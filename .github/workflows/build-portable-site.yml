@@ -1,9 +1,11 @@
-name: Build portable site
+name: Restore and build portable site
 
 on:
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/build-portable-site.yml
   workflow_dispatch:
 
 permissions:
@@ -16,95 +18,111 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Recover source tree
-        shell: bash
-        run: |
-          set -u
-          rm -rf source deploy
-          mkdir -p source deploy
-
-          ARCHIVE="backup/list-geroya-5e-source.tar.gz"
-
-          if gzip -t "$ARCHIVE" 2>/dev/null; then
-            echo "Archive is valid; extracting normally."
-            tar -xzf "$ARCHIVE" -C source
-          else
-            echo "Archive is truncated; recovering all readable files."
-            set +e
-            gzip -dc "$ARCHIVE" 2>gzip-recovery.log | tar -xvf - -C source --ignore-zeros
-            RECOVERY_STATUS=$?
-            set -e
-            echo "Recovery command status: $RECOVERY_STATUS"
-            cat gzip-recovery.log || true
-          fi
-
-          echo "Recovered files:"
-          find source -maxdepth 5 -type f | sort | sed -n '1,400p'
-
-          if ! find source -type f -print -quit | grep -q .; then
-            echo "No files could be recovered from the archive." >&2
-            exit 1
-          fi
-
-      - name: Build portable site
+      - name: Restore complete source archive
         shell: bash
         run: |
           set -euo pipefail
 
+          git fetch origin \
+            refs/heads/agent/restore-current-source:refs/remotes/origin/agent/restore-current-source
+
+          mkdir -p backup
+          git show \
+            origin/agent/restore-current-source:backup/list-geroya-5e-source.tar.gz \
+            > backup/list-geroya-5e-source.tar.gz
+
+          gzip -t backup/list-geroya-5e-source.tar.gz
+          echo "Complete archive restored successfully."
+          ls -lh backup/list-geroya-5e-source.tar.gz
+
+      - name: Extract source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf source deploy
+          mkdir -p source deploy
+          tar -xzf backup/list-geroya-5e-source.tar.gz -C source
+
+          echo "Extracted project files:"
+          find source -maxdepth 4 -type f | sort | sed -n '1,500p'
+
           PACKAGE_JSON="$(find source -name package.json -not -path '*/node_modules/*' | head -n 1 || true)"
-          OUTPUT_DIR=""
+          if [ -z "$PACKAGE_JSON" ]; then
+            echo "The complete archive still contains no package.json." >&2
+            exit 1
+          fi
 
-          if [ -n "$PACKAGE_JSON" ]; then
-            APP_DIR="$(dirname "$PACKAGE_JSON")"
-            echo "Application directory: $APP_DIR"
-            cd "$APP_DIR"
+          echo "PACKAGE_JSON=$PACKAGE_JSON" >> "$GITHUB_ENV"
+          echo "APP_DIR=$(dirname "$PACKAGE_JSON")" >> "$GITHUB_ENV"
 
-            if [ -f package-lock.json ]; then
-              npm ci
-            else
-              npm install
-            fi
+      - name: Install dependencies and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
 
-            if npm run | grep -qE '^  build'; then
-              npm run build
-            else
-              echo "No build script found; treating the recovered files as a static site."
-            fi
-
-            cd "$GITHUB_WORKSPACE"
-
-            for candidate in \
-              "$APP_DIR/dist" \
-              "$APP_DIR/build" \
-              "$APP_DIR/out" \
-              "$APP_DIR/public"; do
-              if [ -f "$candidate/index.html" ]; then
-                OUTPUT_DIR="$candidate"
-                break
-              fi
-            done
-
-            if [ -z "$OUTPUT_DIR" ]; then
-              INDEX_FILE="$(find "$APP_DIR" -name index.html -not -path '*/node_modules/*' | head -n 1 || true)"
-              if [ -n "$INDEX_FILE" ]; then
-                OUTPUT_DIR="$(dirname "$INDEX_FILE")"
-              fi
-            fi
+          if [ -f package-lock.json ]; then
+            npm ci
           else
-            INDEX_FILE="$(find source -name index.html | head -n 1 || true)"
+            npm install
+          fi
+
+          echo "Available scripts:"
+          npm run
+
+          if npm run | grep -qE '^  build'; then
+            npm run build
+          else
+            echo "No build script is defined in package.json." >&2
+            exit 1
+          fi
+
+          echo "Files after build:"
+          find . -maxdepth 5 -type f \
+            -not -path './node_modules/*' \
+            | sort | sed -n '1,800p'
+
+      - name: Create portable deploy folder
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          OUTPUT_DIR=""
+          for candidate in \
+            "$APP_DIR/dist" \
+            "$APP_DIR/build" \
+            "$APP_DIR/out" \
+            "$APP_DIR/public" \
+            "$APP_DIR/.output/public" \
+            "$APP_DIR/.vinext/output/static"; do
+            if [ -f "$candidate/index.html" ]; then
+              OUTPUT_DIR="$candidate"
+              break
+            fi
+          done
+
+          if [ -z "$OUTPUT_DIR" ]; then
+            INDEX_FILE="$(find "$APP_DIR" \
+              -name index.html \
+              -not -path '*/node_modules/*' \
+              | head -n 1 || true)"
             if [ -n "$INDEX_FILE" ]; then
               OUTPUT_DIR="$(dirname "$INDEX_FILE")"
             fi
           fi
 
           if [ -z "$OUTPUT_DIR" ] || [ ! -f "$OUTPUT_DIR/index.html" ]; then
-            echo "Could not find a complete deployable site with index.html." >&2
+            echo "Build completed, but no static index.html was found." >&2
+            echo "Top-level directories after build:" >&2
+            find "$APP_DIR" -maxdepth 4 -type d | sort | sed -n '1,500p' >&2
             exit 1
           fi
 
@@ -116,27 +134,26 @@ jobs:
           cat > deploy/DEPLOYMENT.md <<'EOF'
           # Переносимая версия сайта
 
-          Эта папка содержит готовую статическую сборку **Лист Героя 5e**.
+          Папка содержит готовую статическую сборку **Лист Героя 5e**.
 
-          Для размещения на другом хостинге загрузите содержимое папки `deploy` и укажите её как корневую папку сайта. Файл `index.html` должен находиться в корне публикации.
-
-          Подходит для Netlify, Cloudflare Pages, Vercel, GitHub Pages и обычного веб-сервера.
+          Для другого хостинга опубликуйте содержимое папки `deploy`. Файл `index.html` должен находиться в корне публикации.
           EOF
 
-          echo "Deploy contents:"
-          find deploy -maxdepth 5 -type f | sort | sed -n '1,500p'
+          echo "Portable output: $OUTPUT_DIR"
+          find deploy -maxdepth 5 -type f | sort | sed -n '1,800p'
 
-      - name: Commit portable build
+      - name: Save source and portable build to GitHub
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add deploy
+
+          git add backup/list-geroya-5e-source.tar.gz source deploy
 
           if git diff --cached --quiet; then
-            echo "Portable build is already up to date."
+            echo "Source and deploy folders are already current."
           else
-            git commit -m "Add recovered portable deploy build"
+            git commit -m "Restore source and add portable deploy build"
             git push origin HEAD:main
           fi
