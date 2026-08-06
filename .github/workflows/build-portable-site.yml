@@ -1,4 +1,4 @@
-name: Restore and build portable site
+name: Export current site branch
 
 on:
   push:
@@ -12,148 +12,129 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  export:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Restore complete source archive
+      - name: Extract current source
         shell: bash
         run: |
           set -euo pipefail
-
-          git fetch origin \
-            refs/heads/agent/restore-current-source:refs/remotes/origin/agent/restore-current-source
-
-          mkdir -p backup
-          git show \
-            origin/agent/restore-current-source:backup/list-geroya-5e-source.tar.gz \
-            > backup/list-geroya-5e-source.tar.gz
-
+          rm -rf /tmp/list-geroya-export
+          mkdir -p /tmp/list-geroya-export
           gzip -t backup/list-geroya-5e-source.tar.gz
-          echo "Complete archive restored successfully."
-          ls -lh backup/list-geroya-5e-source.tar.gz
+          tar -xzf backup/list-geroya-5e-source.tar.gz -C /tmp/list-geroya-export
+          test -f /tmp/list-geroya-export/package.json
+          test -f /tmp/list-geroya-export/package-lock.json
 
-      - name: Extract source tree
+      - name: Build current version
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf source deploy
-          mkdir -p source deploy
-          tar -xzf backup/list-geroya-5e-source.tar.gz -C source
+          cd /tmp/list-geroya-export
+          npm ci
+          npm run build
+          test -f dist/server/index.js
+          test -d dist/client
+          rm -rf node_modules .sites-runtime
 
-          echo "Extracted project files:"
-          find source -maxdepth 4 -type f | sort | sed -n '1,500p'
-
-          PACKAGE_JSON="$(find source -name package.json -not -path '*/node_modules/*' | head -n 1 || true)"
-          if [ -z "$PACKAGE_JSON" ]; then
-            echo "The complete archive still contains no package.json." >&2
-            exit 1
-          fi
-
-          echo "PACKAGE_JSON=$PACKAGE_JSON" >> "$GITHUB_ENV"
-          echo "APP_DIR=$(dirname "$PACKAGE_JSON")" >> "$GITHUB_ENV"
-
-      - name: Install dependencies and build
+      - name: Add hosting files
         shell: bash
         run: |
           set -euo pipefail
-          cd "$APP_DIR"
+          cd /tmp/list-geroya-export
 
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          cat > HOSTING.md <<'EOF'
+          # Перенос текущей версии сайта
 
-          echo "Available scripts:"
-          npm run
+          Эта ветка содержит сохранённую текущую версию **Лист Героя 5e**:
 
-          if npm run | grep -qE '^  build'; then
-            npm run build
-          else
-            echo "No build script is defined in package.json." >&2
-            exit 1
-          fi
+          - обычные распакованные исходники в корне ветки;
+          - `package.json` и `package-lock.json`;
+          - заранее собранную серверную версию в `dist/`;
+          - Dockerfile для хостинга с поддержкой Docker.
 
-          echo "Files after build:"
-          find . -maxdepth 5 -type f \
-            -not -path './node_modules/*' \
-            | sort | sed -n '1,800p'
+          ## Обычный Node.js-хостинг
 
-      - name: Create portable deploy folder
-        shell: bash
-        run: |
-          set -euo pipefail
+          Команды сборки:
 
-          OUTPUT_DIR=""
-          for candidate in \
-            "$APP_DIR/dist" \
-            "$APP_DIR/build" \
-            "$APP_DIR/out" \
-            "$APP_DIR/public" \
-            "$APP_DIR/.output/public" \
-            "$APP_DIR/.vinext/output/static"; do
-            if [ -f "$candidate/index.html" ]; then
-              OUTPUT_DIR="$candidate"
-              break
-            fi
-          done
+          ```bash
+          npm ci
+          npm run build
+          ```
 
-          if [ -z "$OUTPUT_DIR" ]; then
-            INDEX_FILE="$(find "$APP_DIR" \
-              -name index.html \
-              -not -path '*/node_modules/*' \
-              | head -n 1 || true)"
-            if [ -n "$INDEX_FILE" ]; then
-              OUTPUT_DIR="$(dirname "$INDEX_FILE")"
-            fi
-          fi
+          Команда запуска:
 
-          if [ -z "$OUTPUT_DIR" ] || [ ! -f "$OUTPUT_DIR/index.html" ]; then
-            echo "Build completed, but no static index.html was found." >&2
-            echo "Top-level directories after build:" >&2
-            find "$APP_DIR" -maxdepth 4 -type d | sort | sed -n '1,500p' >&2
-            exit 1
-          fi
+          ```bash
+          npm start
+          ```
 
-          rm -rf deploy
-          mkdir -p deploy
-          cp -a "$OUTPUT_DIR"/. deploy/
-          touch deploy/.nojekyll
+          Хостинг должен поддерживать серверное Node.js-приложение. Это не чисто статический сайт: сборка содержит `dist/client` и `dist/server`, поэтому одного `index.html` здесь нет.
 
-          cat > deploy/DEPLOYMENT.md <<'EOF'
-          # Переносимая версия сайта
+          ## Docker
 
-          Папка содержит готовую статическую сборку **Лист Героя 5e**.
+          ```bash
+          docker build -t list-geroya-5e .
+          docker run --rm -p 3000:3000 list-geroya-5e
+          ```
 
-          Для другого хостинга опубликуйте содержимое папки `deploy`. Файл `index.html` должен находиться в корне публикации.
+          Для Render, Railway, Fly.io и похожих сервисов можно подключить эту ветку и использовать Dockerfile либо команды `npm ci && npm run build` / `npm start`.
           EOF
 
-          echo "Portable output: $OUTPUT_DIR"
-          find deploy -maxdepth 5 -type f | sort | sed -n '1,800p'
+          cat > Dockerfile <<'EOF'
+          FROM node:22-slim
+          WORKDIR /app
+          COPY package.json package-lock.json ./
+          RUN npm ci
+          COPY . .
+          RUN npm run build
+          ENV NODE_ENV=production
+          ENV HOST=0.0.0.0
+          ENV PORT=3000
+          EXPOSE 3000
+          CMD ["npm", "start"]
+          EOF
 
-      - name: Save source and portable build to GitHub
+          cat > .dockerignore <<'EOF'
+          node_modules
+          .git
+          .github
+          .sites-runtime
+          .wrangler
+          npm-debug.log*
+          EOF
+
+          cat > render.yaml <<'EOF'
+          services:
+            - type: web
+              name: list-geroya-5e
+              runtime: docker
+              dockerfilePath: ./Dockerfile
+              autoDeploy: false
+          EOF
+
+      - name: Publish dedicated branch
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          cd /tmp/list-geroya-export
+          rm -rf .git
+          git init
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add backup/list-geroya-5e-source.tar.gz source deploy
-
-          if git diff --cached --quiet; then
-            echo "Source and deploy folders are already current."
-          else
-            git commit -m "Restore source and add portable deploy build"
-            git push origin HEAD:main
-          fi
+          git checkout -b portable/current-site-2026-08-07
+          git add -A
+          git add -f dist
+          git commit -m "Save current deployable site version"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --force origin HEAD:refs/heads/portable/current-site-2026-08-07
