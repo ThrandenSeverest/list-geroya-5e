@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - agent/add-portable-build
   workflow_dispatch:
 
 permissions:
@@ -21,17 +20,37 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Prepare source tree
+      - name: Recover source tree
         shell: bash
         run: |
-          set -euo pipefail
+          set -u
           rm -rf source deploy
           mkdir -p source deploy
-          tar -xzf backup/list-geroya-5e-source.tar.gz -C source
-          echo "Archive contents:"
-          find source -maxdepth 3 -type f | sort | sed -n '1,200p'
+
+          ARCHIVE="backup/list-geroya-5e-source.tar.gz"
+
+          if gzip -t "$ARCHIVE" 2>/dev/null; then
+            echo "Archive is valid; extracting normally."
+            tar -xzf "$ARCHIVE" -C source
+          else
+            echo "Archive is truncated; recovering all readable files."
+            set +e
+            gzip -dc "$ARCHIVE" 2>gzip-recovery.log | tar -xvf - -C source --ignore-zeros
+            RECOVERY_STATUS=$?
+            set -e
+            echo "Recovery command status: $RECOVERY_STATUS"
+            cat gzip-recovery.log || true
+          fi
+
+          echo "Recovered files:"
+          find source -maxdepth 5 -type f | sort | sed -n '1,400p'
+
+          if ! find source -type f -print -quit | grep -q .; then
+            echo "No files could be recovered from the archive." >&2
+            exit 1
+          fi
 
       - name: Build portable site
         shell: bash
@@ -39,9 +58,11 @@ jobs:
           set -euo pipefail
 
           PACKAGE_JSON="$(find source -name package.json -not -path '*/node_modules/*' | head -n 1 || true)"
+          OUTPUT_DIR=""
 
           if [ -n "$PACKAGE_JSON" ]; then
             APP_DIR="$(dirname "$PACKAGE_JSON")"
+            echo "Application directory: $APP_DIR"
             cd "$APP_DIR"
 
             if [ -f package-lock.json ]; then
@@ -53,12 +74,11 @@ jobs:
             if npm run | grep -qE '^  build'; then
               npm run build
             else
-              echo "No build script found; treating project as static files."
+              echo "No build script found; treating the recovered files as a static site."
             fi
 
             cd "$GITHUB_WORKSPACE"
 
-            OUTPUT_DIR=""
             for candidate in \
               "$APP_DIR/dist" \
               "$APP_DIR/build" \
@@ -80,13 +100,11 @@ jobs:
             INDEX_FILE="$(find source -name index.html | head -n 1 || true)"
             if [ -n "$INDEX_FILE" ]; then
               OUTPUT_DIR="$(dirname "$INDEX_FILE")"
-            else
-              OUTPUT_DIR="source"
             fi
           fi
 
-          if [ -z "${OUTPUT_DIR:-}" ] || [ ! -d "$OUTPUT_DIR" ]; then
-            echo "Could not locate a deployable output directory." >&2
+          if [ -z "$OUTPUT_DIR" ] || [ ! -f "$OUTPUT_DIR/index.html" ]; then
+            echo "Could not find a complete deployable site with index.html." >&2
             exit 1
           fi
 
@@ -96,17 +114,17 @@ jobs:
           touch deploy/.nojekyll
 
           cat > deploy/DEPLOYMENT.md <<'EOF'
-          # Portable build
+          # Переносимая версия сайта
 
-          This folder contains the built static version of **List Geroya 5e**.
+          Эта папка содержит готовую статическую сборку **Лист Героя 5e**.
 
-          Upload the contents of this folder to Netlify, Cloudflare Pages, Vercel, GitHub Pages, or a regular web server.
+          Для размещения на другом хостинге загрузите содержимое папки `deploy` и укажите её как корневую папку сайта. Файл `index.html` должен находиться в корне публикации.
 
-          Configure the hosting root to this folder so that `index.html` is located at the site root.
+          Подходит для Netlify, Cloudflare Pages, Vercel, GitHub Pages и обычного веб-сервера.
           EOF
 
           echo "Deploy contents:"
-          find deploy -maxdepth 3 -type f | sort | sed -n '1,300p'
+          find deploy -maxdepth 5 -type f | sort | sed -n '1,500p'
 
       - name: Commit portable build
         shell: bash
@@ -119,6 +137,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Portable build is already up to date."
           else
-            git commit -m "Add portable deploy build"
-            git push origin HEAD:${{ github.ref_name }}
+            git commit -m "Add recovered portable deploy build"
+            git push origin HEAD:main
           fi
