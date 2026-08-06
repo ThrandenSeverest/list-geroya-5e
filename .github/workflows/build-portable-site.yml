@@ -3,10 +3,8 @@ name: Build portable site
 on:
   push:
     branches:
-      - agent/add-portable-build
-  pull_request:
-    branches:
       - main
+      - agent/add-portable-build
   workflow_dispatch:
 
 permissions:
@@ -19,8 +17,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -104,7 +100,7 @@ jobs:
 
           This folder contains the built static version of **List Geroya 5e**.
 
-          Upload the contents of this folder to any static hosting provider, for example Netlify, Cloudflare Pages, Vercel, GitHub Pages, or a regular web server.
+          Upload the contents of this folder to Netlify, Cloudflare Pages, Vercel, GitHub Pages, or a regular web server.
 
           Configure the hosting root to this folder so that `index.html` is located at the site root.
           EOF
@@ -113,7 +109,6 @@ jobs:
           find deploy -maxdepth 3 -type f | sort | sed -n '1,300p'
 
       - name: Commit portable build
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
@@ -125,5 +120,5 @@ jobs:
             echo "Portable build is already up to date."
           else
             git commit -m "Add portable deploy build"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
+            git push origin HEAD:${{ github.ref_name }}
           fi
