@@ -1,0 +1,124 @@
+name: Build portable site
+
+on:
+  push:
+    branches:
+      - main
+      - agent/add-portable-build
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Prepare source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf source deploy
+          mkdir -p source deploy
+          tar -xzf backup/list-geroya-5e-source.tar.gz -C source
+          echo "Archive contents:"
+          find source -maxdepth 3 -type f | sort | sed -n '1,200p'
+
+      - name: Build portable site
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PACKAGE_JSON="$(find source -name package.json -not -path '*/node_modules/*' | head -n 1 || true)"
+
+          if [ -n "$PACKAGE_JSON" ]; then
+            APP_DIR="$(dirname "$PACKAGE_JSON")"
+            cd "$APP_DIR"
+
+            if [ -f package-lock.json ]; then
+              npm ci
+            else
+              npm install
+            fi
+
+            if npm run | grep -qE '^  build'; then
+              npm run build
+            else
+              echo "No build script found; treating project as static files."
+            fi
+
+            cd "$GITHUB_WORKSPACE"
+
+            OUTPUT_DIR=""
+            for candidate in \
+              "$APP_DIR/dist" \
+              "$APP_DIR/build" \
+              "$APP_DIR/out" \
+              "$APP_DIR/public"; do
+              if [ -f "$candidate/index.html" ]; then
+                OUTPUT_DIR="$candidate"
+                break
+              fi
+            done
+
+            if [ -z "$OUTPUT_DIR" ]; then
+              INDEX_FILE="$(find "$APP_DIR" -name index.html -not -path '*/node_modules/*' | head -n 1 || true)"
+              if [ -n "$INDEX_FILE" ]; then
+                OUTPUT_DIR="$(dirname "$INDEX_FILE")"
+              fi
+            fi
+          else
+            INDEX_FILE="$(find source -name index.html | head -n 1 || true)"
+            if [ -n "$INDEX_FILE" ]; then
+              OUTPUT_DIR="$(dirname "$INDEX_FILE")"
+            else
+              OUTPUT_DIR="source"
+            fi
+          fi
+
+          if [ -z "${OUTPUT_DIR:-}" ] || [ ! -d "$OUTPUT_DIR" ]; then
+            echo "Could not locate a deployable output directory." >&2
+            exit 1
+          fi
+
+          rm -rf deploy
+          mkdir -p deploy
+          cp -a "$OUTPUT_DIR"/. deploy/
+          touch deploy/.nojekyll
+
+          cat > deploy/DEPLOYMENT.md <<'EOF'
+          # Portable build
+
+          This folder contains the built static version of **List Geroya 5e**.
+
+          Upload the contents of this folder to Netlify, Cloudflare Pages, Vercel, GitHub Pages, or a regular web server.
+
+          Configure the hosting root to this folder so that `index.html` is located at the site root.
+          EOF
+
+          echo "Deploy contents:"
+          find deploy -maxdepth 3 -type f | sort | sed -n '1,300p'
+
+      - name: Commit portable build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add deploy
+
+          if git diff --cached --quiet; then
+            echo "Portable build is already up to date."
+          else
+            git commit -m "Add portable deploy build"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
