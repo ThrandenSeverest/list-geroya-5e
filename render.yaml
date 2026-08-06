@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: list-geroya-5e
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: false
