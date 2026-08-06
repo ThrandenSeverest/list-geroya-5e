@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/add-portable-build
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -16,13 +19,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: source/**/package-lock.json
 
       - name: Prepare source tree
         shell: bash
@@ -94,7 +97,6 @@ jobs:
           rm -rf deploy
           mkdir -p deploy
           cp -a "$OUTPUT_DIR"/. deploy/
-
           touch deploy/.nojekyll
 
           cat > deploy/DEPLOYMENT.md <<'EOF'
@@ -102,21 +104,16 @@ jobs:
 
           This folder contains the built static version of **List Geroya 5e**.
 
-          Upload the contents of this folder to any static hosting provider, for example:
+          Upload the contents of this folder to any static hosting provider, for example Netlify, Cloudflare Pages, Vercel, GitHub Pages, or a regular web server.
 
-          - Netlify
-          - Cloudflare Pages
-          - Vercel (static output)
-          - GitHub Pages
-          - any ordinary web server
-
-          The hosting root must point directly to this folder so that `index.html` is at the site root.
+          Configure the hosting root to this folder so that `index.html` is located at the site root.
           EOF
 
           echo "Deploy contents:"
           find deploy -maxdepth 3 -type f | sort | sed -n '1,300p'
 
       - name: Commit portable build
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         shell: bash
         run: |
           set -euo pipefail
@@ -128,5 +125,5 @@ jobs:
             echo "Portable build is already up to date."
           else
             git commit -m "Add portable deploy build"
-            git push
+            git push origin HEAD:${{ github.head_ref || github.ref_name }}
           fi
