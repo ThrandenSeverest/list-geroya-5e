@@ -1,0 +1,83 @@
+name: Create clean hosting upload folder
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/create-hosting-upload.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create clean hosting folder
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -f site-export-current/package.json
+          test -f site-export-current/package-lock.json
+          test -d site-export-current/app
+
+          rm -rf hosting-upload
+          mkdir -p hosting-upload
+
+          rsync -a --prune-empty-dirs \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.openai/' \
+            --exclude='.gitignore' \
+            --exclude='README.md' \
+            --exclude='examples/' \
+            --exclude='tests/' \
+            --exclude='eslint.config.mjs' \
+            --exclude='node_modules/' \
+            --exclude='dist/' \
+            --exclude='.next/' \
+            --exclude='.wrangler/' \
+            site-export-current/ hosting-upload/
+
+          test -f hosting-upload/package.json
+          test -f hosting-upload/package-lock.json
+          test -d hosting-upload/app
+          test -d hosting-upload/public
+          test -d hosting-upload/scripts
+          test -d hosting-upload/worker
+          test -f hosting-upload/vite.config.ts
+          test -f hosting-upload/next.config.ts
+
+          if find hosting-upload -path '*/tests/*' -o -path '*/examples/*' -o -path '*/.openai/*' | grep -q .; then
+            echo 'Forbidden development files found in hosting-upload.' >&2
+            exit 1
+          fi
+
+      - name: Verify the clean folder builds
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/list-geroya-hosting-check
+          cp -a hosting-upload /tmp/list-geroya-hosting-check
+          cd /tmp/list-geroya-hosting-check
+          npm ci
+          npm run build
+
+      - name: Commit hosting folder
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A hosting-upload
+          if git diff --cached --quiet; then
+            echo 'hosting-upload is already up to date.'
+            exit 0
+          fi
+          git commit -m 'Add clean hosting upload folder'
+          git push origin HEAD:main
