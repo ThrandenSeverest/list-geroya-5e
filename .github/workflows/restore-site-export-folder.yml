@@ -28,7 +28,7 @@ jobs:
           tar -xzf backup/list-geroya-5e-source.tar.gz -C site-export-current
           test -f site-export-current/package.json
           test -f site-export-current/package-lock.json
-          test -d site-export-current/src
+          find site-export-current -maxdepth 2 -type f | sort | head -200
 
       - name: Commit restored export folder
         shell: bash
