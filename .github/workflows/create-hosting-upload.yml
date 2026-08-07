@@ -25,9 +25,10 @@ jobs:
           test -f site-export-current/package.json
           test -f site-export-current/package-lock.json
           test -d site-export-current/app
+          test -f site-export-current/.openai/hosting.json
 
           rm -rf hosting-upload
-          mkdir -p hosting-upload
+          mkdir -p hosting-upload/.openai
 
           rsync -a --prune-empty-dirs \
             --exclude='.git/' \
@@ -44,6 +45,8 @@ jobs:
             --exclude='.wrangler/' \
             site-export-current/ hosting-upload/
 
+          cp site-export-current/.openai/hosting.json hosting-upload/.openai/hosting.json
+
           test -f hosting-upload/package.json
           test -f hosting-upload/package-lock.json
           test -d hosting-upload/app
@@ -52,9 +55,15 @@ jobs:
           test -d hosting-upload/worker
           test -f hosting-upload/vite.config.ts
           test -f hosting-upload/next.config.ts
+          test -f hosting-upload/.openai/hosting.json
 
-          if find hosting-upload -path '*/tests/*' -o -path '*/examples/*' -o -path '*/.openai/*' | grep -q .; then
+          if find hosting-upload -path '*/tests/*' -o -path '*/examples/*' | grep -q .; then
             echo 'Forbidden development files found in hosting-upload.' >&2
+            exit 1
+          fi
+
+          if [ "$(find hosting-upload/.openai -type f | wc -l)" -ne 1 ]; then
+            echo 'Only .openai/hosting.json is allowed.' >&2
             exit 1
           fi
 
