@@ -49,10 +49,6 @@ const R = (
   kind: ProficiencyChoiceRequirement["kind"] = "tool",
 ): ProficiencyChoiceRequirement => ({ key, title, source, description, count, options: [...options], kind });
 
-function hasFeat(character: ExportCharacter, featId: string) {
-  return (character.advancements || []).some(choice => choice.featId === featId) || (character.feats || []).includes(featId);
-}
-
 export function proficiencyChoiceRequirements(character: ExportCharacter): ProficiencyChoiceRequirement[] {
   const requirements: ProficiencyChoiceRequirement[] = [];
   const tools = backgroundRule(character.background).tools;
@@ -74,7 +70,6 @@ export function proficiencyChoiceRequirements(character: ExportCharacter): Profi
   if (character.className === "monk" && character.subclass === "kensei" && character.level >= 3) requirements.push(R("subclass-kensei-artisan", "Путь кисти", "Подкласс", "Кэнсэй выбирает каллиграфию или живопись.", 1, ["Инструменты каллиграфа", "Инструменты художника"]));
   if (character.className === "wizard" && character.subclass === "bladesinging" && character.level >= 2) requirements.push(R("subclass-bladesinger-weapon", "Тренировка в войне и песне", "Подкласс", "Выберите один вид одноручного рукопашного оружия.", 1, ["Булава", "Боевой молот", "Боевой топор", "Длинный меч", "Кнут", "Короткий меч", "Рапира", "Скимитар", "Трезубец", "Цеп"], "weapon"));
 
-  if (hasFeat(character, "skilled")) requirements.push(R("feat-skilled", "Одарённый", "Черта", "Выберите три разных навыка или инструмента.", 3, [...skillNames, ...allTools], "skill-or-tool"));
   return requirements;
 }
 
@@ -169,6 +164,14 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
   }
 
   for (const value of character.classChoices?.["kensei-weapons"] || []) weapons.push(value.replace(/^weapon-/, ""));
+  for (const advancement of character.advancements || []) {
+    if (advancement.featId === "skill-expert") skills.push(...(advancement.featChoices?.skill || []));
+    if (advancement.featId === "weapon-master") weapons.push(...(advancement.featChoices?.weapons || []));
+    if (advancement.featId === "skilled") {
+      for (const value of advancement.featChoices?.proficiencies || []) (skillNames.includes(value) ? skills : tools).push(value);
+    }
+    if (advancement.featId === "artificer-initiate") tools.push(...(advancement.featChoices?.tool || []));
+  }
   return {
     skills: unique(skills),
     armor: unique(armor),
@@ -176,4 +179,14 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     tools: unique(tools),
     languages: characterLanguages(character),
   };
+}
+
+export function characterExpertiseSkills(character: ExportCharacter) {
+  const values = [
+    ...(character.expertiseSkills || []),
+    ...(character.classChoices?.expertise || []).map(value => value.replace(/^skill-/, "")),
+    ...(character.className === "rogue" && character.subclass === "scout" && character.level >= 3 ? ["Природа", "Выживание"] : []),
+    ...(character.advancements || []).flatMap(advancement => advancement.featId === "skill-expert" ? advancement.featChoices?.expertise || [] : []),
+  ];
+  return unique(values);
 }

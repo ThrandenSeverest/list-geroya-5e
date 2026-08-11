@@ -5,9 +5,16 @@ export type CharacterResource = {
   name: string;
   max: number;
   die?: string;
+  unit?: number;
   isShortRest: boolean;
   isLongRest: boolean;
 };
+
+export function resourceRestLabel(resource: Pick<CharacterResource, "isShortRest" | "isLongRest">) {
+  if (resource.isShortRest && resource.isLongRest) return "кор./длин.";
+  if (resource.isShortRest) return "кор.";
+  return "длин.";
+}
 
 function rageMaximum(level: number) {
   if (level >= 17) return 6;
@@ -25,6 +32,23 @@ export function characterResources(character: ExportCharacter) {
   const pb = 2 + Math.floor((Math.max(1, level) - 1) / 4);
   const ability = (key: keyof ExportCharacter["abilities"]) => Math.max(1, Math.floor((character.abilities[key] - 10) / 2));
   const subclass = character.subclass || "";
+  const featIds = new Set([
+    ...(character.feats || []),
+    ...(character.advancements || []).map(choice => choice.featId).filter(Boolean),
+  ]);
+
+  add(resources, featIds.has("lucky"), { key: "lucky", name: "Везунчик · очки удачи", max: 3, isShortRest: false, isLongRest: true });
+
+  add(resources, character.race === "dragonborn", { key: "breath-weapon", name: "Оружие дыхания", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.race === "halforc", { key: "relentless-endurance", name: "Непоколебимая стойкость", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.race === "goliath", { key: "stones-endurance", name: "Каменная выносливость", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.race === "firbolg", { key: "hidden-step", name: "Скрытый шаг", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.race === "goblin", { key: "fury-of-the-small", name: "Ярость малого", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.race === "eladrin", { key: "fey-step", name: "Фейский шаг", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.race === "shadarkai", { key: "blessing-raven-queen", name: "Благословение Королевы Воронов", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.race === "reborn", { key: "knowledge-past-life", name: "Знания из прошлой жизни", max: pb, isShortRest: false, isLongRest: true });
+  add(resources, character.race === "aasimar", { key: "healing-hands", name: "Исцеляющие руки", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.race === "aasimar" && level >= 3, { key: "celestial-revelation", name: "Небесное откровение", max: 1, isShortRest: false, isLongRest: true });
 
   add(resources, character.className === "barbarian", { key: "rage", name: "Ярость", max: rageMaximum(level), isShortRest: false, isLongRest: true });
   add(resources, character.className === "bard", { key: "bardic-inspiration", name: "Вдохновение барда", max: ability("cha"), die: level >= 15 ? "к12" : level >= 10 ? "к10" : level >= 5 ? "к8" : "к6", isShortRest: level >= 5, isLongRest: true });
@@ -40,12 +64,28 @@ export function characterResources(character: ExportCharacter) {
   add(resources, character.className === "fighter" && subclass === "samurai" && level >= 3, { key: "fighting-spirit", name: "Боевой дух", max: 3, isShortRest: false, isLongRest: true });
 
   add(resources, character.className === "monk" && level >= 2, { key: "ki", name: "Ци", max: level, isShortRest: true, isLongRest: true });
-  add(resources, character.className === "paladin", { key: "lay-on-hands", name: "Наложение рук", max: level * 5, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "paladin", { key: "lay-on-hands", name: "Наложение рук", max: level * 5, unit: 5, isShortRest: false, isLongRest: true });
   add(resources, character.className === "paladin" && level >= 3, { key: "channel-divinity", name: "Божественный канал", max: 1, isShortRest: true, isLongRest: true });
   add(resources, character.className === "ranger" && character.useTasha, { key: "favored-foe", name: "Избранный враг", max: pb, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "ranger" && subclass === "horizonwalker" && level >= 3, { key: "detect-portal", name: "Обнаружение портала", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.className === "ranger" && subclass === "monster-slayer" && level >= 3, { key: "hunters-sense", name: "Чутьё охотника", max: ability("wis"), isShortRest: false, isLongRest: true });
+  add(resources, character.className === "rogue" && subclass === "soulknife" && level >= 3, { key: "psionic-energy", name: "Псионическая энергия", max: pb * 2, die: level >= 17 ? "к12" : level >= 11 ? "к10" : level >= 5 ? "к8" : "к6", isShortRest: false, isLongRest: true });
+  add(resources, character.className === "rogue" && level >= 20, { key: "stroke-of-luck", name: "Удачливый поворот", max: 1, isShortRest: true, isLongRest: true });
   add(resources, character.className === "sorcerer" && level >= 2, { key: "sorcery-points", name: "Очки чародейства", max: level, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "sorcerer" && subclass === "wildmagic", { key: "tides-of-chaos", name: "Поток хаоса", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "sorcerer" && subclass === "divinesoul", { key: "favored-by-gods", name: "Благоволение богов", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.className === "sorcerer" && subclass === "shadow", { key: "strength-of-the-grave", name: "Сила могилы", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "warlock" && subclass === "archfey", { key: "fey-presence", name: "Фейская внешность", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.className === "warlock" && subclass === "hexblade", { key: "hexblades-curse", name: "Проклятие клинка", max: 1, isShortRest: true, isLongRest: true });
+  add(resources, character.className === "warlock" && subclass === "celestial", { key: "healing-light", name: "Исцеляющий свет", max: level + 1, die: "к6", isShortRest: false, isLongRest: true });
   add(resources, character.className === "wizard", { key: "arcane-recovery", name: "Восстановление магии", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "wizard" && subclass === "bladesinging" && level >= 2, { key: "bladesong", name: "Песнь клинка", max: 2, isShortRest: true, isLongRest: true });
+  add(resources, character.className === "wizard" && subclass === "divination" && level >= 2, { key: "portent", name: "Предзнаменование", max: level >= 14 ? 3 : 2, isShortRest: false, isLongRest: true });
   add(resources, character.className === "artificer" && level >= 7, { key: "flash-of-genius", name: "Вспышка гениальности", max: ability("int"), isShortRest: false, isLongRest: true });
+  add(resources, character.className === "artificer" && subclass === "alchemist" && level >= 3, { key: "experimental-elixir", name: "Экспериментальный эликсир", max: level >= 15 ? 3 : level >= 6 ? 2 : 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "artificer" && subclass === "artillerist" && level >= 3, { key: "eldritch-cannon", name: "Бесплатная магическая пушка", max: 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "artificer" && subclass === "armorer" && level >= 3, { key: "defensive-field", name: "Защитное поле", max: pb, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "artificer" && subclass === "battlesmith" && level >= 9, { key: "arcane-jolt", name: "Магический импульс", max: ability("int"), isShortRest: false, isLongRest: true });
 
   return resources;
 }

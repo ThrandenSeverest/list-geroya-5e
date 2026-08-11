@@ -3,6 +3,9 @@ import test from "node:test";
 import { classChoiceGroups, classChoicesComplete } from "../app/classChoices";
 import { spells } from "../app/catalog";
 import type { ExportCharacter } from "../app/exportFormats";
+import { detailedFeatures, documentedClassFeatures } from "../app/featureDetails";
+import { optionalClassFeatures, selectedSubclass } from "../app/characterRules";
+import { classRules } from "../app/rules";
 
 const base: ExportCharacter = {
   name: "", playerName: "", race: "human", raceVariant: "standard", className: "fighter", subclass: "", background: "", classSkills: [], backgroundSkills: [], level: 1, spells: [], alignment: "", abilities: { str: 15, dex: 14, con: 14, int: 10, wis: 10, cha: 8 }, personality: { traits: "", ideals: "", bonds: "", flaws: "" }, classChoices: {},
@@ -42,4 +45,28 @@ test("completion rejects removed or prerequisite-ineligible options", () => {
   assert.equal(classChoicesComplete(value, spells), false);
   value.useTasha = true;
   assert.equal(classChoicesComplete(value, spells), true);
+});
+
+test("moon druid features explain action economy, healing and CR progression", () => {
+  const moon = selectedSubclass("druid", "moon")!;
+  const features = detailedFeatures(moon.features);
+  const combatShape = features.find(feature => feature.name === "Боевой дикий облик")?.description || "";
+  const circleForms = features.find(feature => feature.name === "Формы круга")?.description || "";
+  assert.match(combatShape, /бонусным действием/i);
+  assert.match(combatShape, /1к8.*каждый круг/i);
+  assert.match(circleForms, /ПО 2 на 6-м/i);
+  assert.match(circleForms, /ПО 6 на 18-м/i);
+});
+
+test("attached class documents restore omitted level features with full wording", () => {
+  const fighter = documentedClassFeatures("fighter", "Мастер боевых искусств", false, classRules.fighter.features, [], optionalClassFeatures.fighter || []);
+  const knowEnemy = fighter.find(feature => feature.name === "Познай своего врага");
+  assert.equal(knowEnemy?.level, 7);
+  assert.match(knowEnemy?.description || "", /1 минуты/i);
+  assert.match(knowEnemy?.description || "", /КД.*текущие хиты/i);
+
+  const monk = documentedClassFeatures("monk", undefined, false, classRules.monk.features, [], optionalClassFeatures.monk || []);
+  const stillness = monk.find(feature => feature.name === "Спокойствие разума");
+  assert.equal(stillness?.level, 7);
+  assert.match(stillness?.description || "", /очарованным или испуганным/i);
 });

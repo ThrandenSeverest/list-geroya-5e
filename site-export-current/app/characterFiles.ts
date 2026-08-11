@@ -1,8 +1,9 @@
 import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
-import { helpmateClassIds, helpmateSubclassClassIds, type ExportCharacter } from "./exportFormats";
-import { helpmateSpellIds } from "./exportIds";
+import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
+import { helpmateSpellIds, spellIdFromDndUrl, spellIdFromLssCardId } from "./exportIds";
 import { skillKeys } from "./rules";
+import { asiLevelsForClass, feats, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
 
 export type CharacterFileSource = "native" | "long-story-short" | "helpmate";
 
@@ -51,10 +52,171 @@ function collectText(node: unknown): string[] {
 
 function spellIdsFromLss(inner: Record<string, unknown>) {
   const textBlocks = (inner.text || {}) as Record<string, unknown>;
-  const names = Object.entries(textBlocks)
+  const values = Object.entries(textBlocks)
     .filter(([key]) => key.startsWith("spells-level-"))
-    .flatMap(([, block]) => collectText(block).map(normalized));
-  return spells.filter(spell => names.includes(normalized(spell.name))).map(spell => spell.id);
+    .flatMap(([, block]) => collectText(block));
+  const names = values.map(normalized);
+  const linked = values.map(spellIdFromDndUrl).filter(Boolean) as string[];
+  return [...new Set([...spells.filter(spell => names.includes(normalized(spell.name))).map(spell => spell.id), ...linked])];
+}
+
+type LssCard = { id: string; name: string; url: string };
+
+function lssCards(value: unknown): LssCard[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(item => {
+    if (typeof item === "string") return { id: text(item), name: "", url: spellIdFromDndUrl(item) ? item : "" };
+    if (!item || typeof item !== "object") return { id: "", name: "", url: "" };
+    const card = item as Record<string, unknown>;
+    const nestedSpell = card.spell && typeof card.spell === "object" ? card.spell as Record<string, unknown> : {};
+    const url = collectText(item).find(value => Boolean(spellIdFromDndUrl(value))) || "";
+    return {
+      id: text(card._id) || text(card.id) || text(nestedSpell._id) || text(nestedSpell.id),
+      name: text(card.name) || text(card.title) || text(nestedSpell.name) || text(nestedSpell.title),
+      url,
+    };
+  }).filter(card => /^[0-9a-f]{24}$/i.test(card.id) || Boolean(card.name) || Boolean(card.url));
+}
+
+function resolveLssCard(card: LssCard) {
+  return spellIdFromDndUrl(card.url) || matchCatalog(card.name, spells) || spellIdFromLssCardId(card.id) || "";
+}
+
+function resolveLssCards(cards: LssCard[]) {
+  return Object.fromEntries(cards.flatMap(card => {
+    const spellId = resolveLssCard(card);
+    return spellId && /^[0-9a-f]{24}$/i.test(card.id) ? [[card.id, spellId]] : [];
+  }));
+}
+
+const abilityKeys = ["str", "dex", "con", "int", "wis", "cha"] as const;
+type AbilityKey = typeof abilityKeys[number];
+
+function classExpertiseLimit(className: string, level: number) {
+  if (className === "bard") return level >= 10 ? 4 : level >= 3 ? 2 : 0;
+  if (className === "rogue") return level >= 6 ? 4 : level >= 1 ? 2 : 0;
+  return 0;
+}
+
+function advancementSlots(race: string, raceVariant: string, className: string, level: number) {
+  return [
+    ...((race === "human" && raceVariant === "variant") || race === "customlineage" ? [{ key: "origin-1", level: 1, origin: true }] : []),
+    ...asiLevelsForClass(className).filter(value => value <= level).map(value => ({ key: `class-${value}`, level: value, origin: false })),
+  ];
+}
+
+function distinctAbilityChoices(count: number, excluded: AbilityKey[] = []) {
+  const available = abilityKeys.filter(key => !excluded.includes(key));
+  const result: AbilityKey[][] = [];
+  const visit = (chosen: AbilityKey[]) => {
+    if (chosen.length === count) return void result.push(chosen);
+    for (const key of available) if (!chosen.includes(key)) visit([...chosen, key]);
+  };
+  visit([]);
+  return result.length ? result : [[]];
+}
+
+function halfFeatOptions(featId: string): AbilityKey[] | null {
+  if (featId === "actor") return ["cha"];
+  if (featId === "durable") return ["con"];
+  if (["athlete"].includes(featId)) return ["str", "dex"];
+  if (featId === "observant") return ["int", "wis"];
+  if (["fey-touched", "shadow-touched", "telekinetic"].includes(featId)) return ["int", "wis", "cha"];
+  if (["resilient", "skill-expert"].includes(featId)) return [...abilityKeys];
+  return null;
+}
+
+function halfFeatAssignments(featIds: string[]) {
+  const indexed = featIds.map((featId, index) => ({ index, options: halfFeatOptions(featId) })).filter(item => item.options) as Array<{ index: number; options: AbilityKey[] }>;
+  const results: Array<Record<number, AbilityKey>> = [];
+  const visit = (at: number, value: Record<number, AbilityKey>) => {
+    if (at === indexed.length) return void results.push(value);
+    const item = indexed[at];
+    for (const key of item.options) visit(at + 1, { ...value, [item.index]: key });
+  };
+  visit(0, {});
+  return results.length ? results : [{}];
+}
+
+type InferredBuild = {
+  abilities: AbilityScores;
+  raceVariant: string;
+  raceAbilityChoices: AbilityKey[];
+  advancements: AdvancementChoice[];
+  asiCount: number;
+  exact: boolean;
+};
+
+function inferBuild(finalScores: AbilityScores, race: string, rawRaceLabel: string, className: string, level: number, featIds: string[], skillExpertSkill = ""): InferredBuild {
+  const normalizedRace = normalized(rawRaceLabel);
+  const raceOptions = variantsFor(race);
+  const explicitVariant = raceOptions.find(variant => normalizedRace.includes(normalized(variant.name)));
+  const variantIds = explicitVariant ? [explicitVariant.id] : raceOptions.length ? raceOptions.map(variant => variant.id) : [race ? "base" : ""];
+  let best: (InferredBuild & { score: number }) | null = null;
+
+  for (const raceVariant of variantIds) {
+    const variant = selectedRaceVariant(race, raceVariant);
+    const raceChoices = variant?.chooseBonuses
+      ? distinctAbilityChoices(variant.chooseBonuses.count, variant.chooseBonuses.exclude || [])
+      : [[]];
+    const slots = advancementSlots(race, raceVariant, className, level);
+    if (featIds.length > slots.length) continue;
+
+    for (const choices of raceChoices) {
+      const raceBonus = Object.fromEntries(abilityKeys.map(key => [key, variant?.bonuses?.[key] || 0])) as AbilityScores;
+      choices.forEach((key, index) => { raceBonus[key] += variant?.chooseBonuses?.amounts?.[index] ?? variant?.chooseBonuses?.amount ?? 0; });
+      const afterRace = Object.fromEntries(abilityKeys.map(key => [key, finalScores[key] - raceBonus[key]])) as AbilityScores;
+
+      for (const halfAssignments of halfFeatAssignments(featIds)) {
+        const halfBonus = Object.fromEntries(abilityKeys.map(key => [key, 0])) as AbilityScores;
+        for (const key of Object.values(halfAssignments)) halfBonus[key] += 1;
+        if (abilityKeys.some(key => afterRace[key] - halfBonus[key] < 8)) continue;
+
+        let states = new Map<string, { abilities: Partial<AbilityScores>; cost: number; diff: number }>();
+        states.set("0:0", { abilities: {}, cost: 0, diff: 0 });
+        for (const key of abilityKeys) {
+          const next = new Map<string, { abilities: Partial<AbilityScores>; cost: number; diff: number }>();
+          const maximum = Math.min(15, afterRace[key] - halfBonus[key]);
+          for (const state of states.values()) for (let base = 8; base <= maximum; base += 1) {
+            const cost = state.cost + (base <= 15 ? ({ 8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9 } as Record<number, number>)[base] : 0);
+            if (cost > 27) continue;
+            const diff = state.diff + afterRace[key] - halfBonus[key] - base;
+            const stateKey = `${cost}:${diff}`;
+            if (!next.has(stateKey)) next.set(stateKey, { abilities: { ...state.abilities, [key]: base }, cost, diff });
+          }
+          states = next;
+        }
+
+        for (const state of states.values()) {
+          if (state.diff % 2) continue;
+          const asiCount = state.diff / 2;
+          if (featIds.length + asiCount > slots.length) continue;
+          const abilities = state.abilities as AbilityScores;
+          if (pointBuySpent(abilities) > 27) continue;
+          const asiChoices = abilityKeys.flatMap(key => Array.from({ length: afterRace[key] - halfBonus[key] - abilities[key] }, () => key));
+          const advancements: AdvancementChoice[] = [];
+          featIds.forEach((featId, index) => {
+            const ability = halfAssignments[index];
+            const featChoices: Record<string, string[]> = {};
+            if (ability && !["actor", "durable"].includes(featId)) featChoices.ability = [ability];
+            if (featId === "skill-expert" && skillExpertSkill) {
+              featChoices.skill = [skillExpertSkill];
+              featChoices.expertise = [skillExpertSkill];
+            }
+            advancements.push({ ...slots[advancements.length], featId, asiChoices: [], featChoices });
+          });
+          for (let index = 0; index < asiChoices.length; index += 2) {
+            advancements.push({ ...slots[advancements.length], featId: "asi", asiChoices: asiChoices.slice(index, index + 2) });
+          }
+          const score = (explicitVariant ? 1_000_000 : 0) + state.cost * 1_000 - asiCount * 10 - advancements.length;
+          if (!best || score > best.score) best = { abilities, raceVariant, raceAbilityChoices: choices, advancements, asiCount, exact: true, score };
+        }
+      }
+    }
+  }
+
+  if (best) return best;
+  return { abilities: { ...finalScores }, raceVariant: explicitVariant?.id || (variantIds[0] || ""), raceAbilityChoices: [], advancements: [], asiCount: 0, exact: false };
 }
 
 function importLss(payload: Record<string, unknown>, empty: ExportCharacter): CharacterImportResult {
@@ -65,9 +227,11 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
   const stats = (inner.stats || {}) as Record<string, unknown>;
   const skillData = (inner.skills || {}) as Record<string, { isProf?: boolean | number }>;
   const lssToRussian = Object.fromEntries(Object.entries(skillKeys).map(([ru, data]) => [data.key, ru]));
-  const selectedSkills = Object.entries(skillData).filter(([, data]) => Boolean(data?.isProf)).map(([key]) => lssToRussian[key]).filter(Boolean);
+  const selectedSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 1).map(([key]) => lssToRussian[key]).filter(Boolean);
+  const expertiseSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 2).map(([key]) => lssToRussian[key]).filter(Boolean);
   const className = matchCatalog(valueOf(info.charClass), classes);
-  const raceName = text(valueOf(info.race)).split(/[·—]/)[0];
+  const rawRaceLabel = text(valueOf(info.race));
+  const raceName = rawRaceLabel.split(/[·—]/)[0];
   const race = matchCatalog(raceName, races);
   const background = matchCatalog(valueOf(info.background), backgrounds);
   const fixedBackgroundSkills = backgroundRule(background, backgrounds.find(item => item.id === background)).skills;
@@ -77,16 +241,45 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
     return Object.entries((inner.spells || {}) as Record<string, { isChecked?: boolean }>)
       .filter(([key, slot]) => key.startsWith(prefix) && slot?.isChecked).length;
   });
-  const abilities = { ...empty.abilities };
-  for (const key of Object.keys(abilities) as Array<keyof typeof abilities>) {
+  const finalAbilities = { ...empty.abilities };
+  for (const key of Object.keys(finalAbilities) as Array<keyof typeof finalAbilities>) {
     const score = Number((stats[key] as { score?: number } | undefined)?.score);
-    if (Number.isFinite(score)) abilities[key] = score;
+    if (Number.isFinite(score)) finalAbilities[key] = score;
   }
-  const importedSpells = spellIdsFromLss(inner);
+  const allLssText = normalized(collectText(inner.text || {}).join(" "));
+  const importedFeatIds = feats
+    .filter(feat => feat.id !== "asi" && ` ${allLssText} `.includes(` ${normalized(feat.name)} `))
+    .map(feat => feat.id);
+  const nativeExpertiseCount = classExpertiseLimit(className, level);
+  const classExpertise = expertiseSkills.slice(0, nativeExpertiseCount);
+  const featExpertise = expertiseSkills.slice(nativeExpertiseCount);
+  if (featExpertise.length && !importedFeatIds.includes("skill-expert")) importedFeatIds.push("skill-expert");
+  const inferredBuild = inferBuild(finalAbilities, race, rawRaceLabel, className, level, [...new Set(importedFeatIds)], featExpertise[0] || "");
+  const textSpells = spellIdsFromLss(inner);
+  const outerSpells = payload.spells && typeof payload.spells === "object"
+    ? payload.spells as Record<string, unknown>
+    : {};
+  const preparedCardEntries = lssCards(outerSpells.prepared);
+  const bookCardEntries = lssCards(outerSpells.book);
+  const preparedCards = preparedCardEntries.map(card => card.id).filter(id => /^[0-9a-f]{24}$/i.test(id));
+  const bookCards = bookCardEntries.map(card => card.id).filter(id => /^[0-9a-f]{24}$/i.test(id));
+  const resolvedCards = resolveLssCards([...preparedCardEntries, ...bookCardEntries]);
+  const resolvedSpellIds = [...preparedCardEntries, ...bookCardEntries].map(resolveLssCard).filter(Boolean);
+  const importedSpells = [...new Set([...textSpells, ...resolvedSpellIds])];
+  const resolvedPreparedSpellIds = preparedCardEntries.map(resolveLssCard).filter(Boolean);
+  const hasCardSpells = preparedCards.length > 0 || bookCards.length > 0;
+  const unresolvedCount = [...new Set([...preparedCards, ...bookCards])].filter(id => !resolvedCards[id]).length;
   const warnings = [
-    "Long Story Short не хранит переносимые публичные ID карточек заклинаний; восстановлены только заклинания, найденные в текстовых блоках.",
+    hasCardSpells
+      ? unresolvedCount
+        ? `Автоматически восстановлено ${new Set(resolvedSpellIds).size} заклинаний по ссылкам dnd.su, названиям и проверенному кэшу LSS. ${unresolvedCount} закрытых ID не содержат ссылки в экспортном файле; они сохранены без ручного сопоставления и не потеряются при обратном экспорте.`
+        : `Все ${preparedCards.length + bookCards.length} карточек Long Story Short автоматически сопоставлены по dnd.su и восстановлены в выбранные заклинания; исходные ID сохранены для обратного экспорта.`
+      : "Восстановлены заклинания, найденные в переносимых текстовых блоках Long Story Short.",
+    expertiseSkills.length ? `Восстановлена компетентность: ${expertiseSkills.join(", ")}. Уровень ${level} учтён при распределении классовых выборов${featExpertise.length ? " и черты «Эксперт в навыке»" : ""}.` : "",
+    inferredBuild.asiCount ? `Итоговые характеристики разложены на допустимый Point Buy и ${inferredBuild.asiCount} повыш. характеристик по уровню персонажа.` : "",
+    !inferredBuild.exact ? "Не удалось однозначно разложить итоговые характеристики на расовые бонусы и доступные повышения — значения сохранены как есть." : "",
     "Выборы снаряжения, черт и вложенных классовых вариантов восстановить однозначно нельзя — проверьте соответствующие шаги мастера.",
-  ];
+  ].filter(Boolean);
   return {
     source: "long-story-short",
     warnings,
@@ -97,14 +290,30 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
       alignment: text(valueOf(info.alignment)),
       className,
       race,
-      raceVariant: race ? "base" : "",
+      raceVariant: inferredBuild.raceVariant,
+      raceAbilityChoices: inferredBuild.raceAbilityChoices,
       background,
       backgroundSkills: fixedBackgroundSkills,
       classSkills: selectedSkills.filter(skill => !fixedBackgroundSkills.includes(skill)),
+      expertiseSkills,
+      classChoices: classExpertise.length ? { expertise: classExpertise.map(skill => `skill-${skill}`) } : {},
       level,
-      abilities,
+      abilities: inferredBuild.abilities,
+      advancements: inferredBuild.advancements,
+      feats: inferredBuild.advancements.map(choice => choice.featId).filter(Boolean),
+      asiChoices: inferredBuild.advancements.flatMap(choice => choice.featId === "asi" ? choice.asiChoices : []),
       spells: importedSpells,
-      preparedSpells: importedSpells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0),
+      preparedSpells: [...new Set([
+        ...textSpells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0),
+        ...resolvedPreparedSpellIds.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0),
+      ])],
+      lssSpellCards: hasCardSpells ? {
+        mode: "cards",
+        prepared: preparedCards,
+        book: bookCards,
+        edition: text(outerSpells.edition) || text(payload.edition) || "2014",
+        resolved: resolvedCards,
+      } : undefined,
       spellSlotsUsed,
       personality: {
         traits: collectText((inner.text as Record<string, unknown> | undefined)?.personality).join(" ").trim(),

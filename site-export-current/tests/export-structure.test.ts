@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { backgrounds, classes, races, spells } from "../app/catalog";
-import { dndSpellUrl, helpmateSpellIds } from "../app/exportIds";
-import { createHelpmateExport, createLongStoryShortExport, helpmateClassIds, helpmateSubclassClassIds, type ExportCharacter } from "../app/exportFormats";
+import { dndSpellUrl, helpmateSpellId, helpmateSpellIds, spellIdFromDndUrl } from "../app/exportIds";
+import { createHelpmateExport, createLongStoryShortExport, helpmateClassIds, helpmateSkippedSpells, helpmateSubclassClassIds, type ExportCharacter } from "../app/exportFormats";
 import { classRules, raceFeatures } from "../app/rules";
 import { resolvedClassChoiceFeatures } from "../app/classChoices";
 
@@ -82,6 +82,7 @@ assert.deepEqual(helpmate.Classes[0].SpellCells, [
 ], "Wizard level 5 cells must match the supplied Helpmate reference");
 assert.equal(helpmate.FirstSpellText, "Сл спасброска заклинаний: 14");
 assert.equal(helpmate.SecondSpellText, "Бонус атаки заклинанием: +6");
+assert.equal(helpmate.SelectedSaveThrowKey, 4, "Helpmate must select Intelligence for wizard spellcasting");
 assert.match(helpmate.Note, /Подготовлено: Доспехи мага, Туманный шаг/);
 assert.equal(helpmate.Parameters[3].Abilities[0].Proficiency, true, "Arcana proficiency must transfer");
 assert.equal(helpmate.Parameters[3].Abilities[1].Proficiency, true, "History proficiency must transfer");
@@ -114,10 +115,55 @@ assert.deepEqual(warlockHelpmate.Classes, [{
   SpellCells: [{ Level: 0, Left: 2, Max: 2 }, { Level: 1, Left: 1, Max: 1 }],
 }], "Warlock pact cells must match the supplied Helpmate class example");
 
-assert.equal(Object.keys(helpmateSpellIds).length, spells.length, "Every catalog spell needs a Helpmate id");
-assert.deepEqual(new Set(Object.keys(helpmateSpellIds)), new Set(spells.map(spell => spell.id)));
-assert(Object.values(helpmateSpellIds).every(id => /^\d+$/.test(id)), "Mapped spell ids must be numeric");
-assert.equal(new Set(Object.values(helpmateSpellIds)).size, spells.length, "Spell ids must not collide");
+const humanDruidCharacter: ExportCharacter = {
+  ...character,
+  race: "human",
+  raceVariant: "standard",
+  className: "druid",
+  subclass: "moon",
+  level: 4,
+  abilities: { str: 8, dex: 16, con: 16, int: 8, wis: 16, cha: 8 },
+};
+const humanDruidFeatures = raceFeatures("human", "standard");
+const humanDruidHelpmate = createHelpmateExport({
+  ...context,
+  character: humanDruidCharacter,
+  race: races.find(option => option.id === "human"),
+  characterClass: classes.find(option => option.id === "druid"),
+  raceFeatureList: humanDruidFeatures,
+});
+assert.equal(humanDruidHelpmate.SelectedSaveThrowKey, 5, "Helpmate must select Wisdom for druid spellcasting");
+assert.equal(humanDruidHelpmate.CellEyeValue, 0, "a human must not receive a hidden 120-foot darkvision value");
+assert.equal(humanDruidHelpmate.EyeEnabled, false);
+assert.equal(humanDruidHelpmate.SeeInTheDark, false);
+
+const drowHelpmate = createHelpmateExport({
+  ...context,
+  raceFeatureList: [
+    ...raceFeatures("elf", "drow"),
+    { name: "Превосходное тёмное зрение", description: "Видит в темноте на 120 футов." },
+  ],
+});
+assert.equal(drowHelpmate.CellEyeValue, 120, "the superior darkvision of a drow must override base elf darkvision");
+
+assert.equal(spells.length, 515, "The attached 514-spell corpus plus the existing official Silvery Barbs card must be available");
+assert.equal(new Set(spells.map(spell => spell.id)).size, spells.length, "Expanded spell IDs must remain unique");
+assert.equal(Object.keys(helpmateSpellIds).length, 477, "Every supplied and verified Helpmate spell mapping must be available");
+assert(spells.every(spell => dndSpellUrl(spell.id)), "Every spell needs a dnd.su page or search URL for LSS and PDF");
+assert.equal(helpmateSpellId("spell-doc-blade_ward"), "101");
+assert.equal(helpmateSpellId("dissonant-whispers"), "56", "Dissonant Whispers must accept Helpmate's singular alias");
+assert.equal(helpmateSpellId("spell-doc-lightning_lure"), "TCoE_3", "Lightning Lure must accept Helpmate's Lighting Lure typo");
+assert.equal(helpmateSpellId("spell-doc-summon_celestial"), "TCoE_18", "Summon Celestial must accept Helpmate's truncated alias");
+assert.equal(helpmateSpellId("spell-doc-create_magen"), null, "Create Magen is absent from Helpmate");
+assert.equal(spells.find(spell => spell.id === "spell-doc-create_magen")?.source, "IDRotF");
+assert.equal(spellIdFromDndUrl("https://dnd.su/spells/?search=Blade%20Ward"), "spell-doc-blade_ward", "Search links from the attached document must round-trip into the catalog");
+assert(Object.values(helpmateSpellIds).every(id => typeof id === "string"), "Helpmate IDs must always stay strings");
+assert(Object.values(helpmateSpellIds).some(id => /^TCoE_\d+$/.test(id)), "Tasha mappings must preserve TCoE_* IDs");
+assert.equal(new Set(Object.values(helpmateSpellIds)).size, Object.keys(helpmateSpellIds).length, "Verified Helpmate spell ids must not collide");
+
+const partialContext = { ...context, character: { ...character, spells: ["firebolt", "spell-doc-create_magen", "spell-doc-air_bubble"] } };
+assert.deepEqual(createHelpmateExport(partialContext).Spells, ["204"], "Unsupported spells must be skipped without breaking compatible exports");
+assert.deepEqual(helpmateSkippedSpells(partialContext).map(spell => spell.name), ["Сотворение магена", "Воздушный пузырь"]);
 
 const lss = createLongStoryShortExport(context);
 const lssInner = JSON.parse(lss.data);
@@ -134,12 +180,18 @@ assert.equal(lssInner.spellsInfo.base.code, "int", "LSS needs the spellcasting a
 assert.equal(lssInner.spellsInfo.base.value, "", "LSS base.value is not a localized label");
 assert.equal(lssInner.spellsInfo.save.customModifier, null, "LSS calculates the save DC from the selected base ability");
 assert.equal(lssInner.spellsInfo.mod.customModifier, 3);
+assert.equal(lssInner.skills.arcana.isProf, 1);
+const expertiseLssInner = JSON.parse(createLongStoryShortExport({
+  ...context,
+  character: { ...character, expertiseSkills: ["Магия"] },
+}).data);
+assert.equal(expertiseLssInner.skills.arcana.isProf, 2, "LSS expertise must use isProf = 2");
 assert.equal(lssInner.text.traits.value.data.type, "doc", "LSS rich text must use ProseMirror JSON");
 assert.equal(lssInner.text.prof.value.data.type, "doc", "LSS proficiencies must use ProseMirror JSON");
 assert.equal(lssInner.text["notes-1"].value.data.type, "doc", "Long class descriptions belong in notes");
 const richStrings = (block: { value: { data: { content?: Array<{ content?: Array<{ text?: string }> }> | null } } }) =>
   (block.value.data.content || []).flatMap(paragraph => paragraph.content || []).map(node => node.text || "").join("");
-assert.match(richStrings(lssInner.text["notes-2"]), /Подготовленные заклинания: Доспехи мага, Туманный шаг/);
+assert.match(richStrings(lssInner.text.quests), /Подготовленные заклинания: Доспехи мага, Туманный шаг/);
 assert.deepEqual(lssInner.weaponsList.map((item: { name: { value: string } }) => item.name.value), ["Боевой посох", "Огненный снаряд"]);
 assert.deepEqual(lssInner.weaponsList[0], {
   id: lssInner.weaponsList[0].id,
@@ -206,6 +258,25 @@ assert.deepEqual(textAt(1), ["Доспехи мага"]);
 assert.deepEqual(textAt(2), ["Туманный шаг"]);
 assert.equal(dndSpellUrl("firebolt"), "https://dnd.su/spells/204-fire_bolt/");
 
+const retainedPreparedCards = ["65d3c16ef3d820fa1add4695", "6723be82cbc20b6b98471104"];
+const retainedBookCards = ["65d3c173f3d820fa1add4919"];
+const roundTripLss = createLongStoryShortExport({
+  ...context,
+  character: {
+    ...character,
+    lssSpellCards: { mode: "cards", prepared: retainedPreparedCards, book: retainedBookCards, edition: "2014" },
+  },
+});
+assert.equal(roundTripLss.spells.mode, "cards");
+assert.deepEqual(roundTripLss.spells.prepared, retainedPreparedCards, "Imported LSS prepared-card ids must survive export unchanged");
+assert.deepEqual(roundTripLss.spells.book, retainedBookCards, "Imported LSS spellbook-card ids must survive export unchanged");
+const roundTripInner = JSON.parse(roundTripLss.data);
+const roundTripCantrips = (roundTripInner.text["spells-level-0"].value.data.content || [])
+  .flatMap((paragraph: { content?: Array<{ text?: string }> }) => paragraph.content || [])
+  .map((node: { text?: string }) => node.text)
+  .filter(Boolean);
+assert.deepEqual(roundTripCantrips, ["Огненный снаряд"], "Portable text spell lists must remain available alongside retained LSS cards");
+
 const spentCharacter = { ...character, spellSlotsUsed: [1, 2, 2] };
 const spentContext = { ...context, character: spentCharacter };
 const spentHelpmate = createHelpmateExport(spentContext);
@@ -271,6 +342,48 @@ assert.match(richStrings(fighterLss.text["notes-1"]), /\+2 к урону/, "Sele
 const rapierAttack = fighterLss.weaponsList.find((item: { name: { value: string } }) => item.name.value === "Рапира");
 assert.equal(rapierAttack.dmg.value, "1d8+[DEX]+2", "Dueling damage must be included in the LSS formula");
 assert.equal(rapierAttack.ability, "dex");
+
+const elementalAdeptCharacter: ExportCharacter = {
+  ...character,
+  level: 5,
+  advancements: [{
+    key: "class-4",
+    level: 4,
+    featId: "elemental-adept",
+    asiChoices: [],
+    featChoices: { element: ["Огонь"] },
+  }],
+  feats: ["elemental-adept"],
+};
+const elementalAdeptFeature = {
+  name: "Стихийный адепт",
+  description: "Огонь: заклинания игнорируют сопротивление урону огнём, а каждая 1 на кости такого урона считается 2.",
+};
+const elementalAdeptLss = JSON.parse(createLongStoryShortExport({
+  ...context,
+  character: elementalAdeptCharacter,
+  featNames: ["Стихийный адепт"],
+  featFeatureList: [elementalAdeptFeature],
+}).data);
+assert.match(richStrings(elementalAdeptLss.text.features), /каждая 1 на кости такого урона считается 2/, "A selected feat must never disappear from the LSS feat field");
+assert.doesNotMatch(richStrings(elementalAdeptLss.text.traits), /Полный текст перенесён/, "The main LSS sheet must contain a useful summary, not a redirect to notes");
+assert.match(richStrings(elementalAdeptLss.text.attacks), /Стихийный адепт \(огонь\)/, "Elemental Adept must annotate matching cantrip attacks");
+assert.match(richStrings(elementalAdeptLss.text.attacks), /сопротивление этому урону игнорируется/, "Elemental Adept resistance handling belongs with the attack");
+assert.match(richStrings(elementalAdeptLss.text.prof), /Раса · Тёмное зрение/, "Racial features belong in Other proficiencies and languages");
+
+const crowdedFeatLss = JSON.parse(createLongStoryShortExport({
+  ...context,
+  character,
+  featFeatureList: [
+    { name: "Первая черта", description: "Первая механика." },
+    { name: "Вторая черта", description: "Вторая механика." },
+    { name: "Страж", description: "Реакцией совершите атаку по существу, которое атакует союзника рядом с вами." },
+  ],
+}).data);
+assert.match(richStrings(crowdedFeatLss.text.features), /Первая черта/);
+assert.match(richStrings(crowdedFeatLss.text.features), /Вторая черта/);
+assert.doesNotMatch(richStrings(crowdedFeatLss.text.features), /Страж/);
+assert.match([1, 2, 3, 4, 5].map(index => richStrings(crowdedFeatLss.text[`notes-${index}`])).join(" "), /Страж/, "Feats after the first two must continue in notes instead of being discarded");
 
 const paladinLss = JSON.parse(createLongStoryShortExport({
   ...context,

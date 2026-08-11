@@ -9,6 +9,27 @@ export type BackgroundRule = {
   feature: BackgroundFeature;
 };
 
+/**
+ * Starting coins are tracked in the character wallet, not as a line item in
+ * inventory.  The PHB background lists phrase this either as "Кошель с N зм"
+ * or simply "N зм" (the hermit is the latter), so keep that small variation
+ * in one place rather than leaking it into every sheet/export.
+ */
+export function startingGoldFromBackgroundEquipment(equipment: string[]) {
+  return equipment.reduce((total, item) => {
+    const match = item.trim().match(/^(?:кошел(?:[её]к|ь)\s+с\s+)?(\d+)\s*зм$/i);
+    return total + (match ? Number(match[1]) : 0);
+  }, 0);
+}
+
+export function backgroundEquipmentWithoutStartingGold(equipment: string[]) {
+  return equipment.filter(item => !/^(?:кошел(?:[её]к|ь)\s+с\s+)?\d+\s*зм$/i.test(item.trim()));
+}
+
+export function backgroundStartingGold(id: string, fallback?: CatalogOption) {
+  return startingGoldFromBackgroundEquipment(backgroundRule(id, fallback).equipment);
+}
+
 const B = (
   skills: string[],
   tools: string[],

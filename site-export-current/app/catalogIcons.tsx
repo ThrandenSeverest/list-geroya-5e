@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Anvil,
@@ -185,9 +186,28 @@ type CatalogIconProps = {
   kind: "race" | "class" | "background";
   fallback?: string;
   className?: string;
+  experimental?: boolean;
 };
 
-export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil" }: CatalogIconProps) {
+type ExperimentalIcon = { sheet: string; cell: number };
+const experimentalClasses: Record<string, ExperimentalIcon> = {
+  barbarian: { sheet: "classes-core", cell: 0 }, bard: { sheet: "classes-core", cell: 1 }, cleric: { sheet: "classes-core", cell: 2 }, druid: { sheet: "classes-core", cell: 3 }, fighter: { sheet: "classes-core", cell: 4 }, monk: { sheet: "classes-core", cell: 5 }, paladin: { sheet: "classes-core", cell: 6 }, ranger: { sheet: "classes-core", cell: 7 }, rogue: { sheet: "classes-core", cell: 8 }, sorcerer: { sheet: "classes-arcane", cell: 0 }, warlock: { sheet: "classes-arcane", cell: 1 }, wizard: { sheet: "classes-arcane", cell: 2 }, artificer: { sheet: "classes-arcane", cell: 3 },
+};
+const experimentalRaces: Record<string, ExperimentalIcon> = {};
+function addRaceSheet(sheet: string, ids: string[]) { ids.forEach((id, cell) => { experimentalRaces[id] = { sheet, cell }; }); }
+addRaceSheet("races-base", ["human", "dwarf", "elf", "halfling", "dragonborn", "gnome", "halfelf", "halforc", "tiefling"]);
+addRaceSheet("races-fey", ["aarakocra", "aasimar", "bugbear", "centaur", "changeling", "deepgnome", "duergar", "eladrin", "fairy"]);
+addRaceSheet("races-firbolg", ["firbolg", "genasi", "githyanki", "githzerai", "goblin", "goliath", "harengon", "hobgoblin", "kenku"]);
+addRaceSheet("races-kobold", ["kobold", "lizardfolk", "minotaur", "orc", "satyr", "seafelf", "shadarkai", "shifter", "tabaxi"]);
+addRaceSheet("races-leonin", ["leonin", "owlin", "kender", "grung", "hexblood", "reborn", "dhampir", "hadozee", "kalashtar"]);
+addRaceSheet("races-tortle", ["tortle", "triton", "yuanpure", "vedalken", "simichybrid", "loxodon", "warforged", "kalashtar", "verdan"]);
+addRaceSheet("races-spelljammer", ["autognome", "astralelf", "giff", "plasmoid", "thrikreen"]);
+
+export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false }: CatalogIconProps) {
+  const experimentalIcon = experimental ? (kind === "class" ? experimentalClasses[id] : kind === "race" ? experimentalRaces[id] : undefined) : undefined;
+  if (experimentalIcon) {
+    return <span className={`${className} catalog-icon experimental-catalog-icon`} aria-hidden="true" title={fallback} data-sheet={experimentalIcon.sheet} style={{ "--experimental-sheet": `url('/experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png')` } as CSSProperties} />;
+  }
   const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || ScrollText;
   const Secondary = kind === "race" ? raceSecondaryIcons[id] : kind === "class" ? classSecondaryIcons[id] : undefined;
   return (

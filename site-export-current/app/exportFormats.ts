@@ -1,20 +1,22 @@
 import type { CatalogOption, CatalogSpell } from "./catalog";
 import { dndSpellUrl, helpmateSpellId } from "./exportIds";
-import { abilityLabels, classRules, raceFeatures, skillKeys, type Feature } from "./rules";
+import { abilityLabels, classRules, skillKeys, type Feature } from "./rules";
 import { spellSelectionRule } from "./characterRules";
 import { characterResources, resourceCurrent } from "./characterResources";
 import { backgroundRule } from "./backgroundRules";
 import { selectedEquipment } from "./equipment";
 import { characterAttacks, lssWeaponAttacks } from "./combat";
-import { characterProficiencies } from "./proficiencies";
+import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 import { armorClass } from "./armor";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
+export type Currency = { gp: number; sp: number; cp: number; pp: number };
 
 export type AdvancementChoice = {
   key: string;
   level: number;
   origin?: boolean;
+  bonus?: boolean;
   featId: string;
   asiChoices: (keyof AbilityScores)[];
   featChoices?: Record<string, string[]>;
@@ -32,19 +34,36 @@ export type ExportCharacter = {
   background: string;
   classSkills: string[];
   backgroundSkills: string[];
+  /** Skills whose proficiency bonus is doubled (LSS isProf = 2). */
+  expertiseSkills?: string[];
   level: number;
   spells: string[];
   preparedSpells?: string[];
+  mobilePreparedConfigured?: boolean;
+  /** Opaque LSS card ids retained for a lossless LSS -> app -> LSS round trip. */
+  lssSpellCards?: {
+    mode: "cards";
+    prepared: string[];
+    book: string[];
+    edition?: string;
+    /** LSS ObjectId -> our catalog id. Unknown cards stay in the arrays above. */
+    resolved?: Record<string, string>;
+  };
   feats?: string[];
   asiChoices?: (keyof AbilityScores)[];
   advancements?: AdvancementChoice[];
   classChoices?: Record<string, string[]>;
   equipmentSelections?: Record<string, string[]>;
+  /** Монеты хранятся отдельно от списка снаряжения, чтобы их можно было быстро менять на листе. */
+  currency?: Currency;
   languages?: string[];
   proficiencyChoices?: Record<string, string[]>;
   resourceSpent?: Record<string, number>;
   spellSlotsUsed?: number[];
   pactSlotsUsed?: number;
+  currentHitPoints?: number;
+  temporaryHitPoints?: number;
+  hitDiceSpent?: number;
   useTasha?: boolean;
   alignment: string;
   abilities: AbilityScores;
@@ -81,6 +100,23 @@ export function proficiencyBonus(level: number) {
   return 2 + Math.floor((Math.max(1, level) - 1) / 4);
 }
 
+const helpmateAbilityKey: Record<keyof AbilityScores, number> = {
+  str: 1,
+  dex: 2,
+  con: 3,
+  int: 4,
+  wis: 5,
+  cha: 6,
+};
+
+export function darkvisionDistance(features: Feature[]) {
+  return features.reduce((distance, feature) => {
+    if (!/т[её]мное зрение/i.test(feature.name)) return distance;
+    const featureDistance = /превосходное/i.test(feature.name) || /120\s*фут/i.test(feature.description) || /больш(ой|ую) дистанц/i.test(feature.description) ? 120 : 60;
+    return Math.max(distance, featureDistance);
+  }, 0);
+}
+
 export function estimatedHitPoints(character: ExportCharacter) {
   const hitDie = classRules[character.className]?.hitDie || 8;
   const constitution = abilityModifier(character.abilities.con);
@@ -96,7 +132,7 @@ function makeId() {
 }
 
 function featureText(features: Feature[]) {
-  return features.map(feature => `${feature.level ? `${feature.level}-й уровень — ` : ""}${feature.name}. ${feature.description}`).join("\n");
+  return features.map(feature => `${feature.name}. ${feature.description}`).join("\n");
 }
 
 function summaryText(context: ExportContext) {
@@ -191,12 +227,27 @@ export const helpmateSubclassClassIds: Readonly<Record<string, Readonly<Record<s
   rogue: Object.freeze({ arcanetrickster: "26" }),
 });
 
+function helpmateSelectedSpellIds(context: ExportContext) {
+  return [...new Set([
+    ...context.character.spells,
+    ...(context.featSpellIds || []),
+    ...(context.alwaysPreparedSpellIds || []),
+  ])];
+}
+
+export function helpmateSkippedSpells(context: ExportContext) {
+  return helpmateSelectedSpellIds(context)
+    .filter(id => !helpmateSpellId(id))
+    .map(id => context.spells.find(spell => spell.id === id))
+    .filter((spell): spell is CatalogSpell => Boolean(spell));
+}
+
 export function createHelpmateExport(context: ExportContext) {
   const { character, race, raceFeatureList } = context;
   const selectedSkills = new Set(characterProficiencies(character).skills);
   const saves = new Set(classRules[character.className]?.saves || []);
   const hitPoints = estimatedHitPoints(character);
-  const darkvision = raceFeatureList.some(feature => feature.name.toLowerCase().includes("тёмное зрение") || feature.name.toLowerCase().includes("темное зрение"));
+  const darkvision = darkvisionDistance(raceFeatureList);
   const fly = raceFeatureList.some(feature => feature.name.toLowerCase() === "полёт");
   const parameters = (Object.keys(helpmateAbilityOrder) as (keyof AbilityScores)[]).map(key => ({
     Name: helpmateAbilityNames[key],
@@ -209,8 +260,7 @@ export function createHelpmateExport(context: ExportContext) {
       Proficiency: selectedSkills.has(skill),
     })),
   }));
-  const selectedSpellIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || [])])];
-  const selectedHelpmateSpellIds = selectedSpellIds
+  const selectedHelpmateSpellIds = helpmateSelectedSpellIds(context)
     .map(helpmateSpellId)
     .filter((id): id is string => Boolean(id));
   const slotMaximums = standardSlotMaximums(character.className, character.level);
@@ -241,11 +291,11 @@ export function createHelpmateExport(context: ExportContext) {
     IHaveLight: false,
     TorchValue: 0,
     TorchValueSecond: 0,
-    CellEyeValue: darkvision ? 60 : 120,
-    EyeEnabled: darkvision,
+    CellEyeValue: darkvision,
+    EyeEnabled: darkvision > 0,
     SoundFolder: null,
     ImDoubleHeal: false,
-    SeeInTheDark: darkvision,
+    SeeInTheDark: darkvision > 0,
     Gold: 0,
     Silver: 0,
     Copper: 0,
@@ -262,7 +312,9 @@ export function createHelpmateExport(context: ExportContext) {
     FlyValue: fly ? 30 : 0,
     IsFly: fly,
     FamiliarId: null,
-    SelectedSaveThrowKey: 0,
+    // Helpmate stores this selector as a one-based ability index. Leaving 0
+    // makes the app fall back to Strength even for Wisdom/Intelligence/Charisma casters.
+    SelectedSaveThrowKey: spellAbility ? helpmateAbilityKey[spellAbility] : 0,
     SizeIndex: 2,
     TagString: null,
     Skills: [],
@@ -336,18 +388,14 @@ function richLabeledText(lines: Array<[string, string]>, id: string) {
   return { value: { id: `hover-toolbar-${id}-${Date.now()}`, data: { type: "doc", content } } };
 }
 
-function richFeatureText(features: Feature[], id: string, compact = false) {
+function richFeatureText(features: Feature[], id: string) {
   const content = features.flatMap(feature => {
-    const heading = `${feature.level ? `${feature.level}-й уровень — ` : ""}${feature.name}.`;
-    const isDetailed = feature.description.length > 150 || feature.name.includes(":");
-    const description = compact && isDetailed
-      ? " Полный текст перенесён в раздел «Заметки»."
-      : ` ${feature.description}`;
+    const heading = `${feature.name}.`;
     return [{
       type: "paragraph",
       content: [
         { type: "text", marks: [{ type: "bold" }], text: heading },
-        { type: "text", text: description },
+        { type: "text", text: ` ${feature.description}` },
       ],
     }];
   });
@@ -357,6 +405,57 @@ function richFeatureText(features: Feature[], id: string, compact = false) {
       data: { type: "doc", content: content.length ? content : [{ type: "paragraph" }] },
     },
   };
+}
+
+const mechanicalVerbs = /бонусным действием|действием|реакци|спасброс|провер(?:к|ок)|атак|урон|трат|использ|соверш|накладыва|восстанавлив|до конца|в течение|раз за|после короткого|после продолжительного|помех|преимуществ|сопротивлен|иммунитет|игнорир|кость|считается|сл\s|кд/i;
+const briefGrant = /получаете владение|получаете компетентность|увеличивается на|повышается на|изучаете язык|изучаете .*заговор|получаете .*язык/i;
+
+/** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
+function conciseLssFeature(feature: Feature, required = false): Feature | null {
+  if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
+  let description = feature.description
+    .split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0]
+    .replace(/•\s*-{5,}[\s\S]*/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!description) return required ? { ...feature, description: "Выбранная черта персонажа." } : null;
+  if (feature.name === "Всплеск действий") return { ...feature, description };
+  const sentences = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(value => value.trim()) || [description];
+  if (briefGrant.test(description) && !mechanicalVerbs.test(description.replace(briefGrant, ""))) {
+    description = sentences.slice(0, 2).join(" ");
+  } else if (description.length > 900) {
+    const important = sentences.filter(sentence => mechanicalVerbs.test(sentence));
+    description = [...new Set([sentences[0], ...important])].join(" ").slice(0, 1400).trim();
+  }
+  return { ...feature, description };
+}
+
+function distributeLssNotes(groups: Array<{ label: string; features: Feature[]; required?: boolean }>, count = 5, budget = 2200) {
+  const entries = groups.flatMap(group => group.features.map(feature => {
+    const concise = conciseLssFeature(feature, group.required);
+    return concise ? { ...concise, name: `${group.label} · ${concise.name}` } : null;
+  })).filter(Boolean) as Feature[];
+  const notes: Feature[][] = Array.from({ length: count }, () => []);
+  let note = 0;
+  for (const feature of entries) {
+    const length = feature.name.length + feature.description.length;
+    const used = notes[note].reduce((total, item) => total + item.name.length + item.description.length, 0);
+    if (note < count - 1 && notes[note].length && used + length > budget) note += 1;
+    notes[note].push(feature);
+  }
+  return notes;
+}
+
+function lssFeatureOrder(feature: Feature) {
+  if (/дополнительн.*атак|мультиатак|четыре атаки/i.test(feature.name)) return -200;
+  if (/ув[её]ртливость|уворот/i.test(feature.name)) return -190;
+  return feature.level || 1;
+}
+
+function orderedLssFeatures(features: Feature[]) {
+  return features.map((feature, index) => ({ feature, index }))
+    .sort((a, b) => lssFeatureOrder(a.feature) - lssFeatureOrder(b.feature) || a.index - b.index)
+    .map(item => item.feature);
 }
 
 function richSpellText(spells: CatalogSpell[], level: number) {
@@ -446,7 +545,7 @@ function lssPact(classId: string, level: number, used = 0) {
   };
 }
 
-function lssSkills(selectedSkills: Set<string>) {
+function lssSkills(selectedSkills: Set<string>, expertiseSkills: Set<string>) {
   const ordered = [
     "acrobatics", "investigation", "athletics", "perception", "survival", "performance",
     "intimidation", "history", "sleight of hand", "arcana", "medicine", "deception",
@@ -455,8 +554,11 @@ function lssSkills(selectedSkills: Set<string>) {
   const selectedEnglish = new Set(
     [...selectedSkills].map(skill => skillKeys[skill]?.key).filter(Boolean),
   );
+  const expertiseEnglish = new Set(
+    [...expertiseSkills].map(skill => skillKeys[skill]?.key).filter(Boolean),
+  );
   return Object.fromEntries(
-    ordered.map(key => [key, { ...skillEnglish[key], isProf: selectedEnglish.has(key) ? 1 : 0 }]),
+    ordered.map(key => [key, { ...skillEnglish[key], isProf: expertiseEnglish.has(key) ? 2 : selectedEnglish.has(key) ? 1 : 0 }]),
   );
 }
 
@@ -464,12 +566,17 @@ export function createLongStoryShortExport(context: ExportContext) {
   const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
   const proficiencies = characterProficiencies(character);
   const selectedSkills = new Set(proficiencies.skills);
+  const expertiseSkills = new Set(characterExpertiseSkills(character));
   const saves = new Set(classRules[character.className]?.saves || []);
   const spellAbility = classRules[character.className]?.spellAbility;
   const spellMod = spellAbility ? abilityModifier(character.abilities[spellAbility as keyof AbilityScores]) : 0;
   const prof = proficiencyBonus(character.level);
   const chosenIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || [])])];
   const chosenSpells = chosenIds.map(id => spells.find(spell => spell.id === id)).filter(Boolean) as CatalogSpell[];
+  const retainedCardIds = (values: string[] | undefined) => (values || []).filter(value => /^[0-9a-f]{24}$/i.test(value));
+  const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
+  const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
+  const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
   const preparedSpellNames = [...new Set([
     ...(character.preparedSpells || []),
     ...(spellSelectionRule(character).mode === "prepared" ? character.spells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0) : []),
@@ -483,12 +590,30 @@ export function createLongStoryShortExport(context: ExportContext) {
     ["Навыки", proficiencies.skills.join(", ") || "нет"],
     ["Инструменты", proficiencies.tools.join(", ") || "нет"],
     ["Языки", proficiencies.languages.join(", ") || "нет"],
+    ...raceFeatureList.map(feature => [`Раса · ${feature.name}`, feature.description] as [string, string]),
   ];
-  const featText = (context.featNames || []).join(", ");
   const backgroundData = backgroundRule(character.background, background);
   const equipment = selectedEquipment(character);
   const attacks = characterAttacks(character, spells);
-  const selectedChoiceFeatures = classFeatureList.filter(feature => feature.name.includes(":"));
+  const spellMasteryNames = ["spell-mastery-1", "spell-mastery-2"]
+    .flatMap(key => character.classChoices?.[key] || [])
+    .map(id => spells.find(spell => spell.id === id)?.name)
+    .filter(Boolean) as string[];
+  const exportClassFeatures = orderedLssFeatures(classFeatureList.map(feature => feature.name === "Мастерство заклинателя" && spellMasteryNames.length
+    ? { ...feature, description: `${spellMasteryNames.join(" и ")}: пока выбранные заклинания подготовлены, вы можете накладывать их на минимальном круге без траты ячеек.` }
+    : feature));
+  const conciseClassFeatures = exportClassFeatures
+    .map(feature => conciseLssFeature(feature))
+    .filter(Boolean) as Feature[];
+  const allFeatFeatures = orderedLssFeatures(context.featFeatureList || []);
+  const primaryFeatFeatures = allFeatFeatures.slice(0, 2)
+    .map(feature => conciseLssFeature(feature, true))
+    .filter(Boolean) as Feature[];
+  const overflowFeatFeatures = allFeatFeatures.slice(2);
+  const noteColumns = distributeLssNotes([
+    { label: "Класс", features: exportClassFeatures },
+    { label: "Черта", features: overflowFeatFeatures, required: true },
+  ]);
   const inner = {
     jsonType: "character",
     template: "default",
@@ -548,12 +673,12 @@ export function createLongStoryShortExport(context: ExportContext) {
         { name: key, isProf: saves.has(key), bonus: 0 },
       ]),
     ),
-    skills: lssSkills(selectedSkills),
+    skills: lssSkills(selectedSkills, expertiseSkills),
     vitality: {
       "hp-dice-current": { value: character.level },
       "hp-dice-multi": {},
       "hp-max-con-bonus": { value: 0 },
-      darkvision: { value: raceFeatures(character.race, character.raceVariant).some(item => item.name.toLowerCase().includes("зрение")) ? 60 : 0 },
+      darkvision: { value: darkvisionDistance(raceFeatureList) },
       "hp-max": { value: estimatedHitPoints(character) },
       "hp-current": { value: estimatedHitPoints(character) },
       "hp-temp": { value: 0 },
@@ -568,7 +693,7 @@ export function createLongStoryShortExport(context: ExportContext) {
     attunementsList: [{ id: `attunement-${Date.now()}`, checked: false, value: "" }],
     weaponsList: lssWeaponAttacks(attacks),
     text: {
-      traits: richFeatureText(classFeatureList, "traits", true),
+      traits: richFeatureText(conciseClassFeatures, "traits"),
       attacks: richText(attacks.map(attack => `${attack.name}: ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}; урон ${attack.damageDisplay}${attack.note ? `. ${attack.note}` : ""}`).join("\n"), "attacks"),
       "spells-level-0": richSpellText(chosenSpells, 0),
       "spells-level-1": richSpellText(chosenSpells, 1),
@@ -590,22 +715,17 @@ export function createLongStoryShortExport(context: ExportContext) {
       flaws: { ...richText(character.personality.flaws, "flaws"), size: 0 },
       bonds: richText(character.personality.bonds, "bonds"),
       allies: richText(backgroundData.feature.description, "allies"),
-      quests: richText("", "quests"),
-      prof: richLabeledText(profLines, "prof"),
-      "notes-1": { ...richFeatureText(classFeatureList, "notes-1"), size: 7 },
-      "notes-2": { ...richLabeledText([
-        ["Подкласс", context.subclassName || "Не выбран"],
-        ["Выбранные варианты", selectedChoiceFeatures.map(feature => feature.name).join(", ") || "Нет"],
+      quests: richLabeledText([
         ["Подготовленные заклинания", preparedSpellNames.join(", ") || "Нет"],
         ["Всегда подготовлены — вне лимита", alwaysPreparedNames.join(", ") || "Нет"],
-      ], "notes-2"), size: 7 },
-      "notes-3": { ...richFeatureText([
-        ...(context.raceVariantName ? [{ name: "Подраса / вариант", description: context.raceVariantName }] : []),
-        ...raceFeatureList,
-      ], "notes-3"), size: 9 },
-      "notes-4": { ...richFeatureText(context.featFeatureList || [{ name: "Черты", description: featText || "Нет" }], "notes-4"), size: 7 },
-      "notes-5": { ...richFeatureText(selectedChoiceFeatures, "notes-5"), size: 7 },
-      features: richLabeledText([[backgroundData.feature.name, backgroundData.feature.description]], "features"),
+      ], "quests"),
+      prof: richLabeledText(profLines, "prof"),
+      "notes-1": { ...richFeatureText(noteColumns[0], "notes-1"), size: 7 },
+      "notes-2": { ...richFeatureText(noteColumns[1], "notes-2"), size: 7 },
+      "notes-3": { ...richFeatureText(noteColumns[2], "notes-3"), size: 7 },
+      "notes-4": { ...richFeatureText(noteColumns[3], "notes-4"), size: 7 },
+      "notes-5": { ...richFeatureText(noteColumns[4], "notes-5"), size: 7 },
+      features: richFeatureText(primaryFeatFeatures, "features"),
       items: { value: { data: "" } },
     },
     coins: {},
@@ -644,13 +764,13 @@ export function createLongStoryShortExport(context: ExportContext) {
     },
     edition: "2014",
     spells: {
-      mode: "text",
-      // Card lists accept only private Long Story Short ObjectIds. Our local
-      // slugs made LSS request non-existent cards and discard the list. The
-      // complete portable list is exported in data.text.spells-level-* below.
-      prepared: [],
-      book: [],
-      edition: "2014",
+      mode: hasRetainedCards ? "cards" : "text",
+      // LSS accepts only its own private ObjectIds in card lists. Preserve ids
+      // imported from LSS verbatim; locally selected spells remain available
+      // in the portable data.text.spells-level-* blocks below.
+      prepared: retainedPreparedCards,
+      book: retainedBookCards,
+      edition: character.lssSpellCards?.edition || "2014",
     },
     data: JSON.stringify(inner),
     lastWriterSessionId: `${Date.now()}-list-geroya5e`,

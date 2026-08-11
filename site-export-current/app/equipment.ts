@@ -1,5 +1,5 @@
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
-import { backgroundRule } from "./backgroundRules";
+import { backgroundEquipmentWithoutStartingGold, backgroundRule } from "./backgroundRules";
 
 export type EquipmentOption = { id: string; label: string; items: string[]; recommended?: boolean };
 export type EquipmentGroup = { key: string; label: string; count: number; options: EquipmentOption[] };
@@ -8,16 +8,38 @@ export type ClassEquipment = { groups: EquipmentGroup[]; fixed: string[] };
 type RecommendationContext = {
   classChoices?: Record<string, string[]>;
   subclass?: string;
+  feats?: string[];
 };
 
 const O = (id: string, label: string, items: string[] = [label], recommended = false): EquipmentOption => ({ id, label, items, recommended });
 const G = (key: string, label: string, options: EquipmentOption[], count = 1): EquipmentGroup => ({ key, label, count, options });
 
+const packContents: Record<string, string> = {
+  burglar: "рюкзак, 1 000 шариков, 10 футов нити, колокольчик, 5 свечей, ломик, молоток, 10 шлямбуров, закрытый фонарь, 2 фляги масла, 5 рационов, трутница, бурдюк и 50 футов пеньковой верёвки",
+  diplomat: "сундук, 2 футляра для карт и свитков, комплект отличной одежды, чернила, перо, лампа, 2 фляги масла, 5 листов бумаги, духи, сургуч и мыло",
+  dungeoneer: "рюкзак, ломик, молоток, 10 шлямбуров, 10 факелов, трутница, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
+  entertainer: "рюкзак, спальник, 2 костюма, 5 свечей, 5 рационов, бурдюк и набор для грима",
+  explorer: "рюкзак, спальник, столовый набор, трутница, 10 факелов, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
+  priest: "рюкзак, одеяло, 10 свечей, трутница, коробка для пожертвований, 2 блока благовоний, кадило, облачение, 2 рациона и бурдюк",
+  scholar: "рюкзак, научная книга, чернила, перо, 10 листов пергамента, мешочек песка и небольшой нож",
+};
+const packText = (id: string, name: string) => `${name} (${packContents[id]})`;
+const P = (id: string, name: string, recommended = false) => O(id, packText(id, name), [packText(id, name)], recommended);
+
+const armorText = {
+  leather: "Кожаный доспех (КД 11 + Лов.)",
+  studded: "Проклёпанная кожа (КД 12 + Лов.)",
+  scale: "Чешуйчатый доспех (КД 14 + Лов., максимум +2)",
+  chain: "Кольчуга (КД 16; Сила 13)",
+  shield: "Щит (+2 к КД)",
+  woodShield: "Деревянный щит (+2 к КД)",
+};
+
 const simpleWeapons = [
   O("club", "Дубинка"), O("dagger", "Кинжал"), O("greatclub", "Палица"), O("handaxe", "Ручной топор"),
   O("javelin", "Метательное копьё"), O("light-hammer", "Лёгкий молот"), O("mace", "Булава"),
   O("quarterstaff", "Боевой посох"), O("sickle", "Серп"), O("spear", "Копьё"),
-  O("light-crossbow", "Лёгкий арбалет и 20 болтов"), O("dart", "Дротик"), O("shortbow", "Короткий лук и 20 стрел"), O("sling", "Праща и 20 снарядов"),
+  O("light-crossbow", "Лёгкий арбалет"), O("dart", "Дротик"), O("shortbow", "Короткий лук"), O("sling", "Праща"),
 ];
 
 const martialMelee = [
@@ -35,102 +57,112 @@ const classEquipment: Record<string, ClassEquipment> = {
     groups: [
       G("primary", "Основное оружие", [O("greataxe", "Секира", ["Секира"], true), ...martialMelee.filter(option => option.id !== "greataxe")]),
       G("secondary", "Запасное оружие", [O("two-handaxes", "Два ручных топора", ["Ручной топор ×2"], true), ...simpleWeapons]),
-    ], fixed: ["Набор путешественника", "Метательное копьё ×4"],
+    ], fixed: [packText("explorer", "Набор путешественника"), "Метательное копьё ×4"],
   },
   bard: {
     groups: [
       G("weapon", "Оружие", [O("rapier", "Рапира", ["Рапира"], true), O("longsword", "Длинный меч"), ...simpleWeapons]),
-      G("pack", "Дорожный набор", [O("diplomat", "Набор дипломата", ["Набор дипломата"], true), O("entertainer", "Набор артиста")]),
+      G("pack", "Дорожный набор", [P("diplomat", "Набор дипломата", true), P("entertainer", "Набор артиста")]),
       G("instrument", "Музыкальный инструмент", instruments.map(option => option.id === "instrument-0" ? { ...option, recommended: true } : option)),
-    ], fixed: ["Кожаный доспех", "Кинжал"],
+    ], fixed: [armorText.leather, "Кинжал"],
   },
   cleric: {
     groups: [
       G("weapon", "Основное оружие", [O("mace", "Булава", ["Булава"], true), O("warhammer", "Боевой молот (если есть владение)")]),
-      G("armor", "Доспех", [O("scale", "Чешуйчатый доспех", ["Чешуйчатый доспех"], true), O("leather", "Кожаный доспех"), O("chain", "Кольчуга (если есть владение)")]),
+      G("armor", "Доспех", [O("scale", armorText.scale, [armorText.scale], true), O("leather", armorText.leather), O("chain", `${armorText.chain} (если есть владение)`, [armorText.chain])]),
       G("ranged", "Дополнительное оружие", [O("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
-      G("pack", "Дорожный набор", [O("priest", "Набор священника", ["Набор священника"], true), O("explorer", "Набор путешественника")]),
-    ], fixed: ["Щит", "Священный символ"],
+      G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")]),
+    ], fixed: [armorText.shield, "Священный символ"],
   },
   druid: {
     groups: [
-      G("shield", "Защита или простое оружие", [O("wood-shield", "Деревянный щит", ["Деревянный щит"], true), ...simpleWeapons]),
-      G("weapon", "Рукопашное оружие", [O("scimitar", "Скимитар", ["Скимитар"], true), ...simpleWeapons.filter(option => !["light-crossbow", "dart", "shortbow", "sling"].includes(option.id))]),
-    ], fixed: ["Кожаный доспех", "Набор путешественника", "Фокусировка друидов"],
+      G("shield", "Защита или простое оружие", [O("wood-shield", armorText.woodShield, [armorText.woodShield], true), ...simpleWeapons]),
+      G("weapon", "Рукопашное оружие", [
+        O("scimitar", "Скимитар"),
+        ...simpleWeapons
+          .filter(option => !["light-crossbow", "dart", "shortbow", "sling"].includes(option.id))
+          .map(option => option.id === "dagger" ? { ...option, recommended: true } : option),
+      ]),
+    ], fixed: [armorText.leather, packText("explorer", "Набор путешественника"), "Фокусировка друидов"],
   },
   fighter: {
     groups: [
-      G("armor", "Доспех и дальнее оружие", [O("chain", "Кольчуга", ["Кольчуга"], true), O("leather-bow", "Кожаный доспех, длинный лук и 20 стрел", ["Кожаный доспех", "Длинный лук", "Стрела ×20"])]),
+      G("armor", "Доспех и дальнее оружие", [O("chain", armorText.chain, [armorText.chain], true), O("leather-bow", `${armorText.leather}, длинный лук и 20 стрел`, [armorText.leather, "Длинный лук", "Стрела ×20"])]),
       G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [
-        O("shield", "Щит", ["Щит"], true),
+        O("shield", armorText.shield, [armorText.shield], true),
         ...martialMelee.map(option => option.id === "longsword" ? { ...option, recommended: true } : option),
       ], 2),
       G("secondary", "Дополнительное оружие", [O("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), O("two-handaxes", "Два ручных топора", ["Ручной топор ×2"])]),
-      G("pack", "Дорожный набор", [O("dungeoneer", "Набор исследователя подземелий", ["Набор исследователя подземелий"], true), O("explorer", "Набор путешественника")]),
+      G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")]),
     ], fixed: [],
   },
   monk: {
     groups: [
       G("weapon", "Оружие", [O("shortsword", "Короткий меч", ["Короткий меч"], true), ...simpleWeapons]),
-      G("pack", "Дорожный набор", [O("dungeoneer", "Набор исследователя подземелий", ["Набор исследователя подземелий"], true), O("explorer", "Набор путешественника")]),
+      G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")]),
     ], fixed: ["Дротик ×10"],
   },
   paladin: {
     groups: [
       G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [
-        O("shield", "Щит", ["Щит"], true),
+        O("shield", armorText.shield, [armorText.shield], true),
         ...martialMelee.map(option => option.id === "longsword" ? { ...option, recommended: true } : option),
       ], 2),
       G("secondary", "Дополнительное оружие", [O("javelins", "Пять метательных копий", ["Метательное копьё ×5"], true), ...simpleWeapons.filter(option => !["light-crossbow", "dart", "shortbow", "sling"].includes(option.id))]),
-      G("pack", "Дорожный набор", [O("priest", "Набор священника", ["Набор священника"], true), O("explorer", "Набор путешественника")]),
-    ], fixed: ["Кольчуга", "Священный символ"],
+      G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")]),
+    ], fixed: [armorText.chain, "Священный символ"],
   },
   ranger: {
     groups: [
-      G("armor", "Доспех", [O("scale", "Чешуйчатый доспех", ["Чешуйчатый доспех"], true), O("leather", "Кожаный доспех")]),
+      G("armor", "Доспех", [O("scale", armorText.scale, [armorText.scale], true), O("leather", armorText.leather)]),
       G("melee", "Рукопашное оружие", [O("two-shortswords", "Два коротких меча", ["Короткий меч ×2"], true), O("two-clubs", "Две дубинки", ["Дубинка ×2"]), O("two-handaxes", "Два ручных топора", ["Ручной топор ×2"]), O("two-spears", "Два копья", ["Копьё ×2"])]),
-      G("pack", "Дорожный набор", [O("dungeoneer", "Набор исследователя подземелий", ["Набор исследователя подземелий"], true), O("explorer", "Набор путешественника")]),
+      G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")]),
     ], fixed: ["Длинный лук", "Стрела ×20"],
   },
   rogue: {
     groups: [
       G("primary", "Основное оружие", [O("rapier", "Рапира", ["Рапира"], true), O("shortsword", "Короткий меч")]),
       G("secondary", "Дополнительное оружие", [O("shortbow", "Короткий лук и 20 стрел", ["Короткий лук", "Стрела ×20"], true), O("shortsword", "Короткий меч")]),
-      G("pack", "Дорожный набор", [O("burglar", "Набор взломщика", ["Набор взломщика"], true), O("dungeoneer", "Набор исследователя подземелий"), O("explorer", "Набор путешественника")]),
-    ], fixed: ["Кожаная броня", "Кинжал ×2", "Воровские инструменты"],
+      G("pack", "Дорожный набор", [P("burglar", "Набор взломщика", true), P("dungeoneer", "Набор исследователя подземелий"), P("explorer", "Набор путешественника")]),
+    ], fixed: [armorText.leather, "Кинжал ×2", "Воровские инструменты"],
   },
   sorcerer: {
     groups: [
       G("weapon", "Оружие", [O("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
-      G("focus", "Фокусировка", [O("components", "Мешочек с компонентами", ["Мешочек с компонентами"], true), O("arcane", "Магическая фокусировка")]),
-      G("pack", "Дорожный набор", [O("dungeoneer", "Набор исследователя подземелий", ["Набор исследователя подземелий"], true), O("explorer", "Набор путешественника")]),
+      G("focus", "Способ работы с материальными компонентами", [O("components", "Мешочек с компонентами"), O("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+      G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")]),
     ], fixed: ["Кинжал ×2"],
   },
   warlock: {
     groups: [
       G("weapon", "Дальнее или простое оружие", [O("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
-      G("focus", "Фокусировка", [O("components", "Мешочек с компонентами", ["Мешочек с компонентами"], true), O("arcane", "Магическая фокусировка")]),
-      G("pack", "Дорожный набор", [O("scholar", "Набор учёного", ["Набор учёного"], true), O("dungeoneer", "Набор исследователя подземелий")]),
+      G("focus", "Способ работы с материальными компонентами", [O("components", "Мешочек с компонентами"), O("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+      G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("dungeoneer", "Набор исследователя подземелий")]),
       G("simple", "Дополнительное простое оружие", simpleWeapons),
-    ], fixed: ["Кожаный доспех", "Кинжал ×2"],
+    ], fixed: [armorText.leather, "Кинжал ×2"],
   },
   wizard: {
     groups: [
       G("weapon", "Оружие", [O("quarterstaff", "Боевой посох", ["Боевой посох"], true), O("dagger", "Кинжал")]),
-      G("focus", "Фокусировка", [O("components", "Мешочек с компонентами", ["Мешочек с компонентами"], true), O("arcane", "Магическая фокусировка")]),
-      G("pack", "Дорожный набор", [O("scholar", "Набор учёного", ["Набор учёного"], true), O("explorer", "Набор путешественника")]),
+      G("focus", "Способ работы с материальными компонентами", [O("components", "Мешочек с компонентами"), O("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+      G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("explorer", "Набор путешественника")]),
     ], fixed: ["Книга заклинаний"],
   },
   artificer: {
     groups: [
       G("weapons", "Два простых оружия", simpleWeapons, 2),
-      G("armor", "Доспех", [O("studded", "Проклёпанная кожа", ["Проклёпанная кожа"], true), O("scale", "Чешуйчатый доспех")]),
-    ], fixed: ["Лёгкий арбалет", "Болт ×20", "Воровские инструменты", "Набор исследователя подземелий"],
+      G("armor", "Доспех", [O("studded", armorText.studded, [armorText.studded], true), O("scale", armorText.scale)]),
+    ], fixed: ["Лёгкий арбалет", "Болт ×20", "Воровские инструменты", packText("dungeoneer", "Набор исследователя подземелий")],
   },
 };
 
 export function equipmentRule(classId: string): ClassEquipment {
   return classEquipment[classId] || { groups: [], fixed: [] };
+}
+
+export function defaultEquipmentSelections(classId: string): Record<string, string[]> {
+  const focus = equipmentRule(classId).groups.find(group => group.key === "focus");
+  return focus?.options.some(option => option.id === "arcane") ? { focus: ["arcane"] } : {};
 }
 
 export function equipmentComplete(character: Pick<ExportCharacter, "className" | "equipmentSelections">) {
@@ -188,7 +220,9 @@ function optionScore(classId: string, option: EquipmentOption, abilities: Abilit
   }
   if (heavyWeapons.has(option.id)) {
     if (abilities.str < 13) return -500;
-    return 55 + strength * 12 + (styles.has("great-weapon") ? 24 : 0) + (option.recommended ? 1 : 0);
+    const greatWeaponMaster = context.feats?.includes("great-weapon-master");
+    const highestDamageHeavy = option.id === "greatsword" || option.id === "maul";
+    return 55 + strength * 12 + (styles.has("great-weapon") ? 24 : 0) + (greatWeaponMaster && highestDamageHeavy ? 80 : 0) + (option.recommended ? 1 : 0);
   }
   if (rangedWeapons.has(option.id)) return 50 + dexterity * 12 + (styles.has("archery") ? 24 : 0) + (option.recommended ? 1 : 0);
   if (finesseWeapons.has(option.id)) return 46 + Math.max(strength, dexterity) * 12 + (styles.has("dueling") ? 12 : 0) + (styles.has("two-weapon") ? 10 : 0) + (option.recommended ? 1 : 0);
@@ -202,6 +236,10 @@ function recommendedForGroup(classId: string, group: EquipmentGroup, abilities: 
 
   const styles = new Set(context.classChoices?.["fighting-style"] || []);
   if (styles.has("great-weapon") && abilities.str >= 13) return ranked.filter(option => option.id !== "shield").slice(0, 2);
+  if (context.feats?.includes("great-weapon-master") && abilities.str >= 13) {
+    const best = ranked.filter(option => option.id === "greatsword" || option.id === "maul");
+    if (best.length) return best.slice(0, group.count);
+  }
   if (styles.has("two-weapon")) return ranked.filter(option => option.id !== "shield" && isOneHandedWeapon(option)).slice(0, 2);
 
   const shield = group.options.find(option => option.id === "shield")!;
@@ -217,6 +255,8 @@ export function optimalEquipmentSelections(classId: string, abilities: AbilitySc
 }
 
 export function equipmentOptionAdvice(option: EquipmentOption, abilities: AbilityScores) {
+  if (option.id === "components") return "Содержит обычные материальные компоненты без указанной стоимости; нужный компонент достаётся свободной рукой.";
+  if (option.id === "arcane") return "Заменяет обычные материальные компоненты без указанной стоимости. Расходуемые и имеющие цену компоненты всё равно нужны отдельно.";
   if (option.id === "chain") {
     return abilities.str < 13
       ? `Не рекомендуется: Сила ${abilities.str}; без Силы 13 скорость снижается на 10 футов.`
@@ -230,5 +270,5 @@ export function equipmentOptionAdvice(option: EquipmentOption, abilities: Abilit
 export function selectedEquipment(character: Pick<ExportCharacter, "className" | "background" | "equipmentSelections">) {
   const rule = equipmentRule(character.className);
   const chosen = rule.groups.flatMap(group => (character.equipmentSelections?.[group.key] || []).flatMap(id => group.options.find(option => option.id === id)?.items || []));
-  return [...rule.fixed, ...chosen, ...backgroundRule(character.background).equipment];
+  return [...rule.fixed, ...chosen, ...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment)];
 }
