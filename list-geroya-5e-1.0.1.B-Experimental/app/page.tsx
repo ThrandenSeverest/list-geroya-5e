@@ -88,6 +88,7 @@ const initial: ExportCharacter = {
   advancements: [],
   classChoices: {},
   equipmentSelections: {},
+  inventoryOverride: undefined,
   currency: { gp: 0, sp: 0, cp: 0, pp: 0 },
   languages: [],
   proficiencyChoices: {},
@@ -121,11 +122,9 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
-  version: "1.0.1.B Experimental",
+  version: "1.0.1",
   publishedAt: "2026-08-11T23:00:00Z",
   changes: [
-    "Собрана отдельная полная экспериментальная версия для Cloudflare Workers с D1-хранилищем, регистрацией, входом, сессиями и восстановлением пароля.",
-    "Подтверждение почты и отправка писем временно отключены в config/auth.ts; новые аккаунты сразу считаются подтверждёнными до подключения почтового домена.",
     "Добавлены три дизайна по кругу: синий с золотом и новыми иконками, светлый пергамент с чёрными иконками и старый упрощённый интерфейс.",
     "Карточки 514 заклинаний получили точные материальные компоненты, стоимость и отметки расходования из обновлённого каталога.",
     "Мобильный лист получил отдельное изменение хитов, выбор костей до короткого отдыха и спасброски от смерти; перепроверены таблицы заговоров и известных заклинаний.",
@@ -631,6 +630,9 @@ export default function Home() {
   const exportCharacter = { ...rulesCharacter, abilities: finalAbilities };
   const classEquipment = equipmentRule(character.className);
   const equipmentItems = selectedEquipment(exportCharacter);
+  const displayedInventory = character.inventoryOverride === undefined
+    ? equipmentItems
+    : character.inventoryOverride.split(/\n|\s*·\s*/).map(item => item.trim()).filter(Boolean);
   const languageRequirements = languageRule(exportCharacter);
   const proficiencyRequirements = proficiencyChoiceRequirements(exportCharacter);
   const proficiencies = characterProficiencies(exportCharacter);
@@ -1402,6 +1404,7 @@ export default function Home() {
           <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
           <button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
         <section className="character-library">
           <header className="library-head">
@@ -1448,6 +1451,7 @@ export default function Home() {
           <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
           <button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
         </header>
         <div className="ban-page">
           <p className="eyebrow">Правила кампании</p>
@@ -1535,6 +1539,16 @@ export default function Home() {
             ? <span className="account-state"><span>●</span>{account.displayName} · {cloudState === "saving" ? "сохраняется" : cloudState === "error" ? "ошибка синхронизации" : "сохранено"}<a href="/account">Аккаунт</a></span>
             : <span className="account-warning">Без входа персонажи хранятся только в этом браузере.<a href="/account">Войти и сохранить</a></span>}
         </div>
+        <details className="mobile-top-menu">
+          <summary aria-label="Открыть меню">☰</summary>
+          <div>
+            <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
+            <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
+            <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
+            <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
+            {account?.authenticated ? <a href="/account">Аккаунт · {account.displayName}</a> : <a href="/account">Войти и сохранить</a>}
+          </div>
+        </details>
       </header>
       {showAdditionalSpellWarning && <div className="modal-backdrop" role="presentation">
         <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="additional-spells-warning-title">
@@ -2191,7 +2205,7 @@ export default function Home() {
                   {spellRule.slots.length > 0 && <div className="mobile-slot-list"><h3>Ячейки заклинаний</h3>{spellRule.slots.map((maximum, circle) => <article key={circle}><span>{circle + 1} круг</span><button onClick={() => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum)}>Потратить</button><b>{maximum - (character.spellSlotsUsed?.[circle] || 0)} / {maximum}</b><button onClick={() => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum)}>Вернуть</button></article>)}</div>}
                 </div>}
 
-                {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel"><h3>Снаряжение</h3><p>{equipmentItems.join(" · ") || "Не выбрано"}</p><h3>Монеты</h3><div className="mobile-coin-grid"><span>ЗМ <b>{character.currency?.gp || 0}</b></span><span>СМ <b>{character.currency?.sp || 0}</b></span><span>ММ <b>{character.currency?.cp || 0}</b></span><span>ПМ <b>{character.currency?.pp || 0}</b></span></div></div>}
+                {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel mobile-equipment-editor"><h3>Снаряжение</h3><label>Инвентарь<textarea value={character.inventoryOverride ?? equipmentItems.join("\n")} onChange={event => setCharacter(current => ({ ...current, inventoryOverride: event.target.value }))} aria-label="Инвентарь персонажа" placeholder="По одному предмету на строку" /></label><small>Можно переписать список полностью. Изменения сохраняются вместе с персонажем.</small><h3>Монеты</h3><div className="mobile-coin-grid">{(["gp", "sp", "cp", "pp"] as const).map(key => { const labels = { gp: "ЗМ", sp: "СМ", cp: "ММ", pp: "ПМ" } as const; return <label key={key}><span>{labels[key]}</span><input type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} aria-label={`${labels[key]}: количество`} /></label>; })}</div></div>}
                 {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}</div>}
               </section>}
               <div className="sheet-page">
@@ -2274,7 +2288,7 @@ export default function Home() {
                       <p>{selectedBackground?.description}</p>
                       <p><b>{selectedBackgroundRule.feature.name}.</b> {selectedBackgroundRule.feature.description}</p>
                     </div>
-                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{equipmentItems.join(" · ") || "Не выбрано"}</p><p><b>Расчёт КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p></div>
+                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{displayedInventory.join(" · ") || "Не выбрано"}</p><p><b>Расчёт КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p></div>
                   </section>
                 </div>
               </div>
@@ -2311,7 +2325,7 @@ export default function Home() {
                 raceFeatures={selectedRaceFeatures}
                 featFeatures={selectedFeatFeatures}
                 backgroundFeature={selectedBackgroundRule.feature}
-                equipment={equipmentItems}
+                equipment={displayedInventory}
                 currency={character.currency || initial.currency}
                 personality={character.personality}
                 spellAbility={spellAbilityKey ? abilityLabels[spellAbilityKey] : undefined}
@@ -2374,7 +2388,7 @@ export default function Home() {
             <div><span>Предыстория</span><strong>{selectedBackground?.name || "—"}</strong></div>
             <div><span>Владения</span><strong>{proficiencies.skills.length || "—"}</strong></div>
             <div><span>Языки</span><strong>{knownLanguages.length || "—"}</strong></div>
-            <div><span>Снаряжение</span><strong>{equipmentItems.length || "—"}</strong></div>
+            <div><span>Снаряжение</span><strong>{displayedInventory.length || "—"}</strong></div>
             <div><span>Заклинания</span><strong>{character.spells.length + alwaysPrepared.length || "—"}</strong></div>
           </div>
           <div className="progress-label"><span>Шаг {step + 1} из {steps.length}</span><span>{Math.round((step + 1) / steps.length * 100)}%</span></div>

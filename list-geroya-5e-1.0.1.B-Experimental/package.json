@@ -1,6 +1,6 @@
 {
   "name": "list-geroya-5e",
-  "version": "1.0.1-b-experimental",
+  "version": "1.0.2",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -29,8 +29,7 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply list-geroya-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply list-geroya-db --remote",
-    "deploy:cloudflare": "vinext deploy",
-    "deploy:cloudflare:dry-run": "vinext deploy --dry-run"
+    "deploy:cloudflare": "wrangler deploy"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

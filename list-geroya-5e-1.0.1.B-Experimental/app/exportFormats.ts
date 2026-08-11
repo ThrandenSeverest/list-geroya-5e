@@ -54,6 +54,8 @@ export type ExportCharacter = {
   advancements?: AdvancementChoice[];
   classChoices?: Record<string, string[]>;
   equipmentSelections?: Record<string, string[]>;
+  /** Редактируемое содержимое рюкзака; если его нет, показывается стартовое снаряжение. */
+  inventoryOverride?: string;
   /** Монеты хранятся отдельно от списка снаряжения, чтобы их можно было быстро менять на листе. */
   currency?: Currency;
   languages?: string[];
