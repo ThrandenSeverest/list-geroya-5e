@@ -1,0 +1,61 @@
+{
+  "name": "list-geroya-5e",
+  "version": "1.0.1",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "install:ci": "bash scripts/install-ci.sh",
+    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
+    "build": "bash scripts/build-verified.sh",
+    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "test": "npm run build && node --experimental-loader ./scripts/cloudflare-validation-loader.mjs --no-warnings --test tests/rendered-html.test.mjs",
+    "test:exports": "esbuild tests/export-structure.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-export-test.mjs && node /tmp/list-geroya-export-test.mjs",
+    "test:rules": "esbuild tests/racial-bonuses.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-rules-test.mjs && node --test /tmp/list-geroya-rules-test.mjs",
+    "test:advancements": "esbuild tests/advancement-levels.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-advancement-test.mjs && node --test /tmp/list-geroya-advancement-test.mjs",
+    "test:choices": "esbuild tests/class-choices.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-choice-test.mjs && node --test /tmp/list-geroya-choice-test.mjs",
+    "test:creation": "esbuild tests/creation-rules.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-creation-test.mjs && node --test /tmp/list-geroya-creation-test.mjs",
+    "test:imports": "esbuild tests/character-files.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-import-test.mjs && node /tmp/list-geroya-import-test.mjs",
+    "test:feat-armor": "esbuild tests/feat-armor.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-feat-armor-test.mjs && node --test /tmp/list-geroya-feat-armor-test.mjs",
+    "test:pdf": "esbuild tests/pdf-sheet.test.tsx --bundle --platform=node --format=cjs --outfile=/tmp/list-geroya-pdf-test.cjs && node /tmp/list-geroya-pdf-test.cjs",
+    "test:background-currency": "esbuild tests/background-currency.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-background-currency-test.mjs && node /tmp/list-geroya-background-currency-test.mjs",
+    "test:resources": "esbuild tests/character-resources.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-resources-test.mjs && node /tmp/list-geroya-resources-test.mjs",
+    "test:auth": "esbuild tests/auth.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-auth-test.mjs && node --test /tmp/list-geroya-auth-test.mjs",
+    "test:mobile": "esbuild tests/mobile-sheet.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-mobile-test.mjs && node --test /tmp/list-geroya-mobile-test.mjs",
+    "test:release": "npm run test:auth && npm run test:mobile && npm run test:resources && npm run test:pdf && npm run test:imports",
+    "validate:artifact": "bash scripts/validate-artifact.sh",
+    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
+    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply list-geroya-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply list-geroya-db --remote",
+    "deploy:cloudflare": "wrangler deploy"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "lucide-react": "^0.468.0",
+    "next": "16.2.6",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "react-server-dom-webpack": "19.2.6",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vinext": "0.0.50",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "type": "module",
+  "displayName": "Лист Героя 5e"
+}
