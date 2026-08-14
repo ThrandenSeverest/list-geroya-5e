@@ -1122,3 +1122,168 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   .pdf-inventory-toggle, .pdf-prepared-summary button { display: none !important; }
   .mobile-character-sheet { display: none !important; }
 }
+
+/* Parchment theme: restrained black/red palette with transparent utility panels. */
+.app-shell.modern-design {
+  --line: #17120e;
+  --teal: #17120e;
+  --muted: #514638;
+  --gold: #8f1821;
+  --gold-bright: #8f1821;
+  --gold-deep: #5e0c12;
+  --copper: #8f1821;
+  --copper-light: #8f1821;
+  --ivory: #17120e;
+  color: #17120e;
+}
+.modern-design .experimental-toggle,
+.modern-design .nav-button,
+.modern-design .search,
+.modern-design .tools select,
+.modern-design .source-filter button,
+.modern-design .tags span,
+.modern-design .card-actions button,
+.modern-design .proficiency-grid button,
+.modern-design .spell-level-filter button,
+.modern-design .known-spell-picker button,
+.modern-design .prepared-picker button,
+.modern-design .spell-list article,
+.modern-design .equipment-options button,
+.modern-design .subclass-grid button,
+.modern-design .feat-grid button,
+.modern-design .class-choice-grid button,
+.modern-design .feat-choice-options button,
+.modern-design .ban-grid button,
+.modern-design .category-tabs button,
+.modern-design .library-actions button,
+.modern-design .slot-footer button {
+  color: #17120e;
+  border-color: #17120e;
+  background: transparent;
+}
+.modern-design .choice-card,
+.modern-design .summary,
+.modern-design .identity-editor label,
+.modern-design .mobile-character-sheet {
+  color: #17120e;
+  border-color: rgba(23,18,14,.72);
+  background: rgba(246,235,203,.42);
+  box-shadow: none;
+}
+.modern-design .choice-card:hover,
+.modern-design .choice-card.selected {
+  background: rgba(246,235,203,.62);
+  border-color: #8f1821;
+}
+.modern-design .choice-card p,
+.modern-design .feature-preview p,
+.modern-design .option-details,
+.modern-design .option-details p,
+.modern-design .option-details li,
+.modern-design .tags span,
+.modern-design .card-actions button,
+.modern-design .spell-list p,
+.modern-design .spell-list small,
+.modern-design .known-spell-picker button small,
+.modern-design .prepared-picker button small,
+.modern-design .proficiency-grid button small,
+.modern-design .character-grid article p,
+.modern-design .character-grid article small {
+  color: #17120e;
+}
+.modern-design .catalog-icon,
+.modern-design .experimental-catalog-icon {
+  color: #17120e;
+  --sigil-line: #17120e;
+  --sigil-bright: #17120e;
+  --sigil-glow: transparent;
+  filter: none;
+}
+.modern-design .selected .catalog-icon,
+.modern-design .active .catalog-icon,
+.modern-design .selected .experimental-catalog-icon,
+.modern-design .active .experimental-catalog-icon {
+  color: #8f1821;
+  --sigil-line: #8f1821;
+  --sigil-bright: #8f1821;
+  --sigil-glow: transparent;
+  filter: none;
+}
+.modern-design .experimental-catalog-icon { background: currentColor; }
+.modern-design .catalog-icon::before,
+.modern-design .catalog-icon::after { background: transparent; border-color: #17120e; }
+.modern-design .selected .catalog-icon::before,
+.modern-design .active .catalog-icon::before,
+.modern-design .selected .catalog-icon::after,
+.modern-design .active .catalog-icon::after { border-color: #8f1821; }
+.modern-design .choice-card.selected .card-actions button:first-child,
+.modern-design .spell-list article.selected,
+.modern-design .prepared-picker button.selected,
+.modern-design .proficiency-grid button.selected,
+.modern-design .spell-level-filter button.active,
+.modern-design .class-choice-grid button.selected,
+.modern-design .subclass-grid button.selected,
+.modern-design .feat-grid button.selected,
+.modern-design .feat-choice-options button.selected {
+  color: #8f1821;
+  border-color: #8f1821;
+  background: rgba(143,24,33,.08);
+}
+.modern-design .choice-card.selected .card-actions button:first-child,
+.modern-design .primary-action { background: #8f1821; color: #fff8e7; }
+.modern-design .skill-source,
+.modern-design .ability-editor,
+.modern-design .racial-choice,
+.modern-design .spell-progression,
+.modern-design .subclass-picker,
+.modern-design .tasha-panel,
+.modern-design .feat-picker,
+.modern-design .class-choice-section,
+.modern-design .spell-requirements,
+.modern-design .equipment-group,
+.modern-design .personality-card,
+.modern-design .character-grid article,
+.modern-design .feat-choice-builder,
+.modern-design .known-spell-picker,
+.modern-design .prepared-picker,
+.modern-design .spell-list article,
+.modern-design .spell-level-quotas div,
+.modern-design .spell-level-filter button,
+.modern-design .proficiency-grid button,
+.modern-design .personality-card textarea,
+.modern-design .personality-card select,
+.modern-design .progression-facts div,
+.modern-design .slot-grid div,
+.modern-design .background-mechanics,
+.modern-design .additional-spell-access {
+  background: transparent;
+  color: #17120e;
+  border-color: #17120e;
+}
+.modern-design input,
+.modern-design select,
+.modern-design textarea,
+.modern-design .personality-card textarea,
+.modern-design .personality-card select {
+  color: #17120e;
+  background: transparent;
+}
+.modern-design input::placeholder,
+.modern-design textarea::placeholder { color: #514638; opacity: 1; }
+.modern-design .step,
+.modern-design .step.done,
+.modern-design .step.active,
+.modern-design footer,
+.modern-design .ban-bulk-actions span,
+.modern-design .account-warning { color: #17120e; }
+.modern-design .step.active,
+.modern-design .step.active span { color: #fff8e7; background: #8f1821; border-color: #8f1821; }
+.modern-design .step.done span,
+.modern-design .step span { color: #17120e; background: transparent; border-color: #17120e; }
+.modern-design .progress { background: rgba(23,18,14,.18); }
+.modern-design .progress i { background: #8f1821; }
+.modern-design .spell-requirements strong.complete,
+.modern-design .spell-level-quotas .at-limit strong,
+.modern-design .known-spell-picker button span,
+.modern-design .prepared-picker button span,
+.modern-design .check { color: #8f1821; }
