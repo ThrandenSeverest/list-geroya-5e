@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 28714)
-Total output lines: 1289
+Warning: truncated output (original token count: 28834)
+Total output lines: 1301
 
 @import "tailwindcss";
 
@@ -385,12 +385,7 @@ button { color: inherit; }
 .tasha-panel label span { color: var(--muted); font-size: 11px; }
 .tasha-panel label strong { margin-bottom: 4px; color: var(--ivory); font-size: 14px; }
 
-.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8714 tokens truncated… align-items: center; }
-.mobile-rest-row > button, .mobile-rest-actions button { min-height: 48px; border: 1px solid var(--copper); background: transparent; color: var(--copper-light); cursor: pointer; }
-.mobile-rest-row > div { min-width: 68px; text-align: center; }
-.mobile-rest-row > div span, .mobile-rest-row > div small { display: block; }
-.mobile-rest-row > div span { font: 22px Georgia, serif; }
-.mobile-rest-row > div b { display: block; margin-top: 3px; color: var(--copper-light); font-size: 9px; font-weight: 500; }
+.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8834 tokens truncated…opper-light); font-size: 9px; font-weight: 500; }
 .mobile-rest-row .hit-die-button { width: 48px; border-radius: 50%; background: var(--copper); color: #fff; font-size: 24px; }
 .mobile-rest-row .hit-die-step { width: 42px; border-radius: 50%; font-size: 22px; }
 .mobile-rest-row button:disabled { opacity: .35; cursor: not-allowed; }
@@ -801,7 +796,7 @@ button { color: inherit; }
 .app-shell.modern-design {
   --line: #17120e;
   --teal: #17120e;
-  --muted: #514638;
+  --muted: #17120e;
   --gold: #8f1821;
   --gold-bright: #8f1821;
   --gold-deep: #5e0c12;
@@ -863,6 +858,18 @@ button { color: inherit; }
 .modern-design .proficiency-grid button small,
 .modern-design .character-grid article p,
 .modern-design .character-grid article small {
+  color: #17120e;
+}
+.modern-design .variant-picker .variant-bonus-line,
+.modern-design .variant-picker .variant-feature-line,
+.modern-design .update-history-panel ul,
+.modern-design .export-panel .export-compatibility,
+.modern-design .equipment-options .equipment-advice,
+.modern-design .equipment-fixed > small,
+.modern-design .choice-required,
+.modern-design .account-state > span,
+.modern-design .mobile-character-sheet > header small,
+.modern-design .mobile-stat-grid span {
   color: #17120e;
 }
 .modern-design .catalog-icon,
@@ -943,7 +950,7 @@ button { color: inherit; }
   background: transparent;
 }
 .modern-design input::placeholder,
-.modern-design textarea::placeholder { color: #514638; opacity: 1; }
+.modern-design textarea::placeholder { color: #17120e; opacity: 1; }
 .modern-design .step,
 .modern-design .step.done,
 .modern-design .step.active,
