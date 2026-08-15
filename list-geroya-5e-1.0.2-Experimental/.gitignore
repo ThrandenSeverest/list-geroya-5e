@@ -20,6 +20,8 @@
 # misc
 .DS_Store
 *.pem
+__pycache__/
+*.py[cod]
 
 # debug
 npm-debug.log*
@@ -37,7 +39,13 @@ yarn-error.log*
 # typescript
 next-env.d.ts
 /dist/
+/.vinext/
 /.wrangler/
 /.sites-runtime/
 /outputs/
 /work/
+backend/.venv/
+backend/data/
+backend/*.db
+backend/*.db-*
+test.db
