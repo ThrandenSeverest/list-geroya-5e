@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 28834)
-Total output lines: 1301
+Warning: truncated output (original token count: 28881)
+Total output lines: 1305
 
 @import "tailwindcss";
 
@@ -385,9 +385,7 @@ button { color: inherit; }
 .tasha-panel label span { color: var(--muted); font-size: 11px; }
 .tasha-panel label strong { margin-bottom: 4px; color: var(--ivory); font-size: 14px; }
 
-.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8834 tokens truncated…opper-light); font-size: 9px; font-weight: 500; }
-.mobile-rest-row .hit-die-button { width: 48px; border-radius: 50%; background: var(--copper); color: #fff; font-size: 24px; }
-.mobile-rest-row .hit-die-step { width: 42px; border-radius: 50%; font-size: 22px; }
+.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8881 tokens truncated…st-row .hit-die-step { width: 42px; border-radius: 50%; font-size: 22px; }
 .mobile-rest-row button:disabled { opacity: .35; cursor: not-allowed; }
 .mobile-roll-result { padding: 10px; border-left: 3px solid var(--copper); background: rgba(185,110,63,.08); }
 .mobile-attack-list { margin-top: 15px; display: grid; gap: 7px; }
@@ -863,6 +861,10 @@ button { color: inherit; }
 .modern-design .variant-picker .variant-bonus-line,
 .modern-design .variant-picker .variant-feature-line,
 .modern-design .update-history-panel ul,
+.modern-design .update-history-panel li,
+.modern-design .update-history-panel time,
+.modern-design .update-history-panel header small,
+.modern-design .update-history-panel header button,
 .modern-design .export-panel .export-compatibility,
 .modern-design .equipment-options .equipment-advice,
 .modern-design .equipment-fixed > small,
