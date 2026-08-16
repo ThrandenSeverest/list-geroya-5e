@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 45796)
-Total output lines: 2412
+Warning: truncated output (original token count: 46097)
+Total output lines: 2422
 
 "use client";
 
@@ -125,6 +125,16 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.0.3",
+  publishedAt: "2026-08-16T18:00:00Z",
+  changes: [
+    "Пользовательский backend перенесён с Cloudflare Worker и D1 на FastAPI, SQLite, SQLAlchemy и Alembic; добавлены импорт D1 и безопасный backup SQLite.",
+    "Сохранены аккаунты, старые PBKDF2-пароли, сессии и Vault; подготовлена отправка подтверждений и сброса пароля через SMTP Mail.ru.",
+    "Светлый дизайн приведён к чёрной типографике, чёрным иконкам и красным активным состояниям, включая фильтры источников.",
+    "Исправлены переполнения панели экспорта и карточек персонажей; кнопка финального шага «Экспорт» открывает все способы экспорта.",
+    "История обновлений скрыта на мобильных экранах, а выдвижное меню и финальный экран адаптированы для телефона.",
+  ],
+}, {
   version: "1.0.1",
   publishedAt: "2026-08-11T23:00:00Z",
   changes: [
@@ -888,37 +898,7 @@ export default function Home() {
       if (!selected.includes(value) && proficiencyChoiceUsedElsewhere(current, key, value)) return current;
       const next = selected.includes(value)
         ? selected.filter(item => item !== value)
-        : selected.length < limit ? [...selected, value] : limit === 1 ? [value] : selected;
-      return { ...current, proficiencyChoices: { ...choices, [key]: next } };
-    });
-  }
-
-  function toggleEquipment(groupKey: string, optionId: string, limit: number) {
-    setCharacter(current => {
-      const selections = current.equipmentSelections || {};
-      const selected = selections[groupKey] || [];
-      const next = selected.includes(optionId)
-        ? selected.filter(id => id !== optionId)
-        : selected.length < limit ? [...selected, optionId] : limit === 1 ? [optionId] : selected;
-      return { ...current, equipmentSelections: { ...selections, [groupKey]: next } };
-    });
-  }
-
-  function chooseOptimalEquipment() {
-    setCharacter(current => ({
-      ...current,
-      equipmentSelections: optimalEquipmentSelections(current.className, finalAbilityScores(current), {
-        classChoices: current.classChoices,
-        subclass: current.subclass,
-        feats: deriveLegacyAdvancementFields(current.advancements || []).feats,
-      }),
-    }));
-  }
-
-  function toggleSpell(id: string) {
-    const level = spells.find(spell => spell.id === id)?.level || 0;
-    setCharacter(current => {
-   …15796 tokens truncated…овне нет ограниченного классового ресурса.</p>}
+        : …16097 tokens truncated…овне нет ограниченного классового ресурса.</p>}
               </div>
               {subclassData && character.level >= subclassData.level && (
                 <div className="subclass-picker" data-incomplete={!character.subclass}>
