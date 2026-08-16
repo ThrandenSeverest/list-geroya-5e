@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 28942)
-Total output lines: 1310
+Warning: truncated output (original token count: 28993)
+Total output lines: 1316
 
 @import "tailwindcss";
 
@@ -385,9 +385,7 @@ button { color: inherit; }
 .tasha-panel label span { color: var(--muted); font-size: 11px; }
 .tasha-panel label strong { margin-bottom: 4px; color: var(--ivory); font-size: 14px; }
 
-.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8942 tokens truncated…ng: 10px; border-left: 3px solid var(--copper); background: rgba(185,110,63,.08); }
-.mobile-attack-list { margin-top: 15px; display: grid; gap: 7px; }
-.mobile-attack-list article { padding: 12px; display: grid; grid-template-columns: 1fr auto auto; gap: 12px; border: 1px solid var(--line); }
+.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8993 tokens truncated…rid; grid-template-columns: 1fr auto auto; gap: 12px; border: 1px solid var(--line); }
 .mobile-prepared-head { display: flex; align-items: center; justify-content: space-between; }
 .mobile-prepared-head span { padding: 8px 12px; border: 1px solid var(--copper); }
 .mobile-prepared-limit { margin: 0 0 12px; color: var(--muted); font-size: 11px; }
@@ -839,6 +837,12 @@ button { color: inherit; }
 .modern-design .choice-card.selected {
   background: rgba(246,235,203,.62);
   border-color: #8f1821;
+}
+.modern-design .source-filter button.active {
+  border-color: #8f1821;
+  background: rgba(143,24,33,.15);
+  color: #8f1821;
+  box-shadow: inset 0 0 0 1px rgba(143,24,33,.24), 0 0 9px rgba(143,24,33,.14);
 }
 .modern-design .choice-card p,
 .modern-design .feature-preview p,
