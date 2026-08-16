@@ -60,7 +60,7 @@ def logout(request: Request, db: Session = Depends(get_db)):
 @router.post("/forgot-password")
 async def forgot_password(body: Credentials, request: Request, db: Session = Depends(get_db)):
     if not settings.password_reset_enabled: raise HTTPException(403, "Восстановление пароля отключено")
-    if not (settings.email_delivery_enabled and settings.resend_api_key and settings.email_from): raise HTTPException(503, detail={"error": "Восстановление через письмо пока не подключено", "emailDeliveryEnabled": False})
+    if not settings.email_delivery_configured: raise HTTPException(503, detail={"error": "Восстановление через письмо пока не подключено", "emailDeliveryEnabled": False})
     rate_limit(request, db, "forgot", 4, 3600); user = db.scalar(select(User).where(User.email == normalize_email(body.email), User.auth_provider == "email"))
     if user:
         token = issue_token(db, user.id, "reset_password", 3600); url = f"{base_url(request)}/account?reset_token={token}"; await send_email(user.email, "Сброс пароля — Лист Героя 5e", f'<p>Ссылка действует 1 час:</p><p><a href="{url}">{url}</a></p>')
@@ -81,7 +81,7 @@ def verify_email(token: str | None = None, db: Session = Depends(get_db)):
 
 @router.post("/resend-verification")
 async def resend_verification(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    if not (settings.email_verification_enabled and settings.email_delivery_enabled): raise HTTPException(503, "Подтверждение почты пока отключено")
+    if not (settings.email_verification_enabled and settings.email_delivery_configured): raise HTTPException(503, "Подтверждение почты пока отключено")
     rate_limit(request, db, "verify", 3, 3600)
     if user.email_verified_at: return {"sent": True}
     threshold = (datetime.now(timezone.utc) - timedelta(minutes=10)).isoformat().replace("+00:00", "Z")

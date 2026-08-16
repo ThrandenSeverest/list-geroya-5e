@@ -19,9 +19,20 @@ class Settings:
     require_verified_email: bool = _bool("REQUIRE_VERIFIED_EMAIL", False)
     email_delivery_enabled: bool = _bool("EMAIL_DELIVERY_ENABLED", False)
     password_reset_enabled: bool = _bool("PASSWORD_RESET_ENABLED", True)
+    smtp_host: str = os.getenv("SMTP_HOST", "")
+    smtp_port: int = int(os.getenv("SMTP_PORT", "465"))
+    smtp_username: str = os.getenv("SMTP_USERNAME", "")
+    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
     resend_api_key: str = os.getenv("RESEND_API_KEY", "")
     email_from: str = os.getenv("EMAIL_FROM", "")
     cookie_secure: bool = _bool("COOKIE_SECURE", True)
+
+    @property
+    def email_delivery_configured(self) -> bool:
+        return self.email_delivery_enabled and bool(self.email_from) and (
+            bool(self.smtp_host and self.smtp_username and self.smtp_password)
+            or bool(self.resend_api_key)
+        )
 
     def public_auth_config(self) -> dict:
         return {"registrationEnabled": self.registration_enabled, "loginEnabled": self.login_enabled,

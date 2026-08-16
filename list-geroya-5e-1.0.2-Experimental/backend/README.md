@@ -14,6 +14,21 @@ pytest
 ```
 Set `DATABASE_URL` to a persistent disk in production, e.g. `sqlite:////var/lib/list-geroya/list-geroya.db`.
 
+## Mail.ru SMTP
+Email delivery can use Mail.ru without Cloudflare or Resend. Create a Mail.ru external-application password with sending-only access, then set these secret environment variables in the host (never commit them):
+
+```env
+EMAIL_VERIFICATION_ENABLED=true
+EMAIL_DELIVERY_ENABLED=true
+SMTP_HOST=smtp.mail.ru
+SMTP_PORT=465
+SMTP_USERNAME=heroleaf@mail.ru
+SMTP_PASSWORD=mailru-external-application-password
+EMAIL_FROM=heroleaf@mail.ru
+```
+
+`REQUIRE_VERIFIED_EMAIL=false` is recommended during the first delivery test. The backend uses SMTP when its four SMTP values are present; otherwise it can use the existing Resend configuration.
+
 ## D1 migration and validation
 `wrangler d1 export list-geroya-db --remote --output=d1-final.sql`
 
