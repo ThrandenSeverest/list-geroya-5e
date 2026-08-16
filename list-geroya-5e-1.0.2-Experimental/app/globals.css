@@ -1,5 +1,5 @@
-Warning: truncated output (original token count: 28881)
-Total output lines: 1305
+Warning: truncated output (original token count: 28942)
+Total output lines: 1310
 
 @import "tailwindcss";
 
@@ -385,9 +385,7 @@ button { color: inherit; }
 .tasha-panel label span { color: var(--muted); font-size: 11px; }
 .tasha-panel label strong { margin-bottom: 4px; color: var(--ivory); font-size: 14px; }
 
-.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8881 tokens truncated…st-row .hit-die-step { width: 42px; border-radius: 50%; font-size: 22px; }
-.mobile-rest-row button:disabled { opacity: .35; cursor: not-allowed; }
-.mobile-roll-result { padding: 10px; border-left: 3px solid var(--copper); background: rgba(185,110,63,.08); }
+.spell-requirements { margin-top: 28px; padding: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); g…8942 tokens truncated…ng: 10px; border-left: 3px solid var(--copper); background: rgba(185,110,63,.08); }
 .mobile-attack-list { margin-top: 15px; display: grid; gap: 7px; }
 .mobile-attack-list article { padding: 12px; display: grid; grid-template-columns: 1fr auto auto; gap: 12px; border: 1px solid var(--line); }
 .mobile-prepared-head { display: flex; align-items: center; justify-content: space-between; }
@@ -865,7 +863,11 @@ button { color: inherit; }
 .modern-design .update-history-panel time,
 .modern-design .update-history-panel header small,
 .modern-design .update-history-panel header button,
+.modern-design .export-panel small,
+.modern-design .export-panel p,
 .modern-design .export-panel .export-compatibility,
+.modern-design .export-panel .known-limitations,
+.modern-design .export-panel .known-limitations summary,
 .modern-design .equipment-options .equipment-advice,
 .modern-design .equipment-fixed > small,
 .modern-design .choice-required,
