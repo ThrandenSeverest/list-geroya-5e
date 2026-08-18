@@ -69,6 +69,8 @@ export type ExportCharacter = {
   deathSaveSuccesses?: number;
   deathSaveFailures?: number;
   useTasha?: boolean;
+  /** Campaign ban-list switch: removes all TCE catalogue additions. */
+  tceFullBanned?: boolean;
   alignment: string;
   abilities: AbilityScores;
   personality: {
@@ -137,6 +139,19 @@ function makeId() {
 
 function featureText(features: Feature[]) {
   return features.map(feature => `${feature.name}. ${feature.description}`).join("\n");
+}
+
+const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
+  "Общий": "12", "Гномий": "13", "Дварфский": "14", "Полуросликов": "15", "Эльфийский": "16", "Орочий": "17", "Великаний": "18", "Гоблинский": "19", "Драконий": "20", "Бездны": "21", "Глубинная речь": "22", "Инфернальный": "23", "Небесный": "24", "Первичный": "25", "Подземный": "26", "Сильван": "27", "Ауран": "28", "Телепатия": "29", "Гитский": "31", "Язык Жаболюдов": "32", "Акван": "33", "Терран": "34", "Игнан": "35", "Гноллий": "36", "Язык Греллов": "37", "Язык Крюкастых ужасов": "38", "Модронский": "39", "Отиджский": "40", "Сахуагинский": "41", "Слаадский": "42", "Язык Сфинксов": "43", "Три-кринский": "44", "Друидический": "45", "Троглодитский": "46", "Язык Бурых увальней": "47", "Язык Йети": "48", "Язык Воргов": "49", "Язык Гигантских сов": "50", "Язык Гигантских лосей": "51", "Язык Гигантских орлов": "52", "Язык Мерцающих псов": "53", "Язык Полярных волков": "54", "Воровской жаргон": "55", "Общий (Жесты)": "56", "Тэйский": "57",
+});
+
+function helpmateNote(context: ExportContext) {
+  return summaryText(context).split(/\n\n+/).map(block => {
+    const [title, ...body] = block.split("\n");
+    const labeled = title.match(/^([^:]+):\s*(.*)$/);
+    if (!labeled) return block.replace(/\n/g, "\r\n");
+    return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\r\n${body.join("\r\n")}` : ""}`;
+  }).join("\r\n\r\n");
 }
 
 function summaryText(context: ExportContext) {
@@ -322,7 +337,7 @@ export function createHelpmateExport(context: ExportContext) {
     SizeIndex: 2,
     TagString: null,
     Skills: [],
-    Languages: "12",
+    Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join(",") || "12",
     Multiplier: 1,
     TrueMultiplier: 0,
     Inspiration: 0,
@@ -330,7 +345,7 @@ export function createHelpmateExport(context: ExportContext) {
     Bditelnost: 10 + abilityModifier(character.abilities.wis) + (selectedSkills.has("Внимательность") ? proficiencyBonus(character.level) : 0),
     IniBonus: abilityModifier(character.abilities.dex),
     IsPlaying: true,
-    Note: summaryText(context),
+    Note: helpmateNote(context),
     FirstSpellText: spellSaveDc === null ? null : `Сл спасброска заклинаний: ${spellSaveDc}`,
     SecondSpellText: spellSaveDc === null ? null : `Бонус атаки заклинанием: ${spellAttack >= 0 ? "+" : ""}${spellAttack}`,
     Spells: selectedHelpmateSpellIds,

@@ -130,7 +130,14 @@ export type CharacterProficiencies = {
 };
 
 export function characterProficiencies(character: ExportCharacter): CharacterProficiencies {
-  const skills = [...(character.raceSkills || []), ...character.backgroundSkills, ...character.classSkills];
+  const racialSkills: Record<string, string[]> = {
+    // PHB: Menacing. This must be a real proficiency, not merely card text.
+    halforc: ["Запугивание"],
+    goliath: ["Атлетика"],
+    leonin: ["Запугивание"],
+    minotaur: ["Выживание"],
+  };
+  const skills = [...(racialSkills[character.race] || []), ...(character.raceSkills || []), ...character.backgroundSkills, ...character.classSkills];
   const armor = [classRules[character.className]?.armor || ""];
   const weapons = [classRules[character.className]?.weapons || ""];
   const tools = [...(fixedClassTools[character.className] || [])];
@@ -164,6 +171,7 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
   }
 
   for (const value of character.classChoices?.["kensei-weapons"] || []) weapons.push(value.replace(/^weapon-/, ""));
+  for (const value of character.classChoices?.["tce-primal-knowledge"] || []) skills.push(value);
   for (const advancement of character.advancements || []) {
     if (advancement.featId === "skill-expert") skills.push(...(advancement.featChoices?.skill || []));
     if (advancement.featId === "weapon-master") weapons.push(...(advancement.featChoices?.weapons || []));
@@ -187,6 +195,7 @@ export function characterExpertiseSkills(character: ExportCharacter) {
     ...(character.classChoices?.expertise || []).map(value => value.replace(/^skill-/, "")),
     ...(character.className === "rogue" && character.subclass === "scout" && character.level >= 3 ? ["Природа", "Выживание"] : []),
     ...(character.advancements || []).flatMap(advancement => advancement.featId === "skill-expert" ? advancement.featChoices?.expertise || [] : []),
+    ...(character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") ? character.classChoices?.["tce-deft-explorer-skill"] || [] : [],
   ];
   return unique(values);
 }

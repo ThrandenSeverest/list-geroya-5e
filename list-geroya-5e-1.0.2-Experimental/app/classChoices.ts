@@ -138,7 +138,9 @@ const expertiseOptions = ["Акробатика", "Атлетика", "Обма�
 const choiceCount = (level: number, rows: [number, number][]) => rows.reduce((value, [at, count]) => level >= at ? count : value, 0);
 
 function available(options: ClassChoiceOption[], character: ExportCharacter, pact = "") {
-  return options.filter(option => (!option.minLevel || character.level >= option.minLevel) && (!option.tasha || character.useTasha) && (!option.pact || option.pact === pact));
+  // TCE styles, invocations, manoeuvres and metamagic are normal catalogue
+  // extensions. Optional Class Features are modelled separately below.
+  return options.filter(option => (!option.minLevel || character.level >= option.minLevel) && (!option.pact || option.pact === pact) && (!option.tasha || !character.tceFullBanned));
 }
 
 export function classChoiceGroups(character: ExportCharacter, spells: CatalogSpell[] = []): ClassChoiceGroup[] {
@@ -147,6 +149,21 @@ export function classChoiceGroups(character: ExportCharacter, spells: CatalogSpe
   const level = character.level;
   const subclass = character.subclass || "";
   const selected = character.classChoices || {};
+
+  if (character.useTasha && !character.tceFullBanned) {
+    if (character.className === "barbarian" && level >= 3) {
+      add({ key: "tce-primal-knowledge", title: "Первобытное знание", description: "TCE: выберите дополнительный навык из списка Варвара; на 10-м уровне выбирается второй.", level: 3, count: level >= 10 ? 2 : 1, options: ["Атлетика", "Внимательность", "Выживание", "Запугивание", "Природа", "Уход за животными"].map(name => O(name, name, "TCE", "Дополнительное владение навыком.")) });
+    }
+    if (character.className === "monk" && level >= 2) {
+      add({ key: "tce-dedicated-weapon", title: "Выбранное оружие", description: "TCE: выберите одно подходящее оружие, считающееся монашеским до следующей тренировки.", level: 2, count: 1, options: ["Боевой посох", "Короткий меч", "Копьё", "Ручной топор", "Кнут"].map(name => O(name, name, "TCE", "Подходящее оружие становится монашеским.")) });
+    }
+    if (character.className === "ranger") {
+      add({ key: "tce-favored-foe", title: "Избранный враг", description: "Выберите одну версию: PHB или замену TCE. Версии взаимоисключающие.", level: 1, count: 1, options: [O("favored-enemy", "Избранный враг", "PHB", "Классическая черта PHB."), O("favored-foe", "Предпочтительный противник", "TCE", "Метка с дополнительным уроном и числом применений, равным БМ.")] });
+      add({ key: "tce-deft-explorer", title: "Исследователь природы", description: "Выберите PHB-версию либо Искусного исследователя TCE.", level: 1, count: 1, options: [O("natural-explorer", "Исследователь природы", "PHB", "Классическая черта PHB."), O("deft-explorer", "Искусный исследователь", "TCE", "Даёт Экспертность в навыке и два дополнительных языка.")] });
+      if ((selected["tce-deft-explorer"] || []).includes("deft-explorer")) add({ key: "tce-deft-explorer-skill", title: "Хитрец", description: "TCE: выберите известный навык для Экспертности.", level: 1, count: 1, options: ["Акробатика", "Атлетика", "Внимательность", "Выживание", "Запугивание", "Природа", "Проницательность", "Расследование", "Скрытность", "Уход за животными"].map(name => O(name, name, "TCE", "Бонус мастерства удваивается для выбранного навыка.")) });
+    }
+    if (character.className === "cleric" && level >= 8) add({ key: "tce-blessed-strikes", title: "Благословлённые удары", description: "TCE: замена доменному удару или могущественному колдовству.", level: 8, count: 1, options: [O("blessed-strikes", "Благословлённые удары", "TCE", "Раз в ход добавляет 1к8 излучением к урону оружием или заговора.")] });
+  }
 
   if (character.className === "fighter") {
     add({ key: "fighting-style", title: "Боевой стиль", description: "Основная специализация воина.", level: 1, count: 1 + (subclass === "champion" && level >= 10 ? 1 : 0), options: available(fightingStyles, character) });
@@ -170,7 +187,7 @@ export function classChoiceGroups(character: ExportCharacter, spells: CatalogSpe
   if (character.className === "warlock") {
     const pact = selected["pact-boon"]?.[0] || "";
     if (level >= 2) add({ key: "invocations", title: "Таинственные воззвания", description: "Количество известных воззваний растёт с уровнем; требования учитываются автоматически.", level: 2, count: choiceCount(level, [[2,2],[5,3],[7,4],[9,5],[12,6],[15,7],[18,8]]), options: available(invocations, character, pact) });
-    if (level >= 3) add({ key: "pact-boon", title: "Предмет договора", description: "Дар покровителя определяет дальнейшие возможности и требования воззваний.", level: 3, count: 1, options: [O("chain", "Договор цепи", "PHB", "Даёт улучшенного фамильяра."), O("blade", "Договор клинка", "PHB", "Создаёт или связывает оружие договора."), O("tome", "Договор гримуара", "PHB", "Даёт Книгу Теней и три заговора любых классов."), O("talisman", "Договор талисмана", "TCE", "Талисман помогает проваленным проверкам.", { tasha: true })].filter(o => !o.tasha || character.useTasha) });
+    if (level >= 3) add({ key: "pact-boon", title: "Предмет договора", description: "Дар покровителя определяет дальнейшие возможности и требования воззваний.", level: 3, count: 1, options: available([O("chain", "Договор цепи", "PHB", "Даёт улучшенного фамильяра."), O("blade", "Договор клинка", "PHB", "Создаёт или связывает оружие договора."), O("tome", "Договор гримуара", "PHB", "Даёт Книгу Теней и три заговора любых классов."), O("talisman", "Договор талисмана", "TCE", "Талисман помогает проваленным проверкам.", { tasha: true })], character) });
     for (const [circle, at] of [[6,11],[7,13],[8,15],[9,17]] as const) if (level >= at) {
       const warlockSpells = spells.filter(s => s.level === circle && s.classes.includes("warlock"));
       const fallback = spells.filter(s => s.level === circle);
@@ -178,7 +195,7 @@ export function classChoiceGroups(character: ExportCharacter, spells: CatalogSpe
     }
   }
   if (character.className === "artificer" && level >= 2) add({ key: "infusions", title: "Известные инфузии", description: "Формулы для создания временных магических предметов.", level: 2, count: choiceCount(level, [[2,4],[6,6],[10,8],[14,10]]), options: available(infusions, character) });
-  if (character.className === "artificer" && subclass === "armorer" && level >= 3) add({ key: "armor-model", title: "Начальная модель доспеха", description: "Модель можно менять после отдыха; здесь сохраняется выбранная начальная конфигурация.", level: 3, count: 1, options: [O("guardian", "Страж", "TCE", "Громовые перчатки и защитное поле для передовой."), O("infiltrator", "Лазутчик", "TCE", "Молниемёт, дополнительная скорость и преимущество Скрытности.")] });
+  if (character.className === "artificer" && subclass === "armorer" && level >= 3) add({ key: "armor-model", title: "Начальная модель доспеха", description: "Модель можно менять после отдыха; здесь сохраняется выбранная начальная конфигурация.", level: 3, count: 1, options: character.tceFullBanned ? [] : [O("guardian", "Страж", "TCE", "Громовые перчатки и защитное поле для передовой."), O("infiltrator", "Лазутчик", "TCE", "Молниемёт, дополнительная скорость и преимущество Скрытности.")] });
   if (character.className === "barbarian" && subclass === "totem") {
     const totems = [O("bear", "Медведь", "PHB", "Защитные и силовые качества тотемного зверя."), O("eagle", "Орёл", "PHB", "Подвижность, зрение и полёт на высших уровнях."), O("wolf", "Волк", "PHB", "Командная охота и выслеживание."), O("elk", "Лось", "SCAG", "Скорость и мощный проход сквозь врагов."), O("tiger", "Тигр", "SCAG", "Прыжки, навыки и дополнительные атаки.")];
     for (const at of [3,6,14]) if (level >= at) add({ key: `totem-${at}`, title: at === 3 ? "Тотемный дух" : at === 6 ? "Аспект зверя" : "Тотемная гармония", description: "На каждом уровне тотема зверя можно выбирать заново.", level: at, count: 1, options: totems });
@@ -193,7 +210,7 @@ export function classChoiceGroups(character: ExportCharacter, spells: CatalogSpe
     };
     for (const at of [3,7,11,15]) if (level >= at) add({ key: `hunter-${at}`, title: `Выбор охотника ${at}-го уровня`, description: "Особый боевой приём архетипа Охотника.", level: at, count: 1, options: hunter[at] });
   }
-  if (character.className === "ranger" && subclass === "beastmaster" && level >= 3) add({ key: "beast-companion", title: "Спутник следопыта", description: "Выберите стартовый тип спутника; конкретный облик можно описать в имени персонажа.", level: 3, count: 1, options: [O("classic-beast", "Классический зверь", "PHB", "Зверь с ПО не выше 1/4, подходящим размером и без постоянной скорости полёта."), O("beast-land", "Зверь земли", "TCE", "Универсальный первозданный зверь земли.", { tasha: true }), O("beast-sea", "Зверь моря", "TCE", "Первозданный спутник для воды.", { tasha: true }), O("beast-sky", "Зверь неба", "TCE", "Малый летающий первозданный спутник.", { tasha: true })].filter(option => !option.tasha || character.useTasha) });
+  if (character.className === "ranger" && subclass === "beastmaster" && level >= 3) add({ key: "beast-companion", title: "Спутник следопыта", description: "Выберите стартовый тип спутника; конкретный облик можно описать в имени персонажа.", level: 3, count: 1, options: available([O("classic-beast", "Классический зверь", "PHB", "Зверь с ПО не выше 1/4, подходящим размером и без постоянной скорости полёта."), O("beast-land", "Зверь земли", "TCE", "Универсальный первозданный зверь земли.", { tasha: true }), O("beast-sea", "Зверь моря", "TCE", "Первозданный спутник для воды.", { tasha: true }), O("beast-sky", "Зверь неба", "TCE", "Малый летающий первозданный спутник.", { tasha: true })], character) });
   if (character.className === "monk" && subclass === "kensei" && level >= 3) add({ key: "kensei-weapons", title: "Оружие кэнсэя", description: "Два вида оружия на 3-м уровне и ещё по одному на 6-м, 11-м и 17-м.", level: 3, count: choiceCount(level, [[3,2],[6,3],[11,4],[17,5]]), options: ["Боевой посох", "Длинный меч", "Короткий меч", "Боевой молот", "Кнут", "Длинный лук", "Короткий лук", "Лёгкий арбалет", "Ручной арбалет", "Дротик"].map(name => O(`weapon-${name}`, name, "PHB", "Выбранное оружие становится оружием кэнсэя.")) });
   if (character.className === "sorcerer" && subclass === "lunar") add({ key: "lunar-phase", title: "Начальная лунная фаза", description: "Фазу можно менять позже; выбор определяет начальный набор лунной магии.", level: 1, count: 1, options: [O("full-moon", "Полная луна", "SDQ", "Защитная и поддерживающая лунная магия."), O("new-moon", "Новолуние", "SDQ", "Тёмная и подавляющая лунная магия."), O("crescent-moon", "Полумесяц", "SDQ", "Преобразующая и подвижная лунная магия.")] });
   if (character.className === "wizard" && level >= 18) add({ key: "spell-mastery-1", title: "Мастерство заклинателя: 1-й круг", description: "Выбранное заклинание 1-го круга должно находиться в книге и быть подготовлено.", level: 18, count: 1, options: spells.filter(spell => spell.level === 1 && spell.classes.includes("wizard")).map(spell => O(spell.id, spell.name, spell.source, spell.description)) });

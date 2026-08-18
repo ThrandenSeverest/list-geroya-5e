@@ -32,7 +32,7 @@ const supplementBackgroundLanguageChoices: Record<string, number> = {
   uthgardt: 1, waterdhavian: 1, haunted: 1, investigator: 1, feylost: 1, strixstudent: 2, astraldrifter: 2,
 };
 
-export function languageRule(character: Pick<ExportCharacter, "race" | "raceVariant" | "background" | "className" | "subclass" | "level" | "useTasha">) {
+export function languageRule(character: Pick<ExportCharacter, "race" | "raceVariant" | "background" | "className" | "subclass" | "level" | "useTasha" | "classChoices">) {
   const racial = raceLanguages[character.race] || { fixed: ["Общий"], choices: 1 };
   const fixed = [...(racial.fixed || ["Общий"] )];
   let choices = (racial.choices || 0) + backgroundRule(character.background).languageChoices + (supplementBackgroundLanguageChoices[character.background] || 0);
@@ -43,6 +43,7 @@ export function languageRule(character: Pick<ExportCharacter, "race" | "raceVari
   if (character.className === "sorcerer" && character.subclass === "draconic") fixed.push("Драконий");
   if (character.className === "sorcerer" && character.subclass === "storm") fixed.push("Первичный");
   if (character.className === "rogue" && character.subclass === "mastermind" && character.level >= 3) choices += 2;
+  if (character.useTasha && character.className === "ranger" && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer")) choices += 2;
   return { fixed: [...new Set(fixed)], choices };
 }
 

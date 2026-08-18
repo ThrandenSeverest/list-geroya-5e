@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 46097)
-Total output lines: 2422
-
 "use client";
 
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -59,7 +56,7 @@ import { hitDiceAfterLongRest, shortRestHitDieHealing } from "./restRules";
 
 type Category = "races" | "classes" | "subclasses" | "backgrounds" | "feats" | "spells";
 type BanMode = "deny" | "allow";
-type BanList = { version: 2; name: string; mode: BanMode; categories: Record<Category, string[]> };
+type BanList = { version: 2; name: string; mode: BanMode; categories: Record<Category, string[]>; tceOptionalFeaturesBanned?: boolean; tceFullBanned?: boolean };
 type PersonalityKey = keyof ExportCharacter["personality"];
 type CharacterSlot = { id: string; character: ExportCharacter; updatedAt: string };
 type CharacterVault = { version: 1; capacity: number; activeId: string; slots: CharacterSlot[] };
@@ -128,11 +125,10 @@ const siteChangelog = [{
   version: "1.0.3",
   publishedAt: "2026-08-16T18:00:00Z",
   changes: [
-    "Пользовательский backend перенесён с Cloudflare Worker и D1 на FastAPI, SQLite, SQLAlchemy и Alembic; добавлены импорт D1 и безопасный backup SQLite.",
-    "Сохранены аккаунты, старые PBKDF2-пароли, сессии и Vault; подготовлена отправка подтверждений и сброса пароля через SMTP Mail.ru.",
-    "Светлый дизайн приведён к чёрной типографике, чёрным иконкам и красным активным состояниям, включая фильтры источников.",
-    "Исправлены переполнения панели экспорта и карточек персонажей; кнопка финального шага «Экспорт» открывает все способы экспорта.",
-    "История обновлений скрыта на мобильных экранах, а выдвижное меню и финальный экран адаптированы для телефона.",
+    "Пользовательский backend перенесён с Cloudflare Worker и D1 на FastAPI, SQLite, SQLAlchemy и Alembic.",
+    "Сохранены аккаунты, старые PBKDF2-пароли, сессии и Vault; подготовлена отправка писем через SMTP.",
+    "Светлый дизайн приведён к чёрной типографике и красным активным состояниям; исправлены мобильные переполнения.",
+    "Кнопка финального шага «Экспорт» открывает все способы экспорта, а история обновлений скрыта в мобильном меню."
   ],
 }, {
   version: "1.0.1",
@@ -385,6 +381,8 @@ function normalizeBanList(value: Partial<BanList> & { version?: number }): BanLi
         ? value.categories![category]
         : mode === "allow" ? catalogs[category].map(option => option.id) : [],
     ])) as Record<Category, string[]>,
+    tceOptionalFeaturesBanned: !!value.tceOptionalFeaturesBanned,
+    tceFullBanned: !!value.tceFullBanned,
   };
 }
 
@@ -494,8 +492,8 @@ export default function Home() {
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
   const banFileRef = useRef<HTMLInputElement>(null);
   const characterFileRef = useRef<HTMLInputElement>(null);
-  const exportPanelRef = useRef<HTMLDivElement>(null);
   const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exportPanelRef = useRef<HTMLDivElement>(null);
 
   async function connectAccount(localVault: CharacterVault) {
     try {
@@ -608,11 +606,17 @@ export default function Home() {
   const advancementSlots = advancementSlotsFor(character);
   const advancements = advancementSlots.map(slot => character.advancements?.find(choice => choice.key === slot.key) || { ...slot, featId: "", asiChoices: [] });
   const advancementFields = deriveLegacyAdvancementFields(advancements);
-  const rulesCharacter = { ...character, ...advancementFields, advancements };
+  const rulesCharacter = {
+    ...character,
+    ...advancementFields,
+    advancements,
+    useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
+    tceFullBanned: !!activeBan?.tceFullBanned,
+  };
   const choiceGroups = classChoiceGroups(rulesCharacter, spells);
   const spellRule = spellSelectionRule({ ...rulesCharacter, abilities: finalAbilityScores(rulesCharacter) });
   const sourceAvailableSpells = sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked);
-  const availableSpellCatalog = sourceAvailableSpells.filter(spell => allowed(activeBan, "spells", spell.id));
+  const availableSpellCatalog = sourceAvailableSpells.filter(spell => allowed(activeBan, "spells", spell.id) && (!rulesCharacter.tceFullBanned || spell.source !== "TCE"));
   const alwaysPreparedEntries = alwaysPreparedSpellEntries(rulesCharacter, availableSpellCatalog);
   const alwaysPrepared = alwaysPreparedEntries.map(entry => entry.id);
   const alwaysPreparedSet = new Set(alwaysPrepared);
@@ -631,7 +635,7 @@ export default function Home() {
     documentedClassFeatures(
       character.className,
       chosenSubclass?.name,
-      !!character.useTasha,
+      !!rulesCharacter.useTasha,
       classRules[character.className]?.features || [],
       chosenSubclass?.features || [],
       optionalClassFeatures[character.className] || [],
@@ -898,7 +902,1003 @@ export default function Home() {
       if (!selected.includes(value) && proficiencyChoiceUsedElsewhere(current, key, value)) return current;
       const next = selected.includes(value)
         ? selected.filter(item => item !== value)
-        : …16097 tokens truncated…овне нет ограниченного классового ресурса.</p>}
+        : selected.length < limit ? [...selected, value] : limit === 1 ? [value] : selected;
+      return { ...current, proficiencyChoices: { ...choices, [key]: next } };
+    });
+  }
+
+  function toggleEquipment(groupKey: string, optionId: string, limit: number) {
+    setCharacter(current => {
+      const selections = current.equipmentSelections || {};
+      const selected = selections[groupKey] || [];
+      const next = selected.includes(optionId)
+        ? selected.filter(id => id !== optionId)
+        : selected.length < limit ? [...selected, optionId] : limit === 1 ? [optionId] : selected;
+      return { ...current, equipmentSelections: { ...selections, [groupKey]: next } };
+    });
+  }
+
+  function chooseOptimalEquipment() {
+    setCharacter(current => ({
+      ...current,
+      equipmentSelections: optimalEquipmentSelections(current.className, finalAbilityScores(current), {
+        classChoices: current.classChoices,
+        subclass: current.subclass,
+        feats: deriveLegacyAdvancementFields(current.advancements || []).feats,
+      }),
+    }));
+  }
+
+  function toggleSpell(id: string) {
+    const level = spells.find(spell => spell.id === id)?.level || 0;
+    setCharacter(current => {
+      if (alwaysPreparedSet.has(id)) return current;
+      if (current.spells.includes(id)) return {
+        ...current,
+        spells: current.spells.filter(spell => spell !== id),
+        preparedSpells: (current.preparedSpells || []).filter(spell => spell !== id),
+      };
+      const sameKind = current.spells.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
+      const cap = level === 0 ? spellRule.cantrips : spellRule.leveled;
+      if (sameKind.length >= cap) return current;
+      if (level > 0 && spellRule.levelLimits) {
+        const breaksCumulativeLimit = spellRule.levelLimits.some((limit, circle) =>
+          circle > 0 && circle <= level && current.spells.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) >= circle).length >= limit,
+        );
+        if (breaksCumulativeLimit) return current;
+      }
+      return { ...current, spells: [...current.spells, id] };
+    });
+  }
+
+  function togglePreparedSpell(id: string) {
+    setCharacter(current => {
+      if (!current.spells.includes(id) || (spells.find(spell => spell.id === id)?.level || 0) === 0) return current;
+      const selected = current.preparedSpells || [];
+      if (selected.includes(id)) return { ...current, preparedSpells: selected.filter(spell => spell !== id) };
+      if (selected.length >= (spellRule.prepared || 0)) return current;
+      return { ...current, preparedSpells: [...selected, id] };
+    });
+  }
+
+  function toggleMobilePreparedSpell(id: string) {
+    setCharacter(current => {
+      const available = spellRule.mode === "prepared"
+        ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(current, spell) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
+        : current.spells.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) > 0);
+      const initialPrepared = spellRule.mode === "prepared" && !current.mobilePreparedConfigured
+        ? current.spells.filter(spellId => available.includes(spellId)).slice(0, spellRule.prepared || available.length)
+        : (current.preparedSpells || []).filter(spellId => available.includes(spellId));
+      const next = initialPrepared.includes(id)
+        ? initialPrepared.filter(spellId => spellId !== id)
+        : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
+      const nextSpells = spellRule.mode === "prepared"
+        ? [...current.spells.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) === 0), ...next]
+        : current.spells;
+      return { ...current, spells: nextSpells, preparedSpells: next, mobilePreparedConfigured: true };
+    });
+  }
+
+  function toggleTasha(enabled: boolean) {
+    setCharacter(current => {
+      if (enabled) return { ...current, useTasha: true };
+      // This switch governs Optional Class Features only. Published TCE spell
+      // lists, styles, invocations and metamagic intentionally stay selected.
+      const classChoices = Object.fromEntries(Object.entries(current.classChoices || {}).filter(([key]) => !key.startsWith("tce-")));
+      const resourceSpent = Object.fromEntries(Object.entries(current.resourceSpent || {}).filter(([key]) => !["favored-foe", "tireless", "harness-divine-power"].includes(key)));
+      return { ...current, useTasha: false, classChoices, resourceSpent };
+    });
+  }
+
+  function scrollToExports() {
+    exportPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function changePointBuy(key: keyof ExportCharacter["abilities"], delta: number) {
+    setCharacter(current => {
+      const next = current.abilities[key] + delta;
+      if (next < 8 || next > 15) return current;
+      const abilities = { ...current.abilities, [key]: next };
+      if (pointBuySpent(abilities) > 27) return current;
+      return { ...current, abilities };
+    });
+  }
+
+  function chooseOptimalAbilities() {
+    setCharacter(current => {
+      const build = optimalAbilityBuild(current);
+      return { ...current, abilities: build.abilities, raceAbilityChoices: build.raceAbilityChoices };
+    });
+  }
+
+  function toggleRaceAbility(key: keyof ExportCharacter["abilities"]) {
+    const limit = chosenRaceVariant?.chooseBonuses?.count || 0;
+    setCharacter(current => {
+      const selected = current.raceAbilityChoices || [];
+      const next = selected.includes(key) ? selected.filter(item => item !== key) : selected.length < limit ? [...selected, key] : selected;
+      return { ...current, raceAbilityChoices: next };
+    });
+  }
+
+  function chooseRaceSkill(skill: string) {
+    setCharacter(current => {
+      const limit = raceSkillChoiceCount(current);
+      const selected = current.raceSkills || [];
+      const next = selected.includes(skill) ? selected.filter(item => item !== skill) : selected.length < limit ? [...selected, skill] : selected;
+      return { ...current, raceSkills: next };
+    });
+  }
+
+  function chooseAdvancementFeat(slotKey: string, id: string) {
+    setCharacter(current => {
+      const slots = advancementSlotsFor(current);
+      const slot = slots.find(item => item.key === slotKey);
+      if (!slot || (slot.origin && id === "asi")) return current;
+      const feat = feats.find(item => item.id === id);
+      const liveCharacter = syncAdvancements(current, current.advancements || []);
+      if (feat?.requirement && !featRequirementMet(liveCharacter, feat.requirement)) {
+        alert("Требования не соблюдены");
+        return current;
+      }
+      const existing = current.advancements || [];
+      const previous = existing.find(choice => choice.key === slotKey);
+      const nextChoice: AdvancementChoice = {
+        ...slot,
+        featId: id,
+        asiChoices: id === "asi" && previous?.featId === "asi" ? previous.asiChoices : [],
+        featChoices: id && previous?.featId === id ? previous.featChoices || {} : {},
+      };
+      const next = [...existing.filter(choice => choice.key !== slotKey), ...(id ? [nextChoice] : [])]
+        .filter(choice => slots.some(item => item.key === choice.key));
+      return syncAdvancements(current, next);
+    });
+  }
+
+  function toggleFeatChoice(slotKey: string, groupKey: string, id: string, limit: number) {
+    setCharacter(current => {
+      const existing = current.advancements || [];
+      const target = existing.find(choice => choice.key === slotKey);
+      if (!target) return current;
+      const selected = target.featChoices?.[groupKey] || [];
+      const nextSelected = selected.includes(id)
+        ? selected.filter(value => value !== id)
+        : selected.length < limit ? [...selected, id] : limit === 1 ? [id] : selected;
+      const featChoices = { ...(target.featChoices || {}), [groupKey]: nextSelected };
+      if (groupKey === "tradition") {
+        delete featChoices.cantrips;
+        delete featChoices.spell;
+        delete featChoices.rituals;
+      }
+      return syncAdvancements(current, existing.map(choice => choice.key === slotKey ? { ...choice, featChoices } : choice));
+    });
+  }
+
+  function changeLevel(level: number) {
+    setCharacter(current => {
+      const nextBase = {
+        ...current,
+        level,
+        subclass: subclassRule(current.className) && level < (subclassRule(current.className)?.level || 99) ? "" : current.subclass,
+        spells: [],
+        preparedSpells: [],
+        spellSlotsUsed: [],
+        pactSlotsUsed: 0,
+        resourceSpent: {},
+      };
+      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+      return syncAdvancements(nextBase, (current.advancements || []).filter(choice => validKeys.has(choice.key)));
+    });
+  }
+
+  function toggleClassChoice(groupKey: string, id: string, limit: number) {
+    setCharacter(current => {
+      const choices = current.classChoices || {};
+      const selected = choices[groupKey] || [];
+      const next = selected.includes(id) ? selected.filter(value => value !== id) : selected.length < limit ? [...selected, id] : selected;
+      return { ...current, classChoices: { ...choices, [groupKey]: next } };
+    });
+  }
+
+  function setUsedSlots(circle: number, value: number, maximum: number) {
+    setCharacter(current => {
+      const used = [...(current.spellSlotsUsed || [])];
+      used[circle] = Math.max(0, Math.min(maximum, value));
+      return { ...current, spellSlotsUsed: used };
+    });
+  }
+
+  function setResourceCurrent(key: string, value: number, maximum: number) {
+    setCharacter(current => ({
+      ...current,
+      resourceSpent: {
+        ...(current.resourceSpent || {}),
+        [key]: maximum - Math.max(0, Math.min(maximum, value)),
+      },
+    }));
+  }
+
+  function setCurrentHitPoints(value: number) {
+    const next = Math.max(-hitPoints, Math.min(hitPoints, value));
+    setCharacter(current => ({
+      ...current,
+      currentHitPoints: next,
+      ...(next > 0 ? { deathSaveSuccesses: 0, deathSaveFailures: 0 } : {}),
+    }));
+  }
+
+  function applyHitPointAdjustment(direction: 1 | -1) {
+    const amount = Math.max(0, Math.floor(hitPointAdjustment || 0));
+    if (!amount) return;
+    setCurrentHitPoints((character.currentHitPoints || 0) + direction * amount);
+  }
+
+  function setDeathSave(kind: "success" | "failure", index: number) {
+    const field = kind === "success" ? "deathSaveSuccesses" : "deathSaveFailures";
+    setCharacter(current => ({ ...current, [field]: (current[field] || 0) === index + 1 ? index : index + 1 }));
+  }
+
+  function takeShortRest() {
+    const remaining = Math.max(0, character.level - (character.hitDiceSpent || 0));
+    const diceUsed = Math.min(remaining, hitDiceToRoll);
+    const die = classRules[character.className]?.hitDie || 8;
+    const rolls = Array.from({ length: diceUsed }, () => (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1);
+    const healing = shortRestHitDieHealing(rolls, abilityModifier(finalAbilities.con));
+    const nextSpent = { ...(character.resourceSpent || {}) };
+    characterResources({ ...character, abilities: finalAbilities }).forEach(resource => {
+      if (resource.isShortRest) nextSpent[resource.key] = 0;
+    });
+    const nextHitPoints = Math.min(hitPoints, (character.currentHitPoints || 0) + healing);
+    setCharacter(current => ({
+      ...current,
+      currentHitPoints: nextHitPoints,
+      hitDiceSpent: Math.min(current.level, (current.hitDiceSpent || 0) + diceUsed),
+      resourceSpent: nextSpent,
+      pactSlotsUsed: 0,
+      ...(nextHitPoints > 0 ? { deathSaveSuccesses: 0, deathSaveFailures: 0 } : {}),
+    }));
+    setHitDiceToRoll(0);
+    setLastHitDieRoll(diceUsed ? healing : null);
+  }
+
+  function takeLongRest() {
+    setCharacter(current => {
+      return {
+        ...current,
+        currentHitPoints: estimatedHitPoints({ ...current, abilities: finalAbilityScores(current) }),
+        temporaryHitPoints: 0,
+        hitDiceSpent: hitDiceAfterLongRest(current.hitDiceSpent || 0, current.level),
+        deathSaveSuccesses: 0,
+        deathSaveFailures: 0,
+        resourceSpent: {},
+        spellSlotsUsed: (current.spellSlotsUsed || []).map(() => 0),
+        pactSlotsUsed: 0,
+      };
+    });
+    setHitDiceToRoll(0);
+    setLastHitDieRoll(null);
+  }
+
+  function changeAsiAbility(slotKey: string, key: keyof ExportCharacter["abilities"], delta: 1 | -1) {
+    setCharacter(current => {
+      const existing = current.advancements || [];
+      const target = existing.find(choice => choice.key === slotKey);
+      if (!target || target.featId !== "asi") return current;
+      const choices = [...target.asiChoices];
+      if (delta < 0) {
+        const index = choices.lastIndexOf(key);
+        if (index >= 0) choices.splice(index, 1);
+      } else {
+        const otherAsiBonus = existing
+          .filter(choice => choice.key !== slotKey && choice.featId === "asi")
+          .flatMap(choice => choice.asiChoices)
+          .filter(item => item === key).length;
+        const racialScore = current.abilities[key] + raceAbilityBonuses(current)[key] + otherAsiBonus;
+        const currentBonus = choices.filter(item => item === key).length;
+        if (choices.length >= 2 || currentBonus >= 2 || racialScore + currentBonus >= 20) return current;
+        choices.push(key);
+      }
+      const next = existing.map(choice => choice.key === slotKey ? { ...choice, asiChoices: choices } : choice);
+      return syncAdvancements(current, next);
+    });
+  }
+
+  function chooseOptimalSpells() {
+    const value = { ...rulesCharacter, abilities: finalAbilityScores(rulesCharacter) };
+    const ids = optimalSpellIds(value, availableSpellCatalog);
+    const preparedSpells = optimalPreparedSpellIds(value, availableSpellCatalog, ids);
+    setCharacter(current => ({ ...current, spells: ids, preparedSpells, lssSpellCards: undefined }));
+  }
+
+  function resetSpells() {
+    setCharacter(current => ({ ...current, spells: [], preparedSpells: [], lssSpellCards: undefined }));
+  }
+
+  function setPersonality(key: PersonalityKey, value: string) {
+    setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: value } }));
+  }
+
+  function randomPersonality(key: PersonalityKey) {
+    const list = personalityLists[key];
+    const randomValue = crypto.getRandomValues(new Uint32Array(1))[0];
+    setPersonality(key, list[randomValue % list.length]);
+  }
+
+  function randomizeAllPersonality() {
+    const randomValues = crypto.getRandomValues(new Uint32Array(Object.keys(personalityNames).length));
+    setCharacter(current => ({
+      ...current,
+      personality: Object.fromEntries(
+        (Object.keys(personalityNames) as PersonalityKey[]).map((key, index) => {
+          const list = personalityLists[key];
+          return [key, list[randomValues[index] % list.length]];
+        }),
+      ) as ExportCharacter["personality"],
+    }));
+  }
+
+  function applyBan(list: BanList) {
+    const normalizedList = normalizeBanList(list);
+    setActiveBan(normalizedList);
+    localStorage.setItem("dark-codex-banlist", JSON.stringify(normalizedList));
+    setCharacter(current => {
+      const next = {
+        ...current,
+        race: allowed(normalizedList, "races", current.race) ? current.race : "",
+        className: allowed(normalizedList, "classes", current.className) ? current.className : "",
+        subclass: allowed(normalizedList, "subclasses", `${current.className}:${current.subclass}`) ? current.subclass : "",
+        background: allowed(normalizedList, "backgrounds", current.background) ? current.background : "",
+        spells: current.spells.filter(id => allowed(normalizedList, "spells", id)),
+        advancements: (current.advancements || []).filter(choice => choice.featId === "asi" || allowed(normalizedList, "feats", choice.featId)),
+      };
+      return syncAdvancements(next, next.advancements);
+    });
+    setView("builder");
+    resetFilters(0);
+  }
+
+  function importBan(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (![1, 2].includes(parsed.version) || !parsed.categories || !["deny", "allow"].includes(parsed.mode)) throw new Error();
+        applyBan(normalizeBanList(parsed));
+      } catch {
+        alert("Файл не похож на бан-лист «Листа Героя 5e».");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  }
+
+  function toggleBan(id: string) {
+    setBanDraft(current => ({
+      ...current,
+      categories: {
+        ...current.categories,
+        [banCategory]: current.categories[banCategory].includes(id)
+          ? current.categories[banCategory].filter(value => value !== id)
+          : [...current.categories[banCategory], id],
+      },
+    }));
+  }
+
+  function setVisibleBanState(ids: string[], banned: boolean) {
+    setBanDraft(current => {
+      const values = new Set(current.categories[banCategory]);
+      for (const id of ids) {
+        const shouldBeListed = current.mode === "deny" ? banned : !banned;
+        if (shouldBeListed) values.add(id);
+        else values.delete(id);
+      }
+      return { ...current, categories: { ...current.categories, [banCategory]: [...values] } };
+    });
+  }
+
+  function setBookBanState(sourceName: string, banned: boolean) {
+    setBanDraft(current => ({
+      ...current,
+      categories: Object.fromEntries((Object.keys(categoryNames) as Category[]).map(category => {
+        const values = new Set(current.categories[category]);
+        for (const option of catalogs[category].filter(item => item.source === sourceName)) {
+          const shouldBeListed = current.mode === "deny" ? banned : !banned;
+          if (shouldBeListed) values.add(option.id);
+          else values.delete(option.id);
+        }
+        return [category, [...values]];
+      })) as Record<Category, string[]>,
+    }));
+  }
+
+  function setTceBanState(kind: "optional" | "full", banned: boolean) {
+    setBanDraft(current => ({
+      ...current,
+      ...(kind === "optional" ? { tceOptionalFeaturesBanned: banned } : { tceFullBanned: banned }),
+    }));
+    if (kind === "full") setBookBanState("TCE", banned);
+  }
+
+  function exportHelpmate() {
+    const skipped = helpmateSkippedSpells(exportContext).map(spell => spell.name);
+    if (skipped.length) {
+      setHelpmateExportWarning(skipped);
+      return;
+    }
+    download(createHelpmateExport(exportContext), `${safeName(character.name)} — Helpmate.json`);
+  }
+
+  function confirmPartialHelpmateExport() {
+    download(createHelpmateExport(exportContext), `${safeName(character.name)} — Helpmate.json`);
+    setHelpmateExportWarning(null);
+  }
+
+  function exportLongStoryShort() {
+    download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
+  }
+
+  function exportNative() {
+    download(createNativeCharacterFile(exportCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
+  }
+
+  function persistVault(next: CharacterVault) {
+    setVault(next);
+    localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(next));
+  }
+
+  function openCharacterManager() {
+    const updatedAt = new Date().toISOString();
+    const next = {
+      ...vault,
+      slots: vault.slots.map(slot => slot.id === vault.activeId ? { ...slot, character, updatedAt } : slot),
+    };
+    persistVault(next);
+    setView("characters");
+  }
+
+  function selectSlot(id: string) {
+    const slot = vault.slots.find(item => item.id === id);
+    if (!slot) return;
+    persistVault({ ...vault, activeId: id });
+    setCharacter(normalizeCharacter(slot.character));
+    setImportMessage(null);
+    setView("builder");
+    resetFilters(0);
+  }
+
+  function addCharacter() {
+    if (vault.slots.length >= vault.capacity) {
+      alert("Все доступные места заняты. Добавьте ещё 5 слотов.");
+      return;
+    }
+    const slot = createSlot(initial);
+    persistVault({ ...vault, activeId: slot.id, slots: [...vault.slots, slot] });
+    setCharacter(initial);
+    setImportMessage(null);
+    setView("builder");
+    resetFilters(0);
+  }
+
+  function addFiveSlots() {
+    persistVault({ ...vault, capacity: vault.capacity + 5 });
+  }
+
+  function resetCurrentCharacter() {
+    if (!confirm("Сбросить текущего персонажа? Остальные персонажи не изменятся.")) return;
+    setCharacter(initial);
+    setImportMessage(null);
+    setView("builder");
+    resetFilters(0);
+  }
+
+  function deleteSlot(id: string) {
+    const target = vault.slots.find(slot => slot.id === id);
+    if (!target || !confirm(`Удалить персонажа «${target.character.name || "Безымянный герой"}»?`)) return;
+    let slots = vault.slots.filter(slot => slot.id !== id);
+    if (!slots.length) slots = [createSlot(initial)];
+    const activeId = id === vault.activeId ? slots[0].id : vault.activeId;
+    const next = { ...vault, activeId, slots };
+    persistVault(next);
+    if (id === vault.activeId) setCharacter(normalizeCharacter(slots[0].character));
+  }
+
+  function importCharacterFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const result = parseCharacterFile(JSON.parse(String(reader.result)), initial);
+        const imported = normalizeCharacter(result.character);
+        const slot = createSlot(imported);
+        const capacity = vault.slots.length >= vault.capacity ? vault.capacity + 5 : vault.capacity;
+        persistVault({ ...vault, capacity, activeId: slot.id, slots: [...vault.slots, slot] });
+        setCharacter(imported);
+        setImportMessage({ source: result.source, warnings: result.warnings });
+        setView("builder");
+        resetFilters(10);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : "Не удалось импортировать персонажа.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  }
+
+  if (view === "characters") {
+    const free = vault.capacity - vault.slots.length;
+    return (
+      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+        <header className="topbar">
+          <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+          <button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
+        </header>
+        <section className="character-library">
+          <header className="library-head">
+            <div><p className="eyebrow">Локальная коллекция</p><h1>Ваши персонажи</h1><p>До {vault.capacity} слотов на этом устройстве. Каждый лист сохраняется автоматически.</p></div>
+            <div className="library-actions">
+              <button onClick={() => characterFileRef.current?.click()}>Импорт JSON</button>
+              <button className="primary-action" disabled={free <= 0} onClick={addCharacter}>Новый персонаж</button>
+              <input ref={characterFileRef} hidden type="file" accept=".json,application/json" onChange={importCharacterFile} />
+            </div>
+          </header>
+          <div className="import-guide">
+            <div><strong>Long Story Short</strong><span>Основной импорт: характеристики, личные данные, навыки, текстовые заклинания, карточки LSS и потраченные ячейки.</span></div>
+            <div><strong>Лист Героя 5e</strong><span>Полный перенос всех решений между устройствами и резервные копии.</span></div>
+            <div><strong>Helpmate · экспериментально</strong><span>Базовые параметры, класс, уровень, навыки, заклинания и ячейки; неполные поля нужно проверить.</span></div>
+          </div>
+          <div className="character-grid">
+            {vault.slots.map(slot => {
+              const itemClass = classes.find(item => item.id === slot.character.className);
+              const itemRace = races.find(item => item.id === slot.character.race);
+              return <article key={slot.id} className={slot.id === vault.activeId ? "active" : ""}>
+                <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} />
+                <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2><p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
+                <div className="character-card-actions"><button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Продолжить" : "Открыть"}</button><button onClick={() => deleteSlot(slot.id)}>Удалить</button></div>
+              </article>;
+            })}
+          </div>
+          <footer className="slot-footer"><span>Занято {vault.slots.length} из {vault.capacity} · свободно {free}</span><button onClick={addFiveSlots}>Добавить ещё 5 слотов</button></footer>
+        </section>
+        <UpdateHistory />
+      </main>
+    );
+  }
+
+  if (view === "banlist") {
+    const allBookSources = [...new Set(Object.values(catalogs).flatMap(options => options.map(option => option.source)))].sort();
+    const banSources = ["Все", ...new Set(catalogs[banCategory].map(option => option.source))];
+    const list = catalogs[banCategory].filter(option =>
+      (banSource === "Все" || option.source === banSource)
+      && `${option.name} ${option.description} ${option.source}`.toLowerCase().includes(search.toLowerCase()),
+    );
+    return (
+      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+        <header className="topbar">
+          <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+          <button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
+        </header>
+        <div className="ban-page">
+          <p className="eyebrow">Правила кампании</p>
+          <h1>Конструктор бан-листа</h1>
+          <p className="lead">Создайте переносимый файл ограничений. Он работает только с официальным каталогом приложения.</p>
+          <div className="ban-controls">
+            <label>Название<input value={banDraft.name} onChange={event => setBanDraft({ ...banDraft, name: event.target.value })} /></label>
+            <fieldset>
+              <legend>Режим</legend>
+              <label><input type="radio" checked={banDraft.mode === "deny"} onChange={() => setBanDraft({ ...banDraft, mode: "deny" })} /> Запретить выбранное</label>
+              <label><input type="radio" checked={banDraft.mode === "allow"} onChange={() => setBanDraft({ ...banDraft, mode: "allow" })} /> Разрешить только выбранное</label>
+            </fieldset>
+            <div className="ban-book-control">
+              <label>Вся книга<select value={banBookSource} onChange={event => setBanBookSource(event.target.value)}>{allBookSources.map(value => <option key={value}>{value}</option>)}</select></label>
+              <button onClick={() => setBookBanState(banBookSource, true)}>Запретить книгу</button>
+              <button onClick={() => setBookBanState(banBookSource, false)}>Снять бан книги</button>
+              <small>После массового действия можно открыть любую категорию и снять запрет с отдельных рас, классов, предысторий или заклинаний.</small>
+            </div>
+            <div className="ban-book-control">
+              <label>Настройки Tasha’s Cauldron of Everything</label>
+              <button onClick={() => setTceBanState("optional", true)}>Запретить опциональные способности TCE</button>
+              <button onClick={() => setTceBanState("optional", false)}>Разрешить опциональные способности TCE</button>
+              <button onClick={() => setTceBanState("full", true)}>Запретить всю TCE, включая новые боевые стили и заклинания</button>
+              <button onClick={() => setTceBanState("full", false)}>Разрешить всю TCE</button>
+            </div>
+          </div>
+          <div className="category-tabs">
+            {(Object.keys(categoryNames) as Category[]).map(key => (
+              <button key={key} className={banCategory === key ? "active" : ""} onClick={() => { setBanCategory(key); setBanSource("Все"); setSearch(""); }}>
+                {categoryNames[key]} <span>{banDraft.categories[key].length}</span>
+              </button>
+            ))}
+          </div>
+          <div className="tools">
+            <label className="search">⌕<input value={search} onChange={event => setSearch(event.target.value)} placeholder={`Найти: ${categoryNames[banCategory].toLowerCase()}`} /></label>
+            <select aria-label="Источник для бан-листа" value={banSource} onChange={event => setBanSource(event.target.value)}>{banSources.map(value => <option key={value}>{value}</option>)}</select>
+          </div>
+          <div className="ban-bulk-actions">
+            <span>{banSource === "Все" ? `Показано: ${list.length}` : `${banSource}: ${list.length}`}</span>
+            <button onClick={() => setVisibleBanState(list.map(option => option.id), true)}>Запретить все показанные</button>
+            <button onClick={() => setVisibleBanState(list.map(option => option.id), false)}>Снять запрет со всех показанных</button>
+          </div>
+          <div className="ban-grid">
+            {list.map(option => (
+              <button key={option.id} className={banDraft.categories[banCategory].includes(option.id) ? "selected" : ""} onClick={() => toggleBan(option.id)}>
+                <span>{banDraft.categories[banCategory].includes(option.id) ? "✓" : "+"}</span>
+                <div><strong>{option.name}</strong><small>{option.source}{banCategory === "spells" ? ` · ${levelLabel((option as typeof spells[number]).level)}` : ""}</small></div>
+              </button>
+            ))}
+          </div>
+          <div className="ban-actions">
+            <button onClick={() => setBanDraft({ ...emptyBan, name: banDraft.name })}>Очистить</button>
+            <button onClick={() => download(banDraft, `${banDraft.name || "ban-list"}.json`)}>Скачать JSON</button>
+            <button className="primary-action" onClick={() => applyBan(banDraft)}>Применить к мастеру</button>
+          </div>
+        </div>
+        <UpdateHistory />
+      </main>
+    );
+  }
+
+  const headings = ["Выберите расу и подрасу", "Выберите класс", "Распределите характеристики", "Выберите предысторию", "Выберите владения навыками", "Выберите стартовое снаряжение", "Уровень, подкласс и черты", "Выберите заклинания", "Выберите языки и инструменты", "Опишите характер", "Лист персонажа"];
+  const stepDescription = step < 2 || step === 3
+    ? "Откройте «Подробнее», чтобы увидеть механические особенности и доступные варианты. Каталог исключает UA, Homebrew и неофициальные классы."
+    : step === 2
+      ? "Point Buy 2014: начните с шести восьмёрок и потратьте ровно 27 очков. Расовые бонусы показаны отдельно."
+      : step === 4
+      ? "Предыстория выдаёт свои навыки, а класс позволяет выбрать только из собственного списка."
+      : step === 5
+        ? "Выберите каждый вариант стартового снаряжения класса. Старт с золотом намеренно не используется."
+        : step === 6
+          ? "Выберите уровень, обязательный подкласс и каждый доступный выбор черты или повышения характеристик по прогрессии класса."
+          : step === 7
+            ? "Счётчики основаны на таблице выбранного класса. Заклинания подкласса показаны отдельно и не занимают лимит."
+            : step === 8
+              ? "Языки и все конкретные инструменты собраны здесь по источникам. Общие формулировки вроде «ремесленный инструмент» в итоговый лист не попадут."
+              : step === 9
+                ? "Каждый пункт можно написать самому, выбрать из списка предыстории или определить случайно."
+                : "Лист повторяет структуру Long Story Short и готов к печати или экспорту.";
+
+  return (
+    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+      <header className="topbar">
+        <button className="brand" onClick={() => resetFilters(0)}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+        <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+        <div className="top-actions">
+          <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
+          <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
+          <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
+          <input ref={banFileRef} hidden type="file" accept=".json,application/json" onChange={importBan} />
+          {account?.authenticated
+            ? <span className="account-state"><span>●</span>{account.displayName} · {cloudState === "saving" ? "сохраняется" : cloudState === "error" ? "ошибка синхронизации" : "сохранено"}<a href="/account">Аккаунт</a></span>
+            : <span className="account-warning">Без входа персонажи хранятся только в этом браузере.<a href="/account">Войти и сохранить</a></span>}
+        </div>
+        <details className="mobile-top-menu">
+          <summary aria-label="Открыть меню">☰</summary>
+          <div>
+            <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
+            <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
+            <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
+            <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
+            {account?.authenticated ? <a href="/account">Аккаунт · {account.displayName}</a> : <a href="/account">Войти и сохранить</a>}
+          </div>
+        </details>
+      </header>
+      {showAdditionalSpellWarning && <div className="modal-backdrop" role="presentation">
+        <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="additional-spells-warning-title">
+          <small>Совместимость экспорта</small>
+          <h2 id="additional-spells-warning-title">Экспорт в Helpmate может быть неполным.</h2>
+          <p>Некоторые заклинания из выбранных дополнительных источников отсутствуют во внутренней базе Helpmate и не смогут быть корректно перенесены при экспорте.</p>
+          <div><button onClick={() => setShowAdditionalSpellWarning(false)}>Отмена</button><button className="primary-action" onClick={confirmAdditionalSpells}>Всё равно включить</button></div>
+        </section>
+      </div>}
+      {helpmateExportWarning && <div className="modal-backdrop" role="presentation">
+        <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="helpmate-export-warning-title">
+          <small>Helpmate</small>
+          <h2 id="helpmate-export-warning-title">Экспорт в Helpmate будет неполным.</h2>
+          <p>Helpmate не содержит следующие заклинания:</p>
+          <ul>{helpmateExportWarning.map(name => <li key={name}>{name}</li>)}</ul>
+          <p>Остальные заклинания будут экспортированы нормально.</p>
+          <div><button onClick={() => setHelpmateExportWarning(null)}>Отмена</button><button className="primary-action" onClick={confirmPartialHelpmateExport}>Экспортировать совместимые</button></div>
+        </section>
+      </div>}
+      <MissingChoiceNavigator signature={`${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}`} />
+      {activeBan && (
+        <div className="ban-status">
+          <span>Активен: <strong>{activeBan.name}</strong> · {activeBan.mode === "deny" ? "запрещены выбранные" : "разрешены только выбранные"} · скрыто {hiddenCount}</span>
+          <button onClick={() => { setActiveBan(null); localStorage.removeItem("dark-codex-banlist"); }}>Отключить</button>
+        </div>
+      )}
+      <div className="workspace">
+        <nav className="steps">
+          <p className="eyebrow">Создание</p>
+          {steps.map((label, index) => (
+            <button key={label} className={`step ${index === step ? "active" : ""} ${index < step ? "done" : ""}`} onClick={() => resetFilters(index)}>
+              <span>{index < step ? "✓" : index + 1}</span><strong>{label}</strong>
+            </button>
+          ))}
+          <div className="compass">✦<small>2014 EDITION</small></div>
+        </nav>
+        <section className="content">
+          {importMessage && (
+            <div className={`import-result ${importMessage.warnings.length ? "warning" : "success"}`}>
+              <div>
+                <strong>{importMessage.source === "native" ? "Создан новый импортированный персонаж" : importMessage.source === "long-story-short" ? "Long Story Short импортирован как новый персонаж" : "Helpmate импортирован как новый персонаж"}</strong>
+                {importMessage.warnings.map(warning => <p key={warning}>{warning}</p>)}
+              </div>
+              <button onClick={() => setImportMessage(null)}>Скрыть</button>
+            </div>
+          )}
+          <header className="content-head">
+            <p className="eyebrow">Шаг {step + 1} · официальный каталог</p>
+            <h1>{headings[step]}</h1>
+            <p>{stepDescription}</p>
+          </header>
+
+          {(step === 0 || step === 7) && <section className={`additional-spell-access${additionalSpellsUnlocked ? " unlocked" : ""}`}>
+            <div><small>Дополнительные заклинания</small><strong>{additionalSpellsUnlocked ? "Источники разблокированы" : "Совместимый с Helpmate набор"}</strong><p>{additionalSpellsUnlocked ? "FTD, EGW, AI, SAS, PAM, BMT и Create Magen доступны в выборе заклинаний. Бан-лист мастера продолжает действовать." : "FTD, EGW, AI, SAS, PAM, BMT и Create Magen скрыты. Их можно включить для PDF, LSS и игры в «Листе Героя»."}</p></div>
+            <button onClick={requestAdditionalSpells}>{additionalSpellsUnlocked ? "Скрыть дополнительные источники" : "Разблокировать дополнительные источники"}</button>
+          </section>}
+
+          {(step < 2 || step === 3) && (
+            <>
+              <div className="tools">
+                <label className="search">⌕<input value={search} onChange={event => setSearch(event.target.value)} placeholder="Поиск по каталогу" /></label>
+                <div className="source-filter" aria-label="Фильтр по книгам">
+                  {step === 0 && <button className={sources.every(value => selectedSources.includes(value)) ? "active" : ""} onClick={toggleAllRaceSources}>Все</button>}
+                  {sources.map(value => <button key={value} className={selectedSources.includes(value) ? "active" : ""} onClick={() => toggleSource(value)}>{value}</button>)}
+                </div>
+              </div>
+              <div className="catalog-meta">{filtered.length} вариантов · только официальные источники</div>
+              <div className="card-grid">
+                {filtered.map(option => {
+                  const selected = (step === 0 ? character.race : step === 1 ? character.className : character.background) === option.id;
+                  const detailFeatures = step === 0
+                    ? raceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags)
+                    : step === 1
+                      ? documentedClassFeatures(option.id, undefined, false, classRules[option.id]?.features || [], [], [])
+                      : [{ ...backgroundRule(option.id, option).feature }];
+                  return (
+                    <article key={option.id} className={`choice-card ${selected ? "selected" : ""}`}>
+                      <CatalogIcon id={option.id} kind={step === 0 ? "race" : step === 1 ? "class" : "background"} fallback={option.name} experimental={usesOrnateIcons} />
+                      <div>
+                        <div className="card-title"><h2>{option.name}</h2><em>{option.source}</em></div>
+                        <p>{option.description}</p>
+                        <div className="tags">{option.tags?.map(tag => <span key={tag}>{tag}</span>)}</div>
+                        <div className="card-actions">
+                          <button onClick={() => pick(option.id)}>{selected ? "Выбрано" : "Выбрать"}</button>
+                          <button className="details-button" onClick={() => setDetailsId(detailsId === option.id ? "" : option.id)}>Подробнее</button>
+                        </div>
+                      </div>
+                      {selected && <span className="check">✓</span>}
+                      {detailsId === option.id && (
+                        <div className="option-details">
+                          <h3>Правила и особенности</h3>
+                          {step === 0 && (() => {
+                            const variantId = option.id === character.race ? character.raceVariant : "base";
+                            const rule = selectedRaceVariant(option.id, variantId);
+                            if (!rule) return null;
+                            const bonuses = Object.entries(rule.bonuses || {}).map(([key, value]) => `${abilityLabels[key as keyof ExportCharacter["abilities"]]} +${value}`);
+                            return <div className="background-mechanics race-mechanics">
+                              <p><b>Вариант:</b> {rule.name} · {rule.source}</p>
+                              <p><b>Характеристики:</b> {bonuses.join(", ") || (rule.chooseBonuses ? rule.description : "нет фиксированных бонусов")}</p>
+                              <p><b>Владения:</b> {raceProficiencies({ ...character, race: option.id, raceVariant: rule.id }).join(", ") || "нет"}</p>
+                            </div>;
+                          })()}
+                          {detailFeatures.length ? (
+                            <div className="feature-preview">
+                              {detailFeatures.map(feature => (
+                                <div key={`${feature.level}-${feature.name}`}>
+                                  <strong>{feature.level ? `${feature.level} ур. · ` : ""}{feature.name}</strong>
+                                  <p>{feature.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <ul>
+                              {(option.details?.length ? option.details : [`Источник: ${option.source}.`, option.description, ...(option.tags || []).map(tag => `Ключевая особенность: ${tag}.`)]).map(value => <li key={value}>{value}</li>)}
+                            </ul>
+                          )}
+                          {step === 3 && (() => {
+                            const rule = backgroundRule(option.id, option);
+                            const startingGold = backgroundStartingGold(option.id, option);
+                            return <div className="background-mechanics">
+                              <p><b>Навыки:</b> {rule.skills.join(", ") || "по описанию"}</p>
+                              <p><b>Инструменты:</b> {rule.tools.join(", ") || "нет"}</p>
+                              <p><b>Языки:</b> {rule.languageChoices ? `${rule.languageChoices} на выбор` : "не даёт"}</p>
+                              <p><b>Снаряжение:</b> {backgroundEquipmentWithoutStartingGold(rule.equipment).join(", ") || "согласуйте с Мастером"}</p>
+                              <p><b>Кошелёк:</b> {startingGold} зм — будет записан в поле ЗМ.</p>
+                            </div>;
+                          })()}
+                          {step === 0 && variantsFor(option.id).length > 0 && (
+                            <fieldset className="variant-picker">
+                              <legend>Обязательный вариант / подраса</legend>
+                              {variantsFor(option.id).map(variant => (
+                                <label key={variant.id}>
+                                  <input
+                                    type="radio"
+                                    checked={character.race === option.id && character.raceVariant === variant.id}
+                                    onChange={() => setCharacter(current => ({
+                                      ...current,
+                                      race: option.id,
+                                      raceVariant: variant.id,
+                                      raceAbilityChoices: [],
+                                      raceSkills: [],
+                                      feats: [],
+                                      asiChoices: [],
+                                      advancements: [],
+                                    }))}
+                                  />
+                                  <span>
+                                    <strong>{variant.name} · {variant.source}</strong>{variant.description}
+                                    <small className="variant-bonus-line">
+                                      {Object.keys(variant.bonuses || {}).length
+                                        ? `Характеристики: ${Object.entries(variant.bonuses).map(([key, value]) => `${abilityLabels[key as keyof ExportCharacter["abilities"]]} +${value}`).join(", ")}`
+                                        : variant.chooseBonuses ? "Характеристики выбираются по правилам варианта" : "Без фиксированного бонуса"}
+                                      {variant.proficiencies?.length ? ` · Владения: ${variant.proficiencies.join(", ")}` : ""}
+                                    </small>
+                                    {variant.features?.length ? <span className="variant-feature-list">{variant.features.map(feature => <small className="variant-feature-line" key={feature.name}><b>{feature.name}.</b> {feature.description}</small>)}</span> : null}
+                                  </span>
+                                </label>
+                              ))}
+                            </fieldset>
+                          )}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <div className="pointbuy-layout">
+              <div className={`pointbuy-status ${pointRemaining === 0 ? "complete" : ""}`} data-incomplete={pointRemaining !== 0}>
+                <div><span>Осталось очков</span><strong>{pointRemaining}</strong></div>
+                <small>Стоимость: 8→0 · 9→1 · 10→2 · 11→3 · 12→4 · 13→5 · 14→7 · 15→9</small>
+                <button onClick={chooseOptimalAbilities}>Оптимальные характеристики</button>
+              </div>
+              <div className="pointbuy-grid">
+                {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => (
+                  <section key={key}>
+                    <small>{abilityLabels[key]}</small>
+                    <div className="score-control">
+                      <button onClick={() => changePointBuy(key, -1)} disabled={character.abilities[key] <= 8}>−</button>
+                      <strong>{character.abilities[key]}</strong>
+                      <button onClick={() => changePointBuy(key, 1)} disabled={character.abilities[key] >= 15 || pointRemaining <= 0}>+</button>
+                    </div>
+                    <p>Цена: {({ 8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9 } as Record<number, number>)[character.abilities[key]]} · бонус расы: {variantBonus[key] ? `+${variantBonus[key]}` : "—"}</p>
+                    <b>Итог {finalAbilities[key]} ({abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])})</b>
+                  </section>
+                ))}
+              </div>
+              {chosenRaceVariant?.chooseBonuses && (
+                <div className="racial-choice" data-incomplete={(character.raceAbilityChoices || []).length !== chosenRaceVariant.chooseBonuses.count}>
+                  <div><small>{chosenRaceVariant.name}</small><h2>Выберите {chosenRaceVariant.chooseBonuses.count} бонуса характеристик</h2></div>
+                  <div className="proficiency-grid">
+                    {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[])
+                      .filter(key => !chosenRaceVariant.chooseBonuses?.exclude?.includes(key))
+                      .map(key => (
+                        <button key={key} className={(character.raceAbilityChoices || []).includes(key) ? "selected" : ""} onClick={() => toggleRaceAbility(key)}>
+                          <span>{(character.raceAbilityChoices || []).includes(key) ? "✓" : "+"}</span>{abilityLabels[key]} {(character.raceAbilityChoices || []).includes(key)
+                            ? `+${chosenRaceVariant.chooseBonuses?.amounts?.[(character.raceAbilityChoices || []).indexOf(key)] ?? chosenRaceVariant.chooseBonuses?.amount ?? 0}`
+                            : chosenRaceVariant.chooseBonuses?.amounts ? `(+${chosenRaceVariant.chooseBonuses.amounts.join(" / +")})` : `+${chosenRaceVariant.chooseBonuses?.amount}`}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+              {raceSkillChoiceCount(character) > 0 && (
+                <div className="racial-choice" data-incomplete={character.raceSkills.length !== raceSkillChoiceCount(character)}>
+                  <div><small>{chosenRaceVariant?.name || selectedRace?.name}</small><h2>Выберите расовые владения навыками: {character.raceSkills.length} / {raceSkillChoiceCount(character)}</h2></div>
+                  <div className="proficiency-grid">
+                    {allSkillNames.map(skill => (
+                      <button key={skill} className={(character.raceSkills || []).includes(skill) ? "selected" : ""} onClick={() => chooseRaceSkill(skill)}>
+                        <span>{(character.raceSkills || []).includes(skill) ? "✓" : "+"}</span>{skill}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="skill-sections">
+              <div className="skill-source" data-incomplete={character.classSkills.length !== classRule.count}>
+                <div className="skill-source-head"><div><small>Предыстория</small><h2>{selectedBackground?.name}</h2></div><strong>{fixedBackgroundSkills.length}</strong></div>
+                <p>Эти владения выдаются выбранной предысторией.</p>
+                <div className="proficiency-grid">{fixedBackgroundSkills.map(skill => <button disabled className="selected" key={skill}><span>✓</span>{skill}</button>)}</div>
+              </div>
+              <div className="skill-source">
+                <div className="skill-source-head"><div><small>Класс</small><h2>{selectedClass?.name}</h2></div><strong>{character.classSkills.length} / {classRule.count}</strong></div>
+                <p>Выберите {classRule.count}; владения предыстории автоматически исключены.</p>
+                <div className="proficiency-grid">
+                  {classRule.skills.filter(skill => !unavailableClassSkills.includes(skill)).map(skill => (
+                    <button key={skill} className={character.classSkills.includes(skill) ? "selected" : ""} onClick={() => toggleSkill(skill)}>
+                      <span>{character.classSkills.includes(skill) ? "✓" : "+"}</span>{skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="equipment-builder">
+              <div className="equipment-toolbar">
+                <div><small>{selectedClass?.name}</small><h2>Стартовое снаряжение класса</h2><p>Рекомендация учитывает Силу {finalAbilities.str}, Ловкость {finalAbilities.dex}, владения и выбранный боевой стиль. Вариант старта с золотом не используется.</p></div>
+                <button onClick={chooseOptimalEquipment}>✦ Выбрать оптимальный</button>
+              </div>
+              {classEquipment.groups.map(group => {
+                const selected = character.equipmentSelections?.[group.key] || [];
+                const recommended = optimalEquipmentSelections(character.className, finalAbilities, {
+                  classChoices: character.classChoices,
+                  subclass: character.subclass,
+                })[group.key] || [];
+                return <section className="equipment-group" key={group.key} data-incomplete={selected.length !== group.count}>
+                  <header><div><small>Обязательный выбор</small><h3>{group.label}</h3></div><strong className={selected.length === group.count ? "complete" : ""}>{selected.length} / {group.count}</strong></header>
+                  <div className="equipment-options">
+                    {group.options.map(option => {
+                      const advice = equipmentOptionAdvice(option, finalAbilities);
+                      return <button key={option.id} className={`${selected.includes(option.id) ? "selected" : ""} ${advice.startsWith("Не рекомендуется") ? "not-recommended" : ""}`} onClick={() => toggleEquipment(group.key, option.id, group.count)}>
+                        <span>{selected.includes(option.id) ? "✓" : "+"}</span><strong>{option.label}</strong>
+                        {((group.key !== "focus" && recommended.includes(option.id)) || advice) && <small className={group.key !== "focus" && recommended.includes(option.id) ? "recommended-label" : "equipment-advice"}>{group.key !== "focus" && recommended.includes(option.id) ? "✦ рекомендуется для ваших характеристик" : advice}</small>}
+                      </button>;
+                    })}
+                  </div>
+                </section>;
+              })}
+              <section className="equipment-fixed"><h3>Также получаете автоматически</h3><p>{[...classEquipment.fixed, ...backgroundEquipmentWithoutStartingGold(selectedBackgroundRule.equipment)].join(" · ") || "Нет фиксированного снаряжения."}</p>{classEquipment.fixed.includes("Кольчуга") && finalAbilities.str < 13 && <small>Кольчуга предусмотрена стартовым набором класса, но при Силе ниже 13 снижает скорость на 10 футов. Она не считается оптимальной рекомендацией.</small>}</section>
+              <section className="currency-editor" aria-label="Монеты персонажа">
+                <div><small>Учёт на основном листе</small><h3>Кошелёк</h3><p>Эти значения сохраняются вместе с персонажем и показываются на первой странице листа.</p></div>
+                <div className="currency-inputs">
+                  {(["gp", "sp", "cp", "pp"] as const).map(key => {
+                    const labels = { gp: ["ЗМ", "золото"], sp: ["СМ", "серебро"], cp: ["ММ", "медь"], pp: ["ПМ", "платина"] } as const;
+                    return <label key={key}><span>{labels[key][0]}</span><input aria-label={`${labels[key][1]}: количество`} type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} /><small>{labels[key][1]}</small></label>;
+                  })}
+                </div>
+              </section>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div className="level-layout">
+              <div className="level-panel">
+                <div className="level-number">{character.level}</div>
+                <input aria-label="Уровень персонажа" type="range" min="1" max="20" value={character.level} onChange={event => changeLevel(+event.target.value)} />
+                <div className="level-ticks"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
+                <p>Бонус владения: <strong>+{proficiency}</strong> · кость хитов: <strong>к{classRules[character.className]?.hitDie || 8}</strong></p>
+              </div>
+              <div className="spell-progression">
+                <div className="ability-editor-head"><div><small>Заклинательства на этом уровне</small><h2>{spellRule.caster ? spellRule.title : "Без базовой магии"}</h2></div><span>{spellRule.maxLevel ? `до ${spellRule.maxLevel} круга` : "—"}</span></div>
+                {spellRule.caster ? (
+                  <>
+                    <div className="progression-facts">
+                      <div><span>Заговоры</span><strong>{spellRule.cantrips}</strong></div>
+                      <div><span>{spellRule.mode === "prepared" ? "Подготовить" : spellRule.mode === "spellbook" ? "В книге" : "Известно"}</span><strong>{spellRule.leveled}</strong></div>
+                      {spellRule.prepared !== undefined && spellRule.mode === "spellbook" && <div><span>Подготовить</span><strong>{spellRule.prepared}</strong></div>}
+                      <div><span>Макс. круг</span><strong>{spellRule.maxLevel}</strong></div>
+                    </div>
+                    {spellRule.pact ? (
+                      <div className="slot-row"><span>Магия договора</span><b>{spellRule.pact.slots} яч. {spellRule.pact.level} круга</b><small>Восстанавливаются после короткого отдыха</small></div>
+                    ) : (
+                      <div className="slot-grid">
+                        {spellRule.slots.map((count, index) => <div key={index}><small>{index + 1} круг</small><strong>{count}</strong><span>ячеек</span></div>)}
+                      </div>
+                    )}
+                  </>
+                ) : <p className="muted">У выбранного класса на этом уровне нет базового выбора заклинаний.</p>}
+              </div>
+              <div className="spell-progression resource-progression">
+                <div className="ability-editor-head"><div><small>Счётчики на листе</small><h2>Классовые ресурсы</h2></div><span>{resources.length || "—"}</span></div>
+                {resources.length ? <div className="resource-preview-grid">
+                  {resources.map(resource => <div key={resource.key}><span>{resource.name}</span><div className="resource-marks preview-resource-marks">{Array.from({ length: Math.ceil(resource.max / (resource.unit || 1)) }, (_, index) => <i key={index} />)}</div><small>{resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : ""}{resourceRestLabel(resource)} отдых</small></div>)}
+                </div> : <p className="muted">На этом уровне нет ограниченного классового ресурса.</p>}
               </div>
               {subclassData && character.level >= subclassData.level && (
                 <div className="subclass-picker" data-incomplete={!character.subclass}>
@@ -934,8 +1934,9 @@ export default function Home() {
                 </div>
               )}
               <div className="tasha-panel">
-                <label><input type="checkbox" checked={!!character.useTasha} onChange={event => toggleTasha(event.target.checked)} /><span><strong>Опциональные способности Tasha’s Cauldron of Everything</strong>Включить официальные дополнения, замены классовых способностей и расширенные списки заклинаний. При отключении выборы, доступные только по TCE, будут удалены.</span></label>
-                {character.useTasha && <div className="feature-preview">{(optionalClassFeatures[character.className] || []).filter(feature => (feature.level || 1) <= character.level).map(feature => <div key={feature.name}><strong>{feature.level} ур. · {feature.name}</strong><p>{feature.description}</p></div>)}</div>}
+                <label><input type="checkbox" checked={!!rulesCharacter.useTasha} disabled={!!activeBan?.tceOptionalFeaturesBanned || !!activeBan?.tceFullBanned} onChange={event => toggleTasha(event.target.checked)} /><span><strong>Опциональные способности Tasha’s Cauldron of Everything</strong>Включает только заменяемые и дополнительные классовые способности. Расширенные списки заклинаний, боевые стили, воззвания и метамагия не зависят от этой галочки; они отключаются только полным запретом TCE в бан-листе.</span></label>
+                {activeBan?.tceOptionalFeaturesBanned && <p className="muted">Опциональные способности TCE запрещены текущим бан-листом.</p>}
+                {rulesCharacter.useTasha && <div className="feature-preview">{(optionalClassFeatures[character.className] || []).filter(feature => (feature.level || 1) <= character.level).map(feature => <div key={feature.name}><strong>{feature.level} ур. · {feature.name}</strong><p>{feature.description}</p></div>)}</div>}
               </div>
               {featSlots > 0 && (
                 <div className="feat-picker">
@@ -1406,7 +2407,6 @@ export default function Home() {
           <div className="mobile-actions">
             {step > 0 && <button onClick={() => resetFilters(step - 1)}>← Назад</button>}
             {step < steps.length - 1 && <button className={!canContinue() ? "blocked" : ""} aria-disabled={!canContinue()} onClick={tryContinue}>Продолжить →</button>}
-            {step === steps.length - 1 && <button onClick={scrollToExports}>Экспорт ↓</button>}
           </div>
         </section>
         <aside className="summary">

@@ -513,11 +513,13 @@ export const tashaAdditionalSpellIds: Readonly<Record<string, readonly string[]>
   wizard: ["booming", "greenflame", "mind-sliver", "enhanceability", "speak-with-dead", "divination", "summonfey", "mindwhip"],
 });
 
-export function isTashaAdditionalSpell(character: Pick<ExportCharacter, "className" | "useTasha">, spellId: string) {
-  return Boolean(character.useTasha && tashaAdditionalSpellIds[character.className]?.includes(spellId));
+export function isTashaAdditionalSpell(character: Pick<ExportCharacter, "className" | "useTasha" | "tceFullBanned">, spellId: string) {
+  // Expanded class lists are published TCE content, not Optional Class Features.
+  // The separate optional-feature checkbox must never remove them.
+  return !character.tceFullBanned && Boolean(tashaAdditionalSpellIds[character.className]?.includes(spellId));
 }
 
-export function spellAvailableToCharacter(character: Pick<ExportCharacter, "className" | "subclass" | "useTasha">, spell: CatalogSpell) {
+export function spellAvailableToCharacter(character: Pick<ExportCharacter, "className" | "subclass" | "useTasha" | "tceFullBanned">, spell: CatalogSpell) {
   if (spell.classes.includes(character.className)) return true;
   if (isTashaAdditionalSpell(character, spell.id)) return true;
   const subclass = selectedSubclass(character.className, character.subclass || "");
@@ -576,7 +578,7 @@ export function alwaysPreparedSpellEntries(character: ExportCharacter, catalog: 
   const subclass = selectedSubclass(character.className, character.subclass || "");
   const entries: AlwaysPreparedSpell[] = (subclass?.alwaysPrepared || [])
     .map(id => ({ id, source: subclass?.name || "Подкласс" }));
-  if (character.useTasha && character.className === "ranger" && character.level >= 3) {
+  if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && character.level >= 3) {
     entries.push({ id: "speak-with-animals", source: "Первозданная осведомлённость (TCE)" });
   }
   return entries
