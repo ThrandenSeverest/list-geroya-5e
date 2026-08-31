@@ -34,6 +34,7 @@ export type ExportCharacter = {
   background: string;
   classSkills: string[];
   backgroundSkills: string[];
+  backgroundChoices?: Record<string, string[]>;
   /** Skills whose proficiency bonus is doubled (LSS isProf = 2). */
   expertiseSkills?: string[];
   level: number;

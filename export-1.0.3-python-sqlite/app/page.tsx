@@ -40,6 +40,7 @@ import { classChoiceGroups, classChoicesComplete, resolvedClassChoiceFeatures } 
 import { knownLanguageOptions, languageRule } from "./languages";
 import { characterResources, resourceCurrent, resourceRestLabel } from "./characterResources";
 import { backgroundEquipmentWithoutStartingGold, backgroundRule, backgroundStartingGold } from "./backgroundRules";
+import { backgroundChoiceGroups } from "./backgroundChoices";
 import { defaultEquipmentSelections, equipmentComplete, equipmentOptionAdvice, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "./equipment";
 import { characterAttacks } from "./combat";
 import { knownLimitations } from "./knownLimitations";
@@ -75,6 +76,7 @@ const initial: ExportCharacter = {
   background: "",
   classSkills: [],
   backgroundSkills: [],
+  backgroundChoices: {},
   expertiseSkills: [],
   level: 1,
   spells: [],
@@ -443,6 +445,7 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
     equipmentSelections: { ...defaultEquipmentSelections(value.className || ""), ...(value.equipmentSelections || {}) },
     currency: { ...initial.currency, ...(value.currency || {}) },
     languages: value.languages || [],
+    backgroundChoices: value.backgroundChoices || {},
     proficiencyChoices: value.proficiencyChoices || {},
     resourceSpent: value.resourceSpent || {},
     preparedSpells: value.preparedSpells || [],
@@ -787,7 +790,7 @@ export default function Home() {
   function pick(id: string) {
     if (step === 0) {
       const raceVariantOptions = variantsFor(id);
-      setCharacter(current => ({
+      setCharacter(current => syncAdvancements({
         ...current,
         race: id,
         raceVariant: raceVariantOptions.length ? "" : "base",
@@ -810,12 +813,13 @@ export default function Home() {
         ...current,
         background: id,
         backgroundSkills,
+        backgroundChoices: {},
         classSkills: [],
         languages: [],
         proficiencyChoices: {},
         personality: initial.personality,
         currency: { ...initial.currency, ...current.currency, gp: startingGold },
-      }));
+      }, (current.advancements || []).filter(choice => !choice.key.startsWith("background-"))));
     }
   }
 
@@ -1078,6 +1082,19 @@ export default function Home() {
         delete featChoices.rituals;
       }
       return syncAdvancements(current, existing.map(choice => choice.key === slotKey ? { ...choice, featChoices } : choice));
+    });
+  }
+
+  function chooseBackgroundChoice(groupKey: string, id: string, grantsFeat = false) {
+    setCharacter(current => {
+      const selected = current.backgroundChoices?.[groupKey] || [];
+      const nextSelected = selected.includes(id) ? [] : [id];
+      const backgroundChoices = { ...(current.backgroundChoices || {}), [groupKey]: nextSelected };
+      if (!grantsFeat) return { ...current, backgroundChoices };
+      const key = `background-${current.background}`;
+      const slot: AdvancementChoice = { key, level: 1, bonus: true, featId: id, asiChoices: [], featChoices: {} };
+      const advancements = [...(current.advancements || []).filter(choice => choice.key !== key), ...(id ? [slot] : [])];
+      return syncAdvancements({ ...current, backgroundChoices }, advancements);
     });
   }
 
@@ -1761,6 +1778,19 @@ export default function Home() {
                 })}
               </div>
             </>
+          )}
+
+          {step === 3 && character.background && backgroundChoiceGroups(character.background, featCatalog).length > 0 && (
+            <section className="feat-choice-builder background-choice-builder">
+              <div className="ability-editor-head"><div><small>Обязательные решения предыстории</small><h2>Настройте «{selectedBackground?.name}»</h2></div></div>
+              {backgroundChoiceGroups(character.background, featCatalog).map(group => {
+                const selected = character.backgroundChoices?.[group.key] || [];
+                return <section className="feat-choice-group" key={group.key}>
+                  <header><div><h3>{group.title}</h3><p>{group.description}</p></div><strong>{selected.length} / {group.count}</strong></header>
+                  <div className="feat-choice-options">{group.options.map(option => <button key={option.id} className={selected.includes(option.id) ? "selected" : ""} onClick={() => chooseBackgroundChoice(group.key, option.id, group.grantsFeat)}><span>{selected.includes(option.id) ? "✓" : "+"}</span><strong>{option.name}</strong>{option.detail && <small>{option.detail}</small>}</button>)}</div>
+                </section>;
+              })}
+            </section>
           )}
 
           {step === 2 && (
