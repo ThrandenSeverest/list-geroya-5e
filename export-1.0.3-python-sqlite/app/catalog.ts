@@ -21,6 +21,7 @@ export type CatalogSpell = CatalogOption & {
 
 import { expandedSpells } from "./spellData";
 import { documentSpells } from "./generatedSpellCatalog";
+import { documentBackgrounds } from "./documentBackgrounds";
 
 export const officialSources = ["PHB", "SCAG", "VGM", "XGE", "MTF", "GGR", "ERLW", "MOT", "TCE", "VRGR", "FTD", "EGW", "IDRotF", "WBW", "SCC", "MPMM", "SAS", "PAM", "BMT", "COS", "POA", "AI", "SDQ", "OGA"];
 
@@ -106,7 +107,7 @@ export const classes: CatalogOption[] = [
 classes.push({id:"artificer",name:"Изобретатель",source:"TCE",description:"Официальный магический инженер с инфузиями и инструментами.",tags:["Интеллект","Инфузии"]});
 
 const bg = (id:string,name:string,source:string,skills:string[],description:string): CatalogOption => ({id,name,source,description,tags:skills});
-export const backgrounds: CatalogOption[] = [
+const legacyBackgrounds: CatalogOption[] = [
   bg("acolyte","Прислужник","PHB",["Проницательность","Религия"],"Служение храму и поддержка единоверцев."),
   bg("charlatan","Шарлатан","PHB",["Ловкость рук","Обман"],"Ложные личности, подделки и уверенная ложь."),
   bg("criminal","Преступник","PHB",["Обман","Скрытность"],"Связи в подполье и опыт тайных операций."),
@@ -137,6 +138,21 @@ export const backgrounds: CatalogOption[] = [
   bg("strixstudent","Студент Стриксхейвена","SCC",["Магия","по факультету"],"Учёба в магическом университете и факультетская магия."),
   bg("astraldrifter","Астральный скиталец","SAS",["Проницательность","Религия"],"Столетия путешествий по Астральному морю."),
   bg("wildspacer","Дикокосмический путешественник","SAS",["Атлетика","Выживание"],"Опыт жизни и работы на космическом корабле."),
+];
+
+// Keep the original ids for saved characters, then supplement the catalog with
+// every official 5e14 background from the verified DND.su reference.
+export const backgrounds: CatalogOption[] = [
+  ...legacyBackgrounds,
+  ...documentBackgrounds
+    .filter(background => !legacyBackgrounds.some(existing => existing.id === background.id))
+    .map(background => bg(
+      background.id,
+      background.name,
+      background.source,
+      background.skills.length ? background.skills : [background.skillChoice || "выбор навыков по предыстории"],
+      background.feature,
+    )),
 ];
 
 const allSkills = ["Акробатика","Атлетика","Внимательность","Выживание","Запугивание","История","Ловкость рук","Магия","Медицина","Обман","Природа","Проницательность","Расследование","Религия","Скрытность","Убеждение","Уход за животными","Выступление"];

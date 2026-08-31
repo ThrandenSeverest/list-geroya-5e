@@ -122,6 +122,14 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.0.4",
+  publishedAt: "2026-08-31T18:00:00Z",
+  changes: [
+    "Каталог предысторий расширен до полного официального списка 5e14 DND.su: 84 варианта из 19 источников.",
+    "Для предысторий добавлены проверенные навыки, инструменты, языки и описания особенностей; варианты с обязательным выбором теперь явно отмечены в интерфейсе.",
+    "Данные подготовлены к локализации: предыстории вынесены в отдельный структурированный каталог без изменения текущего русского интерфейса."
+  ],
+}, {
   version: "1.0.3",
   publishedAt: "2026-08-16T18:00:00Z",
   changes: [
@@ -1706,9 +1714,9 @@ export default function Home() {
                             const rule = backgroundRule(option.id, option);
                             const startingGold = backgroundStartingGold(option.id, option);
                             return <div className="background-mechanics">
-                              <p><b>Навыки:</b> {rule.skills.join(", ") || "по описанию"}</p>
-                              <p><b>Инструменты:</b> {rule.tools.join(", ") || "нет"}</p>
-                              <p><b>Языки:</b> {rule.languageChoices ? `${rule.languageChoices} на выбор` : "не даёт"}</p>
+                              <p><b>Навыки:</b> {rule.skills.join(", ") || "нет"}{rule.skillChoice ? `; выбор: ${rule.skillChoice}` : ""}</p>
+                              <p><b>Инструменты:</b> {rule.tools.join(", ") || "нет"}{rule.toolChoice ? `; выбор: ${rule.toolChoice}` : ""}</p>
+                              <p><b>Языки:</b> {rule.languageChoices ? `${rule.languageChoices} на выбор` : rule.languageNote || "не даёт"}</p>
                               <p><b>Снаряжение:</b> {backgroundEquipmentWithoutStartingGold(rule.equipment).join(", ") || "согласуйте с Мастером"}</p>
                               <p><b>Кошелёк:</b> {startingGold} зм — будет записан в поле ЗМ.</p>
                             </div>;

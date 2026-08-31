@@ -1,10 +1,14 @@
 import type { CatalogOption } from "./catalog";
+import { documentBackgrounds } from "./documentBackgrounds";
 
 export type BackgroundFeature = { name: string; description: string };
 export type BackgroundRule = {
   skills: string[];
+  skillChoice?: string;
   tools: string[];
+  toolChoice?: string;
   languageChoices: number;
+  languageNote?: string;
   equipment: string[];
   feature: BackgroundFeature;
 };
@@ -38,6 +42,21 @@ const B = (
   name: string,
   description: string,
 ): BackgroundRule => ({ skills, tools, languageChoices, equipment, feature: { name, description } });
+
+const normaliseSkill = (skill: string) => skill === "Восприятие" ? "Внимательность" : skill;
+const documentRules: Record<string, BackgroundRule> = Object.fromEntries(documentBackgrounds.map(background => [background.id, {
+  skills: background.skills.map(normaliseSkill),
+  skillChoice: background.skillChoice || undefined,
+  tools: background.tools,
+  toolChoice: background.toolChoice || undefined,
+  languageChoices: background.languageChoices,
+  languageNote: background.languageNote || undefined,
+  equipment: [],
+  feature: {
+    name: background.feature.match(/«([^»]+)»/)?.[1] || "Особенность предыстории",
+    description: background.feature,
+  },
+}]));
 
 export const backgroundRules: Record<string, BackgroundRule> = {
   acolyte: B(
@@ -121,7 +140,7 @@ export const backgroundRules: Record<string, BackgroundRule> = {
 };
 
 export function backgroundRule(id: string, fallback?: CatalogOption): BackgroundRule {
-  return backgroundRules[id] || B(
+  return backgroundRules[id] || documentRules[id] || B(
     (fallback?.tags || []).filter(tag => !tag.includes("списка") && !tag.startsWith("один ") && !tag.startsWith("по ")),
     [], 0, [], "Особенность предыстории", fallback?.description || "Согласуйте особенность и снаряжение этой предыстории с Мастером.",
   );

@@ -1,6 +1,6 @@
 {
   "name": "list-geroya-5e",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -17,6 +17,7 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
     "@tailwindcss/postcss": "4.2.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
@@ -29,7 +30,8 @@
     "tailwindcss": "4.2.1",
     "typescript": "5.9.3",
     "vinext": "0.0.50",
-    "vite": "8.0.13"
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
   },
   "type": "module",
   "displayName": "Лист Героя 5e"
