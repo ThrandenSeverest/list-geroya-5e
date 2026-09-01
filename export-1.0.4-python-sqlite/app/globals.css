@@ -590,6 +590,15 @@ button { color: inherit; }
 .library-actions button, .slot-footer button { min-height: 46px; padding: 0 17px; border: 1px solid var(--line); background: var(--panel); color: var(--teal); cursor: pointer; }
 .library-actions .primary-action { border-color: var(--gold); background: linear-gradient(#8b6427, #5a3a16); color: var(--ivory); }
 .library-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.folder-toolbar { margin: 0 0 14px; padding: 14px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--line); background: var(--panel); }
+.folder-list, .folder-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.folder-list button, .folder-actions button, .bulk-character-actions button, .bulk-character-actions select { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); background: transparent; color: var(--teal); cursor: pointer; }
+.folder-list button.active { border-color: var(--gold); color: var(--gold-bright); box-shadow: inset 0 -2px var(--gold); }
+.folder-list b { margin-left: 5px; color: var(--muted); }
+.bulk-character-actions { margin-bottom: 14px; padding: 12px 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; border: 1px solid rgba(201,165,87,.35); }
+.bulk-character-actions label { display: flex; align-items: center; gap: 7px; }
+.bulk-character-actions span { margin-right: auto; color: var(--muted); }
+.bulk-character-actions button:disabled { opacity: .35; cursor: not-allowed; }
 .import-guide { margin: 30px 0 22px; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid rgba(201,165,87,.35); background: rgba(201,165,87,.04); }
 .import-guide div { padding: 17px 18px; border-right: 1px solid rgba(201,165,87,.25); }
 .import-guide div:last-child { border-right: 0; }
@@ -597,7 +606,8 @@ button { color: inherit; }
 .import-guide strong { color: var(--gold-bright); font: 18px Georgia, serif; }
 .import-guide span { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.45; }
 .character-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.character-grid article { min-height: 150px; padding: 22px; display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px 18px; border: 1px solid var(--line); background: linear-gradient(145deg, rgba(15,29,35,.96), rgba(7,17,22,.94)); }
+.character-grid article { position: relative; min-height: 150px; padding: 22px; display: grid; grid-template-columns: 118px minmax(0, 1fr); gap: 12px 18px; border: 1px solid var(--line); background: linear-gradient(145deg, rgba(15,29,35,.96), rgba(7,17,22,.94)); }
+.character-select { position: absolute; top: 10px; right: 12px; display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; cursor: pointer; }
 .character-grid article.active { border-color: var(--gold); box-shadow: inset 0 0 40px rgba(201,165,87,.05); }
 .character-grid article small { color: var(--teal); text-transform: uppercase; letter-spacing: .1em; font-size: 8px; }
 .character-grid article h2 { margin: 6px 0; font: 28px Georgia, serif; }
@@ -607,6 +617,15 @@ button { color: inherit; }
 .character-card-actions button:first-child { border-color: var(--gold); color: var(--gold-bright); }
 .slot-footer { margin-top: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); color: var(--muted); }
 .slot-footer button { border-color: var(--gold); color: var(--gold-bright); }
+.empty-folder { padding: 50px 20px; display: grid; gap: 8px; place-items: center; border: 1px dashed var(--line); color: var(--muted); }
+.empty-folder strong { color: var(--ivory); font: 24px Georgia, serif; }
+.folder-import-modal { width: min(620px, calc(100% - 28px)); }
+.folder-name-field { display: grid; gap: 6px; margin: 18px 0; color: var(--muted); }
+.folder-name-field input { min-height: 42px; padding: 0 12px; border: 1px solid var(--line); background: transparent; color: inherit; }
+.folder-import-list { max-height: 330px; overflow: auto; display: grid; border: 1px solid var(--line); }
+.folder-import-list label { padding: 10px 12px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.folder-import-list label:last-child { border-bottom: 0; }
+.folder-import-list small { color: var(--muted); }
 
 footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,110,63,.25); color: #667479; font-size: 10px; text-align: center; }
 
@@ -898,6 +917,11 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   .export-panel button, .export-panel .primary-action { width: 100%; }
   .library-head { align-items: stretch; flex-direction: column; }
   .library-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .folder-toolbar, .bulk-character-actions { align-items: stretch; flex-direction: column; }
+  .folder-list, .folder-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .bulk-character-actions span { margin-right: 0; }
+  .folder-import-list label { grid-template-columns: auto 1fr; }
+  .folder-import-list small { grid-column: 2; }
   .import-guide, .character-grid { grid-template-columns: 1fr; }
   .import-guide div { border-right: 0; border-bottom: 1px solid rgba(201,165,87,.25); }
   .character-library { width: calc(100% - 28px); padding-top: 35px; }
@@ -1162,6 +1186,10 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .ban-grid button,
 .modern-design .category-tabs button,
 .modern-design .library-actions button,
+.modern-design .folder-list button,
+.modern-design .folder-actions button,
+.modern-design .bulk-character-actions button,
+.modern-design .bulk-character-actions select,
 .modern-design .slot-footer button {
   color: #17120e;
   border-color: #17120e;
