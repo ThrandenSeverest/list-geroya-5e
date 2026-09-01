@@ -78,13 +78,18 @@ export function proficiencyChoicesComplete(character: ExportCharacter) {
   const complete = proficiencyChoiceRequirements(character).every(requirement => {
     const selected = character.proficiencyChoices?.[requirement.key] || [];
     if (requirement.kind !== "weapon") selectedTools.push(...selected.filter(value => !skillNames.includes(value)));
-    return selected.length === requirement.count && new Set(selected).size === selected.length && selected.every(value => requirement.options.includes(value));
+    const withoutCurrent = { ...character, proficiencyChoices: Object.fromEntries(Object.entries(character.proficiencyChoices || {}).filter(([key]) => key !== requirement.key)) };
+    const alreadyKnown = new Set(characterProficiencies(withoutCurrent).skills);
+    return selected.length === requirement.count && new Set(selected).size === selected.length && selected.every(value => requirement.options.includes(value) && (!skillNames.includes(value) || !alreadyKnown.has(value)));
   });
   return complete && new Set(selectedTools).size === selectedTools.length;
 }
 
 export function proficiencyChoiceUsedElsewhere(character: ExportCharacter, key: string, value: string) {
-  return Object.entries(character.proficiencyChoices || {}).some(([otherKey, selected]) => otherKey !== key && selected.includes(value));
+  if (Object.entries(character.proficiencyChoices || {}).some(([otherKey, selected]) => otherKey !== key && selected.includes(value))) return true;
+  if (!skillNames.includes(value)) return false;
+  const withoutCurrent = { ...character, proficiencyChoices: Object.fromEntries(Object.entries(character.proficiencyChoices || {}).filter(([choiceKey]) => choiceKey !== key)) };
+  return characterProficiencies(withoutCurrent).skills.includes(value);
 }
 
 const fixedClassTools: Record<string, string[]> = {
