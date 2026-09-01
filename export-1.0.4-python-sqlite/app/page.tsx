@@ -1121,6 +1121,9 @@ function Builder() {
       const target = existing.find(choice => choice.key === slotKey);
       if (!target) return current;
       const selected = target.featChoices?.[groupKey] || [];
+      const ownedSkills = new Set(characterProficiencies(current).skills);
+      if (!selected.includes(id) && groupKey === "skill" && ownedSkills.has(id)) return current;
+      if (!selected.includes(id) && groupKey === "expertise" && !ownedSkills.has(id)) return current;
       const nextSelected = selected.includes(id)
         ? selected.filter(value => value !== id)
         : selected.length < limit ? [...selected, id] : limit === 1 ? [id] : selected;
