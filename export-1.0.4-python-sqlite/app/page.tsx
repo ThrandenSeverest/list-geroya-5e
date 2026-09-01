@@ -54,13 +54,17 @@ import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
 import { hitDiceAfterLongRest, shortRestHitDieHealing } from "./restRules";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 type Category = "races" | "classes" | "subclasses" | "backgrounds" | "feats" | "spells";
 type BanMode = "deny" | "allow";
 type BanList = { version: 2; name: string; mode: BanMode; categories: Record<Category, string[]>; tceOptionalFeaturesBanned?: boolean; tceFullBanned?: boolean };
 type PersonalityKey = keyof ExportCharacter["personality"];
-type CharacterSlot = { id: string; character: ExportCharacter; updatedAt: string };
-type CharacterVault = { version: 1; capacity: number; activeId: string; slots: CharacterSlot[] };
+type CharacterFolder = { id: string; name: string; createdAt: string };
+type CharacterSlot = { id: string; character: ExportCharacter; updatedAt: string; folderId?: string };
+type CharacterVault = { version: 1; capacity: number; activeId: string; slots: CharacterSlot[]; folders: CharacterFolder[] };
+type FolderImportItem = { key: string; name: string; character: ExportCharacter; selected: boolean };
+type FolderImportDraft = { archiveName: string; folderName: string; items: FolderImportItem[] };
 type AccountState = { authenticated: true; email: string; displayName: string; authProvider?: "email" | "chatgpt"; emailVerified?: boolean } | { authenticated: false };
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
 type SiteTheme = "classic" | "parchment" | "legacy";
@@ -126,6 +130,14 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.0.5",
+  publishedAt: "2026-09-01T18:00:00Z",
+  changes: [
+    "В коллекции персонажей появились папки: создание, переименование и фильтрация сохранений.",
+    "Добавлены галочки, массовый перенос между папками и удаление нескольких персонажей.",
+    "Папку можно экспортировать ZIP-архивом с JSON-файлами и импортировать с предварительным выбором персонажей.",
+  ],
+}, {
   version: "1.0.4",
   publishedAt: "2026-08-31T18:00:00Z",
   changes: [
@@ -359,10 +371,31 @@ function createSlot(character: ExportCharacter = initial): CharacterSlot {
   return { id: slotId(), character, updatedAt: new Date().toISOString() };
 }
 
+function folderId() {
+  return `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeVault(value: Partial<CharacterVault> | null | undefined): CharacterVault {
+  const folders = Array.isArray(value?.folders)
+    ? value.folders.filter(folder => folder && typeof folder.id === "string" && typeof folder.name === "string")
+    : [];
+  const folderIds = new Set(folders.map(folder => folder.id));
+  const slots = Array.isArray(value?.slots) ? value.slots.map(slot => ({
+    ...slot,
+    character: normalizeCharacter(slot.character),
+    folderId: slot.folderId && folderIds.has(slot.folderId) ? slot.folderId : undefined,
+  })) : [];
+  const activeId = slots.some(slot => slot.id === value?.activeId) ? value!.activeId! : slots[0]?.id || "";
+  return { version: 1, capacity: Math.max(5, value?.capacity || 5, slots.length), activeId, slots, folders };
+}
+
 function mergeVaults(local: CharacterVault, remote: CharacterVault | null): CharacterVault {
   if (!remote?.slots?.length) return local;
+  const remoteNormalized = normalizeVault(remote);
+  const folders = new Map<string, CharacterFolder>();
+  for (const folder of [...remoteNormalized.folders, ...local.folders]) folders.set(folder.id, folder);
   const slots = new Map<string, CharacterSlot>();
-  for (const slot of [...remote.slots, ...local.slots]) {
+  for (const slot of [...remoteNormalized.slots, ...local.slots]) {
     const previous = slots.get(slot.id);
     if (!previous || Date.parse(slot.updatedAt) >= Date.parse(previous.updatedAt)) {
       slots.set(slot.id, { ...slot, character: normalizeCharacter(slot.character) });
@@ -371,8 +404,8 @@ function mergeVaults(local: CharacterVault, remote: CharacterVault | null): Char
   const mergedSlots = [...slots.values()].sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
   const activeId = mergedSlots.some(slot => slot.id === local.activeId)
     ? local.activeId
-    : mergedSlots.some(slot => slot.id === remote.activeId) ? remote.activeId : mergedSlots[0]?.id || "";
-  return { version: 1, capacity: Math.max(5, local.capacity, remote.capacity, mergedSlots.length), activeId, slots: mergedSlots };
+    : mergedSlots.some(slot => slot.id === remoteNormalized.activeId) ? remoteNormalized.activeId : mergedSlots[0]?.id || "";
+  return { version: 1, capacity: Math.max(5, local.capacity, remoteNormalized.capacity, mergedSlots.length), activeId, slots: mergedSlots, folders: [...folders.values()] };
 }
 
 function allowed(list: BanList | null, category: Category, id: string) {
@@ -524,13 +557,18 @@ function Builder() {
   const [featsExpanded, setFeatsExpanded] = useState(true);
   const [advancementKey, setAdvancementKey] = useState("");
   const [detailsId, setDetailsId] = useState("");
-  const [vault, setVault] = useState<CharacterVault>({ version: 1, capacity: 5, activeId: "", slots: [] });
+  const [vault, setVault] = useState<CharacterVault>({ version: 1, capacity: 5, activeId: "", slots: [], folders: [] });
+  const [activeFolderId, setActiveFolderId] = useState("all");
+  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
+  const [moveFolderId, setMoveFolderId] = useState("unfiled");
+  const [folderImport, setFolderImport] = useState<FolderImportDraft | null>(null);
   const [account, setAccount] = useState<AccountState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const banFileRef = useRef<HTMLInputElement>(null);
   const characterFileRef = useRef<HTMLInputElement>(null);
+  const folderFileRef = useRef<HTMLInputElement>(null);
   const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exportPanelRef = useRef<HTMLDivElement>(null);
 
@@ -566,17 +604,14 @@ function Builder() {
       const storedVault = localStorage.getItem("list-geroya-character-vault-v1");
       const storedCharacter = localStorage.getItem("dark-codex-character");
       if (storedVault) {
-        const parsed = JSON.parse(storedVault) as CharacterVault;
-        const slots = (parsed.slots || []).map(slot => ({ ...slot, character: normalizeCharacter(slot.character) }));
-        const activeId = slots.some(slot => slot.id === parsed.activeId) ? parsed.activeId : slots[0]?.id || "";
-        const active = slots.find(slot => slot.id === activeId);
-        loadedVault = { version: 1, capacity: Math.max(5, parsed.capacity || 5, slots.length), activeId, slots };
+        loadedVault = normalizeVault(JSON.parse(storedVault) as CharacterVault);
+        const active = loadedVault.slots.find(slot => slot.id === loadedVault.activeId);
         setVault(loadedVault);
         if (active) setCharacter(active.character);
       } else {
         const migrated = storedCharacter ? normalizeCharacter(JSON.parse(storedCharacter)) : initial;
         const slot = createSlot(migrated);
-        loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot] };
+        loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot], folders: [] };
         setVault(loadedVault);
         setCharacter(migrated);
       }
@@ -588,7 +623,7 @@ function Builder() {
       setSiteTheme(storedTheme === "parchment" || storedTheme === "legacy" ? storedTheme : "classic");
     } catch {
       const slot = createSlot(initial);
-      loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot] };
+      loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot], folders: [] };
       setVault(loadedVault);
     }
     setReady(true);
@@ -1490,6 +1525,104 @@ function Builder() {
     if (id === vault.activeId) setCharacter(normalizeCharacter(slots[0].character));
   }
 
+  function createFolder() {
+    const name = prompt("Название новой папки:")?.trim();
+    if (!name) return;
+    const folder: CharacterFolder = { id: folderId(), name, createdAt: new Date().toISOString() };
+    persistVault({ ...vault, folders: [...vault.folders, folder] });
+    setActiveFolderId(folder.id);
+  }
+
+  function renameFolder(id: string) {
+    const folder = vault.folders.find(item => item.id === id);
+    if (!folder) return;
+    const name = prompt("Новое название папки:", folder.name)?.trim();
+    if (!name || name === folder.name) return;
+    persistVault({ ...vault, folders: vault.folders.map(item => item.id === id ? { ...item, name } : item) });
+  }
+
+  function toggleSlotSelection(id: string) {
+    setSelectedSlotIds(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]);
+  }
+
+  function moveSelectedSlots() {
+    if (!selectedSlotIds.length) return;
+    const destination = moveFolderId === "unfiled" ? undefined : moveFolderId;
+    persistVault({ ...vault, slots: vault.slots.map(slot => selectedSlotIds.includes(slot.id) ? { ...slot, folderId: destination, updatedAt: new Date().toISOString() } : slot) });
+    setSelectedSlotIds([]);
+  }
+
+  function deleteSelectedSlots() {
+    if (!selectedSlotIds.length || !confirm(`Удалить выбранных персонажей: ${selectedSlotIds.length}?`)) return;
+    let slots = vault.slots.filter(slot => !selectedSlotIds.includes(slot.id));
+    if (!slots.length) slots = [createSlot(initial)];
+    const activeId = slots.some(slot => slot.id === vault.activeId) ? vault.activeId : slots[0].id;
+    persistVault({ ...vault, activeId, slots });
+    if (activeId !== vault.activeId) setCharacter(normalizeCharacter(slots[0].character));
+    setSelectedSlotIds([]);
+  }
+
+  function exportFolder(id: string) {
+    const folder = vault.folders.find(item => item.id === id);
+    const slots = vault.slots.filter(slot => id === "unfiled" ? !slot.folderId : slot.folderId === id);
+    if (!slots.length) {
+      alert("В этой папке пока нет персонажей.");
+      return;
+    }
+    const folderName = folder?.name || "Без папки";
+    const files: Record<string, Uint8Array> = {
+      "manifest.json": strToU8(JSON.stringify({ format: "list-geroya-5e-folder", version: 1, folderName, exportedAt: new Date().toISOString(), count: slots.length }, null, 2)),
+    };
+    slots.forEach((slot, index) => {
+      files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)}.json`] = strToU8(JSON.stringify(createNativeCharacterFile(slot.character), null, 2));
+    });
+    const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 }) as BlobPart], { type: "application/zip" }));
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${safeName(folderName)} — персонажи.zip`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importFolderArchive(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const archive = unzipSync(new Uint8Array(await file.arrayBuffer()));
+      let folderName = file.name.replace(/\.zip$/i, "").replace(/\s+—\s+персонажи$/i, "");
+      if (archive["manifest.json"]) {
+        const manifest = JSON.parse(strFromU8(archive["manifest.json"])) as { folderName?: string };
+        if (manifest.folderName?.trim()) folderName = manifest.folderName.trim();
+      }
+      const items: FolderImportItem[] = [];
+      for (const [key, bytes] of Object.entries(archive)) {
+        if (!key.toLowerCase().endsWith(".json") || key === "manifest.json") continue;
+        try {
+          const result = parseCharacterFile(JSON.parse(strFromU8(bytes)), initial);
+          const imported = normalizeCharacter(result.character);
+          items.push({ key, name: imported.name || key.replace(/\.json$/i, ""), character: imported, selected: true });
+        } catch { /* отдельный посторонний JSON не отменяет импорт архива */ }
+      }
+      if (!items.length) throw new Error("В ZIP-архиве не найдено совместимых JSON-файлов персонажей.");
+      setFolderImport({ archiveName: file.name, folderName, items });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Не удалось прочитать ZIP-архив.");
+    }
+  }
+
+  function commitFolderImport() {
+    if (!folderImport) return;
+    const chosen = folderImport.items.filter(item => item.selected);
+    if (!chosen.length) return;
+    const folder: CharacterFolder = { id: folderId(), name: folderImport.folderName.trim() || "Импортированная папка", createdAt: new Date().toISOString() };
+    const slots = chosen.map(item => ({ ...createSlot(item.character), folderId: folder.id }));
+    const capacity = Math.max(vault.capacity, vault.slots.length + slots.length);
+    persistVault({ ...vault, capacity, folders: [...vault.folders, folder], slots: [...vault.slots, ...slots] });
+    setActiveFolderId(folder.id);
+    setFolderImport(null);
+  }
+
   function importCharacterFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1515,6 +1648,9 @@ function Builder() {
 
   if (view === "characters") {
     const free = vault.capacity - vault.slots.length;
+    const visibleSlots = vault.slots.filter(slot => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
+    const allVisibleSelected = visibleSlots.length > 0 && visibleSlots.every(slot => selectedSlotIds.includes(slot.id));
+    const selectedFolder = vault.folders.find(folder => folder.id === activeFolderId);
     return (
       <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
         <header className="topbar">
@@ -1528,8 +1664,10 @@ function Builder() {
             <div><p className="eyebrow">Локальная коллекция</p><h1>Ваши персонажи</h1><p>До {vault.capacity} слотов на этом устройстве. Каждый лист сохраняется автоматически.</p></div>
             <div className="library-actions">
               <button onClick={() => characterFileRef.current?.click()}>Импорт JSON</button>
+              <button onClick={() => folderFileRef.current?.click()}>Импорт папки ZIP</button>
               <button className="primary-action" disabled={free <= 0} onClick={addCharacter}>Новый персонаж</button>
               <input ref={characterFileRef} hidden type="file" accept=".json,application/json" onChange={importCharacterFile} />
+              <input ref={folderFileRef} hidden type="file" accept=".zip,application/zip" onChange={importFolderArchive} />
             </div>
           </header>
           <div className="import-guide">
@@ -1537,19 +1675,55 @@ function Builder() {
             <div><strong>Лист Героя 5e</strong><span>Полный перенос всех решений между устройствами и резервные копии.</span></div>
             <div><strong>Helpmate · экспериментально</strong><span>Базовые параметры, класс, уровень, навыки, заклинания и ячейки; неполные поля нужно проверить.</span></div>
           </div>
+          <div className="folder-toolbar">
+            <nav className="folder-list" aria-label="Папки персонажей">
+              <button className={activeFolderId === "all" ? "active" : ""} onClick={() => { setActiveFolderId("all"); setSelectedSlotIds([]); }}>Все <b>{vault.slots.length}</b></button>
+              <button className={activeFolderId === "unfiled" ? "active" : ""} onClick={() => { setActiveFolderId("unfiled"); setSelectedSlotIds([]); }}>Без папки <b>{vault.slots.filter(slot => !slot.folderId).length}</b></button>
+              {vault.folders.map(folder => <button key={folder.id} className={activeFolderId === folder.id ? "active" : ""} onClick={() => { setActiveFolderId(folder.id); setSelectedSlotIds([]); }}>{folder.name} <b>{vault.slots.filter(slot => slot.folderId === folder.id).length}</b></button>)}
+            </nav>
+            <div className="folder-actions">
+              <button onClick={createFolder}>+ Новая папка</button>
+              {selectedFolder && <button onClick={() => renameFolder(selectedFolder.id)}>Переименовать</button>}
+              {activeFolderId !== "all" && <button onClick={() => exportFolder(activeFolderId)}>Экспорт ZIP</button>}
+            </div>
+          </div>
+          <div className="bulk-character-actions">
+            <label><input type="checkbox" checked={allVisibleSelected} onChange={() => setSelectedSlotIds(current => allVisibleSelected ? current.filter(id => !visibleSlots.some(slot => slot.id === id)) : [...new Set([...current, ...visibleSlots.map(slot => slot.id)])])} /> Выбрать всех показанных</label>
+            <span>Выбрано: {selectedSlotIds.length}</span>
+            <select value={moveFolderId} onChange={event => setMoveFolderId(event.target.value)} aria-label="Папка назначения">
+              <option value="unfiled">Без папки</option>
+              {vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+            </select>
+            <button disabled={!selectedSlotIds.length} onClick={moveSelectedSlots}>Перенести</button>
+            <button disabled={!selectedSlotIds.length} onClick={deleteSelectedSlots}>Удалить выбранных</button>
+          </div>
           <div className="character-grid">
-            {vault.slots.map(slot => {
+            {visibleSlots.map(slot => {
               const itemClass = classes.find(item => item.id === slot.character.className);
               const itemRace = races.find(item => item.id === slot.character.race);
               return <article key={slot.id} className={slot.id === vault.activeId ? "active" : ""}>
+                <label className="character-select"><input type="checkbox" checked={selectedSlotIds.includes(slot.id)} onChange={() => toggleSlotSelection(slot.id)} /><span>Выбрать</span></label>
                 <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2><p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
                 <div className="character-card-actions"><button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Продолжить" : "Открыть"}</button><button onClick={() => deleteSlot(slot.id)}>Удалить</button></div>
               </article>;
             })}
           </div>
+          {!visibleSlots.length && <div className="empty-folder"><strong>В этой папке пока пусто.</strong><span>Выберите персонажей в разделе «Все» и перенесите их сюда.</span></div>}
           <footer className="slot-footer"><span>Занято {vault.slots.length} из {vault.capacity} · свободно {free}</span><button onClick={addFiveSlots}>Добавить ещё 5 слотов</button></footer>
         </section>
+        {folderImport && <div className="modal-backdrop" role="presentation">
+          <section className="warning-modal folder-import-modal" role="dialog" aria-modal="true" aria-labelledby="folder-import-title">
+            <small>Импорт папки · {folderImport.archiveName}</small>
+            <h2 id="folder-import-title">Выберите персонажей для импорта</h2>
+            <label className="folder-name-field">Название папки<input value={folderImport.folderName} onChange={event => setFolderImport({ ...folderImport, folderName: event.target.value })} /></label>
+            <div className="folder-import-list">
+              <label><input type="checkbox" checked={folderImport.items.every(item => item.selected)} onChange={event => setFolderImport({ ...folderImport, items: folderImport.items.map(item => ({ ...item, selected: event.target.checked })) })} /> Выбрать всех</label>
+              {folderImport.items.map(item => <label key={item.key}><input type="checkbox" checked={item.selected} onChange={() => setFolderImport({ ...folderImport, items: folderImport.items.map(value => value.key === item.key ? { ...value, selected: !value.selected } : value) })} /><span>{item.name}</span><small>{item.key}</small></label>)}
+            </div>
+            <div><button onClick={() => setFolderImport(null)}>Отмена</button><button className="primary-action" disabled={!folderImport.items.some(item => item.selected)} onClick={commitFolderImport}>Импортировать выбранных</button></div>
+          </section>
+        </div>}
         <UpdateHistory />
       </main>
     );
