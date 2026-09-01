@@ -206,7 +206,7 @@ addRaceSheet("races-spelljammer", ["autognome", "astralelf", "giff", "plasmoid",
 
 export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false }: CatalogIconProps) {
   if (kind === "race" && id === "locathah") {
-    return <span className={`${className} catalog-icon`} aria-hidden="true" title={fallback}><img src="/experimental/locathah.png" alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} /></span>;
+    return <span className={`${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`} aria-hidden="true" title={fallback} />;
   }
   const experimentalIcon = experimental ? (kind === "class" ? experimentalClasses[id] : kind === "race" ? experimentalRaces[id] : undefined) : undefined;
   if (experimentalIcon) {

@@ -524,6 +524,7 @@ button { color: inherit; }
 .experimental-catalog-icon[data-sheet="races-leonin"] { --experimental-sheet: url('/experimental/races-leonin.png'); }
 .experimental-catalog-icon[data-sheet="races-tortle"] { --experimental-sheet: url('/experimental/races-tortle.png'); }
 .experimental-catalog-icon[data-sheet="races-spelljammer"] { --experimental-sheet: url('/experimental/races-spelljammer.png'); }
+.locathah-catalog-icon { --experimental-sheet: url('/experimental/locathah.png'); }
 .pdf-current-hp { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .pdf-current-hp label { display: grid; gap: 8px; font-size: 7pt; font-weight: 700; }
 .pdf-current-hp b { min-height: 24px; border-bottom: 1px solid #333; font: 18pt Georgia, serif; }
