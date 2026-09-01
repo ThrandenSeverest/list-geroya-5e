@@ -209,7 +209,10 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     ...props.featFeatures.map(feature => ({ ...feature, name: `Черта · ${feature.name}` })),
   ];
   const classPages = paginateFeatures([...combatTechniques, ...ordinaryClassFeatures, ...originFeatures]);
-  const skills = Object.entries(skillKeys).map(([name, detail]) => ({ name, ...detail }));
+  const abilityOrder = ["str", "dex", "con", "int", "wis", "cha"];
+  const skills = Object.entries(skillKeys)
+    .map(([name, detail]) => ({ name, ...detail }))
+    .sort((left, right) => abilityOrder.indexOf(left.stat) - abilityOrder.indexOf(right.stat) || left.name.localeCompare(right.name, "ru"));
   const hasSpellPage = Boolean(props.spellAbility || props.spells.length);
   const wizardPrepared = props.classId === "wizard";
   const orderedSpells = [...props.spells].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "ru"));
@@ -236,9 +239,9 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <div><dt>Класс и уровень</dt><dd>{props.identity.className} {props.identity.level}{props.identity.subclassName ? ` · ${props.identity.subclassName}` : ""}</dd></div>
           <div><dt>Раса</dt><dd>{props.identity.raceName}</dd></div>
           <div><dt>Предыстория</dt><dd>{props.identity.backgroundName}</dd></div>
-          <div><dt>Опыт</dt><dd>{props.identity.experience}</dd></div>
+          <div><dt>Опыт</dt><dd /></div>
           <div><dt>Мировоззрение</dt><dd>{props.identity.alignment || "—"}</dd></div>
-          <div><dt>Вдохновение</dt><dd>{props.identity.inspiration ? "Есть" : "Нет"}</dd></div>
+          <div><dt>Вдохновение</dt><dd>{props.identity.inspiration ? "Есть" : ""}</dd></div>
         </dl>
       </header>
       <div className="pdf-ability-row">

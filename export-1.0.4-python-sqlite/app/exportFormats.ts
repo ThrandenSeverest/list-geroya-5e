@@ -8,6 +8,7 @@ import { selectedEquipment } from "./equipment";
 import { characterAttacks, lssWeaponAttacks } from "./combat";
 import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 import { armorClass } from "./armor";
+import { externalSkillId } from "./skillIds";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -574,10 +575,10 @@ function lssSkills(selectedSkills: Set<string>, expertiseSkills: Set<string>) {
     "nature", "insight", "religion", "stealth", "persuasion", "animal handling",
   ];
   const selectedEnglish = new Set(
-    [...selectedSkills].map(skill => skillKeys[skill]?.key).filter(Boolean),
+    [...selectedSkills].map(externalSkillId).filter(Boolean),
   );
   const expertiseEnglish = new Set(
-    [...expertiseSkills].map(skill => skillKeys[skill]?.key).filter(Boolean),
+    [...expertiseSkills].map(externalSkillId).filter(Boolean),
   );
   return Object.fromEntries(
     ordered.map(key => [key, { ...skillEnglish[key], isProf: expertiseEnglish.has(key) ? 2 : selectedEnglish.has(key) ? 1 : 0 }]),

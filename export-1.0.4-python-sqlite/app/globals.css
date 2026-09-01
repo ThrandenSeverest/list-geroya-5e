@@ -426,6 +426,8 @@ button { color: inherit; }
 .missing-choice-navigator button { width: 48px; min-height: 48px; display: grid; place-items: center; border: 1px solid var(--gold); border-radius: 50%; background: rgba(74,45,18,.96); color: var(--gold-bright); box-shadow: 0 8px 28px rgba(0,0,0,.35); cursor: pointer; font-size: 22px; }
 .missing-choice-navigator button span { position: absolute; right: 58px; width: max-content; max-width: 170px; padding: 6px 8px; border: 1px solid var(--line); background: #081419; color: var(--ivory); font-size: 9px; opacity: 0; pointer-events: none; }
 .missing-choice-navigator button:hover span, .missing-choice-navigator button:focus-visible span { opacity: 1; }
+[data-incomplete="true"].incomplete-focus { animation: incomplete-focus 1.8s ease; }
+@keyframes incomplete-focus { 0%, 100% { box-shadow: none; } 25%, 70% { box-shadow: 0 0 0 3px var(--gold), 0 0 28px rgba(201,165,87,.38); } }
 [data-incomplete="true"] { scroll-margin: 100px; }
 .choice-required { display: block; margin-top: 5px; color: #e7a076; font-size: 9px; font-style: normal; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
 .pdf-document { display: none; }

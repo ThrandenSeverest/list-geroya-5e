@@ -2,8 +2,8 @@ import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
 import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
 import { helpmateSpellIds, spellIdFromDndUrl, spellIdFromLssCardId } from "./exportIds";
-import { skillKeys } from "./rules";
 import { asiLevelsForClass, feats, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
+import { normalizeImportedSkills, skillNameFromExternalId } from "./skillIds";
 
 export type CharacterFileSource = "native" | "long-story-short" | "helpmate";
 
@@ -226,9 +226,14 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
   const info = (inner.info || {}) as Record<string, unknown>;
   const stats = (inner.stats || {}) as Record<string, unknown>;
   const skillData = (inner.skills || {}) as Record<string, { isProf?: boolean | number }>;
-  const lssToRussian = Object.fromEntries(Object.entries(skillKeys).map(([ru, data]) => [data.key, ru]));
-  const selectedSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 1).map(([key]) => lssToRussian[key]).filter(Boolean);
-  const expertiseSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 2).map(([key]) => lssToRussian[key]).filter(Boolean);
+  const selectedSkills = Object.entries(skillData)
+    .filter(([, data]) => Number(data?.isProf || 0) >= 1)
+    .map(([key]) => skillNameFromExternalId(key))
+    .filter(Boolean);
+  const expertiseSkills = Object.entries(skillData)
+    .filter(([, data]) => Number(data?.isProf || 0) >= 2)
+    .map(([key]) => skillNameFromExternalId(key))
+    .filter(Boolean);
   const className = matchCatalog(valueOf(info.charClass), classes);
   const rawRaceLabel = text(valueOf(info.race));
   const raceName = rawRaceLabel.split(/[·—]/)[0];
@@ -393,7 +398,19 @@ export function parseCharacterFile(payload: unknown, empty: ExportCharacter): Ch
   if (!payload || typeof payload !== "object") throw new Error("JSON не содержит объект персонажа.");
   const value = payload as Record<string, unknown>;
   if (value.format === "list-geroya-5e" && value.version === 1 && value.character && typeof value.character === "object") {
-    return { source: "native", warnings: [], character: { ...empty, ...(value.character as ExportCharacter) } };
+    const imported = value.character as ExportCharacter;
+    return {
+      source: "native",
+      warnings: [],
+      character: {
+        ...empty,
+        ...imported,
+        raceSkills: normalizeImportedSkills(imported.raceSkills),
+        classSkills: normalizeImportedSkills(imported.classSkills),
+        backgroundSkills: normalizeImportedSkills(imported.backgroundSkills),
+        expertiseSkills: normalizeImportedSkills(imported.expertiseSkills),
+      },
+    };
   }
   if (value.jsonType === "character" && (typeof value.data === "string" || typeof value.data === "object")) return importLss(value, empty);
   if (Array.isArray(value.Classes) && Array.isArray(value.Parameters)) return importHelpmate(value, empty);

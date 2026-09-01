@@ -130,6 +130,15 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.0.6",
+  publishedAt: "2026-09-01T19:30:00Z",
+  changes: [
+    "Бонусные черты и другие обязательные решения предыстории больше не теряются после смены расы или класса; повреждённые сохранения восстанавливаются автоматически.",
+    "Кнопка «Продолжить» прокручивает страницу к ближайшему незаполненному обязательному выбору.",
+    "В PDF очищено поле опыта, пустое вдохновение больше не подписывается словом «Нет», а навыки сгруппированы по характеристикам.",
+    "Импорт и экспорт навыков используют единые ID; исправлены Внимательность (perception), Медицина (medicine) и старые варианты названий.",
+  ],
+}, {
   version: "1.0.5",
   publishedAt: "2026-09-01T18:00:00Z",
   changes: [
@@ -463,6 +472,21 @@ function syncAdvancements(character: ExportCharacter, advancements: AdvancementC
   return { ...character, advancements, ...deriveLegacyAdvancementFields(advancements) };
 }
 
+function repairBackgroundAdvancement(character: ExportCharacter): ExportCharacter {
+  if (!character.background) return character;
+  const group = backgroundChoiceGroups(character.background, featCatalog).find(item => item.kind === "feat" || item.grantsFeatId);
+  if (!group) return character;
+  const selected = character.backgroundChoices?.[group.key] || [];
+  const featId = group.grantsFeatId || selected[0] || "";
+  if (!featId || !selected.length) return character;
+  const key = `background-${character.background}`;
+  const existing = (character.advancements || []).find(choice => choice.key === key);
+  if (existing?.featId === featId) return character;
+  const featChoices = featId === "strixhaven-initiate" ? { ...(existing?.featChoices || {}), college: selected } : {};
+  const slot: AdvancementChoice = { key, level: 1, bonus: true, featId, asiChoices: [], featChoices };
+  return { ...character, advancements: [...(character.advancements || []).filter(choice => choice.key !== key), slot] };
+}
+
 type BuilderErrorBoundaryProps = { children: React.ReactNode };
 type BuilderErrorBoundaryState = { error: Error | null };
 
@@ -519,7 +543,8 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
   if (value.preparedSpells === undefined && normalized.spells.length) {
     normalized.preparedSpells = optimalPreparedSpellIds(normalized, spells, normalized.spells);
   }
-  return syncAdvancements(normalized, normalized.advancements);
+  const repaired = repairBackgroundAdvancement(normalized);
+  return syncAdvancements(repaired, repaired.advancements);
 }
 
 export default function Home() {
@@ -855,6 +880,7 @@ function Builder() {
       const raceVariantOptions = variantsFor(id);
       setCharacter(current => {
         const safe = normalizeCharacter(current);
+        const keptBonuses = safe.advancements.filter(choice => choice.bonus);
         return syncAdvancements({
         ...safe,
         race: id,
@@ -866,13 +892,14 @@ function Builder() {
         advancements: [],
         languages: [],
         proficiencyChoices: {},
-        }, []);
+        }, keptBonuses);
       });
       if (raceVariantOptions.length) setDetailsId(id);
     }
     if (step === 1) setCharacter(current => {
       const safe = normalizeCharacter(current);
-      return syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], spells: [], preparedSpells: [], lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, []);
+      const keptBonuses = safe.advancements.filter(choice => choice.bonus);
+      return syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], spells: [], preparedSpells: [], lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses);
     });
     if (step === 3) {
       const option = backgrounds.find(item => item.id === id);
@@ -942,7 +969,11 @@ function Builder() {
       if ((character.raceAbilityChoices || []).length !== choiceCount) return `Выберите ${choiceCount} расовых бонуса характеристик.`;
       return `Выберите ${raceSkillChoiceCount(character)} расовых владения навыками.`;
     }
-    if (step === 3) return "Выберите предысторию.";
+    if (step === 3) {
+      if (!character.background) return "Выберите предысторию.";
+      const unfinished = backgroundChoiceGroups(character.background, featCatalog).find(group => (character.backgroundChoices?.[group.key] || []).length !== group.count);
+      return unfinished ? `Завершите обязательный выбор предыстории: ${unfinished.title}.` : "Завершите обязательные решения предыстории.";
+    }
     if (step === 4) return `Выберите навыки класса: ${character.classSkills.length} из ${classRule.count}.`;
     if (step === 5) return "Заполните каждый обязательный выбор стартового снаряжения.";
     if (step === 6) {
@@ -968,6 +999,14 @@ function Builder() {
   function tryContinue() {
     if (!canContinue()) {
       alert(continueBlockReason());
+      requestAnimationFrame(() => {
+        const target = [...document.querySelectorAll<HTMLElement>('[data-incomplete="true"]')].find(item => item.offsetParent !== null);
+        if (!target) return;
+        if (target.matches("button")) target.click();
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+        target.classList.add("incomplete-focus");
+        window.setTimeout(() => target.classList.remove("incomplete-focus"), 1800);
+      });
       return;
     }
     resetFilters(step + 1);
@@ -1866,7 +1905,7 @@ function Builder() {
           <div><button onClick={() => setHelpmateExportWarning(null)}>Отмена</button><button className="primary-action" onClick={confirmPartialHelpmateExport}>Экспортировать совместимые</button></div>
         </section>
       </div>}
-      <MissingChoiceNavigator signature={`${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}`} />
+      <MissingChoiceNavigator signature={`${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.backgroundChoices)}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}`} />
       {activeBan && (
         <div className="ban-status">
           <span>Активен: <strong>{activeBan.name}</strong> · {activeBan.mode === "deny" ? "запрещены выбранные" : "разрешены только выбранные"} · скрыто {hiddenCount}</span>
@@ -2022,7 +2061,7 @@ function Builder() {
               <div className="ability-editor-head"><div><small>Обязательные решения предыстории</small><h2>Настройте «{selectedBackground?.name}»</h2></div></div>
               {backgroundChoiceGroups(character.background, featCatalog).map(group => {
                 const selected = character.backgroundChoices?.[group.key] || [];
-                return <section className="feat-choice-group" key={group.key}>
+                return <section className="feat-choice-group" key={group.key} data-incomplete={selected.length !== group.count}>
                   <header><div><h3>{group.title}</h3><p>{group.description}</p></div><strong>{selected.length} / {group.count}</strong></header>
                   <div className="feat-choice-options">{group.options.map(option => <button type="button" key={option.id} className={selected.includes(option.id) ? "selected" : ""} onClick={() => chooseBackgroundChoice(group.key, option.id, group.count, group.kind, group.grantsFeatId)}><span>{selected.includes(option.id) ? "✓" : "+"}</span><strong>{option.name}</strong>{option.detail && <small>{option.detail}</small>}</button>)}</div>
                 </section>;
