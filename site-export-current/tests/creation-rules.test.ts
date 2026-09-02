@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { backgroundRules } from "../app/backgroundRules";
-import { equipmentComplete, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "../app/equipment";
+import { defaultEquipmentSelections, equipmentComplete, equipmentOptionAdvice, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "../app/equipment";
 import { characterLanguages, languageRule } from "../app/languages";
 import type { ExportCharacter } from "../app/exportFormats";
 import {
   alwaysPreparedSpellEntries,
   alwaysPreparedSpellIds,
+  feats,
+  optimalAbilityBuild,
   optimalPreparedSpellIds,
   optimalSpellIds,
   spellAvailableToCharacter,
@@ -14,6 +16,7 @@ import {
 } from "../app/characterRules";
 import { spells } from "../app/catalog";
 import { characterProficiencies, proficiencyChoiceRequirements, proficiencyChoicesComplete } from "../app/proficiencies";
+import { additionalSpellSources, sourceAvailableSpellCatalog } from "../app/spellCompatibility";
 
 const base: ExportCharacter = {
   name: "", playerName: "", race: "human", raceVariant: "standard", className: "fighter", background: "sage",
@@ -21,6 +24,15 @@ const base: ExportCharacter = {
   alignment: "", abilities: { str: 15, dex: 12, con: 14, int: 10, wis: 10, cha: 8 },
   personality: { traits: "", ideals: "", bonds: "", flaws: "" },
 };
+
+test("Helpmate-incompatible source packs stay locked in normal spell selection", () => {
+  const locked = sourceAvailableSpellCatalog(spells, false);
+  assert([...additionalSpellSources].every(source => locked.every(spell => spell.source !== source)));
+  assert.equal(locked.some(spell => spell.id === "spell-doc-create_magen"), false);
+  const unlocked = sourceAvailableSpellCatalog(spells, true);
+  assert([...additionalSpellSources].every(source => unlocked.some(spell => spell.source === source)));
+  assert.equal(unlocked.find(spell => spell.id === "spell-doc-create_magen")?.source, "IDRotF");
+});
 
 test("every core background has complete mechanical benefits", () => {
   assert.equal(Object.keys(backgroundRules).length, 13);
@@ -43,14 +55,51 @@ test("optimal starting equipment completes every required class choice", () => {
   }
 });
 
+test("arcane focus is the neutral default while both material-component methods stay explained", () => {
+  for (const classId of ["sorcerer", "warlock", "wizard"]) {
+    assert.deepEqual(defaultEquipmentSelections(classId), { focus: ["arcane"] });
+    assert.deepEqual(optimalEquipmentSelections(classId, base.abilities).focus, ["arcane"]);
+  }
+  assert.match(equipmentOptionAdvice(equipmentRule("wizard").groups.find(group => group.key === "focus")!.options[0], base.abilities), /свободной рукой/);
+  assert.match(equipmentOptionAdvice(equipmentRule("wizard").groups.find(group => group.key === "focus")!.options[1], base.abilities), /имеющие цену/);
+});
+
 test("fighter selects two concrete primary items and exports class plus background equipment", () => {
   const equipmentSelections = optimalEquipmentSelections("fighter", base.abilities);
   assert.equal(equipmentSelections.primary.length, 2);
   assert.equal(equipmentRule("fighter").groups.find(group => group.key === "primary")?.count, 2);
   const items = selectedEquipment({ ...base, equipmentSelections });
-  assert(items.includes("Щит"));
+  assert(items.some(item => item.startsWith("Щит")));
   assert(items.includes("Длинный меч"));
   assert(items.includes("Бутылочка чёрных чернил"));
+});
+
+test("generic simple weapons do not invent ammunition and packs expose their contents", () => {
+  const warlock = equipmentRule("warlock");
+  const genericCrossbow = warlock.groups.find(group => group.key === "simple")?.options.find(option => option.id === "light-crossbow");
+  assert.deepEqual(genericCrossbow?.items, ["Лёгкий арбалет"]);
+  const explicitCrossbow = warlock.groups.find(group => group.key === "weapon")?.options.find(option => option.id === "crossbow");
+  assert.deepEqual(explicitCrossbow?.items, ["Лёгкий арбалет", "Болт ×20"]);
+  assert.match(warlock.groups.find(group => group.key === "pack")?.options[0].label || "", /чернила.*пергамента/i);
+  assert.match(equipmentRule("druid").fixed[0], /КД 11 \+ Лов/);
+});
+
+test("optimal ability builds spend 27 points and favor even final scores", () => {
+  for (const className of ["wizard", "druid", "warlock", "rogue", "paladin"]) {
+    const build = optimalAbilityBuild({ race: "human", raceVariant: "variant", className });
+    assert.equal(Object.values(build.abilities).reduce((sum, score) => sum + ({ 8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9 } as Record<number, number>)[score], 0), 27);
+    const bonuses = Object.fromEntries(Object.keys(build.abilities).map(key => [key, build.raceAbilityChoices.includes(key as keyof typeof build.abilities) ? 1 : 0]));
+    const finals = Object.entries(build.abilities).map(([key, score]) => score + bonuses[key]);
+    assert(finals.every(score => score % 2 === 0), `${className}: ${finals.join("/")}`);
+    assert((build.abilities.con + bonuses.con) >= 14);
+  }
+});
+
+test("the attached feat reference contributes all 105 official feats", () => {
+  const documented = feats.filter(feat => feat.id !== "asi");
+  assert.equal(documented.length, 105);
+  assert.deepEqual(feats.find(feat => feat.id === "skill-expert")?.abilityOptions, ["str", "dex", "con", "int", "wis", "cha"]);
+  assert(documented.every(feat => feat.source && feat.description.length > 20));
 });
 
 test("equipment recommendations respect Strength, Dexterity and armor requirements", () => {
@@ -63,6 +112,9 @@ test("equipment recommendations respect Strength, Dexterity and armor requiremen
   const strongFighter = optimalEquipmentSelections("fighter", base.abilities);
   assert.deepEqual(strongFighter.armor, ["chain"]);
   assert(strongFighter.primary.includes("longsword"));
+
+  const agileDruid = optimalEquipmentSelections("druid", agile);
+  assert.deepEqual(agileDruid.weapon, ["dagger"], "a Dexterity-focused druid should receive a finesse dagger");
 });
 
 test("selected fighting style changes the equipment recommendation", () => {
@@ -94,6 +146,15 @@ test("level 8 wizard recommendation follows spellbook acquisition instead of fil
   const prepared = optimalPreparedSpellIds(wizard, spells, selected);
   assert.equal(prepared.length, 12, "level plus Intelligence modifier are prepared from the book");
   assert(prepared.every(id => selected.includes(id)));
+});
+
+test("high-level wizard preparation includes every accessible high circle", () => {
+  const wizard: ExportCharacter = { ...base, className: "wizard", level: 20, abilities: { ...base.abilities, int: 20 } };
+  const selected = optimalSpellIds(wizard, spells);
+  const prepared = optimalPreparedSpellIds(wizard, spells, selected);
+  assert.equal(prepared.length, 25);
+  const preparedLevels = new Set(prepared.map(id => spells.find(spell => spell.id === id)?.level));
+  for (const level of [6, 7, 8, 9]) assert(preparedLevels.has(level), `prepared list must include circle ${level}`);
 });
 
 test("life domain spells are automatic, outside the limit and cannot consume an optimal pick", () => {

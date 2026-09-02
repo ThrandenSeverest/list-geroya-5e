@@ -1,7 +1,8 @@
 import type { CatalogSpell } from "./catalog";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
 import { featAbilityBonuses } from "./featChoices";
-import type { Feature } from "./rules";
+import { classRules, type Feature } from "./rules";
+import { generatedFeats } from "./generatedRulesCorpus";
 
 export type AbilityKey = keyof AbilityScores;
 export type RaceVariant = {
@@ -434,7 +435,7 @@ export function spellSelectionRule(character: ExportCharacter): SpellSelectionRu
   return { caster: false, mode: "none", title: "Нет базового заклинательства", cantrips: 0, leveled: 0, maxLevel: 0, slots: [] };
 }
 
-export type FeatOption = { id: string; name: string; source: string; description: string; requirement?: string };
+export type FeatOption = { id: string; name: string; source: string; description: string; requirement?: string; abilityOptions?: AbilityKey[]; repeatable?: boolean };
 
 export function asiLevelsForClass(className: string) {
   if (className === "fighter") return [4, 6, 8, 12, 14, 16, 19];
@@ -442,7 +443,7 @@ export function asiLevelsForClass(className: string) {
   return [4, 8, 12, 16, 19];
 }
 
-export const feats: FeatOption[] = [
+const legacyFeats: FeatOption[] = [
   { id: "asi", name: "Увеличение характеристик", source: "PHB", description: "+2 к одной характеристике или +1 к двум (максимум 20)." },
   { id: "alert", name: "Бдительный", source: "PHB", description: "+5 к инициативе, нельзя застать врасплох, скрытые враги не получают преимущество." },
   { id: "athlete", name: "Атлет", source: "PHB", description: "+1 к выбранной Силе или Ловкости (не выше 20). Вставание из лежачего положения тратит 5 футов движения, лазание не требует дополнительного движения, а разбег для прыжка сокращается до 5 футов." },
@@ -473,16 +474,29 @@ export const feats: FeatOption[] = [
   { id: "fey-touched", name: "Касание фей", source: "TCE", description: "+1 к ментальной характеристике, Туманный шаг и одно заклинание прорицания/очарования." },
   { id: "shadow-touched", name: "Касание тени", source: "TCE", description: "+1 к ментальной характеристике, Невидимость и одно заклинание иллюзии/некромантии." },
   { id: "telekinetic", name: "Телекинетик", source: "TCE", description: "+1 к ментальной характеристике, Волшебная рука и телекинетический толчок." },
+  { id: "skill-expert", name: "Эксперт в навыке", source: "TCE", description: "+1 к выбранной характеристике, владение одним навыком и компетентность в одном навыке, которым персонаж уже владеет." },
+];
+
+export const feats: FeatOption[] = [
+  legacyFeats[0],
+  ...generatedFeats.map(documented => {
+    const legacy = legacyFeats.find(feat => feat.id === documented.id);
+    return {
+      ...documented,
+      requirement: documented.requirement || legacy?.requirement,
+      abilityOptions: documented.abilityOptions as AbilityKey[],
+    };
+  }),
 ];
 
 const recommendations: Record<string, string[]> = {
-  bard: ["vicious", "minorillusion", "healingword", "dissonant-whispers", "faerie-fire", "command", "invisibility", "suggestion", "aid", "mirror-image", "hypnotic-pattern", "dispel-magic", "slow", "mass-healing-word", "dimensiondoor", "greaterinvisibility", "heroes-feast"],
-  cleric: ["guidance", "sacred-flame", "spare-the-dying", "bless", "healingword", "guiding-bolt", "spiritual-weapon", "lesser-restoration", "spiritguardians", "revivify", "aura-of-vitality", "death-ward", "guardian-of-faith", "greaterrestoration", "heal", "sunbeam", "sunburst"],
-  druid: ["guidance", "thorn-whip", "produce-flame", "entangle", "goodberry", "healingword", "pass", "spike-growth", "call-lightning", "conjure-animals", "revivify", "summonfey", "polymorph", "fire-shield", "coneofcold", "heal"],
+  bard: ["vicious", "minorillusion", "healingword", "dissonant-whispers", "faerie-fire", "command", "invisibility", "suggestion", "aid", "mirror-image", "hypnotic-pattern", "dispel-magic", "slow", "mass-healing-word", "dimensiondoor", "greaterinvisibility", "heroes-feast", "foresight"],
+  cleric: ["guidance", "sacred-flame", "spare-the-dying", "bless", "healingword", "guiding-bolt", "spiritual-weapon", "lesser-restoration", "spiritguardians", "revivify", "aura-of-vitality", "death-ward", "guardian-of-faith", "greaterrestoration", "heal", "sunbeam", "sunburst", "mass-heal", "trueResurrection"],
+  druid: ["guidance", "thorn-whip", "produce-flame", "entangle", "goodberry", "healingword", "pass", "spike-growth", "call-lightning", "conjure-animals", "revivify", "summonfey", "polymorph", "fire-shield", "coneofcold", "heal", "shapechange", "trueResurrection"],
   paladin: ["bless", "curewounds", "command", "find-steed", "lesser-restoration", "branding-smite", "warding-bond", "revivify", "aura-of-vitality", "banishment", "death-ward", "circle-of-power"],
   ranger: ["hunters-mark", "goodberry", "absorb", "entangle", "searing-smite", "pass", "spike-growth", "lesser-restoration", "aid", "conjure-animals", "revivify", "protection-from-energy", "dominate-beast", "greaterrestoration"],
   sorcerer: ["firebolt", "mind-sliver", "minorillusion", "mage-hand", "shield", "magic-missile", "absorb", "grease", "mistystep", "scorching-ray", "flaming-sphere", "fireball", "counterspell", "haste", "vampiric-touch", "polymorph", "greaterinvisibility", "fire-shield", "coneofcold", "disintegrate", "demiplane", "meteor"],
-  warlock: ["eldritch", "minorillusion", "mind-sliver", "armoragathys", "hex", "charm-person", "mistystep", "holdperson", "counterspell", "fly", "summonfey", "banishment", "shadowmoil", "hold-monster", "forcecage", "gate"],
+  warlock: ["eldritch", "minorillusion", "mind-sliver", "armoragathys", "hex", "charm-person", "mistystep", "holdperson", "counterspell", "fly", "summonfey", "banishment", "shadowmoil", "hold-monster", "forcecage", "foresight", "power-word-kill"],
   wizard: ["firebolt", "mage-hand", "minorillusion", "prestidigitation", "shield", "magic-missile", "findfamiliar", "detectmagic", "mage-armor", "absorb", "feather-fall", "silvery", "mistystep", "web", "invisibility", "mirror-image", "suggestion", "fireball", "counterspell", "hypnotic-pattern", "dispel-magic", "haste", "fly", "leomunds-tiny-hut", "polymorph", "dimensiondoor", "greaterinvisibility", "banishment", "arcane-eye", "wallforce", "animate-objects", "telekinesis", "globe-invulnerability", "forcecage", "simulacrum", "maze", "wish"],
   artificer: ["guidance", "mending", "firebolt", "curewounds", "faerie-fire", "absorb", "detectmagic", "aid", "enhanceability", "web", "dispel-magic", "revivify", "arcane-eye", "greaterrestoration"],
 };
@@ -604,13 +618,85 @@ export function optimalPreparedSpellIds(character: ExportCharacter, catalog: Cat
   const rule = spellSelectionRule(character);
   if (rule.mode !== "spellbook" || !rule.prepared) return [];
   const selected = new Set(selectedSpellIds);
-  return rankedSpellCatalog(character, catalog)
-    .filter(spell => spell.level > 0 && selected.has(spell.id))
-    .slice(0, rule.prepared)
-    .map(spell => spell.id);
+  const ranked = rankedSpellCatalog(character, catalog).filter(spell => spell.level > 0 && selected.has(spell.id));
+  const byLevel = Array.from({ length: rule.maxLevel + 1 }, (_, level) => ranked.filter(spell => spell.level === level));
+  const targets = Array.from({ length: rule.maxLevel + 1 }, () => 0);
+  let remaining = Math.min(rule.prepared, ranked.length);
+
+  // A useful high-level prepared list must actually contain answers from every
+  // accessible circle. Reserve one choice from the highest circles first;
+  // then distribute the rest according to available slots and current density.
+  for (let level = rule.maxLevel; level >= 1 && remaining > 0; level -= 1) {
+    if (byLevel[level].length) {
+      targets[level] += 1;
+      remaining -= 1;
+    }
+  }
+  while (remaining > 0) {
+    const candidates = byLevel
+      .map((available, level) => ({ level, available: available.length }))
+      .filter(({ level, available }) => level > 0 && targets[level] < available)
+      .sort((left, right) => {
+        const leftWeight = (rule.slots[left.level - 1] || 1) / (targets[left.level] + 1);
+        const rightWeight = (rule.slots[right.level - 1] || 1) / (targets[right.level] + 1);
+        return rightWeight - leftWeight || right.level - left.level;
+      });
+    if (!candidates.length) break;
+    targets[candidates[0].level] += 1;
+    remaining -= 1;
+  }
+  return targets.flatMap((count, level) => byLevel[level].slice(0, count).map(spell => spell.id));
 }
 
 export const pointBuyCost: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
 export function pointBuySpent(scores: AbilityScores) {
   return (Object.values(scores) as number[]).reduce((total, score) => total + (pointBuyCost[Math.max(8, Math.min(15, score))] ?? 0), 0);
+}
+
+const legalPointBuyBuilds: AbilityScores[] = [];
+for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) for (let con = 8; con <= 15; con += 1)
+  for (let int = 8; int <= 15; int += 1) for (let wis = 8; wis <= 15; wis += 1) for (let cha = 8; cha <= 15; cha += 1) {
+    const abilities = { str, dex, con, int, wis, cha };
+    if (pointBuySpent(abilities) === 27) legalPointBuyBuilds.push(abilities);
+  }
+
+const physicalPrimary: Record<string, AbilityKey> = {
+  barbarian: "str", fighter: "str", monk: "dex", paladin: "str", ranger: "dex", rogue: "dex",
+};
+
+function distinctAbilitySelections(count: number, keys: AbilityKey[], prefix: AbilityKey[] = []): AbilityKey[][] {
+  if (!count) return [prefix];
+  return keys.flatMap((key, index) => distinctAbilitySelections(count - 1, keys.slice(index + 1), [...prefix, key]));
+}
+
+/** Returns a legal 27-point build together with flexible racial bonus choices. */
+export function optimalAbilityBuild(character: Pick<ExportCharacter, "race" | "raceVariant" | "className">) {
+  const variant = selectedRaceVariant(character.race, character.raceVariant);
+  const keys = Object.keys(pointBuyCost).length ? (["str", "dex", "con", "int", "wis", "cha"] as AbilityKey[]) : [];
+  const flexible = variant?.chooseBonuses;
+  const eligible = keys.filter(key => !flexible?.exclude?.includes(key));
+  const raceChoices = flexible ? distinctAbilitySelections(flexible.count, eligible) : [[]];
+  const fixed = Object.fromEntries(keys.map(key => [key, variant?.bonuses?.[key] || 0])) as AbilityScores;
+  const spellPrimary = classRules[character.className]?.spellAbility as AbilityKey | undefined;
+  const primary = spellPrimary || physicalPrimary[character.className] || "con";
+  const heavyArmor = /все доспехи|тяж[её]л/i.test(classRules[character.className]?.armor || "");
+  const second: AbilityKey = !heavyArmor && primary !== "dex" ? "dex" : primary === "str" ? "con" : "str";
+  const third: AbilityKey = primary === "con" || second === "con" ? "wis" : "con";
+  let best: { score: number; abilities: AbilityScores; raceAbilityChoices: AbilityKey[] } | null = null;
+
+  for (const chosen of raceChoices) {
+    const bonuses = { ...fixed };
+    chosen.forEach((key, index) => { bonuses[key] += flexible?.amounts?.[index] ?? flexible?.amount ?? 0; });
+    for (const abilities of legalPointBuyBuilds) {
+        const final = Object.fromEntries(keys.map(key => [key, abilities[key] + bonuses[key]])) as AbilityScores;
+        const oddPenalty = keys.reduce((sum, key) => sum + (final[key] % 2 ? (final[key] === 15 || final[key] === 17 ? 140 : 70) : 0), 0);
+        const conFloorPenalty = final.con < 14 ? (14 - final.con) * 90 : 0;
+        const lowDexPenalty = !heavyArmor && final.dex < 14 ? (14 - final.dex) * 45 : 0;
+        const score = final[primary] * 150 + final[second] * 55 + final[third] * 38
+          + keys.reduce((sum, key) => sum + Math.floor((final[key] - 10) / 2) * 3, 0)
+          - oddPenalty - conFloorPenalty - lowDexPenalty;
+        if (!best || score > best.score) best = { score, abilities, raceAbilityChoices: chosen };
+    }
+  }
+  return best || { score: 0, abilities: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 }, raceAbilityChoices: [] };
 }

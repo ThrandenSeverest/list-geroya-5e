@@ -71,19 +71,20 @@ type CantripDefinition = {
   dice: string;
   mode: "attack" | "save";
   save?: AbilityKey;
+  damageType?: "Кислота" | "Холод" | "Огонь" | "Электричество" | "Звук";
   note?: string;
 };
 
 const damagingCantrips: Record<string, CantripDefinition> = {
-  "acid-splash": { dice: "d6", mode: "save", save: "dex" },
-  firebolt: { dice: "d10", mode: "attack" },
+  "acid-splash": { dice: "d6", mode: "save", save: "dex", damageType: "Кислота" },
+  firebolt: { dice: "d10", mode: "attack", damageType: "Огонь" },
   vicious: { dice: "d4", mode: "save", save: "wis", note: "При провале цель получает помеху на следующую атаку." },
   eldritch: { dice: "d10", mode: "attack", note: "На 5, 11 и 17 уровнях создаёт соответственно 2, 3 и 4 отдельных луча." },
-  "ray-of-frost": { dice: "d8", mode: "attack", note: "Скорость цели уменьшается на 10 футов до начала вашего следующего хода." },
+  "ray-of-frost": { dice: "d8", mode: "attack", damageType: "Холод", note: "Скорость цели уменьшается на 10 футов до начала вашего следующего хода." },
   "sacred-flame": { dice: "d8", mode: "save", save: "dex", note: "Цель не получает бонус от укрытия к спасброску." },
-  "shocking-grasp": { dice: "d8", mode: "attack", note: "При попадании цель не может совершать реакции до начала своего следующего хода." },
+  "shocking-grasp": { dice: "d8", mode: "attack", damageType: "Электричество", note: "При попадании цель не может совершать реакции до начала своего следующего хода." },
   "thorn-whip": { dice: "d6", mode: "attack", note: "Большую или меньшую цель можно подтянуть на 10 футов." },
-  "produce-flame": { dice: "d8", mode: "attack" },
+  "produce-flame": { dice: "d8", mode: "attack", damageType: "Огонь" },
   "toll-the-dead": { dice: "d8", mode: "save", save: "wis", note: "Если у цели не все хиты, используется d12 вместо d8." },
   "mind-sliver": { dice: "d6", mode: "save", save: "int", note: "Цель вычитает 1d4 из следующего спасброска до конца вашего следующего хода." },
   "word-radiance": { dice: "d6", mode: "save", save: "con" },
@@ -146,6 +147,11 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
   const spellMod = abilityModifier(character.abilities[spellAbility]);
   const saveDc = 8 + prof + spellMod;
   const diceCount = cantripDiceCount(character.level);
+  const elementalAdeptTypes = new Set(
+    (character.advancements || [])
+      .filter(choice => choice.featId === "elemental-adept")
+      .flatMap(choice => choice.featChoices?.element || []),
+  );
   const chosenCantrips = character.spells
     .map(id => spells.find(spell => spell.id === id && spell.level === 0))
     .filter(Boolean) as CatalogSpell[];
@@ -154,6 +160,9 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     if (!definition) return [];
     const agonizing = spell.id === "eldritch" && (character.classChoices?.invocations || []).includes("agonizing-blast");
     const damageBonus = agonizing ? spellMod * diceCount : 0;
+    const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType)
+      ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.`
+      : "";
     return [{
       id: `cantrip-${spell.id}`,
       name: spell.name,
@@ -165,7 +174,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       attackBonusExtra: 0,
       damageFormula: `${diceCount}${definition.dice}${agonizing ? `+[CHA]*${diceCount}` : ""}`,
       damageDisplay: `${diceCount}${definition.dice}${damageBonus ? signed(damageBonus) : ""}`,
-      note: definition.note,
+      note: [definition.note, elementalAdept].filter(Boolean).join(" ") || undefined,
     }];
   });
 

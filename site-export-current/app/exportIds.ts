@@ -1,9 +1,13 @@
+import { documentSpells } from "./generatedSpellCatalog";
+import { verifiedHelpmateSpellIds } from "./helpmateSpellMap";
+
 /**
  * DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
  * LSS text blocks also need a stable public URL for every selected spell.
  */
 const dndSpellRefs: Readonly<Record<string, readonly [string, string]>> = {
   "acid-splash": ["13", "acid_splash"],
+  "chill-touch": ["140", "chill_touch"],
   "firebolt": ["204", "fire_bolt"],
   "guidance": ["105", "guidance"],
   "minorillusion": ["154", "minor_illusion"],
@@ -80,6 +84,7 @@ const dndSpellRefs: Readonly<Record<string, readonly [string, string]>> = {
   "bane": ["254", "bane"],
   "burning-hands": ["203", "burning_hands"],
   "charm-person": ["221", "charm_person"],
+  "chromatic-orb": ["86", "chromatic_orb"],
   "command": ["276", "command"],
   "comprehend-languages": ["252", "comprehend_languages"],
   "disguise-self": ["157", "disguise_self"],
@@ -97,6 +102,7 @@ const dndSpellRefs: Readonly<Record<string, readonly [string, string]>> = {
   "hunters-mark": ["164", "hunter_s_mark"],
   "identify": ["210", "identify"],
   "inflict-wounds": ["177", "inflict_wounds"],
+  "longstrider": ["316", "longstrider"],
   "mage-armor": ["60", "mage_armor"],
   "magic-missile": ["27", "magic_missile"],
   "protection-evil-good": ["99", "protection_from_evil_and_good"],
@@ -229,16 +235,71 @@ const dndSpellRefs: Readonly<Record<string, readonly [string, string]>> = {
   "fire-shield": ["206", "fire_shield"],
 };
 
-export const helpmateSpellIds: Readonly<Record<string, string>> = Object.freeze(
-  Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [id, number])),
-);
+export const helpmateSpellIds = verifiedHelpmateSpellIds;
 
 export function helpmateSpellId(id: string) {
-  const mapped = helpmateSpellIds[id];
-  return mapped && /^\d+$/.test(mapped) ? mapped : null;
+  return helpmateSpellIds[id] || null;
+}
+
+export function compatibleWithHelpmate(id: string) {
+  return helpmateSpellId(id) !== null;
 }
 
 export function dndSpellUrl(id: string) {
   const reference = dndSpellRefs[id];
-  return reference ? "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/" : null;
+  if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
+  return documentSpells.find(spell => spell.id === id)?.url || null;
+}
+
+const spellIdByDndNumber: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])),
+);
+
+const normalizeSpellName = (value: string) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
+const documentSpellIdByName: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(documentSpells.flatMap(spell => {
+    const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
+    return [spell.name, searchName].filter(Boolean).map(name => [normalizeSpellName(name as string), spell.id]);
+  })),
+);
+
+/**
+ * LSS uses the public dnd.su page as the stable source reference for a spell.
+ * Accept absolute/relative links and ignore the mutable transliterated suffix:
+ * the numeric dnd.su page id is the canonical part shared with our catalog.
+ */
+export function spellIdFromDndUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
+  if (match) return spellIdByDndNumber[match[1]] || null;
+  try {
+    const parsed = new URL(value, "https://dnd.su");
+    const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
+    return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Compact LSS exports keep only private card ObjectIds. This cache is keyed to
+ * the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
+ * URL-bearing card objects never need this fallback.
+ */
+const lssCardDndNumbers: Readonly<Record<string, string>> = Object.freeze({
+  "65d3c169f3d820fa1add429e": "140", // Леденящее прикосновение
+  "65d3c168f3d820fa1add425f": "204", // Огненный снаряд
+  "65d3c170f3d820fa1add4759": "258", // Починка
+  "65d3c16af3d820fa1add434d": "60",  // Доспехи мага
+  "65d3c16df3d820fa1add45f4": "221", // Очарование личности
+  "65d3c16af3d820fa1add437e": "98",  // Усыпление
+  "65d3c172f3d820fa1add48b7": "183", // Невидимость
+  "65d3c16ef3d820fa1add465d": "103", // Улучшение характеристики
+  "65d3c16df3d820fa1add4561": "44",  // Гипнотический узор
+  "65d3c171f3d820fa1add47ec": "109", // Ужас
+});
+
+export function spellIdFromLssCardId(cardId: string) {
+  const number = lssCardDndNumbers[cardId];
+  return number ? spellIdByDndNumber[number] || null : null;
 }

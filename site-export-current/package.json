@@ -1,6 +1,6 @@
 {
   "name": "list-geroya-5e",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -10,7 +10,7 @@
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
     "build": "bash scripts/build-verified.sh",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "npm run build && node --experimental-loader ./scripts/cloudflare-validation-loader.mjs --no-warnings --test tests/rendered-html.test.mjs",
     "test:exports": "esbuild tests/export-structure.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-export-test.mjs && node /tmp/list-geroya-export-test.mjs",
     "test:rules": "esbuild tests/racial-bonuses.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-rules-test.mjs && node --test /tmp/list-geroya-rules-test.mjs",
     "test:advancements": "esbuild tests/advancement-levels.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-advancement-test.mjs && node --test /tmp/list-geroya-advancement-test.mjs",
@@ -18,9 +18,18 @@
     "test:creation": "esbuild tests/creation-rules.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-creation-test.mjs && node --test /tmp/list-geroya-creation-test.mjs",
     "test:imports": "esbuild tests/character-files.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-import-test.mjs && node /tmp/list-geroya-import-test.mjs",
     "test:feat-armor": "esbuild tests/feat-armor.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-feat-armor-test.mjs && node --test /tmp/list-geroya-feat-armor-test.mjs",
+    "test:pdf": "esbuild tests/pdf-sheet.test.tsx --bundle --platform=node --format=cjs --outfile=/tmp/list-geroya-pdf-test.cjs && node /tmp/list-geroya-pdf-test.cjs",
+    "test:background-currency": "esbuild tests/background-currency.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-background-currency-test.mjs && node /tmp/list-geroya-background-currency-test.mjs",
+    "test:resources": "esbuild tests/character-resources.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-resources-test.mjs && node /tmp/list-geroya-resources-test.mjs",
+    "test:auth": "esbuild tests/auth.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-auth-test.mjs && node --test /tmp/list-geroya-auth-test.mjs",
+    "test:mobile": "esbuild tests/mobile-sheet.test.ts --bundle --platform=node --format=esm --outfile=/tmp/list-geroya-mobile-test.mjs && node --test /tmp/list-geroya-mobile-test.mjs",
+    "test:release": "npm run test:auth && npm run test:mobile && npm run test:resources && npm run test:pdf && npm run test:imports",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
-    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
+    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply list-geroya-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply list-geroya-db --remote",
+    "deploy:cloudflare": "wrangler deploy"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",

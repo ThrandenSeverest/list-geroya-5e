@@ -13,11 +13,16 @@ export type CatalogSpell = CatalogOption & {
   classes: string[];
   ritual?: boolean;
   url?: string;
+  castingTime?: string;
+  range?: string;
+  components?: string;
+  duration?: string;
 };
 
 import { expandedSpells } from "./spellData";
+import { documentSpells } from "./generatedSpellCatalog";
 
-export const officialSources = ["PHB", "SCAG", "VGM", "XGE", "MTF", "GGR", "ERLW", "MOT", "TCE", "VRGR", "FTD", "WBW", "SCC", "MPMM", "SAS", "COS", "POA", "AI", "SDQ", "OGA"];
+export const officialSources = ["PHB", "SCAG", "VGM", "XGE", "MTF", "GGR", "ERLW", "MOT", "TCE", "VRGR", "FTD", "EGW", "IDRotF", "WBW", "SCC", "MPMM", "SAS", "PAM", "BMT", "COS", "POA", "AI", "SDQ", "OGA"];
 
 export const coreRaceIds = new Set(["human", "dwarf", "elf", "halfling", "dragonborn", "gnome", "halfelf", "halforc", "tiefling"]);
 export function isExoticRace(id: string) { return !coreRaceIds.has(id); }
@@ -146,7 +151,7 @@ export const classSkillRules: Record<string,{count:number;skills:string[]}> = {
 };
 
 const S = (id:string,name:string,source:string,level:number,school:string,classes:string[],description:string,ritual=false):CatalogSpell=>({id,name,source,level,school,classes,description,ritual});
-export const spells: CatalogSpell[] = [
+const legacySpells: CatalogSpell[] = [
   S("acid-splash","Брызги кислоты","PHB",0,"Вызов",["sorcerer","wizard","artificer"],"Кислота поражает одну или две близкие цели."),
   S("firebolt","Огненный снаряд","PHB",0,"Воплощение",["sorcerer","wizard","artificer"],"Дальнобойная огненная атака, растущая с уровнем."),
   S("guidance","Указание","PHB",0,"Прорицание",["cleric","druid","artificer"],"Кратко помогает союзнику в проверке."),
@@ -205,4 +210,19 @@ export const spells: CatalogSpell[] = [
   S("trueResurrection","Истинное воскрешение","PHB",9,"Некромантия",["cleric","druid"],"Возвращает умершего к жизни в новом теле."),
   S("wish","Исполнение желаний","PHB",9,"Вызов",["sorcerer","wizard"],"Вершина смертной магии: повторяет магию или меняет реальность."),
   ...expandedSpells,
+];
+
+// The imported Russian catalog is authoritative for titles and mechanics. Its
+// records reuse our stable ids, so imports/recommendations keep working while
+// the visible spell data is refreshed from the user's reference document.
+// Existing class arrays stay authoritative because they encode optional-list
+// gates (for example Tasha additions must not become baseline class spells).
+const legacySpellsById = new Map(legacySpells.map(spell => [spell.id, spell]));
+const documentSpellIds = new Set(documentSpells.map(spell => spell.id));
+export const spells: CatalogSpell[] = [
+  ...documentSpells.map(spell => {
+    const legacy = legacySpellsById.get(spell.id);
+    return legacy ? { ...spell, classes: legacy.classes } : spell;
+  }),
+  ...legacySpells.filter(spell => !documentSpellIds.has(spell.id)),
 ];

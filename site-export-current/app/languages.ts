@@ -48,5 +48,6 @@ export function languageRule(character: Pick<ExportCharacter, "race" | "raceVari
 
 export function characterLanguages(character: ExportCharacter) {
   const rule = languageRule(character);
-  return [...new Set([...rule.fixed, ...(character.languages || []).slice(0, rule.choices)])];
+  const featLanguages = (character.advancements || []).flatMap(choice => choice.featChoices?.languages || []);
+  return [...new Set([...rule.fixed, ...(character.languages || []).slice(0, rule.choices), ...featLanguages])];
 }
