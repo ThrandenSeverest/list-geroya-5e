@@ -219,6 +219,7 @@ button { color: inherit; }
 .spell-list { display: grid; gap: 10px; }
 .multiclass-panel { grid-column: 1 / -1; padding: 18px; border: 1px solid var(--line); background: var(--panel); }
 .multiclass-panel > p { margin: 5px 0 14px; color: var(--muted); }
+.reset-multiclass { margin: 0 0 14px; border-color: #a14a3f; color: #ffd4c9; }
 .multiclass-class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(235px, 1fr)); gap: 10px; }
 .multiclass-class-card { padding: 13px; border: 1px solid var(--line); background: rgba(0,0,0,.12); }
 .multiclass-class-card > small, .multiclass-skill-choice > small { color: var(--teal); }
