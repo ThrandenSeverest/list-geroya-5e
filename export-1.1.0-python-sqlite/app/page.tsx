@@ -1318,14 +1318,33 @@ function Builder() {
     const safe = migrateMulticlassCharacter(current);
     const classes = orderedCharacterClasses(safe);
     const entry = classes.find(item => item.classId === classId);
-    if (!entry || (delta > 0 && characterLevel(safe) >= 20) || (delta < 0 && entry.level <= 1)) return safe;
+    if (!entry || (delta > 0 && characterLevel(safe) >= 20)) return safe;
+    // A character must retain their starting class, but a secondary class at
+    // level 1 can be removed completely when its most recent level is undone.
+    if (delta < 0 && entry.level <= 1 && classId === safe.startingClassId) return safe;
     if (delta < 0 && safe.levelHistory?.[safe.levelHistory.length - 1]?.classId !== classId) return safe;
+    if (delta < 0 && entry.level === 1) {
+      const nextBase = migrateMulticlassCharacter({
+        ...safe,
+        classes: classes.filter(item => item.classId !== classId),
+        levelHistory: (safe.levelHistory || []).slice(0, -1),
+        level: characterLevel(safe) - 1,
+        spells: [],
+        preparedSpells: [],
+        spellGrants: [],
+        spellSlotsUsed: [],
+        pactSlotsUsed: 0,
+        resourceSpent: {},
+      });
+      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+      return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
+    }
     const nextLevel = entry.level + delta;
     const nextClasses = classes.map(item => item.classId === classId ? { ...item, level: nextLevel } : item);
     const nextHistory = delta > 0
       ? [...(safe.levelHistory || []), { characterLevel: characterLevel(safe) + 1, classId, classLevelAfter: nextLevel }]
       : (safe.levelHistory || []).slice(0, -1);
-    const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
+    const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], spellGrants: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
     const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
     return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
   }
@@ -1342,6 +1361,30 @@ function Builder() {
         level: nextLevel,
         spells: [], preparedSpells: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {},
       });
+    });
+  }
+
+  function resetMulticlass() {
+    setCharacter(current => {
+      const safe = migrateMulticlassCharacter(current);
+      const totalLevel = characterLevel(safe);
+      const startingClassId = safe.startingClassId || safe.className;
+      const starting = orderedCharacterClasses(safe).find(entry => entry.classId === startingClassId);
+      if (!starting || orderedCharacterClasses(safe).length <= 1) return safe;
+      const nextBase = migrateMulticlassCharacter({
+        ...safe,
+        classes: [{ ...starting, level: totalLevel, acquiredAtCharacterLevel: 1 }],
+        levelHistory: Array.from({ length: totalLevel }, (_, index) => ({ characterLevel: index + 1, classId: startingClassId, classLevelAfter: index + 1 })),
+        level: totalLevel,
+        spells: [],
+        preparedSpells: [],
+        spellGrants: [],
+        spellSlotsUsed: [],
+        pactSlotsUsed: 0,
+        resourceSpent: {},
+      });
+      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+      return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
     });
   }
 
@@ -2365,6 +2408,7 @@ function Builder() {
               <section className="multiclass-panel">
                 <div className="ability-editor-head"><div><small>Правила D&D 5e 2014 / Legacy</small><h2>Классы персонажа</h2></div><span>{characterLevel(character)} / 20</span></div>
                 <p>Стартовый класс сохраняет спасброски и полные стартовые владения. Последующие классы дают только владения мультиклассирования.</p>
+                {multiclassEntries.length > 1 && <button className="reset-multiclass" onClick={resetMulticlass}>Сбросить мультикласс</button>}
                 <div className="multiclass-class-grid">
                   {multiclassEntries.map(entry => {
                     const option = classes.find(item => item.id === entry.classId);
@@ -2375,7 +2419,7 @@ function Builder() {
                     return <article key={entry.classId} className="multiclass-class-card">
                       <small>{entry.classId === character.startingClassId ? "Стартовый класс" : `Получен на ${entry.acquiredAtCharacterLevel}-м общем уровне`}</small>
                       <h3>{option?.name || entry.classId} <span>{entry.level}</span></h3>
-                      <div className="multiclass-level-actions"><button disabled={entry.level <= 1 || !isLastLevel} title={!isLastLevel ? "Уровни можно откатывать только в обратном порядке" : "Убрать последний уровень этого класса"} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, -1))}>−</button><button disabled={characterLevel(character) >= 20} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, 1))}>+1 уровень</button></div>
+                      <div className="multiclass-level-actions"><button disabled={!isLastLevel || (entry.level <= 1 && entry.classId === character.startingClassId)} title={!isLastLevel ? "Уровни можно откатывать только в обратном порядке" : entry.level === 1 ? "Убрать класс и его единственный уровень" : "Убрать последний уровень этого класса"} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, -1))}>−</button><button disabled={characterLevel(character) >= 20} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, 1))}>+1 уровень</button></div>
                       {entry.classId !== character.startingClassId && secondarySkillCount > 0 && <div className="multiclass-skill-choice"><small>Навыки при входе в класс: {classSkills.length} / {secondarySkillCount}</small><div>{skillRule.skills.map(skill => <button key={skill} className={classSkills.includes(skill) ? "selected" : ""} onClick={() => toggleMulticlassClassSkill(entry.classId, skill)}>{classSkills.includes(skill) ? "✓ " : "+ "}{skill}</button>)}</div></div>}
                     </article>;
                   })}
