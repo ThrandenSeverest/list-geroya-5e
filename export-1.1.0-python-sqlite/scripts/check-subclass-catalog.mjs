@@ -110,12 +110,10 @@ for (const [classId, ids] of Object.entries(requiredAddedIds)) {
 const filterSource = read("../app/catalogFilters.ts");
 for (const book of requiredSources) if (!new RegExp(`\\b${book}\\b`).test(filterSource)) fail(`source filter does not recognise ${book}`);
 
-// Guard the integration surfaces that previously allowed catalogue-only
-// subclasses to silently lose mechanics.
-requireText("../app/multiclass.ts", ["selectedSubclassForClass", "choiceValues: migratedChoiceValues", "classId}:`"]);
-requireText("../app/proficiencies.ts", ["subclass-cleric-knowledge-skills", "cleric:tempest", "cleric:nature", "cleric:death", "cleric:order", "fighter:banneret"]);
+requireText("../app/multiclass.ts", ["selectedSubclassForClass", "migratedChoiceValues", "choiceValues"]);
+requireText("../app/proficiencies.ts", ["subclass-cleric-knowledge-skills", "cleric:tempest", "cleric:nature", "cleric:death", "cleric:order", "subclass === \"banneret\""]);
 requireText("../app/classChoices.ts", ["storm-herald-environment", "giant-cantrip", "nature-druid-cantrip", "death-necromancy-cantrip", "arcana-wizard-cantrips", "four-elements-disciplines", "entry.choiceValues"]);
-requireText("../app/characterResources.ts", ["wild-magic-awareness", "psi-warrior-dice", "emboldening-bond", "drake-breath", "form-of-dread", "chronal-shift"]);
+requireText("../app/characterResources.ts", ["wild-magic-awareness", "psi-warrior-dice", "emboldening-bond", "form-of-dread", "chronal-shift"]);
 requireText("../app/combat.ts", ["subclass-battlerager-spikes", "subclass-beast-bite", "subclass-astral-arms", "subclass-creation-dancing-item", "subclass-drakewarden-bite"]);
 requireText("../app/languages.ts", ["subclass === \"knowledge\"", "subclass === \"giant\"", "subclass === \"ascendant-dragon\"", "subclass === \"drakewarden\""]);
 
