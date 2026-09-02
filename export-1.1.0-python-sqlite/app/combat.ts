@@ -2,6 +2,7 @@ import type { CatalogSpell } from "./catalog";
 import { selectedEquipment } from "./equipment";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
 import { classRules } from "./rules";
+import { characterLevel, orderedCharacterClasses } from "./multiclass";
 
 type AbilityKey = keyof AbilityScores;
 
@@ -11,7 +12,7 @@ const proficiencyBonus = (level: number) => 2 + Math.floor((Math.max(1, level) -
 export type CharacterAttack = {
   id: string;
   name: string;
-  kind: "weapon" | "cantrip";
+  kind: "weapon" | "cantrip" | "feature";
   ability: AbilityKey;
   proficient: boolean;
   attackBonus?: number;
@@ -107,15 +108,95 @@ function cantripDiceCount(level: number) {
   return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
 }
 
+function monkMartialDie(level: number) {
+  if (level >= 17) return "1d10";
+  if (level >= 11) return "1d8";
+  if (level >= 5) return "1d6";
+  return "1d4";
+}
+
 function weaponAbility(definition: WeaponDefinition, character: ExportCharacter): AbilityKey {
   if (definition.ranged) return "dex";
   if (definition.finesse && character.abilities.dex > character.abilities.str) return "dex";
   return "str";
 }
 
+function subclassAttacks(character: ExportCharacter, prof: number): CharacterAttack[] {
+  const result: CharacterAttack[] = [];
+  const add = (attack: CharacterAttack) => result.push(attack);
+  const attack = (id: string, name: string, ability: AbilityKey, dice: string, note: string, damageBonus: number | string = abilityModifier(character.abilities[ability])) => {
+    const abilityMod = abilityModifier(character.abilities[ability]);
+    const bonus = typeof damageBonus === "number" ? damageBonus : 0;
+    add({
+      id,
+      name,
+      kind: "feature",
+      ability,
+      proficient: true,
+      attackBonus: prof + abilityMod,
+      attackBonusExtra: 0,
+      damageFormula: `${dice}+${typeof damageBonus === "string" ? damageBonus : `[${ability.toUpperCase()}]`}`,
+      damageDisplay: `${dice}${typeof damageBonus === "number" && bonus ? signed(bonus) : ""}`,
+      note,
+    });
+  };
+
+  for (const entry of orderedCharacterClasses(character)) {
+    const subclass = entry.subclassId || "";
+    if (entry.classId === "barbarian" && subclass === "battlerager" && entry.level >= 3) {
+      attack("subclass-battlerager-spikes", "Шипы доспеха", "str", "1d4", "Доступно только в шипованном доспехе и во время ярости; атака выполняется бонусным действием.");
+    }
+    if (entry.classId === "barbarian" && subclass === "beast" && entry.level >= 3) {
+      attack("subclass-beast-bite", "Форма зверя: Укус", "str", "1d8", "Временное природное оружие только во время ярости; раз за ход при хп ниже половины попадание может восстановить хиты в размере БМ.");
+      attack("subclass-beast-claws", "Форма зверя: Когти", "str", "1d6", "Временное природное оружие только во время ярости; раз за ход после атаки когтем можно сделать ещё одну атаку когтем.");
+      attack("subclass-beast-tail", "Форма зверя: Хвост", "str", "1d8", "Временное природное оружие только во время ярости; досягаемость 10 футов, реакцией может повысить КД против одной атаки.");
+    }
+    if (entry.classId === "monk" && subclass === "astral-self" && entry.level >= 3) {
+      const die = monkMartialDie(entry.level);
+      attack("subclass-astral-arms", "Руки астрального тела", "wis", die, "Только пока проявлены астральные руки: силовой урон, +5 футов досягаемости в свой ход, для атаки и урона используется Мудрость.");
+    }
+    if (entry.classId === "bard" && subclass === "creation" && entry.level >= 6) {
+      const abilityMod = abilityModifier(character.abilities.cha);
+      add({
+        id: "subclass-creation-dancing-item",
+        name: "Оживлённый предмет: Силовой удар",
+        kind: "feature",
+        ability: "cha",
+        proficient: true,
+        attackBonus: prof + abilityMod,
+        attackBonusExtra: 0,
+        damageFormula: "1d10+[PB]",
+        damageDisplay: `1d10${signed(prof)}`,
+        note: `Временный спутник Dancing Item. КД 16; хиты ${10 + 5 * entry.level}; атака использует модификатор атаки заклинанием барда.`,
+      });
+    }
+    if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) {
+      const abilityMod = abilityModifier(character.abilities.wis);
+      const extra = entry.level >= 15 ? "2d6" : entry.level >= 7 ? "1d6" : "";
+      add({
+        id: "subclass-drakewarden-bite",
+        name: "Дрейк: Укус",
+        kind: "feature",
+        ability: "wis",
+        proficient: true,
+        attackBonus: prof + abilityMod,
+        attackBonusExtra: 0,
+        damageFormula: `1d6+[PB]${extra ? `+${extra}` : ""}`,
+        damageDisplay: `1d6${signed(prof)}${extra ? ` + ${extra} стихией` : ""}`,
+        note: `Атака временного дрейка; КД ${14 + prof}, хиты ${5 + 5 * entry.level}. Стихийный тип выбирается при каждом призыве.`,
+      });
+    }
+  }
+  return result;
+}
+
 export function characterAttacks(character: ExportCharacter, spells: CatalogSpell[]): CharacterAttack[] {
-  const prof = proficiencyBonus(character.level);
-  const styles = new Set(character.classChoices?.["fighting-style"] || []);
+  const totalLevel = characterLevel(character);
+  const prof = proficiencyBonus(totalLevel);
+  const styles = new Set([
+    ...(character.classChoices?.["fighting-style"] || []),
+    ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.["fighting-style"] || []),
+  ]);
   const equipment = selectedEquipment(character);
   const seenWeapons = new Set<string>();
   const weaponAttacks = equipment.flatMap((item): CharacterAttack[] => {
@@ -142,23 +223,28 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     }];
   });
 
+  const featureAttacks = subclassAttacks(character, prof);
   const spellAbility = classRules[character.className]?.spellAbility as AbilityKey | undefined;
-  if (!spellAbility) return weaponAttacks;
+  if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
   const spellMod = abilityModifier(character.abilities[spellAbility]);
   const saveDc = 8 + prof + spellMod;
-  const diceCount = cantripDiceCount(character.level);
+  const diceCount = cantripDiceCount(totalLevel);
   const elementalAdeptTypes = new Set(
     (character.advancements || [])
       .filter(choice => choice.featId === "elemental-adept")
       .flatMap(choice => choice.featChoices?.element || []),
   );
+  const invocations = new Set([
+    ...(character.classChoices?.invocations || []),
+    ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.invocations || []),
+  ]);
   const chosenCantrips = character.spells
     .map(id => spells.find(spell => spell.id === id && spell.level === 0))
     .filter(Boolean) as CatalogSpell[];
   const cantripAttacks = chosenCantrips.flatMap((spell): CharacterAttack[] => {
     const definition = damagingCantrips[spell.id];
     if (!definition) return [];
-    const agonizing = spell.id === "eldritch" && (character.classChoices?.invocations || []).includes("agonizing-blast");
+    const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
     const damageBonus = agonizing ? spellMod * diceCount : 0;
     const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType)
       ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.`
@@ -178,7 +264,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     }];
   });
 
-  return [...weaponAttacks, ...cantripAttacks];
+  return [...weaponAttacks, ...featureAttacks, ...cantripAttacks];
 }
 
 export function lssWeaponAttacks(attacks: CharacterAttack[]) {
