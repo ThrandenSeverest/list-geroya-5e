@@ -400,7 +400,7 @@ const subclassFlagTable: Record<string, NonNullable<SubclassOption["flags"]>> = 
   "barbarian:battlerager": { settingRestriction: "Forgotten Realms: dwarf" },
 };
 for (const [classId, group] of Object.entries(subclasses)) for (const option of group.options) {
-  const key = \`\${classId}:\${option.id}\`;
+  const key = `${classId}:${option.id}`;
   option.spellGrants = subclassSpellGrantTable[key] || option.spellGrants;
   option.flags = subclassFlagTable[key] || option.flags;
 }
@@ -415,16 +415,18 @@ function spellMatchesRef(spell: CatalogSpell, ref: string) {
 function subclassSpellGrants(character: Pick<ExportCharacter,"className"|"subclass"|"level">) {
   return selectedSubclass(character.className, character.subclass || "")?.spellGrants?.filter(grant => character.level >= grant.level) || [];
 }
-function selectedSubclassSpellChoiceIds(character: ExportCharacter) {
+function selectedSubclassSpellChoiceEntries(character: ExportCharacter) {
   const subclass = character.subclass || "";
   const selected = character.classChoices || {};
-  if (character.className === "barbarian" && subclass === "giant") return selected["giant-cantrip"] || [];
-  if (character.className === "cleric" && subclass === "nature") return selected["nature-druid-cantrip"] || [];
-  if (character.className === "cleric" && subclass === "death") return selected["death-necromancy-cantrip"] || [];
+  const known = (ids: string[]) => ids.map(id => ({ id, mode: "known" as const }));
+  const prepared = (ids: string[]) => ids.map(id => ({ id, mode: "always-prepared" as const }));
+  if (character.className === "barbarian" && subclass === "giant") return known(selected["giant-cantrip"] || []);
+  if (character.className === "cleric" && subclass === "nature") return known(selected["nature-druid-cantrip"] || []);
+  if (character.className === "cleric" && subclass === "death") return known(selected["death-necromancy-cantrip"] || []);
   if (character.className === "cleric" && subclass === "arcana") return [
-    ...(selected["arcana-wizard-cantrips"] || []),
-    ...(selected["arcana-mastery-6"] || []), ...(selected["arcana-mastery-7"] || []),
-    ...(selected["arcana-mastery-8"] || []), ...(selected["arcana-mastery-9"] || []),
+    ...known(selected["arcana-wizard-cantrips"] || []),
+    ...prepared(selected["arcana-mastery-6"] || []), ...prepared(selected["arcana-mastery-7"] || []),
+    ...prepared(selected["arcana-mastery-8"] || []), ...prepared(selected["arcana-mastery-9"] || []),
   ];
   return [];
 }
@@ -704,21 +706,21 @@ function rankedSpellCatalog(character: ExportCharacter, catalog: CatalogSpell[])
   });
 }
 
-export type AlwaysPreparedSpell = { id: string; source: string };
+export type AlwaysPreparedSpell = { id: string; source: string; mode: "always-prepared" | "known" };
 
 export function alwaysPreparedSpellEntries(character: ExportCharacter, catalog: CatalogSpell[]): AlwaysPreparedSpell[] {
   const maximum = spellSelectionRule(character).maxLevel;
   const subclass = selectedSubclass(character.className, character.subclass || "");
-  const entries: AlwaysPreparedSpell[] = (subclass?.alwaysPrepared || []).map(id => ({ id, source: subclass?.name || "Подкласс" }));
+  const entries: AlwaysPreparedSpell[] = (subclass?.alwaysPrepared || []).map(id => ({ id, source: subclass?.name || "Подкласс", mode: "always-prepared" }));
   for (const grant of subclassSpellGrants(character)) {
     if (grant.mode === "expanded") continue;
     for (const ref of grant.refs) {
       const spell = catalog.find(item => spellMatchesRef(item, ref));
-      if (spell) entries.push({ id: spell.id, source: grant.mode === "known" ? `${subclass?.name || "Подкласс"} · автоматически известно` : subclass?.name || "Подкласс" });
+      if (spell) entries.push({ id: spell.id, source: subclass?.name || "Подкласс", mode: grant.mode });
     }
   }
-  for (const id of selectedSubclassSpellChoiceIds(character)) entries.push({ id, source: subclass?.name || "Подкласс" });
-  if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && character.level >= 3) entries.push({ id: "speak-with-animals", source: "Первозданная осведомлённость (TCE)" });
+  for (const choice of selectedSubclassSpellChoiceEntries(character)) entries.push({ id: choice.id, source: subclass?.name || "Подкласс", mode: choice.mode });
+  if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && character.level >= 3) entries.push({ id: "speak-with-animals", source: "Первозданная осведомлённость (TCE)", mode: "known" });
   return entries
     .filter(entry => {
       const spell = catalog.find(item => item.id === entry.id);

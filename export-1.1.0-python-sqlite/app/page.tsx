@@ -761,6 +761,13 @@ function Builder() {
   const alwaysPreparedEntries = alwaysPreparedSpellEntries(spellCharacter, availableSpellCatalog);
   const alwaysPrepared = alwaysPreparedEntries.map(entry => entry.id);
   const alwaysPreparedSet = new Set(alwaysPrepared);
+  const allAutomaticSubclassSpellIds = [...new Set(spellClassCandidates.flatMap(candidate => alwaysPreparedSpellEntries({
+    ...rulesCharacter,
+    className: candidate.entry.classId,
+    subclass: candidate.entry.subclassId || "",
+    level: candidate.entry.level,
+    abilities: finalAbilities,
+  }, availableSpellCatalog).map(entry => entry.id)))];
   const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
   const filtered = currentOptions.filter(option => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
   const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
@@ -873,7 +880,7 @@ function Builder() {
     featNames: selectedFeatNames,
     featFeatureList: selectedFeatFeatures,
     featSpellIds: grantedFeatSpells,
-    alwaysPreparedSpellIds: alwaysPrepared,
+    alwaysPreparedSpellIds: allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared,
   };
 
   const availableFeatOptions = feats.filter(feat => {
@@ -1093,13 +1100,18 @@ function Builder() {
 
   function toggleProficiencyChoice(key: string, value: string, limit: number) {
     setCharacter(current => {
-      const choices = current.proficiencyChoices || {};
+      const safe = migrateMulticlassCharacter(current);
+      const choices = safe.proficiencyChoices || {};
       const selected = choices[key] || [];
-      if (!selected.includes(value) && proficiencyChoiceUsedElsewhere(current, key, value)) return current;
+      if (!selected.includes(value) && proficiencyChoiceUsedElsewhere(safe, key, value)) return safe;
       const next = selected.includes(value)
         ? selected.filter(item => item !== value)
         : selected.length < limit ? [...selected, value] : limit === 1 ? [value] : selected;
-      return { ...current, proficiencyChoices: { ...choices, [key]: next } };
+      const subclassMatch = key.match(/^subclass-([a-z-]+)-/);
+      const classes = subclassMatch
+        ? orderedCharacterClasses(safe).map(item => item.classId === subclassMatch[1] ? { ...item, choiceValues: { ...(item.choiceValues || {}), [key]: next } } : item)
+        : safe.classes;
+      return migrateMulticlassCharacter({ ...safe, classes, proficiencyChoices: { ...choices, [key]: next } });
     });
   }
 
@@ -1419,10 +1431,18 @@ function Builder() {
 
   function toggleClassChoice(groupKey: string, id: string, limit: number) {
     setCharacter(current => {
-      const choices = current.classChoices || {};
-      const selected = choices[groupKey] || [];
+      const safe = migrateMulticlassCharacter(current);
+      const separator = groupKey.indexOf(":");
+      const classId = separator > 0 ? groupKey.slice(0, separator) : (safe.startingClassId || safe.className);
+      const localKey = separator > 0 ? groupKey.slice(separator + 1) : groupKey;
+      const entry = orderedCharacterClasses(safe).find(item => item.classId === classId);
+      const choices = safe.classChoices || {};
+      const selected = choices[groupKey] || entry?.choiceValues?.[localKey] || [];
       const next = selected.includes(id) ? selected.filter(value => value !== id) : selected.length < limit ? [...selected, id] : selected;
-      return { ...current, classChoices: { ...choices, [groupKey]: next } };
+      const classes = orderedCharacterClasses(safe).map(item => item.classId === classId
+        ? { ...item, choiceValues: { ...(item.choiceValues || {}), [localKey]: next } }
+        : item);
+      return migrateMulticlassCharacter({ ...safe, classes, classChoices: { ...choices, [groupKey]: next } });
     });
   }
 
@@ -2482,7 +2502,9 @@ function Builder() {
                     <div className="subclass-grid">
                       {data.options.filter(option => allowed(activeBan, "subclasses", `${entry.classId}:${option.id}`)).map(option => (
                         <button key={option.id} className={entry.subclassId === option.id ? "selected" : ""} onClick={() => selectMulticlassSubclass(entry.classId, option.id)}>
-                          <span>{option.source}</span><strong>{option.name}</strong><p>{option.description}</p>
+                          <span>{option.source}{option.flags?.dmApproval ? " · разрешение Мастера" : ""}</span><strong>{option.name}</strong><p>{option.description}</p>
+                          {option.flags?.settingRestriction && <small>Ограничение сеттинга: {option.flags.settingRestriction}</small>}
+                          {option.flags?.dmApproval && <small>Вариант DMG: не скрыт, но обычно требует разрешения Мастера.</small>}
                         </button>
                       ))}
                     </div>
@@ -2653,10 +2675,10 @@ function Builder() {
                   )}
                   {!!alwaysPreparedEntries.length && (
                     <div className="always-prepared">
-                      <div><small>Класс и подкласс</small><h2>Всегда подготовлены</h2><p>Добавляются автоматически, не занимают лимит и недоступны для повторного выбора.</p></div>
+                      <div><small>Класс и подкласс</small><h2>Автоматические заклинания</h2><p>Выданы классом или подклассом сверх обычного лимита. Под каждым заклинанием указан режим.</p></div>
                       <div>{alwaysPreparedEntries.map(entry => {
                         const spell = spells.find(item => item.id === entry.id);
-                        return spell ? <span className="always-prepared-spell" key={spell.id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer">{spell.name} · {levelLabel(spell.level)} ↗</a><small>{entry.source}</small></span> : null;
+                        return spell ? <span className="always-prepared-spell" key={spell.id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer">{spell.name} · {levelLabel(spell.level)} ↗</a><small>{entry.source} · {entry.mode === "known" ? "автоматически известно" : "всегда подготовлено"}</small></span> : null;
                       })}</div>
                     </div>
                   )}
