@@ -412,21 +412,34 @@ function spellMatchesRef(spell: CatalogSpell, ref: string) {
   const needle = normalSpellRef(ref);
   return normalSpellRef(spell.id) === needle || normalSpellRef(spell.name) === needle;
 }
-function subclassSpellGrants(character: Pick<ExportCharacter,"className"|"subclass"|"level">) {
-  return selectedSubclass(character.className, character.subclass || "")?.spellGrants?.filter(grant => character.level >= grant.level) || [];
+type SubclassGrantCharacter = Pick<ExportCharacter, "className" | "subclass" | "level"> & Partial<Pick<ExportCharacter, "classChoices" | "classes">>;
+function subclassChoice(character: SubclassGrantCharacter, key: string) {
+  return character.classChoices?.[`${character.className}:${key}`]
+    || character.classChoices?.[key]
+    || character.classes?.find(entry => entry.classId === character.className)?.choiceValues?.[key]
+    || [];
+}
+function subclassSpellGrants(character: SubclassGrantCharacter) {
+  const grants = selectedSubclass(character.className, character.subclass || "")?.spellGrants?.filter(grant => character.level >= grant.level) || [];
+  if (character.className !== "sorcerer" || character.subclass !== "clockwork") return grants;
+  const defaults = ["Тревога", "Защита от добра и зла", "Подмога", "Малое восстановление", "Рассеивание магии", "Защита от энергии", "Свобода перемещения", "Призыв конструкта", "Высшее восстановление", "Стена силы"];
+  const unlockLevels = [1,1,3,3,5,5,7,7,9,9];
+  return defaults.flatMap((ref, index) => character.level >= unlockLevels[index]
+    ? [G(unlockLevels[index], "known", ...(subclassChoice(character, `clockwork-magic-${index}`).filter(value => !value.startsWith("default-")) || [ref]))]
+    : []);
 }
 function selectedSubclassSpellChoiceEntries(character: ExportCharacter) {
   const subclass = character.subclass || "";
   const selected = character.classChoices || {};
   const known = (ids: string[]) => ids.map(id => ({ id, mode: "known" as const }));
   const prepared = (ids: string[]) => ids.map(id => ({ id, mode: "always-prepared" as const }));
-  if (character.className === "barbarian" && subclass === "giant") return known(selected["giant-cantrip"] || []);
-  if (character.className === "cleric" && subclass === "nature") return known(selected["nature-druid-cantrip"] || []);
-  if (character.className === "cleric" && subclass === "death") return known(selected["death-necromancy-cantrip"] || []);
+  if (character.className === "barbarian" && subclass === "giant") return known(subclassChoice(character, "giant-cantrip"));
+  if (character.className === "cleric" && subclass === "nature") return known(subclassChoice(character, "nature-druid-cantrip"));
+  if (character.className === "cleric" && subclass === "death") return known(subclassChoice(character, "death-necromancy-cantrip"));
   if (character.className === "cleric" && subclass === "arcana") return [
-    ...known(selected["arcana-wizard-cantrips"] || []),
-    ...prepared(selected["arcana-mastery-6"] || []), ...prepared(selected["arcana-mastery-7"] || []),
-    ...prepared(selected["arcana-mastery-8"] || []), ...prepared(selected["arcana-mastery-9"] || []),
+    ...known(subclassChoice(character, "arcana-wizard-cantrips")),
+    ...prepared(subclassChoice(character, "arcana-mastery-6")), ...prepared(subclassChoice(character, "arcana-mastery-7")),
+    ...prepared(subclassChoice(character, "arcana-mastery-8")), ...prepared(subclassChoice(character, "arcana-mastery-9")),
   ];
   return [];
 }
@@ -720,6 +733,10 @@ export function alwaysPreparedSpellEntries(character: ExportCharacter, catalog: 
     }
   }
   for (const choice of selectedSubclassSpellChoiceEntries(character)) entries.push({ id: choice.id, source: subclass?.name || "Подкласс", mode: choice.mode });
+  if (character.className === "bard" && character.subclass === "spirits" && character.level >= 6) {
+    const spiritSessionSpell = character.subclassState?.["bard:spirits:spirit-session-spell"];
+    if (typeof spiritSessionSpell === "string") entries.push({ id: spiritSessionSpell, source: "Духовный сеанс", mode: "known" });
+  }
   if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && character.level >= 3) entries.push({ id: "speak-with-animals", source: "Первозданная осведомлённость (TCE)", mode: "known" });
   return entries
     .filter(entry => {
