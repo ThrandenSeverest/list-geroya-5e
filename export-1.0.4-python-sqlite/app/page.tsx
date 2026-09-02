@@ -723,6 +723,10 @@ function Builder() {
   const filtered = currentOptions.filter(option => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
   const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(rulesCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
   const filteredSpells = selectableSpells.filter(spell => (spellLevel === "all" || spell.level === spellLevel) && matchesSources(spell.source, selectedSources) && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual)) && `${spell.name} ${spell.description} ${spell.school}`.toLowerCase().includes(search.toLowerCase()));
+  const spellLevelGroups = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ({
+    level,
+    spells: filteredSpells.filter(spell => spell.level === level),
+  })).filter(group => group.spells.length > 0);
   const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key as Category].filter(option => !allowed(activeBan, key as Category, option.id)).length, 0) : 0;
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
   const selectedRaceFeatures = [
@@ -836,7 +840,9 @@ function Builder() {
   function resetFilters(nextStep: number) {
     setStep(nextStep);
     setSearch("");
-    setSelectedSources(["PHB"]);
+    // The spell catalogue should be complete on entry. Other catalogue steps
+    // retain their compact PHB-first default.
+    setSelectedSources(nextStep === 7 ? catalogSources(sourceAvailableSpells) : ["PHB"]);
     setDetailsId("");
     setSpellLevel("all");
     setRitualFilter("all");
@@ -2419,7 +2425,10 @@ function Builder() {
                   )}
                   <div className="tools">
                     <label className="search">⌕<input value={search} onChange={event => setSearch(event.target.value)} placeholder="Название, школа или эффект" /></label>
-                    <div className="source-filter" aria-label="Источники заклинаний">{sources.map(value => <button key={value} className={selectedSources.includes(value) ? "active" : ""} onClick={() => toggleSource(value)}>{value}</button>)}</div>
+                    <div className="source-filter" aria-label="Источники заклинаний">
+                      <button className={sources.every(value => selectedSources.includes(value)) ? "active" : ""} onClick={() => setSelectedSources(current => sources.every(value => current.includes(value)) ? ["PHB"] : sources)}>{sources.every(value => selectedSources.includes(value)) ? "Скрыть дополнительные" : "Показать все источники"}</button>
+                      {sources.map(value => <button key={value} className={selectedSources.includes(value) ? "active" : ""} onClick={() => toggleSource(value)}>{value}</button>)}
+                    </div>
                   </div>
                   <div className="spell-level-filter" aria-label="Фильтр заклинаний по кругу">
                     <button className={spellLevel === "all" ? "active" : ""} onClick={() => setSpellLevel("all")}>Все</button>
@@ -2433,13 +2442,16 @@ function Builder() {
                     <button className={ritualFilter === "nonritual" ? "active" : ""} onClick={() => setRitualFilter("nonritual")}>Не ритуалы</button>
                   </div>
                   <div className="spell-list">
-                    {filteredSpells.map(spell => (
-                      <article key={spell.id} className={character.spells.includes(spell.id) ? "selected" : ""}>
-                        <span className="spell-level">{spell.level}</span>
-                        <div><h3>{spell.name}</h3><small>{levelLabel(spell.level)} · {spell.school} · {spell.source}{spell.ritual ? " · ритуал" : ""}{isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : ""}{chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""}</small><p>{spell.description}</p></div>
-                        <div className="spell-actions"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${spell.name} на dnd.su`}>dnd.su ↗</a><button onClick={() => toggleSpell(spell.id)}>{character.spells.includes(spell.id) ? "✓" : "+"}</button></div>
-                      </article>
-                    ))}
+                    {spellLevelGroups.map(group => <section className="spell-level-group" key={group.level}>
+                      <h3>{levelLabel(group.level)} <span>{group.spells.length}</span></h3>
+                      {group.spells.map(spell => (
+                        <article key={spell.id} className={character.spells.includes(spell.id) ? "selected" : ""}>
+                          <span className="spell-level">{spell.level}</span>
+                          <div><h3>{spell.name}</h3><small>{levelLabel(spell.level)} · {spell.school} · {spell.source}{spell.ritual ? " · ритуал" : ""}{isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : ""}{chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""}</small><p>{spell.description}</p></div>
+                          <div className="spell-actions"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${spell.name} на dnd.su`}>dnd.su ↗</a><button onClick={() => toggleSpell(spell.id)}>{character.spells.includes(spell.id) ? "✓" : "+"}</button></div>
+                        </article>
+                      ))}
+                    </section>)}
                   </div>
                 </>
               )}
