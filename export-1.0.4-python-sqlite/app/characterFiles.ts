@@ -1,8 +1,8 @@
 import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
-import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
+import { estimatedHitPoints, helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
 import { helpmateSpellIds, spellIdFromDndUrl, spellIdFromLssCardId } from "./exportIds";
-import { asiLevelsForClass, feats, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
+import { asiLevelsForClass, feats, finalAbilityScores, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
 import { normalizeImportedSkills, skillNameFromExternalId } from "./skillIds";
 
 export type CharacterFileSource = "native" | "long-story-short" | "helpmate";
@@ -13,12 +13,29 @@ export type CharacterImportResult = {
   warnings: string[];
 };
 
+function nativeHitPointsLookUninitialized(character: ExportCharacter) {
+  return Number(character.currentHitPoints) === 0
+    && Number(character.temporaryHitPoints || 0) === 0
+    && Number(character.hitDiceSpent || 0) === 0
+    && Number(character.deathSaveSuccesses || 0) === 0
+    && Number(character.deathSaveFailures || 0) === 0
+    && Number(character.pactSlotsUsed || 0) === 0
+    && !(character.spellSlotsUsed || []).some(value => Number(value) > 0)
+    && !Object.values(character.resourceSpent || {}).some(value => Number(value) > 0);
+}
+
 export function createNativeCharacterFile(character: ExportCharacter) {
+  const exportedCharacter = nativeHitPointsLookUninitialized(character)
+    ? {
+        ...character,
+        currentHitPoints: estimatedHitPoints({ ...character, abilities: finalAbilityScores(character) }),
+      }
+    : character;
   return {
     format: "list-geroya-5e",
     version: 1,
     exportedAt: new Date().toISOString(),
-    character,
+    character: exportedCharacter,
   };
 }
 
