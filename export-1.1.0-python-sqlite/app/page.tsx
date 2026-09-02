@@ -1655,8 +1655,11 @@ function Builder() {
   }
 
   function persistVault(next: CharacterVault) {
-    setVault(next);
-    localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(next));
+    // Keep the same normalized snapshot in state and local storage. This makes
+    // folder changes immediate even before the optional cloud sync finishes.
+    const normalized = normalizeVault(next);
+    setVault(normalized);
+    localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(normalized));
   }
 
   function openCharacterManager() {
@@ -1735,11 +1738,25 @@ function Builder() {
     setSelectedSlotIds(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]);
   }
 
+  function moveSlots(slotIds: string[], destinationId: string) {
+    if (!slotIds.length) return;
+    const destination = destinationId === "unfiled" ? undefined : destinationId;
+    if (destination && !vault.folders.some(folder => folder.id === destination)) return;
+    const moving = new Set(slotIds);
+    persistVault({
+      ...vault,
+      slots: vault.slots.map(slot => moving.has(slot.id) ? { ...slot, folderId: destination, updatedAt: new Date().toISOString() } : slot),
+    });
+    setSelectedSlotIds(current => current.filter(id => !moving.has(id)));
+    setActiveFolderId(destination || "unfiled");
+  }
+
   function moveSelectedSlots() {
-    if (!selectedSlotIds.length) return;
-    const destination = moveFolderId === "unfiled" ? undefined : moveFolderId;
-    persistVault({ ...vault, slots: vault.slots.map(slot => selectedSlotIds.includes(slot.id) ? { ...slot, folderId: destination, updatedAt: new Date().toISOString() } : slot) });
-    setSelectedSlotIds([]);
+    moveSlots(selectedSlotIds, moveFolderId);
+  }
+
+  function moveSlot(id: string, destinationId: string) {
+    moveSlots([id], destinationId);
   }
 
   function deleteSelectedSlots() {
@@ -1895,7 +1912,7 @@ function Builder() {
                 <label className="character-select"><input type="checkbox" checked={selectedSlotIds.includes(slot.id)} onChange={() => toggleSlotSelection(slot.id)} /><span>Выбрать</span></label>
                 <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2><p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
-                <div className="character-card-actions"><button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Продолжить" : "Открыть"}</button><button onClick={() => deleteSlot(slot.id)}>Удалить</button></div>
+                <div className="character-card-actions"><button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Продолжить" : "Открыть"}</button><label className="character-folder-select"><span>Папка</span><select value={slot.folderId || "unfiled"} onChange={event => moveSlot(slot.id, event.target.value)}><option value="unfiled">Без папки</option>{vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label><button onClick={() => deleteSlot(slot.id)}>Удалить</button></div>
               </article>;
             })}
           </div>
