@@ -348,7 +348,8 @@ export function createHelpmateExport(context: ExportContext) {
     Armor: armorClass(character),
     Bditelnost: 10 + abilityModifier(character.abilities.wis) + (selectedSkills.has("Внимательность") ? proficiencyBonus(character.level) : 0),
     IniBonus: abilityModifier(character.abilities.dex),
-    IsPlaying: true,
+    // Helpmate recalculates known spells and cantrips only for an idle import.
+    IsPlaying: false,
     Note: helpmateNote(context),
     FirstSpellText: spellSaveDc === null ? null : `Сл спасброска заклинаний: ${spellSaveDc}`,
     SecondSpellText: spellSaveDc === null ? null : `Бонус атаки заклинанием: ${spellAttack >= 0 ? "+" : ""}${spellAttack}`,
