@@ -1647,10 +1647,6 @@ function Builder() {
   }
 
   function exportLongStoryShort() {
-    if (multiclassEntries.length > 1) {
-      setInteractionError("Экспорт Long Story Short пока не хранит надёжную историю нескольких классов. Он заблокирован для мультикласса, чтобы не потерять второй класс при импорте.");
-      return;
-    }
     download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
   }
 
@@ -2894,6 +2890,7 @@ function Builder() {
                   <h2>Экспорт листа</h2>
                   <p>Укажите уже потраченные ячейки, если переносите персонажа из текущей игры. У нового героя оставьте нули.</p>
                   <p className="export-compatibility">Long Story Short получает выбранные здесь заклинания текстовым списком по кругам со ссылками dnd.su. При импорте общая ссылка автоматически связывает карточку с нашим каталогом; исходные ID сохраняются для обратного переноса. Helpmate получает только проверенные внутренние ID конкретных заклинаний и заранее показывает отсутствующие карточки.</p>
+                  {multiclassEntries.length > 1 && <p className="export-compatibility"><b>⚠️ Мультикласс и Long Story Short:</b> файл будет создан, но LSS не сохраняет все данные о нескольких классах. При обратном импорте могут потеряться второй класс, история уровней, отдельные ресурсы, смешанные кости хитов и раздельные ячейки Pact Magic. Для полного сохранения используйте «Наш JSON».</p>}
                   <details className="known-limitations">
                     <summary>Известные ограничения и временные решения</summary>
                     {knownLimitations.map(item => <p key={item.area}><b>{item.area} · {item.status}.</b> {item.text}</p>)}
