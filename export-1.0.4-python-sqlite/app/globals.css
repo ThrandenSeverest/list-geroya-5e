@@ -217,6 +217,10 @@ button { color: inherit; }
 .ability-grid input { width: 58px; border: 0; border-bottom: 1px solid var(--line); outline: 0; background: transparent; color: var(--ivory); font: 30px Georgia, serif; }
 .ability-grid strong { color: var(--copper-light); font: 28px Georgia, serif; text-align: right; }
 .spell-list { display: grid; gap: 10px; }
+.spell-level-group { display: grid; gap: 8px; }
+.spell-level-group > h3 { margin: 10px 0 0; display: flex; align-items: center; gap: 8px; color: var(--copper-light); font-size: 15px; text-transform: uppercase; letter-spacing: .08em; }
+.spell-level-group > h3::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.spell-level-group > h3 span { color: var(--muted); font-size: 11px; letter-spacing: 0; }
 .spell-list article { width: 100%; padding: 14px; display: grid; grid-template-columns: 42px 1fr auto; gap: 15px; align-items: center; border: 1px solid var(--line); background: var(--panel); text-align: left; }
 .spell-list article.selected { border-color: var(--copper); background: rgba(185,110,63,.1); }
 .spell-level { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--teal); border-radius: 50%; color: var(--teal); font: 19px Georgia; }
