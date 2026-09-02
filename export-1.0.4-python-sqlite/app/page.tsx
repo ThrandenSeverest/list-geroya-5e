@@ -10,6 +10,7 @@ import {
   helpmateSkippedSpells,
   type AdvancementChoice,
   type ExportCharacter,
+  type SpellGrant,
   proficiencyBonus,
 } from "./exportFormats";
 import { abilityLabels, classRules, personalityOptions, raceFeatures } from "./rules";
@@ -31,6 +32,7 @@ import {
   selectedSubclass,
   spellAvailableToCharacter,
   spellSelectionRule,
+  spellSelectionRuleForClass,
   subclasses,
   subclassRule,
   variantsFor,
@@ -53,8 +55,9 @@ import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
-import { hitDiceAfterLongRest, shortRestHitDieHealing } from "./restRules";
+import { shortRestHitDieHealing } from "./restRules";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 
 type Category = "races" | "classes" | "subclasses" | "backgrounds" | "feats" | "spells";
 type BanMode = "deny" | "allow";
@@ -71,6 +74,11 @@ type SiteTheme = "classic" | "parchment" | "legacy";
 
 const steps = ["Раса", "Класс", "Характеристики", "Предыстория", "Навыки", "Снаряжение", "Уровень", "Заклинания", "Языки и инструменты", "Характер", "Итог"];
 const initial: ExportCharacter = {
+  schemaVersion: 4,
+  rulesetId: "5e-2014",
+  startingClassId: "",
+  classes: [],
+  levelHistory: [],
   race: "",
   raceVariant: "",
   raceAbilityChoices: [],
@@ -130,6 +138,16 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.1.0",
+  publishedAt: "2026-09-02T14:00:00Z",
+  changes: [
+    "Добавлено мультиклассирование Legacy 2014: персонаж хранит стартовый класс, список классов, порядок полученных уровней и общий уровень до 20.",
+    "Экран уровня позволяет добавлять новые классы с проверкой требований характеристик, повышать уровень каждого класса отдельно и показывает владения вторичного класса.",
+    "Хиты, КД, кости хитов, ресурсы, спасброски и ячейки магии учитывают уровни конкретных классов; обычная магия и Pact Magic больше не смешиваются.",
+    "Старые одноклассовые сохранения автоматически мигрируют в schemaVersion 4. Экспорт Helpmate теперь сохраняет все классы, порядок и смешанные кости хитов без ложного объединения.",
+    "В подборе заклинаний по умолчанию открыты все источники: их можно одним нажатием свернуть до PHB или снова показать; список сгруппирован по кругам заклинаний.",
+  ],
+}, {
   version: "1.0.6",
   publishedAt: "2026-09-01T19:30:00Z",
   changes: [
@@ -448,17 +466,27 @@ function hasOriginFeat(character: Pick<ExportCharacter, "race" | "raceVariant">)
   return (character.race === "human" && character.raceVariant === "variant") || character.race === "customlineage";
 }
 
-function advancementSlotsFor(character: Pick<ExportCharacter, "race" | "raceVariant" | "className" | "level"> & Partial<Pick<ExportCharacter, "advancements" | "feats">>) {
+function advancementSlotsFor(character: Pick<ExportCharacter, "race" | "raceVariant" | "className" | "level"> & Partial<Pick<ExportCharacter, "classes" | "advancements" | "feats">>) {
+  const classEntries = character.classes?.filter(entry => entry.classId && entry.level > 0)
+    || [{ classId: character.className, level: character.level }];
+  const isSingleClass = classEntries.length === 1;
   const regular = [
     ...(hasOriginFeat(character) ? [{ key: "origin-1", level: 1, origin: true }] : []),
-    ...asiLevelsForClass(character.className)
-      .filter(level => level <= character.level)
-      .map(level => ({ key: `class-${level}`, level, origin: false })),
+    ...classEntries.flatMap(entry => asiLevelsForClass(entry.classId)
+      .filter(level => level <= entry.level)
+      // Preserve V1.0 save keys for existing single-class characters.
+      .map(level => ({ key: isSingleClass ? `class-${level}` : `class:${entry.classId}:${level}`, level, origin: false }))),
   ];
   const savedBonus = (character.advancements || []).filter(choice => choice.bonus).map(choice => ({ key: choice.key, level: choice.level, bonus: true }));
   const requiredBonusCount = Math.max(0, (character.feats?.length || 0) - regular.length - savedBonus.length);
   const generatedBonus = Array.from({ length: requiredBonusCount }, (_, index) => ({ key: `bonus-${savedBonus.length + index + 1}`, level: character.level, bonus: true }));
   return [...regular, ...savedBonus, ...generatedBonus];
+}
+
+function multiclassSkillChoiceCount(classId: string) {
+  // PHB multiclassing table: these are deliberately not the starting-class
+  // counts from the catalogue.
+  return ["bard", "ranger", "rogue"].includes(classId) ? 1 : 0;
 }
 
 function deriveLegacyAdvancementFields(advancements: AdvancementChoice[]) {
@@ -544,7 +572,7 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
     normalized.preparedSpells = optimalPreparedSpellIds(normalized, spells, normalized.spells);
   }
   const repaired = repairBackgroundAdvancement(normalized);
-  return syncAdvancements(repaired, repaired.advancements);
+  return migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements));
 }
 
 export default function Home() {
@@ -566,7 +594,9 @@ function Builder() {
   const [banSource, setBanSource] = useState("Все");
   const [banBookSource, setBanBookSource] = useState("PHB");
   const [search, setSearch] = useState("");
-  const [selectedSources, setSelectedSources] = useState<string[]>(["PHB"]);
+  // Spell sources start expanded; the same control can collapse the view back
+  // to PHB for a compact picker.
+  const [selectedSources, setSelectedSources] = useState<string[]>(() => catalogSources(spells));
   const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
   const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
   const [siteTheme, setSiteTheme] = useState<SiteTheme>("classic");
@@ -578,6 +608,7 @@ function Builder() {
   const [showAdditionalSpellWarning, setShowAdditionalSpellWarning] = useState(false);
   const [helpmateExportWarning, setHelpmateExportWarning] = useState<string[] | null>(null);
   const [spellLevel, setSpellLevel] = useState<number | "all">("all");
+  const [spellClassId, setSpellClassId] = useState("");
   const [ritualFilter, setRitualFilter] = useState<"all" | "ritual" | "nonritual">("all");
   const [featsExpanded, setFeatsExpanded] = useState(true);
   const [advancementKey, setAdvancementKey] = useState("");
@@ -695,6 +726,7 @@ function Builder() {
   );
   const selectedRace = races.find(option => option.id === character.race);
   const selectedClass = classes.find(option => option.id === character.className);
+  const multiclassEntries = orderedCharacterClasses(character);
   const selectedBackground = backgrounds.find(option => option.id === character.background);
   const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
   const classRule = classSkillRules[character.className] || { count: 0, skills: [] };
@@ -712,16 +744,26 @@ function Builder() {
     useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
     tceFullBanned: !!activeBan?.tceFullBanned,
   };
+  const finalAbilities = finalAbilityScores(rulesCharacter);
   const choiceGroups = classChoiceGroups(rulesCharacter, spells);
-  const spellRule = spellSelectionRule({ ...rulesCharacter, abilities: finalAbilityScores(rulesCharacter) });
+  const spellClassCandidates = multiclassEntries.map(entry => ({
+    entry,
+    rule: spellSelectionRuleForClass({ ...rulesCharacter, abilities: finalAbilities }, entry.classId, entry.level),
+  })).filter(candidate => candidate.rule.caster);
+  const activeSpellClass = spellClassCandidates.find(candidate => candidate.entry.classId === spellClassId) || spellClassCandidates[0];
+  const activeSpellClassId = activeSpellClass?.entry.classId || character.className;
+  const spellCharacter = activeSpellClass
+    ? { ...rulesCharacter, className: activeSpellClass.entry.classId, subclass: activeSpellClass.entry.subclassId || "", level: activeSpellClass.entry.level, abilities: finalAbilities }
+    : { ...rulesCharacter, abilities: finalAbilities };
+  const spellRule = activeSpellClass?.rule || spellSelectionRule(spellCharacter);
   const sourceAvailableSpells = sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked);
   const availableSpellCatalog = sourceAvailableSpells.filter(spell => allowed(activeBan, "spells", spell.id) && (!rulesCharacter.tceFullBanned || spell.source !== "TCE"));
-  const alwaysPreparedEntries = alwaysPreparedSpellEntries(rulesCharacter, availableSpellCatalog);
+  const alwaysPreparedEntries = alwaysPreparedSpellEntries(spellCharacter, availableSpellCatalog);
   const alwaysPrepared = alwaysPreparedEntries.map(entry => entry.id);
   const alwaysPreparedSet = new Set(alwaysPrepared);
   const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
   const filtered = currentOptions.filter(option => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
-  const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(rulesCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
+  const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
   const filteredSpells = selectableSpells.filter(spell => (spellLevel === "all" || spell.level === spellLevel) && matchesSources(spell.source, selectedSources) && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual)) && `${spell.name} ${spell.description} ${spell.school}`.toLowerCase().includes(search.toLowerCase()));
   const spellLevelGroups = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ({
     level,
@@ -734,21 +776,19 @@ function Builder() {
     ...(chosenRaceVariant?.features || []),
   ];
   const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
-  const selectedClassFeatures = detailedFeatures(resolvedClassChoiceFeatures(rulesCharacter,
-    documentedClassFeatures(
-      character.className,
-      chosenSubclass?.name,
-      !!rulesCharacter.useTasha,
-      classRules[character.className]?.features || [],
-      chosenSubclass?.features || [],
-      optionalClassFeatures[character.className] || [],
-    ).filter(feature => (feature.level || 1) <= character.level),
-    spells,
-  ));
+  const selectedClassFeatures = multiclassEntries.flatMap(entry => {
+    const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
+    const scoped = { ...rulesCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
+    return detailedFeatures(resolvedClassChoiceFeatures(scoped,
+      documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
+        .filter(feature => (feature.level || 1) <= entry.level), spells,
+    )).map(feature => ({ ...feature, name: `${classes.find(option => option.id === entry.classId)?.name || entry.classId} · ${feature.name}` }));
+  });
   const personalityLists = personalityOptions(character.background);
   const proficiency = proficiencyBonus(character.level);
-  const finalAbilities = finalAbilityScores(rulesCharacter);
   const exportCharacter = { ...rulesCharacter, abilities: finalAbilities };
+  const sharedSpellSlots = resolveSpellSlots(exportCharacter);
+  const pactMagicSlots = resolvePactMagic(exportCharacter);
   const classEquipment = equipmentRule(character.className);
   const equipmentItems = selectedEquipment(exportCharacter);
   const displayedInventory = character.inventoryOverride === undefined
@@ -762,18 +802,24 @@ function Builder() {
   const resources = characterResources(exportCharacter);
   const resourceMarkCount = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
   const resourceDensity = resources.length >= 6 || resourceMarkCount >= 32 ? "micro" : resources.length >= 4 || resourceMarkCount >= 22 ? "dense" : resources.length >= 3 || resourceMarkCount >= 14 ? "compact" : "normal";
-  const spellAbilityKey = classRules[character.className]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+  const spellAbilityKey = classRules[activeSpellClassId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
   const spellcastingModifier = spellAbilityKey ? abilityModifier(finalAbilities[spellAbilityKey]) : 0;
   const spellSaveDc = spellAbilityKey ? 8 + proficiency + spellcastingModifier : 0;
   const spellAttackBonus = spellAbilityKey ? proficiency + spellcastingModifier : 0;
   const hitPoints = estimatedHitPoints(exportCharacter);
+  const hitDicePoolsForCharacter = hitDicePools(exportCharacter);
+  const availableHitDice = hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.max - pool.spent, 0);
   const passivePerception = 10 + abilityModifier(finalAbilities.wis) + (proficiencies.skills.includes("Внимательность") ? proficiency : 0);
   const pointSpent = pointBuySpent(character.abilities);
   const pointRemaining = 27 - pointSpent;
   const variantBonus = raceAbilityBonuses(character);
   const racialProficiencies = raceProficiencies(character);
   const subclassData = subclassRule(character.className);
-  const ordinarySpellIds = character.spells.filter(id => !alwaysPreparedSet.has(id));
+  const currentSpellGrants = character.spellGrants?.length
+    ? character.spellGrants
+    : character.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+  const activeSpellIds = currentSpellGrants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
+  const ordinarySpellIds = activeSpellIds.filter(id => !alwaysPreparedSet.has(id));
   const selectedCantrips = ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === 0);
   const selectedLeveled = ordinarySpellIds.filter(id => (spells.find(item => item.id === id)?.level || 0) > 0);
   const selectedPrepared = (character.preparedSpells || []).filter(id => selectedLeveled.includes(id));
@@ -886,7 +932,7 @@ function Builder() {
       const raceVariantOptions = variantsFor(id);
       setCharacter(current => {
         const safe = normalizeCharacter(current);
-        const keptBonuses = safe.advancements.filter(choice => choice.bonus);
+        const keptBonuses = (safe.advancements || []).filter(choice => choice.bonus);
         return syncAdvancements({
         ...safe,
         race: id,
@@ -904,8 +950,8 @@ function Builder() {
     }
     if (step === 1) setCharacter(current => {
       const safe = normalizeCharacter(current);
-      const keptBonuses = safe.advancements.filter(choice => choice.bonus);
-      return syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], spells: [], preparedSpells: [], lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses);
+      const keptBonuses = (safe.advancements || []).filter(choice => choice.bonus);
+      return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
     });
     if (step === 3) {
       const option = backgrounds.find(item => item.id === id);
@@ -923,7 +969,7 @@ function Builder() {
         proficiencyChoices: {},
         personality: initial.personality,
         currency: { ...initial.currency, ...safe.currency, gp: startingGold },
-        }, safe.advancements.filter(choice => !choice.key.startsWith("background-")));
+        }, (safe.advancements || []).filter(choice => !choice.key.startsWith("background-")));
       });
     }
   }
@@ -1074,21 +1120,34 @@ function Builder() {
     const level = spells.find(spell => spell.id === id)?.level || 0;
     setCharacter(current => {
       if (alwaysPreparedSet.has(id)) return current;
-      if (current.spells.includes(id)) return {
-        ...current,
-        spells: current.spells.filter(spell => spell !== id),
-        preparedSpells: (current.preparedSpells || []).filter(spell => spell !== id),
-      };
-      const sameKind = current.spells.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
+      const grants = current.spellGrants?.length
+        ? current.spellGrants
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+      const selectedForClass = grants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
+      if (selectedForClass.includes(id)) {
+        const nextGrants = grants.filter(grant => grant.classId !== activeSpellClassId || grant.spellId !== id);
+        const remainsSelected = nextGrants.some(grant => grant.spellId === id);
+        return {
+          ...current,
+          spellGrants: nextGrants,
+          spells: remainsSelected ? current.spells : current.spells.filter(spell => spell !== id),
+          preparedSpells: remainsSelected ? current.preparedSpells : (current.preparedSpells || []).filter(spell => spell !== id),
+        };
+      }
+      const sameKind = selectedForClass.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
       const cap = level === 0 ? spellRule.cantrips : spellRule.leveled;
       if (sameKind.length >= cap) return current;
       if (level > 0 && spellRule.levelLimits) {
         const breaksCumulativeLimit = spellRule.levelLimits.some((limit, circle) =>
-          circle > 0 && circle <= level && current.spells.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) >= circle).length >= limit,
+          circle > 0 && circle <= level && selectedForClass.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) >= circle).length >= limit,
         );
         if (breaksCumulativeLimit) return current;
       }
-      return { ...current, spells: [...current.spells, id] };
+      return {
+        ...current,
+        spells: current.spells.includes(id) ? current.spells : [...current.spells, id],
+        spellGrants: [...grants, { spellId: id, sourceType: "class", sourceId: activeSpellClassId, classId: activeSpellClassId, mode: spellRule.mode === "spellbook" ? "spellbook" : spellRule.mode === "prepared" ? "prepared" : "known" }],
+      };
     });
   }
 
@@ -1174,7 +1233,7 @@ function Builder() {
     setCharacter(current => {
       const slots = advancementSlotsFor(current);
       const slot = slots.find(item => item.key === slotKey);
-      if (!slot || (slot.origin && id === "asi")) return current;
+      if (!slot || (("origin" in slot && slot.origin) && id === "asi")) return current;
       const feat = feats.find(item => item.id === id);
       const liveCharacter = syncAdvancements(current, current.advancements || []);
       if (feat?.requirement && !featRequirementMet(liveCharacter, feat.requirement)) {
@@ -1242,18 +1301,57 @@ function Builder() {
 
   function changeLevel(level: number) {
     setCharacter(current => {
-      const nextBase = {
-        ...current,
-        level,
-        subclass: subclassRule(current.className) && level < (subclassRule(current.className)?.level || 99) ? "" : current.subclass,
-        spells: [],
-        preparedSpells: [],
-        spellSlotsUsed: [],
-        pactSlotsUsed: 0,
-        resourceSpent: {},
-      };
-      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
-      return syncAdvancements(nextBase, (current.advancements || []).filter(choice => validKeys.has(choice.key)));
+      const safe = migrateMulticlassCharacter(current);
+      const delta = level - characterLevel(safe);
+      if (!delta) return safe;
+      let next = safe;
+      for (let index = 0; index < Math.abs(delta); index += 1) next = changeClassLevelValue(next, safe.startingClassId || safe.className, delta > 0 ? 1 : -1);
+      return next;
+    });
+  }
+
+  function changeClassLevelValue(current: ExportCharacter, classId: string, delta: 1 | -1): ExportCharacter {
+    const safe = migrateMulticlassCharacter(current);
+    const classes = orderedCharacterClasses(safe);
+    const entry = classes.find(item => item.classId === classId);
+    if (!entry || (delta > 0 && characterLevel(safe) >= 20) || (delta < 0 && entry.level <= 1)) return safe;
+    if (delta < 0 && safe.levelHistory?.[safe.levelHistory.length - 1]?.classId !== classId) return safe;
+    const nextLevel = entry.level + delta;
+    const nextClasses = classes.map(item => item.classId === classId ? { ...item, level: nextLevel } : item);
+    const nextHistory = delta > 0
+      ? [...(safe.levelHistory || []), { characterLevel: characterLevel(safe) + 1, classId, classLevelAfter: nextLevel }]
+      : (safe.levelHistory || []).slice(0, -1);
+    const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
+    const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+    return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
+  }
+
+  function addMulticlass(classId: string) {
+    setCharacter(current => {
+      const safe = migrateMulticlassCharacter(current);
+      if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(safe, classId).passed) return safe;
+      const nextLevel = characterLevel(safe) + 1;
+      return migrateMulticlassCharacter({
+        ...safe,
+        classes: [...orderedCharacterClasses(safe), { classId, level: 1, acquiredAtCharacterLevel: nextLevel, classSkills: [] }],
+        levelHistory: [...(safe.levelHistory || normalizedLevelHistory(safe)), { characterLevel: nextLevel, classId, classLevelAfter: 1 }],
+        level: nextLevel,
+        spells: [], preparedSpells: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {},
+      });
+    });
+  }
+
+  function toggleMulticlassClassSkill(classId: string, skill: string) {
+    setCharacter(current => {
+      const safe = migrateMulticlassCharacter(current);
+      const entry = orderedCharacterClasses(safe).find(item => item.classId === classId);
+      const rule = classSkillRules[classId] || { count: 0, skills: [] };
+      if (!entry) return safe;
+      const selected = entry.classSkills || [];
+      const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId);
+      const next = selected.includes(skill) ? selected.filter(value => value !== skill) : selected.length < limit ? [...selected, skill] : selected;
+      const classes = orderedCharacterClasses(safe).map(item => item.classId === classId ? { ...item, classSkills: next } : item);
+      return migrateMulticlassCharacter({ ...safe, classes, classSkills: classId === safe.startingClassId ? next : safe.classSkills });
     });
   }
 
@@ -1305,10 +1403,21 @@ function Builder() {
   }
 
   function takeShortRest() {
-    const remaining = Math.max(0, character.level - (character.hitDiceSpent || 0));
-    const diceUsed = Math.min(remaining, hitDiceToRoll);
-    const die = classRules[character.className]?.hitDie || 8;
-    const rolls = Array.from({ length: diceUsed }, () => (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1);
+    const diceUsed = Math.min(availableHitDice, hitDiceToRoll);
+    const spentByClass = { ...(character.hitDiceSpentByClass || {}) };
+    const rolls: number[] = [];
+    let remaining = diceUsed;
+    // Until per-pool picking is exposed in the compact mobile control, spend
+    // the largest available dice first. The actual class pool is still saved.
+    for (const entry of [...orderedCharacterClasses(character)].sort((left, right) => (classRules[right.classId]?.hitDie || 8) - (classRules[left.classId]?.hitDie || 8))) {
+      const available = Math.max(0, entry.level - (spentByClass[entry.classId] || 0));
+      const used = Math.min(remaining, available);
+      const die = classRules[entry.classId]?.hitDie || 8;
+      rolls.push(...Array.from({ length: used }, () => (crypto.getRandomValues(new Uint32Array(1))[0] % die) + 1));
+      spentByClass[entry.classId] = (spentByClass[entry.classId] || 0) + used;
+      remaining -= used;
+      if (!remaining) break;
+    }
     const healing = shortRestHitDieHealing(rolls, abilityModifier(finalAbilities.con));
     const nextSpent = { ...(character.resourceSpent || {}) };
     characterResources({ ...character, abilities: finalAbilities }).forEach(resource => {
@@ -1318,7 +1427,8 @@ function Builder() {
     setCharacter(current => ({
       ...current,
       currentHitPoints: nextHitPoints,
-      hitDiceSpent: Math.min(current.level, (current.hitDiceSpent || 0) + diceUsed),
+      hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
+      hitDiceSpentByClass: spentByClass,
       resourceSpent: nextSpent,
       pactSlotsUsed: 0,
       ...(nextHitPoints > 0 ? { deathSaveSuccesses: 0, deathSaveFailures: 0 } : {}),
@@ -1329,11 +1439,20 @@ function Builder() {
 
   function takeLongRest() {
     setCharacter(current => {
+      const spentByClass = { ...(current.hitDiceSpentByClass || {}) };
+      let recovered = Math.max(1, Math.floor(characterLevel(current) / 2));
+      for (const entry of [...orderedCharacterClasses(current)].sort((left, right) => (classRules[left.classId]?.hitDie || 8) - (classRules[right.classId]?.hitDie || 8))) {
+        const restored = Math.min(recovered, spentByClass[entry.classId] || 0);
+        spentByClass[entry.classId] = Math.max(0, (spentByClass[entry.classId] || 0) - restored);
+        recovered -= restored;
+        if (!recovered) break;
+      }
       return {
         ...current,
         currentHitPoints: estimatedHitPoints({ ...current, abilities: finalAbilityScores(current) }),
         temporaryHitPoints: 0,
-        hitDiceSpent: hitDiceAfterLongRest(current.hitDiceSpent || 0, current.level),
+        hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
+        hitDiceSpentByClass: spentByClass,
         deathSaveSuccesses: 0,
         deathSaveFailures: 0,
         resourceSpent: {},
@@ -1370,14 +1489,35 @@ function Builder() {
   }
 
   function chooseOptimalSpells() {
-    const value = { ...rulesCharacter, abilities: finalAbilityScores(rulesCharacter) };
+    const value = spellCharacter;
     const ids = optimalSpellIds(value, availableSpellCatalog);
     const preparedSpells = optimalPreparedSpellIds(value, availableSpellCatalog, ids);
-    setCharacter(current => ({ ...current, spells: ids, preparedSpells, lssSpellCards: undefined }));
+    setCharacter(current => {
+      const grants = current.spellGrants?.length
+        ? current.spellGrants
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+      const otherGrants = grants.filter(grant => grant.classId !== activeSpellClassId);
+      const retainedIds = otherGrants.map(grant => grant.spellId);
+      const mode: SpellGrant["mode"] = spellRule.mode === "spellbook" ? "spellbook" : spellRule.mode === "prepared" ? "prepared" : "known";
+      return {
+        ...current,
+        spells: [...new Set([...retainedIds, ...ids])],
+        preparedSpells: [...new Set([...(current.preparedSpells || []).filter(id => retainedIds.includes(id)), ...preparedSpells])],
+        spellGrants: [...otherGrants, ...ids.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode }))],
+        lssSpellCards: undefined,
+      };
+    });
   }
 
   function resetSpells() {
-    setCharacter(current => ({ ...current, spells: [], preparedSpells: [], lssSpellCards: undefined }));
+    setCharacter(current => {
+      const grants = current.spellGrants?.length
+        ? current.spellGrants
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+      const otherGrants = grants.filter(grant => grant.classId !== activeSpellClassId);
+      const retainedIds = otherGrants.map(grant => grant.spellId);
+      return { ...current, spells: [...new Set(retainedIds)], preparedSpells: (current.preparedSpells || []).filter(id => retainedIds.includes(id)), spellGrants: otherGrants, lssSpellCards: undefined };
+    });
   }
 
   function setPersonality(key: PersonalityKey, value: string) {
@@ -1488,6 +1628,11 @@ function Builder() {
   }
 
   function exportHelpmate() {
+    const regularCasterCount = multiclassEntries.filter(entry => entry.classId !== "warlock" && spellSelectionRule({ ...exportCharacter, className: entry.classId, level: entry.level }).caster).length;
+    if (regularCasterCount > 1) {
+      setInteractionError("Helpmate пока не имеет подтверждённого формата для общего пула ячеек двух обычных заклинательских классов. Экспорт заблокирован, чтобы не создать неверный лист.");
+      return;
+    }
     const skipped = helpmateSkippedSpells(exportContext).map(spell => spell.name);
     if (skipped.length) {
       setHelpmateExportWarning(skipped);
@@ -1502,6 +1647,10 @@ function Builder() {
   }
 
   function exportLongStoryShort() {
+    if (multiclassEntries.length > 1) {
+      setInteractionError("Экспорт Long Story Short пока не хранит надёжную историю нескольких классов. Он заблокирован для мультикласса, чтобы не потерять второй класс при импорте.");
+      return;
+    }
     download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
   }
 
@@ -2043,7 +2192,7 @@ function Builder() {
                                     <strong>{variant.name} · {variant.source}</strong>{variant.description}
                                     <small className="variant-bonus-line">
                                       {Object.keys(variant.bonuses || {}).length
-                                        ? `Характеристики: ${Object.entries(variant.bonuses).map(([key, value]) => `${abilityLabels[key as keyof ExportCharacter["abilities"]]} +${value}`).join(", ")}`
+                                        ? `Характеристики: ${Object.entries(variant.bonuses || {}).map(([key, value]) => `${abilityLabels[key as keyof ExportCharacter["abilities"]]} +${value}`).join(", ")}`
                                         : variant.chooseBonuses ? "Характеристики выбираются по правилам варианта" : "Без фиксированного бонуса"}
                                       {variant.proficiencies?.length ? ` · Владения: ${variant.proficiencies.join(", ")}` : ""}
                                     </small>
@@ -2113,8 +2262,8 @@ function Builder() {
                 </div>
               )}
               {raceSkillChoiceCount(character) > 0 && (
-                <div className="racial-choice" data-incomplete={character.raceSkills.length !== raceSkillChoiceCount(character)}>
-                  <div><small>{chosenRaceVariant?.name || selectedRace?.name}</small><h2>Выберите расовые владения навыками: {character.raceSkills.length} / {raceSkillChoiceCount(character)}</h2></div>
+                <div className="racial-choice" data-incomplete={(character.raceSkills || []).length !== raceSkillChoiceCount(character)}>
+                  <div><small>{chosenRaceVariant?.name || selectedRace?.name}</small><h2>Выберите расовые владения навыками: {(character.raceSkills || []).length} / {raceSkillChoiceCount(character)}</h2></div>
                   <div className="proficiency-grid">
                     {allSkillNames.map(skill => (
                       <button key={skill} className={(character.raceSkills || []).includes(skill) ? "selected" : ""} onClick={() => chooseRaceSkill(skill)}>
@@ -2188,11 +2337,34 @@ function Builder() {
 
           {step === 6 && (
             <div className="level-layout">
+              <section className="multiclass-panel">
+                <div className="ability-editor-head"><div><small>Правила D&D 5e 2014 / Legacy</small><h2>Классы персонажа</h2></div><span>{characterLevel(character)} / 20</span></div>
+                <p>Стартовый класс сохраняет спасброски и полные стартовые владения. Последующие классы дают только владения мультиклассирования.</p>
+                <div className="multiclass-class-grid">
+                  {multiclassEntries.map(entry => {
+                    const option = classes.find(item => item.id === entry.classId);
+                    const isLastLevel = character.levelHistory?.[character.levelHistory.length - 1]?.classId === entry.classId;
+                    const skillRule = classSkillRules[entry.classId] || { count: 0, skills: [] };
+                    const secondarySkillCount = multiclassSkillChoiceCount(entry.classId);
+                    const classSkills = entry.classSkills || [];
+                    return <article key={entry.classId} className="multiclass-class-card">
+                      <small>{entry.classId === character.startingClassId ? "Стартовый класс" : `Получен на ${entry.acquiredAtCharacterLevel}-м общем уровне`}</small>
+                      <h3>{option?.name || entry.classId} <span>{entry.level}</span></h3>
+                      <div className="multiclass-level-actions"><button disabled={entry.level <= 1 || !isLastLevel} title={!isLastLevel ? "Уровни можно откатывать только в обратном порядке" : "Убрать последний уровень этого класса"} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, -1))}>−</button><button disabled={characterLevel(character) >= 20} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, 1))}>+1 уровень</button></div>
+                      {entry.classId !== character.startingClassId && secondarySkillCount > 0 && <div className="multiclass-skill-choice"><small>Навыки при входе в класс: {classSkills.length} / {secondarySkillCount}</small><div>{skillRule.skills.map(skill => <button key={skill} className={classSkills.includes(skill) ? "selected" : ""} onClick={() => toggleMulticlassClassSkill(entry.classId, skill)}>{classSkills.includes(skill) ? "✓ " : "+ "}{skill}</button>)}</div></div>}
+                    </article>;
+                  })}
+                </div>
+                {characterLevel(character) < 20 && <div className="multiclass-add-grid"><h3>Добавить новый класс</h3>{availableClasses.filter(option => !multiclassEntries.some(entry => entry.classId === option.id)).map(option => {
+                  const requirement = multiclassRequirement(character, option.id);
+                  return <button key={option.id} disabled={!requirement.passed} title={requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`} onClick={() => addMulticlass(option.id)}><strong>{option.name}</strong><small>{requirement.passed ? `Требование выполнено: ${requirement.required || "нет"}` : `Требуется ${requirement.required}; сейчас: ${requirement.missing.join(", ")}`}</small></button>;
+                })}</div>}
+              </section>
               <div className="level-panel">
-                <div className="level-number">{character.level}</div>
-                <input aria-label="Уровень персонажа" type="range" min="1" max="20" value={character.level} onChange={event => changeLevel(+event.target.value)} />
+                <div className="level-number">{characterLevel(character)}</div>
+                <input aria-label="Общий уровень персонажа" type="range" min="1" max="20" value={characterLevel(character)} onChange={event => changeLevel(+event.target.value)} />
                 <div className="level-ticks"><span>1</span><span>5</span><span>10</span><span>15</span><span>20</span></div>
-                <p>Бонус владения: <strong>+{proficiency}</strong> · кость хитов: <strong>к{classRules[character.className]?.hitDie || 8}</strong></p>
+                <p>Бонус владения: <strong>+{proficiency}</strong> · общий уровень. Для повышения стартового класса можно использовать шкалу; остальные классы повышайте выше.</p>
               </div>
               <div className="spell-progression">
                 <div className="ability-editor-head"><div><small>Заклинательства на этом уровне</small><h2>{spellRule.caster ? spellRule.title : "Без базовой магии"}</h2></div><span>{spellRule.maxLevel ? `до ${spellRule.maxLevel} круга` : "—"}</span></div>
@@ -2204,11 +2376,11 @@ function Builder() {
                       {spellRule.prepared !== undefined && spellRule.mode === "spellbook" && <div><span>Подготовить</span><strong>{spellRule.prepared}</strong></div>}
                       <div><span>Макс. круг</span><strong>{spellRule.maxLevel}</strong></div>
                     </div>
-                    {spellRule.pact ? (
-                      <div className="slot-row"><span>Магия договора</span><b>{spellRule.pact.slots} яч. {spellRule.pact.level} круга</b><small>Восстанавливаются после короткого отдыха</small></div>
+                    {pactMagicSlots.slots ? (
+                      <><div className="slot-row"><span>Магия договора</span><b>{pactMagicSlots.slots} яч. {pactMagicSlots.level} круга</b><small>Восстанавливаются после короткого отдыха</small></div>{sharedSpellSlots.length > 0 && <div className="slot-grid">{sharedSpellSlots.map((count, index) => <div key={index}><small>{index + 1} круг</small><strong>{count}</strong><span>ячеек</span></div>)}</div>}</>
                     ) : (
                       <div className="slot-grid">
-                        {spellRule.slots.map((count, index) => <div key={index}><small>{index + 1} круг</small><strong>{count}</strong><span>ячеек</span></div>)}
+                        {sharedSpellSlots.map((count, index) => <div key={index}><small>{index + 1} круг</small><strong>{count}</strong><span>ячеек</span></div>)}
                       </div>
                     )}
                   </>
@@ -2372,6 +2544,9 @@ function Builder() {
                 <div className="empty-state"><span>◇</span><h2>У класса нет базового выбора заклинаний</h2><p>Перейдите к характеру или вернитесь к выбору класса.</p></div>
               ) : (
                 <>
+                  {spellClassCandidates.length > 1 && <div className="spell-level-filter" aria-label="Класс заклинаний">
+                    {spellClassCandidates.map(candidate => <button key={candidate.entry.classId} className={candidate.entry.classId === activeSpellClassId ? "active" : ""} onClick={() => setSpellClassId(candidate.entry.classId)}>{classes.find(item => item.id === candidate.entry.classId)?.name || candidate.entry.classId} {candidate.entry.level}</button>)}
+                  </div>}
                   <div className="spell-requirements" data-incomplete={selectedCantrips.length !== spellRule.cantrips || selectedLeveled.length !== spellRule.leveled}>
                     <div><span>Заговоры</span><strong className={selectedCantrips.length === spellRule.cantrips ? "complete" : ""}>{selectedCantrips.length} / {spellRule.cantrips}</strong></div>
                     <div><span>{spellRule.title}</span><strong className={selectedLeveled.length === spellRule.leveled ? "complete" : ""}>{selectedLeveled.length} / {spellRule.leveled}</strong></div>
@@ -2445,10 +2620,10 @@ function Builder() {
                     {spellLevelGroups.map(group => <section className="spell-level-group" key={group.level}>
                       <h3>{levelLabel(group.level)} <span>{group.spells.length}</span></h3>
                       {group.spells.map(spell => (
-                        <article key={spell.id} className={character.spells.includes(spell.id) ? "selected" : ""}>
+                        <article key={spell.id} className={activeSpellIds.includes(spell.id) ? "selected" : ""}>
                           <span className="spell-level">{spell.level}</span>
                           <div><h3>{spell.name}</h3><small>{levelLabel(spell.level)} · {spell.school} · {spell.source}{spell.ritual ? " · ритуал" : ""}{isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : ""}{chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""}</small><p>{spell.description}</p></div>
-                          <div className="spell-actions"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${spell.name} на dnd.su`}>dnd.su ↗</a><button onClick={() => toggleSpell(spell.id)}>{character.spells.includes(spell.id) ? "✓" : "+"}</button></div>
+                          <div className="spell-actions"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${spell.name} на dnd.su`}>dnd.su ↗</a><button onClick={() => toggleSpell(spell.id)}>{activeSpellIds.includes(spell.id) ? "✓" : "+"}</button></div>
                         </article>
                       ))}
                     </section>)}
@@ -2552,7 +2727,7 @@ function Builder() {
                     <strong>Спасброски от смерти</strong>
                     {(["success", "failure"] as const).map(kind => <div key={kind}><small>{kind === "success" ? "Успехи" : "Провалы"}</small><span>{[0, 1, 2].map(index => { const filled = (kind === "success" ? character.deathSaveSuccesses : character.deathSaveFailures) || 0; return <button key={index} className={filled > index ? "filled" : ""} onClick={() => setDeathSave(kind, index)} aria-label={`${kind === "success" ? "Успех" : "Провал"} ${index + 1}`} />; })}</span></div>)}
                   </section>}
-                  <div className="mobile-rest-row"><div><span>к{classRules[character.className]?.hitDie || 8}</span><small>{character.level - (character.hitDiceSpent || 0)} / {character.level}</small><b>к отдыху: {hitDiceToRoll}</b></div><button className="hit-die-step" onClick={() => setHitDiceToRoll(value => Math.max(0, value - 1))} disabled={!hitDiceToRoll} aria-label="Уменьшить число костей хитов">−</button><button className="hit-die-button" onClick={() => setHitDiceToRoll(value => Math.min(character.level - (character.hitDiceSpent || 0), value + 1))} disabled={character.level - (character.hitDiceSpent || 0) <= hitDiceToRoll} aria-label="Добавить кость хитов к короткому отдыху">+</button><button onClick={takeShortRest}>Короткий отдых</button><button onClick={takeLongRest}>Длинный отдых</button></div>
+                  <div className="mobile-rest-row"><div><span>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</span><small>{availableHitDice} / {characterLevel(character)}</small><b>к отдыху: {hitDiceToRoll}</b></div><button className="hit-die-step" onClick={() => setHitDiceToRoll(value => Math.max(0, value - 1))} disabled={!hitDiceToRoll} aria-label="Уменьшить число костей хитов">−</button><button className="hit-die-button" onClick={() => setHitDiceToRoll(value => Math.min(availableHitDice, value + 1))} disabled={availableHitDice <= hitDiceToRoll} aria-label="Добавить кость хитов к короткому отдыху">+</button><button onClick={takeShortRest}>Короткий отдых</button><button onClick={takeLongRest}>Длинный отдых</button></div>
                   {lastHitDieRoll !== null && <p className="mobile-roll-result">Восстановлено хитов: <b>{lastHitDieRoll}</b> (бросок выбранных костей + модификатор Телосложения к каждой)</p>}
                   <div className="mobile-attack-list">{attacks.map(attack => <article key={attack.id}><strong>{attack.name}</strong><span>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code></article>)}</div>
                 </div>}
@@ -2607,7 +2782,7 @@ function Builder() {
                     </div>
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
                     <div className="sheet-box hp-current"><label>ТЕКУЩИЕ ХИТЫ<input aria-label="Текущие хиты" type="number" min="0" max={hitPoints} value={character.currentHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, currentHitPoints: Math.max(0, Math.min(hitPoints, Number(event.target.value) || 0)) }))} /></label><label>ВРЕМЕННЫЕ ХИТЫ<input aria-label="Временные хиты" type="number" min="0" value={character.temporaryHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, temporaryHitPoints: Math.max(0, Number(event.target.value) || 0) }))} /></label></div>
-                    <div className="sheet-box hit-dice"><strong>к{classRules[character.className]?.hitDie || 8}</strong><span>КОСТИ ХИТОВ</span><label><input aria-label="Оставшиеся кости хитов" type="number" min="0" max={character.level} value={character.level - (character.hitDiceSpent || 0)} onChange={event => setCharacter(current => ({ ...current, hitDiceSpent: Math.max(0, Math.min(current.level, current.level - (Number(event.target.value) || 0))) }))} /> / {character.level}</label></div>
+                    <div className="sheet-box hit-dice"><strong>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</strong><span>КОСТИ ХИТОВ</span><label>{availableHitDice} / {characterLevel(character)}</label></div>
                     {resources.length > 0 && <div className={`sheet-box sheet-resources sheet-resources--${resourceDensity}`}>
                       {resources.map(resource => {
                         const unit = resource.unit || 1;
@@ -2669,26 +2844,27 @@ function Builder() {
                   playerName: character.playerName,
                   experience: character.experience || 0,
                   inspiration: !!character.inspiration,
-                  className: selectedClass?.name || "Класс не выбран",
-                  subclassName: chosenSubclass?.name,
+                  className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || entry.classId} ${entry.level}`).join(" / ") || "Класс не выбран",
+                  subclassName: multiclassEntries.length > 1 ? undefined : chosenSubclass?.name,
                   raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
                   backgroundName: selectedBackground?.name || "Предыстория не выбрана",
                   alignment: character.alignment,
-                  level: character.level,
+                  level: characterLevel(character),
                 }}
                 classId={character.className}
                 abilities={finalAbilities}
                 proficiency={proficiency}
-                savingThrows={classRules[character.className]?.saves || []}
+                savingThrows={classRules[character.startingClassId || character.className]?.saves || []}
                 proficiencies={{ ...proficiencies, expertise }}
                 ac={ac.value}
                 initiative={abilityModifier(finalAbilities.dex)}
                 speed={character.race === "dwarf" ? 25 : chosenRaceVariant?.id === "wood" ? 35 : 30}
                 hitPoints={hitPoints}
                 hitDie={classRules[character.className]?.hitDie || 8}
+                hitDiceLabel={hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ")}
                 currentHitPoints={character.currentHitPoints}
                 temporaryHitPoints={character.temporaryHitPoints}
-                hitDiceRemaining={character.level - (character.hitDiceSpent || 0)}
+                hitDiceRemaining={availableHitDice}
                 passivePerception={passivePerception}
                 attacks={attacks}
                 resources={[
