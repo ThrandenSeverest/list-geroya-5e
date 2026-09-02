@@ -242,6 +242,23 @@ function singleClassChoiceGroups(character: ExportCharacter, spells: CatalogSpel
   if (character.className === "cleric" && subclass === "arcana" && level >= 1) add({ key: "arcana-wizard-cantrips", title: "Посвящённый в тайны", description: "Два заговора волшебника становятся заговорами жреца.", level: 1, count: 2, options: spellOptions(spells, spell => spell.level === 0 && spell.classes.includes("wizard")) });
   if (character.className === "cleric" && subclass === "arcana" && level >= 17) for (const circle of [6,7,8,9]) add({ key: `arcana-mastery-${circle}`, title: `Тайное мастерство: ${circle}-й круг`, description: "Выбранное заклинание волшебника всегда подготовлено как заклинание жреца.", level: 17, count: 1, options: spellOptions(spells, spell => spell.level === circle && spell.classes.includes("wizard")) });
   if (character.className === "monk" && subclass === "four-elements" && level >= 3) add({ key: "four-elements-disciplines", title: "Стихийные дисциплины", description: "Настройка на стихии выдаётся автоматически; выберите остальные известные дисциплины. При изучении новой одну старую можно заменить.", level: 3, count: choiceCount(level, [[3,1],[6,2],[11,3],[17,4]]), options: available(fourElementsDisciplines, character) });
+  if (character.className === "sorcerer" && subclass === "clockwork") {
+    const defaults = [
+      [1, "default-0", "Тревога"], [1, "default-1", "Защита от добра и зла"],
+      [3, "default-2", "Подмога"], [3, "default-3", "Малое восстановление"],
+      [5, "default-4", "Рассеивание магии"], [5, "default-5", "Защита от энергии"],
+      [7, "default-6", "Свобода перемещения"], [7, "default-7", "Призыв конструкта"],
+      [9, "default-8", "Высшее восстановление"], [9, "default-9", "Стена силы"],
+    ] as const;
+    defaults.forEach(([at, id, name], index) => {
+      if (level < at) return;
+      const circle = Math.ceil(at / 2);
+      const replacement = spells.filter(spell => spell.level === circle && (spell.classes.includes("sorcerer") || spell.classes.includes("warlock") || spell.classes.includes("wizard")) && /огражден|преобразован/i.test(spell.school));
+      const defaultOption = O(id, name, "TCE", "Исходное заклинание Заводной магии.");
+      const options = [defaultOption, ...spellOptions(replacement, () => true).filter(option => option.id !== id)];
+      add({ key: `clockwork-magic-${index}`, title: `Заводная магия: ${name}`, description: "Оставьте исходное заклинание или замените его на заклинание Ограждения/Преобразования того же круга из списка чародея, колдуна или волшебника.", level: at, count: 1, options });
+    });
+  }
 
   if (character.className === "wizard" && level >= 18) add({ key: "spell-mastery-1", title: "Мастерство заклинателя: 1-й круг", description: "Заклинание 1-го круга из книги.", level: 18, count: 1, options: spellOptions(spells, spell => spell.level === 1 && spell.classes.includes("wizard")) });
   if (character.className === "wizard" && level >= 18) add({ key: "spell-mastery-2", title: "Мастерство заклинателя: 2-й круг", description: "Заклинание 2-го круга из книги.", level: 18, count: 1, options: spellOptions(spells, spell => spell.level === 2 && spell.classes.includes("wizard")) });
