@@ -1,4 +1,5 @@
-import type { ExportCharacter } from "./exportFormats";
+import { proficiencyBonus, type ExportCharacter } from "./exportFormats";
+import type { CatalogSpell } from "./catalog";
 import { orderedCharacterClasses } from "./multiclass";
 import { skillKeys } from "./rules";
 import { artisanTools, gamingSets, musicalInstruments } from "./proficiencies";
@@ -16,8 +17,6 @@ export type SubclassRuntimeControl = {
   options: SubclassRuntimeOption[];
   randomDie?: number;
 };
-
-type RuntimeCharacter = ExportCharacter & { subclassState?: Record<string, string | number> };
 
 const O = (id: string, name: string, description = ""): SubclassRuntimeOption => ({ id, name, description });
 const yesNo = [O("inactive", "Не активно"), O("active", "Активно")];
@@ -64,14 +63,15 @@ const definitions: SubclassRuntimeControl[] = [
   C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
   C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
   C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
+  C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [O("1", "1 продолжительный отдых"), O("2", "2 продолжительных отдыха"), O("3", "3 продолжительных отдыха"), O("4", "4 продолжительных отдыха")], 4),
   C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
   C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [O("inactive", "Не активно"), O("lighter", "Вес уменьшен вдвое"), O("heavier", "Вес удвоен")]),
   C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo),
 ];
 
-export function subclassRuntimeControls(character: ExportCharacter) {
+export function subclassRuntimeControls(character: ExportCharacter, spells: CatalogSpell[] = []) {
   const classes = orderedCharacterClasses(character);
-  return definitions
+  const controls = definitions
     .filter(control => classes.some(entry => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel))
     .map(control => {
       const entry = classes.find(item => item.classId === control.classId);
@@ -83,14 +83,20 @@ export function subclassRuntimeControls(character: ExportCharacter) {
       }
       return control;
     });
+  const spirits = classes.find(entry => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6);
+  if (spirits) {
+    const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
+    controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O(String(index + 1), String(index + 1))), undefined));
+    controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter(spell => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map(spell => O(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
+  }
+  return controls;
 }
 
 export function subclassRuntimeValue(character: ExportCharacter, key: string) {
-  return (character as RuntimeCharacter).subclassState?.[key];
+  return character.subclassState?.[key];
 }
 export function setSubclassRuntimeValue(character: ExportCharacter, key: string, value: string | number): ExportCharacter {
-  const runtime = character as RuntimeCharacter;
-  return { ...character, subclassState: { ...(runtime.subclassState || {}), [key]: value } } as ExportCharacter;
+  return { ...character, subclassState: { ...(character.subclassState || {}), [key]: value } };
 }
 export function rollSubclassRuntimeControl(character: ExportCharacter, control: SubclassRuntimeControl): ExportCharacter {
   if (!control.randomDie) return character;
@@ -109,6 +115,8 @@ export function startNecroticHuskCooldown(character: ExportCharacter): ExportCha
 }
 export function applySubclassLongRest(character: ExportCharacter): ExportCharacter {
   const cooldown = necroticHuskCooldown(character);
-  if (!cooldown) return character;
-  return setSubclassRuntimeValue(character, necroticHuskCooldownKey, Math.max(0, cooldown - 1));
+  const state = { ...(character.subclassState || {}) };
+  delete state["bard:spirits:spirit-session-spell"];
+  if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
+  return { ...character, subclassState: state };
 }
