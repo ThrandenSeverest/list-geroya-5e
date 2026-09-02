@@ -1,9 +1,10 @@
 import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
-import { estimatedHitPoints, helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
+import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
 import { helpmateSpellIds, spellIdFromDndUrl, spellIdFromLssCardId } from "./exportIds";
-import { asiLevelsForClass, feats, finalAbilityScores, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
+import { asiLevelsForClass, feats, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
 import { normalizeImportedSkills, skillNameFromExternalId } from "./skillIds";
+import { migrateMulticlassCharacter } from "./multiclass";
 
 export type CharacterFileSource = "native" | "long-story-short" | "helpmate";
 
@@ -13,29 +14,12 @@ export type CharacterImportResult = {
   warnings: string[];
 };
 
-function nativeHitPointsLookUninitialized(character: ExportCharacter) {
-  return Number(character.currentHitPoints) === 0
-    && Number(character.temporaryHitPoints || 0) === 0
-    && Number(character.hitDiceSpent || 0) === 0
-    && Number(character.deathSaveSuccesses || 0) === 0
-    && Number(character.deathSaveFailures || 0) === 0
-    && Number(character.pactSlotsUsed || 0) === 0
-    && !(character.spellSlotsUsed || []).some(value => Number(value) > 0)
-    && !Object.values(character.resourceSpent || {}).some(value => Number(value) > 0);
-}
-
 export function createNativeCharacterFile(character: ExportCharacter) {
-  const exportedCharacter = nativeHitPointsLookUninitialized(character)
-    ? {
-        ...character,
-        currentHitPoints: estimatedHitPoints({ ...character, abilities: finalAbilityScores(character) }),
-      }
-    : character;
   return {
     format: "list-geroya-5e",
     version: 1,
     exportedAt: new Date().toISOString(),
-    character: exportedCharacter,
+    character: migrateMulticlassCharacter(character),
   };
 }
 
@@ -305,7 +289,7 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
   return {
     source: "long-story-short",
     warnings,
-    character: {
+    character: migrateMulticlassCharacter({
       ...empty,
       name: text(valueOf(inner.name)) || text(inner.hiddenName),
       playerName: text(valueOf(info.playerName)),
@@ -343,7 +327,7 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
         bonds: collectText((inner.text as Record<string, unknown> | undefined)?.bonds).join(" ").trim(),
         flaws: collectText((inner.text as Record<string, unknown> | undefined)?.flaws).join(" ").trim(),
       },
-    },
+    }),
   };
 }
 
@@ -357,15 +341,22 @@ const helpmateSkills: Record<string, string[]> = {
 };
 
 function importHelpmate(payload: Record<string, unknown>, empty: ExportCharacter): CharacterImportResult {
-  const classEntry = Array.isArray(payload.Classes) ? payload.Classes[0] as Record<string, unknown> | undefined : undefined;
+  const importedClassEntries = Array.isArray(payload.Classes) ? payload.Classes.filter((entry): entry is Record<string, unknown> => !!entry && typeof entry === "object") : [];
+  const classEntry = importedClassEntries[0];
   if (!classEntry) throw new Error("В файле Helpmate не найден класс персонажа.");
-  const classId = text(classEntry.Id);
-  let className = Object.entries(helpmateClassIds).find(([, id]) => id === classId)?.[0] || "";
-  let subclass = "";
-  for (const [candidateClass, subclasses] of Object.entries(helpmateSubclassClassIds)) {
-    const found = Object.entries(subclasses).find(([, id]) => id === classId);
-    if (found) [className, subclass] = [candidateClass, found[0]];
-  }
+  const resolveClass = (entry: Record<string, unknown>) => {
+    const classId = text(entry.Id);
+    let className = Object.entries(helpmateClassIds).find(([, id]) => id === classId)?.[0] || "";
+    let subclass = "";
+    for (const [candidateClass, subclasses] of Object.entries(helpmateSubclassClassIds)) {
+      const found = Object.entries(subclasses).find(([, id]) => id === classId);
+      if (found) [className, subclass] = [candidateClass, found[0]];
+    }
+    return { className, subclass };
+  };
+  const resolvedClasses = importedClassEntries.map(resolveClass).filter(entry => entry.className);
+  const className = resolvedClasses[0]?.className || "";
+  const subclass = resolvedClasses[0]?.subclass || "";
   const raceLabel = text(payload.UserRace).split(/[·—]/)[0];
   const race = matchCatalog(raceLabel, races);
   const parameters = Array.isArray(payload.Parameters) ? payload.Parameters as Array<Record<string, unknown>> : [];
@@ -382,7 +373,14 @@ function importHelpmate(payload: Record<string, unknown>, empty: ExportCharacter
   }
   const reverseSpellIds = Object.fromEntries(Object.entries(helpmateSpellIds).map(([id, external]) => [external, id]));
   const importedSpells = (Array.isArray(payload.Spells) ? payload.Spells : []).map(value => reverseSpellIds[String(value)]).filter(Boolean);
-  const level = Math.max(1, Math.min(20, Number(classEntry.Level) || 1));
+  const classProgress = importedClassEntries.map((entry, index) => ({
+    classId: resolvedClasses[index]?.className || "",
+    level: Math.max(1, Math.min(20, Number(entry.Level) || 1)),
+    subclassId: resolvedClasses[index]?.subclass || "",
+    acquiredAtCharacterLevel: index + 1,
+    classSkills: index === 0 ? importedSkills : [],
+  })).filter(entry => entry.classId);
+  const level = classProgress.reduce((sum, entry) => sum + entry.level, 0) || 1;
   const cells = Array.isArray(classEntry.SpellCells) ? classEntry.SpellCells as Array<Record<string, unknown>> : [];
   const spellSlotsUsed = Array.from({ length: 9 }, (_, index) => {
     const cell = cells.find(item => Number(item.Level) === index + 1);
@@ -391,10 +389,10 @@ function importHelpmate(payload: Record<string, unknown>, empty: ExportCharacter
   return {
     source: "helpmate",
     warnings: [
-      "Экспериментальный импорт Helpmate восстанавливает базовые характеристики, класс, уровень, владения навыками, заклинания и ячейки.",
+      `Импорт Helpmate восстановил ${classProgress.length} класс(а/ов), базовые характеристики, навыки, заклинания и ячейки. Порядок Classes использован как эвристика стартового класса, потому что Helpmate не хранит историю уровней.`,
       "Предыстория, конкретные классовые выборы, снаряжение и характер в формате Helpmate не имеют достаточной структуры — проверьте их вручную.",
     ],
-    character: {
+    character: migrateMulticlassCharacter({
       ...empty,
       name: text(payload.SecondName),
       race,
@@ -402,12 +400,14 @@ function importHelpmate(payload: Record<string, unknown>, empty: ExportCharacter
       className,
       subclass,
       level,
+      startingClassId: classProgress[0]?.classId || className,
+      classes: classProgress,
       abilities,
       classSkills: importedSkills,
       spells: importedSpells,
       preparedSpells: importedSpells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0),
       spellSlotsUsed,
-    },
+    }),
   };
 }
 
@@ -419,14 +419,14 @@ export function parseCharacterFile(payload: unknown, empty: ExportCharacter): Ch
     return {
       source: "native",
       warnings: [],
-      character: {
+      character: migrateMulticlassCharacter({
         ...empty,
         ...imported,
         raceSkills: normalizeImportedSkills(imported.raceSkills),
         classSkills: normalizeImportedSkills(imported.classSkills),
         backgroundSkills: normalizeImportedSkills(imported.backgroundSkills),
         expertiseSkills: normalizeImportedSkills(imported.expertiseSkills),
-      },
+      }),
     };
   }
   if (value.jsonType === "character" && (typeof value.data === "string" || typeof value.data === "object")) return importLss(value, empty);
