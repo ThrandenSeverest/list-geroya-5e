@@ -93,6 +93,20 @@ export function proficiencyChoiceUsedElsewhere(character: ExportCharacter, key: 
   return characterProficiencies(withoutCurrent).skills.includes(value);
 }
 
+/** True when a skill is already granted by a source other than the specified
+ * class. This keeps every class-skill picker in a multiclass character on one
+ * shared pool of skills. */
+export function classSkillUsedElsewhere(character: ExportCharacter, classId: string, skill: string) {
+  if (!skillNames.includes(skill)) return false;
+  const startingClassId = getStartingClassId(character);
+  const withoutCurrentClass = {
+    ...character,
+    classSkills: classId === startingClassId ? [] : character.classSkills,
+    classes: orderedCharacterClasses(character).map(entry => entry.classId === classId ? { ...entry, classSkills: [] } : entry),
+  };
+  return characterProficiencies(withoutCurrentClass).skills.includes(skill);
+}
+
 const fixedClassTools: Record<string, string[]> = {
   druid: ["Набор травника"],
   rogue: ["Воровские инструменты"],
@@ -146,7 +160,10 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
   const classes = orderedCharacterClasses(character);
   const startingClassId = getStartingClassId(character);
   const starting = classes.find(entry => entry.classId === startingClassId) || classes[0];
-  const skills = [...(racialSkills[character.race] || []), ...(character.raceSkills || []), ...character.backgroundSkills, ...classes.flatMap(entry => entry.classSkills || (entry.classId === startingClassId ? character.classSkills : []))].filter(skill => skillNames.includes(skill));
+  // Older characters store starting-class skills in `character.classSkills`,
+  // while multiclass entries store their own skills. Prefer an entry when it
+  // has choices, otherwise retain the legacy starting-class value.
+  const skills = [...(racialSkills[character.race] || []), ...(character.raceSkills || []), ...character.backgroundSkills, ...classes.flatMap(entry => entry.classSkills?.length ? entry.classSkills : (entry.classId === startingClassId ? character.classSkills : []))].filter(skill => skillNames.includes(skill));
   const armor = [classRules[startingClassId]?.armor || ""];
   const weapons = [classRules[startingClassId]?.weapons || ""];
   const tools = [...(fixedClassTools[startingClassId] || [])];
