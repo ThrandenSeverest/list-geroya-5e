@@ -1,7 +1,7 @@
 import type { CatalogOption, CatalogSpell } from "./catalog";
 import { dndSpellUrl, helpmateSpellId } from "./exportIds";
 import { abilityLabels, classRules, skillKeys, type Feature } from "./rules";
-import { spellSelectionRule } from "./characterRules";
+import { spellSelectionRule, spellSelectionRuleForClass } from "./characterRules";
 import { characterResources, resourceCurrent } from "./characterResources";
 import { backgroundRule } from "./backgroundRules";
 import { selectedEquipment } from "./equipment";
@@ -9,6 +9,7 @@ import { characterAttacks, lssWeaponAttacks } from "./combat";
 import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 import { armorClass } from "./armor";
 import { externalSkillId } from "./skillIds";
+import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMulticlass, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -23,7 +24,38 @@ export type AdvancementChoice = {
   featChoices?: Record<string, string[]>;
 };
 
+export type RulesetId = "5e-2014" | "5e-2024";
+export type CharacterClassProgress = {
+  classId: string;
+  level: number;
+  subclassId?: string;
+  acquiredAtCharacterLevel: number;
+  /** Class skill choices belong to the class that granted them. */
+  classSkills?: string[];
+  choiceValues?: Record<string, string[]>;
+};
+export type CharacterLevelEntry = {
+  characterLevel: number;
+  classId: string;
+  classLevelAfter: number;
+  hpMode?: "average" | "roll" | "manual";
+  hpGain?: number;
+};
+export type SpellGrant = {
+  spellId: string;
+  sourceType: "class" | "subclass" | "feat" | "race" | "item";
+  sourceId: string;
+  classId?: string;
+  mode: "known" | "prepared" | "always-prepared" | "spellbook" | "granted";
+};
+
 export type ExportCharacter = {
+  schemaVersion?: number;
+  rulesetId?: RulesetId;
+  startingClassId?: string;
+  /** Source of truth from schema V4 onward. */
+  classes?: CharacterClassProgress[];
+  levelHistory?: CharacterLevelEntry[];
   name: string;
   playerName: string;
   experience?: number;
@@ -61,7 +93,7 @@ export type ExportCharacter = {
   /** Редактируемое содержимое рюкзака; если его нет, показывается стартовое снаряжение. */
   inventoryOverride?: string;
   /** Монеты хранятся отдельно от списка снаряжения, чтобы их можно было быстро менять на листе. */
-  currency?: Currency;
+  currency: Currency;
   languages?: string[];
   proficiencyChoices?: Record<string, string[]>;
   resourceSpent?: Record<string, number>;
@@ -70,6 +102,9 @@ export type ExportCharacter = {
   currentHitPoints?: number;
   temporaryHitPoints?: number;
   hitDiceSpent?: number;
+  hitDiceSpentByClass?: Record<string, number>;
+  spellGrants?: SpellGrant[];
+  primarySpellcastingClassId?: string;
   deathSaveSuccesses?: number;
   deathSaveFailures?: number;
   useTasha?: boolean;
@@ -128,9 +163,17 @@ export function darkvisionDistance(features: Feature[]) {
 }
 
 export function estimatedHitPoints(character: ExportCharacter) {
-  const hitDie = classRules[character.className]?.hitDie || 8;
   const constitution = abilityModifier(character.abilities.con);
-  return Math.max(1, hitDie + constitution + (character.level - 1) * Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
+  const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
+  return Math.max(1, history.reduce((total, entry) => {
+    const hitDie = classRules[entry.classId]?.hitDie || 8;
+    const gain = entry.characterLevel === 1
+      ? hitDie + constitution
+      : entry.hpMode === "roll" || entry.hpMode === "manual"
+        ? Math.max(1, entry.hpGain || 1)
+        : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution);
+    return total + gain;
+  }, 0));
 }
 
 function makeId() {
@@ -170,18 +213,30 @@ function summaryText(context: ExportContext) {
   ]);
   const preparedSpellNames = [...preparedSpellIds].map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
   const alwaysPreparedNames = [...alwaysPrepared].map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
+  const classes = orderedCharacterClasses(character);
+  const totalLevel = characterLevel(character);
   const spellAbility = classRules[character.className]?.spellAbility as keyof AbilityScores | undefined;
   const spellMod = spellAbility ? abilityModifier(character.abilities[spellAbility]) : 0;
-  const spellDc = spellAbility ? 8 + proficiencyBonus(character.level) + spellMod : 0;
+  const spellDc = spellAbility ? 8 + proficiencyBonus(totalLevel) + spellMod : 0;
   const resources = characterResources(character).map(resource => `${resource.name}: ${resourceCurrent(character, resource)} / ${resource.max}${resource.die ? ` (${resource.die})` : ""}`);
   const backgroundData = backgroundRule(character.background, background);
   const equipment = selectedEquipment(character);
   const attacks = characterAttacks(character, spells);
   const proficiencies = characterProficiencies(character);
+  const classSummary = classes.map(entry => `${entry.classId}${entry.subclassId ? ` (${entry.subclassId})` : ""} ${entry.level}`).join(" / ");
+  const hitDice = hitDicePools(character).map(pool => `${pool.max}к${pool.die}${pool.spent ? ` (потрачено ${pool.spent})` : ""}`).join(" + ");
+  const spellSources = classes.flatMap(entry => {
+    const ability = classRules[entry.classId]?.spellAbility as keyof AbilityScores | undefined;
+    if (!ability) return [];
+    const mod = abilityModifier(character.abilities[ability]);
+    return [`${entry.classId} ${entry.level}: ${ability.toUpperCase()}, Сл ${8 + proficiencyBonus(totalLevel) + mod}, атака ${proficiencyBonus(totalLevel) + mod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + mod}`];
+  });
   return [
     `Имя: ${character.name || "Безымянный герой"}`,
     `Игрок: ${character.playerName || ""}`,
-    `Класс: ${characterClass?.name || ""}, уровень ${character.level}${context.subclassName ? ` — ${context.subclassName}` : ""}`,
+    `Классы: ${classSummary || `${characterClass?.name || ""}, уровень ${character.level}`}`,
+    `Общий уровень: ${totalLevel}; стартовый класс: ${getStartingClassId(character) || "не указан"}`,
+    `Кости хитов: ${hitDice || "нет"}`,
     `Раса: ${race?.name || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
     `Предыстория: ${background?.name || ""}`,
     `Особенность предыстории: ${backgroundData.feature.name}. ${backgroundData.feature.description}`,
@@ -197,7 +252,8 @@ function summaryText(context: ExportContext) {
     `Слабости: ${character.personality.flaws}`,
     `Расовые особенности:\n${featureText(raceFeatureList)}`,
     `Классовые особенности:\n${featureText(classFeatureList)}`,
-    ...(spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(character.level) + spellMod}`] : []),
+    ...(spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + spellMod}`] : []),
+    ...(spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : []),
     `Ресурсы: ${resources.join("; ") || "нет"}`,
     `Снаряжение: ${equipment.join(", ") || "нет"}`,
     `Атаки: ${attacks.map(attack => `${attack.name} — ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}`).join("; ") || "нет"}`,
@@ -268,7 +324,10 @@ export function helpmateSkippedSpells(context: ExportContext) {
 export function createHelpmateExport(context: ExportContext) {
   const { character, race, raceFeatureList } = context;
   const selectedSkills = new Set(characterProficiencies(character).skills);
-  const saves = new Set(classRules[character.className]?.saves || []);
+  const classes = orderedCharacterClasses(character);
+  const totalLevel = characterLevel(character);
+  const startingClassId = getStartingClassId(character);
+  const saves = new Set(classRules[startingClassId]?.saves || []);
   const hitPoints = estimatedHitPoints(character);
   const darkvision = darkvisionDistance(raceFeatureList);
   const fly = raceFeatureList.some(feature => feature.name.toLowerCase() === "полёт");
@@ -286,23 +345,33 @@ export function createHelpmateExport(context: ExportContext) {
   const selectedHelpmateSpellIds = helpmateSelectedSpellIds(context)
     .map(helpmateSpellId)
     .filter((id): id is string => Boolean(id));
-  const slotMaximums = standardSlotMaximums(character.className, character.level);
-  const selectionRule = spellSelectionRule(character);
-  const cantripCount = selectionRule.cantrips;
-  const spellAbility = classRules[character.className]?.spellAbility as keyof AbilityScores | undefined;
+  const ordinarySpellcasters = classes.filter(entry => spellSelectionRuleForClass(character, entry.classId, entry.level).caster && entry.classId !== "warlock");
+  const sharedSlots = resolveSpellSlots(character);
+  const primarySpellcaster = classes.find(entry => entry.classId === character.primarySpellcastingClassId)
+    || classes.find(entry => Boolean(classRules[entry.classId]?.spellAbility));
+  const spellAbility = primarySpellcaster ? classRules[primarySpellcaster.classId]?.spellAbility as keyof AbilityScores | undefined : undefined;
   const spellModifier = spellAbility ? abilityModifier(character.abilities[spellAbility]) : 0;
   const spellAttack = proficiencyBonus(character.level) + spellModifier;
   const spellSaveDc = spellAbility ? 8 + spellAttack : null;
-  const spellCells = [
-    ...(cantripCount ? [{ Level: 0, Left: cantripCount, Max: cantripCount }] : []),
-    ...slotMaximums.map((max, index) => ({ Level: index + 1, Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)), Max: max })),
-    ...(selectionRule.pact ? [{
-      Level: selectionRule.pact.level,
-      Left: Math.max(0, selectionRule.pact.slots - (character.pactSlotsUsed || 0)),
-      Max: selectionRule.pact.slots,
-    }] : []),
-  ];
-  const helpmateClassId = helpmateSubclassClassIds[character.className]?.[character.subclass || ""] || helpmateClassIds[character.className];
+  const pact = resolvePactMagic(character);
+  const classesPayload = classes.map(entry => {
+    const selection = spellSelectionRuleForClass(character, entry.classId, entry.level);
+    const cells = [
+      ...(selection.cantrips ? [{ Level: 0, Left: selection.cantrips, Max: selection.cantrips }] : []),
+      // A shared normal pool is safe to serialize when exactly one class has
+      // Spellcasting. Its placement for two ordinary casters is intentionally
+      // not guessed until a real Helpmate fixture confirms it.
+      ...(entry.classId !== "warlock" && ordinarySpellcasters.length === 1
+        ? sharedSlots.map((max, index) => ({ Level: index + 1, Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)), Max: max }))
+        : []),
+      ...(entry.classId === "warlock" && pact.slots ? [{ Level: pact.level, Left: Math.max(0, pact.slots - (character.pactSlotsUsed || 0)), Max: pact.slots }] : []),
+    ];
+    const id = helpmateSubclassClassIds[entry.classId]?.[entry.subclassId || ""] || helpmateClassIds[entry.classId];
+    if (!id) throw new Error(`Helpmate: неизвестный класс ${entry.classId}.`);
+    return { Id: id, Level: entry.level, SpellCells: cells };
+  });
+  if (new Set(classesPayload.map(entry => entry.Id)).size !== classesPayload.length) throw new Error("Helpmate: два класса получили один идентификатор.");
+  if (classesPayload.reduce((sum, entry) => sum + entry.Level, 0) !== totalLevel) throw new Error("Helpmate: уровни классов не совпадают с общим уровнем.");
 
   return {
     Id: makeId(),
@@ -323,13 +392,13 @@ export function createHelpmateExport(context: ExportContext) {
     Silver: 0,
     Copper: 0,
     HitPoints: hitPoints,
-    CurrentHitPoints: hitPoints,
+    CurrentHitPoints: character.currentHitPoints ?? hitPoints,
     TempHitPoints: 0,
     TempCurrentHitPoints: 0,
     HasInspiration: false,
     Alignment: 0,
-    HitDice: classRules[character.className]?.hitDie || 8,
-    HitDiceCount: character.level,
+    HitDice: isMulticlass(character) ? 0 : (classRules[character.className]?.hitDie || 8),
+    HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
     IsArmorTakeOf: false,
     TwoHanded: false,
     FlyValue: fly ? 30 : 0,
@@ -360,11 +429,7 @@ export function createHelpmateExport(context: ExportContext) {
     ArrowItems: [],
     InventoryItems: [],
     Parameters: parameters,
-    Classes: helpmateClassId ? [{
-      Id: helpmateClassId,
-      Level: character.level,
-      SpellCells: spellCells,
-    }] : [],
+    Classes: classesPayload,
     DamageResist: "",
     DamageImmun: "",
     DamageVulner: "",
