@@ -34,6 +34,7 @@ export type PdfCharacterSheetProps = {
   speed: number;
   hitPoints: number;
   hitDie: number;
+  hitDiceLabel?: string;
   currentHitPoints?: number;
   temporaryHitPoints?: number;
   hitDiceRemaining?: number;
@@ -262,7 +263,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
         </section>
         <section className="pdf-core-column">
           <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span></div></div>
-          <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: к{props.hitDie} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
+          <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: {props.hitDiceLabel || `к${props.hitDie}`} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
           <div className="pdf-panel pdf-current-hp"><label>ТЕКУЩИЕ ХИТЫ <b>{props.currentHitPoints || ""}</b></label><label>ВРЕМЕННЫЕ ХИТЫ <b>{props.temporaryHitPoints || ""}</b></label></div>
           <div className={`pdf-panel pdf-resources pdf-resources--${resourcesDensity}`}><h2>Ресурсы</h2>{props.resources.length ? props.resources.map(resource => {
             const unit = resource.unit || 1;
