@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vinext build",
+    "build": "node scripts/check-subclass-catalog.mjs && vinext build",
+    "check:subclasses": "node scripts/check-subclass-catalog.mjs",
     "start": "vinext start"
   },
   "dependencies": {
