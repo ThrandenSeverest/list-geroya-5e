@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "list-geroya-5e",
+  "compatibility_date": "2026-05-22",
+  "compatibility_flags": ["nodejs_compat"],
+  // Можно не записывать account_id в файл: vinext также читает
+  // CLOUDFLARE_ACCOUNT_ID из окружения.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "list-geroya-db",
+      "database_id": "00000000-0000-4000-8000-000000000000"
+    }
+  ]
+}
