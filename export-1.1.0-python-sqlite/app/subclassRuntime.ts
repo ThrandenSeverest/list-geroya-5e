@@ -17,9 +17,7 @@ export type SubclassRuntimeControl = {
   randomDie?: number;
 };
 
-type RuntimeCharacter = ExportCharacter & {
-  subclassState?: Record<string, string | number>;
-};
+type RuntimeCharacter = ExportCharacter & { subclassState?: Record<string, string | number> };
 
 const O = (id: string, name: string, description = ""): SubclassRuntimeOption => ({ id, name, description });
 const yesNo = [O("inactive", "Не активно"), O("active", "Активно")];
@@ -48,59 +46,52 @@ const definitions: SubclassRuntimeControl[] = [
   C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [O("bite", "Укус"), O("claws", "Когти"), O("tail", "Хвост")]),
   C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [O("swim", "Плавание и дыхание под водой"), O("climb", "Лазание"), O("jump", "Прыжок")]),
   C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
-
   C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
   C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
-
   C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
   C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [O("inactive", "Нет двойника"), O("1", "1 двойник"), O("2", "2 двойника"), O("3", "3 двойника"), O("4", "4 двойника")]),
   C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
-
   C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
   C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
-
   C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [O("0", "Нет эха"), O("1", "1 эхо"), O("2", "2 эха (только 18 уровень)")]),
-
   C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [O("none", "Не проявлено"), O("arms", "Руки"), O("arms-visage", "Руки + облик"), O("full", "Пробуждённое астральное тело")]),
   C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
   C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
   C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O("cone", "Конус"), O("line", "Линия")]),
   C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O("resistance", "Стихийное сопротивление"), O("fear", "Пугающее присутствие")]),
-
   C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
   C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
-
   C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
-
   C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
   C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
   C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
-
   C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [O("inactive", "Не активно"), O("lighter", "Вес уменьшен вдвое"), O("heavier", "Вес удвоен")]),
   C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo),
 ];
 
 export function subclassRuntimeControls(character: ExportCharacter) {
   const classes = orderedCharacterClasses(character);
-  return definitions.filter(control => classes.some(entry => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel))
-    .filter(control => {
-      if (control.key === "fighter:echo-knight:echo-count") {
-        const fighter = classes.find(entry => entry.classId === "fighter");
-        if ((fighter?.level || 0) < 18) control = { ...control, options: control.options.filter(option => option.id !== "2") };
+  return definitions
+    .filter(control => classes.some(entry => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel))
+    .map(control => {
+      const entry = classes.find(item => item.classId === control.classId);
+      if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return { ...control, options: control.options.filter(option => option.id !== "2") };
+      if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return { ...control, options: control.options.filter(option => ["inactive", "1"].includes(option.id)) };
+      if (control.key === "monk:astral-self:astral-manifestation") {
+        const level = entry?.level || 0;
+        return { ...control, options: control.options.filter(option => option.id === "none" || option.id === "arms" || (level >= 6 && option.id === "arms-visage") || (level >= 17 && option.id === "full")) };
       }
-      return true;
+      return control;
     });
 }
 
 export function subclassRuntimeValue(character: ExportCharacter, key: string) {
   return (character as RuntimeCharacter).subclassState?.[key];
 }
-
 export function setSubclassRuntimeValue(character: ExportCharacter, key: string, value: string | number): ExportCharacter {
   const runtime = character as RuntimeCharacter;
   return { ...character, subclassState: { ...(runtime.subclassState || {}), [key]: value } } as ExportCharacter;
 }
-
 export function rollSubclassRuntimeControl(character: ExportCharacter, control: SubclassRuntimeControl): ExportCharacter {
   if (!control.randomDie) return character;
   const roll = (crypto.getRandomValues(new Uint32Array(1))[0] % control.randomDie) + 1;
