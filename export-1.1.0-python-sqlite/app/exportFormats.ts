@@ -96,6 +96,8 @@ export type ExportCharacter = {
   currency: Currency;
   languages?: string[];
   proficiencyChoices?: Record<string, string[]>;
+  /** Transient subclass modes, summons and per-rest decisions. */
+  subclassState?: Record<string, string | number>;
   resourceSpent?: Record<string, number>;
   spellSlotsUsed?: number[];
   pactSlotsUsed?: number;
@@ -388,14 +390,14 @@ export function createHelpmateExport(context: ExportContext) {
     SoundFolder: null,
     ImDoubleHeal: false,
     SeeInTheDark: darkvision > 0,
-    Gold: 0,
-    Silver: 0,
-    Copper: 0,
+    Gold: character.currency.gp || 0,
+    Silver: character.currency.sp || 0,
+    Copper: character.currency.cp || 0,
     HitPoints: hitPoints,
     CurrentHitPoints: character.currentHitPoints ?? hitPoints,
-    TempHitPoints: 0,
-    TempCurrentHitPoints: 0,
-    HasInspiration: false,
+    TempHitPoints: character.temporaryHitPoints || 0,
+    TempCurrentHitPoints: character.temporaryHitPoints || 0,
+    HasInspiration: !!character.inspiration,
     Alignment: 0,
     HitDice: isMulticlass(character) ? 0 : (classRules[character.className]?.hitDie || 8),
     HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
@@ -413,7 +415,7 @@ export function createHelpmateExport(context: ExportContext) {
     Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join(",") || "12",
     Multiplier: 1,
     TrueMultiplier: 0,
-    Inspiration: 0,
+    Inspiration: character.inspiration ? 1 : 0,
     Armor: armorClass(character),
     Bditelnost: 10 + abilityModifier(character.abilities.wis) + (selectedSkills.has("Внимательность") ? proficiencyBonus(character.level) : 0),
     IniBonus: abilityModifier(character.abilities.dex),
@@ -764,13 +766,13 @@ export function createLongStoryShortExport(context: ExportContext) {
     ),
     skills: lssSkills(selectedSkills, expertiseSkills),
     vitality: {
-      "hp-dice-current": { value: character.level },
+      "hp-dice-current": { value: hitDicePools(character).reduce((total, pool) => total + pool.max - pool.spent, 0) },
       "hp-dice-multi": {},
       "hp-max-con-bonus": { value: 0 },
       darkvision: { value: darkvisionDistance(raceFeatureList) },
       "hp-max": { value: estimatedHitPoints(character) },
-      "hp-current": { value: estimatedHitPoints(character) },
-      "hp-temp": { value: 0 },
+      "hp-current": { value: character.currentHitPoints ?? estimatedHitPoints(character) },
+      "hp-temp": { value: character.temporaryHitPoints || 0 },
       isDying: false,
       deathFails: 0,
       deathSuccesses: 0,
