@@ -1,5 +1,6 @@
 import type { ExportCharacter } from "./exportFormats";
 import { selectedEquipment } from "./equipment";
+import { getClassProgress, getClassLevel, normalizedLevelHistory } from "./multiclass";
 
 const modifier = (score: number) => Math.floor((score - 10) / 2);
 
@@ -53,15 +54,20 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   } else if (character.race === "lizardfolk") {
     value = 13 + dex;
     base = "Природный доспех: 13 + Ловкость";
-  } else if (character.className === "sorcerer" && character.subclass === "draconic") {
+  } else if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") {
     value = 13 + dex;
     base = "Драконья устойчивость: 13 + Ловкость";
-  } else if (character.className === "monk" && !shield) {
-    value = 10 + dex + wis;
-    base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
-  } else if (character.className === "barbarian") {
-    value = 10 + dex + con;
-    base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
+  } else {
+    // Legacy 2014: Monk and Barbarian do not acquire a second instance of
+    // Unarmored Defense. The first class obtained in level history wins.
+    const unarmoredSource = normalizedLevelHistory(character).find(entry => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
+    if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) {
+      value = 10 + dex + wis;
+      base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
+    } else if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) {
+      value = 10 + dex + con;
+      base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
+    }
   }
 
   const bonuses: string[] = [];
