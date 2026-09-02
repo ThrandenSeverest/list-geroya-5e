@@ -6,6 +6,7 @@ on:
       - feature/multiclass-1.1
     paths:
       - 'export-1.1.0-python-sqlite/scripts/apply-subclass-spell-integration.mjs'
+      - 'export-1.1.0-python-sqlite/scripts/repair-subclass-integration.mjs'
       - '.github/workflows/apply-subclass-spell-integration.yml'
   workflow_dispatch:
 
@@ -22,9 +23,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply integration patch
+      - name: Apply subclass data integration
         working-directory: export-1.1.0-python-sqlite
         run: node scripts/apply-subclass-spell-integration.mjs
+      - name: Apply subclass persistence and UI repairs
+        working-directory: export-1.1.0-python-sqlite
+        run: node scripts/repair-subclass-integration.mjs
       - name: Commit generated source
         run: |
           if git diff --quiet; then
@@ -33,6 +37,6 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add export-1.1.0-python-sqlite/app/characterRules.ts
-          git commit -m 'feat: integrate subclass spell grant modes'
+          git add export-1.1.0-python-sqlite/app/characterRules.ts export-1.1.0-python-sqlite/app/page.tsx
+          git commit -m 'feat: finish subclass spell UI and class-local persistence'
           git push origin HEAD:feature/multiclass-1.1
