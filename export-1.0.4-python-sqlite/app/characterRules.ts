@@ -401,9 +401,8 @@ function knownSpellLevelLimits(classId: string, level: number, knownTable: numbe
   return limits;
 }
 
-export function spellSelectionRule(character: ExportCharacter): SpellSelectionRule {
-  const level = character.level;
-  const classId = character.className;
+export function spellSelectionRuleForClass(character: ExportCharacter, classId: string, classLevel?: number): SpellSelectionRule {
+  const level = classLevel ?? character.level;
   const cantrips = cantripTables[classId]?.[level] || 0;
   const ability = classId === "wizard" || classId === "artificer" ? "int" : ["cleric", "druid", "ranger"].includes(classId) ? "wis" : "cha";
   const mod = Math.floor(((character.abilities[ability as AbilityKey] || 10) - 10) / 2);
@@ -433,6 +432,10 @@ export function spellSelectionRule(character: ExportCharacter): SpellSelectionRu
     return { caster: true, mode: "prepared", title: "Подготовленные заклинания", cantrips, leveled: prepared, prepared, maxLevel, slots };
   }
   return { caster: false, mode: "none", title: "Нет базового заклинательства", cantrips: 0, leveled: 0, maxLevel: 0, slots: [] };
+}
+
+export function spellSelectionRule(character: ExportCharacter): SpellSelectionRule {
+  return spellSelectionRuleForClass(character, character.className, character.level);
 }
 
 export type FeatOption = { id: string; name: string; source: string; description: string; requirement?: string; abilityOptions?: AbilityKey[]; repeatable?: boolean };
