@@ -10,7 +10,7 @@ export function classProgresses(character: ExportCharacter): CharacterClassProgr
   const valid = (character.classes || []).filter(entry => entry.classId && entry.level > 0);
   if (valid.length) return valid;
   if (!character.className) return [];
-  return [{ classId: character.className, level: Math.max(1, character.level || 1), subclassId: character.subclass || "", acquiredAtCharacterLevel: 1, classSkills: character.classSkills || [] }];
+  return [{ classId: character.className, level: Math.max(1, character.level || 1), subclassId: character.subclass || "", acquiredAtCharacterLevel: 1, classSkills: character.classSkills || [], choiceValues: character.classChoices || {} }];
 }
 
 export function characterLevel(character: ExportCharacter) {
@@ -24,6 +24,10 @@ export function getClassProgress(character: ExportCharacter, classId: string) {
 
 export function getClassLevel(character: ExportCharacter, classId: string) {
   return getClassProgress(character, classId)?.level || 0;
+}
+
+export function selectedSubclassForClass(character: ExportCharacter, classId: string) {
+  return getClassProgress(character, classId)?.subclassId || "";
 }
 
 export function hasClass(character: ExportCharacter, classId: string) {
@@ -56,10 +60,40 @@ export function normalizedLevelHistory(character: ExportCharacter): CharacterLev
   return history;
 }
 
+function migratedChoiceValues(character: ExportCharacter, classId: string, startingClassId: string, existing?: Record<string, string[]>) {
+  const choices: Record<string, string[]> = { ...(existing || {}) };
+  const legacy = character.classChoices || {};
+
+  // Old single-class saves stored every class/subclass choice globally.
+  if (classId === startingClassId) {
+    for (const [key, value] of Object.entries(legacy)) {
+      if (key.includes(":")) continue;
+      if (!(key in choices)) choices[key] = [...value];
+    }
+  }
+
+  // Transitional multiclass UI uses classId:key keys. Fold them into the
+  // owning CharacterClassProgress so save/load/export do not lose choices.
+  const prefix = `${classId}:`;
+  for (const [key, value] of Object.entries(legacy)) {
+    if (!key.startsWith(prefix)) continue;
+    const localKey = key.slice(prefix.length);
+    if (!(localKey in choices)) choices[localKey] = [...value];
+  }
+  return choices;
+}
+
 export function migrateMulticlassCharacter(character: ExportCharacter): ExportCharacter {
-  const classes = orderedCharacterClasses(character);
+  const rawClasses = orderedCharacterClasses(character);
+  const startingClassId = character.startingClassId || rawClasses[0]?.classId || character.className;
+  const classes = rawClasses.map(entry => ({
+    ...entry,
+    // schema < 4 only had one global subclass. Preserve it on the starting
+    // class when no class-local subclass has been written yet.
+    subclassId: entry.subclassId || (entry.classId === startingClassId ? character.subclass || "" : ""),
+    choiceValues: migratedChoiceValues(character, entry.classId, startingClassId, entry.choiceValues),
+  }));
   const totalLevel = classes.reduce((sum, entry) => sum + entry.level, 0) || 1;
-  const startingClassId = character.startingClassId || classes[0]?.classId || character.className;
   const levelHistory = (character.levelHistory || []).length === totalLevel ? character.levelHistory! : normalizedLevelHistory({ ...character, classes, startingClassId });
   const starting = classes.find(entry => entry.classId === startingClassId) || classes[0];
   return {
@@ -79,7 +113,14 @@ export function migrateMulticlassCharacter(character: ExportCharacter): ExportCh
 }
 
 export function classView(character: ExportCharacter, entry: CharacterClassProgress): ExportCharacter {
-  return { ...character, className: entry.classId, subclass: entry.subclassId || "", level: entry.level, classSkills: entry.classSkills || [] };
+  return {
+    ...character,
+    className: entry.classId,
+    subclass: entry.subclassId || "",
+    level: entry.level,
+    classSkills: entry.classSkills || [],
+    classChoices: { ...(character.classChoices || {}), ...(entry.choiceValues || {}) },
+  };
 }
 
 const prerequisites: Record<string, Array<keyof AbilityScores>> = {
