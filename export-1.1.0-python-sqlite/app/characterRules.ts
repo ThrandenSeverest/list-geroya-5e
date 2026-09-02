@@ -2,7 +2,7 @@ import type { CatalogSpell } from "./catalog";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
 import { featAbilityBonuses } from "./featChoices";
 import { classRules, type Feature } from "./rules";
-import { generatedFeats } from "./generatedRulesCorpus";
+import { generatedFeats, subclassFeatureCorpus } from "./generatedRulesCorpus";
 
 export type AbilityKey = keyof AbilityScores;
 export type RaceVariant = {
@@ -310,6 +310,65 @@ export const subclasses: Record<string, { level: number; options: SubclassOption
     SC("armorer", "Бронник", "TCE", "Превращает доспех в магическую силовую броню.", [SF(3, "Магический доспех", "Броня становится фокусировкой и заменяет утраченные конечности."), SF(3, "Модель доспеха", "Выбирает защитную или скрытную конфигурацию.")], ["magic-missile", "thunderwave", "mirror-image", "shatter", "hypnotic-pattern", "lightningbolt"]),
   ]},
 };
+
+/**
+ * Official 5e (2014) subclasses which were present in the generated rules
+ * corpus but absent from the selectable catalogue.  Feature text is hydrated
+ * from that corpus below, so the corpus is the single source for feature
+ * mechanics rather than a second hand-maintained short description.
+ */
+const missingOfficialSubclassOptions: Array<{ classId: string; id: string; name: string; source: string; description: string }> = [
+  { classId: "barbarian", id: "battlerager", name: "Путь бушующего в бою", source: "SCAG", description: "Шипованный доспех, ярость и давление в ближнем бою." },
+  { classId: "barbarian", id: "stormherald", name: "Путь буревестника", source: "XGE", description: "Аура ярости пустыни, моря или тундры." },
+  { classId: "barbarian", id: "wildmagic", name: "Путь дикой магии", source: "TCE", description: "Случайные магические всплески и поддержка союзников." },
+  { classId: "barbarian", id: "beast", name: "Путь зверя", source: "TCE", description: "Природное оружие и звериная адаптация в ярости." },
+  { classId: "barbarian", id: "giant", name: "Путь великана", source: "BPGG", description: "Сила великанов, размер и стихийное оружие." },
+  { classId: "bard", id: "creation", name: "Коллегия Созидания", source: "TCE", description: "Вдохновение, создающее предметы и оживляющее вещи." },
+  { classId: "bard", id: "spirits", name: "Коллегия Духов", source: "VRGR", description: "Истории духов, гадание и заимствованная магия." },
+  { classId: "cleric", id: "tempest", name: "Домен бури", source: "PHB", description: "Гром, молния и бой в тяжёлых доспехах." },
+  { classId: "cleric", id: "trickery", name: "Домен обмана", source: "PHB", description: "Скрытность, иллюзорный двойник и обман врагов." },
+  { classId: "cleric", id: "nature", name: "Домен природы", source: "PHB", description: "Друидская магия и защита природы." },
+  { classId: "cleric", id: "death", name: "Домен смерти", source: "DMG", description: "Некротическая магия и власть над смертью." },
+  { classId: "cleric", id: "arcana", name: "Домен магии", source: "SCAG", description: "Тайная магия, заговоры и мистическая защита." },
+  { classId: "cleric", id: "peace", name: "Домен мира", source: "TCE", description: "Связи союзников, защита и исцеление." },
+  { classId: "cleric", id: "order", name: "Домен порядка", source: "GGR", description: "Закон, дисциплина и приказы союзникам." },
+  { classId: "druid", id: "spores", name: "Круг спор", source: "GGR", description: "Симбиоз со спорами, некротическая аура и грибная нежить." },
+  { classId: "fighter", id: "banneret", name: "Рыцарь Пурпурного дракона", source: "SCAG", description: "Воин-лидер, поддерживающий союзников." },
+  { classId: "fighter", id: "echo-knight", name: "Рыцарь Эха", source: "EGW", description: "Боевой двойник из альтернативной временной линии." },
+  { classId: "fighter", id: "psi-warrior", name: "Пси-воин", source: "TCE", description: "Псионические кости, щиты и телекинетическая сила." },
+  { classId: "monk", id: "four-elements", name: "Путь четырёх стихий", source: "PHB", description: "Дисциплины стихий за очки ци." },
+  { classId: "monk", id: "long-death", name: "Путь долгой смерти", source: "SCAG", description: "Стойкость, страх и сила на грани смерти." },
+  { classId: "monk", id: "astral-self", name: "Путь астрального тела", source: "TCE", description: "Астральные руки, лик и полное проявление души." },
+  { classId: "monk", id: "ascendant-dragon", name: "Путь восходящего дракона", source: "FTD", description: "Драконья энергия, дыхание и крылья." },
+  { classId: "paladin", id: "oathbreaker", name: "Клятвопреступник", source: "DMG", description: "Падший паладин, повелевающий страхом и нежитью." },
+  { classId: "paladin", id: "crown", name: "Клятва короны", source: "SCAG", description: "Защитник закона, союзников и порядка." },
+  { classId: "paladin", id: "glory", name: "Клятва славы", source: "MOT", description: "Героические подвиги, атлетизм и вдохновение отвагой." },
+  { classId: "ranger", id: "swarmkeeper", name: "Хранитель роя", source: "TCE", description: "Рой духов природы помогает в атаке и перемещении." },
+  { classId: "ranger", id: "drakewarden", name: "Наездник на дрейке", source: "FTD", description: "Связь с драконьим спутником и стихийная поддержка." },
+  { classId: "rogue", id: "phantom", name: "Фантом", source: "TCE", description: "Эхо мёртвых, духовная связь и призрачная форма." },
+  { classId: "sorcerer", id: "clockwork", name: "Заводная душа", source: "TCE", description: "Сила механического порядка и подавление хаоса." },
+  { classId: "warlock", id: "undying", name: "Бессмертный", source: "SCAG", description: "Покровитель, дарующий защиту от смерти и нежити." },
+  { classId: "warlock", id: "fathomless", name: "Бездонный", source: "TCE", description: "Щупальца глубин, морская мобильность и холод." },
+  { classId: "warlock", id: "undead", name: "Нежить", source: "VRGR", description: "Облик ужаса, некротическая сила и проекция духа." },
+  { classId: "wizard", id: "chronurgy", name: "Магия хронургии", source: "EGW", description: "Контроль бросков, инициативы и времени." },
+  { classId: "wizard", id: "graviturgy", name: "Магия гравитургии", source: "EGW", description: "Управление массой, притяжением и гравитационными полями." },
+];
+
+for (const option of missingOfficialSubclassOptions) {
+  const group = subclasses[option.classId];
+  if (!group || group.options.some(existing => existing.id === option.id)) continue;
+  group.options.push({ ...option, features: subclassFeatureCorpus[option.classId]?.[option.name] || [] });
+}
+
+// Keep selectable cards and displayed rules aligned with the detailed corpus.
+for (const [classId, group] of Object.entries(subclasses)) {
+  for (const option of group.options) {
+    const documented = subclassFeatureCorpus[classId]?.[option.name];
+    if (documented?.length) option.features = documented;
+  }
+}
+
+export const officialSubclassCount = Object.values(subclasses).reduce((total, group) => total + group.options.length, 0);
 
 export function subclassRule(classId: string) {
   return subclasses[classId];
