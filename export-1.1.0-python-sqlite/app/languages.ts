@@ -1,5 +1,6 @@
 import type { ExportCharacter } from "./exportFormats";
 import { backgroundRule } from "./backgroundRules";
+import { orderedCharacterClasses } from "./multiclass";
 
 export const knownLanguageOptions = [
   "Общий", "Дварфский", "Эльфийский", "Великаний", "Гномий", "Гоблинский", "Полуросликов", "Орочий",
@@ -32,18 +33,41 @@ const supplementBackgroundLanguageChoices: Record<string, number> = {
   uthgardt: 1, waterdhavian: 1, haunted: 1, investigator: 1, feylost: 1, strixstudent: 2, astraldrifter: 2,
 };
 
-export function languageRule(character: Pick<ExportCharacter, "race" | "raceVariant" | "background" | "className" | "subclass" | "level" | "useTasha" | "classChoices">) {
+function grantOrAlternative(fixed: string[], language: string) {
+  if (fixed.includes(language)) return 1;
+  fixed.push(language);
+  return 0;
+}
+
+export function languageRule(character: ExportCharacter) {
   const racial = raceLanguages[character.race] || { fixed: ["Общий"], choices: 1 };
   const fixed = [...(racial.fixed || ["Общий"] )];
   let choices = (racial.choices || 0) + backgroundRule(character.background).languageChoices + (supplementBackgroundLanguageChoices[character.background] || 0);
 
   if (character.race === "elf" && character.raceVariant === "high") choices += 1;
-  if (character.className === "druid") fixed.push("Друидический");
-  if (character.className === "rogue") fixed.push("Воровской жаргон");
-  if (character.className === "sorcerer" && character.subclass === "draconic") fixed.push("Драконий");
-  if (character.className === "sorcerer" && character.subclass === "storm") fixed.push("Первичный");
-  if (character.className === "rogue" && character.subclass === "mastermind" && character.level >= 3) choices += 2;
-  if (character.useTasha && character.className === "ranger" && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer")) choices += 2;
+
+  const classes = orderedCharacterClasses(character);
+  for (const entry of classes) {
+    const subclass = entry.subclassId || "";
+    if (entry.classId === "druid") fixed.push("Друидический");
+    if (entry.classId === "rogue") fixed.push("Воровской жаргон");
+    if (entry.classId === "sorcerer" && subclass === "draconic") choices += grantOrAlternative(fixed, "Драконий");
+    if (entry.classId === "sorcerer" && subclass === "storm") choices += grantOrAlternative(fixed, "Первичный");
+    if (entry.classId === "rogue" && subclass === "mastermind" && entry.level >= 3) choices += 2;
+
+    // Missing-subclass reference: permanent language grants/choices.
+    if (entry.classId === "cleric" && subclass === "knowledge" && entry.level >= 1) choices += 2;
+    if (entry.classId === "barbarian" && subclass === "giant" && entry.level >= 3) choices += grantOrAlternative(fixed, "Великаний");
+    if (entry.classId === "monk" && subclass === "ascendant-dragon" && entry.level >= 3) choices += grantOrAlternative(fixed, "Драконий");
+    if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) choices += grantOrAlternative(fixed, "Драконий");
+
+    const selected = entry.choiceValues || {};
+    if (character.useTasha && entry.classId === "ranger" && (selected["tce-deft-explorer"] || []).includes("deft-explorer")) choices += 2;
+  }
+
+  // Legacy single-class saves keep pre-V4 choices here until migration.
+  if (character.useTasha && character.className === "ranger" && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") && !classes.some(entry => (entry.choiceValues?.["tce-deft-explorer"] || []).includes("deft-explorer"))) choices += 2;
+
   return { fixed: [...new Set(fixed)], choices };
 }
 
