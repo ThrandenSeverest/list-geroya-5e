@@ -1,0 +1,32 @@
+name: Subclass integration
+
+on:
+  push:
+    branches:
+      - feature/multiclass-1.1
+    paths:
+      - 'export-1.1.0-python-sqlite/**'
+      - '.github/workflows/subclass-integration.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: export-1.1.0-python-sqlite
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: export-1.1.0-python-sqlite/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate subclass catalogue
+        run: npm run check:subclasses
+      - name: Build frontend
+        run: npm run build
