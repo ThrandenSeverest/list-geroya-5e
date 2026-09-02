@@ -640,6 +640,9 @@ button { color: inherit; }
 .character-card-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; }
 .character-card-actions button { min-height: 36px; padding: 0 13px; border: 1px solid var(--line); background: transparent; color: var(--teal); cursor: pointer; }
 .character-card-actions button:first-child { border-color: var(--gold); color: var(--gold-bright); }
+.character-folder-select { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 9px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.character-folder-select select { min-width: 110px; border: 0; outline: 0; background: transparent; color: var(--teal); cursor: pointer; }
+.character-folder-select option { background: var(--panel); color: var(--ivory); }
 .slot-footer { margin-top: 18px; padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--line); color: var(--muted); }
 .slot-footer button { border-color: var(--gold); color: var(--gold-bright); }
 .empty-folder { padding: 50px 20px; display: grid; gap: 8px; place-items: center; border: 1px dashed var(--line); color: var(--muted); }
