@@ -46,7 +46,7 @@ import { backgroundChoiceGroups, backgroundFixedSkills } from "./backgroundChoic
 import { defaultEquipmentSelections, equipmentComplete, equipmentOptionAdvice, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "./equipment";
 import { characterAttacks } from "./combat";
 import { knownLimitations } from "./knownLimitations";
-import { characterExpertiseSkills, characterProficiencies, proficiencyChoiceRequirements, proficiencyChoicesComplete, proficiencyChoiceUsedElsewhere } from "./proficiencies";
+import { characterExpertiseSkills, characterProficiencies, classSkillUsedElsewhere, proficiencyChoiceRequirements, proficiencyChoicesComplete, proficiencyChoiceUsedElsewhere } from "./proficiencies";
 import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource } from "./characterFiles";
 import { advancementChoiceComplete, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
 import { armorClassBreakdown } from "./armor";
@@ -731,7 +731,6 @@ function Builder() {
   const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
   const classRule = classSkillRules[character.className] || { count: 0, skills: [] };
   const fixedBackgroundSkills = character.backgroundSkills;
-  const unavailableClassSkills = [...new Set([...fixedBackgroundSkills, ...(character.raceSkills || [])])];
   const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap(rule => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
   const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
   const advancementSlots = advancementSlotsFor(character);
@@ -1070,9 +1069,14 @@ function Builder() {
 
   function toggleSkill(name: string) {
     setCharacter(current => {
-      const has = current.classSkills.includes(name);
-      if (!has && current.classSkills.length >= classRule.count) return current;
-      return { ...current, classSkills: has ? current.classSkills.filter(skill => skill !== name) : [...current.classSkills, name] };
+      const safe = migrateMulticlassCharacter(current);
+      const startingClassId = safe.startingClassId || safe.className;
+      const selected = safe.classSkills;
+      const has = selected.includes(name);
+      if (!has && (selected.length >= classRule.count || classSkillUsedElsewhere(safe, startingClassId, name))) return safe;
+      const next = has ? selected.filter(skill => skill !== name) : [...selected, name];
+      const classes = orderedCharacterClasses(safe).map(entry => entry.classId === startingClassId ? { ...entry, classSkills: next } : entry);
+      return migrateMulticlassCharacter({ ...safe, classSkills: next, classes });
     });
   }
 
@@ -1396,7 +1400,9 @@ function Builder() {
       if (!entry) return safe;
       const selected = entry.classSkills || [];
       const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId);
-      const next = selected.includes(skill) ? selected.filter(value => value !== skill) : selected.length < limit ? [...selected, skill] : selected;
+      const next = selected.includes(skill)
+        ? selected.filter(value => value !== skill)
+        : selected.length < limit && !classSkillUsedElsewhere(safe, classId, skill) ? [...selected, skill] : selected;
       const classes = orderedCharacterClasses(safe).map(item => item.classId === classId ? { ...item, classSkills: next } : item);
       return migrateMulticlassCharacter({ ...safe, classes, classSkills: classId === safe.startingClassId ? next : safe.classSkills });
     });
@@ -2353,13 +2359,15 @@ function Builder() {
               </div>
               <div className="skill-source">
                 <div className="skill-source-head"><div><small>Класс</small><h2>{selectedClass?.name}</h2></div><strong>{character.classSkills.length} / {classRule.count}</strong></div>
-                <p>Выберите {classRule.count}; владения предыстории автоматически исключены.</p>
+                <p>Выберите {classRule.count}; навыки, уже полученные от расы или предыстории, нельзя выбрать повторно.</p>
                 <div className="proficiency-grid">
-                  {classRule.skills.filter(skill => !unavailableClassSkills.includes(skill)).map(skill => (
-                    <button key={skill} className={character.classSkills.includes(skill) ? "selected" : ""} onClick={() => toggleSkill(skill)}>
-                      <span>{character.classSkills.includes(skill) ? "✓" : "+"}</span>{skill}
-                    </button>
-                  ))}
+                  {classRule.skills.map(skill => {
+                    const selected = character.classSkills.includes(skill);
+                    const usedElsewhere = !selected && classSkillUsedElsewhere(exportCharacter, character.startingClassId || character.className, skill);
+                    return <button key={skill} disabled={usedElsewhere} title={usedElsewhere ? "Этот навык уже получен из другого источника" : undefined} className={selected ? "selected" : ""} onClick={() => toggleSkill(skill)}>
+                      <span>{selected ? "✓" : "+"}</span>{skill}{usedElsewhere && <small>Уже есть</small>}
+                    </button>;
+                  })}
                 </div>
               </div>
             </div>
@@ -2420,7 +2428,11 @@ function Builder() {
                       <small>{entry.classId === character.startingClassId ? "Стартовый класс" : `Получен на ${entry.acquiredAtCharacterLevel}-м общем уровне`}</small>
                       <h3>{option?.name || entry.classId} <span>{entry.level}</span></h3>
                       <div className="multiclass-level-actions"><button disabled={!isLastLevel || (entry.level <= 1 && entry.classId === character.startingClassId)} title={!isLastLevel ? "Уровни можно откатывать только в обратном порядке" : entry.level === 1 ? "Убрать класс и его единственный уровень" : "Убрать последний уровень этого класса"} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, -1))}>−</button><button disabled={characterLevel(character) >= 20} onClick={() => setCharacter(current => changeClassLevelValue(current, entry.classId, 1))}>+1 уровень</button></div>
-                      {entry.classId !== character.startingClassId && secondarySkillCount > 0 && <div className="multiclass-skill-choice"><small>Навыки при входе в класс: {classSkills.length} / {secondarySkillCount}</small><div>{skillRule.skills.map(skill => <button key={skill} className={classSkills.includes(skill) ? "selected" : ""} onClick={() => toggleMulticlassClassSkill(entry.classId, skill)}>{classSkills.includes(skill) ? "✓ " : "+ "}{skill}</button>)}</div></div>}
+                      {entry.classId !== character.startingClassId && secondarySkillCount > 0 && <div className="multiclass-skill-choice"><small>Навыки при входе в класс: {classSkills.length} / {secondarySkillCount}</small><div>{skillRule.skills.map(skill => {
+                        const selected = classSkills.includes(skill);
+                        const usedElsewhere = !selected && classSkillUsedElsewhere(exportCharacter, entry.classId, skill);
+                        return <button key={skill} disabled={usedElsewhere} title={usedElsewhere ? "Этот навык уже получен из другого источника" : undefined} className={selected ? "selected" : ""} onClick={() => toggleMulticlassClassSkill(entry.classId, skill)}>{selected ? "✓ " : "+ "}{skill}{usedElsewhere && <small>Уже есть</small>}</button>;
+                      })}</div></div>}
                     </article>;
                   })}
                 </div>
