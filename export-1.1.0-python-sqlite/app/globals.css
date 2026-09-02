@@ -783,6 +783,13 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .mobile-spell-list small { color: var(--muted); }
 .mobile-rest-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .mobile-resource-list, .mobile-slot-list { display: grid; gap: 7px; }
+.mobile-runtime-controls { display: grid; gap: 7px; margin: 14px 0; }
+.mobile-runtime-controls h3 { margin: 0; font-size: 14px; }
+.mobile-runtime-controls article { padding: 9px 10px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; border: 1px solid var(--line); }
+.mobile-runtime-controls small, .mobile-runtime-controls em { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; font-style: normal; }
+.mobile-runtime-controls em { color: var(--accent); font-weight: 700; }
+.mobile-runtime-controls select, .mobile-runtime-controls button { max-width: 150px; min-height: 36px; border: 1px solid var(--line); background: var(--panel); color: inherit; }
+.mobile-runtime-controls b { font-size: 12px; text-align: right; }
 .mobile-spell-slots { margin-top: 16px; }
 .mobile-resource-list article, .mobile-slot-list article { min-height: 55px; padding: 8px 10px; display: grid; grid-template-columns: 1fr 38px 76px 38px; align-items: center; gap: 7px; border: 1px solid var(--line); }
 .mobile-resource-list article > div small { display: block; color: var(--muted); }
