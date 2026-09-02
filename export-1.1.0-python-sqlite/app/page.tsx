@@ -814,7 +814,10 @@ function Builder() {
   const pointRemaining = 27 - pointSpent;
   const variantBonus = raceAbilityBonuses(character);
   const racialProficiencies = raceProficiencies(character);
-  const subclassData = subclassRule(character.className);
+  const subclassRequirements = multiclassEntries.flatMap(entry => {
+    const data = subclassRule(entry.classId);
+    return data && entry.level >= data.level ? [{ entry, data }] : [];
+  });
   const currentSpellGrants = character.spellGrants?.length
     ? character.spellGrants
     : character.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
@@ -998,9 +1001,9 @@ function Builder() {
     if (step === 4) return character.classSkills.length === classRule.count;
     if (step === 5) return equipmentComplete(character);
     if (step === 6) {
-      const needsSubclass = !!subclassData && character.level >= subclassData.level;
+      const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
       const allComplete = advancements.every(choice => advancementChoiceComplete(choice, spells, character.level));
-      return (!needsSubclass || !!character.subclass) && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells);
+      return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells);
     }
     if (step === 7 && spellRule.caster) {
       const legalLevels = !spellRule.levelLimits || spellRule.levelLimits.every((limit, level) => level === 0 || selectedAtOrAbove[level] <= limit);
@@ -1029,7 +1032,8 @@ function Builder() {
     if (step === 4) return `Выберите навыки класса: ${character.classSkills.length} из ${classRule.count}.`;
     if (step === 5) return "Заполните каждый обязательный выбор стартового снаряжения.";
     if (step === 6) {
-      if (subclassData && character.level >= subclassData.level && !character.subclass) return "Выберите подкласс.";
+      const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
+      if (missingSubclass) return `Выберите подкласс: ${classes.find(option => option.id === missingSubclass.entry.classId)?.name || missingSubclass.entry.classId}.`;
       const unfinished = advancements.find(choice => !advancementChoiceComplete(choice, spells, character.level));
       if (unfinished) return `Завершите выбор ${unfinished.origin ? "черты происхождения" : `на ${unfinished.level}-м уровне`}: черту, повышение характеристик и все дополнительные решения.`;
       if (!classChoicesComplete(rulesCharacter, spells)) return "Заполните все обязательные выборы способностей класса.";
@@ -1352,6 +1356,14 @@ function Builder() {
       const next = selected.includes(skill) ? selected.filter(value => value !== skill) : selected.length < limit ? [...selected, skill] : selected;
       const classes = orderedCharacterClasses(safe).map(item => item.classId === classId ? { ...item, classSkills: next } : item);
       return migrateMulticlassCharacter({ ...safe, classes, classSkills: classId === safe.startingClassId ? next : safe.classSkills });
+    });
+  }
+
+  function selectMulticlassSubclass(classId: string, subclassId: string) {
+    setCharacter(current => {
+      const safe = migrateMulticlassCharacter(current);
+      const nextClasses = orderedCharacterClasses(safe).map(entry => entry.classId === classId ? { ...entry, subclassId } : entry);
+      return migrateMulticlassCharacter({ ...safe, classes: nextClasses });
     });
   }
 
@@ -2405,18 +2417,21 @@ function Builder() {
                   {resources.map(resource => <div key={resource.key}><span>{resource.name}</span><div className="resource-marks preview-resource-marks">{Array.from({ length: Math.ceil(resource.max / (resource.unit || 1)) }, (_, index) => <i key={index} />)}</div><small>{resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : ""}{resourceRestLabel(resource)} отдых</small></div>)}
                 </div> : <p className="muted">На этом уровне нет ограниченного классового ресурса.</p>}
               </div>
-              {subclassData && character.level >= subclassData.level && (
-                <div className="subclass-picker" data-incomplete={!character.subclass}>
-                  <div className="ability-editor-head"><div><small>С {subclassData.level} уровня</small><h2>Выберите подкласс</h2></div><span>{subclassData.options.length} вариантов</span></div>
-                  <div className="subclass-grid">
-                    {subclassData.options.filter(option => allowed(activeBan, "subclasses", `${character.className}:${option.id}`)).map(option => (
-                      <button key={option.id} className={character.subclass === option.id ? "selected" : ""} onClick={() => setCharacter(current => ({ ...current, subclass: option.id, spells: [], preparedSpells: [], classChoices: {}, proficiencyChoices: {} }))}>
-                        <span>{option.source}</span><strong>{option.name}</strong><p>{option.description}</p>
-                      </button>
-                    ))}
+              {subclassRequirements.map(({ entry, data }) => {
+                const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+                return (
+                  <div className="subclass-picker" data-incomplete={!entry.subclassId} key={entry.classId}>
+                    <div className="ability-editor-head"><div><small>{className} · с {data.level} уровня</small><h2>Выберите подкласс</h2></div><span>{data.options.length} вариантов</span></div>
+                    <div className="subclass-grid">
+                      {data.options.filter(option => allowed(activeBan, "subclasses", `${entry.classId}:${option.id}`)).map(option => (
+                        <button key={option.id} className={entry.subclassId === option.id ? "selected" : ""} onClick={() => selectMulticlassSubclass(entry.classId, option.id)}>
+                          <span>{option.source}</span><strong>{option.name}</strong><p>{option.description}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })}
               {choiceGroups.length > 0 && (
                 <div className="class-choice-section">
                   <div className="ability-editor-head"><div><small>Обязательные решения класса</small><h2>Настройка способностей</h2></div><span>{choiceGroups.filter(group => (character.classChoices?.[group.key] || []).length === group.count).length} / {choiceGroups.length}</span></div>
