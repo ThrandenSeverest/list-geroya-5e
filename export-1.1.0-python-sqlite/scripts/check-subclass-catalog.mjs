@@ -35,22 +35,24 @@ function requireText(file, needles) {
   for (const needle of needles) if (!text.includes(needle)) fail(`${file}: missing ${needle}`);
 }
 
-// The full catalogue has two representations while the migration to a generated
-// catalogue is in progress: the base SC/SCE table and the documented additions.
-// Verify every formerly missing ID is physically present under its intended class.
 for (const [classId, id] of requiredAdded) {
   const direct = new RegExp(`classId:\\s*"${classId}"[^\\n]*id:\\s*"${id}"`).test(source);
   const baseClassStart = source.indexOf(`${classId}: { level:`);
   const baseId = baseClassStart >= 0 && source.indexOf(`SC("${id}"`, baseClassStart) >= 0;
   if (!direct && !baseId) fail(`required subclass missing: ${classId}/${id}`);
 }
-requireText("../app/characterRules.ts", ["officialSubclassCount", "subclassFeatureCorpus"]);
+requireText("../app/characterRules.ts", [
+  "officialSubclassCount", "subclassFeatureCorpus", "SUBCLASS_SPELL_GRANTS_5E14",
+  "always-prepared", "known", "expanded", "subclassSpellGrantTable", "subclassFlagTable",
+  "cleric:tempest", "druid:spores", "paladin:oathbreaker", "ranger:swarmkeeper",
+  "sorcerer:clockwork", "warlock:undying", "warlock:fathomless", "warlock:undead",
+  "selectedSubclassSpellChoiceIds", "dmApproval", "settingRestriction",
+]);
 
 const filterSource = read("../app/catalogFilters.ts");
 for (const book of ["PHB", "DMG", "SCAG", "XGE", "GGR", "MOT", "EGW", "TCE", "VRGR", "FTD", "BPGG"])
   if (!filterSource.includes(book)) fail(`catalog filter does not recognise ${book}`);
 
-// Integration surfaces required by sections 16.2/16.4/16.5/16.6 of the reference.
 requireText("../app/multiclass.ts", ["selectedSubclassForClass", "migratedChoiceValues", "choiceValues"]);
 requireText("../app/proficiencies.ts", ["subclass-cleric-knowledge-skills", "cleric:tempest", "cleric:nature", "cleric:death", "cleric:order", "banneret"]);
 requireText("../app/classChoices.ts", ["storm-herald-environment", "giant-cantrip", "nature-druid-cantrip", "death-necromancy-cantrip", "arcana-wizard-cantrips", "four-elements-disciplines", "entry.choiceValues"]);
@@ -58,4 +60,4 @@ requireText("../app/characterResources.ts", ["wild-magic-awareness", "psi-warrio
 requireText("../app/combat.ts", ["subclass-battlerager-spikes", "subclass-beast-bite", "subclass-astral-arms", "subclass-creation-dancing-item", "subclass-drakewarden-bite"]);
 requireText("../app/languages.ts", ["subclass === \"knowledge\"", "subclass === \"giant\"", "subclass === \"ascendant-dragon\"", "subclass === \"drakewarden\""]);
 
-if (!process.exitCode) console.log(`Subclass integration guard OK: acceptance target ${expectedTotal}; all 35 formerly missing subclass IDs and required integration surfaces are present.`);
+if (!process.exitCode) console.log(`Subclass integration guard OK: acceptance target ${expectedTotal}; all 35 formerly missing subclass IDs plus choices, spell modes, proficiencies, resources, attacks, languages and multiclass persistence are present.`);
