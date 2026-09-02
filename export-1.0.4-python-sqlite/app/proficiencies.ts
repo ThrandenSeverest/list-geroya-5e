@@ -1,5 +1,6 @@
 import { backgroundRule } from "./backgroundRules";
 import { selectedRaceVariant } from "./characterRules";
+import { getStartingClassId, orderedCharacterClasses } from "./multiclass";
 import type { ExportCharacter } from "./exportFormats";
 import { characterLanguages } from "./languages";
 import { classRules, skillKeys } from "./rules";
@@ -142,10 +143,31 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     leonin: ["Запугивание"],
     minotaur: ["Выживание"],
   };
-  const skills = [...(racialSkills[character.race] || []), ...(character.raceSkills || []), ...character.backgroundSkills, ...character.classSkills].filter(skill => skillNames.includes(skill));
-  const armor = [classRules[character.className]?.armor || ""];
-  const weapons = [classRules[character.className]?.weapons || ""];
-  const tools = [...(fixedClassTools[character.className] || [])];
+  const classes = orderedCharacterClasses(character);
+  const startingClassId = getStartingClassId(character);
+  const starting = classes.find(entry => entry.classId === startingClassId) || classes[0];
+  const skills = [...(racialSkills[character.race] || []), ...(character.raceSkills || []), ...character.backgroundSkills, ...classes.flatMap(entry => entry.classSkills || (entry.classId === startingClassId ? character.classSkills : []))].filter(skill => skillNames.includes(skill));
+  const armor = [classRules[startingClassId]?.armor || ""];
+  const weapons = [classRules[startingClassId]?.weapons || ""];
+  const tools = [...(fixedClassTools[startingClassId] || [])];
+  const multiclassTraining: Record<string, { armor?: string[]; weapons?: string[]; tools?: string[] }> = {
+    barbarian: { armor: ["Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
+    bard: { armor: ["Лёгкие доспехи"], tools: ["Музыкальный инструмент"] },
+    cleric: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"] },
+    druid: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"] },
+    fighter: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
+    monk: { weapons: ["Простое оружие", "Короткие мечи"] },
+    paladin: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
+    ranger: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
+    rogue: { armor: ["Лёгкие доспехи"], tools: ["Воровские инструменты"] },
+    warlock: { armor: ["Лёгкие доспехи"], weapons: ["Простое оружие"] },
+    artificer: { armor: ["Лёгкие доспехи", "Средние доспехи", "Щиты"], tools: ["Воровские инструменты", "Инструменты ремонтника"] },
+  };
+  for (const entry of classes) {
+    if (entry.classId === starting?.classId) continue;
+    const training = multiclassTraining[entry.classId];
+    armor.push(...(training?.armor || [])); weapons.push(...(training?.weapons || [])); tools.push(...(training?.tools || []));
+  }
   const variant = selectedRaceVariant(character.race, character.raceVariant);
 
   for (const value of variant?.proficiencies || []) {
@@ -160,12 +182,10 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
 
   for (const value of backgroundRule(character.background).tools) if (!isGenericChoice(value)) tools.push(value);
   tools.push(...(character.backgroundChoices?.tool || []));
-  const subclass = subclassProficiencies[`${character.className}:${character.subclass || ""}`];
-  if (subclass && character.level >= 1) {
-    skills.push(...(subclass.skills || []));
-    armor.push(...(subclass.armor || []));
-    weapons.push(...(subclass.weapons || []));
-    tools.push(...(subclass.tools || []));
+  for (const entry of classes) {
+    const subclass = subclassProficiencies[`${entry.classId}:${entry.subclassId || ""}`];
+    if (!subclass || entry.level < 1) continue;
+    skills.push(...(subclass.skills || [])); armor.push(...(subclass.armor || [])); weapons.push(...(subclass.weapons || [])); tools.push(...(subclass.tools || []));
   }
 
   for (const requirement of proficiencyChoiceRequirements(character)) {
