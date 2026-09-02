@@ -56,6 +56,7 @@ import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
 import { shortRestHitDieHealing } from "./restRules";
+import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeValue, subclassRuntimeControls, subclassRuntimeValue } from "./subclassRuntime";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 
@@ -552,6 +553,9 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
     languages: strings(value.languages),
     backgroundChoices: choices(value.backgroundChoices),
     proficiencyChoices: choices(value.proficiencyChoices),
+    subclassState: value.subclassState && typeof value.subclassState === "object" && !Array.isArray(value.subclassState)
+      ? Object.fromEntries(Object.entries(value.subclassState).filter(([, runtimeValue]) => typeof runtimeValue === "string" || typeof runtimeValue === "number"))
+      : {},
     resourceSpent: value.resourceSpent && typeof value.resourceSpent === "object" && !Array.isArray(value.resourceSpent) ? value.resourceSpent : {},
     preparedSpells: strings(value.preparedSpells),
     spellSlotsUsed: Array.isArray(value.spellSlotsUsed) ? value.spellSlotsUsed : [],
@@ -807,6 +811,12 @@ function Builder() {
   const expertise = characterExpertiseSkills(exportCharacter);
   const knownLanguages = proficiencies.languages;
   const resources = characterResources(exportCharacter);
+  const runtimeControls = subclassRuntimeControls(exportCharacter, availableSpellCatalog);
+  const runtimeFeatures = runtimeControls.flatMap(control => {
+    const value = subclassRuntimeValue(exportCharacter, control.key);
+    const option = control.options.find(item => item.id === String(value));
+    return option ? [{ level: 0, name: `Состояние: ${control.title}`, description: `${option.name}. ${control.description}` }] : [];
+  });
   const resourceMarkCount = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
   const resourceDensity = resources.length >= 6 || resourceMarkCount >= 32 ? "micro" : resources.length >= 4 || resourceMarkCount >= 22 ? "dense" : resources.length >= 3 || resourceMarkCount >= 14 ? "compact" : "normal";
   const spellAbilityKey = classRules[activeSpellClassId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
@@ -873,7 +883,7 @@ function Builder() {
     background: selectedBackground,
     spells,
     raceFeatureList: selectedRaceFeatures,
-    classFeatureList: selectedClassFeatures,
+    classFeatureList: [...selectedClassFeatures, ...runtimeFeatures],
     raceProficiencies: racialProficiencies,
     subclassName: chosenSubclass?.name,
     raceVariantName: chosenRaceVariant?.name,
@@ -1464,6 +1474,17 @@ function Builder() {
     }));
   }
 
+  function setRuntimeControl(key: string, value: string) {
+    setCharacter(current => setSubclassRuntimeValue(current, key, value));
+  }
+
+  function rollRuntimeControl(key: string) {
+    setCharacter(current => {
+      const control = subclassRuntimeControls({ ...current, abilities: finalAbilityScores(current) }, availableSpellCatalog).find(item => item.key === key);
+      return control ? rollSubclassRuntimeControl(current, control) : current;
+    });
+  }
+
   function setCurrentHitPoints(value: number) {
     const next = Math.max(-hitPoints, Math.min(hitPoints, value));
     setCharacter(current => ({
@@ -1529,7 +1550,7 @@ function Builder() {
         recovered -= restored;
         if (!recovered) break;
       }
-      return {
+      return applySubclassLongRest({
         ...current,
         currentHitPoints: estimatedHitPoints({ ...current, abilities: finalAbilityScores(current) }),
         temporaryHitPoints: 0,
@@ -1540,7 +1561,7 @@ function Builder() {
         resourceSpent: {},
         spellSlotsUsed: (current.spellSlotsUsed || []).map(() => 0),
         pactSlotsUsed: 0,
-      };
+      });
     });
     setHitDiceToRoll(0);
     setLastHitDieRoll(null);
@@ -2855,6 +2876,11 @@ function Builder() {
                 {mobileSheetTab === "resources" && <div className="mobile-sheet-panel">
                   <div className="mobile-rest-actions"><button onClick={takeShortRest}>Восстановить после короткого отдыха</button><button onClick={takeLongRest}>Восстановить после длинного отдыха</button></div>
                   <div className="mobile-resource-list">{resources.map(resource => <article key={resource.key}><div><strong>{resource.name}</strong><small>{resourceRestLabel(resource)} отдых</small></div><button onClick={() => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max)}>−</button><b>{resourceCurrent(exportCharacter, resource)} / {resource.max}</b><button onClick={() => setResourceCurrent(resource.key, Math.min(resource.max, resourceCurrent(exportCharacter, resource) + (resource.unit || 1)), resource.max)}>+</button></article>)}</div>
+                  {runtimeControls.length > 0 && <section className="mobile-runtime-controls"><h3>Состояния подклассов</h3>{runtimeControls.map(control => {
+                    const currentValue = subclassRuntimeValue(exportCharacter, control.key);
+                    const currentOption = control.options.find(option => option.id === String(currentValue));
+                    return <article key={control.key}><div><strong>{control.title}</strong><small>{control.description}</small>{control.key === "warlock:undead:necrotic-husk-cooldown" && <em>{currentValue ? `Осталось отдыхов: ${currentValue}` : "Готово к применению"}</em>}</div>{control.randomDie ? <><button type="button" onClick={() => rollRuntimeControl(control.key)}>Бросить к{control.randomDie}</button><b>{currentOption?.name || "—"}</b></> : <select aria-label={control.title} value={String(currentValue || "")} onChange={event => setRuntimeControl(control.key, event.target.value)}><option value="">Выберите…</option>{control.options.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}</select>}</article>;
+                  })}</section>}
                   {spellRule.slots.length > 0 && <div className="mobile-slot-list"><h3>Ячейки заклинаний</h3>{spellRule.slots.map((maximum, circle) => <article key={circle}><span>{circle + 1} круг</span><button onClick={() => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum)}>Потратить</button><b>{maximum - (character.spellSlotsUsed?.[circle] || 0)} / {maximum}</b><button onClick={() => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum)}>Вернуть</button></article>)}</div>}
                 </div>}
 
@@ -2935,7 +2961,7 @@ function Builder() {
                       {chosenRaceVariant && <p><b>{chosenRaceVariant.name}.</b> {chosenRaceVariant.description}</p>}
                       {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}
                       <h4>{selectedClass?.name}: классовые особенности до {character.level} уровня</h4>
-                      {selectedClassFeatures.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                      {[...selectedClassFeatures, ...runtimeFeatures].map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
                       {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>
                       <p>{selectedBackground?.description}</p>
@@ -2977,7 +3003,7 @@ function Builder() {
                 resources={[
                   ...resources.map(resource => ({ name: resource.name, current: resourceCurrent(exportCharacter, resource), max: resource.max, die: resource.die, unit: resource.unit, isShortRest: resource.isShortRest, isLongRest: resource.isLongRest })),
                 ]}
-                classFeatures={selectedClassFeatures}
+                classFeatures={[...selectedClassFeatures, ...runtimeFeatures]}
                 raceFeatures={selectedRaceFeatures}
                 featFeatures={selectedFeatFeatures}
                 backgroundFeature={selectedBackgroundRule.feature}
