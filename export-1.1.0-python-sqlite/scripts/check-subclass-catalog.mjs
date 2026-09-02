@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const rulesPath = path.resolve(here, "../app/characterRules.ts");
-const source = fs.readFileSync(rulesPath, "utf8");
+const read = relative => fs.readFileSync(path.resolve(here, relative), "utf8");
+const source = read("../app/characterRules.ts");
 
 const expectedCounts = Object.freeze({
   barbarian: 9,
@@ -42,6 +42,11 @@ const requiredSources = ["PHB", "DMG", "SCAG", "XGE", "GGR", "MOT", "EGW", "TCE"
 function fail(message) {
   console.error(`Subclass catalogue check failed: ${message}`);
   process.exitCode = 1;
+}
+
+function requireText(file, needles) {
+  const text = read(file);
+  for (const needle of needles) if (!text.includes(needle)) fail(`${file} is missing integration marker: ${needle}`);
 }
 
 const catalogStart = source.indexOf("export const subclasses:");
@@ -99,18 +104,23 @@ if (total !== 118) fail(`expected 118 official subclasses, found ${total}`);
 
 for (const [classId, ids] of Object.entries(requiredAddedIds)) {
   const actual = new Set(allIdsByClass.get(classId) || []);
-  for (const id of ids) {
-    if (!actual.has(id)) fail(`required subclass missing: ${classId}/${id}`);
-  }
+  for (const id of ids) if (!actual.has(id)) fail(`required subclass missing: ${classId}/${id}`);
 }
 
-const filterPath = path.resolve(here, "../app/catalogFilters.ts");
-const filterSource = fs.readFileSync(filterPath, "utf8");
-for (const book of requiredSources) {
-  if (!new RegExp(`\\b${book}\\b`).test(filterSource)) fail(`source filter does not recognise ${book}`);
-}
+const filterSource = read("../app/catalogFilters.ts");
+for (const book of requiredSources) if (!new RegExp(`\\b${book}\\b`).test(filterSource)) fail(`source filter does not recognise ${book}`);
+
+// Guard the integration surfaces that previously allowed catalogue-only
+// subclasses to silently lose mechanics.
+requireText("../app/multiclass.ts", ["selectedSubclassForClass", "choiceValues: migratedChoiceValues", "classId}:`"]);
+requireText("../app/proficiencies.ts", ["subclass-cleric-knowledge-skills", "cleric:tempest", "cleric:nature", "cleric:death", "cleric:order", "fighter:banneret"]);
+requireText("../app/classChoices.ts", ["storm-herald-environment", "giant-cantrip", "nature-druid-cantrip", "death-necromancy-cantrip", "arcana-wizard-cantrips", "four-elements-disciplines", "entry.choiceValues"]);
+requireText("../app/characterResources.ts", ["wild-magic-awareness", "psi-warrior-dice", "emboldening-bond", "drake-breath", "form-of-dread", "chronal-shift"]);
+requireText("../app/combat.ts", ["subclass-battlerager-spikes", "subclass-beast-bite", "subclass-astral-arms", "subclass-creation-dancing-item", "subclass-drakewarden-bite"]);
+requireText("../app/languages.ts", ["subclass === \"knowledge\"", "subclass === \"giant\"", "subclass === \"ascendant-dragon\"", "subclass === \"drakewarden\""]);
 
 if (!process.exitCode) {
   console.log(`Subclass catalogue OK: ${total} official 5e14 subclasses.`);
   for (const [classId, ids] of allIdsByClass) console.log(`  ${classId}: ${ids.length}`);
+  console.log("Subclass integration guards OK: choices, proficiencies, resources, attacks, languages and multiclass persistence are present.");
 }
