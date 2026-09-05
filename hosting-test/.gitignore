@@ -1,0 +1,30 @@
+.DS_Store
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+next-env.d.ts
+# The hosting hotfix is distributed with a prebuilt frontend, so keep dist
+# in this export branch.
+.vinext/
+.wrangler/
+.sites-runtime/
+/outputs/
+/work/
+backend/.venv/
+backend/data/

@@ -1,0 +1,13 @@
+[Unit]
+Description=List Geroya 5e FastAPI
+After=network.target
+
+[Service]
+User=list-geroya
+WorkingDirectory=/srv/list-geroya/list-geroya-5e-1.0.2-Experimental/backend
+EnvironmentFile=/etc/list-geroya/api.env
+ExecStart=/srv/list-geroya/backend-venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
