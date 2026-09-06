@@ -1,0 +1,98 @@
+name: Build production 1.1.2 dist
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/multiclass-1.1
+    paths:
+      - ".github/workflows/build-production-1.1.2.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: "production-1.1.2-dist"
+  cancel-in-progress: true
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: export-1.1.2-python-sqlite/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: export-1.1.2-python-sqlite
+
+      - name: Check subclass catalog
+        run: npm run check:subclasses
+        working-directory: export-1.1.2-python-sqlite
+
+      - name: Clean old dist
+        run: rm -rf dist
+        working-directory: export-1.1.2-python-sqlite
+
+      - name: Build production dist
+        run: npm run build
+        working-directory: export-1.1.2-python-sqlite
+
+      - name: Verify build output
+        run: |
+          test -d export-1.1.2-python-sqlite/dist
+          test -n "$(find export-1.1.2-python-sqlite/dist -type f -print -quit)"
+          echo "Production dist contains $(find export-1.1.2-python-sqlite/dist -type f | wc -l) files"
+
+      - name: Prepare minimal hosting update folder
+        run: |
+          rm -rf hosting-update-1.1.2
+          mkdir -p hosting-update-1.1.2
+          cp -a export-1.1.2-python-sqlite/dist hosting-update-1.1.2/dist
+          cat > hosting-update-1.1.2/README.md <<'EOF'
+          # HeroList — hosting update 1.1.2
+
+          Эта папка предназначена только для обновления уже работающего production-хостинга HeroList.
+
+          ## Что заменить
+
+          Замените на сервере существующую папку `dist/` папкой `dist/` из этого обновления.
+
+          Новый `dist` собран из `export-1.1.2-python-sqlite` командой production-сборки `vinext build` после успешной проверки каталога подклассов.
+
+          ## Что НЕ трогать
+
+          Не заменяйте, не удаляйте и не очищайте:
+          - `.env`;
+          - SQLite/database-файлы;
+          - `backend/data/`;
+          - пользовательские сохранения;
+          - `uploads/` и загруженные пользователями файлы;
+          - резервные копии;
+          - настройки авторизации и секреты.
+
+          Backend в 1.1.2 относительно предыдущего hosting-пакета не менялся, поэтому в эту папку он намеренно не дублируется.
+
+          В обновление входят новые Legacy/MPMM варианты рас, при этом ранее внесённые исправления PDF и владений/компетентности сохранены.
+          EOF
+
+      - name: Commit built dist and hosting update
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A export-1.1.2-python-sqlite/dist hosting-update-1.1.2
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit"
+            exit 0
+          fi
+          git commit -m "build: production dist and hosting update 1.1.2"
+          git push origin HEAD:feature/multiclass-1.1
