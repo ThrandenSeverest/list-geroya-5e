@@ -104,6 +104,7 @@ match = old_options_re.search(page)
 if not match:
     raise RuntimeError("anchor not found: feat options block")
 indent = match.group("indent")
+options_start = match.start()
 new_options = (
     f"{indent}const selected = activeAdvancement.featChoices?.[group.key] || [];\n"
     f"{indent}const availability = featChoiceAvailability(activeAdvancement, group, character);\n"
@@ -112,7 +113,12 @@ new_options = (
     f"{indent}const requiredCount = availability.count;"
 )
 page = page[:match.start()] + new_options + page[match.end():]
-page = replace_once(page, "{selected.length} / {group.count}", "{selected.length} / {requiredCount}", "choice counter")
+
+counter_old = "{selected.length} / {group.count}"
+counter_pos = page.find(counter_old, options_start)
+if counter_pos < 0:
+    raise RuntimeError("anchor not found: feat choice counter after options block")
+page = page[:counter_pos] + "{selected.length} / {requiredCount}" + page[counter_pos + len(counter_old):]
 
 button_re = re.compile(
     r'''\{options\.map\(option => <button key=\{option\.id\} className=\{selected\.includes\(option\.id\) \? "selected" : ""\} onClick=\{\(\) => toggleFeatChoice\(activeAdvancement\.key, group\.key, option\.id, group\.count\)\}>\s*'''
@@ -120,7 +126,7 @@ button_re = re.compile(
     r'''</button>\)\}''',
     re.S,
 )
-button_match = button_re.search(page)
+button_match = button_re.search(page, options_start)
 if not button_match:
     raise RuntimeError("anchor not found: feat option buttons")
 button_new = '''{requiredCount === 0 && <p className="feat-choice-failsafe">Нет доступных новых вариантов — этот обязательный выбор пропущен автоматически.</p>}
