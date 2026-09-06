@@ -10,7 +10,7 @@ Workflow `.github/workflows/hosting-test-pages.yml` автоматически �
 
 Ожидаемый адрес проекта без custom domain:
 
-`https://thrandenserverest.github.io/list-geroya-5e/`
+`https://thrandenseverest.github.io/list-geroya-5e/`
 
 ## Локальная проверка
 
