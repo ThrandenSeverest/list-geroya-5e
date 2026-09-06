@@ -1,3 +1,5 @@
-# HeroList 1.0.4 export
+# HeroList 1.1 — GitHub test
 
-Current export scaffold with FastAPI + SQLite backend. Telegram external authentication is prepared for the Velmira External Auth API; real secrets belong only in a manually uploaded `.env` file.
+Static testing copy for GitHub Pages. This copy does not require Telegram authentication or production secrets.
+
+Latest hotfix: 2026-09-06 — global proficiency/expertise deduplication (including «Одарённый» and «Эксперт в навыке»), mandatory-choice failsafe, and stabilized A4 PDF printing.
