@@ -48,7 +48,7 @@ import { characterAttacks } from "./combat";
 import { knownLimitations } from "./knownLimitations";
 import { characterExpertiseSkills, characterProficiencies, classSkillUsedElsewhere, proficiencyChoiceRequirements, proficiencyChoicesComplete, proficiencyChoiceUsedElsewhere } from "./proficiencies";
 import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource } from "./characterFiles";
-import { advancementChoiceComplete, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
+import { advancementChoiceComplete, featChoiceAvailability, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
 import { armorClassBreakdown } from "./armor";
 import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
@@ -139,6 +139,14 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.1.1",
+  publishedAt: "2026-09-06T17:30:00Z",
+  changes: [
+    "Повторный выбор уже имеющихся навыков и инструментов заблокирован для «Одарённого», «Эксперта в навыке» и других источников выбора владений.",
+    "Компетентность нельзя назначить одному навыку повторно; недоступные варианты помечаются, а невозможный обязательный выбор больше не блокирует прогрессию.",
+    "PDF-экспорт закреплён на строгом формате A4 и устойчивее к длинным названиям классов и мультиклассов.",
+  ],
+}, {
   version: "1.1.0",
   publishedAt: "2026-09-02T14:00:00Z",
   changes: [
@@ -849,7 +857,7 @@ function Builder() {
   const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === level).length);
   const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
   const featSlots = advancementSlots.length;
-  const completedAdvancements = advancements.filter(choice => advancementChoiceComplete(choice, spells, character.level));
+  const completedAdvancements = advancements.filter(choice => advancementChoiceComplete(choice, spells, character.level, character));
   const selectedFeatNames = advancementFields.feats.map(id => feats.find(item => item.id === id)?.name).filter(Boolean) as string[];
   const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
   const mobileSpellPool = [...new Map((spellRule.mode === "prepared"
@@ -1019,7 +1027,7 @@ function Builder() {
     if (step === 5) return equipmentComplete(character);
     if (step === 6) {
       const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
-      const allComplete = advancements.every(choice => advancementChoiceComplete(choice, spells, character.level));
+      const allComplete = advancements.every(choice => advancementChoiceComplete(choice, spells, character.level, character));
       return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells);
     }
     if (step === 7 && spellRule.caster) {
@@ -1051,7 +1059,7 @@ function Builder() {
     if (step === 6) {
       const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
       if (missingSubclass) return `Выберите подкласс: ${classes.find(option => option.id === missingSubclass.entry.classId)?.name || missingSubclass.entry.classId}.`;
-      const unfinished = advancements.find(choice => !advancementChoiceComplete(choice, spells, character.level));
+      const unfinished = advancements.find(choice => !advancementChoiceComplete(choice, spells, character.level, character));
       if (unfinished) return `Завершите выбор ${unfinished.origin ? "черты происхождения" : `на ${unfinished.level}-м уровне`}: черту, повышение характеристик и все дополнительные решения.`;
       if (!classChoicesComplete(rulesCharacter, spells)) return "Заполните все обязательные выборы способностей класса.";
     }
@@ -1291,9 +1299,13 @@ function Builder() {
       const target = existing.find(choice => choice.key === slotKey);
       if (!target) return current;
       const selected = target.featChoices?.[groupKey] || [];
-      const ownedSkills = new Set(characterProficiencies(current).skills);
+      const known = characterProficiencies(current);
+      const ownedSkills = new Set(known.skills);
+      const ownedTools = new Set(known.tools);
+      const ownedExpertise = new Set(characterExpertiseSkills(current));
       if (!selected.includes(id) && groupKey === "skill" && ownedSkills.has(id)) return current;
-      if (!selected.includes(id) && groupKey === "expertise" && !ownedSkills.has(id)) return current;
+      if (!selected.includes(id) && groupKey === "proficiencies" && (ownedSkills.has(id) || ownedTools.has(id))) return current;
+      if (!selected.includes(id) && groupKey === "expertise" && (!ownedSkills.has(id) || ownedExpertise.has(id))) return current;
       const nextSelected = selected.includes(id)
         ? selected.filter(value => value !== id)
         : selected.length < limit ? [...selected, id] : limit === 1 ? [id] : selected;
@@ -2571,13 +2583,13 @@ function Builder() {
                     {advancements.map(choice => (
                       <button
                         key={choice.key}
-                        className={(activeAdvancement?.key === choice.key ? "active " : "") + (advancementChoiceComplete(choice, spells, character.level) ? "complete" : "")}
-                        data-incomplete={!advancementChoiceComplete(choice, spells, character.level)}
+                        className={(activeAdvancement?.key === choice.key ? "active " : "") + (advancementChoiceComplete(choice, spells, character.level, character) ? "complete" : "")}
+                        data-incomplete={!advancementChoiceComplete(choice, spells, character.level, character)}
                         onClick={() => setAdvancementKey(choice.key)}
                       >
                         <span>{choice.origin ? "Происхождение" : choice.bonus ? "Дополнительная черта" : `${choice.level} уровень`}</span>
                         <strong>{choice.featId ? feats.find(feat => feat.id === choice.featId)?.name : "Не выбрано"}</strong>
-                        {choice.featId && choice.featId !== "asi" && !advancementChoiceComplete(choice, spells, character.level) && <em className="choice-required">требуется выбор</em>}
+                        {choice.featId && choice.featId !== "asi" && !advancementChoiceComplete(choice, spells, character.level, character) && <em className="choice-required">требуется выбор</em>}
                       </button>
                     ))}
                   </div>
@@ -2613,25 +2625,33 @@ function Builder() {
                     </section>;
                   })}
                   {activeAdvancement.featId !== "asi" && featChoiceGroups(activeAdvancement, spells, character.level).length > 0 && (
-                    <div className="feat-choice-builder" data-incomplete={!advancementChoiceComplete(activeAdvancement, spells, character.level)}>
+                    <div className="feat-choice-builder" data-incomplete={!advancementChoiceComplete(activeAdvancement, spells, character.level, character)}>
                       <div className="ability-editor-head">
                         <div><small>Обязательные решения черты</small><h2>Настройте «{feats.find(feat => feat.id === activeAdvancement.featId)?.name}»</h2></div>
-                        <span>{advancementChoiceComplete(activeAdvancement, spells, character.level) ? "Готово" : "Не завершено"}</span>
+                        <span>{advancementChoiceComplete(activeAdvancement, spells, character.level, character) ? "Готово" : "Не завершено"}</span>
                       </div>
                       {featChoiceGroups(activeAdvancement, spells, character.level).map(group => {
                         const selected = activeAdvancement.featChoices?.[group.key] || [];
-                        const ownedSkills = new Set(proficiencies.skills);
-                        const options = group.key === "expertise"
-                          ? group.options.filter(option => ownedSkills.has(option.id) || selected.includes(option.id))
-                          : (group.key === "skill" || group.key === "proficiencies")
-                            ? group.options.filter(option => !ownedSkills.has(option.id) || selected.includes(option.id))
-                            : group.options;
+
+                        const availability = featChoiceAvailability(activeAdvancement, group, character);
+
+                        const allowedOptionIds = new Set(availability.options.map(option => option.id));
+
+                        const options = group.options;
+
+                        const requiredCount = availability.count;
                         return <section className="feat-choice-group" key={group.key}>
-                          <header><div><h3>{group.title}</h3><p>{group.description}</p></div><strong>{selected.length} / {group.count}</strong></header>
+                          <header><div><h3>{group.title}</h3><p>{group.description}</p></div><strong>{selected.length} / {requiredCount}</strong></header>
                           <div className="feat-choice-options">
-                            {options.map(option => <button key={option.id} className={selected.includes(option.id) ? "selected" : ""} onClick={() => toggleFeatChoice(activeAdvancement.key, group.key, option.id, group.count)}>
-                              <span>{selected.includes(option.id) ? "✓" : "+"}</span><strong>{option.name}</strong>{option.detail && <small>{option.detail}</small>}
-                            </button>)}
+                            {requiredCount === 0 && <p className="feat-choice-failsafe">Нет доступных новых вариантов — этот обязательный выбор пропущен автоматически.</p>}
+                            {options.map(option => {
+                              const isSelected = selected.includes(option.id);
+                              const unavailable = !isSelected && !allowedOptionIds.has(option.id);
+                              const unavailableReason = group.key === "expertise" ? "Уже есть компетентность или нет владения" : "Владение уже получено";
+                              return <button key={option.id} disabled={unavailable} className={`${isSelected ? "selected " : ""}${unavailable ? "unavailable" : ""}`.trim()} onClick={() => toggleFeatChoice(activeAdvancement.key, group.key, option.id, requiredCount)}>
+                                <span>{isSelected ? "✓" : unavailable ? "×" : "+"}</span><strong>{option.name}</strong>{unavailable && <small>{unavailableReason}</small>}{!unavailable && option.detail && <small>{option.detail}</small>}
+                              </button>;
+                            })}
                           </div>
                         </section>;
                       })}

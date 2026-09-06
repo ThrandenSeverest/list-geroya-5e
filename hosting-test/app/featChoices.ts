@@ -2,6 +2,7 @@ import type { CatalogSpell } from "./catalog";
 import type { AdvancementChoice, AbilityScores, ExportCharacter } from "./exportFormats";
 import { abilityLabels } from "./rules";
 import { generatedFeats } from "./generatedRulesCorpus";
+import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 
 export type FeatChoiceGroup = {
   key: string;
@@ -138,10 +139,40 @@ export function featChoiceGroups(choiceValue: AdvancementChoice, spells: Catalog
   return groups;
 }
 
-export function advancementChoiceComplete(choiceValue: AdvancementChoice, spells: CatalogSpell[], characterLevel = choiceValue.level) {
+export function featChoiceAvailability(choiceValue: AdvancementChoice, group: FeatChoiceGroup, character?: ExportCharacter) {
+  const proficiencyGroup = group.key === "skill" || group.key === "proficiencies" || group.key === "expertise";
+  if (!character || !proficiencyGroup) return { options: group.options, count: group.count };
+
+  const baseline: ExportCharacter = {
+    ...character,
+    advancements: (character.advancements || []).map(item => item.key === choiceValue.key
+      ? { ...item, featChoices: { ...(item.featChoices || {}), [group.key]: [] } }
+      : item),
+  };
+  const known = characterProficiencies(baseline);
+  const ownedSkills = new Set(known.skills);
+  const ownedTools = new Set(known.tools);
+  const ownedExpertise = new Set(characterExpertiseSkills(baseline));
+  let options = group.options;
+
+  if (group.key === "skill") options = group.options.filter(option => !ownedSkills.has(option.id));
+  if (group.key === "proficiencies") options = group.options.filter(option => !ownedSkills.has(option.id) && !ownedTools.has(option.id));
+  if (group.key === "expertise") options = group.options.filter(option => ownedSkills.has(option.id) && !ownedExpertise.has(option.id));
+
+  return { options, count: Math.min(group.count, options.length) };
+}
+
+export function advancementChoiceComplete(choiceValue: AdvancementChoice, spells: CatalogSpell[], characterLevel = choiceValue.level, character?: ExportCharacter) {
   if (!choiceValue.featId) return false;
   if (choiceValue.featId === "asi") return choiceValue.asiChoices.length === 2;
-  return featChoiceGroups(choiceValue, spells, characterLevel).every(group => (choiceValue.featChoices?.[group.key] || []).length === group.count);
+  return featChoiceGroups(choiceValue, spells, characterLevel).every(group => {
+    const selected = choiceValue.featChoices?.[group.key] || [];
+    const availability = featChoiceAvailability(choiceValue, group, character);
+    const allowed = new Set(availability.options.map(option => option.id));
+    return selected.length === availability.count
+      && new Set(selected).size === selected.length
+      && selected.every(id => allowed.has(id));
+  });
 }
 
 export function featGrantedSpellIds(character: ExportCharacter) {
