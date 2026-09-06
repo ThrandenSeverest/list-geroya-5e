@@ -1,3 +1,25 @@
-# HeroList 1.0.4 export
+# HeroList — hosting package 1.1.1
 
-Current export scaffold with FastAPI + SQLite backend. Telegram external authentication is prepared for the Velmira External Auth API; real secrets belong only in a manually uploaded `.env` file.
+Эта папка — актуальная версия для обновления существующего хостинга HeroList.
+
+Включено:
+- актуальный frontend source;
+- предварительно собранный `dist`;
+- актуальный FastAPI backend;
+- последние исправления мультикласса, полного каталога подклассов, выбора владений/компетентности (`Одарённый`, `Эксперт в навыке` и другие источники) и PDF-экспорта.
+
+## Важно при обновлении существующего сайта
+
+Не заменяйте и не удаляйте постоянные данные сервера:
+- `.env`;
+- SQLite/database-файлы;
+- `backend/data/`;
+- пользовательские сохранения;
+- uploads/загруженные пользователями файлы;
+- резервные копии.
+
+В репозитории реального `.env` и рабочей базы нет: хранится только `.env.example`. `backend/data/` исключён через `.gitignore`.
+
+Для обычного обновления используйте содержимое этой папки как набор файлов приложения. Готовый `dist` уже собран — пересобирать frontend на хостинге не требуется.
+
+Проверенная ветка: `hosting-update-1.1`.
