@@ -1,0 +1,3197 @@
+{
+  "questions": [
+    {
+      "text": "Что вы обычно выбираете из алкоголя?",
+      "answers": [
+        {
+          "text": "Вино — хорошее, плохое или чужое; главное, чтобы было в бокале.",
+          "race": {
+            "elf": 30,
+            "halfelf": 15
+          },
+          "class": {
+            "bard": 10
+          },
+          "background": {
+            "noble": 20
+          },
+          "traits": {
+            "taste": 15,
+            "status": 10,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "Пиво. Желательно в тяжёлой кружке и рядом с чем-нибудь жареным.",
+          "race": {
+            "dwarf": 25,
+            "halforc": 8
+          },
+          "class": {
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20
+          },
+          "traits": {
+            "craft": 15,
+            "community": 10,
+            "endurance": 8
+          }
+        },
+        {
+          "text": "Самогон. Если он не пытается убить меня — значит, слишком слабый.",
+          "race": {
+            "gnome": 18,
+            "goblin": 12
+          },
+          "class": {
+            "rogue": 8
+          },
+          "background": {
+            "urchin": 15,
+            "criminal": 10
+          },
+          "traits": {
+            "chaos": 15,
+            "risk": 12,
+            "cunning": 8
+          }
+        },
+        {
+          "text": "Домашняя настойка на травах, ягодах или чём-то, что «лечит всё».",
+          "race": {
+            "halfling": 20,
+            "firbolg": 8
+          },
+          "class": {
+            "druid": 12,
+            "ranger": 6
+          },
+          "background": {
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 15,
+            "comfort": 10,
+            "tradition": 8
+          }
+        },
+        {
+          "text": "Крепкое. Без маленьких бокалов и длинных речей.",
+          "race": {
+            "halforc": 15,
+            "goliath": 15
+          },
+          "class": {
+            "barbarian": 15
+          },
+          "background": {
+            "soldier": 10
+          },
+          "traits": {
+            "directness": 15,
+            "endurance": 12,
+            "risk": 8
+          }
+        },
+        {
+          "text": "Не пью. Мне нравится помнить, что именно я натворил.",
+          "race": {
+            "human": 8
+          },
+          "class": {
+            "monk": 15,
+            "cleric": 8
+          },
+          "background": {
+            "sage": 8
+          },
+          "traits": {
+            "discipline": 16,
+            "control": 10,
+            "clarity": 8
+          }
+        }
+      ]
+    },
+    {
+      "text": "Город на год бесплатно отдаёт вам маленькое помещение. Что вы там откроете?",
+      "answers": [
+        {
+          "text": "Мастерскую. Полезные вещи должны быть сделаны хорошо и пережить владельца.",
+          "race": {
+            "dwarf": 22,
+            "warforged": 8
+          },
+          "class": {
+            "fighter": 10
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "craft": 20,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Таверну с маленькой сценой. Хорошая история окупается лучше мебели.",
+          "race": {
+            "halfling": 14,
+            "halfelf": 10,
+            "satyr": 8
+          },
+          "class": {
+            "bard": 25
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "community": 12,
+            "social": 10
+          }
+        },
+        {
+          "text": "Аптекарскую лавку: травы, мази, странные запахи и очень точные подписи.",
+          "race": {
+            "gnome": 12,
+            "firbolg": 10
+          },
+          "class": {
+            "druid": 18,
+            "ranger": 8
+          },
+          "background": {
+            "hermit": 18
+          },
+          "traits": {
+            "nature": 18,
+            "care": 10,
+            "curiosity": 8
+          }
+        },
+        {
+          "text": "Ломбард. Вещи приходят с историями, а истории иногда стоят дороже вещей.",
+          "race": {
+            "goblin": 10,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 22,
+            "warlock": 5
+          },
+          "background": {
+            "criminal": 15,
+            "charlatan": 10
+          },
+          "traits": {
+            "cunning": 18,
+            "commerce": 15,
+            "risk": 8
+          }
+        },
+        {
+          "text": "Книжную лавку и читальный зал. Половину прибыли я бы тратил на книги, которые никто не покупает.",
+          "race": {
+            "elf": 18,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 25
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "scholarship": 22,
+            "curiosity": 15
+          }
+        },
+        {
+          "text": "Небольшой храм, приют или место, куда можно прийти, когда больше идти некуда.",
+          "race": {
+            "aasimar": 15,
+            "human": 8
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 25,
+            "folkhero": 8
+          },
+          "traits": {
+            "care": 20,
+            "duty": 15,
+            "community": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "Вы ночуете в чужом богатом доме. Хозяин ушёл, а одна дверь явно заперта не просто так.",
+      "answers": [
+        {
+          "text": "Не трогаю. Чужая дверь — чужая проблема.",
+          "race": {
+            "human": 10,
+            "dwarf": 8
+          },
+          "class": {
+            "paladin": 18,
+            "monk": 8
+          },
+          "background": {
+            "noble": 12
+          },
+          "traits": {
+            "duty": 15,
+            "discipline": 12
+          }
+        },
+        {
+          "text": "Сначала слушаю, смотрю следы, проверяю петли, сквозняки и кто вообще ходил сюда.",
+          "race": {
+            "halfelf": 10,
+            "tabaxi": 8
+          },
+          "class": {
+            "ranger": 16,
+            "rogue": 10
+          },
+          "background": {
+            "soldier": 6
+          },
+          "traits": {
+            "observation": 18,
+            "caution": 12
+          }
+        },
+        {
+          "text": "Замок существует, чтобы сообщить мне, что за ним есть что-то интересное.",
+          "race": {
+            "tiefling": 10,
+            "goblin": 8
+          },
+          "class": {
+            "rogue": 25
+          },
+          "background": {
+            "criminal": 20,
+            "urchin": 12
+          },
+          "traits": {
+            "cunning": 20,
+            "risk": 10
+          }
+        },
+        {
+          "text": "Ищу ключ, слугу, записку, хозяина ключей — зачем ломать замок, если можно открыть человека?",
+          "race": {
+            "halfelf": 15,
+            "changeling": 12
+          },
+          "class": {
+            "bard": 18,
+            "rogue": 8
+          },
+          "background": {
+            "charlatan": 18,
+            "noble": 8
+          },
+          "traits": {
+            "social": 18,
+            "cunning": 12
+          }
+        },
+        {
+          "text": "Пытаюсь понять, зачем дверь заперта, по архитектуре, истории дома и деталям замка.",
+          "race": {
+            "elf": 12,
+            "gnome": 10
+          },
+          "class": {
+            "wizard": 20
+          },
+          "background": {
+            "sage": 18
+          },
+          "traits": {
+            "scholarship": 18,
+            "curiosity": 15
+          }
+        },
+        {
+          "text": "Если там опасность, лучше узнать сейчас. Если сокровище — тем более.",
+          "race": {
+            "halforc": 18,
+            "goliath": 8
+          },
+          "class": {
+            "barbarian": 22,
+            "fighter": 8
+          },
+          "background": {
+            "soldier": 10
+          },
+          "traits": {
+            "directness": 20,
+            "risk": 12
+          }
+        }
+      ]
+    },
+    {
+      "text": "Друг признаётся, что нарушил закон. Никто не пострадал, но если всплывёт — ему конец.",
+      "answers": [
+        {
+          "text": "Уговариваю признаться первым. Цена ошибки меньше цены жизни в страхе.",
+          "race": {
+            "human": 8,
+            "aasimar": 8
+          },
+          "class": {
+            "cleric": 15,
+            "paladin": 15
+          },
+          "background": {
+            "acolyte": 10,
+            "folkhero": 8
+          },
+          "traits": {
+            "duty": 15,
+            "care": 10
+          }
+        },
+        {
+          "text": "Помогаю скрыть следы. Друг сначала, моральный семинар потом.",
+          "race": {
+            "tiefling": 10,
+            "goblin": 8
+          },
+          "class": {
+            "rogue": 20
+          },
+          "background": {
+            "criminal": 18,
+            "urchin": 8
+          },
+          "traits": {
+            "loyalty": 15,
+            "cunning": 15
+          }
+        },
+        {
+          "text": "Сначала выясняю всё: что именно произошло, кому выгоден закон и почему наказание настолько велико.",
+          "race": {
+            "elf": 10,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 15,
+            "ranger": 8
+          },
+          "background": {
+            "sage": 15
+          },
+          "traits": {
+            "scholarship": 12,
+            "skepticism": 15
+          }
+        },
+        {
+          "text": "Ищу человека, который может решить вопрос без суда: чиновника, свидетеля, посредника.",
+          "race": {
+            "halfelf": 12,
+            "changeling": 8
+          },
+          "class": {
+            "bard": 15,
+            "warlock": 6
+          },
+          "background": {
+            "noble": 10,
+            "charlatan": 10
+          },
+          "traits": {
+            "social": 18,
+            "pragmatism": 12
+          }
+        },
+        {
+          "text": "Собираю вещи. Некоторые проблемы лучше решаются расстоянием.",
+          "race": {
+            "tabaxi": 10,
+            "halfling": 8
+          },
+          "class": {
+            "ranger": 16,
+            "rogue": 6
+          },
+          "background": {
+            "outlander": 15,
+            "sailor": 6
+          },
+          "traits": {
+            "freedom": 16,
+            "pragmatism": 10
+          }
+        },
+        {
+          "text": "Не мой закон, не моё преступление, не моя исповедь. Но если попросит — помогу.",
+          "race": {
+            "human": 8
+          },
+          "class": {
+            "monk": 14,
+            "barbarian": 6
+          },
+          "background": {
+            "hermit": 8
+          },
+          "traits": {
+            "independence": 16,
+            "calm": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "На празднике вас публично высмеяли. Шутка была действительно хорошая.",
+      "answers": [
+        {
+          "text": "Смеюсь громче всех и добавляю деталь, от которой шутка становится ещё хуже для меня.",
+          "race": {
+            "satyr": 14,
+            "halfling": 10
+          },
+          "class": {
+            "bard": 20
+          },
+          "background": {
+            "entertainer": 20
+          },
+          "traits": {
+            "artistry": 16,
+            "confidence": 14
+          }
+        },
+        {
+          "text": "Спокойно исправляю фактическую ошибку в шутке. Теперь смешно только половине зала.",
+          "race": {
+            "elf": 12,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 18
+          },
+          "background": {
+            "sage": 15
+          },
+          "traits": {
+            "scholarship": 15,
+            "control": 10
+          }
+        },
+        {
+          "text": "Если человек хотел реакцию, он её получил.",
+          "race": {
+            "halforc": 18,
+            "goliath": 10
+          },
+          "class": {
+            "barbarian": 20,
+            "fighter": 8
+          },
+          "background": {
+            "soldier": 10
+          },
+          "traits": {
+            "directness": 18,
+            "pride": 12
+          }
+        },
+        {
+          "text": "Запоминаю. Через неделю он будет смеяться последним — но уже не над той шуткой.",
+          "race": {
+            "tiefling": 12,
+            "goblin": 8
+          },
+          "class": {
+            "rogue": 18,
+            "warlock": 5
+          },
+          "background": {
+            "criminal": 12
+          },
+          "traits": {
+            "cunning": 16,
+            "patience": 10
+          }
+        },
+        {
+          "text": "За минуту переворачиваю разговор так, что теперь публика смеётся вместе со мной, а не надо мной.",
+          "race": {
+            "halfelf": 18,
+            "changeling": 8
+          },
+          "class": {
+            "bard": 18
+          },
+          "background": {
+            "charlatan": 15,
+            "noble": 8
+          },
+          "traits": {
+            "social": 20,
+            "confidence": 12
+          }
+        },
+        {
+          "text": "Киваю и продолжаю заниматься своим делом. Хорошая шутка не становится угрозой от того, что она про меня.",
+          "race": {
+            "human": 8
+          },
+          "class": {
+            "monk": 20,
+            "cleric": 5
+          },
+          "background": {
+            "hermit": 10
+          },
+          "traits": {
+            "calm": 18,
+            "discipline": 12
+          }
+        }
+      ]
+    },
+    {
+      "text": "Вы нашли книгу, которая честно отвечает на один вопрос в день. Первый вопрос?",
+      "answers": [
+        {
+          "text": "«Что произойдёт завтра, если я ничего не изменю?»",
+          "race": {
+            "elf": 12,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 22
+          },
+          "background": {
+            "sage": 18
+          },
+          "traits": {
+            "scholarship": 18,
+            "planning": 12
+          }
+        },
+        {
+          "text": "«Что хотел сказать человек, которого я больше не могу спросить?»",
+          "race": {
+            "aasimar": 8,
+            "tiefling": 8
+          },
+          "class": {
+            "cleric": 16,
+            "warlock": 10
+          },
+          "background": {
+            "acolyte": 8
+          },
+          "traits": {
+            "mysticism": 16,
+            "loyalty": 10
+          }
+        },
+        {
+          "text": "«Сколько за тебя дадут?»",
+          "race": {
+            "goblin": 12,
+            "human": 5
+          },
+          "class": {
+            "rogue": 14
+          },
+          "background": {
+            "guild": 12,
+            "criminal": 10
+          },
+          "traits": {
+            "commerce": 18,
+            "pragmatism": 10
+          }
+        },
+        {
+          "text": "«Какой вопрос мне запрещено задавать?»",
+          "race": {
+            "tiefling": 14,
+            "changeling": 6
+          },
+          "class": {
+            "warlock": 22,
+            "wizard": 8
+          },
+          "background": {
+            "sage": 8
+          },
+          "traits": {
+            "curiosity": 18,
+            "forbidden": 18
+          }
+        },
+        {
+          "text": "«Как тебя уничтожить, если ты начнёшь лгать?»",
+          "race": {
+            "dwarf": 8,
+            "human": 8
+          },
+          "class": {
+            "paladin": 15,
+            "fighter": 8
+          },
+          "background": {
+            "soldier": 8
+          },
+          "traits": {
+            "caution": 15,
+            "duty": 10
+          }
+        },
+        {
+          "text": "Никакого великого вопроса. Сначала спрашиваю, скучно ли книге сто лет отвечать на чужие вопросы.",
+          "race": {
+            "gnome": 14,
+            "halfling": 8
+          },
+          "class": {
+            "bard": 14,
+            "sorcerer": 8
+          },
+          "background": {
+            "entertainer": 8
+          },
+          "traits": {
+            "curiosity": 14,
+            "empathy": 12,
+            "chaos": 6
+          }
+        }
+      ]
+    },
+    {
+      "text": "Вы обнаружили, что старый долг давно забыли. Кредитор точно не вспомнит.",
+      "answers": [
+        {
+          "text": "Возвращаю всё как было обещано. Память кредитора не меняет обещание.",
+          "race": {
+            "dwarf": 16,
+            "human": 8
+          },
+          "class": {
+            "paladin": 18
+          },
+          "background": {
+            "noble": 12,
+            "guild": 8
+          },
+          "traits": {
+            "duty": 20,
+            "tradition": 8
+          }
+        },
+        {
+          "text": "Возвращаю долг чем-то более полезным, чем деньги. И делаю вид, что так и планировал.",
+          "race": {
+            "halfling": 14,
+            "firbolg": 6
+          },
+          "class": {
+            "cleric": 8,
+            "druid": 6
+          },
+          "background": {
+            "folkhero": 16
+          },
+          "traits": {
+            "care": 14,
+            "community": 12
+          }
+        },
+        {
+          "text": "Если человек забыл — судьба закрыла счёт.",
+          "race": {
+            "goblin": 10,
+            "tiefling": 6
+          },
+          "class": {
+            "rogue": 14
+          },
+          "background": {
+            "criminal": 12,
+            "urchin": 10
+          },
+          "traits": {
+            "pragmatism": 16,
+            "cunning": 8
+          }
+        },
+        {
+          "text": "Пускаю деньги в дело. Верну позже и больше — если план сработает.",
+          "race": {
+            "gnome": 10,
+            "human": 6
+          },
+          "class": {
+            "wizard": 8,
+            "rogue": 6
+          },
+          "background": {
+            "guild": 14,
+            "noble": 6
+          },
+          "traits": {
+            "planning": 16,
+            "commerce": 14
+          }
+        },
+        {
+          "text": "Убеждаю себя, что это был не долг, а взаимное вложение в отношения.",
+          "race": {
+            "halfelf": 8,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 12
+          },
+          "background": {
+            "charlatan": 18
+          },
+          "traits": {
+            "social": 12,
+            "cunning": 12
+          }
+        },
+        {
+          "text": "Спрашиваю напрямую: «Ты правда не помнишь или проверяешь меня?»",
+          "race": {
+            "human": 10,
+            "aasimar": 5
+          },
+          "class": {
+            "cleric": 10,
+            "monk": 8
+          },
+          "background": {
+            "acolyte": 6
+          },
+          "traits": {
+            "clarity": 14,
+            "discipline": 8
+          }
+        }
+      ]
+    },
+    {
+      "text": "Дом горит. Люди уже снаружи. У вас есть десять секунд на одну вещь.",
+      "answers": [
+        {
+          "text": "Старое письмо, портрет или вещь человека, которого больше нет.",
+          "race": {
+            "halfling": 14,
+            "human": 8
+          },
+          "class": {
+            "paladin": 8,
+            "cleric": 6
+          },
+          "background": {
+            "folkhero": 14
+          },
+          "traits": {
+            "loyalty": 18,
+            "tradition": 10
+          }
+        },
+        {
+          "text": "Инструменты. Остальное можно восстановить, если есть чем работать.",
+          "race": {
+            "dwarf": 20,
+            "warforged": 8
+          },
+          "class": {
+            "fighter": 8
+          },
+          "background": {
+            "guild": 20
+          },
+          "traits": {
+            "craft": 18,
+            "pragmatism": 10
+          }
+        },
+        {
+          "text": "Странный предмет, происхождение которого я никому не объясняю.",
+          "race": {
+            "tiefling": 12,
+            "yuanpure": 6
+          },
+          "class": {
+            "warlock": 18
+          },
+          "background": {
+            "criminal": 6,
+            "sage": 6
+          },
+          "traits": {
+            "forbidden": 15,
+            "mysticism": 14
+          }
+        },
+        {
+          "text": "Записи. Там годы работы, и я не собираюсь начинать их заново.",
+          "race": {
+            "elf": 14,
+            "gnome": 10
+          },
+          "class": {
+            "wizard": 20
+          },
+          "background": {
+            "sage": 18
+          },
+          "traits": {
+            "scholarship": 20,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Животное, которое все почему-то забыли посчитать среди «людей».",
+          "race": {
+            "firbolg": 12,
+            "halfling": 6
+          },
+          "class": {
+            "druid": 20,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 10
+          },
+          "traits": {
+            "nature": 18,
+            "care": 14
+          }
+        },
+        {
+          "text": "Документы, деньги и ключи. Сентиментальность полезнее, когда есть крыша.",
+          "race": {
+            "human": 8,
+            "halfelf": 6
+          },
+          "class": {
+            "rogue": 12,
+            "fighter": 5
+          },
+          "background": {
+            "noble": 10,
+            "criminal": 8
+          },
+          "traits": {
+            "pragmatism": 18,
+            "planning": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "Перед группой старый подвесной мост. Он выдержит не всех — или выдержит. Никто не знает.",
+      "answers": [
+        {
+          "text": "Проверяю крепления, нагрузку и самые слабые места. Паника ничего не чинит.",
+          "race": {
+            "dwarf": 16,
+            "warforged": 8
+          },
+          "class": {
+            "fighter": 12,
+            "wizard": 5
+          },
+          "background": {
+            "guild": 12
+          },
+          "traits": {
+            "craft": 12,
+            "discipline": 14,
+            "caution": 10
+          }
+        },
+        {
+          "text": "Иду первым с верёвкой. Если что-то случится, остальные хотя бы будут знать где.",
+          "race": {
+            "tabaxi": 10,
+            "halforc": 6
+          },
+          "class": {
+            "ranger": 18,
+            "paladin": 10
+          },
+          "background": {
+            "outlander": 12,
+            "soldier": 8
+          },
+          "traits": {
+            "risk": 12,
+            "duty": 12,
+            "observation": 8
+          }
+        },
+        {
+          "text": "Ищу другой путь. «Быстрее» — плохой аргумент, если альтернатива называется «обрыв».",
+          "race": {
+            "halfling": 12,
+            "firbolg": 8
+          },
+          "class": {
+            "druid": 14,
+            "ranger": 12
+          },
+          "background": {
+            "outlander": 15
+          },
+          "traits": {
+            "caution": 16,
+            "nature": 8
+          }
+        },
+        {
+          "text": "Пусть сначала идёт самый лёгкий и закрепит страховку. Не геройство — инженерия.",
+          "race": {
+            "goblin": 12,
+            "gnome": 8
+          },
+          "class": {
+            "rogue": 16
+          },
+          "background": {
+            "urchin": 8
+          },
+          "traits": {
+            "cunning": 14,
+            "pragmatism": 12
+          }
+        },
+        {
+          "text": "Сначала распределяю людей, вещи и темп. Мост — это проблема группы, а не одного смельчака.",
+          "race": {
+            "human": 10,
+            "halfelf": 8
+          },
+          "class": {
+            "paladin": 14,
+            "bard": 10
+          },
+          "background": {
+            "soldier": 10
+          },
+          "traits": {
+            "leadership": 16,
+            "community": 12
+          }
+        },
+        {
+          "text": "Пытаюсь решить задачу способом, который строители моста точно не предусматривали.",
+          "race": {
+            "gnome": 12,
+            "tiefling": 6
+          },
+          "class": {
+            "sorcerer": 18,
+            "wizard": 10
+          },
+          "background": {
+            "sage": 5
+          },
+          "traits": {
+            "innovation": 18,
+            "chaos": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "Вы один в незнакомом городе после полуночи. Куда вас тянет?",
+      "answers": [
+        {
+          "text": "На музыку, смех и свет из дверей, которые ещё не закрылись.",
+          "race": {
+            "satyr": 14,
+            "halfling": 8
+          },
+          "class": {
+            "bard": 20
+          },
+          "background": {
+            "entertainer": 18
+          },
+          "traits": {
+            "social": 15,
+            "artistry": 12
+          }
+        },
+        {
+          "text": "Туда, где выше: башня, крыша, городской склон. Сначала хочу понять карту.",
+          "race": {
+            "tabaxi": 15,
+            "elf": 6
+          },
+          "class": {
+            "ranger": 18,
+            "rogue": 8
+          },
+          "background": {
+            "outlander": 10
+          },
+          "traits": {
+            "observation": 16,
+            "freedom": 10
+          }
+        },
+        {
+          "text": "К храму, университету или месту, где хранится история города.",
+          "race": {
+            "elf": 15,
+            "aasimar": 5
+          },
+          "class": {
+            "wizard": 16,
+            "cleric": 12
+          },
+          "background": {
+            "sage": 16,
+            "acolyte": 8
+          },
+          "traits": {
+            "scholarship": 16,
+            "tradition": 8
+          }
+        },
+        {
+          "text": "К рынку и постоялым дворам. Там быстрее всего узнаёшь, чем город живёт на самом деле.",
+          "race": {
+            "halfelf": 12,
+            "goblin": 8
+          },
+          "class": {
+            "rogue": 14,
+            "bard": 8
+          },
+          "background": {
+            "charlatan": 12,
+            "criminal": 8
+          },
+          "traits": {
+            "social": 12,
+            "commerce": 10,
+            "cunning": 8
+          }
+        },
+        {
+          "text": "К городской страже. Карта, правила, безопасный ночлег — сначала база.",
+          "race": {
+            "human": 12,
+            "dwarf": 6
+          },
+          "class": {
+            "paladin": 12,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 14
+          },
+          "traits": {
+            "duty": 12,
+            "planning": 10
+          }
+        },
+        {
+          "text": "В самый подозрительный переулок. Там либо короткий путь, либо интересная история.",
+          "race": {
+            "tiefling": 14,
+            "changeling": 8
+          },
+          "class": {
+            "warlock": 14,
+            "rogue": 10
+          },
+          "background": {
+            "urchin": 12
+          },
+          "traits": {
+            "risk": 15,
+            "forbidden": 8,
+            "curiosity": 8
+          }
+        }
+      ]
+    },
+    {
+      "text": "В группе из шести человек вам дали общий проект и слишком мало времени. Кем вы становитесь?",
+      "answers": [
+        {
+          "text": "Тем, кто раздаёт задачи, ставит сроки и первым отвечает, когда всё горит.",
+          "race": {
+            "human": 10,
+            "dragonborn": 8
+          },
+          "class": {
+            "paladin": 15,
+            "fighter": 12
+          },
+          "background": {
+            "noble": 10,
+            "soldier": 10
+          },
+          "traits": {
+            "leadership": 18,
+            "duty": 10
+          }
+        },
+        {
+          "text": "Тем, у кого через час уже открыто двадцать источников и составлена схема.",
+          "race": {
+            "elf": 12,
+            "gnome": 10
+          },
+          "class": {
+            "wizard": 20
+          },
+          "background": {
+            "sage": 20
+          },
+          "traits": {
+            "scholarship": 20,
+            "planning": 10
+          }
+        },
+        {
+          "text": "Тем, кто молча делает самые неприятные практические куски, которые остальные избегают.",
+          "race": {
+            "dwarf": 12,
+            "warforged": 8
+          },
+          "class": {
+            "ranger": 10,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 12
+          },
+          "traits": {
+            "pragmatism": 14,
+            "discipline": 10
+          }
+        },
+        {
+          "text": "Тем, кто знает, кто поссорился, кто устал и кому нужно дать слово, чтобы работа не развалилась.",
+          "race": {
+            "halfelf": 15,
+            "halfling": 8
+          },
+          "class": {
+            "bard": 18,
+            "cleric": 6
+          },
+          "background": {
+            "entertainer": 8,
+            "folkhero": 8
+          },
+          "traits": {
+            "social": 18,
+            "care": 10
+          }
+        },
+        {
+          "text": "Тем, кто уходит в угол, делает свою часть в последний момент и почему-то сдаёт её первой.",
+          "race": {
+            "goblin": 10,
+            "tabaxi": 8
+          },
+          "class": {
+            "rogue": 18,
+            "monk": 6
+          },
+          "background": {
+            "urchin": 10
+          },
+          "traits": {
+            "independence": 16,
+            "cunning": 8
+          }
+        },
+        {
+          "text": "Тем, кто на третий день спрашивает: «А почему мы вообще решаем именно эту задачу?» — и меняет весь план.",
+          "race": {
+            "gnome": 14,
+            "tiefling": 6
+          },
+          "class": {
+            "sorcerer": 14,
+            "warlock": 10,
+            "wizard": 6
+          },
+          "background": {
+            "charlatan": 6
+          },
+          "traits": {
+            "innovation": 18,
+            "skepticism": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "Влиятельный чиновник просит вас о маленькой незаконной услуге. «Никто не пострадает».",
+      "answers": [
+        {
+          "text": "Отказываю так, чтобы он понял: второй раз просить не стоит.",
+          "race": {
+            "dragonborn": 12,
+            "human": 8
+          },
+          "class": {
+            "paladin": 22
+          },
+          "background": {
+            "acolyte": 8,
+            "soldier": 8
+          },
+          "traits": {
+            "duty": 18,
+            "pride": 8
+          }
+        },
+        {
+          "text": "Ищу законный обходной путь. Если правило мешает цели, сначала проверю, действительно ли оно мешает.",
+          "race": {
+            "elf": 10,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 14,
+            "monk": 6
+          },
+          "background": {
+            "sage": 12,
+            "noble": 8
+          },
+          "traits": {
+            "scholarship": 10,
+            "planning": 14
+          }
+        },
+        {
+          "text": "Соглашаюсь, но делаю так, чтобы после этого чиновник был должен уже мне.",
+          "race": {
+            "tiefling": 10,
+            "halfelf": 8
+          },
+          "class": {
+            "rogue": 18,
+            "warlock": 10
+          },
+          "background": {
+            "criminal": 12,
+            "noble": 8
+          },
+          "traits": {
+            "cunning": 18,
+            "ambition": 12
+          }
+        },
+        {
+          "text": "Соглашаюсь только если это реально поможет обычным людям, а не его карьере.",
+          "race": {
+            "halfling": 10,
+            "aasimar": 8
+          },
+          "class": {
+            "cleric": 16,
+            "ranger": 6
+          },
+          "background": {
+            "folkhero": 18
+          },
+          "traits": {
+            "care": 16,
+            "community": 12
+          }
+        },
+        {
+          "text": "Первый вопрос: «Сколько?» Второй: «Почему так мало?»",
+          "race": {
+            "goblin": 12,
+            "changeling": 6
+          },
+          "class": {
+            "warlock": 12,
+            "rogue": 10
+          },
+          "background": {
+            "criminal": 14,
+            "guild": 8
+          },
+          "traits": {
+            "commerce": 16,
+            "pragmatism": 10
+          }
+        },
+        {
+          "text": "Киваю, ухожу и делаю всё возможное, чтобы завтра меня не нашли ни он, ни его услуга.",
+          "race": {
+            "tabaxi": 12,
+            "halfling": 6
+          },
+          "class": {
+            "ranger": 14,
+            "rogue": 8
+          },
+          "background": {
+            "outlander": 12,
+            "sailor": 8
+          },
+          "traits": {
+            "freedom": 16,
+            "caution": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "У двери лежит дорогой подарок без подписи. Что дальше?",
+      "answers": [
+        {
+          "text": "Открываю. Если это ловушка, она хотя бы не будет скучной.",
+          "race": {
+            "tabaxi": 14,
+            "gnome": 8
+          },
+          "class": {
+            "sorcerer": 16,
+            "barbarian": 6
+          },
+          "background": {
+            "urchin": 8
+          },
+          "traits": {
+            "risk": 18,
+            "curiosity": 10
+          }
+        },
+        {
+          "text": "Проверяю швы, вес, запах, дно коробки и все очевидные места для иглы.",
+          "race": {
+            "goblin": 10,
+            "halfling": 6
+          },
+          "class": {
+            "rogue": 20,
+            "ranger": 8
+          },
+          "background": {
+            "criminal": 10
+          },
+          "traits": {
+            "caution": 16,
+            "cunning": 12
+          }
+        },
+        {
+          "text": "Сначала выясняю происхождение упаковки, знак мастера, материал и кто вообще мог знать мой адрес.",
+          "race": {
+            "elf": 12,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 18
+          },
+          "background": {
+            "sage": 16
+          },
+          "traits": {
+            "scholarship": 16,
+            "observation": 10
+          }
+        },
+        {
+          "text": "Если подарок действительно мой, он переживёт ночь в храме или у людей, которым нужнее.",
+          "race": {
+            "aasimar": 12,
+            "human": 6
+          },
+          "class": {
+            "cleric": 18,
+            "paladin": 6
+          },
+          "background": {
+            "acolyte": 14
+          },
+          "traits": {
+            "care": 16,
+            "duty": 8
+          }
+        },
+        {
+          "text": "Уношу подальше от дома и открываю там, где последствия не сожгут соседей.",
+          "race": {
+            "firbolg": 10,
+            "dwarf": 6
+          },
+          "class": {
+            "druid": 10,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 10,
+            "outlander": 6
+          },
+          "traits": {
+            "caution": 14,
+            "pragmatism": 10
+          }
+        },
+        {
+          "text": "Ставлю на видное место нераспакованным. Пускай отправитель первым начнёт нервничать.",
+          "race": {
+            "halfelf": 12,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 12,
+            "warlock": 6
+          },
+          "background": {
+            "noble": 10,
+            "charlatan": 12
+          },
+          "traits": {
+            "social": 12,
+            "confidence": 10,
+            "cunning": 8
+          }
+        }
+      ]
+    },
+    {
+      "text": "Вы можете навсегда стереть одну неприятную память — без последствий.",
+      "answers": [
+        {
+          "text": "Ничего не стираю. Плохая память всё равно моя, и она чему-то меня научила.",
+          "race": {
+            "human": 10,
+            "dwarf": 6
+          },
+          "class": {
+            "monk": 20,
+            "cleric": 8
+          },
+          "background": {
+            "hermit": 10
+          },
+          "traits": {
+            "discipline": 16,
+            "tradition": 10
+          }
+        },
+        {
+          "text": "Стираю самый позорный момент. Мне не нужна внутренняя аудитория из прошлого.",
+          "race": {
+            "halfelf": 10,
+            "changeling": 8
+          },
+          "class": {
+            "bard": 12
+          },
+          "background": {
+            "charlatan": 14,
+            "entertainer": 6
+          },
+          "traits": {
+            "social": 10,
+            "freedom": 10
+          }
+        },
+        {
+          "text": "Стираю момент, когда испугался. Не хочу, чтобы старый страх выбирал за меня.",
+          "race": {
+            "dragonborn": 10,
+            "halforc": 10
+          },
+          "class": {
+            "fighter": 14,
+            "barbarian": 12
+          },
+          "background": {
+            "soldier": 14
+          },
+          "traits": {
+            "pride": 12,
+            "endurance": 12
+          }
+        },
+        {
+          "text": "Стираю момент потери — хотя бы один день без этого груза.",
+          "race": {
+            "tiefling": 10,
+            "aasimar": 5
+          },
+          "class": {
+            "warlock": 15,
+            "cleric": 8
+          },
+          "background": {
+            "acolyte": 5
+          },
+          "traits": {
+            "mysticism": 10,
+            "loyalty": 12
+          }
+        },
+        {
+          "text": "Стираю скучную книгу или фильм, чтобы получить удовольствие от них заново.",
+          "race": {
+            "gnome": 14,
+            "halfling": 8
+          },
+          "class": {
+            "sorcerer": 12,
+            "bard": 8
+          },
+          "background": {
+            "entertainer": 8
+          },
+          "traits": {
+            "curiosity": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Стираю знание, которое вообще не должен был получать. Некоторые двери лучше закрывать изнутри.",
+          "race": {
+            "elf": 8,
+            "yuanpure": 6
+          },
+          "class": {
+            "wizard": 12,
+            "warlock": 10
+          },
+          "background": {
+            "sage": 12
+          },
+          "traits": {
+            "forbidden": 12,
+            "caution": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "За что вам было бы приятно однажды стать известным?",
+      "answers": [
+        {
+          "text": "За то, что спас людей, когда никто больше не мог.",
+          "race": {
+            "aasimar": 12,
+            "human": 8
+          },
+          "class": {
+            "paladin": 20,
+            "cleric": 14
+          },
+          "background": {
+            "folkhero": 20
+          },
+          "traits": {
+            "duty": 15,
+            "care": 12
+          }
+        },
+        {
+          "text": "За открытие истины, которую до меня считали невозможной.",
+          "race": {
+            "elf": 14,
+            "gnome": 10
+          },
+          "class": {
+            "wizard": 22
+          },
+          "background": {
+            "sage": 22
+          },
+          "traits": {
+            "scholarship": 20,
+            "curiosity": 10
+          }
+        },
+        {
+          "text": "За историю, песню или выступление, которое люди повторяют спустя годы.",
+          "race": {
+            "halfelf": 14,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25
+          },
+          "background": {
+            "entertainer": 22
+          },
+          "traits": {
+            "artistry": 20,
+            "social": 10
+          }
+        },
+        {
+          "text": "За дело, которое все обсуждают, но никто так и не доказал, что это был я.",
+          "race": {
+            "goblin": 10,
+            "changeling": 10
+          },
+          "class": {
+            "rogue": 22
+          },
+          "background": {
+            "criminal": 18,
+            "charlatan": 8
+          },
+          "traits": {
+            "cunning": 18,
+            "confidence": 8
+          }
+        },
+        {
+          "text": "За то, что прошёл туда, откуда другие возвращались только в рассказах.",
+          "race": {
+            "tabaxi": 12,
+            "halforc": 6
+          },
+          "class": {
+            "ranger": 20,
+            "druid": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 6
+          },
+          "traits": {
+            "freedom": 14,
+            "endurance": 12
+          }
+        },
+        {
+          "text": "За репутацию человека, которого враги предпочитают не проверять дважды.",
+          "race": {
+            "halforc": 16,
+            "dragonborn": 8
+          },
+          "class": {
+            "barbarian": 18,
+            "warlock": 10,
+            "fighter": 8
+          },
+          "background": {
+            "soldier": 14
+          },
+          "traits": {
+            "pride": 14,
+            "directness": 10
+          }
+        }
+      ]
+    },
+    {
+      "text": "В большом старом городе у вас свободный день. В какой район вы уйдёте без карты?",
+      "answers": [
+        {
+          "text": "Кузницы, мастерские, склады, шум работы и запах металла.",
+          "race": {
+            "dwarf": 22,
+            "warforged": 8
+          },
+          "class": {
+            "fighter": 10
+          },
+          "background": {
+            "guild": 22
+          },
+          "traits": {
+            "craft": 18,
+            "pragmatism": 8
+          }
+        },
+        {
+          "text": "Старый университет, архивы, книжные развалы, закрытые дворики.",
+          "race": {
+            "elf": 18,
+            "gnome": 8
+          },
+          "class": {
+            "wizard": 20
+          },
+          "background": {
+            "sage": 20
+          },
+          "traits": {
+            "scholarship": 20,
+            "curiosity": 8
+          }
+        },
+        {
+          "text": "Порт, доки, корабли и люди, которые завтра могут оказаться на другом конце мира.",
+          "race": {
+            "human": 8,
+            "tabaxi": 10
+          },
+          "class": {
+            "ranger": 12,
+            "rogue": 6
+          },
+          "background": {
+            "sailor": 22,
+            "outlander": 8
+          },
+          "traits": {
+            "freedom": 16,
+            "community": 6
+          }
+        },
+        {
+          "text": "Рынки, трактиры, театры и улицы, где люди говорят больше, чем собирались.",
+          "race": {
+            "halfelf": 16,
+            "satyr": 8
+          },
+          "class": {
+            "bard": 18,
+            "rogue": 8
+          },
+          "background": {
+            "entertainer": 14,
+            "charlatan": 12
+          },
+          "traits": {
+            "social": 18,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "Старые стены, заброшенные сады, окраины и места, где город начинает уступать природе.",
+          "race": {
+            "firbolg": 14,
+            "halfling": 6
+          },
+          "class": {
+            "druid": 20,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 14,
+            "outlander": 10
+          },
+          "traits": {
+            "nature": 20,
+            "solitude": 8
+          }
+        },
+        {
+          "text": "Храмовый или дворцовый квартал. Люблю места, где архитектура пытается убедить тебя в чьей-то власти.",
+          "race": {
+            "aasimar": 8,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 14,
+            "paladin": 12
+          },
+          "background": {
+            "noble": 18,
+            "acolyte": 10
+          },
+          "traits": {
+            "tradition": 14,
+            "status": 12
+          }
+        }
+      ]
+    },
+    {
+      "text": "Незнакомец предлагает сделку. Какой вариант звучит для вас опасно заманчиво?",
+      "answers": [
+        {
+          "text": "Всегда знать правду — но больше никогда не суметь солгать.",
+          "race": {
+            "elf": 12,
+            "aasimar": 6
+          },
+          "class": {
+            "wizard": 16,
+            "cleric": 12
+          },
+          "background": {
+            "sage": 16
+          },
+          "traits": {
+            "scholarship": 12,
+            "duty": 10,
+            "control": 8
+          }
+        },
+        {
+          "text": "Никогда не проигрывать бой — но каждая победа стирает одну память.",
+          "race": {
+            "halforc": 14,
+            "dragonborn": 10
+          },
+          "class": {
+            "fighter": 18,
+            "barbarian": 16
+          },
+          "background": {
+            "soldier": 14
+          },
+          "traits": {
+            "risk": 14,
+            "pride": 12,
+            "endurance": 8
+          }
+        },
+        {
+          "text": "Нравиться всем — но никто никогда не узнает вас настоящего.",
+          "race": {
+            "changeling": 18,
+            "halfelf": 10
+          },
+          "class": {
+            "bard": 16,
+            "rogue": 8
+          },
+          "background": {
+            "charlatan": 18,
+            "noble": 6
+          },
+          "traits": {
+            "social": 15,
+            "identity": 14
+          }
+        },
+        {
+          "text": "Можно попасть куда угодно — но ни одно место больше не станет домом.",
+          "race": {
+            "tabaxi": 18,
+            "halfling": 5
+          },
+          "class": {
+            "ranger": 20
+          },
+          "background": {
+            "outlander": 18,
+            "sailor": 10
+          },
+          "traits": {
+            "freedom": 20,
+            "solitude": 8
+          }
+        },
+        {
+          "text": "Одно невозможное желание сейчас — а когда-нибудь незнакомец потребует услугу.",
+          "race": {
+            "tiefling": 20,
+            "goblin": 6
+          },
+          "class": {
+            "warlock": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "criminal": 10
+          },
+          "traits": {
+            "forbidden": 20,
+            "ambition": 12,
+            "risk": 10
+          }
+        },
+        {
+          "text": "Никакую. Я не принимаю цену, которую назначил кто-то другой.",
+          "race": {
+            "human": 12,
+            "dwarf": 6
+          },
+          "class": {
+            "paladin": 18,
+            "monk": 16
+          },
+          "background": {
+            "folkhero": 10,
+            "hermit": 6
+          },
+          "traits": {
+            "independence": 18,
+            "discipline": 12,
+            "duty": 8
+          }
+        }
+      ]
+    },
+    {
+      "text": "Какая победа кажется вам самой красивой?",
+      "answers": [
+        {
+          "text": "Противник понимает, что проиграл, только когда уже поздно.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "shadow": 25,
+            "trickery": 20,
+            "subtlety": 20,
+            "control": 8
+          }
+        },
+        {
+          "text": "Я остаюсь на месте, когда всё остальное рушится.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "guardian": 25,
+            "endurance": 20,
+            "devotion": 15
+          }
+        },
+        {
+          "text": "Один точный момент, одно решение, один удар — и всё кончено.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "precision": 25,
+            "vengeance": 15,
+            "glory": 12,
+            "discipline": 10
+          }
+        },
+        {
+          "text": "Победа, после которой бывший враг становится союзником или хотя бы перестаёт быть врагом.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "mercy": 25,
+            "charm": 20,
+            "peace": 15,
+            "control": 8
+          }
+        },
+        {
+          "text": "Поле боя, спор или ситуация постепенно становятся «моими», и у противника остаются только плохие варианты.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "battlefield_control": 25,
+            "nature": 12,
+            "arcane": 12,
+            "tactics": 15
+          }
+        },
+        {
+          "text": "Победа, которая сработала потому, что я сделал то, чего «по правилам» делать было нельзя.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "chaos": 25,
+            "innovation": 20,
+            "forbidden": 15,
+            "wild": 12
+          }
+        }
+      ]
+    },
+    {
+      "text": "Какой недостаток силы вы легче всего готовы принять?",
+      "answers": [
+        {
+          "text": "Она требует подготовки, ритуалов, компонентов и правильного момента.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "knowledge": 22,
+            "ritual": 20,
+            "discipline": 15,
+            "arcane": 10
+          }
+        },
+        {
+          "text": "Иногда она опасна и для меня. Сила без риска редко бывает настоящей.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "wild": 22,
+            "rage": 18,
+            "chaos": 18,
+            "transformation": 10
+          }
+        },
+        {
+          "text": "Она зависит от клятвы, покровителя, духа, идеала или связи с кем-то.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "devotion": 22,
+            "patron": 20,
+            "ancestor": 15,
+            "bond": 18
+          }
+        },
+        {
+          "text": "Она постепенно делает меня страннее, менее обычным или вообще не совсем человеком.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "transformation": 25,
+            "otherworldly": 20,
+            "shadow": 10,
+            "forbidden": 10
+          }
+        },
+        {
+          "text": "Она работает идеально только в подходящих условиях, зато тогда — безупречно.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "precision": 20,
+            "patience": 18,
+            "tactics": 18,
+            "nature": 8
+          }
+        },
+        {
+          "text": "Её невозможно использовать тихо. Пусть знают, что я пришёл.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "glory": 22,
+            "radiance": 18,
+            "storm": 18,
+            "presence": 15
+          }
+        }
+      ]
+    },
+    {
+      "text": "После невозможного приключения что вы хотели бы услышать от союзников?",
+      "answers": [
+        {
+          "text": "«Без него мы бы не выжили.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "guardian": 25,
+            "healing": 20,
+            "mercy": 12,
+            "devotion": 12
+          }
+        },
+        {
+          "text": "«Он видел то, чего не видел никто из нас.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "knowledge": 22,
+            "divination": 20,
+            "scout": 18,
+            "perception": 15
+          }
+        },
+        {
+          "text": "«Он сделал невозможное красиво.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "glamour": 20,
+            "artistry": 20,
+            "mobility": 15,
+            "glory": 12
+          }
+        },
+        {
+          "text": "«Я до сих пор не понимаю, как он это провернул.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "trickery": 22,
+            "illusion": 20,
+            "tactics": 18,
+            "subtlety": 15
+          }
+        },
+        {
+          "text": "«Он был самым страшным существом в комнате — и был на нашей стороне.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "rage": 20,
+            "shadow": 18,
+            "transformation": 20,
+            "vengeance": 12
+          }
+        },
+        {
+          "text": "«Рядом с ним мир становился другим.»",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "battlefield_control": 20,
+            "nature": 18,
+            "arcane": 18,
+            "creation": 15,
+            "otherworldly": 10
+          }
+        }
+      ]
+    }
+  ],
+  "profiles": {
+    "barbarian": [
+      {
+        "name": "Берсерк",
+        "tags": [
+          "rage",
+          "glory",
+          "selfdanger"
+        ],
+        "id": "berserker"
+      },
+      {
+        "name": "Тотемный воин",
+        "tags": [
+          "ancestor",
+          "nature",
+          "guardian"
+        ],
+        "id": "totem"
+      },
+      {
+        "name": "Предок-хранитель",
+        "tags": [
+          "ancestor",
+          "guardian",
+          "bond"
+        ],
+        "id": "ancestral"
+      },
+      {
+        "name": "Буревестник",
+        "tags": [
+          "storm",
+          "presence",
+          "battlefield_control"
+        ],
+        "id": "stormherald"
+      },
+      {
+        "name": "Фанатик",
+        "tags": [
+          "devotion",
+          "radiance",
+          "rage"
+        ],
+        "id": "zealot"
+      },
+      {
+        "name": "Зверь",
+        "tags": [
+          "transformation",
+          "wild",
+          "rage"
+        ],
+        "id": "beast"
+      },
+      {
+        "name": "Дикая магия",
+        "tags": [
+          "chaos",
+          "wild",
+          "otherworldly"
+        ],
+        "id": "wildmagic"
+      },
+      {
+        "name": "Великан",
+        "tags": [
+          "glory",
+          "transformation",
+          "battlefield_control"
+        ],
+        "id": "giant"
+      }
+    ],
+    "bard": [
+      {
+        "name": "Коллегия знаний",
+        "tags": [
+          "knowledge",
+          "subtlety",
+          "control"
+        ],
+        "id": "lore"
+      },
+      {
+        "name": "Доблести",
+        "tags": [
+          "guardian",
+          "glory",
+          "presence"
+        ],
+        "id": "valor"
+      },
+      {
+        "name": "Гламура",
+        "tags": [
+          "glamour",
+          "charm",
+          "presence"
+        ],
+        "id": "glamour"
+      },
+      {
+        "name": "Мечей",
+        "tags": [
+          "precision",
+          "mobility",
+          "glory"
+        ],
+        "id": "swords"
+      },
+      {
+        "name": "Шёпотов",
+        "tags": [
+          "shadow",
+          "subtlety",
+          "trickery"
+        ],
+        "id": "whispers"
+      },
+      {
+        "name": "Созидания",
+        "tags": [
+          "creation",
+          "artistry",
+          "arcane"
+        ],
+        "id": "creation"
+      },
+      {
+        "name": "Красноречия",
+        "tags": [
+          "charm",
+          "peace",
+          "control"
+        ],
+        "id": "eloquence"
+      },
+      {
+        "name": "Духов",
+        "tags": [
+          "otherworldly",
+          "knowledge",
+          "bond"
+        ],
+        "id": "spirits"
+      }
+    ],
+    "cleric": [
+      {
+        "name": "Знания",
+        "tags": [
+          "knowledge",
+          "divination",
+          "ritual"
+        ],
+        "id": "knowledge"
+      },
+      {
+        "name": "Жизни",
+        "tags": [
+          "healing",
+          "guardian",
+          "devotion"
+        ],
+        "id": "life"
+      },
+      {
+        "name": "Света",
+        "tags": [
+          "radiance",
+          "presence",
+          "guardian"
+        ],
+        "id": "light"
+      },
+      {
+        "name": "Природы",
+        "tags": [
+          "nature",
+          "guardian",
+          "ritual"
+        ],
+        "id": "nature"
+      },
+      {
+        "name": "Бури",
+        "tags": [
+          "storm",
+          "presence",
+          "battlefield_control"
+        ],
+        "id": "tempest"
+      },
+      {
+        "name": "Обмана",
+        "tags": [
+          "trickery",
+          "illusion",
+          "subtlety"
+        ],
+        "id": "trickery"
+      },
+      {
+        "name": "Войны",
+        "tags": [
+          "glory",
+          "precision",
+          "guardian"
+        ],
+        "id": "war"
+      },
+      {
+        "name": "Кузни",
+        "tags": [
+          "guardian",
+          "creation",
+          "discipline"
+        ],
+        "id": "forge"
+      },
+      {
+        "name": "Могилы",
+        "tags": [
+          "knowledge",
+          "shadow",
+          "guardian"
+        ],
+        "id": "grave"
+      },
+      {
+        "name": "Арканы",
+        "tags": [
+          "arcane",
+          "knowledge",
+          "ritual"
+        ],
+        "id": "arcana"
+      },
+      {
+        "name": "Порядка",
+        "tags": [
+          "control",
+          "devotion",
+          "presence"
+        ],
+        "id": "order"
+      },
+      {
+        "name": "Мира",
+        "tags": [
+          "peace",
+          "mercy",
+          "guardian"
+        ],
+        "id": "peace"
+      },
+      {
+        "name": "Сумерек",
+        "tags": [
+          "shadow",
+          "guardian",
+          "otherworldly"
+        ],
+        "id": "twilight"
+      }
+    ],
+    "druid": [
+      {
+        "name": "Земли",
+        "tags": [
+          "nature",
+          "ritual",
+          "knowledge"
+        ],
+        "id": "land"
+      },
+      {
+        "name": "Луны",
+        "tags": [
+          "transformation",
+          "wild",
+          "guardian"
+        ],
+        "id": "moon"
+      },
+      {
+        "name": "Снов",
+        "tags": [
+          "healing",
+          "otherworldly",
+          "mercy"
+        ],
+        "id": "dreams"
+      },
+      {
+        "name": "Пастыря",
+        "tags": [
+          "guardian",
+          "nature",
+          "bond"
+        ],
+        "id": "shepherd"
+      },
+      {
+        "name": "Спор",
+        "tags": [
+          "transformation",
+          "shadow",
+          "nature"
+        ],
+        "id": "spores"
+      },
+      {
+        "name": "Звёзд",
+        "tags": [
+          "divination",
+          "radiance",
+          "knowledge"
+        ],
+        "id": "stars"
+      },
+      {
+        "name": "Дикого огня",
+        "tags": [
+          "wild",
+          "creation",
+          "healing"
+        ],
+        "id": "wildfire"
+      }
+    ],
+    "fighter": [
+      {
+        "name": "Чемпион",
+        "tags": [
+          "glory",
+          "precision",
+          "endurance"
+        ],
+        "id": "champion"
+      },
+      {
+        "name": "Мастер боевых искусств",
+        "tags": [
+          "tactics",
+          "precision",
+          "control"
+        ],
+        "id": "battlemaster"
+      },
+      {
+        "name": "Мистический рыцарь",
+        "tags": [
+          "arcane",
+          "guardian",
+          "discipline"
+        ],
+        "id": "eldritchknight"
+      },
+      {
+        "name": "Арканный лучник",
+        "tags": [
+          "precision",
+          "arcane",
+          "scout"
+        ],
+        "id": "arcanearcher"
+      },
+      {
+        "name": "Кавалер",
+        "tags": [
+          "guardian",
+          "devotion",
+          "presence"
+        ],
+        "id": "cavalier"
+      },
+      {
+        "name": "Самурай",
+        "tags": [
+          "discipline",
+          "glory",
+          "endurance"
+        ],
+        "id": "samurai"
+      },
+      {
+        "name": "Пси-воин",
+        "tags": [
+          "arcane",
+          "control",
+          "precision"
+        ],
+        "id": "psi-warrior"
+      },
+      {
+        "name": "Рунный рыцарь",
+        "tags": [
+          "ritual",
+          "transformation",
+          "guardian"
+        ],
+        "id": "runeknight"
+      },
+      {
+        "name": "Эхо-рыцарь",
+        "tags": [
+          "otherworldly",
+          "mobility",
+          "tactics"
+        ],
+        "id": "echo-knight"
+      }
+    ],
+    "monk": [
+      {
+        "name": "Открытой ладони",
+        "tags": [
+          "precision",
+          "mercy",
+          "discipline"
+        ],
+        "id": "openhand"
+      },
+      {
+        "name": "Тени",
+        "tags": [
+          "shadow",
+          "subtlety",
+          "mobility"
+        ],
+        "id": "shadow"
+      },
+      {
+        "name": "Четырёх стихий",
+        "tags": [
+          "arcane",
+          "battlefield_control",
+          "discipline"
+        ],
+        "id": "four-elements"
+      },
+      {
+        "name": "Долгой смерти",
+        "tags": [
+          "shadow",
+          "endurance",
+          "forbidden"
+        ],
+        "id": "long-death"
+      },
+      {
+        "name": "Солнца",
+        "tags": [
+          "radiance",
+          "presence",
+          "discipline"
+        ],
+        "id": "sun-soul"
+      },
+      {
+        "name": "Пьяного мастера",
+        "tags": [
+          "mobility",
+          "trickery",
+          "chaos"
+        ],
+        "id": "drunken"
+      },
+      {
+        "name": "Кэнсэй",
+        "tags": [
+          "precision",
+          "discipline",
+          "glory"
+        ],
+        "id": "kensei"
+      },
+      {
+        "name": "Милосердия",
+        "tags": [
+          "healing",
+          "mercy",
+          "precision"
+        ],
+        "id": "mercy"
+      },
+      {
+        "name": "Астрального «я»",
+        "tags": [
+          "otherworldly",
+          "transformation",
+          "discipline"
+        ],
+        "id": "astral-self"
+      }
+    ],
+    "paladin": [
+      {
+        "name": "Преданности",
+        "tags": [
+          "devotion",
+          "guardian",
+          "radiance"
+        ],
+        "id": "devotion"
+      },
+      {
+        "name": "Древних",
+        "tags": [
+          "nature",
+          "guardian",
+          "mercy"
+        ],
+        "id": "ancients"
+      },
+      {
+        "name": "Мести",
+        "tags": [
+          "vengeance",
+          "precision",
+          "glory"
+        ],
+        "id": "vengeance"
+      },
+      {
+        "name": "Короны",
+        "tags": [
+          "guardian",
+          "presence",
+          "devotion"
+        ],
+        "id": "crown"
+      },
+      {
+        "name": "Завоевания",
+        "tags": [
+          "presence",
+          "control",
+          "glory"
+        ],
+        "id": "conquest"
+      },
+      {
+        "name": "Искупления",
+        "tags": [
+          "mercy",
+          "peace",
+          "guardian"
+        ],
+        "id": "redemption"
+      },
+      {
+        "name": "Славы",
+        "tags": [
+          "glory",
+          "mobility",
+          "presence"
+        ],
+        "id": "glory"
+      },
+      {
+        "name": "Наблюдателей",
+        "tags": [
+          "guardian",
+          "knowledge",
+          "otherworldly"
+        ],
+        "id": "watchers"
+      },
+      {
+        "name": "Клятвопреступник",
+        "tags": [
+          "shadow",
+          "forbidden",
+          "presence"
+        ],
+        "id": "oathbreaker"
+      }
+    ],
+    "ranger": [
+      {
+        "name": "Охотник",
+        "tags": [
+          "precision",
+          "scout",
+          "tactics"
+        ],
+        "id": "hunter"
+      },
+      {
+        "name": "Повелитель зверей",
+        "tags": [
+          "bond",
+          "nature",
+          "guardian"
+        ],
+        "id": "beastmaster"
+      },
+      {
+        "name": "Сумрачный охотник",
+        "tags": [
+          "shadow",
+          "scout",
+          "precision"
+        ],
+        "id": "gloomstalker"
+      },
+      {
+        "name": "Странник горизонта",
+        "tags": [
+          "otherworldly",
+          "mobility",
+          "scout"
+        ],
+        "id": "horizonwalker"
+      },
+      {
+        "name": "Убийца монстров",
+        "tags": [
+          "knowledge",
+          "precision",
+          "vengeance"
+        ],
+        "id": "monster-slayer"
+      },
+      {
+        "name": "Фейский странник",
+        "tags": [
+          "glamour",
+          "otherworldly",
+          "charm"
+        ],
+        "id": "feywanderer"
+      },
+      {
+        "name": "Роевой хранитель",
+        "tags": [
+          "nature",
+          "battlefield_control",
+          "otherworldly"
+        ],
+        "id": "swarmkeeper"
+      },
+      {
+        "name": "Дрейкварден",
+        "tags": [
+          "bond",
+          "glory",
+          "guardian"
+        ],
+        "id": "drakewarden"
+      }
+    ],
+    "rogue": [
+      {
+        "name": "Вор",
+        "tags": [
+          "mobility",
+          "subtlety",
+          "trickery"
+        ],
+        "id": "thief"
+      },
+      {
+        "name": "Убийца",
+        "tags": [
+          "precision",
+          "shadow",
+          "subtlety"
+        ],
+        "id": "assassin"
+      },
+      {
+        "name": "Мистический ловкач",
+        "tags": [
+          "arcane",
+          "illusion",
+          "trickery"
+        ],
+        "id": "arcanetrickster"
+      },
+      {
+        "name": "Мастер интриг",
+        "tags": [
+          "charm",
+          "tactics",
+          "subtlety"
+        ],
+        "id": "mastermind"
+      },
+      {
+        "name": "Головорез",
+        "tags": [
+          "glory",
+          "mobility",
+          "presence"
+        ],
+        "id": "swashbuckler"
+      },
+      {
+        "name": "Сыщик",
+        "tags": [
+          "knowledge",
+          "perception",
+          "tactics"
+        ],
+        "id": "inquisitive"
+      },
+      {
+        "name": "Разведчик",
+        "tags": [
+          "scout",
+          "mobility",
+          "nature"
+        ],
+        "id": "scout"
+      },
+      {
+        "name": "Фантом",
+        "tags": [
+          "shadow",
+          "otherworldly",
+          "knowledge"
+        ],
+        "id": "phantom"
+      },
+      {
+        "name": "Клинок души",
+        "tags": [
+          "otherworldly",
+          "precision",
+          "subtlety"
+        ],
+        "id": "soulknife"
+      }
+    ],
+    "sorcerer": [
+      {
+        "name": "Драконья кровь",
+        "tags": [
+          "glory",
+          "transformation",
+          "presence"
+        ],
+        "id": "draconic"
+      },
+      {
+        "name": "Дикая магия",
+        "tags": [
+          "chaos",
+          "wild",
+          "otherworldly"
+        ],
+        "id": "wildmagic"
+      },
+      {
+        "name": "Шторм",
+        "tags": [
+          "storm",
+          "mobility",
+          "presence"
+        ],
+        "id": "storm"
+      },
+      {
+        "name": "Тень",
+        "tags": [
+          "shadow",
+          "otherworldly",
+          "subtlety"
+        ],
+        "id": "shadow"
+      },
+      {
+        "name": "Божественная душа",
+        "tags": [
+          "radiance",
+          "healing",
+          "devotion"
+        ],
+        "id": "divinesoul"
+      },
+      {
+        "name": "Аберрантный разум",
+        "tags": [
+          "otherworldly",
+          "control",
+          "forbidden"
+        ],
+        "id": "aberrant"
+      },
+      {
+        "name": "Заводная душа",
+        "tags": [
+          "control",
+          "discipline",
+          "guardian"
+        ],
+        "id": "clockwork"
+      },
+      {
+        "name": "Лунное колдовство",
+        "tags": [
+          "otherworldly",
+          "divination",
+          "transformation"
+        ],
+        "id": "lunar"
+      }
+    ],
+    "warlock": [
+      {
+        "name": "Архифея",
+        "tags": [
+          "glamour",
+          "charm",
+          "otherworldly"
+        ],
+        "id": "archfey"
+      },
+      {
+        "name": "Исчадие",
+        "tags": [
+          "forbidden",
+          "glory",
+          "rage"
+        ],
+        "id": "fiend"
+      },
+      {
+        "name": "Великий Древний",
+        "tags": [
+          "forbidden",
+          "knowledge",
+          "otherworldly"
+        ],
+        "id": "greatoldone"
+      },
+      {
+        "name": "Небожитель",
+        "tags": [
+          "healing",
+          "radiance",
+          "devotion"
+        ],
+        "id": "celestial"
+      },
+      {
+        "name": "Ведьмовской клинок",
+        "tags": [
+          "precision",
+          "shadow",
+          "vengeance"
+        ],
+        "id": "hexblade"
+      },
+      {
+        "name": "Бездонный",
+        "tags": [
+          "otherworldly",
+          "battlefield_control",
+          "bond"
+        ],
+        "id": "fathomless"
+      },
+      {
+        "name": "Гений",
+        "tags": [
+          "creation",
+          "otherworldly",
+          "glory"
+        ],
+        "id": "genie"
+      },
+      {
+        "name": "Нежить",
+        "tags": [
+          "shadow",
+          "transformation",
+          "presence"
+        ],
+        "id": "undead"
+      },
+      {
+        "name": "Бессмертный",
+        "tags": [
+          "shadow",
+          "knowledge",
+          "endurance"
+        ],
+        "id": "undying"
+      }
+    ],
+    "wizard": [
+      {
+        "name": "Ограждение",
+        "tags": [
+          "guardian",
+          "discipline",
+          "arcane"
+        ],
+        "id": "abjuration"
+      },
+      {
+        "name": "Вызов",
+        "tags": [
+          "creation",
+          "arcane",
+          "battlefield_control"
+        ],
+        "id": "conjuration"
+      },
+      {
+        "name": "Прорицание",
+        "tags": [
+          "divination",
+          "knowledge",
+          "control"
+        ],
+        "id": "divination"
+      },
+      {
+        "name": "Очарование",
+        "tags": [
+          "charm",
+          "control",
+          "subtlety"
+        ],
+        "id": "enchantment"
+      },
+      {
+        "name": "Воплощение",
+        "tags": [
+          "glory",
+          "arcane",
+          "battlefield_control"
+        ],
+        "id": "evocation"
+      },
+      {
+        "name": "Иллюзия",
+        "tags": [
+          "illusion",
+          "trickery",
+          "subtlety"
+        ],
+        "id": "illusion"
+      },
+      {
+        "name": "Некромантия",
+        "tags": [
+          "shadow",
+          "forbidden",
+          "knowledge"
+        ],
+        "id": "necromancy"
+      },
+      {
+        "name": "Преобразование",
+        "tags": [
+          "transformation",
+          "creation",
+          "knowledge"
+        ],
+        "id": "transmutation"
+      },
+      {
+        "name": "Песнь клинка",
+        "tags": [
+          "precision",
+          "mobility",
+          "arcane"
+        ],
+        "id": "bladesinging"
+      },
+      {
+        "name": "Военная магия",
+        "tags": [
+          "guardian",
+          "tactics",
+          "arcane"
+        ],
+        "id": "warmagic"
+      },
+      {
+        "name": "Хронургия",
+        "tags": [
+          "control",
+          "divination",
+          "knowledge"
+        ],
+        "id": "chronurgy"
+      },
+      {
+        "name": "Гравитургия",
+        "tags": [
+          "battlefield_control",
+          "arcane",
+          "knowledge"
+        ],
+        "id": "graviturgy"
+      },
+      {
+        "name": "Орден писцов",
+        "tags": [
+          "knowledge",
+          "ritual",
+          "creation"
+        ],
+        "id": "scribes"
+      }
+    ]
+  }
+}

@@ -1,5 +1,9 @@
 "use client";
 
+import { HeroQuiz } from "./HeroQuiz";
+import { buildRecommendedCharacter, standardAbilityBuild, standardArray, swapStandardAbility } from "./recommendedBuild";
+import type { QuizResult } from "./quizEngine";
+
 import { ChangeEvent, Component, type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { backgrounds, CatalogOption, type CatalogSpell, classes, classSkillRules, races, spells } from "./catalog";
 import {
@@ -597,7 +601,7 @@ export default function Home() {
 }
 
 function Builder() {
-  const [view, setView] = useState<"builder" | "banlist" | "characters">("builder");
+  const [view, setView] = useState<"home" | "quiz" | "builder" | "banlist" | "characters">("home");
   const [step, setStep] = useState(0);
   const [character, setCharacter] = useState<ExportCharacter>(initial);
   const [banDraft, setBanDraft] = useState<BanList>(emptyBan);
@@ -837,6 +841,8 @@ function Builder() {
   const passivePerception = 10 + abilityModifier(finalAbilities.wis) + (proficiencies.skills.includes("Внимательность") ? proficiency : 0);
   const pointSpent = pointBuySpent(character.abilities);
   const pointRemaining = 27 - pointSpent;
+  const standardMode = character.abilityMethod === "standard";
+  const abilitiesComplete = standardMode ? Object.values(character.abilities).sort((a, b) => b - a).join(",") === standardArray.join(",") : pointRemaining === 0;
   const variantBonus = raceAbilityBonuses(character);
   const racialProficiencies = raceProficiencies(character);
   const subclassRequirements = multiclassEntries.flatMap(entry => {
@@ -1020,7 +1026,7 @@ function Builder() {
     if (step === 2) {
       const choiceCount = chosenRaceVariant?.chooseBonuses?.count || 0;
       const raceSkillCount = raceSkillChoiceCount(character);
-      return pointRemaining === 0 && (character.raceAbilityChoices || []).length === choiceCount && (character.raceSkills || []).length === raceSkillCount;
+      return abilitiesComplete && (character.raceAbilityChoices || []).length === choiceCount && (character.raceSkills || []).length === raceSkillCount;
     }
     if (step === 3) return !!character.background && backgroundChoiceGroups(character.background, featCatalog).every(group => (character.backgroundChoices?.[group.key] || []).length === group.count);
     if (step === 4) return character.classSkills.length === classRule.count;
@@ -1044,7 +1050,8 @@ function Builder() {
     if (step === 0) return !character.race ? "Выберите расу." : "Выберите обязательный вариант расы или подрасу.";
     if (step === 1) return "Выберите класс.";
     if (step === 2) {
-      if (pointRemaining !== 0) return pointRemaining > 0 ? `Распределите ещё ${pointRemaining} очк. Point Buy.` : "Распределение превышает 27 очков Point Buy.";
+      if (standardMode && !abilitiesComplete) return "Распределите стандартный набор 15, 14, 13, 12, 10, 8.";
+      if (!standardMode && pointRemaining !== 0) return pointRemaining > 0 ? `Распределите ещё ${pointRemaining} очк. Point Buy.` : "Распределение превышает 27 очков Point Buy.";
       const choiceCount = chosenRaceVariant?.chooseBonuses?.count || 0;
       if ((character.raceAbilityChoices || []).length !== choiceCount) return `Выберите ${choiceCount} расовых бонуса характеристик.`;
       return `Выберите ${raceSkillChoiceCount(character)} расовых владения навыками.`;
@@ -1245,6 +1252,7 @@ function Builder() {
 
   function chooseOptimalAbilities() {
     setCharacter(current => {
+      if (current.abilityMethod === "standard") return { ...current, abilities: standardAbilityBuild(current.className, current.subclass) };
       const build = optimalAbilityBuild(current);
       return { ...current, abilities: build.abilities, raceAbilityChoices: build.raceAbilityChoices };
     });
@@ -1968,6 +1976,18 @@ function Builder() {
     event.target.value = "";
   }
 
+  function createFromQuiz(result: QuizResult, level: number) {
+    const generated = buildRecommendedCharacter(result, level, initial);
+    const slot = createSlot(generated);
+    const saved = vault.slots.map(item => item.id === vault.activeId ? { ...item, character, updatedAt: new Date().toISOString() } : item);
+    persistVault({ ...vault, capacity: Math.max(vault.capacity, saved.length + 1), activeId: slot.id, slots: [...saved, slot] });
+    setCharacter(generated); setView("builder"); resetFilters(10);
+  }
+
+  if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+    {view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Выбери происхождение, способности и свой путь.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>20 вопросов — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section>}
+  </main>;
+
   if (view === "characters") {
     const free = vault.capacity - vault.slots.length;
     const visibleSlots = vault.slots.filter(slot => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
@@ -2130,7 +2150,7 @@ function Builder() {
   const stepDescription = step < 2 || step === 3
     ? "Откройте «Подробнее», чтобы увидеть механические особенности и доступные варианты. Каталог исключает UA, Homebrew и неофициальные классы."
     : step === 2
-      ? "Point Buy 2014: начните с шести восьмёрок и потратьте ровно 27 очков. Расовые бонусы показаны отдельно."
+      ? standardMode ? "Распределите 15, 14, 13, 12, 10, 8. Расовые бонусы добавляются отдельно." : "Point Buy 2014: начните с шести восьмёрок и потратьте ровно 27 очков. Расовые бонусы показаны отдельно."
       : step === 4
       ? "Предыстория выдаёт свои навыки, а класс позволяет выбрать только из собственного списка."
       : step === 5
@@ -2354,9 +2374,10 @@ function Builder() {
 
           {step === 2 && (
             <div className="pointbuy-layout">
-              <div className={`pointbuy-status ${pointRemaining === 0 ? "complete" : ""}`} data-incomplete={pointRemaining !== 0}>
-                <div><span>Осталось очков</span><strong>{pointRemaining}</strong></div>
-                <small>Стоимость: 8→0 · 9→1 · 10→2 · 11→3 · 12→4 · 13→5 · 14→7 · 15→9</small>
+              <label>Способ определения характеристик<select value={character.abilityMethod || "pointBuy"} onChange={event => setCharacter(current => ({ ...current, abilityMethod: event.target.value as "pointBuy" | "standard", abilities: event.target.value === "standard" ? standardAbilityBuild(current.className, current.subclass) : current.abilities }))}><option value="pointBuy">Point Buy (по умолчанию)</option><option value="standard">Стандартный набор: 15, 14, 13, 12, 10, 8</option></select></label>
+              <div className={`pointbuy-status ${abilitiesComplete ? "complete" : ""}`} data-incomplete={!abilitiesComplete}>
+                <div><span>{standardMode ? "Стандартный набор" : "Осталось очков"}</span><strong>{standardMode ? "15 · 14 · 13 · 12 · 10 · 8" : pointRemaining}</strong></div>
+                {!standardMode && <small>Стоимость: 8→0 · 9→1 · 10→2 · 11→3 · 12→4 · 13→5 · 14→7 · 15→9</small>}
                 <button onClick={chooseOptimalAbilities}>Оптимальные характеристики</button>
               </div>
               <div className="pointbuy-grid">
@@ -2364,9 +2385,7 @@ function Builder() {
                   <section key={key}>
                     <small>{abilityLabels[key]}</small>
                     <div className="score-control">
-                      <button onClick={() => changePointBuy(key, -1)} disabled={character.abilities[key] <= 8}>−</button>
-                      <strong>{character.abilities[key]}</strong>
-                      <button onClick={() => changePointBuy(key, 1)} disabled={character.abilities[key] >= 15 || pointRemaining <= 0}>+</button>
+                      {standardMode ? <select aria-label={abilityLabels[key]} value={character.abilities[key]} onChange={event => setCharacter(current => ({ ...current, abilities: swapStandardAbility(current.abilities, key, Number(event.target.value)) }))}>{standardArray.map(value => <option key={value} value={value}>{value}</option>)}</select> : <><button onClick={() => changePointBuy(key, -1)} disabled={character.abilities[key] <= 8}>−</button><strong>{character.abilities[key]}</strong><button onClick={() => changePointBuy(key, 1)} disabled={character.abilities[key] >= 15 || pointRemaining <= 0}>+</button></>}
                     </div>
                     <p>Цена: {({ 8:0, 9:1, 10:2, 11:3, 12:4, 13:5, 14:7, 15:9 } as Record<number, number>)[character.abilities[key]]} · бонус расы: {variantBonus[key] ? `+${variantBonus[key]}` : "—"}</p>
                     <b>Итог {finalAbilities[key]} ({abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])})</b>

@@ -50,6 +50,9 @@ export type SpellGrant = {
 };
 
 export type ExportCharacter = {
+  abilityMethod?: "pointBuy" | "standard";
+  recommendedSubclassId?: string;
+  recommendedBuildVersion?: string;
   schemaVersion?: number;
   rulesetId?: RulesetId;
   startingClassId?: string;
