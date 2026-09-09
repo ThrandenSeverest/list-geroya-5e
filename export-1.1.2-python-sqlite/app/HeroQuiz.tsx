@@ -1,15 +1,82 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { quizQuestions, resolveQuiz, type QuizResult } from './quizEngine';
+import {
+  QUIZ_CORE_COUNT, QUIZ_MAX_QUESTIONS, isQuizComplete, nextQuizQuestionId, preferredElfVariant,
+  quizCoreQuestionIds, quizQuestion, resolveQuiz, type QuizResult,
+} from './quizEngine';
 import { races, classes, backgrounds } from './catalog';
-import { subclasses } from './characterRules';
-const storageKey='herolist.quiz.v1.2';
-export function HeroQuiz({onClose,onCreate}:{onClose:()=>void;onCreate:(result:QuizResult,level:number)=>void}){
- const [answers,setAnswers]=useState<number[]>([]),[index,setIndex]=useState(0),[level,setLevel]=useState(1),[loaded,setLoaded]=useState(false),[error,setError]=useState('');
- useEffect(()=>{try{const saved=JSON.parse(localStorage.getItem(storageKey)||'null');if(Array.isArray(saved)&&saved.length<=20&&saved.every((a,i)=>Number.isInteger(a)&&quizQuestions[i].answers[a])){setAnswers(saved);setIndex(saved.length);}}catch{}setLoaded(true);},[]);
- useEffect(()=>{if(loaded)try{localStorage.setItem(storageKey,JSON.stringify(answers));}catch{}},[answers,loaded]);
- const result=index===20?resolveQuiz(answers):null;
- return <section className="hero-quiz"><header><button onClick={onClose}>← Главное меню</button><span>Какой из тебя герой?</span><strong>{Math.min(index+1,20)} / 20</strong></header><progress max={20} value={index}/>
- {result?<><h1>Твой герой</h1><div className="quiz-result">{[["Раса",races.find(x=>x.id===result.raceId)?.name],["Класс",classes.find(x=>x.id===result.classId)?.name],["Предыстория",backgrounds.find(x=>x.id===result.backgroundId)?.name],["Подкласс",subclasses[result.classId].options.find(x=>x.id===result.subclassId)?.name]].map(([label,value])=><div key={label}><small>{label}</small><strong>{value}</strong></div>)}</div><p>Ответы о привычках, решениях и отношении к другим определили происхождение героя. Последние три ответа уточнили его путь.</p><label className="quiz-level">Уровень персонажа<select value={level} onChange={e=>setLevel(Number(e.target.value))}>{Array.from({length:20},(_,i)=><option key={i} value={i+1}>{i+1}</option>)}</select></label>{level<result.subclassUnlockLevel&&<p role="status">Подкласс станет доступен на уровне {result.subclassUnlockLevel}. Рекомендация сохранится в персонаже.</p>}<p>Характеристики, навыки, заклинания и снаряжение будут заполнены автоматически. Готового героя можно редактировать.</p>{error&&<p role="alert">{error}</p>}<button className="primary-action" onClick={()=>{try{onCreate(result,level);localStorage.removeItem(storageKey);}catch(e){setError(e instanceof Error?e.message:'Не удалось создать персонажа.');}}}>Создать готового персонажа</button><button onClick={()=>{setAnswers([]);setIndex(0);setError('');}}>Пройти заново</button><details><summary>Почему такой результат?</summary><p>Раса, класс и предыстория учитывают все первые 17 ответов. Подкласс выбирается среди путей полученного класса. При одинаковых ответах результат остаётся тем же.</p><p>Характеристики расставляются по потребностям класса. Повышения развивают основные характеристики; хиты растут на фиксированное среднее. Навыки и инструменты выбираются с учётом уже освоенных владений.</p></details></>:<><h1>{quizQuestions[index].text}</h1><div className="quiz-answers">{quizQuestions[index].answers.map((a,i)=><button key={i} onClick={()=>{setAnswers([...answers.slice(0,index),i]);setIndex(index+1);}}><span>{i+1}</span>{a.text}</button>)}</div>{index>0&&<button onClick={()=>setIndex(index-1)}>← Назад</button>}</>}
- </section>;
+import { subclasses, variantsFor } from './characterRules';
+
+const storageKey = 'herolist.quiz.v1.2.1';
+type SavedQuiz = { questionIds: string[]; answers: number[]; index: number };
+
+function validSaved(value: unknown): value is SavedQuiz {
+  if (!value || typeof value !== 'object') return false;
+  const saved = value as SavedQuiz;
+  try {
+    return Array.isArray(saved.questionIds) && Array.isArray(saved.answers) && Number.isInteger(saved.index)
+      && saved.questionIds.length >= QUIZ_CORE_COUNT && saved.questionIds.length <= QUIZ_MAX_QUESTIONS
+      && quizCoreQuestionIds.every((id, index) => saved.questionIds[index] === id)
+      && saved.answers.length <= saved.questionIds.length && saved.index >= 0 && saved.index <= saved.answers.length
+      && saved.answers.every((answer, index) => Number.isInteger(answer) && !!quizQuestion(saved.questionIds[index]).answers[answer]);
+  } catch { return false; }
+}
+
+export function HeroQuiz({ onClose, onCreate }: { onClose: () => void; onCreate: (result: QuizResult, level: number) => void }) {
+  const [questionIds, setQuestionIds] = useState<string[]>([...quizCoreQuestionIds]);
+  const [answers, setAnswers] = useState<number[]>([]);
+  const [index, setIndex] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
+      if (validSaved(saved)) { setQuestionIds(saved.questionIds); setAnswers(saved.answers); setIndex(saved.index); }
+    } catch {}
+    setLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (loaded) try { localStorage.setItem(storageKey, JSON.stringify({ questionIds, answers, index })); } catch {}
+  }, [questionIds, answers, index, loaded]);
+
+  const finished = answers.length === questionIds.length && isQuizComplete(questionIds, answers);
+  const result = finished ? resolveQuiz(questionIds, answers) : null;
+  const current = !result ? quizQuestion(questionIds[index]) : null;
+  const answerCurrent = (answer: number) => {
+    const nextAnswers = [...answers.slice(0, index), answer];
+    let nextQuestionIds = index < QUIZ_CORE_COUNT ? [...quizCoreQuestionIds] : questionIds.slice(0, index + 1);
+    if (nextAnswers.length === nextQuestionIds.length && !isQuizComplete(nextQuestionIds, nextAnswers)) {
+      const nextId = nextQuizQuestionId(nextQuestionIds, nextAnswers);
+      if (nextId) nextQuestionIds = [...nextQuestionIds, nextId];
+    }
+    setAnswers(nextAnswers); setQuestionIds(nextQuestionIds); setIndex(index + 1); setError('');
+  };
+  const reset = () => { setQuestionIds([...quizCoreQuestionIds]); setAnswers([]); setIndex(0); setError(''); };
+  const raceName = result ? races.find(option => option.id === result.raceId)?.name : '';
+  const raceVariant = result?.raceId === 'elf' ? variantsFor('elf').find(option => option.id === (result.raceVariantId || preferredElfVariant(result.classId)))?.name : '';
+
+  return <section className="hero-quiz">
+    <header><button onClick={onClose}>← Главное меню</button><span>Какой из тебя герой?</span><strong>{result ? answers.length : Math.min(index + 1, QUIZ_MAX_QUESTIONS)} / {result ? answers.length : `до ${QUIZ_MAX_QUESTIONS}`}</strong></header>
+    <progress max={QUIZ_MAX_QUESTIONS} value={result ? answers.length : index} />
+    {result ? <>
+      <h1>Твой герой</h1>
+      <div className="quiz-result">
+        {[["Раса", raceVariant ? `${raceName} — ${raceVariant}` : raceName], ["Класс", classes.find(option => option.id === result.classId)?.name], ["Предыстория", backgrounds.find(option => option.id === result.backgroundId)?.name], ["Подкласс", subclasses[result.classId].options.find(option => option.id === result.subclassId)?.name]].map(([label, value]) => <div key={label}><small>{label}</small><strong>{value}</strong></div>)}
+      </div>
+      <p>Ответы на 17 обязательных и {answers.length - QUIZ_CORE_COUNT} уточняющих вопросов определили происхождение и путь героя.</p>
+      <label className="quiz-level">Уровень персонажа<select value={level} onChange={event => setLevel(Number(event.target.value))}>{Array.from({ length: 20 }, (_, option) => <option key={option} value={option + 1}>{option + 1}</option>)}</select></label>
+      {level < result.subclassUnlockLevel && <p role="status">Подкласс станет доступен на уровне {result.subclassUnlockLevel}. Рекомендация сохранится в персонаже.</p>}
+      <p>Характеристики, навыки, заклинания и снаряжение будут заполнены автоматически. Готового героя можно редактировать.</p>
+      {error && <p role="alert">{error}</p>}
+      <button className="primary-action" onClick={() => { try { onCreate(result, level); localStorage.removeItem(storageKey); } catch (caught) { setError(caught instanceof Error ? caught.message : 'Не удалось создать персонажа.'); } }}>Создать готового персонажа</button>
+      <button onClick={reset}>Пройти заново</button>
+      <details><summary>Почему такой результат?</summary><p>Все прохождения включают 17 одинаковых основных вопросов. Затем тест задаёт от одного до шести уточнений, выбирая полезные для близких результатов. У вариантов PHB есть небольшой бонус, но все варианты из банка остаются достижимыми.</p><p>При споре двух лидеров расы учитывается подтверждённый минимум двумя ответами менее очевидный вариант; иначе выбор сверяется с основной характеристикой класса. Подраса эльфа также подбирается под класс.</p></details>
+    </> : current ? <>
+      <h1>{current.text}</h1>
+      <div className="quiz-answers">{current.answers.map((answer, answerIndex) => <button key={answerIndex} onClick={() => answerCurrent(answerIndex)}><span>{answerIndex + 1}</span>{answer.text}</button>)}</div>
+      {index > 0 && <button onClick={() => setIndex(index - 1)}>← Назад</button>}
+    </> : <p role="alert">Не удалось подобрать следующий вопрос.</p>}
+  </section>;
 }

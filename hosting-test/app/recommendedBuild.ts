@@ -29,7 +29,7 @@ export function buildRecommendedCharacter(result:QuizResult,level:number,initial
  if(!races.some(x=>x.id===result.raceId)||!classes.some(x=>x.id===result.classId)||!backgrounds.some(x=>x.id===result.backgroundId)||!subclasses[result.classId]?.options.some(x=>x.id===result.subclassId))throw new Error('Результат несовместим с каталогом.');
  const order=abilityOrder(result.classId,result.subclassId);
  const variants=variantsFor(result.raceId);
- const variant=(result.raceId==='elf'?variants.find(x=>x.id==='wood'):undefined)?.id||variants.find(x=>x.id!=='variant')?.id||'base';
+ const variant=variants.find(x=>x.id===result.raceVariantId)?.id||variants.find(x=>x.id!=='variant')?.id||'base';
  let c:ExportCharacter={...structuredClone(initial),race:result.raceId,raceVariant:variant,className:result.classId,startingClassId:result.classId,classes:[],levelHistory:[],level,subclass:level>=result.subclassUnlockLevel?result.subclassId:'',recommendedSubclassId:result.subclassId,recommendedBuildVersion:'1.2.0',abilityMethod:'standard',background:result.backgroundId,abilities:standardAbilityBuild(result.classId,result.subclassId),name:`${classes.find(x=>x.id===result.classId)!.name} — новый герой`,backgroundSkills:backgroundFixedSkills(result.backgroundId)};
  const sync=()=>{c.classes=[{classId:c.className,level:c.level,acquiredAtCharacterLevel:1,subclassId:c.subclass,classSkills:c.classSkills,choiceValues:c.classChoices}];c=migrateMulticlassCharacter(c);};
  const flexible=selectedRaceVariant(c.race,c.raceVariant)?.chooseBonuses;
