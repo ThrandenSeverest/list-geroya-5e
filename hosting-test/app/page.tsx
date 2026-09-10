@@ -1993,7 +1993,7 @@ function Builder() {
   }
 
   if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
-    {view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Выбери происхождение, способности и свой путь.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section>}
+    {view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-layout"><section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Выбери происхождение, способности и свой путь.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="/acknowledgements/velmira.png" alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="/acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div>}
   </main>;
 
   if (view === "characters") {
@@ -2004,9 +2004,9 @@ function Builder() {
     return (
       <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
         <header className="topbar">
-          <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
-          <button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button>
+          <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
           <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
         <section className="character-library">
@@ -2089,9 +2089,9 @@ function Builder() {
     return (
       <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
         <header className="topbar">
-          <button className="brand" onClick={() => setView("builder")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
-          <button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button>
+          <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
           <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
         </header>
         <div className="ban-page">
@@ -2176,9 +2176,10 @@ function Builder() {
   return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
       <header className="topbar">
-        <button className="brand" onClick={() => resetFilters(0)}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+        <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
         <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
         <div className="top-actions">
+          <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
           <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
           <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
           <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
@@ -2191,6 +2192,7 @@ function Builder() {
           <summary aria-label="Открыть меню">☰</summary>
           <div>
             <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
+            <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
             <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
             <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
             <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
