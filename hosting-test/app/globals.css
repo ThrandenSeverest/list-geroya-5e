@@ -885,6 +885,12 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .update-history-toggle { background: rgba(239,224,185,.96); color: #17120e; box-shadow: 0 10px 28px rgba(70,42,16,.2); }
 .modern-design .mobile-death-saves button.filled { box-shadow: inset 0 0 0 3px #efe0b9; }
 .modern-design .account-warning { color: #6f1015; }
+.modern-design .special-thanks { border-color: #7d6a55; background: rgba(246,235,203,.9); box-shadow: 0 18px 40px rgba(70,42,16,.18); }
+.modern-design .special-thanks h2 { color: #7b1119; }
+.modern-design .special-thanks a { color: #17120e; border-color: rgba(125,106,85,.38); }
+.modern-design .special-thanks a:hover strong { color: #8f1821; }
+.modern-design .special-thanks small { color: #5e5347; }
+.modern-design .special-thanks img { border-color: #8f1821; box-shadow: 0 0 0 3px rgba(143,24,33,.12); }
 .modern-design footer { color: #5e5347; }
 .ban-bulk-actions { margin: 10px 0 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ban-bulk-actions span { margin-right: auto; color: var(--muted); font-size: 11px; }
