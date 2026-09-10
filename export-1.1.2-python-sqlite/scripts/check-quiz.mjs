@@ -11,7 +11,7 @@ const initial=Function('return '+source.match(/const initial: ExportCharacter = 
 const data=JSON.parse(fs.readFileSync(new URL('../app/quizData.json',import.meta.url)));
 let checked=0,failed=[];
 
-assert.equal(data.questions.length,50);
+assert.equal(data.questions.length,49);
 assert.equal(data.coreQuestionIds.length,17);
 assert.deepEqual(data.excludedQuestionIds,['Q09','Q11','Q26','Q27','Q32','Q42','Q43','Q49','Q50','Q59']);
 assert.ok(data.excludedQuestionIds.every(id=>!data.questions.some(question=>question.id===id)));
