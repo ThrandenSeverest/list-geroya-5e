@@ -369,7 +369,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           {columns.map((column, columnIndex) => <div className={`pdf-spell-table${wizardPrepared ? " wizard" : ""}`} key={columnIndex}>
             <header><b>Кр.</b><b>Заклинание</b><b>В/С/М</b>{wizardPrepared && <b>Подг.</b>}</header>
             {column.map(spell => <div key={spell.id}>
-              <span>{spell.level === 0 ? "З" : spell.level}</span>
+              <span>{spell.level}</span>
               <strong>{spell.name}{spell.ritual ? " Р" : ""}{spell.alwaysPrepared ? " †" : ""}</strong>
               <span>{spellComponentLabel(spell)}</span>
               {wizardPrepared && <span>{spell.level === 0 ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○"}</span>}
