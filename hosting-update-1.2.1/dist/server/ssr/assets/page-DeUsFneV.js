@@ -40675,7 +40675,7 @@ function PdfCharacterSheet(props) {
 									/* @__PURE__ */ jsx("b", { children: "В/С/М" }),
 									wizardPrepared && /* @__PURE__ */ jsx("b", { children: "Подг." })
 								] }), column.map((spell) => /* @__PURE__ */ jsxs("div", { children: [
-									/* @__PURE__ */ jsx("span", { children: spell.level === 0 ? "З" : spell.level }),
+									/* @__PURE__ */ jsx("span", { children: spell.level }),
 									/* @__PURE__ */ jsxs("strong", { children: [
 										spell.name,
 										spell.ritual ? " Р" : "",
