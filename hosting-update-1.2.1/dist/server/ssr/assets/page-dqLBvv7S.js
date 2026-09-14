@@ -42823,13 +42823,14 @@ function Builder() {
 			data
 		}] : [];
 	});
-	const activeSpellIds = (character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
+	const currentSpellGrants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
 		sourceType: "class",
 		sourceId: activeSpellClassId,
 		classId: activeSpellClassId,
 		mode: "known"
-	}))).filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
+	}));
+	const activeSpellIds = currentSpellGrants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
 	const ordinarySpellIds = activeSpellIds.filter((id) => !alwaysPreparedSet.has(id));
 	const selectedCantrips = ordinarySpellIds.filter((id) => spells.find((item) => item.id === id)?.level === 0);
 	const selectedLeveled = ordinarySpellIds.filter((id) => (spells.find((item) => item.id === id)?.level || 0) > 0);
@@ -47334,13 +47335,13 @@ function Builder() {
 										spellSlots: spellRule.slots,
 										preparedMaximum: spellRule.prepared,
 										spells: [...new Set([
-											...character.spells,
+											...currentSpellGrants.map((grant) => grant.spellId),
 											...grantedFeatSpells,
-											...alwaysPrepared
+											...allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared
 										])].map((id) => spells.find((spell) => spell.id === id)).filter(Boolean).map((spell) => ({
 											...spell,
-											prepared: mobilePreparedIds.includes(spell.id),
-											alwaysPrepared: alwaysPrepared.includes(spell.id)
+											prepared: (character.preparedSpells || []).includes(spell.id),
+											alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell.id)
 										}))
 									}),
 									/* @__PURE__ */ jsxs("div", {
