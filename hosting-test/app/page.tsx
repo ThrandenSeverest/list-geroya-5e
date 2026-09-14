@@ -3064,10 +3064,14 @@ function Builder() {
                 spellAttackBonus={spellAbilityKey ? spellAttackBonus : undefined}
                 spellSlots={spellRule.slots}
                 preparedMaximum={spellRule.prepared}
-                spells={[...new Set([...character.spells, ...grantedFeatSpells, ...alwaysPrepared])].map(id => spells.find(spell => spell.id === id)).filter(Boolean).map(spell => ({
+                spells={[...new Set([
+                  ...currentSpellGrants.map(grant => grant.spellId),
+                  ...grantedFeatSpells,
+                  ...(allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared),
+                ])].map(id => spells.find(spell => spell.id === id)).filter(Boolean).map(spell => ({
                   ...spell!,
-                  prepared: mobilePreparedIds.includes(spell!.id),
-                  alwaysPrepared: alwaysPrepared.includes(spell!.id),
+                  prepared: (character.preparedSpells || []).includes(spell!.id),
+                  alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell!.id),
                 }))}
               />
               <div ref={exportPanelRef} className="export-panel">
