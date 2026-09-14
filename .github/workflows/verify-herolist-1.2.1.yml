@@ -1,0 +1,49 @@
+name: Verify HeroList 1.2.1 regressions
+
+on:
+  push:
+    branches:
+      - feature/multiclass-1.1
+    paths:
+      - ".github/workflows/verify-herolist-1.2.1.yml"
+      - "hosting-update-1.2.1/app/**"
+      - "hosting-update-1.2.1/tests/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hosting-update-1.2.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: hosting-update-1.2.1/package-lock.json
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Install test runners
+        run: npm install --no-save --package-lock=false tsx@4.20.6 playwright@1.55.0
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Check racial traits and resources
+        run: node --import tsx tests/racial-traits.test.ts
+
+      - name: Check adaptive PDF resource layout
+        run: node tests/pdf-layout/check.cjs
+
+      - name: Build production bundle
+        run: npm run build
