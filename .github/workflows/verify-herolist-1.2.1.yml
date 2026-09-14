@@ -13,9 +13,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: "verify-herolist-1.2.1"
+  cancel-in-progress: true
+
 jobs:
   regression:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: hosting-update-1.2.1
