@@ -1,4 +1,5 @@
 import type { ExportCharacter } from "./exportFormats";
+import { selectedRaceVariant } from "./characterRules";
 import { characterLevel, classView, getClassLevel, orderedCharacterClasses } from "./multiclass";
 
 export type CharacterResource = {
@@ -27,6 +28,46 @@ function rageMaximum(level: number) {
 
 const add = (list: CharacterResource[], condition: boolean, resource: CharacterResource) => condition && list.push(resource);
 
+function racialResources(character: ExportCharacter) {
+  const resources: CharacterResource[] = [];
+  const level = characterLevel(character);
+  const pb = 2 + Math.floor((Math.max(1, level) - 1) / 4);
+  const modern = selectedRaceVariant(character.race, character.raceVariant || "base")?.source === "MPMM";
+  const pool = (race: string, key: string, name: string, max: number, short = false) =>
+    add(resources, character.race === race, { key, name, max, isShortRest: short, isLongRest: true });
+  pool("dragonborn", "breath-weapon", "Оружие дыхания", 1, true);
+  pool("halforc", "relentless-endurance", "Непоколебимая стойкость", 1);
+  pool("goliath", "stones-endurance", "Каменная стойкость", modern ? pb : 1, !modern);
+  pool("firbolg", "hidden-step", "Скрытый шаг", modern ? pb : 1, !modern);
+  pool("goblin", "fury-of-the-small", "Ярость малого", modern ? pb : 1, !modern);
+  pool("eladrin", "fey-step", "Фейский шаг", modern ? pb : 1, !modern);
+  pool("shadarkai", "blessing-raven-queen", "Благословение Королевы Воронов", modern ? pb : 1);
+  pool("reborn", "knowledge-past-life", "Знания из прошлой жизни", pb);
+  pool("aasimar", "healing-hands", "Исцеляющие руки", 1);
+  if (level >= 3) pool("aasimar", "celestial-revelation", "Небесное откровение", 1);
+  pool("lizardfolk", "hungry-jaws", "Голодная пасть", modern ? pb : 1, !modern);
+  pool("shifter", "shifting", "Смена", modern ? pb : 1, !modern);
+  pool("harengon", "rabbit-hop", "Прыжок кролика", pb);
+  pool("hadozee", "hadozee-dodge", "Стойкость хадози", pb);
+  pool("giff", "astral-spark", "Астральная искра", pb);
+  pool("autognome", "built-for-success", "Создан для успеха", pb);
+  pool("dhampir", "vampiric-bite-empowerment", "Вампирский укус · усиление", pb);
+  pool("leonin", "daunting-roar", "Ужасающий рёв", 1, true);
+  if (modern) {
+    pool("orc", "adrenaline-rush", "Выброс адреналина", pb);
+    pool("orc", "relentless-endurance", "Непоколебимая стойкость", 1);
+    pool("hobgoblin", "fey-gift", "Дар фей", pb);
+    pool("hobgoblin", "fortune-from-many", "Удача многих", pb);
+    pool("kenku", "kenku-recall", "Воспоминание кенку", pb);
+    pool("deepgnome", "svirfneblin-camouflage", "Камуфляж свирфнеблина", pb);
+    pool("kobold", "draconic-cry", "Драконий крик", pb);
+  } else {
+    pool("hobgoblin", "saving-face", "Спасение лица", 1, true);
+    pool("kobold", "grovel-cower-beg", "Пресмыкаться и умолять", 1, true);
+  }
+  return resources;
+}
+
 function singleClassResources(character: ExportCharacter) {
   const resources: CharacterResource[] = [];
   const level = getClassLevel(character, character.className) || character.level;
@@ -40,16 +81,7 @@ function singleClassResources(character: ExportCharacter) {
 
   add(resources, featIds.has("lucky"), { key: "lucky", name: "Везунчик · очки удачи", max: 3, isShortRest: false, isLongRest: true });
 
-  add(resources, character.race === "dragonborn", { key: "breath-weapon", name: "Оружие дыхания", max: 1, isShortRest: true, isLongRest: true });
-  add(resources, character.race === "halforc", { key: "relentless-endurance", name: "Непоколебимая стойкость", max: 1, isShortRest: false, isLongRest: true });
-  add(resources, character.race === "goliath", { key: "stones-endurance", name: "Каменная выносливость", max: 1, isShortRest: true, isLongRest: true });
-  add(resources, character.race === "firbolg", { key: "hidden-step", name: "Скрытый шаг", max: 1, isShortRest: true, isLongRest: true });
-  add(resources, character.race === "goblin", { key: "fury-of-the-small", name: "Ярость малого", max: 1, isShortRest: false, isLongRest: true });
-  add(resources, character.race === "eladrin", { key: "fey-step", name: "Фейский шаг", max: 1, isShortRest: true, isLongRest: true });
-  add(resources, character.race === "shadarkai", { key: "blessing-raven-queen", name: "Благословение Королевы Воронов", max: 1, isShortRest: false, isLongRest: true });
-  add(resources, character.race === "reborn", { key: "knowledge-past-life", name: "Знания из прошлой жизни", max: pb, isShortRest: false, isLongRest: true });
-  add(resources, character.race === "aasimar", { key: "healing-hands", name: "Исцеляющие руки", max: 1, isShortRest: false, isLongRest: true });
-  add(resources, character.race === "aasimar" && level >= 3, { key: "celestial-revelation", name: "Небесное откровение", max: 1, isShortRest: false, isLongRest: true });
+
 
   add(resources, character.className === "barbarian", { key: "rage", name: "Ярость", max: rageMaximum(level), isShortRest: false, isLongRest: true });
   add(resources, character.className === "barbarian" && subclass === "wildmagic" && level >= 3, { key: "wild-magic-awareness", name: "Магическое чутьё", max: pb, isShortRest: false, isLongRest: true });
@@ -143,7 +175,7 @@ function singleClassResources(character: ExportCharacter) {
 /** Resources are resolved once per source class. Identical named pools such as
  * Channel Divinity remain one shared pool instead of being doubled. */
 export function characterResources(character: ExportCharacter) {
-  const merged = new Map<string, CharacterResource>();
+  const merged = new Map<string, CharacterResource>(racialResources(character).map(resource => [resource.key, resource]));
   for (const entry of orderedCharacterClasses(character)) {
     for (const resource of singleClassResources(classView(character, entry))) {
       const previous = merged.get(resource.key);

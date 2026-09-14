@@ -1,4 +1,4 @@
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/utils/domain-locale.js
+//#region node_modules/vinext/dist/utils/domain-locale.js
 function normalizeDomainHostname(hostname) {
 	if (!hostname) return void 0;
 	return hostname.split(",", 1)[0]?.trim().split(":", 1)[0]?.toLowerCase() || void 0;
@@ -39,7 +39,7 @@ function getDomainLocaleUrl(url, locale, { basePath, currentHostname, domainItem
 	return `${`http${targetDomain.http ? "" : "s"}://`}${targetDomain.domain}${withBasePath(localizedPath, basePath)}`;
 }
 //#endregion
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/utils/query.js
+//#region node_modules/vinext/dist/utils/query.js
 function setOwnQueryValue(obj, key, value) {
 	Object.defineProperty(obj, key, {
 		value,

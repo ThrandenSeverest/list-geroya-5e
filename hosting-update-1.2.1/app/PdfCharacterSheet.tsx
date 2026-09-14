@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { CatalogSpell } from "./catalog";
 import type { CharacterAttack } from "./combat";
 import type { AbilityScores, Currency } from "./exportFormats";
@@ -146,12 +146,33 @@ function spellCardDensity(spell: PdfSpell) {
   return "normal";
 }
 
-function resourceDensity(resources: PdfResource[]) {
-  const marks = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
-  if (resources.length >= 6 || marks >= 32) return "micro";
-  if (resources.length >= 4 || marks >= 22) return "dense";
-  if (resources.length >= 3 || marks >= 14) return "compact";
-  return "normal";
+function paginateResources(resources: PdfResource[]) {
+  const pages: PdfResource[][] = [[]];
+  let used = 0;
+  for (const resource of resources) {
+    const marks = Math.ceil(resource.max / (resource.unit || 1));
+    const weight = 1 + Math.ceil(resource.name.length / 24) + (marks > 12 && marks <= 24 ? 1 : 0);
+    const budget = pages.length === 1 ? 11 : 40;
+    if (pages.at(-1)!.length && used + weight > budget) { pages.push([]); used = 0; }
+    pages.at(-1)!.push(resource);
+    used += weight;
+  }
+  return pages;
+}
+
+function ResourceList({ resources }: { resources: PdfResource[] }) {
+  return <>{resources.map(resource => {
+    const unit = resource.unit || 1;
+    const marks = Math.ceil(resource.max / unit);
+    const spentMarks = Math.ceil((resource.max - resource.current) / unit);
+    return <div className="pdf-resource" key={resource.name}>
+      <div><b>{resource.name}{resource.die ? ` (${resource.die})` : ""}</b>{unit > 1 && <small>1 круг = {unit} хитов</small>}</div>
+      {marks <= 24 ? <span className="pdf-resource-marks" aria-label={`Потрачено ${resource.max - resource.current} из ${resource.max}`}>
+        {Array.from({ length: marks }, (_, index) => <i className={index < spentMarks ? "spent" : ""} key={index} />)}
+      </span> : <span className="pdf-resource-counter">Осталось: {resource.current} / {resource.max}</span>}
+      <small className="pdf-resource-rest">{resourceRestLabel(resource)} отдых</small>
+    </div>;
+  })}</>;
 }
 
 function isCombatTechnique(feature: Feature) {
@@ -163,7 +184,7 @@ function RacialTraitList({ features }: { features: Feature[] }) {
   if (!features.length) return <p>Расовые особенности не выбраны.</p>;
   return <div className="pdf-compact-features">{features.map((feature, index) => {
     const text = compactRulesText(feature.description);
-    const summary = text.length > 210 ? `${text.slice(0, 207).trimEnd()}…` : text;
+    const summary = text;
     return <p key={`${feature.name}-${index}`}><b>{feature.name}.</b> {summary}</p>;
   })}</div>;
 }
@@ -195,6 +216,7 @@ function InventoryPanel({ equipment, currency, mode, onModeChange }: Pick<PdfCha
 }
 
 export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
+  const primaryContent = useRef<HTMLDivElement>(null);
   const [inventoryMode, setInventoryMode] = useState<InventoryMode>("list");
   const [showPreparedMarks, setShowPreparedMarks] = useState(true);
   function changeInventoryMode(mode: InventoryMode) {
@@ -219,20 +241,42 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const orderedSpells = [...props.spells].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "ru"));
   const spellPages = hasSpellPage ? paginateSpells(orderedSpells, wizardPrepared) : [];
   const spellCardPages = orderedSpells.length ? paginateSpellCards(orderedSpells) : [];
-  const resourcesDensity = resourceDensity(props.resources);
+  const [primaryResources, ...resourcePages] = paginateResources(props.resources);
   const proficiencyRows = [
     ["Инструменты", props.proficiencies.tools],
     ["Языки", props.proficiencies.languages],
     ["Доспехи", props.proficiencies.armor],
     ["Оружие", props.proficiencies.weapons],
   ] as const;
-  const totalPages = 2 + classPages.length + spellPages.length + spellCardPages.length;
+  const totalPages = 2 + classPages.length + resourcePages.length + spellPages.length + spellCardPages.length;
   const lifePageNumber = 2 + classPages.length;
-  const firstSpellPageNumber = lifePageNumber + 1;
+  const firstSpellPageNumber = lifePageNumber + resourcePages.length + 1;
   const firstSpellCardPageNumber = firstSpellPageNumber + spellPages.length;
+
+  // Measure the natural layout, including wrapped identity text and resources.
+  // Use the same fitting for the preview and the browser's print rendering.
+  useLayoutEffect(() => {
+    const content = primaryContent.current;
+    if (!content) return;
+    const page = content.parentElement!;
+    const fit = () => {
+      const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 16 * 96 / 25.4;
+      const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
+      content.style.zoom = String(scale);
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(content);
+    let active = true;
+    document.fonts.ready.then(() => { if (active) fit(); });
+    window.addEventListener("beforeprint", fit);
+    window.addEventListener("afterprint", fit);
+    return () => { active = false; observer.disconnect(); window.removeEventListener("beforeprint", fit); window.removeEventListener("afterprint", fit); };
+  }, [props, inventoryMode]);
 
   return <div className="pdf-document" aria-hidden="true">
     <section className="pdf-page pdf-primary-page">
+      <div className="pdf-primary-content" ref={primaryContent}>
       <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · 2014</i></div>
       <header className="pdf-hero-header">
         <div><small>ИМЯ ПЕРСОНАЖА</small><h1>{props.identity.name || "Безымянный герой"}</h1></div>
@@ -265,12 +309,10 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span></div></div>
           <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: {props.hitDiceLabel || `к${props.hitDie}`} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
           <div className="pdf-panel pdf-current-hp"><label>ТЕКУЩИЕ ХИТЫ <b>{props.currentHitPoints || ""}</b></label><label>ВРЕМЕННЫЕ ХИТЫ <b>{props.temporaryHitPoints || ""}</b></label></div>
-          <div className={`pdf-panel pdf-resources pdf-resources--${resourcesDensity}`}><h2>Ресурсы</h2>{props.resources.length ? props.resources.map(resource => {
-            const unit = resource.unit || 1;
-            const marks = Math.ceil(resource.max / unit);
-            const spentMarks = Math.ceil((resource.max - resource.current) / unit);
-            return <div className="pdf-resource" key={resource.name}><div><b>{resource.name}{resource.die ? ` (${resource.die})` : ""}</b>{unit > 1 && <small>1 круг = {unit} хитов</small>}</div><span className="pdf-resource-marks" aria-label={`Потрачено ${resource.max - resource.current} из ${resource.max}`}>{Array.from({ length: marks }, (_, index) => <i className={index < spentMarks ? "spent" : ""} key={index} />)}</span><small className="pdf-resource-rest">{resourceRestLabel(resource)} отдых</small></div>;
-          }) : <p>Ограниченных классовых ресурсов нет.</p>}</div>
+          <div className="pdf-panel pdf-resources"><h2>Ресурсы</h2>
+            {primaryResources.length ? <ResourceList resources={primaryResources} /> : <p>Ограниченных ресурсов нет.</p>}
+            {resourcePages.length > 0 && <p className="pdf-resource-continuation">Остальные ресурсы — стр. {lifePageNumber + 1}</p>}
+          </div>
         </section>
         <section className="pdf-panel pdf-attacks"><h2>Оружие и боевые заклинания</h2>
           <div className="pdf-attack-head"><b>Название</b><b>Попадание / Сл</b><b>Урон</b></div>
@@ -279,6 +321,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <div className="pdf-racial-traits"><h3>Расовые способности</h3><RacialTraitList features={props.raceFeatures} /></div>
         </section>
         <InventoryPanel equipment={props.equipment} currency={props.currency} mode={inventoryMode} onModeChange={changeInventoryMode} />
+      </div>
       </div>
       <footer>Лист Героя 5e · Основной лист <span>1 / {totalPages}</span></footer>
     </section>
@@ -307,6 +350,12 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       <section className="pdf-panel pdf-notes"><h2>Заметки кампании</h2>{Array.from({ length: 18 }, (_, index) => <i key={index} />)}</section>
       <footer>Лист Героя 5e · История и заметки <span>{lifePageNumber} / {totalPages}</span></footer>
     </section>
+
+    {resourcePages.map((resources, index) => <section className="pdf-page pdf-resource-page" key={`resources-${index}`}>
+      <PageHeader eyebrow="Расовые и классовые способности" title="Ресурсы · продолжение" page={lifePageNumber + index + 1} />
+      <div className="pdf-resource-page-grid"><ResourceList resources={resources} /></div>
+      <footer>Лист Героя 5e · Ресурсы <span>{lifePageNumber + index + 1} / {totalPages}</span></footer>
+    </section>)}
 
     {spellPages.map((pageSpells, spellPageIndex) => {
       const split = Math.ceil(pageSpells.length / 2);

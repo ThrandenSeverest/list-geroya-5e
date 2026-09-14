@@ -17,7 +17,8 @@ import {
   type SpellGrant,
   proficiencyBonus,
 } from "./exportFormats";
-import { abilityLabels, classRules, personalityOptions, raceFeatures } from "./rules";
+import { abilityLabels, classRules, personalityOptions } from "./rules";
+import { resolvedRaceFeatures as raceFeatures } from "./racialTraits";
 import {
   alwaysPreparedSpellEntries,
   asiLevelsForClass,
@@ -804,10 +805,7 @@ function Builder() {
   })).filter(group => group.spells.length > 0);
   const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key as Category].filter(option => !allowed(activeBan, key as Category, option.id)).length, 0) : 0;
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
-  const selectedRaceFeatures = [
-    ...raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags),
-    ...(chosenRaceVariant?.features || []),
-  ];
+  const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags);
   const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
   const selectedClassFeatures = multiclassEntries.flatMap(entry => {
     const subclass = selectedSubclass(entry.classId, entry.subclassId || "");

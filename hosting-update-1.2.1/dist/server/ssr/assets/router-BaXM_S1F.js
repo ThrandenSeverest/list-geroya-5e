@@ -1,7 +1,7 @@
 import { b as stripBasePath, d as isHashOnlyBrowserUrlChange, m as toSameOriginAppPath, p as toBrowserNavigationHref } from "../index.js";
-import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams, t as addQueryParam } from "./query-BY3w5gxH.js";
+import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams, t as addQueryParam } from "./query-DGHsJKv-.js";
 import { createContext, createElement } from "react";
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/shims/internal/router-context.js
+//#region node_modules/vinext/dist/shims/internal/router-context.js
 /**
 * Shim for next/dist/shared/lib/router-context.shared-runtime
 *
@@ -10,7 +10,7 @@ import { createContext, createElement } from "react";
 */
 var RouterContext = createContext(null);
 //#endregion
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/client/validate-module-path.js
+//#region node_modules/vinext/dist/client/validate-module-path.js
 /**
 * Defense-in-depth: validate module paths before passing them to dynamic import().
 *
@@ -33,7 +33,7 @@ function isValidModulePath(p) {
 	return true;
 }
 //#endregion
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/client/window-next.js
+//#region node_modules/vinext/dist/client/window-next.js
 /**
 * Build-time replacement for the vinext package version, injected by the
 * Vite plugin via `define` (see `index.ts` — `process.env.__NEXT_VERSION`
@@ -78,7 +78,7 @@ function installWindowNext(fields) {
 	};
 }
 //#endregion
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/shims/router.js
+//#region node_modules/vinext/dist/shims/router.js
 /**
 * next/router shim
 *

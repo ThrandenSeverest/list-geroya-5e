@@ -1,7 +1,7 @@
 import { c as useRouter, s as usePathname } from "../index.js";
 import React from "react";
 import { jsx } from "react/jsx-runtime";
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/utils/navigation-signal.js
+//#region node_modules/vinext/dist/utils/navigation-signal.js
 function getErrorDigest(error) {
 	if (!error || typeof error !== "object" || !("digest" in error)) return null;
 	return String(error.digest);
@@ -12,7 +12,7 @@ function isNavigationSignalError(error) {
 	return digest === "NEXT_NOT_FOUND" || digest.startsWith("NEXT_HTTP_ERROR_FALLBACK;") || digest.startsWith("NEXT_REDIRECT;");
 }
 //#endregion
-//#region ../../../3ec381cc8d1e/herolist/export-1.1.2-python-sqlite/node_modules/vinext/dist/shims/error-boundary.js
+//#region node_modules/vinext/dist/shims/error-boundary.js
 function normalizeBoundaryResetKey(resetKey) {
 	return resetKey === void 0 || resetKey === null || resetKey === "" ? null : resetKey;
 }
