@@ -1,0 +1,7397 @@
+{
+  "version": "1.2.1",
+  "coreQuestionIds": [
+    "Q01",
+    "Q03",
+    "Q07",
+    "Q08",
+    "Q19",
+    "Q20",
+    "Q29",
+    "Q31",
+    "Q33",
+    "Q34",
+    "Q35",
+    "Q37",
+    "Q39",
+    "Q48",
+    "Q52",
+    "Q55",
+    "Q58"
+  ],
+  "excludedQuestionIds": [
+    "Q09",
+    "Q11",
+    "Q26",
+    "Q27",
+    "Q32",
+    "Q42",
+    "Q43",
+    "Q49",
+    "Q50",
+    "Q59"
+  ],
+  "minQuestions": 18,
+  "maxQuestions": 23,
+  "questions": [
+    {
+      "id": "Q01",
+      "number": 1,
+      "text": "Что вы обычно выбираете из алкоголя?",
+      "answers": [
+        {
+          "text": "Вино — хорошее, плохое или чужое; главное, чтобы было в бокале.",
+          "race": {
+            "elf": 30,
+            "halfelf": 15
+          },
+          "class": {
+            "bard": 10
+          },
+          "background": {
+            "noble": 20
+          },
+          "traits": {
+            "taste": 15,
+            "status": 10,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "Пиво. Желательно в тяжёлой кружке и рядом с чем-нибудь жареным.",
+          "race": {
+            "dwarf": 25,
+            "halforc": 8
+          },
+          "class": {
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20
+          },
+          "traits": {
+            "craft": 15,
+            "community": 10,
+            "endurance": 8
+          }
+        },
+        {
+          "text": "Самогон. Если он не пытается убить меня — значит, слишком слабый.",
+          "race": {
+            "gnome": 18,
+            "goblin": 12
+          },
+          "class": {
+            "rogue": 8
+          },
+          "background": {
+            "urchin": 15,
+            "criminal": 10
+          },
+          "traits": {
+            "chaos": 15,
+            "risk": 12,
+            "cunning": 8
+          }
+        },
+        {
+          "text": "Домашняя настойка на травах, ягодах или чём-то, что «лечит всё».",
+          "race": {
+            "halfling": 20,
+            "firbolg": 8
+          },
+          "class": {
+            "druid": 12,
+            "ranger": 6
+          },
+          "background": {
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 15,
+            "comfort": 10,
+            "tradition": 8
+          }
+        },
+        {
+          "text": "Крепкое. Без маленьких бокалов и длинных речей.",
+          "race": {
+            "halforc": 15,
+            "goliath": 15
+          },
+          "class": {
+            "barbarian": 15
+          },
+          "background": {
+            "soldier": 10
+          },
+          "traits": {
+            "directness": 15,
+            "endurance": 12,
+            "risk": 8
+          }
+        },
+        {
+          "text": "Не пью. Мне нравится помнить, что именно я натворил.",
+          "race": {
+            "human": 8
+          },
+          "class": {
+            "monk": 15,
+            "cleric": 8
+          },
+          "background": {
+            "sage": 8
+          },
+          "traits": {
+            "discipline": 16,
+            "control": 10,
+            "clarity": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q02",
+      "number": 2,
+      "text": "Вам досталось пустое помещение на оживлённой улице. Денег хватит на небольшое дело. Что откроете?",
+      "answers": [
+        {
+          "text": "Мастерскую: чинить чужие вещи и мастерить свои.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Таверну с большой кухней и живой музыкой.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Лавку трав, настоек и снадобий.",
+          "race": {
+            "gnome": 14,
+            "firbolg": 12,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 20,
+            "sage": 10
+          },
+          "traits": {
+            "nature": 20,
+            "healing": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Скупку редкостей и подержанных вещей.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Книжную лавку с местами для чтения.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Бесплатную столовую. Пусть хотя бы здесь никто не уходит голодным.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q03",
+      "number": 3,
+      "text": "У вас месяц свободы и немного денег. Какое путешествие выберете?",
+      "answers": [
+        {
+          "text": "На попутных повозках, без обратного билета. Насколько денег хватит.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "Недорогое: заранее посчитаю расходы и оставлю запас на возвращение.",
+          "race": {
+            "dwarf": 20,
+            "halfling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "rogue": 15,
+            "fighter": 8
+          },
+          "background": {
+            "guild": 15,
+            "urchin": 15
+          },
+          "traits": {
+            "control": 20,
+            "discipline": 12,
+            "perception": 8
+          }
+        },
+        {
+          "text": "Поездку большой компанией. Маршрут придумаем вместе.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Экспедицию к развалинам, которые ещё толком никто не исследовал.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Поеду с караваном: помогу в дороге, зато за проезд и еду платить не надо.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Никакое. Устрою себе месяц отдыха дома.",
+          "race": {
+            "halfling": 22,
+            "dwarf": 12
+          },
+          "class": {
+            "cleric": 15,
+            "fighter": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "guardian": 12,
+            "ritual": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q04",
+      "number": 4,
+      "text": "В таверне остались места за несколькими столами. Где сядете?",
+      "answers": [
+        {
+          "text": "С игроками в кости. Может, выиграю денег на ужин.",
+          "race": {
+            "goblin": 15,
+            "satyr": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 22,
+            "sorcerer": 15
+          },
+          "background": {
+            "charlatan": 20,
+            "criminal": 10
+          },
+          "traits": {
+            "chaos": 20,
+            "trickery": 12,
+            "selfdanger": 8
+          }
+        },
+        {
+          "text": "Перед сценой: там уже настраивают инструменты.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Рядом с путешественниками, которые только что вернулись из дальних стран.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "В тихом углу, где можно спокойно поесть.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "За общим столом, где уже знакомятся и угощают друг друга.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "У стены, лицом к залу. Отсюда видно, кто входит.",
+          "race": {
+            "yuanpure": 14,
+            "elf": 12,
+            "warforged": 10
+          },
+          "class": {
+            "ranger": 20,
+            "rogue": 15
+          },
+          "background": {
+            "soldier": 15,
+            "sage": 10
+          },
+          "traits": {
+            "perception": 20,
+            "scout": 12,
+            "divination": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q05",
+      "number": 5,
+      "text": "На празднике друг вас разыграл. Без злости, но смеётся весь стол. Как поступите?",
+      "answers": [
+        {
+          "text": "Посмеюсь вместе со всеми и останусь праздновать.",
+          "race": {
+            "halfling": 20,
+            "satyr": 12,
+            "human": 10
+          },
+          "class": {
+            "sorcerer": 20,
+            "bard": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "entertainer": 10
+          },
+          "traits": {
+            "peace": 20,
+            "charm": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Подстрою ему ответный розыгрыш, когда он перестанет ждать подвоха.",
+          "race": {
+            "changeling": 15,
+            "goblin": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 25,
+            "bard": 10
+          },
+          "background": {
+            "charlatan": 25,
+            "criminal": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "illusion": 12,
+            "subtlety": 8
+          }
+        },
+        {
+          "text": "Сам всё переиграю так, что к концу вечера буду главным рассказчиком этой истории.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        },
+        {
+          "text": "Вернусь к еде. Жалко пропускать ужин из-за чужих шуточек.",
+          "race": {
+            "halfling": 22,
+            "dwarf": 12
+          },
+          "class": {
+            "cleric": 15,
+            "fighter": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "guardian": 12,
+            "ritual": 8
+          }
+        },
+        {
+          "text": "Отведу друга в сторону и разберусь с ним без зрителей.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "При всех остановлю розыгрыш. Не хочу, чтобы это повторялось.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q06",
+      "number": 6,
+      "text": "Рюкзак уже набит. Ради чего всё-таки освободите немного места?",
+      "answers": [
+        {
+          "text": "Любимой еды. В дороге тоже хочется есть с удовольствием.",
+          "race": {
+            "halfling": 20,
+            "firbolg": 10,
+            "dwarf": 10
+          },
+          "class": {
+            "druid": 15,
+            "cleric": 10
+          },
+          "background": {
+            "guild": 15,
+            "hermit": 10
+          },
+          "traits": {
+            "peace": 20,
+            "healing": 12,
+            "nature": 8
+          }
+        },
+        {
+          "text": "Запасной тёплой одежды и сухих носков.",
+          "race": {
+            "dwarf": 18,
+            "goliath": 14,
+            "halforc": 12
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "endurance": 20,
+            "guardian": 12,
+            "selfdanger": 8
+          }
+        },
+        {
+          "text": "Набора инструментов для мелкого ремонта.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Вещицы, которую подарил близкий человек.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Блокнота для находок, набросков и внезапных идей.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Красивой одежды на случай праздника.",
+          "race": {
+            "elf": 20,
+            "tiefling": 15,
+            "dragonborn": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "bard": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glamour": 20,
+            "presence": 12,
+            "artistry": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q07",
+      "number": 7,
+      "text": "Ваш отряд остановился на ночлег. Чем займётесь, пока остальные разгружают вещи?",
+      "answers": [
+        {
+          "text": "Разведу огонь и начну готовить ужин.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Принесу дров и воды на всю ночь.",
+          "race": {
+            "dwarf": 18,
+            "goliath": 14,
+            "halforc": 12
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "endurance": 20,
+            "guardian": 12,
+            "selfdanger": 8
+          }
+        },
+        {
+          "text": "Выберу сухое место для палаток и осмотрю подходы к лагерю.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "ranger": 25,
+            "monk": 10
+          },
+          "background": {
+            "outlander": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "scout": 20,
+            "nature": 12,
+            "mobility": 8
+          }
+        },
+        {
+          "text": "Займусь натёртыми ногами и мелкими ранами спутников.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Проверю припасы и отложу продукты на обратную дорогу.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 14,
+            "human": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 10
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 15
+          },
+          "traits": {
+            "tactics": 20,
+            "discipline": 12,
+            "control": 8,
+            "timing": 12
+          }
+        },
+        {
+          "text": "Встану на первую стражу, пока остальные отдыхают.",
+          "race": {
+            "human": 15,
+            "dragonborn": 15,
+            "warforged": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 25,
+            "acolyte": 10
+          },
+          "traits": {
+            "devotion": 20,
+            "discipline": 12,
+            "guardian": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q08",
+      "number": 8,
+      "text": "На ярмарке вам понравился плащ, но он дороже, чем вы рассчитывали. Как поступите?",
+      "answers": [
+        {
+          "text": "Поторгуюсь. Уйду, если продавец не уступит.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Сравню цены у других торговцев, прежде чем решать.",
+          "race": {
+            "dwarf": 20,
+            "halfling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "rogue": 15,
+            "fighter": 8
+          },
+          "background": {
+            "guild": 15,
+            "urchin": 15
+          },
+          "traits": {
+            "control": 20,
+            "discipline": 12,
+            "perception": 8
+          }
+        },
+        {
+          "text": "Проверю ткань и швы. Если работа хорошая, доплачу.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Куплю: давно ничего так не нравилось.",
+          "race": {
+            "elf": 20,
+            "tiefling": 15,
+            "dragonborn": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "bard": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glamour": 20,
+            "presence": 12,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "Предложу обмен на что-нибудь из своих вещей.",
+          "race": {
+            "tiefling": 18,
+            "changeling": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "rogue": 15
+          },
+          "background": {
+            "charlatan": 18,
+            "guild": 15
+          },
+          "traits": {
+            "control": 20,
+            "charm": 12,
+            "bond": 8
+          }
+        },
+        {
+          "text": "Отложу покупку. Старый плащ ещё цел.",
+          "race": {
+            "halfling": 22,
+            "dwarf": 12
+          },
+          "class": {
+            "cleric": 15,
+            "fighter": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "guardian": 12,
+            "ritual": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q10",
+      "number": 10,
+      "text": "Вы готовите праздник. Гости скоро придут, а столы не расставлены, еда не готова и все друг другу мешают. За что возьмётесь?",
+      "answers": [
+        {
+          "text": "Отменю лишние затеи и распределю самое срочное между людьми.",
+          "race": {
+            "dragonborn": 20,
+            "human": 15,
+            "goliath": 10
+          },
+          "class": {
+            "fighter": 25,
+            "paladin": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 15
+          },
+          "traits": {
+            "presence": 20,
+            "tactics": 12,
+            "glory": 8
+          }
+        },
+        {
+          "text": "Выберу один участок работы и доведу его до конца.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Приведу знакомых на помощь.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Починю сломанную печь: пока она не работает, ужина не будет.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Превращу недоделанный праздник в пикник. Еду приготовим прямо на огне.",
+          "race": {
+            "gnome": 18,
+            "changeling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "rogue": 12
+          },
+          "background": {
+            "charlatan": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "chaos": 20,
+            "creation": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "Накормлю помощников и дам им немного передохнуть.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q12",
+      "number": 12,
+      "text": "Можно бесплатно провести неделю у одного из мастеров. Чему будете учиться?",
+      "answers": [
+        {
+          "text": "Готовить так, чтобы гости просили добавки.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Делать полезные вещи из дерева и металла.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Танцевать и выступать перед публикой.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Оказывать первую помощь в дороге.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Находить дорогу по лесу и читать следы.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "ranger": 25,
+            "monk": 10
+          },
+          "background": {
+            "outlander": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "scout": 20,
+            "nature": 12,
+            "mobility": 8
+          }
+        },
+        {
+          "text": "Показывать фокусы с картами и монетами.",
+          "race": {
+            "changeling": 15,
+            "goblin": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 25,
+            "bard": 10
+          },
+          "background": {
+            "charlatan": 25,
+            "criminal": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "illusion": 12,
+            "subtlety": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q13",
+      "number": 13,
+      "text": "Вам нужен помощник для большого заказа. Есть желающий, но вы видели его только за кружкой пива. Как проверите, можно ли на него положиться?",
+      "answers": [
+        {
+          "text": "Дам ему работу и доверю инструменты.",
+          "race": {
+            "human": 18,
+            "halfelf": 15,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 18,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "bond": 20,
+            "mercy": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Узнаю у прежних напарников, как он работает.",
+          "race": {
+            "yuanpure": 14,
+            "elf": 12,
+            "warforged": 10
+          },
+          "class": {
+            "ranger": 20,
+            "rogue": 15
+          },
+          "background": {
+            "soldier": 15,
+            "sage": 10
+          },
+          "traits": {
+            "perception": 20,
+            "scout": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Возьму другого человека, с которым уже работал.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Оформлю пробный заказ с чёткими условиями и залогом за инструменты.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Первую вещь сделаем вместе: покажу работу и посмотрю, как он справляется.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Дам маленький заказ, на котором не потеряю много денег.",
+          "race": {
+            "tiefling": 18,
+            "changeling": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "rogue": 15
+          },
+          "background": {
+            "charlatan": 18,
+            "guild": 15
+          },
+          "traits": {
+            "control": 20,
+            "charm": 12,
+            "bond": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q14",
+      "number": 14,
+      "text": "Вы с треском провалились на состязании. Что поможет прийти в себя?",
+      "answers": [
+        {
+          "text": "Превращу провал в смешную историю и расскажу друзьям.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        },
+        {
+          "text": "Дам себе отдохнуть. Один неудачный день ещё ничего не решает.",
+          "race": {
+            "aasimar": 14,
+            "halfling": 16,
+            "firbolg": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "mercy": 20,
+            "peace": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Лично поздравлю победителя, даже если это сейчас трудно.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Займусь обычными делами, чтобы не прокручивать поражение весь вечер.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Разберу выступление: хочу понять, где всё пошло не так.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        },
+        {
+          "text": "Побуду один, пока не отпустит.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q15",
+      "number": 15,
+      "text": "Работа обещает хороший доход. Из-за какого условия вы откажетесь?",
+      "answers": [
+        {
+          "text": "Придётся месяцами не видеться с близкими.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Без разрешения начальника нельзя будет и шагу ступить.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Придётся обманывать покупателей.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Нужно годами выполнять одну и ту же операцию.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Оплату смогут менять задним числом.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Придётся жить всей командой в одной комнате.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q16",
+      "number": 16,
+      "text": "Дерево во дворе даёт тень всему дому, но его корни повредили соседскую стену. Сосед хочет его срубить. Вы тоже здесь живёте. Что сделаете?",
+      "answers": [
+        {
+          "text": "Позову садовника: вдруг дерево можно сохранить, убрав часть корней.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Соберу деньги на ремонт стены, если сосед согласится оставить дерево.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Помогу убрать дерево и посажу новые подальше от дома.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Оставлю решение хозяину повреждённого дома.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Соберу соседей, чтобы выбрать решение, которое устроит всех.",
+          "race": {
+            "halfelf": 20,
+            "aasimar": 12,
+            "changeling": 10
+          },
+          "class": {
+            "monk": 20,
+            "bard": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "peace": 20,
+            "mercy": 12,
+            "charm": 8
+          }
+        },
+        {
+          "text": "Приглашу строителя проверить, действительно ли трещины появились из-за корней.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q17",
+      "number": 17,
+      "text": "Вы уже выбрали дорогу, но спутник утверждает, что она ведёт совсем не туда. Что будете делать?",
+      "answers": [
+        {
+          "text": "Если он прав, признаю ошибку и передам ему карту.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Сверюсь с подробным путеводителем.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Остановлю отряд и спокойно проверю маршрут с самого начала.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Расспрошу его об этой дороге. Может, узнаю что-нибудь полезное.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Сравню оба маршрута по времени и опасностям.",
+          "race": {
+            "human": 16,
+            "warforged": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 15
+          },
+          "background": {
+            "soldier": 25,
+            "sage": 10
+          },
+          "traits": {
+            "tactics": 20,
+            "battlefield_control": 12,
+            "precision": 8,
+            "timing": 12
+          }
+        },
+        {
+          "text": "Продолжу свой путь. Разворачиваться при всех совсем не хочется.",
+          "race": {
+            "dragonborn": 18,
+            "tiefling": 14,
+            "elf": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "paladin": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "vengeance": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q18",
+      "number": 18,
+      "text": "Приключение закончилось, награда получена. На что потратите первую свободную неделю?",
+      "answers": [
+        {
+          "text": "На тишину и сон где-нибудь подальше от людей.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "На встречи с друзьями, которых давно не видел.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "На небольшую поездку в новое место.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "На своё увлечение: куплю всё нужное и запрусь с этим дома.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "На семью и домашние дела.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Ничего не запланирую, а деньги пока отложу.",
+          "race": {
+            "dwarf": 20,
+            "halfling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "rogue": 15,
+            "fighter": 8
+          },
+          "background": {
+            "guild": 15,
+            "urchin": 15
+          },
+          "traits": {
+            "control": 20,
+            "discipline": 12,
+            "perception": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q19",
+      "number": 19,
+      "text": "Можно получить одно маленькое волшебное удобство на всю жизнь. Что выберете?",
+      "answers": [
+        {
+          "text": "Потерянные вещи сами находятся в кармане.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Животные могут объяснить, чего хотят.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Всегда удаётся заснуть вовремя и проснуться отдохнувшим.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Любую услышанную мелодию можно без труда сыграть или напеть.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Любое приготовленное вами блюдо получается вкусным.",
+          "race": {
+            "gnome": 14,
+            "firbolg": 12,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 20,
+            "sage": 10
+          },
+          "traits": {
+            "nature": 20,
+            "healing": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Вас понимают на любом языке.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q20",
+      "number": 20,
+      "text": "Вы уезжаете на несколько лет. С чем будет тяжелее расстаться?",
+      "answers": [
+        {
+          "text": "С близкими людьми.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "С домом, который долго обустраивал.",
+          "race": {
+            "halfling": 22,
+            "dwarf": 12
+          },
+          "class": {
+            "cleric": 15,
+            "fighter": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "guardian": 12,
+            "ritual": 8
+          }
+        },
+        {
+          "text": "Со своим кварталом, где почти все друг друга знают.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "С делом, в которое вложил столько сил.",
+          "race": {
+            "dragonborn": 18,
+            "goliath": 12,
+            "human": 12
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 10
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "С родными лесами, полями и рекой.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Пока ни с чем. Я давно хочу пожить в другом месте.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q21",
+      "number": 21,
+      "text": "Разбойники увезли ваши припасы в свой лагерь. Их больше, но они пока не ждут погони. Как будете возвращать груз?",
+      "answers": [
+        {
+          "text": "Проберусь ночью и вытащу припасы, пока лагерь спит.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "shadow": 25,
+            "trickery": 20,
+            "subtlety": 20,
+            "control": 8
+          }
+        },
+        {
+          "text": "Выманю разбойников из лагеря и задержу в узком проходе, пока спутники забирают груз.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "guardian": 25,
+            "endurance": 20,
+            "devotion": 15
+          }
+        },
+        {
+          "text": "Прослежу за главарём и перехвачу его, когда он останется без охраны.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "precision": 25,
+            "vengeance": 15,
+            "glory": 12,
+            "discipline": 10,
+            "timing": 20
+          }
+        },
+        {
+          "text": "Найду недовольных среди разбойников и предложу им долю за помощь.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "mercy": 25,
+            "charm": 20,
+            "peace": 15,
+            "control": 8
+          }
+        },
+        {
+          "text": "Перекрою дороги к лагерю, чтобы вынудить их обменять груз на свободный проход.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "battlefield_control": 25,
+            "tactics": 20,
+            "control": 12
+          }
+        },
+        {
+          "text": "Выдам себя за посланника их нанимателя и попробую забрать груз по поддельному приказу.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "chaos": 20,
+            "trickery": 20,
+            "illusion": 15,
+            "creation": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q23",
+      "number": 23,
+      "text": "Ваш отряд готовится к штурму крепости. Какую задачу возьмёте на себя?",
+      "answers": [
+        {
+          "text": "Прикрою раненых и вытащу тех, кто не может идти сам.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "guardian": 25,
+            "healing": 20,
+            "mercy": 12,
+            "devotion": 12
+          }
+        },
+        {
+          "text": "Прослежу за сменой караула и найду момент, когда проход останется без охраны.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "knowledge": 22,
+            "divination": 20,
+            "scout": 18,
+            "perception": 15,
+            "timing": 10
+          }
+        },
+        {
+          "text": "Заберусь по наружной стене и закреплю верёвку для остальных.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "glamour": 20,
+            "artistry": 20,
+            "mobility": 15,
+            "glory": 12
+          }
+        },
+        {
+          "text": "Отвлеку защитников ложной атакой с другой стороны.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "trickery": 22,
+            "illusion": 20,
+            "tactics": 18,
+            "subtlety": 15
+          }
+        },
+        {
+          "text": "Выйду вперёд и заставлю защитников отступить натиском и угрозами.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "rage": 20,
+            "shadow": 18,
+            "transformation": 20,
+            "vengeance": 12
+          }
+        },
+        {
+          "text": "Обрушу часть стены, чтобы открыть новый проход.",
+          "race": {},
+          "class": {},
+          "background": {},
+          "traits": {
+            "battlefield_control": 20,
+            "nature": 18,
+            "arcane": 18,
+            "creation": 15,
+            "otherworldly": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q24",
+      "number": 24,
+      "text": "Цены примерно одинаковые. Где бы вы поселились?",
+      "answers": [
+        {
+          "text": "В доме с садом. Яблоню бы посадить, стол поставить.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Над таверной. Захотел компании — спустился.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Рядом со своими. Чтобы можно было просто зайти.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "При мастерской. Наконец-то не таскать всё туда-сюда.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Под крышей, с видом на город. Ради этого и по лестнице похожу.",
+          "race": {
+            "elf": 20,
+            "tiefling": 15,
+            "dragonborn": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "bard": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glamour": 20,
+            "presence": 12,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "У большой дороги. Мне всё равно надолго не сидится.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q25",
+      "number": 25,
+      "text": "Вы пришли на праздник, но потеряли приглашение. Стража у входа вас не знает. Как попадёте внутрь?",
+      "answers": [
+        {
+          "text": "Попрошу позвать хозяина и дождусь его у ворот.",
+          "race": {
+            "human": 15,
+            "dragonborn": 15,
+            "warforged": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 25,
+            "acolyte": 10
+          },
+          "traits": {
+            "devotion": 20,
+            "discipline": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Найду знакомых среди гостей и войду вместе с ними.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Заведу разговор со стражником и попробую расположить его к себе.",
+          "race": {
+            "halfelf": 18,
+            "changeling": 16,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "warlock": 12
+          },
+          "background": {
+            "charlatan": 20,
+            "entertainer": 15
+          },
+          "traits": {
+            "charm": 20,
+            "glamour": 12,
+            "illusion": 8
+          }
+        },
+        {
+          "text": "Добьюсь проверки списка приглашённых.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Найду другой вход и пройду незаметно.",
+          "race": {
+            "changeling": 15,
+            "goblin": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 25,
+            "bard": 10
+          },
+          "background": {
+            "charlatan": 25,
+            "criminal": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "illusion": 12,
+            "subtlety": 8
+          }
+        },
+        {
+          "text": "Развернусь и уйду. Желание праздновать уже пропало.",
+          "race": {
+            "dragonborn": 18,
+            "tiefling": 14,
+            "elf": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "paladin": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "vengeance": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q28",
+      "number": 28,
+      "text": "Какой попутчик быстрее всего доведёт вас до белого каления?",
+      "answers": [
+        {
+          "text": "Которого каждое утро все ждут.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Который вдруг решил, что он тут главный.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Который без спроса берёт мои вещи.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Которому всё плохо, но ни одно предложение не подходит.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Который вообще не замолкает. Вообще.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Который ничего не делает, зато есть садится первым.",
+          "race": {
+            "human": 15,
+            "dragonborn": 15,
+            "warforged": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 25,
+            "acolyte": 10
+          },
+          "traits": {
+            "devotion": 20,
+            "discipline": 12,
+            "guardian": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q29",
+      "number": 29,
+      "text": "Купец перепутал кошельки и отдал вам больше денег, чем должен. Вы заметили это уже у выхода. Как поступите?",
+      "answers": [
+        {
+          "text": "Сразу верну лишнее.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Сначала проверю цену и пересчитаю монеты.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        },
+        {
+          "text": "Верну деньги и попрошу купца впредь считать внимательнее.",
+          "race": {
+            "halforc": 18,
+            "dragonborn": 14,
+            "human": 10
+          },
+          "class": {
+            "barbarian": 20,
+            "paladin": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "presence": 20,
+            "discipline": 12,
+            "glory": 8
+          }
+        },
+        {
+          "text": "Оформлю разницу как предоплату за следующую покупку.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Мелкую разницу оставлю себе, крупную верну.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Унесу кошелёк. Его ошибка — моя удача.",
+          "race": {
+            "goblin": 16,
+            "tiefling": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 15
+          },
+          "background": {
+            "criminal": 25,
+            "charlatan": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q30",
+      "number": 30,
+      "text": "Дождь загнал всю компанию под навес. До вечера никуда не уйти. Чем займёте остальных?",
+      "answers": [
+        {
+          "text": "Расскажу самую невероятную историю из своих приключений.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        },
+        {
+          "text": "Устрою песни под общий стук дождя.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Покажу карточные фокусы.",
+          "race": {
+            "changeling": 15,
+            "goblin": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 25,
+            "bard": 10
+          },
+          "background": {
+            "charlatan": 25,
+            "criminal": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "illusion": 12,
+            "subtlety": 8
+          }
+        },
+        {
+          "text": "Организую игру, в которой смогут участвовать все.",
+          "race": {
+            "dragonborn": 20,
+            "human": 15,
+            "goliath": 10
+          },
+          "class": {
+            "fighter": 25,
+            "paladin": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 15
+          },
+          "traits": {
+            "presence": 20,
+            "tactics": 12,
+            "glory": 8
+          }
+        },
+        {
+          "text": "Почитаю вслух принесённую книгу.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Приготовлю горячую еду на всех.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q31",
+      "number": 31,
+      "text": "На чердаке нашлась старая шкатулка с непонятным механизмом. Как с ней поступите?",
+      "answers": [
+        {
+          "text": "Расспрошу родных, кому она принадлежала.",
+          "race": {
+            "dwarf": 18,
+            "elf": 14,
+            "dragonborn": 10
+          },
+          "class": {
+            "cleric": 20,
+            "warlock": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "noble": 10
+          },
+          "traits": {
+            "ancestor": 20,
+            "bond": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Разберу механизм и попробую его починить.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Отнесу оценщику: вдруг она дорогая.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Поищу похожие устройства и выясню, для чего её сделали.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Поставлю на видное место. Красивая вещь, даже если не работает.",
+          "race": {
+            "elf": 20,
+            "tiefling": 15,
+            "dragonborn": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "bard": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glamour": 20,
+            "presence": 12,
+            "artistry": 8
+          }
+        },
+        {
+          "text": "Уберу обратно. Сейчас у меня другие дела.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q33",
+      "number": 33,
+      "text": "Вы впервые держите в руках незнакомый инструмент. Как будете учиться им пользоваться?",
+      "answers": [
+        {
+          "text": "Повторю за тем, кто умеет.",
+          "race": {
+            "human": 18,
+            "warforged": 14,
+            "goliath": 10
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "endurance": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Прочитаю руководство.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Начну пробовать и разберусь по ходу.",
+          "race": {
+            "gnome": 18,
+            "changeling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "rogue": 12
+          },
+          "background": {
+            "charlatan": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "chaos": 20,
+            "creation": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "Расспрошу мастера, зачем нужна каждая деталь.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Буду учиться вместе с другом.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Выделю время на ежедневные упражнения.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q34",
+      "number": 34,
+      "text": "Вы заблудились в незнакомом городе и уже опаздываете. Что сделаете первым делом?",
+      "answers": [
+        {
+          "text": "Остановлю прохожего и спрошу дорогу.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Зайду в ближайшую лавку: там подскажут местные.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Сверюсь с картой.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        },
+        {
+          "text": "Найму извозчика.",
+          "race": {
+            "tiefling": 18,
+            "changeling": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "rogue": 15
+          },
+          "background": {
+            "charlatan": 18,
+            "guild": 15
+          },
+          "traits": {
+            "control": 20,
+            "charm": 12,
+            "bond": 8
+          }
+        },
+        {
+          "text": "Найду видимую издалека башню и сориентируюсь по ней.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "ranger": 25,
+            "monk": 10
+          },
+          "background": {
+            "outlander": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "scout": 20,
+            "nature": 12,
+            "mobility": 8
+          }
+        },
+        {
+          "text": "Вернусь к последнему знакомому перекрёстку.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q35",
+      "number": 35,
+      "text": "Друг отменил встречу: он совсем вымотался. Вы весь день ждали этого вечера. Как его проведёте теперь?",
+      "answers": [
+        {
+          "text": "Перенесу встречу и займусь своими делами.",
+          "race": {
+            "aasimar": 14,
+            "halfling": 16,
+            "firbolg": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "mercy": 20,
+            "peace": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Останусь дома. Сегодня хотелось увидеть именно его.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Предложу тихо посидеть у него вместо шумной прогулки.",
+          "race": {
+            "halfling": 20,
+            "firbolg": 10,
+            "dwarf": 10
+          },
+          "class": {
+            "druid": 15,
+            "cleric": 10
+          },
+          "background": {
+            "guild": 15,
+            "hermit": 10
+          },
+          "traits": {
+            "peace": 20,
+            "healing": 12,
+            "nature": 8
+          }
+        },
+        {
+          "text": "Встречусь с другой компанией.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Занесу ему ужин и оставлю отдыхать.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Сначала договорюсь о новой дате, чтобы снова не освобождать вечер зря.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q36",
+      "number": 36,
+      "text": "Заказчик третий раз меняет уже утверждённый рисунок вывески. Что вы сделаете?",
+      "answers": [
+        {
+          "text": "Выставлю отдельный счёт за новые переделки.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 10
+          },
+          "background": {
+            "guild": 20,
+            "noble": 8
+          },
+          "traits": {
+            "control": 20,
+            "bond": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Встречусь с ним и заново согласую, чего он хочет.",
+          "race": {
+            "halfelf": 20,
+            "aasimar": 12,
+            "changeling": 10
+          },
+          "class": {
+            "monk": 20,
+            "bard": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "peace": 20,
+            "mercy": 12,
+            "charm": 8
+          }
+        },
+        {
+          "text": "Дам выбрать из двух последних вариантов и закрою вопрос.",
+          "race": {
+            "dragonborn": 20,
+            "human": 15,
+            "goliath": 10
+          },
+          "class": {
+            "fighter": 25,
+            "paladin": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 15
+          },
+          "traits": {
+            "presence": 20,
+            "tactics": 12,
+            "glory": 8
+          }
+        },
+        {
+          "text": "Переделаю ещё раз, лишь бы закончить.",
+          "race": {
+            "dwarf": 18,
+            "goliath": 14,
+            "halforc": 12
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "endurance": 20,
+            "guardian": 12,
+            "selfdanger": 8
+          }
+        },
+        {
+          "text": "Сдам согласованную работу и откажусь от новых изменений.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Попрошу показать вывеску, которая ему нравится, и разберу отличия.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q37",
+      "number": 37,
+      "text": "Друзья приютили вас в деревне на неделю. Чем поможете им по хозяйству?",
+      "answers": [
+        {
+          "text": "Починю мебель и инструменты.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Поработаю в огороде и помогу с животными.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Возьму на себя ужины.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Займусь детьми, чтобы взрослые могли отдохнуть.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Разберу запасы в кладовой и составлю список недостающего.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 14,
+            "human": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 10
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 15
+          },
+          "traits": {
+            "tactics": 20,
+            "discipline": 12,
+            "control": 8,
+            "timing": 12
+          }
+        },
+        {
+          "text": "Отвезу товар на рынок и займусь продажей.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q38",
+      "number": 38,
+      "text": "Вы проиграли сопернику, которого считали слабее. Что сделаете после состязания?",
+      "answers": [
+        {
+          "text": "Потренирую с ним приём, на котором попался.",
+          "race": {
+            "human": 18,
+            "warforged": 14,
+            "goliath": 10
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "endurance": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Сразу предложу реванш.",
+          "race": {
+            "dragonborn": 18,
+            "goliath": 12,
+            "human": 12
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 10
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Уйду остыть подальше от зрителей.",
+          "race": {
+            "halforc": 22,
+            "goliath": 16,
+            "tiefling": 10
+          },
+          "class": {
+            "barbarian": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 15
+          },
+          "traits": {
+            "rage": 20,
+            "presence": 12,
+            "vengeance": 8
+          }
+        },
+        {
+          "text": "Позову победителя отметить его удачу.",
+          "race": {
+            "halfling": 20,
+            "satyr": 12,
+            "human": 10
+          },
+          "class": {
+            "sorcerer": 20,
+            "bard": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "entertainer": 10
+          },
+          "traits": {
+            "peace": 20,
+            "charm": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Разберу свои ошибки и подготовлюсь к следующей встрече.",
+          "race": {
+            "human": 16,
+            "warforged": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 15
+          },
+          "background": {
+            "soldier": 25,
+            "sage": 10
+          },
+          "traits": {
+            "tactics": 20,
+            "battlefield_control": 12,
+            "precision": 8,
+            "timing": 12
+          }
+        },
+        {
+          "text": "Переключусь на другое развлечение.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q39",
+      "number": 39,
+      "text": "После нескольких побед ваш приятель объявил себя лучшим игроком в городе. Вам это уже надоело. Как поступите?",
+      "answers": [
+        {
+          "text": "Прямо попрошу его перестать хвастаться.",
+          "race": {
+            "halforc": 18,
+            "dragonborn": 14,
+            "human": 10
+          },
+          "class": {
+            "barbarian": 20,
+            "paladin": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "presence": 20,
+            "discipline": 12,
+            "glory": 8
+          }
+        },
+        {
+          "text": "Устрою ему шуточное награждение с короной из бумаги.",
+          "race": {
+            "changeling": 15,
+            "goblin": 12,
+            "tiefling": 12
+          },
+          "class": {
+            "rogue": 25,
+            "bard": 10
+          },
+          "background": {
+            "charlatan": 25,
+            "criminal": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "illusion": 12,
+            "subtlety": 8
+          }
+        },
+        {
+          "text": "Перестану играть с ним, пока не успокоится.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Поговорю с ним наедине, как со старым другом.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Пропущу мимо ушей. Он скоро сам устанет.",
+          "race": {
+            "halfling": 20,
+            "satyr": 12,
+            "human": 10
+          },
+          "class": {
+            "sorcerer": 20,
+            "bard": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "entertainer": 10
+          },
+          "traits": {
+            "peace": 20,
+            "charm": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Вызову его на состязание и попробую отобрать первенство.",
+          "race": {
+            "goliath": 18,
+            "halforc": 16,
+            "dragonborn": 10
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "glory": 20,
+            "mobility": 12,
+            "endurance": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q40",
+      "number": 40,
+      "text": "Какую книгу возьмёте в дорогу?",
+      "answers": [
+        {
+          "text": "Про те места, куда еду. Не хочу всё интересное пропустить.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "Смешные истории. Вслух у костра почитаем.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        },
+        {
+          "text": "Про местные растения и зверей. Чтобы хоть понимать, что вокруг.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Чью-нибудь биографию. Люблю читать, как у людей всё складывалось.",
+          "race": {
+            "dwarf": 18,
+            "elf": 14,
+            "dragonborn": 10
+          },
+          "class": {
+            "cleric": 20,
+            "warlock": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "noble": 10
+          },
+          "traits": {
+            "ancestor": 20,
+            "bond": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Загадки и головоломки. Будет чем голову занять.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Хороший роман. Такой, чтобы остановку чуть не проехать.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q41",
+      "number": 41,
+      "text": "Двое спутников поссорились за ужином. Остальные молчат. Как поступите?",
+      "answers": [
+        {
+          "text": "По очереди выслушаю обоих и помогу договориться.",
+          "race": {
+            "halfelf": 20,
+            "aasimar": 12,
+            "changeling": 10
+          },
+          "class": {
+            "monk": 20,
+            "bard": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "peace": 20,
+            "mercy": 12,
+            "charm": 8
+          }
+        },
+        {
+          "text": "Уведу самого расстроенного подышать воздухом.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Поддержу того, кто, по-моему, прав.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Прерву спор и верну всех к ужину.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Дам им закончить. Пока они не дерутся, вмешиваться рано.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Отойду в сторону: я не знаю, что между ними произошло.",
+          "race": {
+            "elf": 15,
+            "firbolg": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "monk": 25,
+            "warlock": 10
+          },
+          "background": {
+            "hermit": 25
+          },
+          "traits": {
+            "subtlety": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q44",
+      "number": 44,
+      "text": "Для экспедиции выбрали ваш план, но руководить поручили другому. Какую роль вы займёте?",
+      "answers": [
+        {
+          "text": "Возьму самое интересное дело и оставлю ему организацию.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Добьюсь права самому возглавить экспедицию.",
+          "race": {
+            "dragonborn": 18,
+            "goliath": 12,
+            "human": 12
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 10
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Стану его помощником и объясню все тонкости плана.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Возьму отдельную задачу, за которую буду отвечать самостоятельно.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Поработаю под его началом и посмотрю, как он справляется.",
+          "race": {
+            "yuanpure": 14,
+            "elf": 12,
+            "warforged": 10
+          },
+          "class": {
+            "ranger": 20,
+            "rogue": 15
+          },
+          "background": {
+            "soldier": 15,
+            "sage": 10
+          },
+          "traits": {
+            "perception": 20,
+            "scout": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Откажусь от участия. После такого уже не хочется.",
+          "race": {
+            "dragonborn": 18,
+            "tiefling": 14,
+            "elf": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "paladin": 10
+          },
+          "background": {
+            "noble": 25
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "vengeance": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q45",
+      "number": 45,
+      "text": "Из-за непогоды застряли в маленьком городе на два дня. Чем займётесь?",
+      "answers": [
+        {
+          "text": "Познакомлюсь с такими же застрявшими. Вместе переждём.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Высплюсь. И вещи наконец высушу.",
+          "race": {
+            "halfling": 20,
+            "firbolg": 10,
+            "dwarf": 10
+          },
+          "class": {
+            "druid": 15,
+            "cleric": 10
+          },
+          "background": {
+            "guild": 15,
+            "hermit": 10
+          },
+          "traits": {
+            "peace": 20,
+            "healing": 12,
+            "nature": 8
+          }
+        },
+        {
+          "text": "Поищу, где подработать. Раз уж всё равно сижу.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Пойду город смотреть, как дождь стихнет.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Запрусь с книжкой. Давно такого случая не было.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Узнаю, как ещё отсюда выбраться. Два дня тут сидеть не хочу.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q46",
+      "number": 46,
+      "text": "Ученик снова повторяет одну и ту же ошибку. Что поменяете в обучении?",
+      "answers": [
+        {
+          "text": "Составлю короткую памятку с порядком действий.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Попрошу выполнить работу при мне и поправлю в нужный момент.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Объясню другим способом, без упрёков за прошлые попытки.",
+          "race": {
+            "aasimar": 14,
+            "halfling": 16,
+            "firbolg": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "mercy": 20,
+            "peace": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Дам простое практическое задание, на котором можно безопасно ошибаться.",
+          "race": {
+            "human": 18,
+            "warforged": 14,
+            "goliath": 10
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "endurance": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Введу регулярные занятия и отдельное время для вопросов.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Попрошу другого мастера позаниматься с ним.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q47",
+      "number": 47,
+      "text": "Ремонт любимой старой вещи стоит дороже покупки новой. Будете чинить?",
+      "answers": [
+        {
+          "text": "Буду. Мне именно эта нужна.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Новую куплю, а от старой что-нибудь оставлю на память.",
+          "race": {
+            "dwarf": 18,
+            "elf": 14,
+            "dragonborn": 10
+          },
+          "class": {
+            "cleric": 20,
+            "warlock": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "noble": 10
+          },
+          "traits": {
+            "ancestor": 20,
+            "bond": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Смотря какая новая. Сейчас ещё поищешь такую же крепкую.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Сам попробую починить. Терять-то уже нечего.",
+          "race": {
+            "gnome": 18,
+            "changeling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "rogue": 12
+          },
+          "background": {
+            "charlatan": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "chaos": 20,
+            "creation": 12,
+            "wild": 8
+          }
+        },
+        {
+          "text": "Поищу такую же подержанную. Может, дешевле выйдет.",
+          "race": {
+            "dwarf": 20,
+            "halfling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "rogue": 15,
+            "fighter": 8
+          },
+          "background": {
+            "guild": 15,
+            "urchin": 15
+          },
+          "traits": {
+            "control": 20,
+            "discipline": 12,
+            "perception": 8
+          }
+        },
+        {
+          "text": "Отдам тому, кто починит, а себе новую возьму.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q48",
+      "number": 48,
+      "text": "На городском празднике идут конкурсы. В каком поучаствуете?",
+      "answers": [
+        {
+          "text": "Байки рассказывать. У меня одна есть — никто не верит.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        },
+        {
+          "text": "Подсказки по городу искать. Только бы совсем легко не было.",
+          "race": {
+            "gnome": 20,
+            "tabaxi": 12,
+            "elf": 8
+          },
+          "class": {
+            "wizard": 18,
+            "sorcerer": 15
+          },
+          "background": {
+            "sage": 20,
+            "outlander": 8
+          },
+          "traits": {
+            "knowledge": 20,
+            "perception": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Готовить из одинаковых продуктов. Интересно, у кого что выйдет.",
+          "race": {
+            "gnome": 14,
+            "firbolg": 12,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 20,
+            "sage": 10
+          },
+          "traits": {
+            "nature": 20,
+            "healing": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Через препятствия бегать. Хочу себя проверить.",
+          "race": {
+            "goliath": 18,
+            "halforc": 16,
+            "dragonborn": 10
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "glory": 20,
+            "mobility": 12,
+            "endurance": 8
+          }
+        },
+        {
+          "text": "Мастерить полезные штуки. Я бы и без конкурса попробовал.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "В командной игре. Уже хочется посмотреть, кого нам дадут в соперники.",
+          "race": {
+            "human": 16,
+            "warforged": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 15
+          },
+          "background": {
+            "soldier": 25,
+            "sage": 10
+          },
+          "traits": {
+            "tactics": 20,
+            "battlefield_control": 12,
+            "precision": 8,
+            "timing": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q51",
+      "number": 51,
+      "text": "Месяц учитесь новому делу, а получается пока плохо. Что поможет не бросить?",
+      "answers": [
+        {
+          "text": "Хочу видеть хоть маленький прогресс. Запишу, что уже умею.",
+          "race": {
+            "warforged": 16,
+            "human": 14,
+            "dwarf": 12
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 20,
+            "acolyte": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "control": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Позову учиться друга. Друг друга подтолкнём.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Попробую сделать что-то настоящее. Упражнения надоели.",
+          "race": {
+            "human": 18,
+            "warforged": 14,
+            "goliath": 10
+          },
+          "class": {
+            "monk": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 10
+          },
+          "traits": {
+            "discipline": 20,
+            "precision": 12,
+            "endurance": 8,
+            "timing": 8
+          }
+        },
+        {
+          "text": "Найду учителя. Может, я просто не с того начал.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Сделаю перерыв. Сейчас только злюсь.",
+          "race": {
+            "aasimar": 14,
+            "halfling": 16,
+            "firbolg": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "mercy": 20,
+            "peace": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "А может, и брошу. Значит, не так уж мне это нравилось.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q52",
+      "number": 52,
+      "text": "После общего дела все получили обещанную плату, и ещё немного денег осталось. Как поделите остаток?",
+      "answers": [
+        {
+          "text": "Поровну. Вместе работали.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Кто больше сделал, тому и добавим.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Купим хороший инструмент. На следующий раз пригодится.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Пусть полежат на всякий случай.",
+          "race": {
+            "dwarf": 18,
+            "warforged": 14,
+            "human": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 10
+          },
+          "background": {
+            "soldier": 20,
+            "guild": 15
+          },
+          "traits": {
+            "tactics": 20,
+            "discipline": 12,
+            "control": 8,
+            "timing": 12
+          }
+        },
+        {
+          "text": "Прогуляем вместе. Мы заслужили.",
+          "race": {
+            "halfling": 22,
+            "satyr": 12
+          },
+          "class": {
+            "bard": 20,
+            "cleric": 8
+          },
+          "background": {
+            "entertainer": 18,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "artistry": 12,
+            "healing": 8
+          }
+        },
+        {
+          "text": "Если никто не против, поможем тому, у кого сейчас совсем туго.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q53",
+      "number": 53,
+      "text": "Вы обещали помочь другу переехать, а теперь вас на тот же день позвали на праздник, куда давно хотелось попасть. Как поступите?",
+      "answers": [
+        {
+          "text": "Помогу с переездом и пропущу праздник.",
+          "race": {
+            "human": 15,
+            "dragonborn": 15,
+            "warforged": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "soldier": 25,
+            "acolyte": 10
+          },
+          "traits": {
+            "devotion": 20,
+            "discipline": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Договорюсь начать переезд раньше, чтобы освободить вечер.",
+          "race": {
+            "halfelf": 20,
+            "aasimar": 12,
+            "changeling": 10
+          },
+          "class": {
+            "monk": 20,
+            "bard": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 15
+          },
+          "traits": {
+            "peace": 20,
+            "mercy": 12,
+            "charm": 8
+          }
+        },
+        {
+          "text": "Найду себе замену и согласую её с другом.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Постараюсь успеть на оба дела, даже если придётся весь день бегать.",
+          "race": {
+            "dwarf": 18,
+            "goliath": 14,
+            "halforc": 12
+          },
+          "class": {
+            "barbarian": 25,
+            "fighter": 15
+          },
+          "background": {
+            "soldier": 20,
+            "outlander": 10
+          },
+          "traits": {
+            "endurance": 20,
+            "guardian": 12,
+            "selfdanger": 8
+          }
+        },
+        {
+          "text": "Пойду на праздник. С переездом ему помогут и без меня.",
+          "race": {
+            "goblin": 16,
+            "tiefling": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 15
+          },
+          "background": {
+            "criminal": 25,
+            "charlatan": 10
+          },
+          "traits": {
+            "trickery": 20,
+            "shadow": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Перенесу тяжёлую мебель, а остальное оставлю другим помощникам.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q54",
+      "number": 54,
+      "text": "В чужом городе есть несколько свободных часов. Куда пойдёте?",
+      "answers": [
+        {
+          "text": "На рынок. Всегда интересно, что там продают.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "К старой башне или храму. Хочу посмотреть, что от прошлого осталось.",
+          "race": {
+            "dwarf": 18,
+            "elf": 14,
+            "dragonborn": 10
+          },
+          "class": {
+            "cleric": 20,
+            "warlock": 15
+          },
+          "background": {
+            "acolyte": 20,
+            "noble": 10
+          },
+          "traits": {
+            "ancestor": 20,
+            "bond": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "В мастерскую. Вдруг разрешат поглазеть.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "К реке. Просто посижу у воды.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Туда, где музыка и люди. Может, познакомлюсь с кем.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Куда глаза глядят. Так обычно самое интересное и находится.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 12,
+            "halfelf": 10
+          },
+          "class": {
+            "ranger": 25,
+            "sorcerer": 8
+          },
+          "background": {
+            "outlander": 20,
+            "sailor": 15
+          },
+          "traits": {
+            "scout": 20,
+            "mobility": 12,
+            "wild": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q55",
+      "number": 55,
+      "text": "В трактире принесли не тот ужин. Новый придётся ждать, а вы голодны. Как поступите?",
+      "answers": [
+        {
+          "text": "Потребую заменить заказ и подожду.",
+          "race": {
+            "dragonborn": 20,
+            "human": 12,
+            "aasimar": 12
+          },
+          "class": {
+            "paladin": 25,
+            "fighter": 10
+          },
+          "background": {
+            "noble": 18,
+            "soldier": 15
+          },
+          "traits": {
+            "devotion": 20,
+            "guardian": 12,
+            "radiance": 8
+          }
+        },
+        {
+          "text": "Съем принесённое: попробую что-нибудь новое.",
+          "race": {
+            "halfling": 20,
+            "satyr": 12,
+            "human": 10
+          },
+          "class": {
+            "sorcerer": 20,
+            "bard": 10
+          },
+          "background": {
+            "folkhero": 15,
+            "entertainer": 10
+          },
+          "traits": {
+            "peace": 20,
+            "charm": 12,
+            "chaos": 8
+          }
+        },
+        {
+          "text": "Выберу другое блюдо из тех, что уже готовы.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Поменяюсь тарелками с кем-нибудь за столом.",
+          "race": {
+            "halfelf": 20,
+            "human": 10,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 15,
+            "sailor": 10
+          },
+          "traits": {
+            "charm": 20,
+            "bond": 12,
+            "presence": 8
+          }
+        },
+        {
+          "text": "Соглашусь оставить блюдо, если сделают скидку.",
+          "race": {
+            "goblin": 14,
+            "dwarf": 12,
+            "tiefling": 8
+          },
+          "class": {
+            "rogue": 25,
+            "warlock": 10
+          },
+          "background": {
+            "guild": 20,
+            "criminal": 8
+          },
+          "traits": {
+            "trickery": 20,
+            "perception": 12,
+            "control": 8
+          }
+        },
+        {
+          "text": "Отменю заказ и поем в другом месте.",
+          "race": {
+            "tiefling": 18,
+            "tabaxi": 14,
+            "satyr": 12
+          },
+          "class": {
+            "warlock": 20,
+            "sorcerer": 15
+          },
+          "background": {
+            "outlander": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "wild": 20,
+            "mobility": 12,
+            "chaos": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q56",
+      "number": 56,
+      "text": "Во дворе бегает явно потерявшаяся собака с ошейником. К людям не подходит. Что будете делать?",
+      "answers": [
+        {
+          "text": "Присяду, позову тихонько. Может, подойдёт.",
+          "race": {
+            "firbolg": 16,
+            "elf": 14,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 15
+          },
+          "background": {
+            "outlander": 20,
+            "hermit": 15
+          },
+          "traits": {
+            "nature": 20,
+            "wild": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "У соседей спрошу, чья она.",
+          "race": {
+            "halfling": 18,
+            "human": 14,
+            "dragonborn": 8
+          },
+          "class": {
+            "cleric": 20,
+            "paladin": 15
+          },
+          "background": {
+            "folkhero": 25,
+            "guild": 10
+          },
+          "traits": {
+            "bond": 20,
+            "peace": 12,
+            "guardian": 8
+          }
+        },
+        {
+          "text": "Попробую разглядеть ошейник. Вдруг адрес там есть.",
+          "race": {
+            "yuanpure": 14,
+            "elf": 12,
+            "warforged": 10
+          },
+          "class": {
+            "ranger": 20,
+            "rogue": 15
+          },
+          "background": {
+            "soldier": 15,
+            "sage": 10
+          },
+          "traits": {
+            "perception": 20,
+            "scout": 12,
+            "divination": 8
+          }
+        },
+        {
+          "text": "Позову знакомого собачника. Он лучше знает, как её поймать.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Побуду рядом, чтоб под колёса не выбежала.",
+          "race": {
+            "goliath": 16,
+            "aasimar": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "paladin": 25,
+            "druid": 10
+          },
+          "background": {
+            "folkhero": 25,
+            "acolyte": 10
+          },
+          "traits": {
+            "guardian": 20,
+            "devotion": 12,
+            "endurance": 8
+          }
+        },
+        {
+          "text": "Скажу в ближайшей лавке и пойду. Мне сейчас совсем некогда.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q57",
+      "number": 57,
+      "text": "Ваша компания разделилась в большом городе. Как устроите встречу, чтобы никто не потерялся?",
+      "answers": [
+        {
+          "text": "Нарисую всем понятную схему с приметными зданиями.",
+          "race": {
+            "elf": 20,
+            "halfelf": 12,
+            "satyr": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "glamour": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Выберу высокую башню, которую видно из разных кварталов.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "ranger": 25,
+            "monk": 10
+          },
+          "background": {
+            "outlander": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "scout": 20,
+            "nature": 12,
+            "mobility": 8
+          }
+        },
+        {
+          "text": "Сам соберу людей из нескольких мест.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Раздам записки с точным адресом и временем.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Позову в заведение, где мы раньше часто встречались.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Выясню, куда каждый собирается, и выберу точку по пути у большинства.",
+          "race": {
+            "human": 16,
+            "warforged": 14,
+            "yuanpure": 10
+          },
+          "class": {
+            "fighter": 25,
+            "wizard": 15
+          },
+          "background": {
+            "soldier": 25,
+            "sage": 10
+          },
+          "traits": {
+            "tactics": 20,
+            "battlefield_control": 12,
+            "precision": 8,
+            "timing": 12
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q58",
+      "number": 58,
+      "text": "Долго делали вещь и никак не можете перестать её улучшать. Когда всё-таки остановитесь?",
+      "answers": [
+        {
+          "text": "Когда ей уже можно нормально пользоваться.",
+          "race": {
+            "human": 18,
+            "dwarf": 14,
+            "goblin": 10
+          },
+          "class": {
+            "fighter": 20,
+            "rogue": 15
+          },
+          "background": {
+            "urchin": 20,
+            "guild": 10
+          },
+          "traits": {
+            "control": 20,
+            "tactics": 12,
+            "precision": 8
+          }
+        },
+        {
+          "text": "Когда получится то, что я вначале задумал.",
+          "race": {
+            "dragonborn": 18,
+            "goliath": 12,
+            "human": 12
+          },
+          "class": {
+            "warlock": 25,
+            "fighter": 15
+          },
+          "background": {
+            "noble": 20,
+            "soldier": 10
+          },
+          "traits": {
+            "glory": 20,
+            "presence": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Когда работа понравится тому, для кого я её делаю.",
+          "race": {
+            "aasimar": 14,
+            "human": 10,
+            "halfling": 10
+          },
+          "class": {
+            "cleric": 25,
+            "paladin": 10
+          },
+          "background": {
+            "acolyte": 20,
+            "folkhero": 10
+          },
+          "traits": {
+            "healing": 20,
+            "guardian": 12,
+            "mercy": 8
+          }
+        },
+        {
+          "text": "Когда пойму, что уже третий вечер переделываю одну мелочь.",
+          "race": {
+            "gnome": 18,
+            "elf": 12,
+            "yuanpure": 10
+          },
+          "class": {
+            "wizard": 25,
+            "warlock": 15
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "divination": 12,
+            "tactics": 8
+          }
+        },
+        {
+          "text": "Покажу тому, чьему вкусу доверяю. Может, меня уже заносит.",
+          "race": {
+            "dwarf": 16,
+            "elf": 14,
+            "human": 10
+          },
+          "class": {
+            "wizard": 15,
+            "cleric": 15
+          },
+          "background": {
+            "sage": 20,
+            "guild": 15
+          },
+          "traits": {
+            "knowledge": 20,
+            "bond": 12,
+            "creation": 8
+          }
+        },
+        {
+          "text": "Когда придут забирать. Раньше вряд ли.",
+          "race": {
+            "gnome": 18,
+            "changeling": 12,
+            "goblin": 10
+          },
+          "class": {
+            "sorcerer": 25,
+            "rogue": 12
+          },
+          "background": {
+            "charlatan": 20,
+            "urchin": 15
+          },
+          "traits": {
+            "chaos": 20,
+            "creation": 12,
+            "wild": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "Q60",
+      "number": 60,
+      "text": "Прошло несколько лет после большого путешествия. Что поможет снова его вспомнить?",
+      "answers": [
+        {
+          "text": "Свои записи. Там столько мелочей, которых я уже не помню.",
+          "race": {
+            "elf": 20,
+            "gnome": 15,
+            "warforged": 8
+          },
+          "class": {
+            "wizard": 25,
+            "monk": 8
+          },
+          "background": {
+            "sage": 25
+          },
+          "traits": {
+            "knowledge": 20,
+            "ritual": 12,
+            "arcane": 8
+          }
+        },
+        {
+          "text": "Карта со всем маршрутом. Вот тут-то мы и заблудились.",
+          "race": {
+            "tabaxi": 16,
+            "elf": 14,
+            "firbolg": 10
+          },
+          "class": {
+            "ranger": 25,
+            "monk": 10
+          },
+          "background": {
+            "outlander": 25,
+            "sailor": 10
+          },
+          "traits": {
+            "scout": 20,
+            "nature": 12,
+            "mobility": 8
+          }
+        },
+        {
+          "text": "Вещь, которую привёз. До сих пор ей пользуюсь.",
+          "race": {
+            "dwarf": 22,
+            "gnome": 12,
+            "warforged": 10
+          },
+          "class": {
+            "fighter": 15,
+            "wizard": 8
+          },
+          "background": {
+            "guild": 25
+          },
+          "traits": {
+            "creation": 20,
+            "precision": 12,
+            "discipline": 8
+          }
+        },
+        {
+          "text": "Приготовлю то самое блюдо. Сразу как будто снова туда попал.",
+          "race": {
+            "gnome": 14,
+            "firbolg": 12,
+            "halfling": 10
+          },
+          "class": {
+            "druid": 25,
+            "ranger": 10
+          },
+          "background": {
+            "hermit": 20,
+            "sage": 10
+          },
+          "traits": {
+            "nature": 20,
+            "healing": 12,
+            "knowledge": 8
+          }
+        },
+        {
+          "text": "Перечитаю письма от людей, с которыми там познакомился.",
+          "race": {
+            "halfling": 18,
+            "halfelf": 12,
+            "dragonborn": 10
+          },
+          "class": {
+            "paladin": 18,
+            "cleric": 15
+          },
+          "background": {
+            "folkhero": 15,
+            "acolyte": 10
+          },
+          "traits": {
+            "bond": 20,
+            "ancestor": 12,
+            "devotion": 8
+          }
+        },
+        {
+          "text": "Соберу тех, с кем ездил. У каждого своя версия, что там было.",
+          "race": {
+            "halfelf": 18,
+            "satyr": 14,
+            "changeling": 10
+          },
+          "class": {
+            "bard": 25,
+            "sorcerer": 10
+          },
+          "background": {
+            "entertainer": 25
+          },
+          "traits": {
+            "artistry": 20,
+            "presence": 12,
+            "glamour": 8
+          }
+        }
+      ]
+    }
+  ],
+  "profiles": {
+    "barbarian": [
+      {
+        "name": "Берсерк",
+        "tags": [
+          "rage",
+          "glory",
+          "selfdanger"
+        ],
+        "id": "berserker"
+      },
+      {
+        "name": "Тотемный воин",
+        "tags": [
+          "ancestor",
+          "nature",
+          "guardian"
+        ],
+        "id": "totem"
+      },
+      {
+        "name": "Предок-хранитель",
+        "tags": [
+          "ancestor",
+          "guardian",
+          "bond"
+        ],
+        "id": "ancestral"
+      },
+      {
+        "name": "Буревестник",
+        "tags": [
+          "storm",
+          "presence",
+          "battlefield_control"
+        ],
+        "id": "stormherald"
+      },
+      {
+        "name": "Фанатик",
+        "tags": [
+          "devotion",
+          "radiance",
+          "rage"
+        ],
+        "id": "zealot"
+      },
+      {
+        "name": "Зверь",
+        "tags": [
+          "transformation",
+          "wild",
+          "rage"
+        ],
+        "id": "beast"
+      },
+      {
+        "name": "Дикая магия",
+        "tags": [
+          "chaos",
+          "wild",
+          "otherworldly"
+        ],
+        "id": "wildmagic"
+      },
+      {
+        "name": "Великан",
+        "tags": [
+          "glory",
+          "transformation",
+          "battlefield_control"
+        ],
+        "id": "giant"
+      }
+    ],
+    "bard": [
+      {
+        "name": "Коллегия знаний",
+        "tags": [
+          "knowledge",
+          "subtlety",
+          "control"
+        ],
+        "id": "lore"
+      },
+      {
+        "name": "Доблести",
+        "tags": [
+          "guardian",
+          "glory",
+          "presence"
+        ],
+        "id": "valor"
+      },
+      {
+        "name": "Гламура",
+        "tags": [
+          "glamour",
+          "charm",
+          "presence"
+        ],
+        "id": "glamour"
+      },
+      {
+        "name": "Мечей",
+        "tags": [
+          "precision",
+          "mobility",
+          "glory"
+        ],
+        "id": "swords"
+      },
+      {
+        "name": "Шёпотов",
+        "tags": [
+          "shadow",
+          "subtlety",
+          "trickery"
+        ],
+        "id": "whispers"
+      },
+      {
+        "name": "Созидания",
+        "tags": [
+          "creation",
+          "artistry",
+          "arcane"
+        ],
+        "id": "creation"
+      },
+      {
+        "name": "Красноречия",
+        "tags": [
+          "charm",
+          "peace",
+          "control"
+        ],
+        "id": "eloquence"
+      },
+      {
+        "name": "Духов",
+        "tags": [
+          "otherworldly",
+          "knowledge",
+          "bond"
+        ],
+        "id": "spirits"
+      }
+    ],
+    "cleric": [
+      {
+        "name": "Знания",
+        "tags": [
+          "knowledge",
+          "divination",
+          "ritual"
+        ],
+        "id": "knowledge"
+      },
+      {
+        "name": "Жизни",
+        "tags": [
+          "healing",
+          "guardian",
+          "devotion"
+        ],
+        "id": "life"
+      },
+      {
+        "name": "Света",
+        "tags": [
+          "radiance",
+          "presence",
+          "guardian"
+        ],
+        "id": "light"
+      },
+      {
+        "name": "Природы",
+        "tags": [
+          "nature",
+          "guardian",
+          "ritual"
+        ],
+        "id": "nature"
+      },
+      {
+        "name": "Бури",
+        "tags": [
+          "storm",
+          "presence",
+          "battlefield_control"
+        ],
+        "id": "tempest"
+      },
+      {
+        "name": "Обмана",
+        "tags": [
+          "trickery",
+          "illusion",
+          "subtlety"
+        ],
+        "id": "trickery"
+      },
+      {
+        "name": "Войны",
+        "tags": [
+          "glory",
+          "precision",
+          "guardian"
+        ],
+        "id": "war"
+      },
+      {
+        "name": "Кузни",
+        "tags": [
+          "guardian",
+          "creation",
+          "discipline"
+        ],
+        "id": "forge"
+      },
+      {
+        "name": "Могилы",
+        "tags": [
+          "knowledge",
+          "shadow",
+          "guardian"
+        ],
+        "id": "grave"
+      },
+      {
+        "name": "Арканы",
+        "tags": [
+          "arcane",
+          "knowledge",
+          "ritual"
+        ],
+        "id": "arcana"
+      },
+      {
+        "name": "Порядка",
+        "tags": [
+          "control",
+          "devotion",
+          "presence"
+        ],
+        "id": "order"
+      },
+      {
+        "name": "Мира",
+        "tags": [
+          "peace",
+          "mercy",
+          "guardian"
+        ],
+        "id": "peace"
+      },
+      {
+        "name": "Сумерек",
+        "tags": [
+          "shadow",
+          "guardian",
+          "otherworldly"
+        ],
+        "id": "twilight"
+      }
+    ],
+    "druid": [
+      {
+        "name": "Земли",
+        "tags": [
+          "nature",
+          "ritual",
+          "knowledge"
+        ],
+        "id": "land"
+      },
+      {
+        "name": "Луны",
+        "tags": [
+          "transformation",
+          "wild",
+          "guardian"
+        ],
+        "id": "moon"
+      },
+      {
+        "name": "Снов",
+        "tags": [
+          "healing",
+          "otherworldly",
+          "mercy"
+        ],
+        "id": "dreams"
+      },
+      {
+        "name": "Пастыря",
+        "tags": [
+          "guardian",
+          "nature",
+          "bond"
+        ],
+        "id": "shepherd"
+      },
+      {
+        "name": "Спор",
+        "tags": [
+          "transformation",
+          "shadow",
+          "nature"
+        ],
+        "id": "spores"
+      },
+      {
+        "name": "Звёзд",
+        "tags": [
+          "divination",
+          "radiance",
+          "knowledge"
+        ],
+        "id": "stars"
+      },
+      {
+        "name": "Дикого огня",
+        "tags": [
+          "wild",
+          "creation",
+          "healing"
+        ],
+        "id": "wildfire"
+      }
+    ],
+    "fighter": [
+      {
+        "name": "Чемпион",
+        "tags": [
+          "glory",
+          "precision",
+          "endurance"
+        ],
+        "id": "champion"
+      },
+      {
+        "name": "Мастер боевых искусств",
+        "tags": [
+          "tactics",
+          "precision",
+          "control"
+        ],
+        "id": "battlemaster"
+      },
+      {
+        "name": "Мистический рыцарь",
+        "tags": [
+          "arcane",
+          "guardian",
+          "discipline"
+        ],
+        "id": "eldritchknight"
+      },
+      {
+        "name": "Арканный лучник",
+        "tags": [
+          "precision",
+          "arcane",
+          "scout"
+        ],
+        "id": "arcanearcher"
+      },
+      {
+        "name": "Кавалер",
+        "tags": [
+          "guardian",
+          "devotion",
+          "presence"
+        ],
+        "id": "cavalier"
+      },
+      {
+        "name": "Самурай",
+        "tags": [
+          "discipline",
+          "glory",
+          "endurance"
+        ],
+        "id": "samurai"
+      },
+      {
+        "name": "Пси-воин",
+        "tags": [
+          "arcane",
+          "control",
+          "precision"
+        ],
+        "id": "psi-warrior"
+      },
+      {
+        "name": "Рунный рыцарь",
+        "tags": [
+          "ritual",
+          "transformation",
+          "guardian"
+        ],
+        "id": "runeknight"
+      },
+      {
+        "name": "Эхо-рыцарь",
+        "tags": [
+          "otherworldly",
+          "mobility",
+          "tactics"
+        ],
+        "id": "echo-knight"
+      }
+    ],
+    "monk": [
+      {
+        "name": "Открытой ладони",
+        "tags": [
+          "precision",
+          "mercy",
+          "discipline"
+        ],
+        "id": "openhand"
+      },
+      {
+        "name": "Тени",
+        "tags": [
+          "shadow",
+          "subtlety",
+          "mobility"
+        ],
+        "id": "shadow"
+      },
+      {
+        "name": "Четырёх стихий",
+        "tags": [
+          "arcane",
+          "battlefield_control",
+          "discipline"
+        ],
+        "id": "four-elements"
+      },
+      {
+        "name": "Долгой смерти",
+        "tags": [
+          "shadow",
+          "endurance",
+          "forbidden"
+        ],
+        "id": "long-death"
+      },
+      {
+        "name": "Солнца",
+        "tags": [
+          "radiance",
+          "presence",
+          "discipline"
+        ],
+        "id": "sun-soul"
+      },
+      {
+        "name": "Пьяного мастера",
+        "tags": [
+          "mobility",
+          "trickery",
+          "chaos"
+        ],
+        "id": "drunken"
+      },
+      {
+        "name": "Кэнсэй",
+        "tags": [
+          "precision",
+          "discipline",
+          "glory"
+        ],
+        "id": "kensei"
+      },
+      {
+        "name": "Милосердия",
+        "tags": [
+          "healing",
+          "mercy",
+          "precision"
+        ],
+        "id": "mercy"
+      },
+      {
+        "name": "Астрального «я»",
+        "tags": [
+          "otherworldly",
+          "transformation",
+          "discipline"
+        ],
+        "id": "astral-self"
+      }
+    ],
+    "paladin": [
+      {
+        "name": "Преданности",
+        "tags": [
+          "devotion",
+          "guardian",
+          "radiance"
+        ],
+        "id": "devotion"
+      },
+      {
+        "name": "Древних",
+        "tags": [
+          "nature",
+          "guardian",
+          "mercy"
+        ],
+        "id": "ancients"
+      },
+      {
+        "name": "Мести",
+        "tags": [
+          "vengeance",
+          "precision",
+          "glory"
+        ],
+        "id": "vengeance"
+      },
+      {
+        "name": "Короны",
+        "tags": [
+          "guardian",
+          "presence",
+          "devotion"
+        ],
+        "id": "crown"
+      },
+      {
+        "name": "Завоевания",
+        "tags": [
+          "presence",
+          "control",
+          "glory"
+        ],
+        "id": "conquest"
+      },
+      {
+        "name": "Искупления",
+        "tags": [
+          "mercy",
+          "peace",
+          "guardian"
+        ],
+        "id": "redemption"
+      },
+      {
+        "name": "Славы",
+        "tags": [
+          "glory",
+          "mobility",
+          "presence"
+        ],
+        "id": "glory"
+      },
+      {
+        "name": "Наблюдателей",
+        "tags": [
+          "guardian",
+          "knowledge",
+          "otherworldly"
+        ],
+        "id": "watchers"
+      },
+      {
+        "name": "Клятвопреступник",
+        "tags": [
+          "shadow",
+          "forbidden",
+          "presence"
+        ],
+        "id": "oathbreaker"
+      }
+    ],
+    "ranger": [
+      {
+        "name": "Охотник",
+        "tags": [
+          "precision",
+          "scout",
+          "tactics"
+        ],
+        "id": "hunter"
+      },
+      {
+        "name": "Повелитель зверей",
+        "tags": [
+          "bond",
+          "nature",
+          "guardian"
+        ],
+        "id": "beastmaster"
+      },
+      {
+        "name": "Сумрачный охотник",
+        "tags": [
+          "shadow",
+          "scout",
+          "precision"
+        ],
+        "id": "gloomstalker"
+      },
+      {
+        "name": "Странник горизонта",
+        "tags": [
+          "otherworldly",
+          "mobility",
+          "scout"
+        ],
+        "id": "horizonwalker"
+      },
+      {
+        "name": "Убийца монстров",
+        "tags": [
+          "knowledge",
+          "precision",
+          "vengeance"
+        ],
+        "id": "monster-slayer"
+      },
+      {
+        "name": "Фейский странник",
+        "tags": [
+          "glamour",
+          "otherworldly",
+          "charm"
+        ],
+        "id": "feywanderer"
+      },
+      {
+        "name": "Роевой хранитель",
+        "tags": [
+          "nature",
+          "battlefield_control",
+          "otherworldly"
+        ],
+        "id": "swarmkeeper"
+      },
+      {
+        "name": "Дрейкварден",
+        "tags": [
+          "bond",
+          "glory",
+          "guardian"
+        ],
+        "id": "drakewarden"
+      }
+    ],
+    "rogue": [
+      {
+        "name": "Вор",
+        "tags": [
+          "mobility",
+          "subtlety",
+          "trickery"
+        ],
+        "id": "thief"
+      },
+      {
+        "name": "Убийца",
+        "tags": [
+          "precision",
+          "shadow",
+          "subtlety"
+        ],
+        "id": "assassin"
+      },
+      {
+        "name": "Мистический ловкач",
+        "tags": [
+          "arcane",
+          "illusion",
+          "trickery"
+        ],
+        "id": "arcanetrickster"
+      },
+      {
+        "name": "Мастер интриг",
+        "tags": [
+          "charm",
+          "tactics",
+          "subtlety"
+        ],
+        "id": "mastermind"
+      },
+      {
+        "name": "Головорез",
+        "tags": [
+          "glory",
+          "mobility",
+          "presence"
+        ],
+        "id": "swashbuckler"
+      },
+      {
+        "name": "Сыщик",
+        "tags": [
+          "knowledge",
+          "perception",
+          "tactics"
+        ],
+        "id": "inquisitive"
+      },
+      {
+        "name": "Разведчик",
+        "tags": [
+          "scout",
+          "mobility",
+          "nature"
+        ],
+        "id": "scout"
+      },
+      {
+        "name": "Фантом",
+        "tags": [
+          "shadow",
+          "otherworldly",
+          "knowledge"
+        ],
+        "id": "phantom"
+      },
+      {
+        "name": "Клинок души",
+        "tags": [
+          "otherworldly",
+          "precision",
+          "subtlety"
+        ],
+        "id": "soulknife"
+      }
+    ],
+    "sorcerer": [
+      {
+        "name": "Драконья кровь",
+        "tags": [
+          "glory",
+          "transformation",
+          "presence"
+        ],
+        "id": "draconic"
+      },
+      {
+        "name": "Дикая магия",
+        "tags": [
+          "chaos",
+          "wild",
+          "otherworldly"
+        ],
+        "id": "wildmagic"
+      },
+      {
+        "name": "Шторм",
+        "tags": [
+          "storm",
+          "mobility",
+          "presence"
+        ],
+        "id": "storm"
+      },
+      {
+        "name": "Тень",
+        "tags": [
+          "shadow",
+          "otherworldly",
+          "subtlety"
+        ],
+        "id": "shadow"
+      },
+      {
+        "name": "Божественная душа",
+        "tags": [
+          "radiance",
+          "healing",
+          "devotion"
+        ],
+        "id": "divinesoul"
+      },
+      {
+        "name": "Аберрантный разум",
+        "tags": [
+          "otherworldly",
+          "control",
+          "forbidden"
+        ],
+        "id": "aberrant"
+      },
+      {
+        "name": "Заводная душа",
+        "tags": [
+          "control",
+          "discipline",
+          "guardian"
+        ],
+        "id": "clockwork"
+      },
+      {
+        "name": "Лунное колдовство",
+        "tags": [
+          "otherworldly",
+          "divination",
+          "transformation"
+        ],
+        "id": "lunar"
+      }
+    ],
+    "warlock": [
+      {
+        "name": "Архифея",
+        "tags": [
+          "glamour",
+          "charm",
+          "otherworldly"
+        ],
+        "id": "archfey"
+      },
+      {
+        "name": "Исчадие",
+        "tags": [
+          "forbidden",
+          "glory",
+          "rage"
+        ],
+        "id": "fiend"
+      },
+      {
+        "name": "Великий Древний",
+        "tags": [
+          "forbidden",
+          "knowledge",
+          "otherworldly"
+        ],
+        "id": "greatoldone"
+      },
+      {
+        "name": "Небожитель",
+        "tags": [
+          "healing",
+          "radiance",
+          "devotion"
+        ],
+        "id": "celestial"
+      },
+      {
+        "name": "Ведьмовской клинок",
+        "tags": [
+          "precision",
+          "shadow",
+          "vengeance"
+        ],
+        "id": "hexblade"
+      },
+      {
+        "name": "Бездонный",
+        "tags": [
+          "otherworldly",
+          "battlefield_control",
+          "bond"
+        ],
+        "id": "fathomless"
+      },
+      {
+        "name": "Гений",
+        "tags": [
+          "creation",
+          "otherworldly",
+          "glory"
+        ],
+        "id": "genie"
+      },
+      {
+        "name": "Нежить",
+        "tags": [
+          "shadow",
+          "transformation",
+          "presence"
+        ],
+        "id": "undead"
+      },
+      {
+        "name": "Бессмертный",
+        "tags": [
+          "shadow",
+          "knowledge",
+          "endurance"
+        ],
+        "id": "undying"
+      }
+    ],
+    "wizard": [
+      {
+        "name": "Ограждение",
+        "tags": [
+          "guardian",
+          "discipline",
+          "arcane"
+        ],
+        "id": "abjuration"
+      },
+      {
+        "name": "Вызов",
+        "tags": [
+          "creation",
+          "arcane",
+          "battlefield_control"
+        ],
+        "id": "conjuration"
+      },
+      {
+        "name": "Прорицание",
+        "tags": [
+          "divination",
+          "knowledge",
+          "control"
+        ],
+        "id": "divination"
+      },
+      {
+        "name": "Очарование",
+        "tags": [
+          "charm",
+          "control",
+          "subtlety"
+        ],
+        "id": "enchantment"
+      },
+      {
+        "name": "Воплощение",
+        "tags": [
+          "glory",
+          "arcane",
+          "battlefield_control"
+        ],
+        "id": "evocation"
+      },
+      {
+        "name": "Иллюзия",
+        "tags": [
+          "illusion",
+          "trickery",
+          "subtlety"
+        ],
+        "id": "illusion"
+      },
+      {
+        "name": "Некромантия",
+        "tags": [
+          "shadow",
+          "forbidden",
+          "knowledge"
+        ],
+        "id": "necromancy"
+      },
+      {
+        "name": "Преобразование",
+        "tags": [
+          "transformation",
+          "creation",
+          "knowledge"
+        ],
+        "id": "transmutation"
+      },
+      {
+        "name": "Песнь клинка",
+        "tags": [
+          "precision",
+          "mobility",
+          "arcane"
+        ],
+        "id": "bladesinging"
+      },
+      {
+        "name": "Военная магия",
+        "tags": [
+          "guardian",
+          "tactics",
+          "arcane"
+        ],
+        "id": "warmagic"
+      },
+      {
+        "name": "Хронургия",
+        "tags": [
+          "control",
+          "divination",
+          "knowledge"
+        ],
+        "id": "chronurgy"
+      },
+      {
+        "name": "Гравитургия",
+        "tags": [
+          "battlefield_control",
+          "arcane",
+          "knowledge"
+        ],
+        "id": "graviturgy"
+      },
+      {
+        "name": "Орден писцов",
+        "tags": [
+          "knowledge",
+          "ritual",
+          "creation"
+        ],
+        "id": "scribes"
+      }
+    ]
+  }
+}
