@@ -44048,7 +44048,7 @@ function Builder() {
 		download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
 	}
 	function exportNative() {
-		download(createNativeCharacterFile(exportCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
+		download(createNativeCharacterFile(rulesCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
 	}
 	function persistVault(next) {
 		const normalized = normalizeVault(next);
