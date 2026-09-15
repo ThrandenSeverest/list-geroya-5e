@@ -1,1 +1,0 @@
-"""List Geroya FastAPI backend."""

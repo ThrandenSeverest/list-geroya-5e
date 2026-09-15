@@ -1,0 +1,36 @@
+.DS_Store
+node_modules/
+.next/
+dist/
+out/
+build/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+next-env.d.ts
+.vinext/
+.wrangler/
+.sites-runtime/
+/outputs/
+/work/
+backend/.venv/
+backend/data/
+backend/test.db
+__pycache__/
+*.pyc
+.pytest_cache/
+*.tsbuildinfo
+uploads/
+saves/
