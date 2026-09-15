@@ -60,15 +60,13 @@ const abilityModifier = (score: number) => Math.floor((score - 10) / 2);
 const signed = (value: number) => value >= 0 ? `+${value}` : `${value}`;
 
 function compactRulesText(value: string) {
-  const clean = value
+  // Keep the same canonical rules text as the sheet. Pagination below is
+  // responsible for layout; it must not discard mechanical clauses.
+  return value
     .split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0]
     .replace(/•\s*-{5,}[\s\S]*/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  if (clean.length <= 650) return clean;
-  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(text => text.trim()) || [clean];
-  const mechanics = /действием|реакци|спасброс|атак|урон|использ|соверш|накладыва|восстанавлив|сопротивлен|преимуществ|помех|кд|скорост/i;
-  return [...new Set([sentences[0], ...sentences.filter(sentence => mechanics.test(sentence))])].join(" ").slice(0, 900).trim();
 }
 
 function featureOrder(feature: Feature) {

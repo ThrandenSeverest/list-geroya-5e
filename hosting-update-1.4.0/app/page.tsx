@@ -65,6 +65,7 @@ import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeVa
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
+import { noMagicTutorialStep, tutorialReflection, tutorialSteps, type TutorialTerm } from "./tutorial";
 
 type Category = "races" | "classes" | "subclasses" | "backgrounds" | "feats" | "spells";
 type BanMode = "deny" | "allow";
@@ -146,6 +147,14 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.4.0",
+  publishedAt: "2026-09-15T16:00:00Z",
+  changes: [
+    "На главном экране появился отдельный режим «Создать с обучением» с теми же 11 этапами и правилами конструктора.",
+    "Каждый этап получил короткое вводное объяснение и контекстную справку по новым терминам.",
+    "После завершения обучения персонаж получает три вопроса: о силе, слабости и мотивации.",
+  ],
+}, {
   version: "1.3.0",
   publishedAt: "2026-09-15T15:00:00Z",
   changes: [
@@ -665,6 +674,11 @@ function Builder() {
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
   const [interactionError, setInteractionError] = useState<string | null>(null);
   const [characterCheck, setCharacterCheck] = useState<CharacterCheck[] | null>(null);
+  const [tutorialMode, setTutorialMode] = useState(false);
+  const [tutorialDialog, setTutorialDialog] = useState<number | null>(null);
+  const [tutorialTerm, setTutorialTerm] = useState<TutorialTerm | null>(null);
+  const [showTutorialReflection, setShowTutorialReflection] = useState(false);
+  const [pendingMulticlassId, setPendingMulticlassId] = useState("");
   const [homebrew, setHomebrew] = useState<HomebrewLibrary>(emptyHomebrewLibrary);
   const [homebrewState, setHomebrewState] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
   const [homebrewDraft, setHomebrewDraft] = useState<{ type: HomebrewType; name: string; description: string; attach: boolean; level: number; school: string; castingTime: string; concentration: boolean; ritual: boolean }>({ type: "ability", name: "", description: "", attach: true, level: 0, school: "", castingTime: "1 действие", concentration: false, ritual: false });
@@ -673,6 +687,8 @@ function Builder() {
   const folderFileRef = useRef<HTMLInputElement>(null);
   const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exportPanelRef = useRef<HTMLDivElement>(null);
+  const tutorialSeenStepsRef = useRef<Set<number>>(new Set());
+  const tutorialConditionalSeenRef = useRef<Set<string>>(new Set());
 
   async function connectAccount(localVault: CharacterVault) {
     try {
@@ -844,14 +860,17 @@ function Builder() {
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
   const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags);
   const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
-  const selectedClassFeatures = multiclassEntries.flatMap(entry => {
+  const selectedClassFeatureSections = multiclassEntries.map(entry => {
     const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
     const scoped = { ...rulesCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
-    return detailedFeatures(resolvedClassChoiceFeatures(scoped,
+    const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+    const features = detailedFeatures(resolvedClassChoiceFeatures(scoped,
       documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
-    )).map(feature => ({ ...feature, name: `${classes.find(option => option.id === entry.classId)?.name || entry.classId} · ${feature.name}` }));
+    )).map(feature => ({ ...feature, name: `${className} · ${feature.name}` }));
+    return { key: `${entry.classId}:${entry.subclassId || "base"}`, title: `${className}${subclass ? ` · ${subclass.name}` : ""}`, features };
   });
+  const selectedClassFeatures = selectedClassFeatureSections.flatMap(section => section.features);
   const personalityLists = personalityOptions(character.background);
   const proficiency = proficiencyBonus(character.level);
   const exportCharacter = { ...rulesCharacter, abilities: finalAbilities };
@@ -980,7 +999,20 @@ function Builder() {
     ? selectedSources.map(book => ({ book, feats: availableFeatOptions.filter(feat => sourceTokens(feat.source).includes(book)) })).filter(group => group.feats.length)
     : [{ book: selectedSources[0] || "PHB", feats: availableFeatOptions }];
 
-  function resetFilters(nextStep: number) {
+  function openTutorialStepOnce(nextStep: number) {
+    if (!tutorialMode || tutorialSeenStepsRef.current.has(nextStep)) return;
+    tutorialSeenStepsRef.current.add(nextStep);
+    setTutorialDialog(nextStep);
+  }
+
+  function stopTutorial() {
+    setTutorialMode(false);
+    setTutorialDialog(null);
+    setTutorialTerm(null);
+    setPendingMulticlassId("");
+  }
+
+  function resetFilters(nextStep: number, showTutorial = true) {
     setStep(nextStep);
     setSearch("");
     // The spell catalogue should be complete on entry. Other catalogue steps
@@ -990,6 +1022,7 @@ function Builder() {
     setSpellLevel("all");
     setRitualFilter("all");
     setFeatsExpanded(true);
+    if (showTutorial) openTutorialStepOnce(nextStep);
   }
 
   function toggleSource(book: string) {
@@ -1197,6 +1230,12 @@ function Builder() {
 
   function runCharacterCheck() {
     setCharacterCheck(collectCharacterChecks());
+  }
+
+  function closeCharacterCheck() {
+    const completedTutorial = tutorialMode && characterCheck?.length === 0;
+    setCharacterCheck(null);
+    if (completedTutorial) setShowTutorialReflection(true);
   }
 
   function openCharacterCheck(check: CharacterCheck) {
@@ -1532,6 +1571,22 @@ function Builder() {
     });
   }
 
+  function requestMulticlass(classId: string) {
+    if (!tutorialMode || tutorialConditionalSeenRef.current.has("multiclass")) {
+      addMulticlass(classId);
+      return;
+    }
+    setPendingMulticlassId(classId);
+  }
+
+  function confirmMulticlass() {
+    if (!pendingMulticlassId) return;
+    tutorialConditionalSeenRef.current.add("multiclass");
+    const classId = pendingMulticlassId;
+    setPendingMulticlassId("");
+    addMulticlass(classId);
+  }
+
   function resetMulticlass() {
     setCharacter(current => {
       const safe = migrateMulticlassCharacter(current);
@@ -1804,7 +1859,7 @@ function Builder() {
       return syncAdvancements(next, next.advancements);
     });
     setView("builder");
-    resetFilters(0);
+    resetFilters(0, false);
   }
 
   function importBan(event: ChangeEvent<HTMLInputElement>) {
@@ -1971,11 +2026,12 @@ function Builder() {
     persistVault({ ...vault, activeId: id });
     setCharacter(normalizeCharacter(slot.character));
     setImportMessage(null);
+    stopTutorial();
     setView("builder");
-    resetFilters(0);
+    resetFilters(0, false);
   }
 
-  function addCharacter() {
+  function startCharacter(withTutorial: boolean) {
     if (vault.slots.length >= vault.capacity) {
       alert("Все доступные места заняты. Добавьте ещё 5 слотов.");
       return;
@@ -1984,8 +2040,23 @@ function Builder() {
     persistVault({ ...vault, activeId: slot.id, slots: [...vault.slots, slot] });
     setCharacter(initial);
     setImportMessage(null);
+    tutorialSeenStepsRef.current = new Set(withTutorial ? [0] : []);
+    tutorialConditionalSeenRef.current = new Set();
+    setTutorialMode(withTutorial);
+    setTutorialDialog(withTutorial ? 0 : null);
+    setTutorialTerm(null);
+    setShowTutorialReflection(false);
+    setPendingMulticlassId("");
     setView("builder");
-    resetFilters(0);
+    resetFilters(0, false);
+  }
+
+  function addCharacter() {
+    startCharacter(false);
+  }
+
+  function addTutorialCharacter() {
+    startCharacter(true);
   }
 
   function duplicateSlot(id: string) {
@@ -2016,6 +2087,11 @@ function Builder() {
     if (!confirm("Сбросить текущего персонажа? Остальные персонажи не изменятся.")) return;
     setCharacter(initial);
     setImportMessage(null);
+    if (tutorialMode) {
+      tutorialSeenStepsRef.current = new Set([0]);
+      tutorialConditionalSeenRef.current = new Set();
+      setTutorialDialog(0);
+    }
     setView("builder");
     resetFilters(0);
   }
@@ -2156,8 +2232,9 @@ function Builder() {
         persistVault({ ...vault, capacity, activeId: slot.id, slots: [...vault.slots, slot] });
         setCharacter(imported);
         setImportMessage({ source: result.source, warnings: result.warnings });
+        stopTutorial();
         setView("builder");
-        resetFilters(10);
+        resetFilters(10, false);
       } catch (error) {
         alert(error instanceof Error ? error.message : "Не удалось импортировать персонажа.");
       }
@@ -2171,11 +2248,12 @@ function Builder() {
     const slot = createSlot(generated);
     const saved = vault.slots.map(item => item.id === vault.activeId ? { ...item, character, updatedAt: new Date().toISOString() } : item);
     persistVault({ ...vault, capacity: Math.max(vault.capacity, saved.length + 1), activeId: slot.id, slots: [...saved, slot] });
-    setCharacter(generated); setView("builder"); resetFilters(10);
+    stopTutorial();
+    setCharacter(generated); setView("builder"); resetFilters(10, false);
   }
 
   if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
-{view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-layout"><section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Выбери происхождение, способности и свой путь.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section><div className="home-side"><section className="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="acknowledgements/velmira.png" alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div>}
+{view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-layout"><section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Обычный режим без обучающих окон.</span></button><button className="tutorial-start" onClick={addTutorialCharacter}><strong>Создать с обучением</strong><span>Тот же конструктор, но каждый этап объясняется по мере создания.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section><div className="home-side"><section className="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="acknowledgements/velmira.png" alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div>}
   </main>;
 
   if (view === "homebrew") return (
@@ -2389,6 +2467,30 @@ function Builder() {
               : step === 9
                 ? "Каждый пункт можно написать самому, выбрать из списка предыстории или определить случайно."
                 : "Лист повторяет структуру Long Story Short и готов к печати или экспорту.";
+  const hasTutorialMagic = spellRule.caster
+    || character.spells.length > 0
+    || alwaysPrepared.length > 0
+    || grantedFeatSpells.length > 0
+    || selectedRaceFeatures.some(feature => /заклин|заговор|магичес/i.test(`${feature.name} ${feature.description}`));
+  const expertiseAvailable = choiceGroups.some(group => group.key === "expertise" || group.key.endsWith(":expertise"))
+    || advancements.some(choice => featChoiceGroups(choice, spells, character.level).some(group => group.key === "expertise"));
+  const tutorialDataFor = (index: number) => index === 7 && !hasTutorialMagic ? noMagicTutorialStep : tutorialSteps[index];
+  const tutorialTermIsRelevant = (item: TutorialTerm) => {
+    if (!item.when) return true;
+    if (item.when === "magic") return hasTutorialMagic;
+    if (item.when === "known") return spellRule.mode === "known" || spellRule.mode === "spellbook";
+    if (item.when === "prepared") return spellRule.mode === "prepared" || spellRule.mode === "spellbook";
+    if (item.when === "pact") return pactMagicSlots.slots > 0;
+    if (item.when === "expertise") return expertiseAvailable;
+    if (item.when === "subclass") return subclassRequirements.length > 0;
+    if (item.when === "advancement") return advancementSlots.length > 0;
+    return true;
+  };
+  const currentTutorialStep = tutorialDataFor(step);
+  const currentTutorialTerms = currentTutorialStep.terms.filter(tutorialTermIsRelevant);
+  const dialogTutorialStep = tutorialDialog === null ? null : tutorialDataFor(tutorialDialog);
+  const pendingMulticlass = pendingMulticlassId ? availableClasses.find(option => option.id === pendingMulticlassId) : undefined;
+  const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(character, pendingMulticlassId) : undefined;
 
   return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
@@ -2419,6 +2521,44 @@ function Builder() {
           </div>
         </details>
       </header>
+      {dialogTutorialStep && <div className="modal-backdrop tutorial-backdrop" role="presentation">
+        <section className="warning-modal tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-step-title">
+          <small>Обучение · этап {(tutorialDialog || 0) + 1} из {steps.length}</small>
+          <h2 id="tutorial-step-title">{dialogTutorialStep.title}</h2>
+          {dialogTutorialStep.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+          <p className="tutorial-important"><b>Важно:</b> {dialogTutorialStep.important}</p>
+          <div><button onClick={stopTutorial}>Пропустить обучение</button><button className="primary-action" onClick={() => setTutorialDialog(null)}>Понятно</button></div>
+        </section>
+      </div>}
+      {tutorialTerm && <div className="modal-backdrop tutorial-backdrop" role="presentation">
+        <section className="warning-modal tutorial-term-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-term-title">
+          <small>Короткая справка</small>
+          <h2 id="tutorial-term-title">{tutorialTerm.title}</h2>
+          <p>{tutorialTerm.description}</p>
+          {tutorialTerm.id === "skill-check" && <p className="tutorial-example">Пример: Ловкость 16 даёт +3. Владение Скрытностью и бонус мастерства +2 дают +5; с экспертизой получится +7.</p>}
+          {tutorialTerm.id === "armor-class" && <p className="tutorial-example">Пример: при КД 16 итог атаки 15 — промах, а 16 или выше — попадание, если другое правило не говорит обратного.</p>}
+          <div><button className="primary-action" onClick={() => setTutorialTerm(null)}>Закрыть</button></div>
+        </section>
+      </div>}
+      {pendingMulticlass && pendingMulticlassRequirement && <div className="modal-backdrop tutorial-backdrop" role="presentation">
+        <section className="warning-modal tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-multiclass-title">
+          <small>Обучение · мультикласс</small>
+          <h2 id="tutorial-multiclass-title">Добавить класс «{pendingMulticlass.name}»?</h2>
+          <p>Мультикласс распределяет уровни между несколькими классами. Общий уровень складывается, но способности открываются по уровню каждого отдельного класса.</p>
+          <p>Второй класс обычно не выдаёт все стартовые владения заново. Кости хитов хранятся по классам, а правила ячеек будут показаны на этапе заклинаний.</p>
+          <p className="tutorial-important"><b>Требование:</b> {pendingMulticlassRequirement.required || "особых требований нет"}.</p>
+          <div><button onClick={() => setPendingMulticlassId("")}>Отмена</button><button className="primary-action" onClick={confirmMulticlass}>Добавить класс</button></div>
+        </section>
+      </div>}
+      {showTutorialReflection && <div className="modal-backdrop tutorial-backdrop" role="presentation">
+        <section className="warning-modal tutorial-modal tutorial-reflection" role="dialog" aria-modal="true" aria-labelledby="tutorial-reflection-title">
+          <small>Персонаж готов</small>
+          <h2 id="tutorial-reflection-title">Теперь поймите, кого вы создали</h2>
+          <div className="tutorial-question-list">{tutorialReflection.map((question, index) => <article key={question.title}><span>{index + 1}</span><div><h3>{question.title}</h3><p>{question.description}</p></div></article>)}</div>
+          <p>Ответы не обязательно записывать на сайте. Достаточно, чтобы вы сами могли на них ответить.</p>
+          <div><button className="primary-action" onClick={() => { setShowTutorialReflection(false); setTutorialMode(false); }}>Открыть персонажа</button></div>
+        </section>
+      </div>}
       {showAdditionalSpellWarning && <div className="modal-backdrop" role="presentation">
         <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="additional-spells-warning-title">
           <small>Совместимость экспорта</small>
@@ -2442,7 +2582,7 @@ function Builder() {
           <small>Итоговая проверка</small>
           <h2 id="character-check-title">{characterCheck.length ? `Найдено: ${characterCheck.length}` : "Персонаж готов"}</h2>
           {characterCheck.length ? <><p>Нажмите на строку, чтобы перейти к нужному шагу.</p><div className="character-check-list">{characterCheck.map((check, index) => <button key={`${check.step}-${index}`} className={check.severity} onClick={() => openCharacterCheck(check)}><span>{check.severity === "error" ? "!" : "i"}</span><strong>{check.message}</strong><small>Шаг {check.step + 1} · {steps[check.step]}</small></button>)}</div></> : <p>Все обязательные решения заполнены. Лист можно экспортировать или скопировать в игровой режим.</p>}
-          <div><button className="primary-action" onClick={() => setCharacterCheck(null)}>Закрыть</button></div>
+          <div><button className="primary-action" onClick={closeCharacterCheck}>{tutorialMode && !characterCheck.length ? "Продолжить" : "Закрыть"}</button></div>
         </section>
       </div>}
       <MissingChoiceNavigator signature={`${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.backgroundChoices)}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}`} />
@@ -2454,7 +2594,7 @@ function Builder() {
       )}
       <div className="workspace">
         <nav className="steps">
-          <p className="eyebrow">Создание</p>
+          <p className="eyebrow">{tutorialMode ? "Создание с обучением" : "Создание"}</p>
           {steps.map((label, index) => (
             <button key={label} className={`step ${index === step ? "active" : ""} ${index < step ? "done" : ""}`} onClick={() => resetFilters(index)}>
               <span>{index < step ? "✓" : index + 1}</span><strong>{label}</strong>
@@ -2478,6 +2618,14 @@ function Builder() {
             <h1>{headings[step]}</h1>
             <p>{stepDescription}</p>
           </header>
+          {tutorialMode && <section className="tutorial-help-strip" aria-label="Справка по текущему этапу">
+            <div><small>Обучение включено</small><strong>{currentTutorialStep.title}</strong></div>
+            <div className="tutorial-term-buttons">
+              <button className="tutorial-overview-button" onClick={() => setTutorialDialog(step)}>Объяснить этап</button>
+              {currentTutorialTerms.map(item => <button key={item.id} title={`Что означает «${item.title}»`} onClick={() => setTutorialTerm(item)}><span>?</span>{item.title}</button>)}
+            </div>
+            <button className="tutorial-stop-button" onClick={stopTutorial}>Выйти из обучения</button>
+          </section>}
 
           {(step === 0 || step === 7) && <section className={`additional-spell-access${additionalSpellsUnlocked ? " unlocked" : ""}`}>
             <div><small>Дополнительные заклинания</small><strong>{additionalSpellsUnlocked ? "Источники разблокированы" : "Совместимый с Helpmate набор"}</strong><p>{additionalSpellsUnlocked ? "FTD, EGW, AI, SAS, PAM, BMT и Create Magen доступны в выборе заклинаний. Бан-лист мастера продолжает действовать." : "FTD, EGW, AI, SAS, PAM, BMT и Create Magen скрыты. Их можно включить для PDF, LSS и игры в «Листе Героя»."}</p></div>
@@ -2748,7 +2896,7 @@ function Builder() {
                 </div>
                 {characterLevel(character) < 20 && <div className="multiclass-add-grid"><h3>Добавить новый класс</h3>{availableClasses.filter(option => !multiclassEntries.some(entry => entry.classId === option.id)).map(option => {
                   const requirement = multiclassRequirement(character, option.id);
-                  return <button key={option.id} disabled={!requirement.passed} title={requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`} onClick={() => addMulticlass(option.id)}><strong>{option.name}</strong><small>{requirement.passed ? `Требование выполнено: ${requirement.required || "нет"}` : `Требуется ${requirement.required}; сейчас: ${requirement.missing.join(", ")}`}</small></button>;
+                  return <button key={option.id} disabled={!requirement.passed} title={requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`} onClick={() => requestMulticlass(option.id)}><strong>{option.name}</strong><small>{requirement.passed ? `Требование выполнено: ${requirement.required || "нет"}` : `Требуется ${requirement.required}; сейчас: ${requirement.missing.join(", ")}`}</small></button>;
                 })}</div>}
               </section>
               <div className="level-panel">
@@ -2812,7 +2960,7 @@ function Builder() {
                         <div className="class-choice-grid">
                           {group.options.map(option => (
                             <button key={option.id} className={selected.includes(option.id) ? "selected" : ""} onClick={() => toggleClassChoice(group.key, option.id, group.count)}>
-                              <span>{option.source}</span><strong>{option.name}</strong><p>{option.description}</p>{option.minLevel && <small>Требование: {option.minLevel} уровень</small>}
+                              <span>{option.source}</span><strong>{option.name}</strong><p>{option.summary || option.description}</p>{option.minLevel && <small>Требование: {option.minLevel} уровень</small>}
                             </button>
                           ))}
                         </div>
@@ -3243,8 +3391,11 @@ function Builder() {
                       <h4>{selectedRace?.name}: расовые особенности</h4>
                       {chosenRaceVariant && <p><b>{chosenRaceVariant.name}.</b> {chosenRaceVariant.description}</p>}
                       {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}
-                      <h4>{selectedClass?.name}: классовые особенности до {character.level} уровня</h4>
-                      {[...selectedClassFeatures, ...runtimeFeatures].map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                      {selectedClassFeatureSections.map(section => <div key={section.key}>
+                        <h4>{section.title}: классовые особенности</h4>
+                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                      </div>)}
+                      {runtimeFeatures.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
                       {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       {customFeatures.length > 0 && <><h4>Пользовательские способности</h4>{customFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>

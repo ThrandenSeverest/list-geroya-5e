@@ -89,7 +89,10 @@ const mechanics: Record<string, string> = {
 };
 
 export function detailedFeature(feature: Feature): Feature {
-  return { ...feature, description: mechanics[feature.name] || feature.description };
+  // generatedRulesCorpus is the canonical source for a finished character.
+  // The old mechanics map contains compact builder-era reminders and must only
+  // cover legacy entries that genuinely have no description.
+  return { ...feature, description: feature.description?.trim() || mechanics[feature.name] || "" };
 }
 
 export function detailedFeatures(features: Feature[]) {
@@ -100,6 +103,28 @@ function normalizedFeatureKey(value: string) {
   return value.toLocaleLowerCase("ru-RU").replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").trim();
 }
 
+const SUBCLASS_SELECTOR_FEATURES: Record<string, string[]> = {
+  barbarian: ["Путь дикости", "Путь варвара"],
+  bard: ["Коллегия бардов"],
+  cleric: ["Божественный домен"],
+  druid: ["Круг друидов"],
+  fighter: ["Воинский архетип"],
+  monk: ["Монастырская традиция"],
+  paladin: ["Священная клятва"],
+  ranger: ["Архетип следопыта"],
+  rogue: ["Плутовской архетип", "Архетип плута"],
+  sorcerer: ["Чародейское происхождение", "Происхождение чародея"],
+  warlock: ["Потусторонний покровитель", "Покровитель"],
+  wizard: ["Магическая традиция"],
+  artificer: ["Специализация изобретателя"],
+};
+
+function withoutSubclassSelector(classId: string, subclassName: string | undefined, features: Feature[]) {
+  if (!subclassName?.trim()) return features;
+  const selectors = new Set(SUBCLASS_SELECTOR_FEATURES[classId] || []);
+  return features.filter(feature => !selectors.has(feature.name));
+}
+
 export function documentedClassFeatures(
   classId: string,
   subclassName: string | undefined,
@@ -108,7 +133,8 @@ export function documentedClassFeatures(
   fallbackSubclass: Feature[],
   fallbackOptional: Feature[],
 ) {
-  const base = classFeatureCorpus[classId]?.length ? classFeatureCorpus[classId] : fallbackClass;
+  const sourceBase = classFeatureCorpus[classId]?.length ? classFeatureCorpus[classId] : fallbackClass;
+  const base = withoutSubclassSelector(classId, subclassName, sourceBase);
   const subclassEntries = subclassFeatureCorpus[classId] || {};
   const wanted = normalizedFeatureKey(subclassName || "");
   const documentedSubclass = Object.entries(subclassEntries).find(([name]) => {

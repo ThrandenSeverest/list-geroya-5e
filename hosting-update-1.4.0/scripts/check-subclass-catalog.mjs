@@ -65,6 +65,21 @@ need("../app/characterResources.ts", "psi-warrior-dice");
 need("../app/combat.ts", "subclass-drakewarden-bite");
 need("../app/languages.ts", "subclass === \"drakewarden\"");
 
+// Finished characters must use the full canonical corpus. Compact texts are
+// allowed only in builder cards and legacy fallbacks.
+need("../app/featureDetails.ts", "feature.description?.trim() || mechanics[feature.name] || \"\"");
+for (const classId of Object.keys(expectedCounts)) need("../app/featureDetails.ts", `${classId}: [`);
+for (const selector of [
+  "Путь дикости", "Коллегия бардов", "Божественный домен", "Круг друидов", "Воинский архетип",
+  "Монастырская традиция", "Священная клятва", "Архетип следопыта", "Плутовской архетип",
+  "Чародейское происхождение", "Потусторонний покровитель", "Магическая традиция", "Специализация изобретателя",
+]) need("../app/featureDetails.ts", selector);
+need("../app/classChoices.ts", "fullDescription || option.description");
+need("../app/page.tsx", "selectedClassFeatureSections");
+if (/compactRulesText[\s\S]*?slice\(0,\s*900\)/.test(read("../app/PdfCharacterSheet.tsx"))) {
+  problems.push("PdfCharacterSheet.tsx: full feature descriptions are truncated");
+}
+
 if (problems.length) {
   console.error("Subclass integration acceptance check failed:\n- " + problems.join("\n- "));
   process.exit(1);

@@ -860,14 +860,17 @@ function Builder() {
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
   const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags);
   const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
-  const selectedClassFeatures = multiclassEntries.flatMap(entry => {
+  const selectedClassFeatureSections = multiclassEntries.map(entry => {
     const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
     const scoped = { ...rulesCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
-    return detailedFeatures(resolvedClassChoiceFeatures(scoped,
+    const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+    const features = detailedFeatures(resolvedClassChoiceFeatures(scoped,
       documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
-    )).map(feature => ({ ...feature, name: `${classes.find(option => option.id === entry.classId)?.name || entry.classId} · ${feature.name}` }));
+    )).map(feature => ({ ...feature, name: `${className} · ${feature.name}` }));
+    return { key: `${entry.classId}:${entry.subclassId || "base"}`, title: `${className}${subclass ? ` · ${subclass.name}` : ""}`, features };
   });
+  const selectedClassFeatures = selectedClassFeatureSections.flatMap(section => section.features);
   const personalityLists = personalityOptions(character.background);
   const proficiency = proficiencyBonus(character.level);
   const exportCharacter = { ...rulesCharacter, abilities: finalAbilities };
@@ -2957,7 +2960,7 @@ function Builder() {
                         <div className="class-choice-grid">
                           {group.options.map(option => (
                             <button key={option.id} className={selected.includes(option.id) ? "selected" : ""} onClick={() => toggleClassChoice(group.key, option.id, group.count)}>
-                              <span>{option.source}</span><strong>{option.name}</strong><p>{option.description}</p>{option.minLevel && <small>Требование: {option.minLevel} уровень</small>}
+                              <span>{option.source}</span><strong>{option.name}</strong><p>{option.summary || option.description}</p>{option.minLevel && <small>Требование: {option.minLevel} уровень</small>}
                             </button>
                           ))}
                         </div>
@@ -3388,8 +3391,11 @@ function Builder() {
                       <h4>{selectedRace?.name}: расовые особенности</h4>
                       {chosenRaceVariant && <p><b>{chosenRaceVariant.name}.</b> {chosenRaceVariant.description}</p>}
                       {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}
-                      <h4>{selectedClass?.name}: классовые особенности до {character.level} уровня</h4>
-                      {[...selectedClassFeatures, ...runtimeFeatures].map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                      {selectedClassFeatureSections.map(section => <div key={section.key}>
+                        <h4>{section.title}: классовые особенности</h4>
+                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                      </div>)}
+                      {runtimeFeatures.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
                       {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       {customFeatures.length > 0 && <><h4>Пользовательские способности</h4>{customFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>

@@ -7,7 +7,11 @@ export type ClassChoiceOption = {
   id: string;
   name: string;
   source: string;
+  /** Brief text for selection cards. Never use it for the finished sheet. */
+  summary?: string;
   description: string;
+  /** Complete rules text for the finished sheet, PDF and game mode. */
+  fullDescription?: string;
   minLevel?: number;
   pact?: string;
   tasha?: boolean;
@@ -302,7 +306,7 @@ export function chosenClassChoiceFeatures(character: ExportCharacter, spells: Ca
   const groups = classChoiceGroups(character, spells);
   return groups.flatMap(group => selectedForGroup(character, group.key).map(id => {
     const option = group.options.find(item => item.id === id);
-    return option ? { level: group.level, name: `${group.title}: ${option.name}`, description: option.description } : null;
+    return option ? { level: group.level, name: `${group.title}: ${option.name}`, description: option.fullDescription || option.description } : null;
   }).filter(Boolean) as Feature[]);
 }
 
