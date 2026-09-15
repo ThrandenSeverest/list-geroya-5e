@@ -2,11 +2,13 @@ import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
 import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
 import { helpmateSpellIds, spellIdFromDndUrl, spellIdFromLssCardId } from "./exportIds";
-import { asiLevelsForClass, feats, pointBuySpent, selectedRaceVariant, variantsFor } from "./characterRules";
+import { asiLevelsForClass, feats, pointBuySpent, raceAbilityBonuses, selectedRaceVariant, variantsFor } from "./characterRules";
 import { normalizeImportedSkills, skillNameFromExternalId } from "./skillIds";
 import { migrateMulticlassCharacter } from "./multiclass";
 
 export type CharacterFileSource = "native" | "long-story-short" | "helpmate";
+
+type NativeExportCharacter = ExportCharacter & { abilitiesAreBase?: boolean };
 
 export type CharacterImportResult = {
   character: ExportCharacter;
@@ -14,12 +16,18 @@ export type CharacterImportResult = {
   warnings: string[];
 };
 
+// Before this export fix, native HeroList JSON stored already-calculated ability
+// scores. On import the race was calculated again, so racial bonuses stacked.
+// All native exports created after this point store base scores instead.
+const BASE_ABILITY_EXPORT_FIX_AT = Date.parse("2026-09-15T15:09:44.000Z");
+
 export function createNativeCharacterFile(character: ExportCharacter) {
+  const normalized = migrateMulticlassCharacter(character);
   return {
     format: "list-geroya-5e",
     version: 1,
     exportedAt: new Date().toISOString(),
-    character: migrateMulticlassCharacter(character),
+    character: { ...normalized, abilitiesAreBase: true },
   };
 }
 
@@ -92,6 +100,36 @@ function resolveLssCards(cards: LssCard[]) {
 
 const abilityKeys = ["str", "dex", "con", "int", "wis", "cha"] as const;
 type AbilityKey = typeof abilityKeys[number];
+
+function baseRange(scores: AbilityScores) {
+  return abilityKeys.every(key => Number.isFinite(scores[key]) && scores[key] >= 8 && scores[key] <= 15);
+}
+
+function normalizeLegacyNativeAbilities(wrapper: Record<string, unknown>, imported: NativeExportCharacter) {
+  if (imported.abilitiesAreBase === true) return { character: imported, fixed: false };
+
+  const bonuses = raceAbilityBonuses(imported);
+  const hasRacialBonus = abilityKeys.some(key => bonuses[key] !== 0);
+  if (!hasRacialBonus) return { character: { ...imported, abilitiesAreBase: true }, fixed: false };
+
+  const candidate = Object.fromEntries(
+    abilityKeys.map(key => [key, imported.abilities[key] - bonuses[key]]),
+  ) as AbilityScores;
+  const exportedAt = Date.parse(text(wrapper.exportedAt));
+  const fromKnownBrokenExporter = Number.isFinite(exportedAt) && exportedAt < BASE_ABILITY_EXPORT_FIX_AT;
+  const candidateLooksLikeBase = baseRange(candidate) && pointBuySpent(candidate) <= 27;
+  const storedLooksLikeCalculated = !baseRange(imported.abilities) || pointBuySpent(imported.abilities) > 27;
+  const shouldFix = fromKnownBrokenExporter || (candidateLooksLikeBase && storedLooksLikeCalculated);
+
+  return {
+    character: {
+      ...imported,
+      abilities: shouldFix ? candidate : imported.abilities,
+      abilitiesAreBase: true,
+    },
+    fixed: shouldFix,
+  };
+}
 
 function classExpertiseLimit(className: string, level: number) {
   if (className === "bard") return level >= 10 ? 4 : level >= 3 ? 2 : 0;
@@ -415,13 +453,16 @@ export function parseCharacterFile(payload: unknown, empty: ExportCharacter): Ch
   if (!payload || typeof payload !== "object") throw new Error("JSON не содержит объект персонажа.");
   const value = payload as Record<string, unknown>;
   if (value.format === "list-geroya-5e" && value.version === 1 && value.character && typeof value.character === "object") {
-    const imported = value.character as ExportCharacter;
+    const imported = value.character as NativeExportCharacter;
+    const legacyAbilities = normalizeLegacyNativeAbilities(value, imported);
     return {
       source: "native",
-      warnings: [],
+      warnings: legacyAbilities.fixed
+        ? ["Старый JSON HeroList содержал уже применённые расовые бонусы характеристик. При импорте они автоматически сняты один раз; дальше бонусы расы рассчитываются обычной системой."]
+        : [],
       character: migrateMulticlassCharacter({
         ...empty,
-        ...imported,
+        ...legacyAbilities.character,
         raceSkills: normalizeImportedSkills(imported.raceSkills),
         classSkills: normalizeImportedSkills(imported.classSkills),
         backgroundSkills: normalizeImportedSkills(imported.backgroundSkills),
