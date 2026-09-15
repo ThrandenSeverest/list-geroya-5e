@@ -22,6 +22,7 @@ button, input, select, textarea { font: inherit; }
 button { color: inherit; }
 
 .hero-menu,.hero-quiz{max-width:900px;margin:5vh auto;padding:24px;font-size:1rem}.hero-menu h1,.hero-quiz h1{font-size:clamp(1.6rem,4vw,2.6rem);line-height:1.2;margin:32px 0}.hero-menu-options,.quiz-answers{display:grid;gap:16px;margin:28px 0}.hero-menu-options button,.quiz-answers button{display:flex;gap:18px;align-items:center;text-align:left;padding:24px;border:1px solid currentColor;border-radius:12px;font-size:1rem;line-height:1.5;background:transparent;color:inherit}.hero-menu-options button{flex-direction:column;align-items:flex-start;gap:8px}.hero-menu-options strong{font-size:1.35rem}.hero-menu-options span{opacity:.8}.hero-quiz header{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}.hero-quiz progress{width:100%;margin-top:24px;accent-color:#9065cc}.quiz-answers span{opacity:.65;min-width:1em}.quiz-result{display:grid;grid-template-columns:1fr 1fr;gap:16px}.quiz-result div{padding:18px;border:1px solid currentColor;border-radius:10px;display:grid;gap:10px}.quiz-result strong{font-size:1.2rem}.quiz-level{display:flex;gap:20px;align-items:center;margin:24px 0}.hero-quiz p{line-height:1.6}.hero-quiz button,.hero-menu>button{min-height:44px;padding:12px 20px}.hero-quiz details{margin:24px 0}.pointbuy-layout>label{display:grid;gap:10px}.pointbuy-layout select,.quiz-level select{padding:12px;font-size:1rem;max-width:100%;color:inherit;background:var(--panel,#222)}
+.hero-menu-options .tutorial-start{border-color:var(--copper-light);background:linear-gradient(135deg,rgba(184,117,75,.19),rgba(118,170,165,.08));box-shadow:inset 0 0 0 1px rgba(240,211,154,.08)}.hero-menu-options .tutorial-start strong{color:var(--gold-bright)}
 .home-layout{width:min(1180px,calc(100% - 48px));margin:5vh auto;display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:32px;align-items:start}.home-layout .hero-menu{max-width:none;width:100%;margin:0;padding:24px}.home-side{display:grid;gap:16px}.contact-card,.special-thanks{padding:23px 20px;border:1px solid rgba(225,160,113,.55);background:linear-gradient(145deg,rgba(13,32,39,.95),rgba(5,15,20,.94));box-shadow:0 18px 40px rgba(0,0,0,.22)}.contact-card p{margin:0 0 14px;color:var(--ivory);font:600 15px/1.45 Georgia,serif}.contact-card a{display:block;padding:5px 0;color:var(--teal);text-decoration:none;line-height:1.4;overflow-wrap:anywhere}.contact-card a:hover{color:var(--copper-light)}.contact-card strong{color:var(--gold-bright)}.special-thanks h2{margin:0 0 18px;color:var(--gold-bright);font:24px Georgia,serif}.special-thanks a{display:flex;align-items:center;gap:13px;padding:12px 0;color:var(--ivory);text-decoration:none;border-top:1px solid rgba(118,170,165,.25)}.special-thanks a:hover strong{color:var(--copper-light)}.special-thanks img{width:62px;height:62px;flex:0 0 62px;object-fit:cover;border-radius:50%;border:2px solid var(--copper);box-shadow:0 0 0 3px rgba(200,161,94,.16)}.special-thanks span{display:grid;gap:4px}.special-thanks strong{font:600 15px Georgia,serif}.special-thanks small{color:var(--muted);line-height:1.35}@media (max-width:760px){.home-layout{width:100%;margin:0;display:block}.home-layout .hero-menu{padding:24px}.home-side{margin:0 24px 32px}.special-thanks img{width:56px;height:56px;flex-basis:56px}}
 
 .app-shell {
@@ -105,6 +106,25 @@ button { color: inherit; }
 .warning-modal > div { margin-top: 22px; display: flex; justify-content: flex-end; gap: 10px; }
 .warning-modal button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ivory); cursor: pointer; }
 .warning-modal button.primary-action { border-color: var(--copper); background: #713a24; }
+.tutorial-backdrop { z-index: 140; }
+.tutorial-modal { width: min(650px, 100%); }
+.tutorial-modal .tutorial-important { margin: 18px 0 0; padding: 14px 16px; border-left: 3px solid var(--copper-light); background: rgba(184,117,75,.1); color: var(--ivory); }
+.tutorial-example { padding-top: 14px; border-top: 1px solid var(--line); }
+.tutorial-question-list { display: grid !important; gap: 12px !important; margin: 20px 0 !important; }
+.tutorial-question-list article { display: grid; grid-template-columns: 34px 1fr; gap: 13px; align-items: start; padding: 14px; border: 1px solid rgba(118,170,165,.4); background: rgba(118,170,165,.06); }
+.tutorial-question-list article > span { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--copper-light); border-radius: 50%; color: var(--gold-bright); font-family: Georgia, serif; }
+.tutorial-question-list h3 { margin: 2px 0 5px; color: var(--ivory); font: 20px Georgia, serif; }
+.tutorial-question-list p { margin: 0; }
+.tutorial-help-strip { margin: 20px 0 24px; padding: 15px 16px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 16px; align-items: center; border: 1px solid rgba(118,170,165,.48); background: linear-gradient(90deg,rgba(118,170,165,.1),rgba(184,117,75,.06)); }
+.tutorial-help-strip > div:first-child { display: grid; gap: 3px; min-width: 150px; }
+.tutorial-help-strip small { color: var(--teal); text-transform: uppercase; letter-spacing: .1em; font-size: 9px; }
+.tutorial-help-strip strong { color: var(--ivory); font: 17px Georgia, serif; }
+.tutorial-term-buttons { display: flex; flex-wrap: wrap; gap: 7px; }
+.tutorial-term-buttons button,.tutorial-stop-button { min-height: 34px; padding: 6px 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); cursor: pointer; }
+.tutorial-term-buttons button:hover { border-color: var(--copper-light); color: var(--ivory); }
+.tutorial-term-buttons button span { width: 20px; height: 20px; margin-right: 6px; display: inline-grid; place-items: center; border: 1px solid var(--teal); border-radius: 50%; color: var(--teal); font-weight: 700; }
+.tutorial-term-buttons .tutorial-overview-button { border-color: var(--copper); color: var(--copper-light); }
+.tutorial-stop-button { border: 0; border-bottom: 1px solid var(--teal); background: transparent; color: var(--teal); white-space: nowrap; }
 .catalog-meta { margin: -10px 0 16px; color: var(--teal); font-size: 11px; letter-spacing: .08em; }
 .card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .choice-card { min-height: 190px; padding: 25px 21px; border: 1px solid rgba(118,170,165,.34); border-radius: 0; clip-path: polygon(0 11px, 11px 0, calc(100% - 11px) 0, 100% 11px, 100% calc(100% - 11px), calc(100% - 11px) 100%, 11px 100%, 0 calc(100% - 11px)); background: linear-gradient(145deg, rgba(15,31,38,.98), rgba(6,17,22,.97)); display: grid; grid-template-columns: 76px 1fr; gap: 18px; text-align: left; position: relative; transition: .2s ease; box-shadow: inset 0 0 42px rgba(0,0,0,.17); }
@@ -951,6 +971,11 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   .additional-spell-access button { width: 100%; }
   .warning-modal { padding: 22px 18px; }
   .warning-modal > div { display: grid; grid-template-columns: 1fr; }
+  .tutorial-help-strip { grid-template-columns: 1fr; align-items: stretch; }
+  .tutorial-help-strip > div:first-child { min-width: 0; }
+  .tutorial-term-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+  .tutorial-term-buttons button { text-align: left; }
+  .tutorial-stop-button { justify-self: start; }
   .topbar { height: 60px; padding: 0 16px; }
   .brand { font-size: 21px; }
   .brand small, .save-state, .topbar > .experimental-toggle, .topbar > .top-actions, .topbar > .nav-button { display: none; }
@@ -1037,7 +1062,7 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   @page { size: A4 portrait; margin: 0; }
   html, body, .app-shell { width: auto; min-width: 0; background: #fff !important; }
   body { orphans: 3; widows: 3; }
-  .topbar, .ban-status, .steps, .summary, .content-head, .identity-editor, .export-panel, .mobile-actions, .update-history, footer, .sheet-page { display: none !important; }
+  .topbar, .ban-status, .steps, .summary, .content-head, .tutorial-help-strip, .identity-editor, .export-panel, .mobile-actions, .update-history, footer, .sheet-page { display: none !important; }
   .workspace, .content, .final-workspace { display: block !important; min-height: 0; padding: 0 !important; margin: 0 !important; }
 }
 
