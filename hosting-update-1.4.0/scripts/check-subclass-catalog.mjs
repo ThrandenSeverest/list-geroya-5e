@@ -51,9 +51,6 @@ needRules("SUBCLASS_SPELL_GRANTS_5E14");
 needRules("subclassSpellGrantTable");
 needRules("mode: \"always-prepared\"");
 needRules("mode: \"known\"");
-// Expanded patron lists are represented by spell grants, not by a UI-only
-// marker. Check an actual grant entry so formatting cannot make the
-// acceptance check fail while the feature is present.
 needRules('G(1,"expanded"');
 needRules("dmApproval");
 need("../app/multiclass.ts", "selectedSubclassForClass");
@@ -65,9 +62,12 @@ need("../app/characterResources.ts", "psi-warrior-dice");
 need("../app/combat.ts", "subclass-drakewarden-bite");
 need("../app/languages.ts", "subclass === \"drakewarden\"");
 
-// Finished characters must use the full canonical corpus. Compact texts are
-// allowed only in builder cards and legacy fallbacks.
-need("../app/featureDetails.ts", "feature.description?.trim() || mechanics[feature.name] || \"\"");
+// Finished characters must preserve canonical full rules text. Subclass names
+// can differ between the builder catalog and the generated Russian corpus, so
+// the resolver must support aliases plus an unambiguous feature-name fallback.
+need("../app/featureDetails.ts", "description: feature.description?.trim() || \"\"");
+need("../app/featureDetails.ts", "subclassByFeatureOverlap");
+need("../app/featureDetails.ts", "\"убийца монстров\": \"убийца чудовищ\"");
 for (const classId of Object.keys(expectedCounts)) need("../app/featureDetails.ts", `${classId}: [`);
 for (const selector of [
   "Путь дикости", "Коллегия бардов", "Божественный домен", "Круг друидов", "Воинский архетип",
