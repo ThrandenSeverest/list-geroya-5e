@@ -49,8 +49,12 @@ jobs:
         env:
           NEXT_PUBLIC_BASE_PATH: /list-geroya-5e
 
-      - name: Fix font preload paths for project Pages
-        run: sed -i 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/assets/_vinext_fonts#g' hosting-test/dist/client/index.html
+      - name: Fix font paths for project Pages
+        run: |
+          find hosting-test/dist/client -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec \
+            sed -i \
+              -e 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/assets/_vinext_fonts#g' \
+              -e 's#url(/assets/_vinext_fonts#url(/list-geroya-5e/assets/_vinext_fonts#g' {} +
 
       - name: Disable Jekyll processing
         run: touch hosting-test/dist/client/.nojekyll
