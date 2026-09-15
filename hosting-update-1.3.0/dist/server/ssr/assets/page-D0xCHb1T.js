@@ -41829,6 +41829,26 @@ function unzipSync(data, opts) {
 	return files;
 }
 //#endregion
+//#region app/homebrew.ts
+var emptyHomebrewLibrary = {
+	version: 1,
+	elements: []
+};
+var homebrewTypeLabels = {
+	ability: "Способность",
+	item: "Предмет",
+	spell: "Заклинание",
+	proficiency: "Владение",
+	note: "Заметка"
+};
+function normalizeHomebrewLibrary(value) {
+	const types = new Set(Object.keys(homebrewTypeLabels));
+	return {
+		version: 1,
+		elements: Array.isArray(value?.elements) ? value.elements.filter((element) => !!element && typeof element.id === "string" && types.has(element.type) && typeof element.name === "string" && typeof element.description === "string" && typeof element.updatedAt === "string") : []
+	};
+}
+//#endregion
 //#region app/page.tsx
 var steps = [
 	"Раса",
@@ -41965,6 +41985,16 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.3.0",
+		publishedAt: "2026-09-15T15:00:00Z",
+		changes: [
+			"В «Моих персонажах» добавлено копирование персонажа вместе со всеми решениями и текущим состоянием.",
+			"Финальный шаг получил полную проверку персонажа с единым списком незавершённых и доступных выборов, включая мультикласс.",
+			"Раздел заклинаний получил фильтры по школе, концентрации и времени накладывания; подготовка и расход ячеек доступны в игровом листе.",
+			"В аккаунте появилась личная библиотека хоумбрю: способности, предметы, заклинания, владения и заметки с JSON-экспортом."
+		]
+	},
 	{
 		version: "1.2.1",
 		publishedAt: "2026-09-09T22:00:00Z",
@@ -42555,6 +42585,9 @@ function Builder() {
 	const [spellLevel, setSpellLevel] = useState("all");
 	const [spellClassId, setSpellClassId] = useState("");
 	const [ritualFilter, setRitualFilter] = useState("all");
+	const [spellSchool, setSpellSchool] = useState("all");
+	const [concentrationFilter, setConcentrationFilter] = useState("all");
+	const [castingTimeFilter, setCastingTimeFilter] = useState("all");
 	const [featsExpanded, setFeatsExpanded] = useState(true);
 	const [advancementKey, setAdvancementKey] = useState("");
 	const [detailsId, setDetailsId] = useState("");
@@ -42573,6 +42606,20 @@ function Builder() {
 	const [cloudState, setCloudState] = useState("local");
 	const [importMessage, setImportMessage] = useState(null);
 	const [interactionError, setInteractionError] = useState(null);
+	const [characterCheck, setCharacterCheck] = useState(null);
+	const [homebrew, setHomebrew] = useState(emptyHomebrewLibrary);
+	const [homebrewState, setHomebrewState] = useState("idle");
+	const [homebrewDraft, setHomebrewDraft] = useState({
+		type: "ability",
+		name: "",
+		description: "",
+		attach: true,
+		level: 0,
+		school: "",
+		castingTime: "1 действие",
+		concentration: false,
+		ritual: false
+	});
 	const banFileRef = useRef(null);
 	const characterFileRef = useRef(null);
 	const folderFileRef = useRef(null);
@@ -42583,10 +42630,14 @@ function Builder() {
 			const accountValue = await (await fetch("/api/account", { cache: "no-store" })).json();
 			if (!accountValue.authenticated) {
 				setAccount({ authenticated: false });
+				setHomebrew(emptyHomebrewLibrary);
 				return;
 			}
-			const vaultResponse = await fetch("/api/vault", { cache: "no-store" });
-			const merged = mergeVaults(localVault, (vaultResponse.ok ? await vaultResponse.json() : { vault: null }).vault);
+			const [vaultResponse, homebrewResponse] = await Promise.all([fetch("/api/vault", { cache: "no-store" }), fetch("/api/homebrew", { cache: "no-store" })]);
+			const remotePayload = vaultResponse.ok ? await vaultResponse.json() : { vault: null };
+			setHomebrew(normalizeHomebrewLibrary((homebrewResponse.ok ? await homebrewResponse.json() : { library: emptyHomebrewLibrary }).library));
+			setHomebrewState(homebrewResponse.ok ? "saved" : "error");
+			const merged = mergeVaults(localVault, remotePayload.vault);
 			setVault(merged);
 			const active = merged.slots.find((slot) => slot.id === merged.activeId);
 			if (active) setCharacter(active.character);
@@ -42600,6 +42651,7 @@ function Builder() {
 			setAccount(accountValue);
 		} catch {
 			setAccount({ authenticated: false });
+			setHomebrew(emptyHomebrewLibrary);
 			setCloudState("error");
 		}
 	}
@@ -42753,7 +42805,13 @@ function Builder() {
 	}, availableSpellCatalog).map((entry) => entry.id)))];
 	const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
 	const filtered = currentOptions.filter((option) => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
-	const filteredSpells = availableSpellCatalog.filter((spell) => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id)).filter((spell) => (spellLevel === "all" || spell.level === spellLevel) && matchesSources(spell.source, selectedSources) && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual)) && `${spell.name} ${spell.description} ${spell.school}`.toLowerCase().includes(search.toLowerCase()));
+	const selectableSpells = availableSpellCatalog.filter((spell) => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
+	const spellSchools = [...new Set(selectableSpells.map((spell) => spell.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
+	const castingTimes = [...new Set(selectableSpells.map((spell) => spell.castingTime).filter((value) => !!value))].sort((a, b) => a.localeCompare(b, "ru"));
+	const filteredSpells = selectableSpells.filter((spell) => {
+		const concentration = /концентрац/i.test(spell.duration || "");
+		return (spellLevel === "all" || spell.level === spellLevel) && matchesSources(spell.source, selectedSources) && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual)) && (spellSchool === "all" || spell.school === spellSchool) && (concentrationFilter === "all" || (concentrationFilter === "concentration" ? concentration : !concentration)) && (castingTimeFilter === "all" || spell.castingTime === castingTimeFilter) && `${spell.name} ${spell.description} ${spell.school} ${spell.castingTime || ""}`.toLowerCase().includes(search.toLowerCase());
+	});
 	const spellLevelGroups = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ({
 		level,
 		spells: filteredSpells.filter((spell) => spell.level === level)
@@ -42791,6 +42849,26 @@ function Builder() {
 	const expertise = characterExpertiseSkills(exportCharacter);
 	const knownLanguages = proficiencies.languages;
 	const resources = characterResources(exportCharacter);
+	const attachedHomebrew = account?.authenticated ? homebrew.elements.filter((element) => element.characterId === vault.activeId) : [];
+	const customFeatures = attachedHomebrew.filter((element) => element.type === "ability").map((element) => ({
+		name: element.name,
+		description: element.description
+	}));
+	const customEquipment = attachedHomebrew.filter((element) => element.type === "item").map((element) => element.name);
+	const customProficiencies = attachedHomebrew.filter((element) => element.type === "proficiency").map((element) => element.name);
+	const customNotes = attachedHomebrew.filter((element) => element.type === "note");
+	const customSpells = attachedHomebrew.filter((element) => element.type === "spell").map((element) => ({
+		id: element.id,
+		name: element.name,
+		source: "Хоумбрю",
+		description: element.description,
+		level: element.level || 0,
+		school: element.school || "Пользовательская",
+		classes: [],
+		ritual: element.ritual,
+		castingTime: element.castingTime,
+		duration: element.concentration ? "Концентрация" : void 0
+	}));
 	const runtimeControls = subclassRuntimeControls(exportCharacter, availableSpellCatalog);
 	const runtimeFeatures = runtimeControls.flatMap((control) => {
 		const value = subclassRuntimeValue(exportCharacter, control.key);
@@ -42846,12 +42924,13 @@ function Builder() {
 		...selectedCantrips.map((id) => spells.find((spell) => spell.id === id)),
 		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(rulesCharacter, spell)),
 		...alwaysPrepared.map((id) => spells.find((spell) => spell.id === id)),
-		...grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id))
+		...grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)),
+		...customSpells
 	] : [...new Set([
 		...ordinarySpellIds,
 		...alwaysPrepared,
 		...grantedFeatSpells
-	])].map((id) => spells.find((spell) => spell.id === id))).filter((spell) => Boolean(spell)).map((spell) => [spell.id, spell])).values()].sort((left, right) => left.level - right.level || left.name.localeCompare(right.name, "ru"));
+	])].map((id) => spells.find((spell) => spell.id === id)).concat(customSpells)).filter((spell) => Boolean(spell)).map((spell) => [spell.id, spell])).values()].sort((left, right) => left.level - right.level || left.name.localeCompare(right.name, "ru"));
 	const selectedFeatFeatures = advancements.flatMap((choice) => {
 		const feat = feats.find((item) => item.id === choice.featId);
 		if (!feat || feat.id === "asi") return [];
@@ -43082,6 +43161,70 @@ function Builder() {
 		}
 		if (step === 9) return "Заполните черты характера, идеал, привязанность и слабость.";
 		return "Завершите обязательные выборы на этом шаге.";
+	}
+	function collectCharacterChecks() {
+		const issues = [];
+		const add = (step, message, severity = "error") => issues.push({
+			step,
+			message,
+			severity
+		});
+		if (!character.race) add(0, "Не выбрана раса.");
+		else if (variantsFor(character.race).length && !character.raceVariant) add(0, "Не выбран вариант расы или подраса.");
+		if (!character.className) add(1, "Не выбран класс.");
+		if (!abilitiesComplete) add(2, "Не распределены характеристики.");
+		const raceBonusCount = chosenRaceVariant?.chooseBonuses?.count || 0;
+		if ((character.raceAbilityChoices || []).length !== raceBonusCount) add(2, "Не распределён расовый бонус характеристики.");
+		if ((character.raceSkills || []).length !== raceSkillChoiceCount(character)) add(2, "Не выбран расовый навык.");
+		if (!character.background) add(3, "Не выбрана предыстория.");
+		else backgroundChoiceGroups(character.background, featCatalog).forEach((group) => {
+			if ((character.backgroundChoices?.[group.key] || []).length < group.count) add(3, `Не завершён выбор предыстории: ${group.title}.`);
+		});
+		if (character.classSkills.length < classRule.count) add(4, `Не выбран навык класса: ${character.classSkills.length} из ${classRule.count}.`);
+		if (!equipmentComplete(character)) add(5, "Не завершён выбор стартового снаряжения.");
+		subclassRequirements.forEach(({ entry }) => {
+			if (!entry.subclassId) add(6, `Не выбран подкласс: ${classes.find((option) => option.id === entry.classId)?.name || entry.classId}.`);
+		});
+		advancements.forEach((choice) => {
+			if (!advancementChoiceComplete(choice, spells, character.level, character)) add(6, `Не завершён выбор развития на ${choice.level}-м уровне.`);
+		});
+		if (!classChoicesComplete(rulesCharacter, spells)) add(6, "Не завершены обязательные выборы способностей класса.");
+		spellClassCandidates.forEach((candidate) => {
+			const classId = candidate.entry.classId;
+			const scoped = {
+				...rulesCharacter,
+				className: classId,
+				subclass: candidate.entry.subclassId || "",
+				level: candidate.entry.level,
+				abilities: finalAbilities
+			};
+			const rule = spellSelectionRuleForClass(scoped, classId, candidate.entry.level);
+			const automatic = new Set(alwaysPreparedSpellEntries(scoped, availableSpellCatalog).map((entry) => entry.id));
+			const ids = currentSpellGrants.filter((grant) => grant.classId === classId && !automatic.has(grant.spellId)).map((grant) => grant.spellId);
+			const cantrips = ids.filter((id) => spells.find((spell) => spell.id === id)?.level === 0);
+			const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
+			const className = classes.find((option) => option.id === classId)?.name || classId;
+			if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
+			if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
+			if (rule.mode === "spellbook") {
+				const prepared = (character.preparedSpells || []).filter((id) => leveled.includes(id));
+				if (prepared.length < (rule.prepared || 0)) add(7, `Не подготовлены заклинания класса «${className}»: ${prepared.length} из ${rule.prepared}.`);
+			}
+		});
+		const chosenLanguageCount = (character.languages || []).length;
+		if (chosenLanguageCount < languageRequirements.choices) add(8, `Можно выбрать ещё ${languageRequirements.choices - chosenLanguageCount} язык(а).`, "warning");
+		if (!proficiencyChoicesComplete(exportCharacter)) add(8, "Не завершён выбор владений или инструментов.");
+		const emptyPersonality = Object.entries(character.personality).filter(([, value]) => !value).map(([key]) => personalityNames[key]);
+		if (emptyPersonality.length) add(9, `Не заполнено: ${emptyPersonality.join(", ")}.`, "warning");
+		return issues;
+	}
+	function runCharacterCheck() {
+		setCharacterCheck(collectCharacterChecks());
+	}
+	function openCharacterCheck(check) {
+		setCharacterCheck(null);
+		setView("builder");
+		resetFilters(check.step);
 	}
 	function tryContinue() {
 		if (!canContinue()) {
@@ -43912,6 +44055,74 @@ function Builder() {
 		setVault(normalized);
 		localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(normalized));
 	}
+	async function persistHomebrew(next) {
+		if (!account?.authenticated) return;
+		const normalized = normalizeHomebrewLibrary(next);
+		setHomebrew(normalized);
+		setHomebrewState("saving");
+		try {
+			setHomebrewState((await fetch("/api/homebrew", {
+				method: "PUT",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ library: normalized })
+			})).ok ? "saved" : "error");
+		} catch {
+			setHomebrewState("error");
+		}
+	}
+	function addHomebrewElement() {
+		const name = homebrewDraft.name.trim();
+		if (!name || !account?.authenticated) return;
+		const element = {
+			id: `homebrew-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+			type: homebrewDraft.type,
+			name,
+			description: homebrewDraft.description.trim(),
+			characterId: homebrewDraft.attach ? vault.activeId : void 0,
+			updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+			...homebrewDraft.type === "spell" ? {
+				level: homebrewDraft.level,
+				school: homebrewDraft.school.trim(),
+				castingTime: homebrewDraft.castingTime.trim(),
+				concentration: homebrewDraft.concentration,
+				ritual: homebrewDraft.ritual
+			} : {}
+		};
+		persistHomebrew({
+			version: 1,
+			elements: [...homebrew.elements, element]
+		});
+		setHomebrewDraft((current) => ({
+			...current,
+			name: "",
+			description: ""
+		}));
+	}
+	function deleteHomebrewElement(id) {
+		if (!confirm("Удалить этот пользовательский элемент?")) return;
+		persistHomebrew({
+			version: 1,
+			elements: homebrew.elements.filter((element) => element.id !== id)
+		});
+	}
+	function toggleHomebrewAttachment(element) {
+		const characterId = element.characterId === vault.activeId ? void 0 : vault.activeId;
+		persistHomebrew({
+			version: 1,
+			elements: homebrew.elements.map((item) => item.id === element.id ? {
+				...item,
+				characterId,
+				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+			} : item)
+		});
+	}
+	function exportHomebrew() {
+		download({
+			format: "herolist-homebrew",
+			exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+			...homebrew
+		}, "HeroList — моё хоумбрю.json");
+	}
 	function openCharacterManager() {
 		const updatedAt = (/* @__PURE__ */ new Date()).toISOString();
 		persistVault({
@@ -43951,6 +44162,31 @@ function Builder() {
 		setImportMessage(null);
 		setView("builder");
 		resetFilters(0);
+	}
+	function duplicateSlot(id) {
+		const source = vault.slots.find((slot) => slot.id === id);
+		if (!source) return;
+		if (vault.slots.length >= vault.capacity) {
+			alert("Все доступные места заняты. Добавьте ещё 5 слотов.");
+			return;
+		}
+		const copy = normalizeCharacter(JSON.parse(JSON.stringify(source.character)));
+		copy.name = `${copy.name || "Безымянный герой"} — копия`;
+		const slot = {
+			...createSlot(copy),
+			folderId: source.folderId
+		};
+		persistVault({
+			...vault,
+			activeId: slot.id,
+			slots: [...vault.slots, slot]
+		});
+		setCharacter(copy);
+	}
+	function exportSlot(id) {
+		const slot = vault.slots.find((item) => item.id === id);
+		if (!slot) return;
+		download(createNativeCharacterFile(slot.character), `${safeName(slot.character.name)} — Лист Героя 5e.json`);
 	}
 	function addFiveSlots() {
 		persistVault({
@@ -44257,6 +44493,196 @@ function Builder() {
 			})]
 		})
 	});
+	if (view === "homebrew") return /* @__PURE__ */ jsxs("main", {
+		className: `app-shell${shellThemeClass}`,
+		"data-site-theme": siteTheme,
+		children: [
+			/* @__PURE__ */ jsxs("header", {
+				className: "topbar",
+				children: [/* @__PURE__ */ jsxs("button", {
+					className: "brand",
+					onClick: () => setView("home"),
+					children: [
+						/* @__PURE__ */ jsx("span", {
+							className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
+							children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+								src: "/experimental/site-mark.png",
+								alt: ""
+							}) : "✦"
+						}),
+						"Лист Героя ",
+						/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
+					]
+				}), /* @__PURE__ */ jsx("button", {
+					className: "nav-button",
+					onClick: () => setView("characters"),
+					children: "← К персонажам"
+				})]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "homebrew-library",
+				children: [/* @__PURE__ */ jsxs("header", {
+					className: "library-head",
+					children: [/* @__PURE__ */ jsxs("div", { children: [
+						/* @__PURE__ */ jsx("p", {
+							className: "eyebrow",
+							children: "Только в вашем аккаунте"
+						}),
+						/* @__PURE__ */ jsx("h1", { children: "Моё хоумбрю" }),
+						/* @__PURE__ */ jsx("p", { children: "Собственные способности, предметы, заклинания, владения и заметки. Они не добавляются в общий каталог HeroList." })
+					] }), account?.authenticated && /* @__PURE__ */ jsxs("div", {
+						className: "library-actions",
+						children: [/* @__PURE__ */ jsx("button", {
+							disabled: !homebrew.elements.length,
+							onClick: exportHomebrew,
+							children: "Экспортировать JSON"
+						}), /* @__PURE__ */ jsx("span", {
+							className: `homebrew-save-state state-${homebrewState}`,
+							children: homebrewState === "saving" ? "Сохраняется…" : homebrewState === "error" ? "Ошибка сохранения" : "Сохранено в аккаунте"
+						})]
+					})]
+				}), !account?.authenticated ? /* @__PURE__ */ jsxs("div", {
+					className: "homebrew-auth-required",
+					children: [
+						/* @__PURE__ */ jsx("h2", { children: "Нужен вход в аккаунт" }),
+						/* @__PURE__ */ jsx("p", { children: "Хоумбрю хранится отдельно от локальных персонажей и доступно только владельцу аккаунта. Войдите в HeroList, затем вернитесь в этот раздел." }),
+						/* @__PURE__ */ jsx("button", {
+							className: "primary-action",
+							onClick: () => setView("builder"),
+							children: "Перейти к входу"
+						})
+					]
+				}) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+					/* @__PURE__ */ jsxs("section", {
+						className: "homebrew-editor",
+						children: [
+							/* @__PURE__ */ jsxs("label", { children: ["Тип", /* @__PURE__ */ jsx("select", {
+								value: homebrewDraft.type,
+								onChange: (event) => setHomebrewDraft({
+									...homebrewDraft,
+									type: event.target.value
+								}),
+								children: Object.keys(homebrewTypeLabels).map((type) => /* @__PURE__ */ jsx("option", {
+									value: type,
+									children: homebrewTypeLabels[type]
+								}, type))
+							})] }),
+							/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
+								value: homebrewDraft.name,
+								onChange: (event) => setHomebrewDraft({
+									...homebrewDraft,
+									name: event.target.value
+								}),
+								placeholder: "Например, Клинок зимнего короля"
+							})] }),
+							/* @__PURE__ */ jsxs("label", {
+								className: "homebrew-description",
+								children: ["Описание", /* @__PURE__ */ jsx("textarea", {
+									value: homebrewDraft.description,
+									onChange: (event) => setHomebrewDraft({
+										...homebrewDraft,
+										description: event.target.value
+									}),
+									placeholder: "Полный игровой текст и механика"
+								})]
+							}),
+							homebrewDraft.type === "spell" && /* @__PURE__ */ jsxs("div", {
+								className: "homebrew-spell-fields",
+								children: [
+									/* @__PURE__ */ jsxs("label", { children: ["Круг", /* @__PURE__ */ jsx("input", {
+										type: "number",
+										min: "0",
+										max: "9",
+										value: homebrewDraft.level,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											level: Math.max(0, Math.min(9, Number(event.target.value) || 0))
+										})
+									})] }),
+									/* @__PURE__ */ jsxs("label", { children: ["Школа", /* @__PURE__ */ jsx("input", {
+										value: homebrewDraft.school,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											school: event.target.value
+										})
+									})] }),
+									/* @__PURE__ */ jsxs("label", { children: ["Время", /* @__PURE__ */ jsx("input", {
+										value: homebrewDraft.castingTime,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											castingTime: event.target.value
+										})
+									})] }),
+									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: homebrewDraft.concentration,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											concentration: event.target.checked
+										})
+									}), " Концентрация"] }),
+									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: homebrewDraft.ritual,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											ritual: event.target.checked
+										})
+									}), " Ритуал"] })
+								]
+							}),
+							/* @__PURE__ */ jsxs("label", {
+								className: "homebrew-attach",
+								children: [
+									/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: homebrewDraft.attach,
+										onChange: (event) => setHomebrewDraft({
+											...homebrewDraft,
+											attach: event.target.checked
+										})
+									}),
+									" Добавить к текущему персонажу «",
+									character.name || "Безымянный герой",
+									"»"
+								]
+							}),
+							/* @__PURE__ */ jsx("button", {
+								className: "primary-action",
+								disabled: !homebrewDraft.name.trim() || homebrewState === "saving",
+								onClick: addHomebrewElement,
+								children: "Добавить"
+							})
+						]
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "homebrew-grid",
+						children: homebrew.elements.map((element) => {
+							const linkedSlot = element.characterId ? vault.slots.find((slot) => slot.id === element.characterId) : void 0;
+							return /* @__PURE__ */ jsxs("article", { children: [
+								/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[element.type], element.type === "spell" ? ` · ${levelLabel(element.level || 0)}${element.school ? ` · ${element.school}` : ""}` : ""] }),
+								/* @__PURE__ */ jsx("h2", { children: element.name }),
+								/* @__PURE__ */ jsx("p", { children: element.description || "Без описания" }),
+								linkedSlot && /* @__PURE__ */ jsxs("em", { children: ["Добавлено к: ", linkedSlot.character.name || "Безымянный герой"] }),
+								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("button", {
+									onClick: () => toggleHomebrewAttachment(element),
+									children: element.characterId === vault.activeId ? "Убрать у текущего" : "Добавить текущему"
+								}), /* @__PURE__ */ jsx("button", {
+									onClick: () => deleteHomebrewElement(element.id),
+									children: "Удалить"
+								})] })
+							] }, element.id);
+						})
+					}),
+					!homebrew.elements.length && /* @__PURE__ */ jsxs("div", {
+						className: "empty-folder",
+						children: [/* @__PURE__ */ jsx("strong", { children: "Личная библиотека пока пуста." }), /* @__PURE__ */ jsx("span", { children: "Создайте первый пользовательский элемент выше." })]
+					})
+				] })]
+			}),
+			/* @__PURE__ */ jsx(UpdateHistory, {})
+		]
+	});
 	if (view === "characters") {
 		const free = vault.capacity - vault.slots.length;
 		const visibleSlots = vault.slots.filter((slot) => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
@@ -44331,6 +44757,10 @@ function Builder() {
 							] }), /* @__PURE__ */ jsxs("div", {
 								className: "library-actions",
 								children: [
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => setView("homebrew"),
+										children: "Моё хоумбрю"
+									}),
 									/* @__PURE__ */ jsx("button", {
 										onClick: () => characterFileRef.current?.click(),
 										children: "Импорт JSON"
@@ -44495,11 +44925,15 @@ function Builder() {
 											children: [
 												/* @__PURE__ */ jsx("button", {
 													onClick: () => selectSlot(slot.id),
-													children: slot.id === vault.activeId ? "Продолжить" : "Открыть"
+													children: slot.id === vault.activeId ? "Открыть" : "Открыть"
 												}),
-												/* @__PURE__ */ jsxs("label", {
-													className: "character-folder-select",
-													children: [/* @__PURE__ */ jsx("span", { children: "Папка" }), /* @__PURE__ */ jsxs("select", {
+												/* @__PURE__ */ jsx("button", {
+													onClick: () => duplicateSlot(slot.id),
+													children: "Копировать"
+												}),
+												/* @__PURE__ */ jsxs("details", {
+													className: "character-move-menu",
+													children: [/* @__PURE__ */ jsx("summary", { children: "Переместить" }), /* @__PURE__ */ jsxs("select", {
 														value: slot.folderId || "unfiled",
 														onChange: (event) => moveSlot(slot.id, event.target.value),
 														children: [/* @__PURE__ */ jsx("option", {
@@ -44510,6 +44944,10 @@ function Builder() {
 															children: folder.name
 														}, folder.id))]
 													})]
+												}),
+												/* @__PURE__ */ jsx("button", {
+													onClick: () => exportSlot(slot.id),
+													children: "Экспорт"
 												}),
 												/* @__PURE__ */ jsx("button", {
 													onClick: () => deleteSlot(slot.id),
@@ -44887,6 +45325,11 @@ function Builder() {
 									vault.capacity
 								] })]
 							}),
+							account?.authenticated && /* @__PURE__ */ jsx("button", {
+								className: "nav-button",
+								onClick: () => setView("homebrew"),
+								children: "Хоумбрю"
+							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
 								onClick: () => {
@@ -44952,6 +45395,11 @@ function Builder() {
 									"/",
 									vault.capacity
 								] })]
+							}),
+							account?.authenticated && /* @__PURE__ */ jsx("button", {
+								className: "nav-button",
+								onClick: () => setView("homebrew"),
+								children: "Хоумбрю"
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
@@ -45028,6 +45476,45 @@ function Builder() {
 							onClick: confirmPartialHelpmateExport,
 							children: "Экспортировать совместимые"
 						})] })
+					]
+				})
+			}),
+			characterCheck && /* @__PURE__ */ jsx("div", {
+				className: "modal-backdrop",
+				role: "presentation",
+				children: /* @__PURE__ */ jsxs("section", {
+					className: "warning-modal character-check-modal",
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-labelledby": "character-check-title",
+					children: [
+						/* @__PURE__ */ jsx("small", { children: "Итоговая проверка" }),
+						/* @__PURE__ */ jsx("h2", {
+							id: "character-check-title",
+							children: characterCheck.length ? `Найдено: ${characterCheck.length}` : "Персонаж готов"
+						}),
+						characterCheck.length ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("p", { children: "Нажмите на строку, чтобы перейти к нужному шагу." }), /* @__PURE__ */ jsx("div", {
+							className: "character-check-list",
+							children: characterCheck.map((check, index) => /* @__PURE__ */ jsxs("button", {
+								className: check.severity,
+								onClick: () => openCharacterCheck(check),
+								children: [
+									/* @__PURE__ */ jsx("span", { children: check.severity === "error" ? "!" : "i" }),
+									/* @__PURE__ */ jsx("strong", { children: check.message }),
+									/* @__PURE__ */ jsxs("small", { children: [
+										"Шаг ",
+										check.step + 1,
+										" · ",
+										steps[check.step]
+									] })
+								]
+							}, `${check.step}-${index}`))
+						})] }) : /* @__PURE__ */ jsx("p", { children: "Все обязательные решения заполнены. Лист можно экспортировать или скопировать в игровой режим." }),
+						/* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("button", {
+							className: "primary-action",
+							onClick: () => setCharacterCheck(null),
+							children: "Закрыть"
+						}) })
 					]
 				})
 			}),
@@ -46377,6 +46864,62 @@ function Builder() {
 										})
 									]
 								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "spell-advanced-filters",
+									children: [
+										/* @__PURE__ */ jsxs("label", { children: ["Школа", /* @__PURE__ */ jsxs("select", {
+											value: spellSchool,
+											onChange: (event) => setSpellSchool(event.target.value),
+											children: [/* @__PURE__ */ jsx("option", {
+												value: "all",
+												children: "Все школы"
+											}), spellSchools.map((school) => /* @__PURE__ */ jsx("option", {
+												value: school,
+												children: school
+											}, school))]
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Концентрация", /* @__PURE__ */ jsxs("select", {
+											value: concentrationFilter,
+											onChange: (event) => setConcentrationFilter(event.target.value),
+											children: [
+												/* @__PURE__ */ jsx("option", {
+													value: "all",
+													children: "Все"
+												}),
+												/* @__PURE__ */ jsx("option", {
+													value: "concentration",
+													children: "Требуется"
+												}),
+												/* @__PURE__ */ jsx("option", {
+													value: "instant",
+													children: "Не требуется"
+												})
+											]
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Время накладывания", /* @__PURE__ */ jsxs("select", {
+											value: castingTimeFilter,
+											onChange: (event) => setCastingTimeFilter(event.target.value),
+											children: [/* @__PURE__ */ jsx("option", {
+												value: "all",
+												children: "Любое"
+											}), castingTimes.map((value) => /* @__PURE__ */ jsx("option", {
+												value,
+												children: value
+											}, value))]
+										})] }),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => {
+												setSpellSchool("all");
+												setConcentrationFilter("all");
+												setCastingTimeFilter("all");
+												setRitualFilter("all");
+												setSpellLevel("all");
+												setSearch("");
+											},
+											children: "Сбросить фильтры"
+										})
+									]
+								}),
 								/* @__PURE__ */ jsx("div", {
 									className: "spell-list",
 									children: spellLevelGroups.map((group) => /* @__PURE__ */ jsxs("section", {
@@ -46400,6 +46943,8 @@ function Builder() {
 														spell.school,
 														" · ",
 														spell.source,
+														spell.castingTime ? ` · ${spell.castingTime}` : "",
+														/концентрац/i.test(spell.duration || "") ? " · концентрация" : "",
 														spell.ritual ? " · ритуал" : "",
 														isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : "",
 														chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""
@@ -46539,6 +47084,18 @@ function Builder() {
 							step === 10 && /* @__PURE__ */ jsxs("div", {
 								className: "final-workspace",
 								children: [
+									/* @__PURE__ */ jsxs("section", {
+										className: "character-check-banner",
+										children: [/* @__PURE__ */ jsxs("div", { children: [
+											/* @__PURE__ */ jsx("small", { children: "Перед экспортом" }),
+											/* @__PURE__ */ jsx("h2", { children: "Проверьте, что герой полностью собран" }),
+											/* @__PURE__ */ jsx("p", { children: "Итоговая проверка найдёт пропущенные навыки, характеристики, языки, подклассы и заклинания во всех классах." })
+										] }), /* @__PURE__ */ jsx("button", {
+											className: "primary-action",
+											onClick: runCharacterCheck,
+											children: "Проверить персонажа"
+										})]
+									}),
 									/* @__PURE__ */ jsxs("div", {
 										className: "identity-editor",
 										children: [
@@ -46791,7 +47348,7 @@ function Builder() {
 													!spellRule.caster && !mobileSpellPool.length ? /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }) : /* @__PURE__ */ jsx("div", {
 														className: "mobile-spell-list",
 														children: mobileSpellPool.map((spell) => {
-															const automatic = spell.level === 0 || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
+															const automatic = spell.level === 0 || spell.source === "Хоумбрю" || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
 															const prepared = automatic || mobilePreparedIds.includes(spell.id);
 															const canToggle = spell.level > 0 && !automatic && spellRule.prepared !== void 0;
 															return /* @__PURE__ */ jsxs("button", {
@@ -46950,6 +47507,11 @@ function Builder() {
 														"aria-label": "Инвентарь персонажа",
 														placeholder: "По одному предмету на строку"
 													})] }),
+													customEquipment.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
+														/* @__PURE__ */ jsx("b", { children: "Хоумбрю:" }),
+														" ",
+														customEquipment.join(" · ")
+													] }),
 													/* @__PURE__ */ jsx("small", { children: "Можно переписать список полностью. Изменения сохраняются вместе с персонажем." }),
 													/* @__PURE__ */ jsx("h3", { children: "Монеты" }),
 													/* @__PURE__ */ jsx("div", {
@@ -46986,16 +47548,23 @@ function Builder() {
 											}),
 											mobileSheetTab === "notes" && /* @__PURE__ */ jsxs("div", {
 												className: "mobile-sheet-panel mobile-notes",
-												children: [/* @__PURE__ */ jsx("h3", { children: "Характер и заметки" }), Object.keys(personalityNames).map((key) => /* @__PURE__ */ jsxs("label", { children: [personalityNames[key], /* @__PURE__ */ jsx("textarea", {
-													value: character.personality[key],
-													onChange: (event) => setCharacter((current) => ({
-														...current,
-														personality: {
-															...current.personality,
-															[key]: event.target.value
-														}
-													}))
-												})] }, key))]
+												children: [
+													/* @__PURE__ */ jsx("h3", { children: "Характер и заметки" }),
+													Object.keys(personalityNames).map((key) => /* @__PURE__ */ jsxs("label", { children: [personalityNames[key], /* @__PURE__ */ jsx("textarea", {
+														value: character.personality[key],
+														onChange: (event) => setCharacter((current) => ({
+															...current,
+															personality: {
+																...current.personality,
+																[key]: event.target.value
+															}
+														}))
+													})] }, key)),
+													customNotes.map((note) => /* @__PURE__ */ jsxs("article", {
+														className: "homebrew-note",
+														children: [/* @__PURE__ */ jsx("strong", { children: note.name }), /* @__PURE__ */ jsx("p", { children: note.description })]
+													}, note.id))
+												]
 											})
 										]
 									}),
@@ -47057,7 +47626,7 @@ function Builder() {
 																/* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: "Инструменты:" }),
 																	" ",
-																	proficiencies.tools.join(", ") || "нет"
+																	[...proficiencies.tools, ...customProficiencies].join(", ") || "нет"
 																] }),
 																/* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: "Языки:" }),
@@ -47271,6 +47840,11 @@ function Builder() {
 																	" ",
 																	feature.description
 																] }, feature.name))] }),
+																customFeatures.length > 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("h4", { children: "Пользовательские способности" }), customFeatures.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
+																	" ",
+																	feature.description
+																] }, feature.name))] }),
 																/* @__PURE__ */ jsxs("h4", { children: [selectedBackground?.name, ": предыстория"] }),
 																/* @__PURE__ */ jsx("p", { children: selectedBackground?.description }),
 																/* @__PURE__ */ jsxs("p", { children: [
@@ -47284,7 +47858,7 @@ function Builder() {
 															className: "sheet-box feature-box",
 															children: [
 																/* @__PURE__ */ jsx("h3", { children: "СТАРТОВОЕ СНАРЯЖЕНИЕ" }),
-																/* @__PURE__ */ jsx("p", { children: displayedInventory.join(" · ") || "Не выбрано" }),
+																/* @__PURE__ */ jsx("p", { children: [...displayedInventory, ...customEquipment].join(" · ") || "Не выбрано" }),
 																/* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: "Расчёт КД:" }),
 																	" ",
@@ -47319,6 +47893,7 @@ function Builder() {
 										savingThrows: classRules[character.startingClassId || character.className]?.saves || [],
 										proficiencies: {
 											...proficiencies,
+											tools: [...proficiencies.tools, ...customProficiencies],
 											expertise
 										},
 										ac: ac.value,
@@ -47341,11 +47916,19 @@ function Builder() {
 											isShortRest: resource.isShortRest,
 											isLongRest: resource.isLongRest
 										}))],
-										classFeatures: [...selectedClassFeatures, ...runtimeFeatures],
+										classFeatures: [
+											...selectedClassFeatures,
+											...runtimeFeatures,
+											...customFeatures,
+											...customNotes.map((note) => ({
+												name: note.name,
+												description: note.description
+											}))
+										],
 										raceFeatures: selectedRaceFeatures,
 										featFeatures: selectedFeatFeatures,
 										backgroundFeature: selectedBackgroundRule.feature,
-										equipment: displayedInventory,
+										equipment: [...displayedInventory, ...customEquipment],
 										currency: character.currency || initial.currency,
 										personality: character.personality,
 										spellAbility: spellAbilityKey ? abilityLabels[spellAbilityKey] : void 0,
@@ -47361,7 +47944,11 @@ function Builder() {
 											...spell,
 											prepared: (character.preparedSpells || []).includes(spell.id),
 											alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell.id)
-										}))
+										})).concat(customSpells.map((spell) => ({
+											...spell,
+											prepared: true,
+											alwaysPrepared: true
+										})))
 									}),
 									/* @__PURE__ */ jsxs("div", {
 										ref: exportPanelRef,
@@ -47542,11 +48129,15 @@ function Builder() {
 								"aria-disabled": !canContinue(),
 								onClick: tryContinue,
 								children: ["Продолжить ", /* @__PURE__ */ jsx("span", { children: "→" })]
-							}) : /* @__PURE__ */ jsxs("button", {
+							}) : /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
 								className: "primary-action",
+								onClick: runCharacterCheck,
+								children: ["Проверить персонажа ", /* @__PURE__ */ jsx("span", { children: "✓" })]
+							}), /* @__PURE__ */ jsxs("button", {
+								className: "back",
 								onClick: scrollToExports,
 								children: ["Экспорт ", /* @__PURE__ */ jsx("span", { children: "↓" })]
-							})
+							})] })
 						]
 					})
 				]
