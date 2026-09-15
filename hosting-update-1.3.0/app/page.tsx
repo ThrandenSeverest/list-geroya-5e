@@ -1895,7 +1895,7 @@ function Builder() {
   }
 
   function exportNative() {
-    download(createNativeCharacterFile(exportCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
+    download(createNativeCharacterFile(rulesCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
   }
 
   function persistVault(next: CharacterVault) {
