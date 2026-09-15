@@ -33,6 +33,29 @@ export function racialTraitKey(name: string) {
   return (aliases.find(group => group.includes(name))?.[0] || name).toLocaleLowerCase("ru").replace(/ё/g, "е");
 }
 
+const FINAL_SHEET_HIDDEN_RACE_FEATURES = new Set([
+  "универсальность",
+  "человеческая универсальность",
+  "языки",
+  "язык",
+  "дополнительный язык",
+  "увеличение характеристик",
+  "увеличение значения характеристик",
+  "возраст",
+  "мировоззрение",
+  "размер",
+  "скорость",
+]);
+
+function usefulFinalRaceFeature(feature: Feature) {
+  const key = racialTraitKey(feature.name).replace(/[^a-zа-я0-9]+/g, " ").trim();
+  if (FINAL_SHEET_HIDDEN_RACE_FEATURES.has(key)) return false;
+  const text = feature.description.toLocaleLowerCase("ru").replace(/ё/g, "е");
+  if (/\+1\s+ко\s+всем\s+(шести\s+)?характеристик/.test(text)) return false;
+  if (/общ(ий|его)\s+и\s+од(ин|ного)\s+дополнительн(ый|ого)\s+язык/.test(text)) return false;
+  return true;
+}
+
 // Legacy variants supply their own mechanics; only genuinely shared traits
 // are inherited. In particular, Volo orcs never inherit Adrenaline Rush.
 const legacyCommon: Record<string, string[]> = {
@@ -73,5 +96,5 @@ export function resolvedRaceFeatures(raceId: string, variantId: string, descript
   if (raceId === "shifter") put("Смена", modern
     ? "Бонусным действием принимает звериный облик на 1 минуту и получает временные хиты в количестве 2 × бонус мастерства. Применений — бонус мастерства; восстановление после продолжительного отдыха. Заканчивается при смерти или досрочно бонусным действием."
     : "Бонусным действием принимает звериный облик на 1 минуту и получает временные хиты: уровень персонажа + модификатор Телосложения (минимум 1). Одно применение за короткий или продолжительный отдых. Заканчивается при смерти или досрочно бонусным действием.");
-  return [...merged.values()];
+  return [...merged.values()].filter(usefulFinalRaceFeature);
 }
