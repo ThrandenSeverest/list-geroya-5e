@@ -2,8 +2,9 @@ import type { Feature } from "./rules";
 import { classFeatureCorpus, optionalClassFeatureCorpus, subclassFeatureCorpus } from "./generatedRulesCorpus";
 
 /**
- * Finished characters must keep the complete rules text that is already attached
- * to a feature. Compact builder-era descriptions are never allowed to replace it.
+ * Finished characters use canonical rules text, but the final sheet is not a
+ * rules encyclopedia. Infrastructure already represented elsewhere on the
+ * sheet (spellcasting boilerplate, ASI bookkeeping) is omitted here.
  */
 export function detailedFeature(feature: Feature): Feature {
   return { ...feature, description: feature.description?.trim() || "" };
@@ -19,6 +20,16 @@ function normalizedFeatureKey(value: string) {
     .replace(/ё/g, "е")
     .replace(/[^a-zа-я0-9]+/g, " ")
     .trim();
+}
+
+const FINAL_SHEET_HIDDEN_CLASS_FEATURES = new Set([
+  "использование заклинаний",
+  "увеличение характеристик",
+  "увеличение значения характеристик",
+]);
+
+function usefulFinalClassFeature(feature: Feature) {
+  return !FINAL_SHEET_HIDDEN_CLASS_FEATURES.has(normalizedFeatureKey(feature.name));
 }
 
 const SUBCLASS_SELECTOR_FEATURES: Record<string, string[]> = {
@@ -37,10 +48,7 @@ const SUBCLASS_SELECTOR_FEATURES: Record<string, string[]> = {
   artificer: ["Специализация изобретателя"],
 };
 
-/**
- * Some builder labels intentionally differ from the Russian names used by the
- * canonical corpus. Keep explicit aliases for known translation variants.
- */
+/** Builder/catalog labels sometimes differ from canonical Russian corpus names. */
 const SUBCLASS_NAME_ALIASES: Record<string, Record<string, string>> = {
   ranger: {
     "убийца монстров": "убийца чудовищ",
@@ -68,9 +76,9 @@ function subclassByName(
 }
 
 /**
- * Last-resort resolver for catalog/corpus naming differences. The compact
- * subclass object still contains feature names, so a unique overlap identifies
- * the canonical subclass without ever borrowing descriptions from another one.
+ * Last-resort resolver for catalog/corpus naming differences. A unique overlap
+ * of feature names identifies the canonical subclass without borrowing text
+ * from another subclass.
  */
 function subclassByFeatureOverlap(entries: Record<string, Feature[]>, fallbackSubclass: Feature[]) {
   const fallbackNames = new Set(
@@ -117,5 +125,5 @@ export function documentedClassFeatures(
     ...base,
     ...(documentedSubclass?.length ? documentedSubclass : fallbackSubclass),
     ...optional,
-  ]);
+  ]).filter(usefulFinalClassFeature);
 }
