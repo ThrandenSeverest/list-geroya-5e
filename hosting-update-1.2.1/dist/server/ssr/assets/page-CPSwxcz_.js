@@ -44211,30 +44211,49 @@ function Builder() {
 						children: "Продолжить текущего персонажа"
 					})
 				]
-			}), /* @__PURE__ */ jsxs("aside", {
-				className: "special-thanks",
-				"aria-label": "Отдельное спасибо",
-				children: [
-					/* @__PURE__ */ jsx("h2", { children: "Отдельное спасибо" }),
-					/* @__PURE__ */ jsxs("a", {
-						href: "https://t.me/WiseHomeAI_bot",
-						target: "_blank",
-						rel: "noreferrer",
-						children: [/* @__PURE__ */ jsx("img", {
-							src: "acknowledgements/velmira.png",
-							alt: "Вельмира"
-						}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "@WiseHomeAI_bot · Вельмира" }), /* @__PURE__ */ jsx("small", { children: "За помощь в запуске сайта" })] })]
-					}),
-					/* @__PURE__ */ jsxs("a", {
-						href: "https://vk.ru/dndworlds",
-						target: "_blank",
-						rel: "noreferrer",
-						children: [/* @__PURE__ */ jsx("img", {
-							src: "acknowledgements/krugovorot-mirov.png",
-							alt: "Сообщество «Круговорот Миров»"
-						}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "«Круговорот Миров»" }), /* @__PURE__ */ jsx("small", { children: "За поддержку и помощь в развитии" })] })]
-					})
-				]
+			}), /* @__PURE__ */ jsxs("div", {
+				className: "home-side",
+				children: [/* @__PURE__ */ jsxs("section", {
+					className: "contact-card",
+					"aria-label": "Обратная связь",
+					children: [
+						/* @__PURE__ */ jsx("p", { children: "Если нашли ошибку или хотите предложить улучшение:" }),
+						/* @__PURE__ */ jsxs("a", {
+							href: "https://t.me/heroleaf",
+							target: "_blank",
+							rel: "noreferrer",
+							children: [/* @__PURE__ */ jsx("strong", { children: "Telegram" }), " t.me/heroleaf"]
+						}),
+						/* @__PURE__ */ jsxs("a", {
+							href: "mailto:heroleaf@mail.ru",
+							children: [/* @__PURE__ */ jsx("strong", { children: "Почта:" }), " heroleaf@mail.ru"]
+						})
+					]
+				}), /* @__PURE__ */ jsxs("aside", {
+					className: "special-thanks",
+					"aria-label": "Отдельное спасибо",
+					children: [
+						/* @__PURE__ */ jsx("h2", { children: "Отдельное спасибо" }),
+						/* @__PURE__ */ jsxs("a", {
+							href: "https://t.me/WiseHomeAI_bot",
+							target: "_blank",
+							rel: "noreferrer",
+							children: [/* @__PURE__ */ jsx("img", {
+								src: "acknowledgements/velmira.png",
+								alt: "Вельмира"
+							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "@WiseHomeAI_bot · Вельмира" }), /* @__PURE__ */ jsx("small", { children: "За помощь в запуске сайта" })] })]
+						}),
+						/* @__PURE__ */ jsxs("a", {
+							href: "https://vk.ru/dndworlds",
+							target: "_blank",
+							rel: "noreferrer",
+							children: [/* @__PURE__ */ jsx("img", {
+								src: "acknowledgements/krugovorot-mirov.png",
+								alt: "Сообщество «Круговорот Миров»"
+							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "«Круговорот Миров»" }), /* @__PURE__ */ jsx("small", { children: "За поддержку и помощь в развитии" })] })]
+						})
+					]
+				})]
 			})]
 		})
 	});
