@@ -1,6 +1,6 @@
-# HeroList — GitHub Pages test
+# HeroList 1.3.0 — GitHub Pages test
 
-`hosting-test` — отдельная статическая тестовая версия HeroList. Production backend, Telegram login и аккаунт не используются.
+`hosting-test` — отдельная статическая тестовая версия HeroList 1.3.0. Production backend, Telegram login и аккаунт не используются, поэтому аккаунтное хоумбрю здесь намеренно доступно только как закрытый экран.
 
 ## GitHub Pages
 

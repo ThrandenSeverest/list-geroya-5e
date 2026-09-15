@@ -25,3 +25,12 @@ def test_migrated_session_and_empty_vault():
     isolated=TestClient(app); isolated.cookies.set("list_geroya_session","existing-session-token")
     assert isolated.get("/api/account").json()["email"]=="session@example.test"
     assert isolated.get("/api/vault").json()=={"vault":None,"updatedAt":None}
+
+def test_homebrew_is_private_and_validated():
+    anonymous=TestClient(app)
+    assert anonymous.get("/api/homebrew").status_code==401
+    client.post("/api/auth/login",json={"email":"a@example.test","password":"very-long-pass"})
+    library={"version":1,"elements":[{"id":"hb-1","type":"spell","name":"Искра","description":"Авторское заклинание","updatedAt":"2026-09-15T00:00:00Z"}]}
+    assert client.put("/api/homebrew",json={"library":library}).json()["saved"]
+    assert client.get("/api/homebrew").json()["library"]==library
+    assert client.put("/api/homebrew",json={"library":{"version":1,"elements":[{"id":"x","type":"race","name":"Нет","updatedAt":"2026-09-15T00:00:00Z"}]}}).status_code==400

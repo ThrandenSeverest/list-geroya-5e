@@ -1,6 +1,6 @@
 {
   "name": "list-geroya-5e",
-  "version": "1.0.6",
+  "version": "1.3.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"

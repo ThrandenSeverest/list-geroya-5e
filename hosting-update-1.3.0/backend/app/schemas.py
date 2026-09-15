@@ -9,3 +9,5 @@ class TokenPassword(BaseModel):
     password: str = ""
 class VaultRequest(BaseModel):
     vault: Any = None
+class HomebrewRequest(BaseModel):
+    library: Any = None

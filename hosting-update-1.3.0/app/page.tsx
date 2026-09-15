@@ -64,6 +64,7 @@ import { shortRestHitDieHealing } from "./restRules";
 import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeValue, subclassRuntimeControls, subclassRuntimeValue } from "./subclassRuntime";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
+import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
 
 type Category = "races" | "classes" | "subclasses" | "backgrounds" | "feats" | "spells";
 type BanMode = "deny" | "allow";
@@ -77,6 +78,7 @@ type FolderImportDraft = { archiveName: string; folderName: string; items: Folde
 type AccountState = { authenticated: true; email: string; displayName: string; authProvider?: "email" | "chatgpt"; emailVerified?: boolean } | { authenticated: false };
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
 type SiteTheme = "classic" | "parchment" | "legacy";
+type CharacterCheck = { step: number; message: string; severity: "error" | "warning" };
 
 const steps = ["Раса", "Класс", "Характеристики", "Предыстория", "Навыки", "Снаряжение", "Уровень", "Заклинания", "Языки и инструменты", "Характер", "Итог"];
 const initial: ExportCharacter = {
@@ -144,6 +146,15 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.3.0",
+  publishedAt: "2026-09-15T15:00:00Z",
+  changes: [
+    "В «Моих персонажах» добавлено копирование персонажа вместе со всеми решениями и текущим состоянием.",
+    "Финальный шаг получил полную проверку персонажа с единым списком незавершённых и доступных выборов, включая мультикласс.",
+    "Раздел заклинаний получил фильтры по школе, концентрации и времени накладывания; подготовка и расход ячеек доступны в игровом листе.",
+    "В аккаунте появилась личная библиотека хоумбрю: способности, предметы, заклинания, владения и заметки с JSON-экспортом.",
+  ],
+}, {
   version: "1.2.1",
   publishedAt: "2026-09-09T22:00:00Z",
   changes: [
@@ -612,7 +623,7 @@ export default function Home() {
 }
 
 function Builder() {
-  const [view, setView] = useState<"home" | "quiz" | "builder" | "banlist" | "characters">("home");
+  const [view, setView] = useState<"home" | "quiz" | "builder" | "banlist" | "characters" | "homebrew">("home");
   const [step, setStep] = useState(0);
   const [character, setCharacter] = useState<ExportCharacter>(initial);
   const [banDraft, setBanDraft] = useState<BanList>(emptyBan);
@@ -638,6 +649,9 @@ function Builder() {
   const [spellLevel, setSpellLevel] = useState<number | "all">("all");
   const [spellClassId, setSpellClassId] = useState("");
   const [ritualFilter, setRitualFilter] = useState<"all" | "ritual" | "nonritual">("all");
+  const [spellSchool, setSpellSchool] = useState("all");
+  const [concentrationFilter, setConcentrationFilter] = useState<"all" | "concentration" | "instant">("all");
+  const [castingTimeFilter, setCastingTimeFilter] = useState("all");
   const [featsExpanded, setFeatsExpanded] = useState(true);
   const [advancementKey, setAdvancementKey] = useState("");
   const [detailsId, setDetailsId] = useState("");
@@ -650,6 +664,10 @@ function Builder() {
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
   const [interactionError, setInteractionError] = useState<string | null>(null);
+  const [characterCheck, setCharacterCheck] = useState<CharacterCheck[] | null>(null);
+  const [homebrew, setHomebrew] = useState<HomebrewLibrary>(emptyHomebrewLibrary);
+  const [homebrewState, setHomebrewState] = useState<"idle" | "loading" | "saving" | "saved" | "error">("idle");
+  const [homebrewDraft, setHomebrewDraft] = useState<{ type: HomebrewType; name: string; description: string; attach: boolean; level: number; school: string; castingTime: string; concentration: boolean; ritual: boolean }>({ type: "ability", name: "", description: "", attach: true, level: 0, school: "", castingTime: "1 действие", concentration: false, ritual: false });
   const banFileRef = useRef<HTMLInputElement>(null);
   const characterFileRef = useRef<HTMLInputElement>(null);
   const folderFileRef = useRef<HTMLInputElement>(null);
@@ -662,10 +680,17 @@ function Builder() {
       const accountValue = await accountResponse.json() as AccountState;
       if (!accountValue.authenticated) {
         setAccount({ authenticated: false });
+        setHomebrew(emptyHomebrewLibrary);
         return;
       }
-      const vaultResponse = await fetch("/api/vault", { cache: "no-store" });
+      const [vaultResponse, homebrewResponse] = await Promise.all([
+        fetch("/api/vault", { cache: "no-store" }),
+        fetch("/api/homebrew", { cache: "no-store" }),
+      ]);
       const remotePayload = vaultResponse.ok ? await vaultResponse.json() as { vault: CharacterVault | null } : { vault: null };
+      const homebrewPayload = homebrewResponse.ok ? await homebrewResponse.json() as { library: HomebrewLibrary } : { library: emptyHomebrewLibrary };
+      setHomebrew(normalizeHomebrewLibrary(homebrewPayload.library));
+      setHomebrewState(homebrewResponse.ok ? "saved" : "error");
       const merged = mergeVaults(localVault, remotePayload.vault);
       setVault(merged);
       const active = merged.slots.find(slot => slot.id === merged.activeId);
@@ -677,6 +702,7 @@ function Builder() {
       setAccount(accountValue);
     } catch {
       setAccount({ authenticated: false });
+      setHomebrew(emptyHomebrewLibrary);
       setCloudState("error");
     }
   }
@@ -798,7 +824,18 @@ function Builder() {
   const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
   const filtered = currentOptions.filter(option => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
   const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
-  const filteredSpells = selectableSpells.filter(spell => (spellLevel === "all" || spell.level === spellLevel) && matchesSources(spell.source, selectedSources) && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual)) && `${spell.name} ${spell.description} ${spell.school}`.toLowerCase().includes(search.toLowerCase()));
+  const spellSchools = [...new Set(selectableSpells.map(spell => spell.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
+  const castingTimes = [...new Set(selectableSpells.map(spell => spell.castingTime).filter((value): value is string => !!value))].sort((a, b) => a.localeCompare(b, "ru"));
+  const filteredSpells = selectableSpells.filter(spell => {
+    const concentration = /концентрац/i.test(spell.duration || "");
+    return (spellLevel === "all" || spell.level === spellLevel)
+      && matchesSources(spell.source, selectedSources)
+      && (ritualFilter === "all" || (ritualFilter === "ritual" ? !!spell.ritual : !spell.ritual))
+      && (spellSchool === "all" || spell.school === spellSchool)
+      && (concentrationFilter === "all" || (concentrationFilter === "concentration" ? concentration : !concentration))
+      && (castingTimeFilter === "all" || spell.castingTime === castingTimeFilter)
+      && `${spell.name} ${spell.description} ${spell.school} ${spell.castingTime || ""}`.toLowerCase().includes(search.toLowerCase());
+  });
   const spellLevelGroups = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ({
     level,
     spells: filteredSpells.filter(spell => spell.level === level),
@@ -831,6 +868,23 @@ function Builder() {
   const expertise = characterExpertiseSkills(exportCharacter);
   const knownLanguages = proficiencies.languages;
   const resources = characterResources(exportCharacter);
+  const attachedHomebrew = account?.authenticated ? homebrew.elements.filter(element => element.characterId === vault.activeId) : [];
+  const customFeatures = attachedHomebrew.filter(element => element.type === "ability").map(element => ({ name: element.name, description: element.description }));
+  const customEquipment = attachedHomebrew.filter(element => element.type === "item").map(element => element.name);
+  const customProficiencies = attachedHomebrew.filter(element => element.type === "proficiency").map(element => element.name);
+  const customNotes = attachedHomebrew.filter(element => element.type === "note");
+  const customSpells: CatalogSpell[] = attachedHomebrew.filter(element => element.type === "spell").map(element => ({
+    id: element.id,
+    name: element.name,
+    source: "Хоумбрю",
+    description: element.description,
+    level: element.level || 0,
+    school: element.school || "Пользовательская",
+    classes: [],
+    ritual: element.ritual,
+    castingTime: element.castingTime,
+    duration: element.concentration ? "Концентрация" : undefined,
+  }));
   const runtimeControls = subclassRuntimeControls(exportCharacter, availableSpellCatalog);
   const runtimeFeatures = runtimeControls.flatMap(control => {
     const value = subclassRuntimeValue(exportCharacter, control.key);
@@ -880,8 +934,9 @@ function Builder() {
         ...availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(rulesCharacter, spell)),
         ...alwaysPrepared.map(id => spells.find(spell => spell.id === id)),
         ...grantedFeatSpells.map(id => spells.find(spell => spell.id === id)),
+        ...customSpells,
       ]
-    : [...new Set([...ordinarySpellIds, ...alwaysPrepared, ...grantedFeatSpells])].map(id => spells.find(spell => spell.id === id)))
+    : [...new Set([...ordinarySpellIds, ...alwaysPrepared, ...grantedFeatSpells])].map(id => spells.find(spell => spell.id === id)).concat(customSpells))
     .filter((spell): spell is CatalogSpell => Boolean(spell))
     .map(spell => [spell.id, spell])).values()]
     .sort((left, right) => left.level - right.level || left.name.localeCompare(right.name, "ru"));
@@ -1090,6 +1145,64 @@ function Builder() {
     }
     if (step === 9) return "Заполните черты характера, идеал, привязанность и слабость.";
     return "Завершите обязательные выборы на этом шаге.";
+  }
+
+  function collectCharacterChecks(): CharacterCheck[] {
+    const issues: CharacterCheck[] = [];
+    const add = (step: number, message: string, severity: CharacterCheck["severity"] = "error") => issues.push({ step, message, severity });
+    if (!character.race) add(0, "Не выбрана раса.");
+    else if (variantsFor(character.race).length && !character.raceVariant) add(0, "Не выбран вариант расы или подраса.");
+    if (!character.className) add(1, "Не выбран класс.");
+    if (!abilitiesComplete) add(2, "Не распределены характеристики.");
+    const raceBonusCount = chosenRaceVariant?.chooseBonuses?.count || 0;
+    if ((character.raceAbilityChoices || []).length !== raceBonusCount) add(2, "Не распределён расовый бонус характеристики.");
+    if ((character.raceSkills || []).length !== raceSkillChoiceCount(character)) add(2, "Не выбран расовый навык.");
+    if (!character.background) add(3, "Не выбрана предыстория.");
+    else backgroundChoiceGroups(character.background, featCatalog).forEach(group => {
+      const count = (character.backgroundChoices?.[group.key] || []).length;
+      if (count < group.count) add(3, `Не завершён выбор предыстории: ${group.title}.`);
+    });
+    if (character.classSkills.length < classRule.count) add(4, `Не выбран навык класса: ${character.classSkills.length} из ${classRule.count}.`);
+    if (!equipmentComplete(character)) add(5, "Не завершён выбор стартового снаряжения.");
+    subclassRequirements.forEach(({ entry }) => {
+      if (!entry.subclassId) add(6, `Не выбран подкласс: ${classes.find(option => option.id === entry.classId)?.name || entry.classId}.`);
+    });
+    advancements.forEach(choice => {
+      if (!advancementChoiceComplete(choice, spells, character.level, character)) add(6, `Не завершён выбор развития на ${choice.level}-м уровне.`);
+    });
+    if (!classChoicesComplete(rulesCharacter, spells)) add(6, "Не завершены обязательные выборы способностей класса.");
+    spellClassCandidates.forEach(candidate => {
+      const classId = candidate.entry.classId;
+      const scoped = { ...rulesCharacter, className: classId, subclass: candidate.entry.subclassId || "", level: candidate.entry.level, abilities: finalAbilities };
+      const rule = spellSelectionRuleForClass(scoped, classId, candidate.entry.level);
+      const automatic = new Set(alwaysPreparedSpellEntries(scoped, availableSpellCatalog).map(entry => entry.id));
+      const ids = currentSpellGrants.filter(grant => grant.classId === classId && !automatic.has(grant.spellId)).map(grant => grant.spellId);
+      const cantrips = ids.filter(id => spells.find(spell => spell.id === id)?.level === 0);
+      const leveled = ids.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0);
+      const className = classes.find(option => option.id === classId)?.name || classId;
+      if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
+      if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
+      if (rule.mode === "spellbook") {
+        const prepared = (character.preparedSpells || []).filter(id => leveled.includes(id));
+        if (prepared.length < (rule.prepared || 0)) add(7, `Не подготовлены заклинания класса «${className}»: ${prepared.length} из ${rule.prepared}.`);
+      }
+    });
+    const chosenLanguageCount = (character.languages || []).length;
+    if (chosenLanguageCount < languageRequirements.choices) add(8, `Можно выбрать ещё ${languageRequirements.choices - chosenLanguageCount} язык(а).`, "warning");
+    if (!proficiencyChoicesComplete(exportCharacter)) add(8, "Не завершён выбор владений или инструментов.");
+    const emptyPersonality = Object.entries(character.personality).filter(([, value]) => !value).map(([key]) => personalityNames[key as PersonalityKey]);
+    if (emptyPersonality.length) add(9, `Не заполнено: ${emptyPersonality.join(", ")}.`, "warning");
+    return issues;
+  }
+
+  function runCharacterCheck() {
+    setCharacterCheck(collectCharacterChecks());
+  }
+
+  function openCharacterCheck(check: CharacterCheck) {
+    setCharacterCheck(null);
+    setView("builder");
+    resetFilters(check.step);
   }
 
   function tryContinue() {
@@ -1793,6 +1906,55 @@ function Builder() {
     localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(normalized));
   }
 
+  async function persistHomebrew(next: HomebrewLibrary) {
+    if (!account?.authenticated) return;
+    const normalized = normalizeHomebrewLibrary(next);
+    setHomebrew(normalized);
+    setHomebrewState("saving");
+    try {
+      const response = await fetch("/api/homebrew", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ library: normalized }) });
+      setHomebrewState(response.ok ? "saved" : "error");
+    } catch {
+      setHomebrewState("error");
+    }
+  }
+
+  function addHomebrewElement() {
+    const name = homebrewDraft.name.trim();
+    if (!name || !account?.authenticated) return;
+    const element: HomebrewElement = {
+      id: `homebrew-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      type: homebrewDraft.type,
+      name,
+      description: homebrewDraft.description.trim(),
+      characterId: homebrewDraft.attach ? vault.activeId : undefined,
+      updatedAt: new Date().toISOString(),
+      ...(homebrewDraft.type === "spell" ? {
+        level: homebrewDraft.level,
+        school: homebrewDraft.school.trim(),
+        castingTime: homebrewDraft.castingTime.trim(),
+        concentration: homebrewDraft.concentration,
+        ritual: homebrewDraft.ritual,
+      } : {}),
+    };
+    void persistHomebrew({ version: 1, elements: [...homebrew.elements, element] });
+    setHomebrewDraft(current => ({ ...current, name: "", description: "" }));
+  }
+
+  function deleteHomebrewElement(id: string) {
+    if (!confirm("Удалить этот пользовательский элемент?")) return;
+    void persistHomebrew({ version: 1, elements: homebrew.elements.filter(element => element.id !== id) });
+  }
+
+  function toggleHomebrewAttachment(element: HomebrewElement) {
+    const characterId = element.characterId === vault.activeId ? undefined : vault.activeId;
+    void persistHomebrew({ version: 1, elements: homebrew.elements.map(item => item.id === element.id ? { ...item, characterId, updatedAt: new Date().toISOString() } : item) });
+  }
+
+  function exportHomebrew() {
+    download({ format: "herolist-homebrew", exportedAt: new Date().toISOString(), ...homebrew }, "HeroList — моё хоумбрю.json");
+  }
+
   function openCharacterManager() {
     const updatedAt = new Date().toISOString();
     const next = {
@@ -1824,6 +1986,26 @@ function Builder() {
     setImportMessage(null);
     setView("builder");
     resetFilters(0);
+  }
+
+  function duplicateSlot(id: string) {
+    const source = vault.slots.find(slot => slot.id === id);
+    if (!source) return;
+    if (vault.slots.length >= vault.capacity) {
+      alert("Все доступные места заняты. Добавьте ещё 5 слотов.");
+      return;
+    }
+    const copy = normalizeCharacter(JSON.parse(JSON.stringify(source.character)) as ExportCharacter);
+    copy.name = `${copy.name || "Безымянный герой"} — копия`;
+    const slot = { ...createSlot(copy), folderId: source.folderId };
+    persistVault({ ...vault, activeId: slot.id, slots: [...vault.slots, slot] });
+    setCharacter(copy);
+  }
+
+  function exportSlot(id: string) {
+    const slot = vault.slots.find(item => item.id === id);
+    if (!slot) return;
+    download(createNativeCharacterFile(slot.character), `${safeName(slot.character.name)} — Лист Героя 5e.json`);
   }
 
   function addFiveSlots() {
@@ -1996,6 +2178,34 @@ function Builder() {
 {view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-layout"><section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Выбери происхождение, способности и свой путь.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section><div className="home-side"><section className="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="acknowledgements/velmira.png" alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div>}
   </main>;
 
+  if (view === "homebrew") return (
+    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+      <header className="topbar">
+        <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src="/experimental/site-mark.png" alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+        <button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button>
+      </header>
+      <section className="homebrew-library">
+        <header className="library-head"><div><p className="eyebrow">Только в вашем аккаунте</p><h1>Моё хоумбрю</h1><p>Собственные способности, предметы, заклинания, владения и заметки. Они не добавляются в общий каталог HeroList.</p></div>{account?.authenticated && <div className="library-actions"><button disabled={!homebrew.elements.length} onClick={exportHomebrew}>Экспортировать JSON</button><span className={`homebrew-save-state state-${homebrewState}`}>{homebrewState === "saving" ? "Сохраняется…" : homebrewState === "error" ? "Ошибка сохранения" : "Сохранено в аккаунте"}</span></div>}</header>
+        {!account?.authenticated ? <div className="homebrew-auth-required"><h2>Нужен вход в аккаунт</h2><p>Хоумбрю хранится отдельно от локальных персонажей и доступно только владельцу аккаунта. Войдите в HeroList, затем вернитесь в этот раздел.</p><button className="primary-action" onClick={() => setView("builder")}>Перейти к входу</button></div> : <>
+          <section className="homebrew-editor">
+            <label>Тип<select value={homebrewDraft.type} onChange={event => setHomebrewDraft({ ...homebrewDraft, type: event.target.value as HomebrewType })}>{(Object.keys(homebrewTypeLabels) as HomebrewType[]).map(type => <option key={type} value={type}>{homebrewTypeLabels[type]}</option>)}</select></label>
+            <label>Название<input value={homebrewDraft.name} onChange={event => setHomebrewDraft({ ...homebrewDraft, name: event.target.value })} placeholder="Например, Клинок зимнего короля" /></label>
+            <label className="homebrew-description">Описание<textarea value={homebrewDraft.description} onChange={event => setHomebrewDraft({ ...homebrewDraft, description: event.target.value })} placeholder="Полный игровой текст и механика" /></label>
+            {homebrewDraft.type === "spell" && <div className="homebrew-spell-fields"><label>Круг<input type="number" min="0" max="9" value={homebrewDraft.level} onChange={event => setHomebrewDraft({ ...homebrewDraft, level: Math.max(0, Math.min(9, Number(event.target.value) || 0)) })} /></label><label>Школа<input value={homebrewDraft.school} onChange={event => setHomebrewDraft({ ...homebrewDraft, school: event.target.value })} /></label><label>Время<input value={homebrewDraft.castingTime} onChange={event => setHomebrewDraft({ ...homebrewDraft, castingTime: event.target.value })} /></label><label><input type="checkbox" checked={homebrewDraft.concentration} onChange={event => setHomebrewDraft({ ...homebrewDraft, concentration: event.target.checked })} /> Концентрация</label><label><input type="checkbox" checked={homebrewDraft.ritual} onChange={event => setHomebrewDraft({ ...homebrewDraft, ritual: event.target.checked })} /> Ритуал</label></div>}
+            <label className="homebrew-attach"><input type="checkbox" checked={homebrewDraft.attach} onChange={event => setHomebrewDraft({ ...homebrewDraft, attach: event.target.checked })} /> Добавить к текущему персонажу «{character.name || "Безымянный герой"}»</label>
+            <button className="primary-action" disabled={!homebrewDraft.name.trim() || homebrewState === "saving"} onClick={addHomebrewElement}>Добавить</button>
+          </section>
+          <div className="homebrew-grid">{homebrew.elements.map(element => {
+            const linkedSlot = element.characterId ? vault.slots.find(slot => slot.id === element.characterId) : undefined;
+            return <article key={element.id}><small>{homebrewTypeLabels[element.type]}{element.type === "spell" ? ` · ${levelLabel(element.level || 0)}${element.school ? ` · ${element.school}` : ""}` : ""}</small><h2>{element.name}</h2><p>{element.description || "Без описания"}</p>{linkedSlot && <em>Добавлено к: {linkedSlot.character.name || "Безымянный герой"}</em>}<div><button onClick={() => toggleHomebrewAttachment(element)}>{element.characterId === vault.activeId ? "Убрать у текущего" : "Добавить текущему"}</button><button onClick={() => deleteHomebrewElement(element.id)}>Удалить</button></div></article>;
+          })}</div>
+          {!homebrew.elements.length && <div className="empty-folder"><strong>Личная библиотека пока пуста.</strong><span>Создайте первый пользовательский элемент выше.</span></div>}
+        </>}
+      </section>
+      <UpdateHistory />
+    </main>
+  );
+
   if (view === "characters") {
     const free = vault.capacity - vault.slots.length;
     const visibleSlots = vault.slots.filter(slot => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
@@ -2013,6 +2223,7 @@ function Builder() {
           <header className="library-head">
             <div><p className="eyebrow">Локальная коллекция</p><h1>Ваши персонажи</h1><p>До {vault.capacity} слотов на этом устройстве. Каждый лист сохраняется автоматически.</p></div>
             <div className="library-actions">
+              <button onClick={() => setView("homebrew")}>Моё хоумбрю</button>
               <button onClick={() => characterFileRef.current?.click()}>Импорт JSON</button>
               <button onClick={() => folderFileRef.current?.click()}>Импорт папки ZIP</button>
               <button className="primary-action" disabled={free <= 0} onClick={addCharacter}>Новый персонаж</button>
@@ -2055,7 +2266,13 @@ function Builder() {
                 <label className="character-select"><input type="checkbox" checked={selectedSlotIds.includes(slot.id)} onChange={() => toggleSlotSelection(slot.id)} /><span>Выбрать</span></label>
                 <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2><p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
-                <div className="character-card-actions"><button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Продолжить" : "Открыть"}</button><label className="character-folder-select"><span>Папка</span><select value={slot.folderId || "unfiled"} onChange={event => moveSlot(slot.id, event.target.value)}><option value="unfiled">Без папки</option>{vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></label><button onClick={() => deleteSlot(slot.id)}>Удалить</button></div>
+                <div className="character-card-actions">
+                  <button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Открыть" : "Открыть"}</button>
+                  <button onClick={() => duplicateSlot(slot.id)}>Копировать</button>
+                  <details className="character-move-menu"><summary>Переместить</summary><select value={slot.folderId || "unfiled"} onChange={event => moveSlot(slot.id, event.target.value)}><option value="unfiled">Без папки</option>{vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></details>
+                  <button onClick={() => exportSlot(slot.id)}>Экспорт</button>
+                  <button onClick={() => deleteSlot(slot.id)}>Удалить</button>
+                </div>
               </article>;
             })}
           </div>
@@ -2181,6 +2398,7 @@ function Builder() {
         <div className="top-actions">
           <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
           <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
+          {account?.authenticated && <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>}
           <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
           <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
           <input ref={banFileRef} hidden type="file" accept=".json,application/json" onChange={importBan} />
@@ -2194,6 +2412,7 @@ function Builder() {
             <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
             <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
             <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
+            {account?.authenticated && <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>}
             <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
             <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
             {account?.authenticated ? <a href="/account">Аккаунт · {account.displayName}</a> : <a href="/account">Войти и сохранить</a>}
@@ -2216,6 +2435,14 @@ function Builder() {
           <ul>{helpmateExportWarning.map(name => <li key={name}>{name}</li>)}</ul>
           <p>Остальные заклинания будут экспортированы нормально.</p>
           <div><button onClick={() => setHelpmateExportWarning(null)}>Отмена</button><button className="primary-action" onClick={confirmPartialHelpmateExport}>Экспортировать совместимые</button></div>
+        </section>
+      </div>}
+      {characterCheck && <div className="modal-backdrop" role="presentation">
+        <section className="warning-modal character-check-modal" role="dialog" aria-modal="true" aria-labelledby="character-check-title">
+          <small>Итоговая проверка</small>
+          <h2 id="character-check-title">{characterCheck.length ? `Найдено: ${characterCheck.length}` : "Персонаж готов"}</h2>
+          {characterCheck.length ? <><p>Нажмите на строку, чтобы перейти к нужному шагу.</p><div className="character-check-list">{characterCheck.map((check, index) => <button key={`${check.step}-${index}`} className={check.severity} onClick={() => openCharacterCheck(check)}><span>{check.severity === "error" ? "!" : "i"}</span><strong>{check.message}</strong><small>Шаг {check.step + 1} · {steps[check.step]}</small></button>)}</div></> : <p>Все обязательные решения заполнены. Лист можно экспортировать или скопировать в игровой режим.</p>}
+          <div><button className="primary-action" onClick={() => setCharacterCheck(null)}>Закрыть</button></div>
         </section>
       </div>}
       <MissingChoiceNavigator signature={`${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.backgroundChoices)}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}`} />
@@ -2793,13 +3020,19 @@ function Builder() {
                     <button className={ritualFilter === "ritual" ? "active" : ""} onClick={() => setRitualFilter("ritual")}>Ритуалы</button>
                     <button className={ritualFilter === "nonritual" ? "active" : ""} onClick={() => setRitualFilter("nonritual")}>Не ритуалы</button>
                   </div>
+                  <div className="spell-advanced-filters">
+                    <label>Школа<select value={spellSchool} onChange={event => setSpellSchool(event.target.value)}><option value="all">Все школы</option>{spellSchools.map(school => <option key={school} value={school}>{school}</option>)}</select></label>
+                    <label>Концентрация<select value={concentrationFilter} onChange={event => setConcentrationFilter(event.target.value as typeof concentrationFilter)}><option value="all">Все</option><option value="concentration">Требуется</option><option value="instant">Не требуется</option></select></label>
+                    <label>Время накладывания<select value={castingTimeFilter} onChange={event => setCastingTimeFilter(event.target.value)}><option value="all">Любое</option>{castingTimes.map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+                    <button onClick={() => { setSpellSchool("all"); setConcentrationFilter("all"); setCastingTimeFilter("all"); setRitualFilter("all"); setSpellLevel("all"); setSearch(""); }}>Сбросить фильтры</button>
+                  </div>
                   <div className="spell-list">
                     {spellLevelGroups.map(group => <section className="spell-level-group" key={group.level}>
                       <h3>{levelLabel(group.level)} <span>{group.spells.length}</span></h3>
                       {group.spells.map(spell => (
                         <article key={spell.id} className={activeSpellIds.includes(spell.id) ? "selected" : ""}>
                           <span className="spell-level">{spell.level}</span>
-                          <div><h3>{spell.name}</h3><small>{levelLabel(spell.level)} · {spell.school} · {spell.source}{spell.ritual ? " · ритуал" : ""}{isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : ""}{chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""}</small><p>{spell.description}</p></div>
+                          <div><h3>{spell.name}</h3><small>{levelLabel(spell.level)} · {spell.school} · {spell.source}{spell.castingTime ? ` · ${spell.castingTime}` : ""}{/концентрац/i.test(spell.duration || "") ? " · концентрация" : ""}{spell.ritual ? " · ритуал" : ""}{isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : ""}{chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""}</small><p>{spell.description}</p></div>
                           <div className="spell-actions"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer" aria-label={`Открыть ${spell.name} на dnd.su`}>dnd.su ↗</a><button onClick={() => toggleSpell(spell.id)}>{activeSpellIds.includes(spell.id) ? "✓" : "+"}</button></div>
                         </article>
                       ))}
@@ -2867,6 +3100,7 @@ function Builder() {
 
           {step === 10 && (
             <div className="final-workspace">
+              <section className="character-check-banner"><div><small>Перед экспортом</small><h2>Проверьте, что герой полностью собран</h2><p>Итоговая проверка найдёт пропущенные навыки, характеристики, языки, подклассы и заклинания во всех классах.</p></div><button className="primary-action" onClick={runCharacterCheck}>Проверить персонажа</button></section>
               <div className="identity-editor">
                 <label>Имя персонажа<input value={character.name} onChange={event => setCharacter(current => ({ ...current, name: event.target.value }))} placeholder="Введите имя" /></label>
                 <label>Опыт<input type="number" min="0" value={character.experience || 0} onChange={event => setCharacter(current => ({ ...current, experience: Math.max(0, Number(event.target.value) || 0) }))} /></label>
@@ -2913,7 +3147,7 @@ function Builder() {
                   <div className="mobile-prepared-head"><h3>Заклинания</h3><span>{mobileSpellPool.length}</span></div>
                   {spellRule.prepared !== undefined && <p className="mobile-prepared-limit">Подготовлено: <b>{mobilePreparedIds.length}</b> из <b>{spellRule.prepared}</b>. Заговоры и всегда подготовленные заклинания лимит не занимают.</p>}
                   {!spellRule.caster && !mobileSpellPool.length ? <p>У персонажа нет доступных заклинаний.</p> : <div className="mobile-spell-list">{mobileSpellPool.map(spell => {
-                    const automatic = spell.level === 0 || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
+                    const automatic = spell.level === 0 || spell.source === "Хоумбрю" || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
                     const prepared = automatic || mobilePreparedIds.includes(spell.id);
                     const canToggle = spell.level > 0 && !automatic && spellRule.prepared !== undefined;
                     return <button key={spell.id} className={prepared ? "prepared" : ""} onClick={() => canToggle && toggleMobilePreparedSpell(spell.id)} aria-disabled={!canToggle} title={canToggle ? "Подготовить или снять подготовку" : automatic ? "Доступно всегда" : "Известное заклинание"}><span>{spell.level === 0 ? "∞" : automatic ? "◆" : prepared ? "●" : "○"}</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button>;
@@ -2933,8 +3167,8 @@ function Builder() {
                   {spellRule.slots.length > 0 && <div className="mobile-slot-list"><h3>Ячейки заклинаний</h3>{spellRule.slots.map((maximum, circle) => <article key={circle}><span>{circle + 1} круг</span><button onClick={() => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum)}>Потратить</button><b>{maximum - (character.spellSlotsUsed?.[circle] || 0)} / {maximum}</b><button onClick={() => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum)}>Вернуть</button></article>)}</div>}
                 </div>}
 
-                {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel mobile-equipment-editor"><h3>Снаряжение</h3><label>Инвентарь<textarea value={character.inventoryOverride ?? equipmentItems.join("\n")} onChange={event => setCharacter(current => ({ ...current, inventoryOverride: event.target.value }))} aria-label="Инвентарь персонажа" placeholder="По одному предмету на строку" /></label><small>Можно переписать список полностью. Изменения сохраняются вместе с персонажем.</small><h3>Монеты</h3><div className="mobile-coin-grid">{(["gp", "sp", "cp", "pp"] as const).map(key => { const labels = { gp: "ЗМ", sp: "СМ", cp: "ММ", pp: "ПМ" } as const; return <label key={key}><span>{labels[key]}</span><input type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} aria-label={`${labels[key]}: количество`} /></label>; })}</div></div>}
-                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}</div>}
+                {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel mobile-equipment-editor"><h3>Снаряжение</h3><label>Инвентарь<textarea value={character.inventoryOverride ?? equipmentItems.join("\n")} onChange={event => setCharacter(current => ({ ...current, inventoryOverride: event.target.value }))} aria-label="Инвентарь персонажа" placeholder="По одному предмету на строку" /></label>{customEquipment.length > 0 && <p><b>Хоумбрю:</b> {customEquipment.join(" · ")}</p>}<small>Можно переписать список полностью. Изменения сохраняются вместе с персонажем.</small><h3>Монеты</h3><div className="mobile-coin-grid">{(["gp", "sp", "cp", "pp"] as const).map(key => { const labels = { gp: "ЗМ", sp: "СМ", cp: "ММ", pp: "ПМ" } as const; return <label key={key}><span>{labels[key]}</span><input type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} aria-label={`${labels[key]}: количество`} /></label>; })}</div></div>}
+                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}{customNotes.map(note => <article className="homebrew-note" key={note.id}><strong>{note.name}</strong><p>{note.description}</p></article>)}</div>}
               </section>}
               <div className="sheet-page">
                 <header className="sheet-header">
@@ -2954,7 +3188,7 @@ function Builder() {
                       <div className="stat-block" key={key}><small>{abilityLabels[key]}</small><strong>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</strong><span>{finalAbilities[key]}</span></div>
                     ))}
                     <div className="sheet-box passive"><strong>{passivePerception}</strong><span>ПАССИВНАЯ МУДРОСТЬ</span></div>
-                    <div className="sheet-box prof-list"><h3>ВЛАДЕНИЯ И ЯЗЫКИ</h3><p><b>Навыки:</b> {proficiencies.skills.join(", ") || "нет"}</p><p><b>Компетентность:</b> {expertise.join(", ") || "нет"}</p><p><b>Инструменты:</b> {proficiencies.tools.join(", ") || "нет"}</p><p><b>Языки:</b> {proficiencies.languages.join(", ") || "нет"}</p><p><b>Доспехи:</b> {proficiencies.armor.join(", ") || "нет"}</p><p><b>Оружие:</b> {proficiencies.weapons.join(", ") || "нет"}</p></div>
+                    <div className="sheet-box prof-list"><h3>ВЛАДЕНИЯ И ЯЗЫКИ</h3><p><b>Навыки:</b> {proficiencies.skills.join(", ") || "нет"}</p><p><b>Компетентность:</b> {expertise.join(", ") || "нет"}</p><p><b>Инструменты:</b> {[...proficiencies.tools, ...customProficiencies].join(", ") || "нет"}</p><p><b>Языки:</b> {proficiencies.languages.join(", ") || "нет"}</p><p><b>Доспехи:</b> {proficiencies.armor.join(", ") || "нет"}</p><p><b>Оружие:</b> {proficiencies.weapons.join(", ") || "нет"}</p></div>
                   </section>
                   <section className="sheet-combat">
                     <div className="combat-row">
@@ -3012,11 +3246,12 @@ function Builder() {
                       <h4>{selectedClass?.name}: классовые особенности до {character.level} уровня</h4>
                       {[...selectedClassFeatures, ...runtimeFeatures].map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
                       {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
+                      {customFeatures.length > 0 && <><h4>Пользовательские способности</h4>{customFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>
                       <p>{selectedBackground?.description}</p>
                       <p><b>{selectedBackgroundRule.feature.name}.</b> {selectedBackgroundRule.feature.description}</p>
                     </div>
-                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{displayedInventory.join(" · ") || "Не выбрано"}</p><p><b>Расчёт КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p></div>
+                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{[...displayedInventory, ...customEquipment].join(" · ") || "Не выбрано"}</p><p><b>Расчёт КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p></div>
                   </section>
                 </div>
               </div>
@@ -3037,7 +3272,7 @@ function Builder() {
                 abilities={finalAbilities}
                 proficiency={proficiency}
                 savingThrows={classRules[character.startingClassId || character.className]?.saves || []}
-                proficiencies={{ ...proficiencies, expertise }}
+                proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
                 initiative={abilityModifier(finalAbilities.dex)}
                 speed={character.race === "dwarf" ? 25 : chosenRaceVariant?.id === "wood" ? 35 : 30}
@@ -3052,11 +3287,11 @@ function Builder() {
                 resources={[
                   ...resources.map(resource => ({ name: resource.name, current: resourceCurrent(exportCharacter, resource), max: resource.max, die: resource.die, unit: resource.unit, isShortRest: resource.isShortRest, isLongRest: resource.isLongRest })),
                 ]}
-                classFeatures={[...selectedClassFeatures, ...runtimeFeatures]}
+                classFeatures={[...selectedClassFeatures, ...runtimeFeatures, ...customFeatures, ...customNotes.map(note => ({ name: note.name, description: note.description }))]}
                 raceFeatures={selectedRaceFeatures}
                 featFeatures={selectedFeatFeatures}
                 backgroundFeature={selectedBackgroundRule.feature}
-                equipment={displayedInventory}
+                equipment={[...displayedInventory, ...customEquipment]}
                 currency={character.currency || initial.currency}
                 personality={character.personality}
                 spellAbility={spellAbilityKey ? abilityLabels[spellAbilityKey] : undefined}
@@ -3072,7 +3307,7 @@ function Builder() {
                   ...spell!,
                   prepared: (character.preparedSpells || []).includes(spell!.id),
                   alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell!.id),
-                }))}
+                })).concat(customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true })))}
               />
               <div ref={exportPanelRef} className="export-panel">
                 <div>
@@ -3132,7 +3367,7 @@ function Builder() {
           {step > 0 && <button className="back" onClick={() => resetFilters(step - 1)}>← Назад</button>}
           {step < steps.length - 1
             ? <button className={`primary-action${!canContinue() ? " blocked" : ""}`} aria-disabled={!canContinue()} onClick={tryContinue}>Продолжить <span>→</span></button>
-            : <button className="primary-action" onClick={scrollToExports}>Экспорт <span>↓</span></button>}
+            : <><button className="primary-action" onClick={runCharacterCheck}>Проверить персонажа <span>✓</span></button><button className="back" onClick={scrollToExports}>Экспорт <span>↓</span></button></>}
         </aside>
       </div>
       <footer>Неофициальный инструмент для личного некоммерческого использования. Dungeons &amp; Dragons и названия книг принадлежат правообладателям. Описания оригинально сформулированы для этого приложения.</footer>

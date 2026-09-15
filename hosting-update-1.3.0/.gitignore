@@ -28,3 +28,8 @@ next-env.d.ts
 /work/
 backend/.venv/
 backend/data/
+backend/test.db
+__pycache__/
+*.pyc
+.pytest_cache/
+*.tsbuildinfo

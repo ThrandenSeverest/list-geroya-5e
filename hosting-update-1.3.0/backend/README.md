@@ -1,7 +1,7 @@
 # FastAPI + SQLite backend
 
 ## Architecture
-The React/Vinext frontend stays unchanged. Nginx sends `/api/` to FastAPI and all other paths to the frontend. `character_vaults.vault_json` is stored and returned as opaque JSON.
+Nginx sends `/api/` to FastAPI and all other paths to the frontend. `character_vaults.vault_json` stores character slots as opaque JSON. `homebrew_libraries.library_json` is a separate authenticated, account-scoped store for personal homebrew and is never exposed through the public catalogs.
 
 ## Local setup
 ```bash

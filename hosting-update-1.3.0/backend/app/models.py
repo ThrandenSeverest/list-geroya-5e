@@ -41,3 +41,9 @@ class CharacterVault(Base):
     user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     vault_json: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(String, nullable=False)
+
+class HomebrewLibrary(Base):
+    __tablename__ = "homebrew_libraries"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    library_json: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[str] = mapped_column(String, nullable=False)

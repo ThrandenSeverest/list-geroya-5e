@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
-from .routers import auth, account, vault, external_auth
+from .routers import auth, account, vault, external_auth, homebrew
 
 app = FastAPI(title="Лист Героя 5e API")
 @app.exception_handler(HTTPException)
@@ -10,6 +10,7 @@ async def http_error(_: Request, exc: HTTPException):
 app.include_router(auth.router)
 app.include_router(account.router)
 app.include_router(vault.router)
+app.include_router(homebrew.router)
 app.include_router(external_auth.router)
 @app.get("/healthz")
 def healthz(): return {"ok": True}

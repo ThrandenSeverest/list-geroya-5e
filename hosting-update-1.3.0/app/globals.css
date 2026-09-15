@@ -426,6 +426,10 @@ button { color: inherit; }
 .spell-level-filter { margin: -8px 0 18px; display: flex; flex-wrap: wrap; gap: 8px; }
 .spell-level-filter button { min-height: 34px; padding: 0 12px; border: 1px solid var(--line); background: rgba(11,23,29,.8); color: var(--muted); cursor: pointer; }
 .spell-level-filter button.active { border-color: var(--copper); background: rgba(185,110,63,.12); color: var(--copper-light); }
+.spell-advanced-filters { margin: -8px 0 22px; display: grid; grid-template-columns: repeat(3, minmax(150px, 1fr)) auto; gap: 10px; align-items: end; }
+.spell-advanced-filters label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.spell-advanced-filters select, .spell-advanced-filters button { min-height: 40px; padding: 0 10px; border: 1px solid var(--line); background: rgba(11,23,29,.8); color: var(--ivory); }
+.spell-advanced-filters button { cursor: pointer; color: var(--teal); }
 .always-prepared { margin: 14px 0; padding: 16px; display: grid; grid-template-columns: 220px 1fr; gap: 18px; border: 1px solid rgba(105,170,162,.4); background: rgba(105,170,162,.06); }
 .always-prepared small { color: var(--teal); text-transform: uppercase; letter-spacing: .1em; }
 .always-prepared h2 { margin: 4px 0; font: 23px Georgia, serif; }
@@ -644,6 +648,39 @@ button { color: inherit; }
 .character-card-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; }
 .character-card-actions button { min-height: 36px; padding: 0 13px; border: 1px solid var(--line); background: transparent; color: var(--teal); cursor: pointer; }
 .character-card-actions button:first-child { border-color: var(--gold); color: var(--gold-bright); }
+.character-move-menu { position: relative; }
+.character-move-menu summary { min-height: 36px; padding: 7px 13px; border: 1px solid var(--line); color: var(--teal); cursor: pointer; list-style: none; }
+.character-move-menu summary::-webkit-details-marker { display: none; }
+.character-move-menu select { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 180px; padding: 9px; border: 1px solid var(--copper); background: var(--panel); color: var(--ivory); }
+.character-check-banner { display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 18px 20px; border: 1px solid var(--copper); background: rgba(185,110,63,.09); }
+.character-check-banner h2 { margin: 3px 0; font: 22px/1.2 Georgia, serif; }
+.character-check-banner p { margin: 0; color: var(--muted); }
+.character-check-banner button { min-height: 46px; white-space: nowrap; }
+.character-check-list { display: grid !important; margin: 16px 0 0 !important; gap: 8px; }
+.character-check-list button { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px; text-align: left; }
+.character-check-list button > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #843c30; color: white; }
+.character-check-list button.warning > span { background: #8a6b23; }
+.character-check-list button small { color: var(--muted); }
+.homebrew-library { width: min(1180px, calc(100% - 40px)); margin: 34px auto 80px; }
+.homebrew-editor { display: grid; grid-template-columns: 180px 1fr; gap: 14px; margin: 24px 0; padding: 22px; border: 1px solid var(--line); background: var(--panel); }
+.homebrew-editor label { display: grid; gap: 7px; color: var(--muted); }
+.homebrew-editor input, .homebrew-editor select, .homebrew-editor textarea { min-height: 42px; padding: 9px 11px; border: 1px solid var(--line); background: var(--ink); color: var(--ivory); }
+.homebrew-editor textarea { min-height: 120px; resize: vertical; }
+.homebrew-description, .homebrew-spell-fields, .homebrew-attach { grid-column: 1 / -1; }
+.homebrew-spell-fields { display: grid; grid-template-columns: 100px 1fr 1fr auto auto; gap: 12px; align-items: end; }
+.homebrew-spell-fields label:has(input[type="checkbox"]), .homebrew-attach { display: flex; align-items: center; gap: 8px; }
+.homebrew-editor > button { justify-self: start; min-height: 44px; padding: 0 22px; }
+.homebrew-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.homebrew-grid article { padding: 18px; border: 1px solid var(--line); background: var(--panel); }
+.homebrew-grid h2 { margin: 6px 0 10px; font: 22px/1.2 Georgia, serif; }
+.homebrew-grid p { color: var(--muted); white-space: pre-wrap; }
+.homebrew-grid em { display: block; margin: 10px 0; color: var(--teal); }
+.homebrew-grid article > div { display: flex; gap: 8px; margin-top: 14px; }
+.homebrew-grid button, .homebrew-auth-required button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line); background: transparent; color: var(--teal); cursor: pointer; }
+.homebrew-auth-required { padding: 34px; border: 1px solid var(--copper); text-align: center; background: var(--panel); }
+.homebrew-save-state { align-self: center; color: var(--teal); }
+.homebrew-save-state.state-error { color: #d87a69; }
+.homebrew-note { padding: 10px; border: 1px solid var(--line); }
 .character-folder-select { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 9px; border: 1px solid var(--line); color: var(--muted); font-size: 10px; }
 .character-folder-select select { min-width: 110px; border: 0; outline: 0; background: transparent; color: var(--teal); cursor: pointer; }
 .character-folder-select option { background: var(--panel); color: var(--ivory); }
@@ -1336,6 +1373,17 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   color: #8f1821;
   border-color: #8f1821;
   background: rgba(143,24,33,.08);
+}
+
+@media (max-width: 760px) {
+  .spell-advanced-filters { grid-template-columns: 1fr; }
+  .character-check-banner { align-items: stretch; flex-direction: column; }
+  .homebrew-library { width: min(100% - 24px, 1180px); margin-top: 18px; }
+  .homebrew-editor { grid-template-columns: 1fr; padding: 16px; }
+  .homebrew-description, .homebrew-spell-fields, .homebrew-attach { grid-column: auto; }
+  .homebrew-spell-fields { grid-template-columns: 1fr; }
+  .character-check-list button { grid-template-columns: 28px 1fr; }
+  .character-check-list button small { grid-column: 2; }
 }
 .modern-design .choice-card.selected .card-actions button:first-child,
 .modern-design .primary-action { background: #8f1821; color: #fff8e7; }
