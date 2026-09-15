@@ -49,7 +49,7 @@ jobs:
           cache: pip
           cache-dependency-path: hosting-update-1.3.0/backend/requirements.txt
       - run: pip install -r requirements.txt
-      - run: pytest -q
+      - run: python -m pytest -q
       - name: Verify migrations from an empty database
         env:
           DATABASE_URL: sqlite:///./migration-test.db
