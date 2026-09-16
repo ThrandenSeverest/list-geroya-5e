@@ -51,6 +51,19 @@ def login(body: Credentials, request: Request, db: Session = Depends(get_db)):
     if settings.require_verified_email and not user.email_verified_at: raise HTTPException(403, "Сначала подтвердите почту")
     response = Response(content=__import__("json").dumps({"authenticated": True, "email": user.email, "emailVerified": bool(user.email_verified_at)}), media_type="application/json"); set_session_cookie(response, create_session(db, user.id)); return response
 
+@router.post("/legacy-recovery")
+def legacy_recovery(body: Credentials, request: Request, db: Session = Depends(get_db)):
+    """Password-check old E-mail users into a deliberately read-only recovery session."""
+    if not settings.legacy_email_recovery_enabled: raise HTTPException(403, "Legacy recovery отключён")
+    rate_limit(request, db, "legacy-recovery", 10, 900)
+    user = db.scalar(select(User).where(User.email == normalize_email(body.email), User.auth_provider == "email"))
+    from ..auth.security import verify_password
+    if not user or not user.password_hash or not user.password_salt or not verify_password(body.password, user.password_salt, user.password_hash):
+        raise HTTPException(401, "Неверная почта или пароль")
+    response = Response(content=__import__("json").dumps({"legacyRecovery": True, "email": user.email}), media_type="application/json")
+    set_session_cookie(response, create_session(db, user.id, scope="legacy_recovery"))
+    return response
+
 @router.post("/logout")
 def logout(request: Request, db: Session = Depends(get_db)):
     token = request.cookies.get(AUTH_COOKIE)

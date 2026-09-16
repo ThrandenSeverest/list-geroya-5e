@@ -199,12 +199,19 @@ const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
 });
 
 function helpmateNote(context: ExportContext) {
-  return summaryText(context).split(/\n\n+/).map(block => {
+  const formatted = summaryText(context).split(/\n\n+/).map(block => {
     const [title, ...body] = block.split("\n");
     const labeled = title.match(/^([^:]+):\s*(.*)$/);
-    if (!labeled) return block.replace(/\n/g, "\r\n");
-    return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\r\n${body.join("\r\n")}` : ""}`;
-  }).join("\r\n\r\n");
+    if (!labeled) return block;
+    return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\n${body.join("\n")}` : ""}`;
+  }).join("\n");
+
+  // Helpmate distinguishes Windows CRLF from a lone LF. Normalize every
+  // source newline first, collapse accidental blank lines, then emit only CRLF.
+  return formatted
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/\n/g, "\r\n");
 }
 
 function summaryText(context: ExportContext) {
@@ -529,12 +536,26 @@ const briefGrant = /получаете владение|получаете ко�
 /** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
 function conciseLssFeature(feature: Feature, required = false): Feature | null {
   if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
+  const sourceHasTable = /\|\s*:?-{3,}:?/.test(feature.description);
   let description = normalizeExportText(feature.description)
     .split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0]
     .replace(/•\s*-{5,}[\s\S]*/g, "")
     .replace(/[^\S\n]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+
+  // The main LSS feature box is narrow. Full rule tables belong in the six
+  // notes blocks; their individual rows are intentionally omitted here.
+  if (sourceHasTable) {
+    description = description
+      .split("\n")
+      .filter(line => !/^•\s+[^;:]+:\s*.*;\s*[^;:]+:\s*/.test(line.trim()))
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+    if (!description) description = "Подробная таблица — в заметках.";
+  }
+
   if (!description) return required ? { ...feature, description: "Выбранная черта персонажа." } : null;
   if (feature.name === "Всплеск действий") return { ...feature, description };
   const sentences = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(value => value.trim()) || [description];
@@ -547,18 +568,92 @@ function conciseLssFeature(feature: Feature, required = false): Feature | null {
   return { ...feature, description };
 }
 
-function distributeLssNotes(groups: Array<{ label: string; features: Feature[]; required?: boolean }>, count = 5, budget = 2200) {
+// LSS 2014 has six ruled note boxes: three wide boxes on the left and three
+// narrower boxes on the right. Estimate wrapped line usage per actual column
+// instead of using a raw character budget, and allow one long feature/table to
+// continue in the next box instead of overflowing the first one.
+const lssNoteWidths = [76, 36, 76, 36, 76, 36];
+const lssNoteLineLimit = 19;
+
+function lssWrappedLines(value: string, width: number) {
+  return Math.max(1, Math.ceil(Math.max(1, value.trim().length) / width));
+}
+
+function splitLssLine(value: string, maxChars: number) {
+  if (value.length <= maxChars) return [value, ""] as const;
+  let cut = value.lastIndexOf(" ", maxChars);
+  if (cut < Math.floor(maxChars * 0.55)) cut = maxChars;
+  return [value.slice(0, cut).trim(), value.slice(cut).trim()] as const;
+}
+
+function distributeLssNotes(groups: Array<{ label: string; features: Feature[]; required?: boolean; full?: boolean }>, count = 6) {
   const entries = groups.flatMap(group => group.features.map(feature => {
     const concise = conciseLssFeature(feature, group.required);
-    return concise ? { ...concise, name: `${group.label} · ${concise.name}` } : null;
+    if (!concise) return null;
+    const noteFeature = group.full
+      ? { ...feature, description: normalizeExportText(feature.description) }
+      : concise;
+    return { ...noteFeature, name: `${group.label} · ${noteFeature.name}` };
   })).filter(Boolean) as Feature[];
+
   const notes: Feature[][] = Array.from({ length: count }, () => []);
+  const usedLines = Array.from({ length: count }, () => 0);
   let note = 0;
+
   for (const feature of entries) {
-    const length = feature.name.length + feature.description.length;
-    const used = notes[note].reduce((total, item) => total + item.name.length + item.description.length, 0);
-    if (note < count - 1 && notes[note].length && used + length > budget) note += 1;
-    notes[note].push(feature);
+    const pending = normalizeExportText(feature.description)
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean);
+    if (!pending.length) pending.push("—");
+    let continuation = false;
+
+    while (pending.length && note < count) {
+      const width = lssNoteWidths[note] || 60;
+      const heading = continuation ? `${feature.name} (продолжение)` : feature.name;
+      const headingLines = lssWrappedLines(heading, width);
+
+      if (usedLines[note] > 0 && usedLines[note] + headingLines + 1 >= lssNoteLineLimit) {
+        note += 1;
+        continue;
+      }
+
+      let remaining = Math.max(1, lssNoteLineLimit - usedLines[note] - headingLines);
+      const chunk: string[] = [];
+      while (pending.length && remaining > 0) {
+        const line = pending[0];
+        const lineLines = lssWrappedLines(line, width);
+        if (lineLines <= remaining) {
+          chunk.push(line);
+          pending.shift();
+          remaining -= lineLines;
+          continue;
+        }
+        if (chunk.length) break;
+        const [part, rest] = splitLssLine(line, Math.max(width, width * remaining));
+        chunk.push(part);
+        if (rest) pending[0] = rest;
+        else pending.shift();
+        remaining = 0;
+      }
+
+      const bodyLines = chunk.reduce((sum, line) => sum + lssWrappedLines(line, width), 0);
+      notes[note].push({ ...feature, name: heading, description: chunk.join("\n") });
+      usedLines[note] += headingLines + bodyLines;
+      continuation = true;
+      if (pending.length) note += 1;
+    }
+
+    // Six boxes are the complete LSS 2014 notes page. Preserve any extreme
+    // overflow rather than silently losing rules, even if it has to continue
+    // in the final box.
+    if (pending.length) {
+      notes[count - 1].push({
+        ...feature,
+        name: `${feature.name} (продолжение)`,
+        description: pending.join("\n"),
+      });
+    }
   }
   return notes;
 }
@@ -728,8 +823,8 @@ export function createLongStoryShortExport(context: ExportContext) {
     .filter(Boolean) as Feature[];
   const overflowFeatFeatures = allFeatFeatures.slice(2);
   const noteColumns = distributeLssNotes([
-    { label: "Класс", features: exportClassFeatures },
-    { label: "Черта", features: overflowFeatFeatures, required: true },
+    { label: "Класс", features: exportClassFeatures, full: true },
+    { label: "Черта", features: overflowFeatFeatures, required: true, full: true },
   ]);
   const inner = {
     jsonType: "character",
@@ -842,6 +937,7 @@ export function createLongStoryShortExport(context: ExportContext) {
       "notes-3": { ...richFeatureText(noteColumns[2], "notes-3"), size: 7 },
       "notes-4": { ...richFeatureText(noteColumns[3], "notes-4"), size: 7 },
       "notes-5": { ...richFeatureText(noteColumns[4], "notes-5"), size: 7 },
+      "notes-6": { ...richFeatureText(noteColumns[5], "notes-6"), size: 7 },
       features: richFeatureText(primaryFeatFeatures, "features"),
       items: { value: { data: "" } },
     },

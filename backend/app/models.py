@@ -12,6 +12,13 @@ class User(Base):
     email_verified_at: Mapped[str | None] = mapped_column(String)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
 
+class UserExternalIdentity(Base):
+    __tablename__ = "user_external_identities"
+    provider: Mapped[str] = mapped_column(String, primary_key=True)
+    external_user_hash: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)
+    created_at: Mapped[str] = mapped_column(String, nullable=False)
+
 class AuthSession(Base):
     __tablename__ = "auth_sessions"
     id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -19,6 +26,7 @@ class AuthSession(Base):
     token_hash: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
     expires_at: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[str] = mapped_column(String, nullable=False)
+    scope: Mapped[str] = mapped_column(String, nullable=False, default="full")
 
 class AuthToken(Base):
     __tablename__ = "auth_tokens"

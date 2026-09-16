@@ -5,7 +5,8 @@ from fastapi.testclient import TestClient
 from app.database import Base, engine, SessionLocal
 from app.main import app
 from app.auth.security import hash_password, hash_token
-from app.models import User, AuthSession, CharacterVault, HomebrewEntity, HomebrewLibrary
+from app.models import User, AuthSession, CharacterVault, HomebrewEntity, HomebrewLibrary, UserExternalIdentity
+from app.routers import external_auth
 Base.metadata.drop_all(engine); Base.metadata.create_all(engine); client=TestClient(app)
 VAULT={"version":1,"capacity":5,"activeId":"a","slots":[{"id":"a","updatedAt":"2026-01-01T00:00:00Z","character":{"name":"A"}}]}
 def test_register_login_vault_logout():
@@ -66,3 +67,32 @@ def test_homebrew_entities_are_normalized_ordered_and_limited():
     assert db.query(HomebrewLibrary).one().library_json=="{}"; db.close()
     too_many={"version":1,"elements":[{"id":str(i),"type":"note","name":"N","updatedAt":"2026-09-15T00:00:00Z"} for i in range(101)]}
     assert client.put("/api/homebrew",json={"library":too_many}).status_code==413
+
+def test_telegram_link_keeps_email_user_id_and_vault(monkeypatch):
+    email="link@example.test"; password="link-password"
+    assert client.post("/api/auth/register",json={"email":email,"password":password}).status_code==201
+    assert client.put("/api/vault",json={"vault":VAULT}).status_code==200
+    db=SessionLocal(); original=db.query(User).filter_by(email=email).one(); original_id=original.id; db.close()
+    async def verified(_token): return "telegram", "linked-hash", {"platform":"telegram","user_hash":"linked-hash","external_name":"Link Test"}
+    monkeypatch.setattr(external_auth,"verified_identity",verified)
+    assert client.post("/api/auth/external/link",json={"token":"ok"}).status_code==200
+    db=SessionLocal(); identity=db.get(UserExternalIdentity,{"provider":"telegram","external_user_hash":"linked-hash"}); assert identity.user_id==original_id; db.close()
+    client.post("/api/auth/logout")
+    assert client.post("/api/auth/external/complete",json={"token":"ok"}).status_code==200
+    assert client.get("/api/account").json()["email"]==email
+    assert client.get("/api/vault").json()["vault"]==VAULT
+
+def test_legacy_recovery_is_read_only_exports_and_can_link(monkeypatch):
+    email="recover@example.test"; password="recover-password"
+    assert client.post("/api/auth/register",json={"email":email,"password":password}).status_code==201
+    recovery_vault={**VAULT,"slots":[{**VAULT["slots"][0],"id":"recovery-character"}],"activeId":"recovery-character"}
+    assert client.put("/api/vault",json={"vault":recovery_vault}).status_code==200
+    client.post("/api/auth/logout")
+    assert client.post("/api/auth/legacy-recovery",json={"email":email,"password":password}).status_code==200
+    account=client.get("/api/account").json(); assert not account["authenticated"] and account["legacyRecovery"]
+    assert client.put("/api/vault",json={"vault":VAULT}).status_code==403
+    backup=client.get("/api/legacy/export"); assert backup.status_code==200 and backup.json()["vault"]==recovery_vault
+    async def verified(_token): return "telegram", "recovery-hash", {"platform":"telegram","user_hash":"recovery-hash","external_name":"Recovery Test"}
+    monkeypatch.setattr(external_auth,"verified_identity",verified)
+    assert client.post("/api/auth/external/link",json={"token":"ok"}).status_code==200
+    assert client.get("/api/vault").json()["vault"]==recovery_vault

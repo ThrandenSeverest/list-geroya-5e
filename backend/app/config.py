@@ -21,6 +21,7 @@ class Settings:
     homebrew_total_max_bytes: int = int(os.getenv("HOMEBREW_TOTAL_MAX_BYTES", str(2 * 1024 * 1024)))
     registration_enabled: bool = _bool("REGISTRATION_ENABLED", True)
     login_enabled: bool = _bool("LOGIN_ENABLED", True)
+    legacy_email_recovery_enabled: bool = _bool("LEGACY_EMAIL_RECOVERY_ENABLED", True)
     email_verification_enabled: bool = _bool("EMAIL_VERIFICATION_ENABLED", False)
     require_verified_email: bool = _bool("REQUIRE_VERIFIED_EMAIL", False)
     email_delivery_enabled: bool = _bool("EMAIL_DELIVERY_ENABLED", False)
@@ -43,6 +44,7 @@ class Settings:
 
     def public_auth_config(self) -> dict:
         return {"registrationEnabled": self.registration_enabled, "loginEnabled": self.login_enabled,
+                "legacyEmailRecoveryEnabled": self.legacy_email_recovery_enabled,
                 "cloudSyncEnabled": True, "emailVerificationEnabled": self.email_verification_enabled,
                 "requireVerifiedEmail": self.require_verified_email, "emailDeliveryEnabled": self.email_delivery_enabled,
                 "passwordResetEnabled": self.password_reset_enabled, "sessionDays": self.session_days,

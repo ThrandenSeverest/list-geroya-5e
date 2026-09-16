@@ -20,7 +20,9 @@ router = APIRouter(prefix="/api/vault")
 def signed_in(request: Request, db: Session) -> User:
     try:
         return current_user(request, db)
-    except Exception:
+    except HTTPException as error:
+        if error.status_code != 401:
+            raise
         email = request.headers.get("oai-authenticated-user-email")
         if not email:
             raise HTTPException(401, "Требуется вход")
