@@ -15,6 +15,102 @@ TEST_LAYER = r'''
 <script id="herolist-gh-pages-test-api">
 (() => {
   const nativeFetch = window.fetch.bind(window);
+  const nativeSetItem = Storage.prototype.setItem;
+  const VAULT_KEY = "list-geroya-character-vault-v1";
+  const VAULT_BACKUP_KEY = "list-geroya-character-vault-v1-gh-pages-backup";
+  const LEGACY_CHARACTER_KEY = "dark-codex-character";
+  const startupProtectionUntil = Date.now() + 5000;
+
+  function parseJson(raw) {
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
+  function isVault(value) {
+    return !!value && typeof value === "object" && Array.isArray(value.slots);
+  }
+
+  function isMeaningfulCharacter(character) {
+    if (!character || typeof character !== "object") return false;
+    if (String(character.name || "").trim()) return true;
+    if (String(character.race || "").trim()) return true;
+    if (String(character.className || "").trim()) return true;
+    if (String(character.background || "").trim()) return true;
+    if (String(character.subclass || "").trim()) return true;
+    if (Array.isArray(character.classes) && character.classes.some(item => item && item.classId)) return true;
+    if (Array.isArray(character.spells) && character.spells.length) return true;
+    if (Array.isArray(character.feats) && character.feats.length) return true;
+    return false;
+  }
+
+  function meaningfulSlotCount(vault) {
+    if (!isVault(vault)) return 0;
+    return vault.slots.filter(slot => slot && isMeaningfulCharacter(slot.character)).length;
+  }
+
+  function makeLegacyVault(character) {
+    const now = new Date().toISOString();
+    const id = `recovered-${Date.now()}`;
+    return { version: 1, capacity: 5, activeId: id, slots: [{ id, character, updatedAt: now }], folders: [] };
+  }
+
+  function saveBackup(raw) {
+    const parsed = parseJson(raw);
+    if (!isVault(parsed) || !parsed.slots.length) return;
+    const existing = parseJson(localStorage.getItem(VAULT_BACKUP_KEY));
+    if (!isVault(existing) || parsed.slots.length >= existing.slots.length || meaningfulSlotCount(parsed) >= meaningfulSlotCount(existing)) {
+      nativeSetItem.call(localStorage, VAULT_BACKUP_KEY, raw);
+    }
+  }
+
+  function recoverLocalVault() {
+    const primaryRaw = localStorage.getItem(VAULT_KEY);
+    const backupRaw = localStorage.getItem(VAULT_BACKUP_KEY);
+    const primary = parseJson(primaryRaw);
+    const backup = parseJson(backupRaw);
+    const primaryUseful = isVault(primary) && meaningfulSlotCount(primary) > 0;
+    const backupUseful = isVault(backup) && meaningfulSlotCount(backup) > 0;
+
+    if (backupUseful && !primaryUseful) {
+      nativeSetItem.call(localStorage, VAULT_KEY, backupRaw);
+      return;
+    }
+
+    if (primaryUseful) {
+      saveBackup(primaryRaw);
+      return;
+    }
+
+    const legacyRaw = localStorage.getItem(LEGACY_CHARACTER_KEY);
+    const legacy = parseJson(legacyRaw);
+    if (isMeaningfulCharacter(legacy)) {
+      const recovered = JSON.stringify(makeLegacyVault(legacy));
+      nativeSetItem.call(localStorage, VAULT_KEY, recovered);
+      nativeSetItem.call(localStorage, VAULT_BACKUP_KEY, recovered);
+    }
+  }
+
+  recoverLocalVault();
+
+  Storage.prototype.setItem = function(key, value) {
+    if (this === localStorage && key === VAULT_KEY) {
+      const previousRaw = localStorage.getItem(VAULT_KEY);
+      const previous = parseJson(previousRaw);
+      const next = parseJson(String(value));
+      const previousMeaningful = meaningfulSlotCount(previous);
+      const nextMeaningful = meaningfulSlotCount(next);
+
+      if (Date.now() < startupProtectionUntil && previousMeaningful > 0 && nextMeaningful < previousMeaningful) {
+        saveBackup(previousRaw);
+        return;
+      }
+
+      nativeSetItem.call(this, key, value);
+      if (isVault(next) && next.slots.length) saveBackup(String(value));
+      return;
+    }
+    nativeSetItem.call(this, key, value);
+  };
 
   function markLocalSaving() {
     document.querySelectorAll('.account-warning').forEach(node => {
@@ -107,6 +203,8 @@ if 'Персонажи сохраняются локально в этом бр�
     raise SystemExit("Anonymous local-save test layer is missing")
 if 'Authentication is disabled in the GitHub Pages test' not in index:
     raise SystemExit("Authentication blocker is missing")
+if 'list-geroya-character-vault-v1-gh-pages-backup' not in index:
+    raise SystemExit("Local vault recovery layer is missing")
 
 bundle_text = "\n".join(
     p.read_text(encoding="utf-8")
@@ -116,4 +214,4 @@ bundle_text = "\n".join(
 if "/list-geroya-5e/experimental/site-mark.png" not in bundle_text:
     raise SystemExit("Built JS does not contain the prefixed site-mark path")
 
-print("GitHub Pages paths, anonymous mode and local character saving verified.")
+print("GitHub Pages paths, anonymous mode and protected local character saving verified.")
