@@ -1,64 +1,22 @@
-<!DOCTYPE html><html lang="ru"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="image" href="acknowledgements/velmira.png"/><link rel="preload" as="image" href="acknowledgements/krugovorot-mirov.png"/><link rel="stylesheet" href="/list-geroya-5e/assets/index-PUiXg1AW.css" data-rsc-css-href="/list-geroya-5e/assets/index-PUiXg1AW.css" data-precedence="vite-rsc/importer-resources"/><link rel="modulepreload" href="/list-geroya-5e/assets/layout-segment-context-DQw7EAYs.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/rolldown-runtime-S-ySWqyJ.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/index-C4L5vFGq.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/framework-CXnKph_e.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/page-26VXXarX.js" crossorigin=""/><title>Лист Героя 5e 1.4 — тест GitHub Pages</title><meta name="description" content="Статическая тестовая версия конструктора D&amp;D 5e 2014 без серверной авторизации и облачного сохранения."/><link rel="shortcut icon" href="/list-geroya-5e/favicon.svg"/><link rel="icon" href="/list-geroya-5e/favicon.svg"/><style>
-          .account-state, .account-warning, .mobile-top-menu a[href="/account"] { display: none !important; }
-          .app-shell.modern-design { background: linear-gradient(rgba(246,235,203,.84), rgba(238,218,173,.88)), url('/list-geroya-5e/parchment-background.jpg') center top / cover fixed !important; }
-        </style><script>
-(() => {
-  const nativeFetch = window.fetch.bind(window);
-  window.fetch = (input, init) => {
-    const raw = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
-    const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
-    let path = raw;
-    try { path = new URL(raw, window.location.href).pathname; } catch {}
-    if (path === "/api/account" || path.endsWith("/api/account")) {
-      return Promise.resolve(new Response(JSON.stringify({ authenticated: false, cloudSyncEnabled: false }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      }));
-    }
-    if (path === "/api/vault" || path.endsWith("/api/vault")) {
-      return Promise.resolve(new Response(JSON.stringify(method === "GET"
-        ? { vault: null, updatedAt: null }
-        : { error: "Cloud sync is disabled in the GitHub Pages test" }), {
-        status: method === "GET" ? 200 : 404,
-        headers: { "content-type": "application/json" },
-      }));
-    }
-    if (path === "/api/homebrew" || path.endsWith("/api/homebrew")) {
-      return Promise.resolve(new Response(JSON.stringify(method === "GET"
-        ? { library: { version: 1, elements: [] }, updatedAt: null }
-        : { error: "Cloud homebrew is disabled in the GitHub Pages test" }), {
-        status: method === "GET" ? 200 : 404,
-        headers: { "content-type": "application/json" },
-      }));
-    }
-    if (path.includes("/api/auth/")) {
-      return Promise.resolve(new Response(JSON.stringify({ error: "Authentication is disabled in the GitHub Pages test" }), {
-        status: 404,
-        headers: { "content-type": "application/json" },
-      }));
-    }
-    return nativeFetch(input, init);
-  };
-})();
-</script><script>self.__VINEXT_RSC_PARAMS__={}</script><script>self.__VINEXT_RSC_NAV__={"pathname":"/","searchParams":[]}</script><link rel="modulepreload" href="/list-geroya-5e/assets/index-C4L5vFGq.js" />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2" as="font" type="font/woff2" crossorigin />
+<!DOCTYPE html><html lang="ru"><head><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="preload" as="image" href="acknowledgements/velmira.png"/><link rel="preload" as="image" href="acknowledgements/krugovorot-mirov.png"/><link rel="stylesheet" href="/list-geroya-5e/assets/index-DJt2hjLH.css" data-rsc-css-href="/list-geroya-5e/assets/index-DJt2hjLH.css" data-precedence="vite-rsc/importer-resources"/><link rel="modulepreload" href="/list-geroya-5e/assets/layout-segment-context-C2vVNynN.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/rolldown-runtime-S-ySWqyJ.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/index-DUy0mivH.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/framework-CXnKph_e.js" crossorigin=""/><link rel="modulepreload" href="/list-geroya-5e/assets/page-D2j8CnCg.js" crossorigin=""/><title>Лист Героя 5e 1.4 — тест · — создание персонажа D&amp;D 2014</title><meta name="description" content="Пошаговый конструктор персонажа D&amp;D 5e в редакции 2014 года."/><link rel="shortcut icon" href="/favicon.svg"/><link rel="icon" href="/favicon.svg"/><meta name="codex-preview" content="development"/><script>self.__VINEXT_RSC_PARAMS__={}</script><script>self.__VINEXT_RSC_NAV__={"pathname":"/","searchParams":[]}</script><link rel="modulepreload" href="/list-geroya-5e/assets/index-DUy0mivH.js" />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2" as="font" type="font/woff2" crossorigin />
 <style data-vinext-fonts>/* cyrillic-ext */
 @font-face {
   font-family: 'Geist';
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-ff2310f5.woff2) format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* cyrillic */
@@ -67,7 +25,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-875ccdd4.woff2) format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* vietnamese */
@@ -76,7 +34,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-52306abf.woff2) format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -85,7 +43,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-001175b1.woff2) format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -94,7 +52,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-8ac0455e797f/geist-98bbbccb.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -108,7 +66,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-f6b33328.woff2) format('woff2');
   unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
 /* cyrillic */
@@ -117,7 +75,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44e03052.woff2) format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 /* symbols2 */
@@ -126,7 +84,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-0638449e.woff2) format('woff2');
   unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
 }
 /* vietnamese */
@@ -135,7 +93,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-971fb274.woff2) format('woff2');
   unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
 }
 /* latin-ext */
@@ -144,7 +102,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-44745446.woff2) format('woff2');
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 /* latin */
@@ -153,7 +111,7 @@
   font-style: normal;
   font-weight: 100 900;
   font-display: swap;
-  src: url(/list-geroya-5e/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2) format('woff2');
+  src: url(/assets/_vinext_fonts/geist-mono-00e989178794/geist-mono-013b2f2f.woff2) format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -161,4 +119,33 @@
 
 .__variable_geist_mono_1diim1n { --font-geist-mono: 'Geist Mono', sans-serif; }
 </style>
-</head><body class="__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased"><main class="app-shell" data-site-theme="classic"><div class="home-layout"><section class="hero-menu"><p class="eyebrow">Лист Героя · D&amp;D 5e 2014</p><h1>Твоя история начинается здесь</h1><div class="hero-menu-options"><button><strong>Создать персонажа</strong><span>Обычный режим без обучающих окон.</span></button><button class="tutorial-start"><strong>Создать с обучением</strong><span>Тот же конструктор, но каждый этап объясняется по мере создания.</span></button><button><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button>Продолжить текущего персонажа</button></section><div class="home-side"><section class="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside class="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="acknowledgements/velmira.png" alt="Вельмира"/><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»"/><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div></main><script id="_R_">import("/list-geroya-5e/assets/index-C4L5vFGq.js")</script></body></html><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("3:I[\"9d2e7a3b397f\",[],\"Children\",1]\n4:I[\"88e3a57a434a\",[],\"LayoutSegmentProvider\",1]\n5:I[\"9d2e7a3b397f\",[],\"Slot\",1]\n6:I[\"4d0c3c6797bd\",[],\"RedirectBoundary\",1]\n:HL[\"/list-geroya-5e/assets/index-PUiXg1AW.css\",\"style\"]\n2:T6ec,\n(() =\u003e {\n  const nativeFetch = window.fetch.bind(window);\n  window.fetch = (input, init) =\u003e {\n    const raw = typeof input === \"string\" ? input : input instanceof Request ? input.url : String(input);\n    const method = String(init?.method || (input instanceof Request ? input.method : \"GET\")).toUpperCase();\n    let path = raw;\n    try { path = new URL(raw, window.location.href).pathname; } catch {}\n    if (path === \"/api/account\" || path.endsWith(\"/api/account\")) {\n      return Promise.resolve(new Response(JSON.stringify({ authenticated: false, cloudSyncEnabled: false }), {\n        status: 200,\n        headers: { \"content-type\": \"application/json\" },\n      }));\n    }\n    if (path === \"/api/vault\" || path.endsWith(\"/api/vault\")) {\n      return Promise.resolve(new Response(JSON.stringify(method === \"GET\"\n        ? { vault: null, updatedAt: null }\n        : { error: \"Cloud sync is disabled in the GitHub Pages test\" }), {\n        status: method === \"GET\" ? 200 : 404,\n        headers: { \"content-type\": \"application/json\" },\n      }));\n    }\n    if (path === \"/api/homebrew\" || path.endsWith(\"/api/homebrew\")) {\n      return Promise.resolve(new Response(JSON.stringify(method === \"GET\"\n        ? { library: { version: 1, elements: [] }, updatedAt: null }\n        : { error: \"Cloud homebrew is disabled in the GitHub Pages test\" }), {\n        status: method === \"GET\" ? 200 : 404,\n        headers: { \"content-type\": \"application/json\" },\n      }));\n    }\n    if (path.includes(\"/api/auth/\")) {\n      return Promise.resolve(new Response(JSON.stringify({ error: \"Authentication is disabled in the GitHub Pages test\" }), {\n        status: 404,\n        headers: { \"content-type\": \"application/json\" },\n      }));\n    }\n    return nativeFetch(input, init);\n  };\n})();\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("0:{\"__route\":\"route:/\",\"__interceptionContext\":null,\"__layoutIds\":[\"layout:/\"],\"__rootLayout\":\"/\",\"page:/\":\"$L1\",\"layout:/\":[[[[\"$\",\"link\",\"css:/assets/index-PUiXg1AW.css\",{\"rel\":\"stylesheet\",\"precedence\":\"vite-rsc/importer-resources\",\"href\":\"/list-geroya-5e/assets/index-PUiXg1AW.css\",\"data-rsc-css-href\":\"/list-geroya-5e/assets/index-PUiXg1AW.css\"}],\"$undefined\"],[\"$\",\"html\",null,{\"lang\":\"ru\",\"children\":[[\"$\",\"head\",null,{\"children\":[[\"$\",\"style\",null,{\"children\":\"\\n          .account-state, .account-warning, .mobile-top-menu a[href=\\\"/account\\\"] { display: none !important; }\\n          .app-shell.modern-design { background: linear-gradient(rgba(246,235,203,.84), rgba(238,218,173,.88)), url('/list-geroya-5e/parchment-background.jpg') center top / cover fixed !important; }\\n        \"}],[\"$\",\"script\",null,{\"dangerouslySetInnerHTML\":{\"__html\":\"$2\"}}]]}],[\"$\",\"body\",null,{\"className\":\"__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased\",\"children\":[\"$\",\"$L3\",null,{}]}]]}]],null],\"route:/\":[[[\"$\",\"meta\",null,{\"charSet\":\"utf-8\"}],[[\"$\",\"title\",\"0\",{\"children\":\"Лист Героя 5e 1.4 — тест GitHub Pages\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Статическая тестовая версия конструктора D\u0026D 5e 2014 без серверной авторизации и облачного сохранения.\"}],[\"$\",\"link\",\"2\",{\"rel\":\"shortcut icon\",\"href\":\"/list-geroya-5e/favicon.svg\"}],[\"$\",\"link\",\"3\",{\"rel\":\"icon\",\"href\":\"/list-geroya-5e/favicon.svg\"}]],[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]],[\"$\",\"$L4\",null,{\"segmentMap\":{\"children\":[]},\"children\":[\"$\",\"$L5\",null,{\"id\":\"layout:/\",\"parallelSlots\":\"$undefined\",\"children\":[\"$\",\"$L6\",null,{\"children\":[\"$\",\"$L4\",null,{\"segmentMap\":{\"children\":[]},\"children\":[\"$\",\"$L5\",null,{\"id\":\"page:/\"}]}]}]}]}]],\"__layoutFlags\":{\"layout:/\":\"s\"},\"__artifactCompatibility\":{\"schemaVersion\":1,\"graphVersion\":\"app-route-graph:4uhn5s1wvoptc\",\"deploymentVersion\":\"fbc94da5-e948-4b9c-887c-60bac2f817a4\",\"appElementsSchemaVersion\":1,\"rscPayloadSchemaVersion\":1,\"rootBoundaryId\":\"/\",\"renderEpoch\":null}}\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("7:I[\"6efdf509a785\",[],\"default\",1]\n1:[\"$\",\"$L7\",null,{\"params\":\"$@8\",\"searchParams\":\"$@9\"}]\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("8:{}\n9:{}\n")</script><script>self.__VINEXT_RSC_DONE__=true</script>
+
+<style id="herolist-gh-pages-test-style">
+  .account-state, .account-warning, .mobile-top-menu a[href="/account"] { display: none !important; }
+  .app-shell.modern-design { background: linear-gradient(rgba(246,235,203,.84), rgba(238,218,173,.88)), url('/list-geroya-5e/parchment-background.jpg') center top / cover fixed !important; }
+</style>
+<script id="herolist-gh-pages-test-api">
+(() => {
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const raw = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+    const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+    let path = raw;
+    try { path = new URL(raw, window.location.href).pathname; } catch {}
+    if (path === "/api/account" || path.endsWith("/api/account")) {
+      return Promise.resolve(new Response(JSON.stringify({ authenticated: false, cloudSyncEnabled: false }), { status: 200, headers: { "content-type": "application/json" } }));
+    }
+    if (path === "/api/vault" || path.endsWith("/api/vault")) {
+      return Promise.resolve(new Response(JSON.stringify(method === "GET" ? { vault: null, updatedAt: null } : { error: "Cloud sync is disabled in the GitHub Pages test" }), { status: method === "GET" ? 200 : 404, headers: { "content-type": "application/json" } }));
+    }
+    if (path === "/api/homebrew" || path.endsWith("/api/homebrew")) {
+      return Promise.resolve(new Response(JSON.stringify(method === "GET" ? { library: { version: 1, elements: [] }, updatedAt: null } : { error: "Cloud homebrew is disabled in the GitHub Pages test" }), { status: method === "GET" ? 200 : 404, headers: { "content-type": "application/json" } }));
+    }
+    if (path.includes("/api/auth/")) {
+      return Promise.resolve(new Response(JSON.stringify({ error: "Authentication is disabled in the GitHub Pages test" }), { status: 404, headers: { "content-type": "application/json" } }));
+    }
+    return nativeFetch(input, init);
+  };
+})();
+</script>
+</head><body class="__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased"><main class="app-shell" data-site-theme="classic"><div class="home-layout"><section class="hero-menu"><p class="eyebrow">Лист Героя · D&amp;D 5e 2014</p><h1>Твоя история начинается здесь</h1><div class="hero-menu-options"><button><strong>Создать персонажа</strong><span>Обычный режим без обучающих окон.</span></button><button class="tutorial-start"><strong>Создать с обучением</strong><span>Тот же конструктор, но каждый этап объясняется по мере создания.</span></button><button><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button>Продолжить текущего персонажа</button></section><div class="home-side"><section class="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside class="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src="acknowledgements/velmira.png" alt="Вельмира"/><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src="acknowledgements/krugovorot-mirov.png" alt="Сообщество «Круговорот Миров»"/><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div></main><script id="_R_">import("/list-geroya-5e/assets/index-DUy0mivH.js")</script></body></html><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("2:I[\"8c0f216c4604\",[],\"Children\",1]\n3:I[\"15c18cfaeeff\",[],\"LayoutSegmentProvider\",1]\n4:I[\"8c0f216c4604\",[],\"Slot\",1]\n5:I[\"593f344dc510\",[],\"RedirectBoundary\",1]\n:HL[\"/list-geroya-5e/assets/index-DJt2hjLH.css\",\"style\"]\n0:{\"__route\":\"route:/\",\"__interceptionContext\":null,\"__layoutIds\":[\"layout:/\"],\"__rootLayout\":\"/\",\"page:/\":\"$L1\",\"layout:/\":[[[[\"$\",\"link\",\"css:/list-geroya-5e/assets/index-DJt2hjLH.css\",{\"rel\":\"stylesheet\",\"precedence\":\"vite-rsc/importer-resources\",\"href\":\"/list-geroya-5e/assets/index-DJt2hjLH.css\",\"data-rsc-css-href\":\"/list-geroya-5e/assets/index-DJt2hjLH.css\"}],\"$undefined\"],[\"$\",\"html\",null,{\"lang\":\"ru\",\"children\":[\"$\",\"body\",null,{\"className\":\"__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased\",\"children\":[\"$\",\"$L2\",null,{}]}]}]],null],\"route:/\":[[[\"$\",\"meta\",null,{\"charSet\":\"utf-8\"}],[[\"$\",\"title\",\"0\",{\"children\":\"Лист Героя 5e — создание персонажа D\u0026D 2014\"}],[\"$\",\"meta\",\"1\",{\"name\":\"description\",\"content\":\"Пошаговый конструктор персонажа D\u0026D 5e в редакции 2014 года.\"}],[\"$\",\"link\",\"2\",{\"rel\":\"shortcut icon\",\"href\":\"/favicon.svg\"}],[\"$\",\"link\",\"3\",{\"rel\":\"icon\",\"href\":\"/favicon.svg\"}],[\"$\",\"meta\",\"4\",{\"name\":\"codex-preview\",\"content\":\"development\"}]],[[\"$\",\"meta\",\"0\",{\"name\":\"viewport\",\"content\":\"width=device-width, initial-scale=1\"}]]],[\"$\",\"$L3\",null,{\"segmentMap\":{\"children\":[]},\"children\":[\"$\",\"$L4\",null,{\"id\":\"layout:/\",\"parallelSlots\":\"$undefined\",\"children\":[\"$\",\"$L5\",null,{\"children\":[\"$\",\"$L3\",null,{\"segmentMap\":{\"children\":[]},\"children\":[\"$\",\"$L4\",null,{\"id\":\"page:/\"}]}]}]}]}]],\"__layoutFlags\":{\"layout:/\":\"s\"},\"__artifactCompatibility\":{\"schemaVersion\":1,\"graphVersion\":\"app-route-graph:4uhn5s1wvoptc\",\"deploymentVersion\":\"84c8dccc-c9cc-4867-a44b-98ecb8399b14\",\"appElementsSchemaVersion\":1,\"rscPayloadSchemaVersion\":1,\"rootBoundaryId\":\"/\",\"renderEpoch\":null}}\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("6:I[\"6efdf509a785\",[],\"default\",1]\n1:[\"$\",\"$L6\",null,{\"params\":\"$@7\",\"searchParams\":\"$@8\"}]\n")</script><script>self.__VINEXT_RSC_CHUNKS__=self.__VINEXT_RSC_CHUNKS__||[];self.__VINEXT_RSC_CHUNKS__.push("7:{}\n8:{}\n")</script><script>self.__VINEXT_RSC_DONE__=true</script>
