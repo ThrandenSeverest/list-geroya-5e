@@ -1,0 +1,110 @@
+export const storageGuardScript = String.raw`
+(() => {
+  const VAULT_KEY = "list-geroya-character-vault-v1";
+  const VAULT_BACKUP_KEY = "list-geroya-character-vault-v1-safe-backup";
+  const LEGACY_KEY = "dark-codex-character";
+  const LEGACY_BACKUP_KEY = "dark-codex-character-safe-backup";
+  const RELOAD_GUARD_KEY = "herolist-storage-guard-reload-v1";
+
+  const parseObject = raw => {
+    if (!raw) return null;
+    try {
+      const value = JSON.parse(raw);
+      return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const parseVault = raw => {
+    const value = parseObject(raw);
+    return value && Array.isArray(value.slots) ? value : null;
+  };
+
+  const slotIds = raw => {
+    const value = parseVault(raw);
+    if (!value) return null;
+    return value.slots
+      .map(slot => slot && typeof slot.id === "string" ? slot.id : "")
+      .filter(Boolean);
+  };
+
+  const hasCharacters = raw => {
+    const ids = slotIds(raw);
+    return Array.isArray(ids) && ids.length > 0;
+  };
+
+  const preservesSnapshot = (candidateRaw, snapshotRaw) => {
+    const candidateIds = slotIds(candidateRaw);
+    const snapshotIds = slotIds(snapshotRaw);
+    if (!candidateIds || !snapshotIds || snapshotIds.length === 0) return false;
+    const current = new Set(candidateIds);
+    return snapshotIds.every(id => current.has(id));
+  };
+
+  const looksLikeCharacter = raw => {
+    const value = parseObject(raw);
+    if (!value) return false;
+    return typeof value.name === "string"
+      || typeof value.race === "string"
+      || typeof value.className === "string"
+      || typeof value.schemaVersion === "number"
+      || (value.abilities && typeof value.abilities === "object");
+  };
+
+  try {
+    let currentVault = localStorage.getItem(VAULT_KEY);
+    const safeBackup = localStorage.getItem(VAULT_BACKUP_KEY);
+
+    // Capture the exact pre-upgrade Vault before React or migrations can touch it.
+    if (hasCharacters(currentVault)) {
+      localStorage.setItem(VAULT_BACKUP_KEY, currentVault);
+    } else if (!parseVault(currentVault) && hasCharacters(safeBackup)) {
+      // Missing/corrupted primary storage may be restored immediately. A valid
+      // deliberately empty Vault remains authoritative and is not resurrected.
+      localStorage.setItem(VAULT_KEY, safeBackup);
+      currentVault = safeBackup;
+    }
+
+    const legacyCharacter = localStorage.getItem(LEGACY_KEY);
+    const legacyBackup = localStorage.getItem(LEGACY_BACKUP_KEY);
+    if (looksLikeCharacter(legacyCharacter)) {
+      localStorage.setItem(LEGACY_BACKUP_KEY, legacyCharacter);
+    } else if (!legacyCharacter && looksLikeCharacter(legacyBackup)) {
+      localStorage.setItem(LEGACY_KEY, legacyBackup);
+    }
+
+    const bootSnapshot = hasCharacters(currentVault) ? currentVault : null;
+    if (!bootSnapshot) return;
+
+    // The normal application may update character contents on boot, but it
+    // must never replace/remove the slots that existed before the upgrade.
+    const verifyAfterBoot = () => {
+      const afterBoot = localStorage.getItem(VAULT_KEY);
+      if (preservesSnapshot(afterBoot, bootSnapshot)) {
+        localStorage.setItem(VAULT_BACKUP_KEY, afterBoot);
+        sessionStorage.removeItem(RELOAD_GUARD_KEY);
+        return;
+      }
+
+      localStorage.setItem(VAULT_KEY, bootSnapshot);
+      localStorage.setItem(VAULT_BACKUP_KEY, bootSnapshot);
+
+      // One automatic retry lets the app start again from the restored data,
+      // while the session flag prevents an endless reload loop if old data is
+      // genuinely incompatible with a future schema.
+      if (sessionStorage.getItem(RELOAD_GUARD_KEY) !== "1") {
+        sessionStorage.setItem(RELOAD_GUARD_KEY, "1");
+        window.location.reload();
+      }
+    };
+
+    const armVerification = () => window.setTimeout(verifyAfterBoot, 1200);
+    if (document.readyState === "complete") armVerification();
+    else window.addEventListener("load", armVerification, { once: true });
+  } catch {
+    // Storage can be unavailable in hardened/private browser contexts. Never
+    // block the application merely because the safety layer cannot run.
+  }
+})();
+`;
