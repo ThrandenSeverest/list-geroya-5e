@@ -6,7 +6,7 @@ import "./index-C4L5vFGq-original.js";
 // Production source in main stays untouched until the test is approved.
 (() => {
   const STYLE_ID = "herolist-feature-table-test-fix";
-  const FEATURE_SELECTOR = ".feature-preview p, .feature-box p, .pdf-feature-list article > p";
+  const FEATURE_SELECTOR = ".feature-preview p, .feature-box p, .pdf-feature-list article > p, .pdf-compact-features p";
 
   function installStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -35,16 +35,21 @@ import "./index-C4L5vFGq-original.js";
       .pdf-document .feature-table th { color: #173d43; background: rgba(23,61,67,.08); font-weight: 700; }
       .pdf-document .feature-table tbody tr:nth-child(even) td { background: rgba(164,99,62,.035); }
 
+      /* Long progression/option tables need extra density to stay on an A4 page. */
+      .pdf-document .feature-table.feature-table-dense { font-size: 5.25pt; line-height: 1.13; }
+      .pdf-document .feature-table.feature-table-dense th,
+      .pdf-document .feature-table.feature-table-dense td { padding: .4mm .5mm; }
+      .pdf-document .feature-table.feature-table-micro { font-size: 4.8pt; line-height: 1.08; }
+      .pdf-document .feature-table.feature-table-micro th,
+      .pdf-document .feature-table.feature-table-micro td { padding: .3mm .35mm; }
+
       @media (max-width: 620px) {
         .feature-table { font-size: 10px; }
         .feature-table th, .feature-table td { padding: 4px; }
-        .pdf-document .feature-table { font-size: 5.9pt; }
-        .pdf-document .feature-table th, .pdf-document .feature-table td { padding: .65mm .75mm; }
       }
       @media print {
         .feature-table-wrap { overflow: visible !important; }
-        .pdf-document .feature-table { width: 100% !important; min-width: 0 !important; table-layout: fixed; font-size: 5.9pt; }
-        .pdf-document .feature-table th, .pdf-document .feature-table td { padding: .65mm .75mm; }
+        .pdf-document .feature-table { width: 100% !important; min-width: 0 !important; table-layout: fixed; }
       }
     `;
     document.head.appendChild(style);
@@ -68,7 +73,6 @@ import "./index-C4L5vFGq-original.js";
     const prefix = text.slice(0, start).trim();
     const suffix = text.slice(end + 1).trim();
     const tableText = text.slice(start, end + 1)
-      // generatedSheetRules stores Markdown row boundaries inline as `| |`.
       .replace(/\|\s+\|/g, "|\n|");
 
     const rows = tableText
@@ -96,6 +100,8 @@ import "./index-C4L5vFGq-original.js";
     wrap.className = "feature-table-wrap";
     const table = document.createElement("table");
     table.className = "feature-table";
+    if (parsed.body.length >= 9) table.classList.add("feature-table-dense");
+    if (parsed.body.length >= 16) table.classList.add("feature-table-micro");
 
     const thead = document.createElement("thead");
     const headRow = document.createElement("tr");
@@ -165,9 +171,6 @@ import "./index-C4L5vFGq-original.js";
     window.addEventListener("beforeprint", () => scan());
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start, { once: true });
-  } else {
-    start();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start, { once: true });
+  else start();
 })();
