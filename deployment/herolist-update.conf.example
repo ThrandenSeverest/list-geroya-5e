@@ -1,0 +1,16 @@
+# One-time server configuration for deployment/update-hosting.sh.
+APP_DIR=/srv/herolist
+API_ENV_FILE=/etc/list-geroya/api.env
+BACKUP_DIR=/var/backups/herolist
+BACKEND_VENV=/srv/herolist/backend/.venv
+
+# Existing systemd unit names, separated by spaces.
+SERVICES="list-geroya-api list-geroya-web"
+
+# Local smoke-test URLs after restart.
+API_HEALTH_URL=http://127.0.0.1:8000/healthz
+FRONTEND_HEALTH_URL=http://127.0.0.1:3000/
+
+# 1 removes source/build-only directories after a successful deploy.
+# Production keeps only dist, the small runtime, backend and deployment files.
+LEAN_HOSTING=1

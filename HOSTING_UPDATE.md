@@ -1,5 +1,40 @@
 # Обновление HeroList на хостинге из `main`
 
+## Короткий способ: одна команда
+
+В `deployment/update-hosting.sh` находится готовый безопасный updater. После
+однократной настройки обновление выполняется одной командой:
+
+```bash
+sudo bash /srv/herolist/deployment/update-hosting.sh
+```
+
+Один раз перед первым запуском:
+
+```bash
+sudo cp /srv/herolist/deployment/herolist-update.conf.example /etc/herolist-update.conf
+sudo nano /etc/herolist-update.conf
+sudo cp /srv/herolist/deployment/list-geroya-api.service.example /etc/systemd/system/list-geroya-api.service
+sudo cp /srv/herolist/deployment/list-geroya-web.service.example /etc/systemd/system/list-geroya-web.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now list-geroya-api list-geroya-web
+```
+
+Нужно указать фактический `APP_DIR`, файл окружения и названия systemd-служб.
+Для frontend-службы дан пример `deployment/list-geroya-web.service.example`.
+
+Updater сам скачивает `main` во временный каталог, выполняет тесты и сборку,
+останавливает службы только после успешной сборки, создаёт проверенный SQLite-
+backup, заменяет только код, применяет Alembic и проверяет API/frontend после
+перезапуска. При ошибке после остановки служб предыдущие `dist` и backend-код
+возвращаются автоматически.
+
+Полный `node_modules` нужен только во временной папке на время сборки. На
+production остаётся минимальный runtime: около 38 МБ зависимостей вместо
+примерно 967 МБ, плюс `dist` около 15 МБ. При `LEAN_HOSTING=1` также удаляются
+ненужные на сервере frontend-исходники, тесты и сборочные кэши. `.git`, архивы
+версий и временная сборка на хостинге не сохраняются.
+
 `main` — единственный актуальный источник production-версии. Старые каталоги
 `hosting-*`, `hosting-update-*`, `export-*`, `site-export-*` и другие
 снимки версий на сервере больше не нужны.

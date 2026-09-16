@@ -1,0 +1,13 @@
+{
+  "name": "herolist-runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node deployment/start-frontend.mjs"
+  },
+  "dependencies": {
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "vinext": "0.0.50"
+  }
+}
