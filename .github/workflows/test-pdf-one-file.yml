@@ -157,7 +157,7 @@ jobs:
           printf '%s\n' "$changed"
           test "$changed" = "app/PdfCharacterSheet.tsx"
 
-      - name: Prepare temporary static-export config for GitHub Pages
+      - name: Prepare temporary GitHub Pages config
         shell: bash
         run: |
           cp next.config.ts /tmp/next.config.ts
@@ -166,8 +166,8 @@ jobs:
 
           const nextConfig: NextConfig = {
             output: "export",
-            basePath: "/list-geroya-5e/one-file-pdf-test",
-            assetPrefix: "/list-geroya-5e/one-file-pdf-test",
+            basePath: "/list-geroya-5e",
+            assetPrefix: "/list-geroya-5e",
             images: { unoptimized: true },
           };
 
@@ -186,28 +186,25 @@ jobs:
           printf '%s\n' "$changed"
           test "$changed" = "app/PdfCharacterSheet.tsx"
 
-      - name: Prepare static test site
+      - name: Prepare candidate runtime for existing test page
         shell: bash
         run: |
-          echo "HTML produced by vinext:"
-          find dist -type f -name '*.html' -print || true
-          echo "Relevant dist files:"
-          find dist -maxdepth 6 -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print | head -n 200 || true
-          rm -rf .pages-one-file-test
-          mkdir -p .pages-one-file-test
-          cp -R dist/client/. .pages-one-file-test/
-          index="$(find dist -type f -name '*.html' | head -n 1)"
-          echo "Static export HTML: $index"
-          test -n "$index"
-          cp "$index" .pages-one-file-test/index.html
-          touch .pages-one-file-test/.nojekyll
-          cp .pages-one-file-test/index.html .pages-one-file-test/404.html
+          rm -rf .pages-runtime
+          mkdir -p .pages-runtime/assets
+          cp -R dist/client/assets/. .pages-runtime/assets/
+          candidate="$(find dist/client/assets -maxdepth 1 -type f -name 'index-*.js' | head -n 1)"
+          echo "Candidate runtime: $candidate"
+          test -n "$candidate"
+          cp "$candidate" .pages-runtime/assets/index-C4L5vFGq-original.js
+          cat > .pages-runtime/assets/index-C4L5vFGq.js <<'EOF'
+          export * from "./index-C4L5vFGq-original.js";
+          import "./index-C4L5vFGq-original.js";
+          EOF
 
-      - name: Publish isolated test under GitHub Pages
+      - name: Publish candidate runtime to existing GitHub Pages test
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./.pages-one-file-test
-          destination_dir: one-file-pdf-test
+          publish_dir: ./.pages-runtime
           keep_files: true
