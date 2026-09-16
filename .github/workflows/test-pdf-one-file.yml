@@ -1,4 +1,4 @@
-name: Test PDF tables and LSS export layout
+name: Test PDF tables, LSS and Helpmate export layout
 
 on:
   push:
@@ -28,6 +28,9 @@ jobs:
 
       - name: Apply LSS compact-sheet/full-notes candidate
         run: python3 scripts/test_apply_lss_sheet_notes_patch.py
+
+      - name: Apply Helpmate compact CRLF candidate
+        run: python3 scripts/test_apply_helpmate_crlf_patch.py
 
       - name: Prove test candidates touch only the intended production files
         shell: bash
