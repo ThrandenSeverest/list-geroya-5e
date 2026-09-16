@@ -6,12 +6,31 @@ PREFIX = "/list-geroya-5e"
 
 TEST_LAYER = r'''
 <style id="herolist-gh-pages-test-style">
-  .account-state, .account-warning, .mobile-top-menu a[href="/account"] { display: none !important; }
+  .account-state,
+  a[href="/account"],
+  .mobile-top-menu a[href="/account"] { display: none !important; }
+  .account-warning { display: inline-flex !important; }
   .app-shell.modern-design { background: linear-gradient(rgba(246,235,203,.84), rgba(238,218,173,.88)), url('/list-geroya-5e/parchment-background.jpg') center top / cover fixed !important; }
 </style>
 <script id="herolist-gh-pages-test-api">
 (() => {
   const nativeFetch = window.fetch.bind(window);
+
+  function markLocalSaving() {
+    document.querySelectorAll('.account-warning').forEach(node => {
+      if (node.textContent !== 'Персонажи сохраняются локально в этом браузере.') {
+        node.textContent = 'Персонажи сохраняются локально в этом браузере.';
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', markLocalSaving, { once: true });
+  } else {
+    markLocalSaving();
+  }
+  new MutationObserver(markLocalSaving).observe(document.documentElement, { childList: true, subtree: true });
+
   window.fetch = (input, init) => {
     const raw = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
     const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
@@ -84,6 +103,10 @@ index = (ROOT / "index.html").read_text(encoding="utf-8")
 for expected in ("/list-geroya-5e/favicon.svg", "/list-geroya-5e/assets/"):
     if expected not in index:
         raise SystemExit(f"index.html does not contain expected path: {expected}")
+if 'Персонажи сохраняются локально в этом браузере.' not in index:
+    raise SystemExit("Anonymous local-save test layer is missing")
+if 'Authentication is disabled in the GitHub Pages test' not in index:
+    raise SystemExit("Authentication blocker is missing")
 
 bundle_text = "\n".join(
     p.read_text(encoding="utf-8")
@@ -93,4 +116,4 @@ bundle_text = "\n".join(
 if "/list-geroya-5e/experimental/site-mark.png" not in bundle_text:
     raise SystemExit("Built JS does not contain the prefixed site-mark path")
 
-print("GitHub Pages asset paths normalized and verified.")
+print("GitHub Pages paths, anonymous mode and local character saving verified.")

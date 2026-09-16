@@ -10,6 +10,7 @@ import { characterExpertiseSkills, characterProficiencies } from "./proficiencie
 import { armorClass } from "./armor";
 import { externalSkillId } from "./skillIds";
 import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMulticlass, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
+import { normalizeExportText } from "./exportText";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -190,7 +191,7 @@ function makeId() {
 }
 
 function featureText(features: Feature[]) {
-  return features.map(feature => `${feature.name}. ${feature.description}`).join("\n");
+  return features.map(feature => `${feature.name}. ${normalizeExportText(feature.description)}`).join("\n");
 }
 
 const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
@@ -244,7 +245,7 @@ function summaryText(context: ExportContext) {
     `Кости хитов: ${hitDice || "нет"}`,
     `Раса: ${race?.name || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
     `Предыстория: ${background?.name || ""}`,
-    `Особенность предыстории: ${backgroundData.feature.name}. ${backgroundData.feature.description}`,
+    `Особенность предыстории: ${backgroundData.feature.name}. ${normalizeExportText(backgroundData.feature.description)}`,
     `Навыки: ${proficiencies.skills.join(", ") || "нет"}`,
     `Доспехи: ${proficiencies.armor.join(", ") || "нет"}`,
     `Оружие: ${proficiencies.weapons.join(", ") || "нет"}`,
@@ -455,7 +456,7 @@ export function createHelpmateExport(context: ExportContext) {
 }
 
 function richText(value: string, id: string) {
-  const content = value
+  const content = normalizeExportText(value)
     .split(/\n+/)
     .map(line => line.trim())
     .filter(Boolean)
@@ -472,26 +473,47 @@ function richText(value: string, id: string) {
 }
 
 function richLabeledText(lines: Array<[string, string]>, id: string) {
-  const content = lines.map(([label, value]) => ({
-    type: "paragraph",
-    content: [
-      { type: "text", marks: [{ type: "bold" }], text: `${label}: ` },
-      { type: "text", text: value || "нет" },
-    ],
-  }));
+  const content = lines.flatMap(([label, value]) => {
+    const normalized = normalizeExportText(value || "нет")
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean);
+    const body = normalized.length ? normalized : ["нет"];
+    return body.map((text, index) => ({
+      type: "paragraph",
+      content: index === 0
+        ? [
+          { type: "text", marks: [{ type: "bold" }], text: `${label}: ` },
+          { type: "text", text },
+        ]
+        : [{ type: "text", text }],
+    }));
+  });
   return { value: { id: `hover-toolbar-${id}-${Date.now()}`, data: { type: "doc", content } } };
 }
 
 function richFeatureText(features: Feature[], id: string) {
   const content = features.flatMap(feature => {
     const heading = `${feature.name}.`;
-    return [{
+    const lines = normalizeExportText(feature.description)
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean);
+    if (!lines.length) {
+      return [{
+        type: "paragraph",
+        content: [{ type: "text", marks: [{ type: "bold" }], text: heading }],
+      }];
+    }
+    return lines.map((text, index) => ({
       type: "paragraph",
-      content: [
-        { type: "text", marks: [{ type: "bold" }], text: heading },
-        { type: "text", text: ` ${feature.description}` },
-      ],
-    }];
+      content: index === 0
+        ? [
+          { type: "text", marks: [{ type: "bold" }], text: heading },
+          { type: "text", text: ` ${text}` },
+        ]
+        : [{ type: "text", text }],
+    }));
   });
   return {
     value: {
@@ -507,10 +529,11 @@ const briefGrant = /получаете владение|получаете ко�
 /** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
 function conciseLssFeature(feature: Feature, required = false): Feature | null {
   if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
-  let description = feature.description
+  let description = normalizeExportText(feature.description)
     .split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0]
     .replace(/•\s*-{5,}[\s\S]*/g, "")
-    .replace(/\s+/g, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
   if (!description) return required ? { ...feature, description: "Выбранная черта персонажа." } : null;
   if (feature.name === "Всплеск действий") return { ...feature, description };
