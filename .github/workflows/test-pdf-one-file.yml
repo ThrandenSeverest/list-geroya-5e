@@ -1,4 +1,4 @@
-name: Test one-file PDF feature tables
+name: Test PDF tables and LSS export layout
 
 on:
   push:
@@ -6,6 +6,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: "herolist-gh-pages-test"
+  cancel-in-progress: true
 
 jobs:
   build-and-publish:
@@ -19,15 +23,19 @@ jobs:
 
       - run: npm ci
 
-      - name: Apply production candidate to PdfCharacterSheet only
+      - name: Apply PDF table candidate
         run: python3 scripts/test_apply_pdf_table_patch.py
 
-      - name: Prove production candidate changes one source file only
+      - name: Apply LSS compact-sheet/full-notes candidate
+        run: python3 scripts/test_apply_lss_sheet_notes_patch.py
+
+      - name: Prove test candidates touch only the intended production files
         shell: bash
         run: |
-          changed="$(git diff --name-only)"
+          changed="$(git diff --name-only | sort)"
           printf '%s\n' "$changed"
-          test "$changed" = "app/PdfCharacterSheet.tsx"
+          expected="$(printf '%s\n' app/PdfCharacterSheet.tsx app/exportFormats.ts | sort)"
+          test "$changed" = "$expected"
 
       - name: Prepare temporary GitHub Pages config
         shell: bash
@@ -48,13 +56,14 @@ jobs:
       - name: Build coherent test candidate
         run: npm run build
 
-      - name: Restore production config and re-check one-file diff
+      - name: Restore production config and re-check candidate diff
         shell: bash
         run: |
           cp /tmp/next.config.ts next.config.ts
-          changed="$(git diff --name-only)"
+          changed="$(git diff --name-only | sort)"
           printf '%s\n' "$changed"
-          test "$changed" = "app/PdfCharacterSheet.tsx"
+          expected="$(printf '%s\n' app/PdfCharacterSheet.tsx app/exportFormats.ts | sort)"
+          test "$changed" = "$expected"
 
       - name: Render the real root page from the built Vinext server
         shell: bash
