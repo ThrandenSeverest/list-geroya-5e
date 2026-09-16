@@ -2,14 +2,17 @@ import json
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from ..auth.dependencies import current_user
 from ..config import settings
 from ..database import get_db
-from ..models import HomebrewLibrary, User
+from ..models import HomebrewEntity, HomebrewLibrary, User
 from ..schemas import HomebrewRequest
+from ..services.payloads import decode_payload, encode_payload, json_bytes, payload_hash, reject_embedded_binary
 from ..services.users import ensure_chatgpt_user
+from .vault import rate_limit
 
 router = APIRouter(prefix="/api/homebrew")
 ALLOWED_TYPES = {"ability", "item", "spell", "proficiency", "note"}
@@ -28,38 +31,60 @@ def signed_in(request: Request, db: Session) -> User:
 def validate(value):
     if not isinstance(value, dict) or value.get("version") != 1 or not isinstance(value.get("elements"), list):
         raise HTTPException(400, "Некорректная библиотека хоумбрю")
+    if len(value["elements"]) > settings.homebrew_max_count:
+        raise HTTPException(413, f"Можно хранить не более {settings.homebrew_max_count} элементов хоумбрю")
+    reject_embedded_binary(value)
+    encoded = []
+    total = 0
+    ids = set()
     for element in value["elements"]:
-        if not isinstance(element, dict) or not isinstance(element.get("id"), str):
-            raise HTTPException(400, "Некорректный пользовательский элемент")
+        if not isinstance(element, dict) or not isinstance(element.get("id"), str) or element["id"] in ids:
+            raise HTTPException(400, "Некорректный или повторяющийся id пользовательского элемента")
+        ids.add(element["id"])
         if element.get("type") not in ALLOWED_TYPES or not isinstance(element.get("name"), str) or not element["name"].strip():
             raise HTTPException(400, "Некорректный тип или название пользовательского элемента")
         if not isinstance(element.get("description", ""), str) or not isinstance(element.get("updatedAt"), str):
             raise HTTPException(400, "Некорректное описание пользовательского элемента")
-        character_id = element.get("characterId")
-        if character_id is not None and not isinstance(character_id, str):
+        if element.get("characterId") is not None and not isinstance(element.get("characterId"), str):
             raise HTTPException(400, "Некорректная привязка пользовательского элемента")
-    raw = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-    if len(raw.encode()) > settings.vault_max_bytes:
-        raise HTTPException(413, "Библиотека хоумбрю слишком велика")
-    return raw
+        raw = json_bytes(element)
+        total += len(raw)
+        if len(raw) > settings.homebrew_entity_max_bytes:
+            raise HTTPException(413, "Один элемент хоумбрю превышает лимит 32 КиБ")
+        encoded.append((element, raw))
+    if total > settings.homebrew_total_max_bytes:
+        raise HTTPException(413, "Библиотека хоумбрю превышает лимит 2 МиБ")
+    return encoded
 
 
 @router.get("")
 def get_homebrew(request: Request, db: Session = Depends(get_db)):
     user = signed_in(request, db)
-    row = db.get(HomebrewLibrary, user.id)
-    return {"library": json.loads(row.library_json) if row else {"version": 1, "elements": []}, "updatedAt": row.updated_at if row else None}
+    rows = list(db.scalars(select(HomebrewEntity).where(HomebrewEntity.owner_user_id == user.id).order_by(HomebrewEntity.sort_index)))
+    if rows:
+        elements = [decode_payload(row.payload_codec, row.content_blob) for row in rows]
+        return {"library": {"version": 1, "elements": elements}, "updatedAt": max(row.updated_at for row in rows)}
+    legacy = db.get(HomebrewLibrary, user.id)
+    if legacy and legacy.library_json not in {"", "{}"}:
+        return {"library": json.loads(legacy.library_json), "updatedAt": legacy.updated_at}
+    return {"library": {"version": 1, "elements": []}, "updatedAt": legacy.updated_at if legacy else None}
 
 
 @router.put("")
 def put_homebrew(payload: HomebrewRequest, request: Request, db: Session = Depends(get_db)):
     user = signed_in(request, db)
-    raw = validate(payload.library)
+    encoded = validate(payload.library)
+    rate_limit(db, user.id, "write", 30, 60)
     updated = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-    row = db.get(HomebrewLibrary, user.id)
-    if row:
-        row.library_json, row.updated_at = raw, updated
+    db.execute(delete(HomebrewEntity).where(HomebrewEntity.owner_user_id == user.id))
+    for sort_index, (element, raw) in enumerate(encoded):
+        codec, compact = encode_payload(raw)
+        db.add(HomebrewEntity(owner_user_id=user.id, id=element["id"], kind=element["type"], name=element["name"].strip(), sort_index=sort_index, schema_version=1, payload_codec=codec, content_blob=compact, content_hash=payload_hash(raw), updated_at=element["updatedAt"] or updated))
+    legacy = db.get(HomebrewLibrary, user.id)
+    if legacy:
+        legacy.library_json = "{}"
+        legacy.updated_at = updated
     else:
-        db.add(HomebrewLibrary(user_id=user.id, library_json=raw, updated_at=updated))
+        db.add(HomebrewLibrary(user_id=user.id, library_json="{}", updated_at=updated))
     db.commit()
     return {"saved": True, "updatedAt": updated}

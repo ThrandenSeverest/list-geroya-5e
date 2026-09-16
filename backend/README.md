@@ -1,7 +1,9 @@
 # FastAPI + SQLite backend
 
 ## Architecture
-Nginx sends `/api/` to FastAPI and all other paths to the frontend. `character_vaults.vault_json` stores character slots as opaque JSON. `homebrew_libraries.library_json` is a separate authenticated, account-scoped store for personal homebrew and is never exposed through the public catalogs.
+Nginx sends `/api/` to FastAPI and all other paths to the frontend. New vault writes use the versioned `compact_payload` column and zlib level 6 above 2 KiB; legacy `vault_json` rows remain readable and migrate on the next save. Homebrew is stored per entity in `homebrew_entities`; legacy `homebrew_libraries` rows remain readable until the next save. Neither store is exposed through the public catalogs.
+
+Storage guards default to 100 characters, 256 KiB raw / 64 KiB compressed per character, 100 homebrew elements, 32 KiB per element and 2 MiB total homebrew. Embedded base64 data URLs are rejected. Limits can be overridden with the matching `CHARACTER_*` and `HOMEBREW_*` environment variables.
 
 ## Local setup
 ```bash
@@ -13,6 +15,8 @@ uvicorn app.main:app --host 127.0.0.1 --port 8000
 pytest
 ```
 Set `DATABASE_URL` to a persistent disk in production, e.g. `sqlite:////var/lib/list-geroya/list-geroya.db`.
+
+Before every deployment, back up the database and run `alembic upgrade head`. Migration `0003_compact_storage` only adds columns and the normalized homebrew table; it does not rewrite or delete existing JSON.
 
 ## Mail.ru SMTP
 Email delivery can use Mail.ru without Cloudflare or Resend. Create a Mail.ru external-application password with sending-only access, then set these secret environment variables in the host (never commit them):
