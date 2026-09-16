@@ -1,11 +1,12 @@
 export * from "./index-C4L5vFGq-original.js";
 import "./index-C4L5vFGq-original.js";
 
-// GitHub Pages test-only hotfix: render flattened Markdown tables inside
-// feature descriptions as real responsive tables. Production source in main
-// stays untouched until this behaviour is verified on the test site.
+// GitHub Pages test-only hotfix: convert flattened Markdown tables embedded in
+// feature descriptions into real tables. This also handles the PDF/print sheet.
+// Production source in main stays untouched until the test is approved.
 (() => {
   const STYLE_ID = "herolist-feature-table-test-fix";
+  const FEATURE_SELECTOR = ".feature-preview p, .feature-box p, .pdf-feature-list article > p";
 
   function installStyles() {
     if (document.getElementById(STYLE_ID)) return;
@@ -23,14 +24,27 @@ import "./index-C4L5vFGq-original.js";
       .modern-design .feature-table th, .modern-design .feature-table td { border-color: rgba(83,105,111,.42); color: #342d25; }
       .modern-design .feature-table th { color: #213f47; background: rgba(86,111,118,.12); }
       .modern-design .feature-table tbody tr:nth-child(even) td { background: rgba(86,111,118,.055); }
+
+      /* PDF must be self-contained: no scroll area can survive printing. */
+      .pdf-document .feature-rich-description { margin: 0; color: inherit; line-height: 1.3; }
+      .pdf-document .feature-rich-description > p { margin: 0 0 1.2mm !important; font-size: 7pt; line-height: 1.35; color: inherit !important; }
+      .pdf-document .feature-table-wrap { width: 100%; max-width: 100%; overflow: visible; margin: 1.2mm 0 0; }
+      .pdf-document .feature-table { width: 100%; min-width: 0; table-layout: fixed; border-collapse: collapse; font-size: 5.9pt; line-height: 1.18; }
+      .pdf-document .feature-table th,
+      .pdf-document .feature-table td { padding: .65mm .75mm; border: .22mm solid rgba(23,61,67,.35); color: #263b3d; background: rgba(255,255,255,.28); white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+      .pdf-document .feature-table th { color: #173d43; background: rgba(23,61,67,.08); font-weight: 700; }
+      .pdf-document .feature-table tbody tr:nth-child(even) td { background: rgba(164,99,62,.035); }
+
       @media (max-width: 620px) {
         .feature-table { font-size: 10px; }
         .feature-table th, .feature-table td { padding: 4px; }
+        .pdf-document .feature-table { font-size: 5.9pt; }
+        .pdf-document .feature-table th, .pdf-document .feature-table td { padding: .65mm .75mm; }
       }
       @media print {
-        .feature-table-wrap { overflow: visible; }
-        .feature-table { width: 100%; min-width: 0; font-size: 8px; }
-        .feature-table th, .feature-table td { padding: 2px 3px; }
+        .feature-table-wrap { overflow: visible !important; }
+        .pdf-document .feature-table { width: 100% !important; min-width: 0 !important; table-layout: fixed; font-size: 5.9pt; }
+        .pdf-document .feature-table th, .pdf-document .feature-table td { padding: .65mm .75mm; }
       }
     `;
     document.head.appendChild(style);
@@ -54,7 +68,7 @@ import "./index-C4L5vFGq-original.js";
     const prefix = text.slice(0, start).trim();
     const suffix = text.slice(end + 1).trim();
     const tableText = text.slice(start, end + 1)
-      // generatedSheetRules stores row boundaries as `| |` on one line.
+      // generatedSheetRules stores Markdown row boundaries inline as `| |`.
       .replace(/\|\s+\|/g, "|\n|");
 
     const rows = tableText
@@ -126,18 +140,15 @@ import "./index-C4L5vFGq-original.js";
     if (parsed.suffix) {
       const p = document.createElement("p");
       p.textContent = parsed.suffix;
+      p.dataset.featureTableChecked = "1";
       rich.appendChild(p);
     }
     node.replaceWith(rich);
   }
 
   function scan(root = document) {
-    if (root instanceof HTMLParagraphElement && root.matches(".feature-preview p, .feature-box p")) {
-      enhanceParagraph(root);
-    }
-    if (root.querySelectorAll) {
-      root.querySelectorAll(".feature-preview p, .feature-box p").forEach(enhanceParagraph);
-    }
+    if (root instanceof HTMLParagraphElement && root.matches(FEATURE_SELECTOR)) enhanceParagraph(root);
+    if (root.querySelectorAll) root.querySelectorAll(FEATURE_SELECTOR).forEach(enhanceParagraph);
   }
 
   function start() {
@@ -151,6 +162,7 @@ import "./index-C4L5vFGq-original.js";
       }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
+    window.addEventListener("beforeprint", () => scan());
   }
 
   if (document.readyState === "loading") {
