@@ -189,11 +189,15 @@ jobs:
       - name: Prepare static test site
         shell: bash
         run: |
+          echo "HTML produced by vinext:"
+          find dist -type f -name '*.html' -print || true
+          echo "Relevant dist files:"
+          find dist -maxdepth 6 -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -print | head -n 200 || true
           rm -rf .pages-one-file-test
           mkdir -p .pages-one-file-test
           cp -R dist/client/. .pages-one-file-test/
-          index="$(find dist/client -type f -name index.html | head -n 1)"
-          echo "Static export index: $index"
+          index="$(find dist -type f -name '*.html' | head -n 1)"
+          echo "Static export HTML: $index"
           test -n "$index"
           cp "$index" .pages-one-file-test/index.html
           touch .pages-one-file-test/.nojekyll
