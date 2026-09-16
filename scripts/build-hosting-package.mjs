@@ -15,7 +15,7 @@ for (const entry of ["dist", "backend", "deployment", "package.json", "package-l
   await cp(path.join(root, entry), path.join(stage, entry), { recursive: true });
 }
 
-for (const forbidden of ["backend/data", ".env", "uploads", "saves", "node_modules", "tests", ".git"]) {
+for (const forbidden of ["backend/data", "backend/.env", "backend/.env.example", ".env", ".env.example", "uploads", "saves", "node_modules", "tests", ".git"]) {
   await rm(path.join(stage, forbidden), { recursive: true, force: true });
 }
 
@@ -25,13 +25,19 @@ const forbiddenPattern = /(^|\/)(\.env(?:\.|$)|[^/]*\.sqlite3?$|data\/|uploads\/
 const listed = spawnSync("find", [stage, "-type", "f"], { encoding: "utf8" });
 if (listed.status !== 0) throw new Error(listed.stderr);
 const files = listed.stdout.trim().split("\n").filter(Boolean);
+const placeholderSecret = /^(?:your-|example|change-?me|mailru-external-application-password|<.+>)/i;
 for (const file of files) {
   const relative = path.relative(stage, file).replaceAll(path.sep, "/");
   if (forbiddenPattern.test(relative)) throw new Error(`Forbidden release path: ${relative}`);
   const info = await stat(file);
   if (info.size <= 1024 * 1024) {
-    const content = await readFile(file).catch(() => Buffer.alloc(0));
-    if (/SMTP_PASSWORD=|RESEND_API_KEY=|DATABASE_URL=.*@/.test(content.toString("utf8"))) throw new Error(`Possible secret in ${relative}`);
+    const content = (await readFile(file).catch(() => Buffer.alloc(0))).toString("utf8");
+    const assignedSecrets = [...content.matchAll(/^(?:SMTP_PASSWORD|RESEND_API_KEY)\s*=\s*([^\s#]+)/gm)]
+      .map(match => match[1].replace(/^['"]|['"]$/g, ""))
+      .filter(value => value && !placeholderSecret.test(value));
+    if (assignedSecrets.length || /^DATABASE_URL\s*=\s*[^\s:]+:\/\/[^\s/:]+:[^\s/@]+@/m.test(content)) {
+      throw new Error(`Possible secret in ${relative}`);
+    }
   }
 }
 

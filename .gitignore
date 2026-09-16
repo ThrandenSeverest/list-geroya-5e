@@ -2,6 +2,7 @@
 node_modules/
 .next/
 dist/
+release/
 out/
 build/
 coverage/
@@ -28,6 +29,8 @@ next-env.d.ts
 backend/.venv/
 backend/data/
 backend/test.db
+*.db-wal
+*.db-shm
 __pycache__/
 *.pyc
 .pytest_cache/
