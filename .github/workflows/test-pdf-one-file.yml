@@ -189,15 +189,21 @@ jobs:
       - name: Prepare static test site
         shell: bash
         run: |
-          test -f dist/client/index.html
-          touch dist/client/.nojekyll
-          cp dist/client/index.html dist/client/404.html
+          rm -rf .pages-one-file-test
+          mkdir -p .pages-one-file-test
+          cp -R dist/client/. .pages-one-file-test/
+          index="$(find dist/client -type f -name index.html | head -n 1)"
+          echo "Static export index: $index"
+          test -n "$index"
+          cp "$index" .pages-one-file-test/index.html
+          touch .pages-one-file-test/.nojekyll
+          cp .pages-one-file-test/index.html .pages-one-file-test/404.html
 
       - name: Publish isolated test under GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./dist/client
+          publish_dir: ./.pages-one-file-test
           destination_dir: one-file-pdf-test
           keep_files: true
