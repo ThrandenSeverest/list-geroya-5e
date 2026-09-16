@@ -150,7 +150,7 @@ jobs:
           path.write_text(text.replace(old, new, 1), encoding="utf-8")
           PY
 
-      - name: Prove the production fix changes one source file only
+      - name: Prove production candidate changes one source file only
         shell: bash
         run: |
           changed="$(git diff --name-only)"
@@ -165,7 +165,6 @@ jobs:
           import type { NextConfig } from "next";
 
           const nextConfig: NextConfig = {
-            output: "export",
             basePath: "/list-geroya-5e",
             assetPrefix: "/list-geroya-5e",
             images: { unoptimized: true },
@@ -174,11 +173,10 @@ jobs:
           export default nextConfig;
           EOF
 
-      - name: Build source candidate
+      - name: Build coherent test candidate
         run: npm run build
 
       - name: Restore production config and re-check one-file diff
-        if: always()
         shell: bash
         run: |
           cp /tmp/next.config.ts next.config.ts
@@ -186,25 +184,91 @@ jobs:
           printf '%s\n' "$changed"
           test "$changed" = "app/PdfCharacterSheet.tsx"
 
-      - name: Prepare candidate runtime for existing test page
+      - name: Render the real root page from the built Vinext server
         shell: bash
         run: |
-          rm -rf .pages-runtime
-          mkdir -p .pages-runtime/assets
-          cp -R dist/client/assets/. .pages-runtime/assets/
-          candidate="$(find dist/client/assets -maxdepth 1 -type f -name 'index-*.js' | head -n 1)"
-          echo "Candidate runtime: $candidate"
-          test -n "$candidate"
-          cp "$candidate" .pages-runtime/assets/index-C4L5vFGq-original.js
-          cat > .pages-runtime/assets/index-C4L5vFGq.js <<'EOF'
-          export * from "./index-C4L5vFGq-original.js";
-          import "./index-C4L5vFGq-original.js";
-          EOF
+          HOST=127.0.0.1 PORT=4173 npm start >/tmp/herolist-test-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
 
-      - name: Publish candidate runtime to existing GitHub Pages test
+          ok=0
+          for i in $(seq 1 40); do
+            if curl -fsS "http://127.0.0.1:4173/list-geroya-5e/" -o /tmp/herolist-index.html; then
+              ok=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$ok" != "1" ]; then
+            cat /tmp/herolist-test-server.log
+            exit 1
+          fi
+
+          test "$(wc -c </tmp/herolist-index.html)" -gt 1000
+          grep -q "Твоя история начинается здесь" /tmp/herolist-index.html
+
+      - name: Assemble one consistent anonymous GitHub Pages build
+        shell: bash
+        run: |
+          rm -rf .pages-test
+          mkdir -p .pages-test
+          cp -R dist/client/. .pages-test/
+          cp -R public/. .pages-test/
+          cp /tmp/herolist-index.html .pages-test/index.html
+          cp /tmp/herolist-index.html .pages-test/404.html
+          touch .pages-test/.nojekyll
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          test_layer = r'''
+          <style id="herolist-gh-pages-test-style">
+            .account-state, .account-warning, .mobile-top-menu a[href="/account"] { display: none !important; }
+            .app-shell.modern-design { background: linear-gradient(rgba(246,235,203,.84), rgba(238,218,173,.88)), url('/list-geroya-5e/parchment-background.jpg') center top / cover fixed !important; }
+          </style>
+          <script id="herolist-gh-pages-test-api">
+          (() => {
+            const nativeFetch = window.fetch.bind(window);
+            window.fetch = (input, init) => {
+              const raw = typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+              const method = String(init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+              let path = raw;
+              try { path = new URL(raw, window.location.href).pathname; } catch {}
+              if (path === "/api/account" || path.endsWith("/api/account")) {
+                return Promise.resolve(new Response(JSON.stringify({ authenticated: false, cloudSyncEnabled: false }), { status: 200, headers: { "content-type": "application/json" } }));
+              }
+              if (path === "/api/vault" || path.endsWith("/api/vault")) {
+                return Promise.resolve(new Response(JSON.stringify(method === "GET" ? { vault: null, updatedAt: null } : { error: "Cloud sync is disabled in the GitHub Pages test" }), { status: method === "GET" ? 200 : 404, headers: { "content-type": "application/json" } }));
+              }
+              if (path === "/api/homebrew" || path.endsWith("/api/homebrew")) {
+                return Promise.resolve(new Response(JSON.stringify(method === "GET" ? { library: { version: 1, elements: [] }, updatedAt: null } : { error: "Cloud homebrew is disabled in the GitHub Pages test" }), { status: method === "GET" ? 200 : 404, headers: { "content-type": "application/json" } }));
+              }
+              if (path.includes("/api/auth/")) {
+                return Promise.resolve(new Response(JSON.stringify({ error: "Authentication is disabled in the GitHub Pages test" }), { status: 404, headers: { "content-type": "application/json" } }));
+              }
+              return nativeFetch(input, init);
+            };
+          })();
+          </script>
+          '''
+
+          for filename in ("index.html", "404.html"):
+            path = Path(".pages-test") / filename
+            html = path.read_text(encoding="utf-8")
+            if "</head>" not in html:
+              raise SystemExit(f"{filename}: missing </head>")
+            html = html.replace("</head>", test_layer + "</head>", 1)
+            html = html.replace("<title>Лист Героя 5e", "<title>Лист Героя 5e 1.4 — тест ·", 1)
+            path.write_text(html, encoding="utf-8")
+          PY
+
+          grep -q '/list-geroya-5e/assets/' .pages-test/index.html
+
+      - name: Publish complete build to the existing test site
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: ./.pages-runtime
-          keep_files: true
+          publish_dir: ./.pages-test
+          keep_files: false
