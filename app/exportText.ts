@@ -26,12 +26,55 @@ function tableCells(value: string) {
 }
 
 /**
+ * Some generated feature descriptions keep Markdown tables on one physical line,
+ * using `| |` between logical rows. Expand only strings that contain a Markdown
+ * separator row so ordinary prose containing pipes is left untouched.
+ */
+function expandFlattenedMarkdownTables(value: string) {
+  const physicalLines = String(value || "").replace(/\r\n?/g, "\n").split("\n");
+  const expanded: string[] = [];
+
+  for (const physicalLine of physicalLines) {
+    if (!/\|\s+\|\s*:?-{3,}/.test(physicalLine)) {
+      expanded.push(physicalLine);
+      continue;
+    }
+
+    const logicalLines = physicalLine.replace(/\|\s+\|/g, "|\n|").split("\n");
+    for (const logicalLine of logicalLines) {
+      const firstPipe = logicalLine.indexOf("|");
+      if (firstPipe > 0) {
+        const prefix = logicalLine.slice(0, firstPipe).trim();
+        if (prefix) expanded.push(prefix);
+        expanded.push(logicalLine.slice(firstPipe).trim());
+        continue;
+      }
+
+      if (firstPipe === 0) {
+        const lastPipe = logicalLine.lastIndexOf("|");
+        if (lastPipe >= 0 && lastPipe < logicalLine.length - 1) {
+          const row = logicalLine.slice(0, lastPipe + 1).trim();
+          const suffix = logicalLine.slice(lastPipe + 1).trim();
+          if (row) expanded.push(row);
+          if (suffix) expanded.push(suffix);
+          continue;
+        }
+      }
+
+      expanded.push(logicalLine);
+    }
+  }
+
+  return expanded;
+}
+
+/**
  * Converts Markdown that external character-sheet importers do not understand
  * into conservative plain text. In particular Markdown tables become one
  * readable paragraph per row instead of a stream of pipes and separator dashes.
  */
 export function normalizeExportText(value: string) {
-  const lines = String(value || "").replace(/\r\n?/g, "\n").split("\n");
+  const lines = expandFlattenedMarkdownTables(value);
   const output: string[] = [];
 
   for (let index = 0; index < lines.length;) {
