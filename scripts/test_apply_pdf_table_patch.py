@@ -1,0 +1,129 @@
+from pathlib import Path
+
+path = Path("app/PdfCharacterSheet.tsx")
+text = path.read_text(encoding="utf-8")
+
+old = '''function FeatureList({ features }: { features: Feature[] }) {
+  return <div className="pdf-feature-list">
+    {features.map((feature, index) => <article key={`${feature.name}-${index}`}>
+      <h3>{feature.name}</h3>
+      <p>{compactRulesText(feature.description)}</p>
+    </article>)}
+  </div>;
+}
+
+function featureWeight(feature: Feature) {
+  const text = compactRulesText(feature.description);
+  return 92 + Math.ceil(text.length / 58) * 18;
+}
+'''
+
+new = '''type ParsedFeatureTable = {
+  prefix: string;
+  suffix: string;
+  header: string[];
+  rows: string[][];
+};
+
+function cleanFeatureTableCell(value: string) {
+  return value
+    .trim()
+    .replace(/\\*\\*/g, "")
+    .replace(/__/g, "")
+    .replace(/`/g, "")
+    .trim();
+}
+
+function parseFeatureTable(value: string): ParsedFeatureTable | null {
+  const text = compactRulesText(value);
+  const start = text.indexOf("|");
+  const end = text.lastIndexOf("|");
+  if (start < 0 || end <= start) return null;
+
+  const tableText = text.slice(start, end + 1).replace(/\\|\\s+\\|/g, "|\\n|");
+  const rows = tableText
+    .split(/\\r?\\n+/)
+    .map(line => line.trim())
+    .filter(line => line.startsWith("|") && line.endsWith("|"))
+    .map(line => line.slice(1, -1).split("|").map(cleanFeatureTableCell));
+
+  const separatorIndex = rows.findIndex(row =>
+    row.length >= 2 && row.every(cell => /^:?-{3,}:?$/.test(cell)),
+  );
+  if (separatorIndex < 1) return null;
+
+  const header = rows[separatorIndex - 1];
+  const body = rows.slice(separatorIndex + 1).filter(row =>
+    row.length === header.length && row.some(Boolean),
+  );
+  if (header.length < 2 || body.length < 1) return null;
+
+  return {
+    prefix: text.slice(0, start).trim(),
+    suffix: text.slice(end + 1).trim(),
+    header,
+    rows: body,
+  };
+}
+
+function FeatureDescription({ description }: { description: string }) {
+  const parsed = parseFeatureTable(description);
+  if (!parsed) return <p>{compactRulesText(description)}</p>;
+
+  const columns = parsed.header.length;
+  const density = columns >= 6 ? 4.8 : parsed.rows.length >= 8 ? 4.9 : parsed.rows.length >= 5 ? 5.3 : 5.8;
+  const cellStyle = {
+    padding: ".55mm .65mm",
+    border: ".22mm solid rgba(23,61,67,.35)",
+    verticalAlign: "top" as const,
+    whiteSpace: "normal" as const,
+    overflowWrap: "anywhere" as const,
+    wordBreak: "normal" as const,
+  };
+
+  return <div style={{ minWidth: 0, margin: 0, lineHeight: 1.25 }}>
+    {parsed.prefix && <p style={{ margin: "0 0 1mm", fontSize: "7pt", lineHeight: 1.32 }}>{parsed.prefix}</p>}
+    <table style={{ width: "100%", tableLayout: "fixed", borderCollapse: "collapse", fontSize: `${density}pt`, lineHeight: 1.14, margin: "1mm 0 0" }}>
+      <thead>
+        <tr>{parsed.header.map((cell, index) => <th key={index} style={{ ...cellStyle, color: "#173d43", background: "rgba(23,61,67,.08)", fontWeight: 700, textAlign: "left" }}>{cell}</th>)}</tr>
+      </thead>
+      <tbody>
+        {parsed.rows.map((row, rowIndex) => <tr key={rowIndex} style={{ breakInside: "avoid" }}>
+          {row.map((cell, cellIndex) => <td key={cellIndex} style={{ ...cellStyle, color: "#263b3d", background: rowIndex % 2 ? "rgba(164,99,62,.035)" : "rgba(255,255,255,.28)" }}>{cell}</td>)}
+        </tr>)}
+      </tbody>
+    </table>
+    {parsed.suffix && <p style={{ margin: "1mm 0 0", fontSize: "7pt", lineHeight: 1.32 }}>{parsed.suffix}</p>}
+  </div>;
+}
+
+function FeatureList({ features }: { features: Feature[] }) {
+  return <div className="pdf-feature-list">
+    {features.map((feature, index) => <article key={`${feature.name}-${index}`}>
+      <h3>{feature.name}</h3>
+      <FeatureDescription description={feature.description} />
+    </article>)}
+  </div>;
+}
+
+function featureWeight(feature: Feature) {
+  const text = compactRulesText(feature.description);
+  const parsed = parseFeatureTable(feature.description);
+  if (!parsed) return 92 + Math.ceil(text.length / 58) * 18;
+
+  const proseLength = parsed.prefix.length + parsed.suffix.length;
+  const charsPerCellLine = Math.max(12, Math.floor(72 / parsed.header.length));
+  const headerLines = Math.max(...parsed.header.map(cell => Math.max(1, Math.ceil(cell.length / charsPerCellLine))));
+  const bodyLines = parsed.rows.reduce((total, row) => {
+    const rowLines = Math.max(...row.map(cell => Math.max(1, Math.ceil(cell.length / charsPerCellLine))));
+    return total + rowLines;
+  }, 0);
+  const tableWeight = 36 + (headerLines + bodyLines) * 18;
+  return 92 + Math.ceil(proseLength / 58) * 18 + tableWeight;
+}
+'''
+
+if old not in text:
+    raise SystemExit("Expected PdfCharacterSheet block not found; aborting")
+
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
