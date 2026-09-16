@@ -43,7 +43,7 @@ import {
   variantsFor,
 } from "./characterRules";
 import { CatalogIcon } from "./catalogIcons";
-import { classChoiceGroups, classChoicesComplete, resolvedClassChoiceFeatures, selectedClassChoiceIds } from "./classChoices";
+import { classChoiceGroups, classChoicesComplete, clearTashaOptionalState, resolvedClassChoiceFeatures, selectedClassChoiceIds } from "./classChoices";
 import { knownLanguageOptions, languageRule } from "./languages";
 import { characterResources, resourceCurrent, resourceRestLabel } from "./characterResources";
 import { backgroundEquipmentWithoutStartingGold, backgroundRule, backgroundStartingGold } from "./backgroundRules";
@@ -1396,14 +1396,7 @@ function Builder() {
       if (enabled) return { ...current, useTasha: true };
       // This switch governs Optional Class Features only. Published TCE spell
       // lists, styles, invocations and metamagic intentionally stay selected.
-      const isTceKey = (key: string) => key.split(":").at(-1)?.startsWith("tce-");
-      const classChoices = Object.fromEntries(Object.entries(current.classChoices || {}).filter(([key]) => !isTceKey(key)));
-      const classes = (current.classes || []).map(entry => ({
-        ...entry,
-        choiceValues: Object.fromEntries(Object.entries(entry.choiceValues || {}).filter(([key]) => !isTceKey(key))),
-      }));
-      const resourceSpent = Object.fromEntries(Object.entries(current.resourceSpent || {}).filter(([key]) => !["favored-foe", "tireless", "natures-veil", "harness-divine-power"].includes(key) && !key.startsWith("primal-awareness:")));
-      return migrateMulticlassCharacter({ ...current, useTasha: false, classes, classChoices, resourceSpent });
+      return clearTashaOptionalState(current);
     });
   }
 

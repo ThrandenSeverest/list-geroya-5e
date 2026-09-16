@@ -521,7 +521,10 @@ function pactMagic(level: number) {
 
 function casterSlots(classId: string, level: number) {
   if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(classId)) return fullCasterSlots[level] || [];
-  if (["paladin", "ranger"].includes(classId)) return fullCasterSlots[Math.floor(level / 2)] || [];
+  // Single-class half casters gain 2nd/3rd/4th/5th-circle slots at class
+  // levels 5/9/13/17. Multiclass contribution is intentionally calculated
+  // separately with floor(level / 2) in multiclass.ts.
+  if (["paladin", "ranger"].includes(classId)) return level < 2 ? [] : fullCasterSlots[Math.ceil(level / 2)] || [];
   if (classId === "artificer") return fullCasterSlots[Math.ceil(level / 2)] || [];
   return [];
 }

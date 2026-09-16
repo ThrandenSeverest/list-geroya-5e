@@ -1,7 +1,7 @@
 import type { CatalogSpell } from "./catalog";
 import type { ExportCharacter } from "./exportFormats";
 import type { Feature } from "./rules";
-import { classView, getStartingClassId, orderedCharacterClasses } from "./multiclass";
+import { classView, getStartingClassId, migrateMulticlassCharacter, orderedCharacterClasses } from "./multiclass";
 import { sheetChoiceDescriptions, sheetClassFeatures, sheetOptionalFeatures, sheetSubclassFeatures } from "./generatedSheetRules";
 
 export type ClassChoiceOption = {
@@ -257,8 +257,8 @@ function singleClassChoiceGroups(character: ExportCharacter, spells: CatalogSpel
       ] });
       if ((selected["tce-deft-explorer"] || []).includes("deft-explorer")) add({ key: "tce-deft-explorer-skill", title: "Хитрец", description: "Выберите известный навык для компетентности.", level: 1, count: 1, options: ["Акробатика", "Атлетика", "Внимательность", "Выживание", "Запугивание", "Природа", "Проницательность", "Расследование", "Скрытность", "Уход за животными"].map(name => O(name, name, "TCE", "Бонус мастерства удваивается.")) });
       if (level >= 3) add({ key: "tce-primal-awareness", title: "Первозданная или Изначальная осведомлённость", description: "Выберите PHB-способность либо замену TCE с тематическими заклинаниями.", level: 3, count: 1, defaultOptionId: "primeval-awareness", options: [
-        documentedOption("ranger", "primeval-awareness", "Первозданная осведомлённость", "PHB · базовое правило", "Расходуйте ячейку следопыта, чтобы на 1 минуту за круг ячейки ощущать определённые типы существ в пределах местности.", { mode: "passthrough", canonicalFeatureName: "Первозданная осведомлённость", emitFeature: false }),
-        documentedOption("ranger", "primal-awareness", "Изначальная осведомлённость", "TCE · опциональная замена", "Получайте тематические заклинания на уровнях 3/5/9/13/17; каждое можно раз за продолжительный отдых наложить без ячейки.", { mode: "replace", canonicalFeatureName: "Изначальная осведомлённость", replacesFeatureName: "Первозданная осведомлённость", tasha: true }),
+        documentedOption("ranger", "primeval-awareness", "Первобытная осведомлённость", "PHB · базовое правило", "Расходуйте ячейку следопыта, чтобы на 1 минуту за круг ячейки ощущать определённые типы существ в пределах местности.", { mode: "passthrough", canonicalFeatureName: "Первобытная осведомлённость", emitFeature: false }),
+        documentedOption("ranger", "primal-awareness", "Изначальная осведомлённость", "TCE · опциональная замена", "Получайте тематические заклинания на уровнях 3/5/9/13/17; каждое можно раз за продолжительный отдых наложить без ячейки.", { mode: "replace", canonicalFeatureName: "Изначальная осведомлённость", replacesFeatureName: "Первобытная осведомлённость", tasha: true }),
       ] });
       if (level >= 10) add({ key: "tce-natures-veil", title: "Маскировка на виду или Покров природы", description: "Выберите подготовку маскировки PHB либо быструю невидимость TCE.", level: 10, count: 1, defaultOptionId: "hide-in-plain-sight", options: [
         documentedOption("ranger", "hide-in-plain-sight", "Маскировка на виду", "PHB · базовое правило", "За 1 минуту создайте природную маскировку, дающую +10 к Скрытности, пока вы не двигаетесь и не действуете.", { mode: "passthrough", canonicalFeatureName: "Маскировка на виду", emitFeature: false }),
@@ -399,6 +399,20 @@ function selectedForGroup(character: ExportCharacter, key: string, defaultOption
 
 export function selectedClassChoiceIds(character: ExportCharacter, group: ClassChoiceGroup) {
   return selectedForGroup(character, group.key, group.defaultOptionId);
+}
+
+export function clearTashaOptionalState(character: ExportCharacter): ExportCharacter {
+  const isTceKey = (key: string) => key.split(":").at(-1)?.startsWith("tce-");
+  const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).filter(([key]) => !isTceKey(key)));
+  const classes = (character.classes || []).map(entry => ({
+    ...entry,
+    choiceValues: Object.fromEntries(Object.entries(entry.choiceValues || {}).filter(([key]) => !isTceKey(key))),
+  }));
+  const resourceSpent = Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) =>
+    !["favored-foe", "tireless", "natures-veil", "harness-divine-power"].includes(key)
+    && !key.startsWith("primal-awareness:"),
+  ));
+  return migrateMulticlassCharacter({ ...character, useTasha: false, classes, classChoices, resourceSpent });
 }
 
 function choiceBelongsOnSheet(groupKey: string, option: ClassChoiceOption) {
