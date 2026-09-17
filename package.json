@@ -10,14 +10,12 @@
     "build": "node scripts/check-subclass-catalog.mjs && npm run test:rules && vinext build",
     "check:subclasses": "node scripts/check-subclass-catalog.mjs",
     "test:rules": "node --import tsx --test tests/*.test.ts",
-    "start": "vinext start"
+    "start": "node deployment/start-frontend.mjs"
   },
   "dependencies": {
-    "fflate": "^0.7.5",
-    "lucide-react": "^0.468.0",
-    "next": "16.2.6",
     "react": "19.2.6",
-    "react-dom": "19.2.6"
+    "react-dom": "19.2.6",
+    "vinext": "0.0.50"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -29,11 +27,13 @@
     "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
+    "fflate": "^0.7.5",
+    "lucide-react": "^0.468.0",
+    "next": "16.2.6",
     "react-server-dom-webpack": "19.2.6",
     "tailwindcss": "4.2.1",
     "tsx": "4.20.6",
     "typescript": "5.9.3",
-    "vinext": "0.0.50",
     "vite": "8.0.13",
     "wrangler": "4.92.0"
   },

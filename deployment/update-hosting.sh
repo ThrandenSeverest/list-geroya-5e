@@ -82,22 +82,36 @@ echo "1/8 Downloading main into a temporary directory..."
 mkdir -p "$SOURCE_ROOT"
 curl --fail --location --silent --show-error "$ARCHIVE_URL" -o "$TMP_DIR/main.tar.gz"
 tar -xzf "$TMP_DIR/main.tar.gz" -C "$SOURCE_ROOT" --strip-components=1
-[[ -f "$SOURCE_ROOT/package-lock.json" && -f "$SOURCE_ROOT/backend/alembic.ini" ]] || {
+[[ -f "$SOURCE_ROOT/dist/server/index.js" && -f "$SOURCE_ROOT/dist/BUILD_INFO.json" && -f "$SOURCE_ROOT/backend/alembic.ini" ]] || {
   echo "Downloaded archive is incomplete" >&2
   exit 1
 }
 
-echo "2/8 Running tests and building outside the production directory..."
-(
-  cd "$SOURCE_ROOT"
-  npm ci
-  npm run build
-)
+echo "2/8 Verifying the precompiled frontend..."
+python3 - "$SOURCE_ROOT/dist/BUILD_INFO.json" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as source:
+    value = json.load(source)
+if value.get("project") != "list-geroya-5e" or not value.get("builtAt"):
+    raise SystemExit("Invalid dist/BUILD_INFO.json")
+print(f"Precompiled build: {value.get('version')} from {value['builtAt']}")
+PY
+
+# The committed build contains a non-sensitive build-time prerender token.
+# Replace it on every production host so the public repository value is never used.
+python3 - "$SOURCE_ROOT/dist" <<'PY'
+import json, secrets, sys
+from pathlib import Path
+for path in Path(sys.argv[1]).glob("server/**/vinext-server.json"):
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["prerenderSecret"] = secrets.token_hex(32)
+    path.write_text(json.dumps(value, separators=(",", ":")), encoding="utf-8")
+PY
 
 echo "3/8 Preparing the minimal frontend runtime..."
 mkdir -p "$RUNTIME_ROOT"
-cp "$SOURCE_ROOT/deployment/runtime-package.json" "$RUNTIME_ROOT/package.json"
-npm install --prefix "$RUNTIME_ROOT" --omit=dev --omit=peer --ignore-scripts --no-package-lock
+cp "$SOURCE_ROOT/package.json" "$SOURCE_ROOT/package-lock.json" "$RUNTIME_ROOT/"
+npm ci --prefix "$RUNTIME_ROOT" --omit=dev --ignore-scripts --legacy-peer-deps
 
 echo "4/8 Reading the real SQLite path..."
 DATABASE_URL_VALUE="$(python3 - "$API_ENV_FILE" <<'PY'
@@ -159,8 +173,7 @@ done
 cp "$SOURCE_ROOT/backend/requirements.txt" "$SOURCE_ROOT/backend/alembic.ini" "$APP_DIR/backend/"
 rsync -a --delete "$SOURCE_ROOT/deployment/" "$APP_DIR/deployment/"
 rsync -a --delete "$RUNTIME_ROOT/node_modules/" "$APP_DIR/node_modules/"
-cp "$SOURCE_ROOT/deployment/runtime-package.json" "$APP_DIR/package.json"
-rm -f -- "$APP_DIR/package-lock.json"
+cp "$SOURCE_ROOT/package.json" "$SOURCE_ROOT/package-lock.json" "$APP_DIR/"
 
 if [[ "$LEAN_HOSTING" == 1 ]]; then
   for path in app public scripts tests .next .vinext; do

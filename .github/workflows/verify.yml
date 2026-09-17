@@ -14,8 +14,28 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Preserve committed production build
+        run: cp -a dist /tmp/herolist-committed-dist
+      - name: Verify precompiled production runtime
+        run: |
+          npm ci --omit=dev --ignore-scripts
+          PORT=3999 HOST=127.0.0.1 npm start >/tmp/herolist-frontend.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:3999/ >/dev/null && curl --fail --silent http://127.0.0.1:3999/account >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/herolist-frontend.log
+          exit 1
       - run: npm ci
       - run: npm run build
+      - name: Verify committed dist matches source
+        run: |
+          python3 scripts/normalize-dist-for-compare.py /tmp/herolist-committed-dist dist
+          diff -qr /tmp/herolist-committed-dist dist
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
