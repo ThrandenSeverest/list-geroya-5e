@@ -97,17 +97,6 @@ if value.get("project") != "list-geroya-5e" or not value.get("builtAt"):
 print(f"Precompiled build: {value.get('version')} from {value['builtAt']}")
 PY
 
-# The committed build contains a non-sensitive build-time prerender token.
-# Replace it on every production host so the public repository value is never used.
-python3 - "$SOURCE_ROOT/dist" <<'PY'
-import json, secrets, sys
-from pathlib import Path
-for path in Path(sys.argv[1]).glob("server/**/vinext-server.json"):
-    value = json.loads(path.read_text(encoding="utf-8"))
-    value["prerenderSecret"] = secrets.token_hex(32)
-    path.write_text(json.dumps(value, separators=(",", ":")), encoding="utf-8")
-PY
-
 echo "3/8 Preparing the minimal frontend runtime..."
 mkdir -p "$RUNTIME_ROOT"
 cp "$SOURCE_ROOT/package.json" "$SOURCE_ROOT/package-lock.json" "$RUNTIME_ROOT/"

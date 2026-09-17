@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 npm ci
 npm run build
+python3 scripts/sanitize-committed-dist.py
 python3 scripts/write-build-info.py
 
 echo "Compiled production dist is ready to commit."
