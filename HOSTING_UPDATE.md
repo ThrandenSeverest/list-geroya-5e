@@ -109,83 +109,39 @@ Frontend запускается напрямую через `deployment/start-fr
 - старые каталоги-снимки `hosting-*`, `hosting-update-*`, `export-*`,
   `site-export-*`, `backup/` и `workflow-handoff/`.
 
-Старые build-каталоги нужно удалить до новой сборки, чтобы в production не
-остались чанки и файлы предыдущих версий.
+Старые build-каталоги не нужно собирать или чистить вручную: updater сам
+заменяет `dist` готовой версией из `main`.
 
-## Рекомендуемый безопасный порядок
+## Обычное обновление production
 
-Предположим, рабочий каталог приложения — `/srv/herolist`, а чистая копия
-`main` находится в `/tmp/herolist-main`.
+После первоначальной настройки нужна ровно одна команда:
 
-1. Остановите сервисы приложения.
-2. Скопируйте базу, `.env`, `uploads/` и `saves/` в отдельную резервную
-   директорию.
-3. Синхронизируйте код, сохраняя пользовательские данные:
+```bash
+sudo bash /srv/herolist/deployment/update-hosting.sh
+```
 
-   ```bash
-   rsync -a --delete \
-     --exclude='.git/' \
-     --exclude='.env' \
-     --exclude='backend/.env' \
-     --exclude='backend/data/' \
-     --exclude='uploads/' \
-     --exclude='saves/' \
-     /tmp/herolist-main/ /srv/herolist/
-   ```
+Не запускайте на хостинге `npm run build`, `vite build` или обычный `npm ci`.
+Updater скачивает уже скомпилированный `dist` и устанавливает только runtime:
 
-   Не добавляйте `--delete-excluded`: этот параметр удалит сохраняемые
-   каталоги.
+```bash
+npm ci --omit=dev --ignore-scripts --legacy-peer-deps
+```
 
-4. Установите зависимости и соберите frontend:
+Он самостоятельно создаёт backup базы, сохраняет `.env`, SQLite, `uploads/`
+и `saves/`, применяет миграции, перезапускает службы и проверяет сайт.
 
-   ```bash
-   cd /srv/herolist
-   npm ci
-   npm run build
-   python3 -m pip install -r backend/requirements.txt
-   ```
+Перед первым обновлением проверьте в `backend/.env`:
 
-5. Примените миграции к сохранённой базе:
+```env
+REGISTRATION_ENABLED=false
+LOGIN_ENABLED=false
+LEGACY_EMAIL_RECOVERY_ENABLED=true
+```
 
-   ```bash
-   cd /srv/herolist/backend
-   python3 -m alembic upgrade head
-   ```
+`DATABASE_URL` и `EXT_AUTH_BASE` должны остаться прежними. Миграция
+`0004_external_identities` не меняет `users.id` или содержимое vault: старый
+E-mail пользователь может открыть recovery, выгрузить backup и привязать
+Telegram к своему прежнему аккаунту.
 
-   Миграция `0003_compact_storage` не удаляет старые JSON-данные. Она
-   добавляет компактное хранилище; старые записи мигрируют при следующем
-   сохранении пользователя. Миграция `0004_external_identities` добавляет
-   отдельные Telegram-identities и scope recovery-сессий, не меняя
-   `users.id`, `character_vaults.user_id` или содержимое vault.
-
-   На время перехода безопасная конфигурация такая:
-
-   ```env
-   REGISTRATION_ENABLED=false
-   LOGIN_ENABLED=false
-   LEGACY_EMAIL_RECOVERY_ENABLED=true
-   ```
-
-   Старый E-mail/пароль в этом режиме выдаёт только ограниченную recovery-
-   сессию: она может скачать единый JSON-backup и привязать Telegram, но не
-   может записывать vault. После привязки Telegram открывает исходный
-   `users.id` со всеми прежними персонажами и хоумбрю.
-
-6. Запустите API и frontend, затем проверьте:
-
-   - `/healthz` возвращает `{"ok": true}`;
-   - существующий пользователь может войти через Telegram;
-   - его серверные персонажи и хоумбрю доступны;
-   - браузер с уже сохранёнными локальными персонажами показывает те же
-     персонажи после обновления и перезагрузки;
-   - новый персонаж сохраняется и открывается после перезагрузки.
-   - старый E-mail пользователь открывает recovery, скачивает backup и
-     привязывает Telegram; после этого видит прежние slot ID.
-
-## Если файлы загружаются вручную
-
-Сначала сохраните перечисленные выше пользовательские данные. Затем удалите
-только старый код и build-каталоги, загрузите содержимое `main` с заменой,
-выполните `npm ci`, `npm run build` и `alembic upgrade head`. Никогда не
-очищайте весь каталог приложения одной рекурсивной командой: база или `.env`
-могут находиться внутри него.
+После завершения updater сам проверяет API и frontend. Дополнительно убедитесь,
+что существующий пользователь входит через Telegram и видит свои персонажи.
