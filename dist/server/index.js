@@ -7357,7 +7357,7 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "bb802538-bd2a-4923-a86f-86cf01436e19";
+		return "170f2866-b1d7-45f9-937c-85bdc8233bef";
 	}
 };
 var RequestCookies = class {
@@ -12479,7 +12479,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "bb802538-bd2a-4923-a86f-86cf01436e19") {
+function appIsrCacheKey(pathname, suffix, buildId = "170f2866-b1d7-45f9-937c-85bdc8233bef") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12808,7 +12808,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "bb802538-bd2a-4923-a86f-86cf01436e19",
+		deploymentVersion: "170f2866-b1d7-45f9-937c-85bdc8233bef",
 		rootBoundaryId
 	});
 }
@@ -14644,7 +14644,6 @@ var __publicFiles = new Set([
 	"/experimental/locathah.png",
 	"/experimental/site-mark.png",
 	"/favicon.ico",
-	"/favicon.svg",
 	"/parchment-background.jpg"
 ]);
 var __allowedOrigins = [];
