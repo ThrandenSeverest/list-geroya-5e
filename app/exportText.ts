@@ -31,7 +31,13 @@ function tableCells(value: string) {
  * readable paragraph per row instead of a stream of pipes and separator dashes.
  */
 export function normalizeExportText(value: string) {
-  const lines = String(value || "").replace(/\r\n?/g, "\n").split("\n");
+  // Some rule descriptions arrive with Markdown table rows collapsed onto one
+  // physical line ("| ... | | ... |"). Restore row boundaries before parsing
+  // so LSS and Helpmate never receive raw pipes/separator dashes.
+  const source = String(value || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\|\s+\|/g, "|\n|");
+  const lines = source.split("\n");
   const output: string[] = [];
 
   for (let index = 0; index < lines.length;) {
