@@ -32182,13 +32182,18 @@ function tableCells(value) {
 * readable paragraph per row instead of a stream of pipes and separator dashes.
 */
 function normalizeExportText(value) {
-	const lines = String(value || "").replace(/\r\n?/g, "\n").split("\n");
+	const lines = String(value || "").replace(/\r\n?/g, "\n").replace(/\|\s+\|/g, "|\n|").split("\n");
 	const output = [];
 	for (let index = 0; index < lines.length;) {
 		const line = lines[index];
 		const next = lines[index + 1];
 		if (line.includes("|") && next !== void 0 && isMarkdownTableSeparator(next)) {
-			const headers = tableCells(line);
+			const firstPipe = line.indexOf("|");
+			if (firstPipe > 0) {
+				const prefix = cleanPlainLine(line.slice(0, firstPipe).trim());
+				if (prefix) output.push(prefix);
+			}
+			const headers = tableCells(firstPipe >= 0 ? line.slice(firstPipe) : line);
 			index += 2;
 			let rows = 0;
 			while (index < lines.length && lines[index].includes("|") && !isMarkdownTableSeparator(lines[index])) {
@@ -32304,7 +32309,7 @@ var helpmateLanguageIds = Object.freeze({
 	"Тэйский": "57"
 });
 function helpmateNote(context) {
-	return summaryText(context).split(/\n\n+/).map((block) => {
+	return summaryText(context).split(/\n\n+/).filter((block) => !/^Языки:\s*/i.test(block.trim())).map((block) => {
 		const [title, ...body] = block.split("\n");
 		const labeled = title.match(/^([^:]+):\s*(.*)$/);
 		if (!labeled) return block;
@@ -32534,7 +32539,7 @@ function createHelpmateExport(context) {
 		SizeIndex: 2,
 		TagString: null,
 		Skills: [],
-		Languages: characterProficiencies(character).languages.map((language) => helpmateLanguageIds[language]).filter(Boolean).join(",") || "12",
+		Languages: characterProficiencies(character).languages.map((language) => helpmateLanguageIds[language]).filter(Boolean).join("|") || "12",
 		Multiplier: 1,
 		TrueMultiplier: 0,
 		Inspiration: character.inspiration ? 1 : 0,
@@ -47290,6 +47295,76 @@ function normalizeCharacter(value) {
 	const repaired = repairBackgroundAdvancement(normalized);
 	return migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements));
 }
+function savedCharacterExportContext(value) {
+	const character = normalizeCharacter(value);
+	const advancementFields = deriveLegacyAdvancementFields(character.advancements || []);
+	const rulesCharacter = {
+		...character,
+		...advancementFields,
+		useTasha: !!character.useTasha
+	};
+	const abilities = finalAbilityScores(rulesCharacter);
+	const exportCharacter = {
+		...rulesCharacter,
+		abilities
+	};
+	const race = races.find((option) => option.id === exportCharacter.race);
+	const characterClass = classes.find((option) => option.id === exportCharacter.className);
+	const background = backgrounds.find((option) => option.id === exportCharacter.background);
+	const raceFeatureList = resolvedRaceFeatures(exportCharacter.race, exportCharacter.raceVariant, race?.description, race?.tags);
+	const classFeatureList = orderedCharacterClasses(exportCharacter).flatMap((entry) => {
+		const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
+		const scoped = {
+			...exportCharacter,
+			className: entry.classId,
+			subclass: entry.subclassId || "",
+			level: entry.level
+		};
+		const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
+		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => ({
+			...feature,
+			name: `${className} · ${feature.name}`
+		}));
+	});
+	const chosenRaceVariant = selectedRaceVariant(exportCharacter.race, exportCharacter.raceVariant);
+	const chosenSubclass = selectedSubclass(exportCharacter.className, exportCharacter.subclass || "");
+	const featNames = (exportCharacter.advancements || []).map((choice) => feats.find((item) => item.id === choice.featId)?.name).filter((name) => Boolean(name));
+	const featFeatureList = (exportCharacter.advancements || []).flatMap((choice) => {
+		const feat = feats.find((item) => item.id === choice.featId);
+		if (!feat || feat.id === "asi") return [];
+		const details = featChoiceGroups(choice, spells, exportCharacter.level).map((group) => {
+			const names = (choice.featChoices?.[group.key] || []).map((id) => group.options.find((option) => option.id === id)?.name || id);
+			return names.length ? `${group.title}: ${names.join(", ")}` : "";
+		}).filter(Boolean);
+		return [{
+			name: feat.name,
+			description: [feat.description, ...details].join(" ")
+		}];
+	});
+	const featSpellIds = featGrantedSpellIds(exportCharacter);
+	const alwaysPreparedSpellIds = [...new Set(orderedCharacterClasses(exportCharacter).flatMap((entry) => alwaysPreparedSpellEntries({
+		...exportCharacter,
+		className: entry.classId,
+		subclass: entry.subclassId || "",
+		level: entry.level
+	}, spells).map((item) => item.id)))];
+	return {
+		character: exportCharacter,
+		race,
+		characterClass,
+		background,
+		spells,
+		raceFeatureList,
+		classFeatureList,
+		raceProficiencies: raceProficiencies(exportCharacter),
+		subclassName: chosenSubclass?.name,
+		raceVariantName: chosenRaceVariant?.name,
+		featNames,
+		featFeatureList,
+		featSpellIds,
+		alwaysPreparedSpellIds
+	};
+}
 function Home() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, {}) });
 }
@@ -47335,6 +47410,7 @@ function Builder() {
 	const [selectedSlotIds, setSelectedSlotIds] = useState([]);
 	const [moveFolderId, setMoveFolderId] = useState("unfiled");
 	const [folderImport, setFolderImport] = useState(null);
+	const [libraryExportTarget, setLibraryExportTarget] = useState(null);
 	const [account, setAccount] = useState(null);
 	const [cloudState, setCloudState] = useState("local");
 	const [importMessage, setImportMessage] = useState(null);
@@ -48970,10 +49046,43 @@ function Builder() {
 		});
 		setCharacter(copy);
 	}
-	function exportSlot(id) {
-		const slot = vault.slots.find((item) => item.id === id);
-		if (!slot) return;
-		download(createNativeCharacterFile(slot.character), `${safeName(slot.character.name)} — Лист Героя 5e.json`);
+	function openCharacterExport(id) {
+		if (!vault.slots.some((item) => item.id === id)) return;
+		setLibraryExportTarget({
+			kind: "character",
+			id
+		});
+	}
+	function exportCharacterByFormat(slot, format) {
+		const name = safeName(slot.character.name);
+		if (format === "herolist") {
+			download(createNativeCharacterFile(slot.character), `${name} — Лист Героя 5e.json`);
+			return;
+		}
+		const context = savedCharacterExportContext(slot.character);
+		if (format === "helpmate") {
+			if (orderedCharacterClasses(context.character).filter((entry) => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length > 1) {
+				alert("Helpmate пока не имеет подтверждённого формата общего пула ячеек для двух обычных заклинательских классов.");
+				return;
+			}
+			const skipped = helpmateSkippedSpells(context).map((spell) => spell.name);
+			if (skipped.length && !confirm(`Helpmate не содержит заклинания: ${skipped.join(", ")}. Экспортировать остальные?`)) return;
+			download(createHelpmateExport(context), `${name} — Helpmate.json`);
+			return;
+		}
+		download(createLongStoryShortExport(context), `${name} — Long Story Short.json`);
+	}
+	function confirmLibraryExport(format) {
+		const target = libraryExportTarget;
+		if (!target) return;
+		if (target.kind === "character") {
+			const slot = vault.slots.find((item) => item.id === target.id);
+			if (slot) exportCharacterByFormat(slot, format);
+			setLibraryExportTarget(null);
+			return;
+		}
+		exportFolder(target.id, format);
+		setLibraryExportTarget(null);
 	}
 	function addFiveSlots() {
 		persistVault({
@@ -49033,6 +49142,22 @@ function Builder() {
 			} : item)
 		});
 	}
+	function deleteFolder(id) {
+		const folder = vault.folders.find((item) => item.id === id);
+		if (!folder || !confirm(`Удалить папку «${folder.name}»? Персонажи останутся и перейдут в «Без папки».`)) return;
+		const updatedAt = (/* @__PURE__ */ new Date()).toISOString();
+		persistVault({
+			...vault,
+			folders: vault.folders.filter((item) => item.id !== id),
+			slots: vault.slots.map((slot) => slot.folderId === id ? {
+				...slot,
+				folderId: void 0,
+				updatedAt
+			} : slot)
+		});
+		setSelectedSlotIds([]);
+		setActiveFolderId("unfiled");
+	}
 	function toggleSlotSelection(id) {
 		setSelectedSlotIds((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
 	}
@@ -49071,28 +49196,55 @@ function Builder() {
 		if (activeId !== vault.activeId) setCharacter(normalizeCharacter(slots[0].character));
 		setSelectedSlotIds([]);
 	}
-	function exportFolder(id) {
-		const folder = vault.folders.find((item) => item.id === id);
-		const slots = vault.slots.filter((slot) => id === "unfiled" ? !slot.folderId : slot.folderId === id);
-		if (!slots.length) {
+	function openFolderExport(id) {
+		if (!vault.slots.filter((slot) => id === "unfiled" ? !slot.folderId : slot.folderId === id).length) {
 			alert("В этой папке пока нет персонажей.");
 			return;
 		}
+		setLibraryExportTarget({
+			kind: "folder",
+			id
+		});
+	}
+	function exportFolder(id, format) {
+		const folder = vault.folders.find((item) => item.id === id);
+		const slots = vault.slots.filter((slot) => id === "unfiled" ? !slot.folderId : slot.folderId === id);
+		if (!slots.length) return;
 		const folderName = folder?.name || "Без папки";
 		const files = { "manifest.json": strToU8(JSON.stringify({
 			format: "list-geroya-5e-folder",
-			version: 1,
+			version: 2,
+			exportFormat: format,
 			folderName,
 			exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
 			count: slots.length
 		}, null, 2)) };
-		slots.forEach((slot, index) => {
-			files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)}.json`] = strToU8(JSON.stringify(createNativeCharacterFile(slot.character), null, 2));
-		});
+		for (const [index, slot] of slots.entries()) {
+			let payload;
+			let suffix;
+			if (format === "herolist") {
+				payload = createNativeCharacterFile(slot.character);
+				suffix = "HeroList";
+			} else {
+				const context = savedCharacterExportContext(slot.character);
+				if (format === "helpmate") {
+					if (orderedCharacterClasses(context.character).filter((entry) => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length > 1) {
+						alert(`«${slot.character.name || "Безымянный герой"}» не экспортирован: Helpmate не поддерживает подтверждённый общий пул ячеек двух обычных заклинательских классов.`);
+						return;
+					}
+					payload = createHelpmateExport(context);
+					suffix = "Helpmate";
+				} else {
+					payload = createLongStoryShortExport(context);
+					suffix = "LSS";
+				}
+			}
+			files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
+		}
 		const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 })], { type: "application/zip" }));
 		const anchor = document.createElement("a");
 		anchor.href = url;
-		anchor.download = `${safeName(folderName)} — персонажи.zip`;
+		anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : "LSS"}.zip`;
 		anchor.click();
 		URL.revokeObjectURL(url);
 	}
@@ -49645,9 +49797,13 @@ function Builder() {
 										onClick: () => renameFolder(selectedFolder.id),
 										children: "Переименовать"
 									}),
+									selectedFolder && /* @__PURE__ */ jsx("button", {
+										onClick: () => deleteFolder(selectedFolder.id),
+										children: "Удалить папку"
+									}),
 									activeFolderId !== "all" && /* @__PURE__ */ jsx("button", {
-										onClick: () => exportFolder(activeFolderId),
-										children: "Экспорт ZIP"
+										onClick: () => openFolderExport(activeFolderId),
+										children: "Экспорт"
 									})
 								]
 							})]
@@ -49745,7 +49901,7 @@ function Builder() {
 													})]
 												}),
 												/* @__PURE__ */ jsx("button", {
-													onClick: () => exportSlot(slot.id),
+													onClick: () => openCharacterExport(slot.id),
 													children: "Экспорт"
 												}),
 												/* @__PURE__ */ jsx("button", {
@@ -49777,6 +49933,45 @@ function Builder() {
 							})]
 						})
 					]
+				}),
+				libraryExportTarget && /* @__PURE__ */ jsx("div", {
+					className: "modal-backdrop",
+					role: "presentation",
+					children: /* @__PURE__ */ jsxs("section", {
+						className: "warning-modal",
+						role: "dialog",
+						"aria-modal": "true",
+						"aria-labelledby": "library-export-title",
+						children: [
+							/* @__PURE__ */ jsx("small", { children: libraryExportTarget.kind === "folder" ? "Экспорт папки" : "Экспорт персонажа" }),
+							/* @__PURE__ */ jsx("h2", {
+								id: "library-export-title",
+								children: "Выберите формат экспорта"
+							}),
+							/* @__PURE__ */ jsx("p", { children: libraryExportTarget.kind === "folder" ? "Все персонажи папки будут упакованы в ZIP в выбранном формате." : "Будет скачан один JSON-файл выбранного формата." }),
+							/* @__PURE__ */ jsxs("div", {
+								className: "library-export-options",
+								children: [
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => confirmLibraryExport("herolist"),
+										children: "HeroList JSON"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => confirmLibraryExport("helpmate"),
+										children: "Helpmate JSON"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => confirmLibraryExport("lss"),
+										children: "Long Story Short JSON"
+									})
+								]
+							}),
+							/* @__PURE__ */ jsx("div", { children: /* @__PURE__ */ jsx("button", {
+								onClick: () => setLibraryExportTarget(null),
+								children: "Отмена"
+							}) })
+						]
+					})
 				}),
 				folderImport && /* @__PURE__ */ jsx("div", {
 					className: "modal-backdrop",
