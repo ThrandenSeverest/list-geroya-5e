@@ -199,7 +199,12 @@ const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
 });
 
 function helpmateNote(context: ExportContext) {
-  const formatted = summaryText(context).split(/\n\n+/).map(block => {
+  const formatted = summaryText(context)
+    .split(/\n\n+/)
+    // Languages have a dedicated Helpmate field. Keeping them in Note makes
+    // Helpmate render the same proficiencies twice.
+    .filter(block => !/^Языки:\s*/i.test(block.trim()))
+    .map(block => {
     const [title, ...body] = block.split("\n");
     const labeled = title.match(/^([^:]+):\s*(.*)$/);
     if (!labeled) return block;
@@ -423,7 +428,7 @@ export function createHelpmateExport(context: ExportContext) {
     SizeIndex: 2,
     TagString: null,
     Skills: [],
-    Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join(",") || "12",
+    Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join("|") || "12",
     Multiplier: 1,
     TrueMultiplier: 0,
     Inspiration: character.inspiration ? 1 : 0,
