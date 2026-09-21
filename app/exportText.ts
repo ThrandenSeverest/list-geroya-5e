@@ -45,7 +45,14 @@ export function normalizeExportText(value: string) {
     const next = lines[index + 1];
 
     if (line.includes("|") && next !== undefined && isMarkdownTableSeparator(next)) {
-      const headers = tableCells(line);
+      const firstPipe = line.indexOf("|");
+      // A collapsed source can leave prose immediately before the table header.
+      // Preserve that prose separately instead of mistaking it for column 1.
+      if (firstPipe > 0) {
+        const prefix = cleanPlainLine(line.slice(0, firstPipe).trim());
+        if (prefix) output.push(prefix);
+      }
+      const headers = tableCells(firstPipe >= 0 ? line.slice(firstPipe) : line);
       index += 2;
       let rows = 0;
 
