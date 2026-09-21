@@ -10,6 +10,7 @@ import { characterExpertiseSkills, characterProficiencies } from "./proficiencie
 import { armorClass } from "./armor";
 import { externalSkillId } from "./skillIds";
 import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMulticlass, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
+import { normalizeExportText } from "./exportText";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -190,7 +191,7 @@ function makeId() {
 }
 
 function featureText(features: Feature[]) {
-  return features.map(feature => `${feature.name}. ${feature.description}`).join("\n");
+  return features.map(feature => `${feature.name}. ${normalizeExportText(feature.description)}`).join("\n");
 }
 
 const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
@@ -198,12 +199,22 @@ const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
 });
 
 function helpmateNote(context: ExportContext) {
-  return summaryText(context).split(/\n\n+/).map(block => {
-    const [title, ...body] = block.split("\n");
-    const labeled = title.match(/^([^:]+):\s*(.*)$/);
-    if (!labeled) return block.replace(/\n/g, "\r\n");
-    return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\r\n${body.join("\r\n")}` : ""}`;
-  }).join("\r\n\r\n");
+  const formatted = summaryText(context)
+    .split(/\n\n+/)
+    // Languages have a dedicated Helpmate field. Keeping them in Note makes
+    // Helpmate render the same proficiencies twice.
+    .filter(block => !/^Языки:\s*/i.test(block.trim()))
+    .map(block => {
+      const [title, ...body] = block.split("\n");
+      const labeled = title.match(/^([^:]+):\s*(.*)$/);
+      if (!labeled) return block;
+      return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\n${body.join("\n")}` : ""}`;
+    }).join("\n");
+
+  return formatted
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .replace(/\n/g, "\r\n");
 }
 
 function summaryText(context: ExportContext) {
@@ -415,7 +426,7 @@ export function createHelpmateExport(context: ExportContext) {
     SizeIndex: 2,
     TagString: null,
     Skills: [],
-    Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join(",") || "12",
+    Languages: characterProficiencies(character).languages.map(language => helpmateLanguageIds[language]).filter(Boolean).join("|") || "12",
     Multiplier: 1,
     TrueMultiplier: 0,
     Inspiration: character.inspiration ? 1 : 0,
