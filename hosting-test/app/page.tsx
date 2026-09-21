@@ -80,6 +80,8 @@ type AccountState = { authenticated: true; email: string; displayName: string; a
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
 type SiteTheme = "classic" | "parchment" | "legacy";
 type CharacterCheck = { step: number; message: string; severity: "error" | "warning" };
+type LibraryExportFormat = "herolist" | "helpmate" | "lss";
+type LibraryExportTarget = { kind: "character"; id: string } | { kind: "folder"; id: string };
 
 const steps = ["Раса", "Класс", "Характеристики", "Предыстория", "Навыки", "Снаряжение", "Уровень", "Заклинания", "Языки и инструменты", "Характер", "Итог"];
 const initial: ExportCharacter = {
@@ -623,6 +625,65 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
   return migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements));
 }
 
+function savedCharacterExportContext(value: ExportCharacter) {
+  const character = normalizeCharacter(value);
+  const advancementFields = deriveLegacyAdvancementFields(character.advancements || []);
+  const rulesCharacter = { ...character, ...advancementFields, useTasha: !!character.useTasha };
+  const abilities = finalAbilityScores(rulesCharacter);
+  const exportCharacter = { ...rulesCharacter, abilities };
+  const race = races.find(option => option.id === exportCharacter.race);
+  const characterClass = classes.find(option => option.id === exportCharacter.className);
+  const background = backgrounds.find(option => option.id === exportCharacter.background);
+  const raceFeatureList = raceFeatures(exportCharacter.race, exportCharacter.raceVariant, race?.description, race?.tags);
+  const classFeatureList = orderedCharacterClasses(exportCharacter).flatMap(entry => {
+    const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
+    const scoped = { ...exportCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
+    const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+    return detailedFeatures(resolvedClassChoiceFeatures(scoped,
+      documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
+        .filter(feature => (feature.level || 1) <= entry.level), spells,
+    )).map(feature => ({ ...feature, name: `${className} · ${feature.name}` }));
+  });
+  const chosenRaceVariant = selectedRaceVariant(exportCharacter.race, exportCharacter.raceVariant);
+  const chosenSubclass = selectedSubclass(exportCharacter.className, exportCharacter.subclass || "");
+  const featNames = (exportCharacter.advancements || [])
+    .map(choice => feats.find(item => item.id === choice.featId)?.name)
+    .filter((name): name is string => Boolean(name));
+  const featFeatureList = (exportCharacter.advancements || []).flatMap(choice => {
+    const feat = feats.find(item => item.id === choice.featId);
+    if (!feat || feat.id === "asi") return [];
+    const details = featChoiceGroups(choice, spells, exportCharacter.level).map(group => {
+      const names = (choice.featChoices?.[group.key] || []).map(id => group.options.find(option => option.id === id)?.name || id);
+      return names.length ? `${group.title}: ${names.join(", ")}` : "";
+    }).filter(Boolean);
+    return [{ name: feat.name, description: [feat.description, ...details].join(" ") }];
+  });
+  const featSpellIds = featGrantedSpellIds(exportCharacter);
+  const alwaysPreparedSpellIds = [...new Set(orderedCharacterClasses(exportCharacter).flatMap(entry => alwaysPreparedSpellEntries({
+    ...exportCharacter,
+    className: entry.classId,
+    subclass: entry.subclassId || "",
+    level: entry.level,
+  }, spells).map(item => item.id)))];
+
+  return {
+    character: exportCharacter,
+    race,
+    characterClass,
+    background,
+    spells,
+    raceFeatureList,
+    classFeatureList,
+    raceProficiencies: raceProficiencies(exportCharacter),
+    subclassName: chosenSubclass?.name,
+    raceVariantName: chosenRaceVariant?.name,
+    featNames,
+    featFeatureList,
+    featSpellIds,
+    alwaysPreparedSpellIds,
+  };
+}
+
 export default function Home() {
   return (
     <BuilderErrorBoundary>
@@ -669,6 +730,7 @@ function Builder() {
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [moveFolderId, setMoveFolderId] = useState("unfiled");
   const [folderImport, setFolderImport] = useState<FolderImportDraft | null>(null);
+  const [libraryExportTarget, setLibraryExportTarget] = useState<LibraryExportTarget | null>(null);
   const [account, setAccount] = useState<AccountState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
@@ -2073,10 +2135,44 @@ function Builder() {
     setCharacter(copy);
   }
 
-  function exportSlot(id: string) {
-    const slot = vault.slots.find(item => item.id === id);
-    if (!slot) return;
-    download(createNativeCharacterFile(slot.character), `${safeName(slot.character.name)} — Лист Героя 5e.json`);
+  function openCharacterExport(id: string) {
+    if (!vault.slots.some(item => item.id === id)) return;
+    setLibraryExportTarget({ kind: "character", id });
+  }
+
+  function exportCharacterByFormat(slot: CharacterSlot, format: LibraryExportFormat) {
+    const name = safeName(slot.character.name);
+    if (format === "herolist") {
+      download(createNativeCharacterFile(slot.character), `${name} — Лист Героя 5e.json`);
+      return;
+    }
+    const context = savedCharacterExportContext(slot.character);
+    if (format === "helpmate") {
+      const regularCasterCount = orderedCharacterClasses(context.character)
+        .filter(entry => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length;
+      if (regularCasterCount > 1) {
+        alert("Helpmate пока не имеет подтверждённого формата общего пула ячеек для двух обычных заклинательских классов.");
+        return;
+      }
+      const skipped = helpmateSkippedSpells(context).map(spell => spell.name);
+      if (skipped.length && !confirm(`Helpmate не содержит заклинания: ${skipped.join(", ")}. Экспортировать остальные?`)) return;
+      download(createHelpmateExport(context), `${name} — Helpmate.json`);
+      return;
+    }
+    download(createLongStoryShortExport(context), `${name} — Long Story Short.json`);
+  }
+
+  function confirmLibraryExport(format: LibraryExportFormat) {
+    const target = libraryExportTarget;
+    if (!target) return;
+    if (target.kind === "character") {
+      const slot = vault.slots.find(item => item.id === target.id);
+      if (slot) exportCharacterByFormat(slot, format);
+      setLibraryExportTarget(null);
+      return;
+    }
+    exportFolder(target.id, format);
+    setLibraryExportTarget(null);
   }
 
   function addFiveSlots() {
@@ -2123,6 +2219,19 @@ function Builder() {
     persistVault({ ...vault, folders: vault.folders.map(item => item.id === id ? { ...item, name } : item) });
   }
 
+  function deleteFolder(id: string) {
+    const folder = vault.folders.find(item => item.id === id);
+    if (!folder || !confirm(`Удалить папку «${folder.name}»? Персонажи останутся и перейдут в «Без папки».`)) return;
+    const updatedAt = new Date().toISOString();
+    persistVault({
+      ...vault,
+      folders: vault.folders.filter(item => item.id !== id),
+      slots: vault.slots.map(slot => slot.folderId === id ? { ...slot, folderId: undefined, updatedAt } : slot),
+    });
+    setSelectedSlotIds([]);
+    setActiveFolderId("unfiled");
+  }
+
   function toggleSlotSelection(id: string) {
     setSelectedSlotIds(current => current.includes(id) ? current.filter(value => value !== id) : [...current, id]);
   }
@@ -2158,24 +2267,51 @@ function Builder() {
     setSelectedSlotIds([]);
   }
 
-  function exportFolder(id: string) {
-    const folder = vault.folders.find(item => item.id === id);
+  function openFolderExport(id: string) {
     const slots = vault.slots.filter(slot => id === "unfiled" ? !slot.folderId : slot.folderId === id);
     if (!slots.length) {
       alert("В этой папке пока нет персонажей.");
       return;
     }
+    setLibraryExportTarget({ kind: "folder", id });
+  }
+
+  function exportFolder(id: string, format: LibraryExportFormat) {
+    const folder = vault.folders.find(item => item.id === id);
+    const slots = vault.slots.filter(slot => id === "unfiled" ? !slot.folderId : slot.folderId === id);
+    if (!slots.length) return;
     const folderName = folder?.name || "Без папки";
     const files: Record<string, Uint8Array> = {
-      "manifest.json": strToU8(JSON.stringify({ format: "list-geroya-5e-folder", version: 1, folderName, exportedAt: new Date().toISOString(), count: slots.length }, null, 2)),
+      "manifest.json": strToU8(JSON.stringify({ format: "list-geroya-5e-folder", version: 2, exportFormat: format, folderName, exportedAt: new Date().toISOString(), count: slots.length }, null, 2)),
     };
-    slots.forEach((slot, index) => {
-      files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)}.json`] = strToU8(JSON.stringify(createNativeCharacterFile(slot.character), null, 2));
-    });
+    for (const [index, slot] of slots.entries()) {
+      let payload: unknown;
+      let suffix: string;
+      if (format === "herolist") {
+        payload = createNativeCharacterFile(slot.character);
+        suffix = "HeroList";
+      } else {
+        const context = savedCharacterExportContext(slot.character);
+        if (format === "helpmate") {
+          const regularCasterCount = orderedCharacterClasses(context.character)
+            .filter(entry => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length;
+          if (regularCasterCount > 1) {
+            alert(`«${slot.character.name || "Безымянный герой"}» не экспортирован: Helpmate не поддерживает подтверждённый общий пул ячеек двух обычных заклинательских классов.`);
+            return;
+          }
+          payload = createHelpmateExport(context);
+          suffix = "Helpmate";
+        } else {
+          payload = createLongStoryShortExport(context);
+          suffix = "LSS";
+        }
+      }
+      files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
+    }
     const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 }) as BlobPart], { type: "application/zip" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${safeName(folderName)} — персонажи.zip`;
+    anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : "LSS"}.zip`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -2323,7 +2459,8 @@ function Builder() {
             <div className="folder-actions">
               <button onClick={createFolder}>+ Новая папка</button>
               {selectedFolder && <button onClick={() => renameFolder(selectedFolder.id)}>Переименовать</button>}
-              {activeFolderId !== "all" && <button onClick={() => exportFolder(activeFolderId)}>Экспорт ZIP</button>}
+              {selectedFolder && <button onClick={() => deleteFolder(selectedFolder.id)}>Удалить папку</button>}
+              {activeFolderId !== "all" && <button onClick={() => openFolderExport(activeFolderId)}>Экспорт</button>}
             </div>
           </div>
           <div className="bulk-character-actions">
@@ -2348,7 +2485,7 @@ function Builder() {
                   <button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Открыть" : "Открыть"}</button>
                   <button onClick={() => duplicateSlot(slot.id)}>Копировать</button>
                   <details className="character-move-menu"><summary>Переместить</summary><select value={slot.folderId || "unfiled"} onChange={event => moveSlot(slot.id, event.target.value)}><option value="unfiled">Без папки</option>{vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></details>
-                  <button onClick={() => exportSlot(slot.id)}>Экспорт</button>
+                  <button onClick={() => openCharacterExport(slot.id)}>Экспорт</button>
                   <button onClick={() => deleteSlot(slot.id)}>Удалить</button>
                 </div>
               </article>;
@@ -2357,6 +2494,19 @@ function Builder() {
           {!visibleSlots.length && <div className="empty-folder"><strong>В этой папке пока пусто.</strong><span>Выберите персонажей в разделе «Все» и перенесите их сюда.</span></div>}
           <footer className="slot-footer"><span>Занято {vault.slots.length} из {vault.capacity} · свободно {free}</span><button onClick={addFiveSlots}>Добавить ещё 5 слотов</button></footer>
         </section>
+        {libraryExportTarget && <div className="modal-backdrop" role="presentation">
+          <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="library-export-title">
+            <small>{libraryExportTarget.kind === "folder" ? "Экспорт папки" : "Экспорт персонажа"}</small>
+            <h2 id="library-export-title">Выберите формат экспорта</h2>
+            <p>{libraryExportTarget.kind === "folder" ? "Все персонажи папки будут упакованы в ZIP в выбранном формате." : "Будет скачан один JSON-файл выбранного формата."}</p>
+            <div className="library-export-options">
+              <button onClick={() => confirmLibraryExport("herolist")}>HeroList JSON</button>
+              <button onClick={() => confirmLibraryExport("helpmate")}>Helpmate JSON</button>
+              <button onClick={() => confirmLibraryExport("lss")}>Long Story Short JSON</button>
+            </div>
+            <div><button onClick={() => setLibraryExportTarget(null)}>Отмена</button></div>
+          </section>
+        </div>}
         {folderImport && <div className="modal-backdrop" role="presentation">
           <section className="warning-modal folder-import-modal" role="dialog" aria-modal="true" aria-labelledby="folder-import-title">
             <small>Импорт папки · {folderImport.archiveName}</small>
