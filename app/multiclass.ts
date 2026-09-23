@@ -161,7 +161,7 @@ export function resolveSpellSlots(character: ExportCharacter) {
     const entry = regularCasters[0];
     const level = entry.level;
     if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(entry.classId)) return fullCasterSlots[level] || [];
-    if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots[Math.floor(level / 2)] || [];
+    if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots[Math.ceil(level / 2)] || [];
     if (entry.classId === "artificer") return fullCasterSlots[Math.ceil(level / 2)] || [];
     if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots[Math.floor(level / 3)] || [];
   }
