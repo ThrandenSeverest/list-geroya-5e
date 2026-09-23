@@ -57,6 +57,7 @@ import { advancementChoiceComplete, featAbilityBonuses, featChoiceAvailability, 
 import { armorClassBreakdown } from "./armor";
 import { speedBreakdown } from "./speed";
 import { passivePerceptionBreakdown } from "./derivedSkills";
+import { initiativeBreakdown } from "./initiative";
 import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
@@ -990,6 +991,7 @@ function Builder() {
   const hitDicePoolsForCharacter = hitDicePools(exportCharacter);
   const availableHitDice = hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.max - pool.spent, 0);
   const passivePerception = passivePerceptionBreakdown(exportCharacter).value;
+  const initiative = initiativeBreakdown(exportCharacter);
   const pointSpent = pointBuySpent(character.abilities);
   const pointRemaining = 27 - pointSpent;
   const standardMode = character.abilityMethod === "standard";
@@ -3446,7 +3448,8 @@ function Builder() {
                   <div className="mobile-stat-grid">
                     {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{finalAbilities[key]}</strong><span>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</span></div>)}
                   </div>
-                  <div className="mobile-quick-grid"><div><small>КД</small><strong>{ac.value}</strong></div><div><small>Инициатива</small><strong>{abilityModifier(finalAbilities.dex) >= 0 ? "+" : ""}{abilityModifier(finalAbilities.dex)}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  <div className="mobile-quick-grid"><div><small>КД</small><strong>{ac.value}</strong></div><div title={[...initiative.sources, ...initiative.notes].join("; ")}><small>Инициатива</small><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  {initiative.notes.length > 0 && <p><b>Инициатива:</b> {initiative.notes.join("; ")}</p>}
                   <p><b>Раса:</b> {selectedRace?.name} · <b>Класс:</b> {selectedClass?.name} · <b>Предыстория:</b> {selectedBackground?.name}</p>
                 </div>}
 
@@ -3515,9 +3518,10 @@ function Builder() {
                   <section className="sheet-combat">
                     <div className="combat-row">
                       <div className="shield" title={`${ac.base}${ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""}`}><strong>{ac.value}</strong><span>КД</span></div>
-                      <div className="combat-tile"><strong>{abilityModifier(finalAbilities.dex) >= 0 ? "+" : ""}{abilityModifier(finalAbilities.dex)}</strong><span>ИНИЦИАТИВА</span></div>
+                      <div className="combat-tile" title={[...initiative.sources, ...initiative.notes].join("; ")}><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong><span>ИНИЦИАТИВА</span></div>
                       <div className="combat-tile" title={[...speedBreakdown(exportCharacter).sources, ...speedBreakdown(exportCharacter).conditions].join("; ")}><strong>{speedBreakdown(exportCharacter).walk}</strong><span>СКОРОСТЬ</span></div>
                     </div>
+                    {initiative.notes.length > 0 && <small>{initiative.notes.join("; ")}</small>}
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
                     <div className="sheet-box hp-current"><label>ТЕКУЩИЕ ХИТЫ<input aria-label="Текущие хиты" type="number" min="0" max={hitPoints} value={character.currentHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, currentHitPoints: Math.max(0, Math.min(hitPoints, Number(event.target.value) || 0)) }))} /></label><label>ВРЕМЕННЫЕ ХИТЫ<input aria-label="Временные хиты" type="number" min="0" value={character.temporaryHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, temporaryHitPoints: Math.max(0, Number(event.target.value) || 0) }))} /></label></div>
                     <div className="sheet-box hit-dice"><strong>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</strong><span>КОСТИ ХИТОВ</span><label>{availableHitDice} / {characterLevel(character)}</label></div>
@@ -3599,7 +3603,8 @@ function Builder() {
                 savingThrows={classRules[character.startingClassId || character.className]?.saves || []}
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
-                initiative={abilityModifier(finalAbilities.dex)}
+                initiative={initiative.value}
+                initiativeNotes={initiative.notes}
                 speed={speedBreakdown(exportCharacter).walk}
                 hitPoints={hitPoints}
                 hitDie={classRules[character.className]?.hitDie || 8}

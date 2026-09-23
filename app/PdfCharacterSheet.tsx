@@ -31,6 +31,7 @@ export type PdfCharacterSheetProps = {
   proficiencies: { skills: string[]; expertise: string[]; armor: string[]; weapons: string[]; tools: string[]; languages: string[] };
   ac: number;
   initiative: number;
+  initiativeNotes?: string[];
   speed: number;
   hitPoints: number;
   hitDie: number;
@@ -395,6 +396,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
         </section>
         <section className="pdf-core-column">
           <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span></div></div>
+          {!!props.initiativeNotes?.length && <p className="pdf-inline-stats">Инициатива: {props.initiativeNotes.join("; ")}</p>}
           <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: {props.hitDiceLabel || `к${props.hitDie}`} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
           <div className="pdf-panel pdf-current-hp"><label>ТЕКУЩИЕ ХИТЫ <b>{props.currentHitPoints || ""}</b></label><label>ВРЕМЕННЫЕ ХИТЫ <b>{props.temporaryHitPoints || ""}</b></label></div>
           <div className="pdf-panel pdf-resources"><h2>Ресурсы</h2>

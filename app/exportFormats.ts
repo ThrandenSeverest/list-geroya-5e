@@ -13,6 +13,7 @@ import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMult
 import { normalizeExportText } from "./exportText";
 import { speedBreakdown } from "./speed";
 import { passivePerceptionBreakdown } from "./derivedSkills";
+import { initiativeBreakdown } from "./initiative";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -436,7 +437,7 @@ export function createHelpmateExport(context: ExportContext) {
     Inspiration: character.inspiration ? 1 : 0,
     Armor: armorClass(character),
     Bditelnost: passivePerceptionBreakdown(character).value,
-    IniBonus: abilityModifier(character.abilities.dex),
+    IniBonus: initiativeBreakdown(character).value,
     // Helpmate recalculates known spells and cantrips only for an idle import.
     IsPlaying: false,
     Note: helpmateNote(context),
