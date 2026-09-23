@@ -25081,7 +25081,7 @@ function multiclassRequirement(character, classId) {
 		missing: alternatives.length ? passed ? [] : alternatives.map((key) => `${labels[key]} ${character.abilities[key]}`) : needs.filter((key) => character.abilities[key] < 13).map((key) => `${labels[key]} ${character.abilities[key]}`)
 	};
 }
-var fullCasterSlots$2 = [
+var fullCasterSlots$1 = [
 	[],
 	[2],
 	[3],
@@ -25252,12 +25252,12 @@ function resolveSpellSlots(character) {
 			"druid",
 			"sorcerer",
 			"wizard"
-		].includes(entry.classId)) return fullCasterSlots$2[level] || [];
-		if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots$2[Math.floor(level / 2)] || [];
-		if (entry.classId === "artificer") return fullCasterSlots$2[Math.ceil(level / 2)] || [];
-		if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots$2[Math.floor(level / 3)] || [];
+		].includes(entry.classId)) return fullCasterSlots$1[level] || [];
+		if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (entry.classId === "artificer") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots$1[Math.floor(level / 3)] || [];
 	}
-	return fullCasterSlots$2[multiclassCasterLevel(character)] || [];
+	return fullCasterSlots$1[multiclassCasterLevel(character)] || [];
 }
 function resolvePactMagic(character) {
 	const level = getClassLevel(character, "warlock");
@@ -27614,7 +27614,7 @@ var optionalClassFeatures = {
 	wizard: [SF(3, "Формулы заговоров (TCE)", "После отдыха может заменить один известный заговор волшебника.")],
 	artificer: []
 };
-var fullCasterSlots$1 = [
+var fullCasterSlots = [
 	[],
 	[2],
 	[3],
@@ -28028,9 +28028,9 @@ function casterSlots(classId, level) {
 		"druid",
 		"sorcerer",
 		"wizard"
-	].includes(classId)) return fullCasterSlots$1[level] || [];
-	if (["paladin", "ranger"].includes(classId)) return level < 2 ? [] : fullCasterSlots$1[Math.ceil(level / 2)] || [];
-	if (classId === "artificer") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+	].includes(classId)) return fullCasterSlots[level] || [];
+	if (["paladin", "ranger"].includes(classId)) return level < 2 ? [] : fullCasterSlots[Math.ceil(level / 2)] || [];
+	if (classId === "artificer") return fullCasterSlots[Math.ceil(level / 2)] || [];
 	return [];
 }
 function maximumSpellLevel(classId, level) {
@@ -32805,176 +32805,18 @@ var skillEnglish = Object.fromEntries(Object.values(skillKeys).map(({ key, stat 
 	baseStat: stat,
 	name: key
 }]));
-var fullCasterSlots = [
-	[],
-	[2],
-	[3],
-	[4, 2],
-	[4, 3],
-	[
-		4,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3
-	],
-	[
-		4,
-		3,
-		3,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		1,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		2,
-		2,
-		1,
-		1
-	]
-];
-function standardSlotMaximums(classId, level) {
-	const full = [
-		"bard",
-		"cleric",
-		"druid",
-		"sorcerer",
-		"wizard"
-	].includes(classId);
-	const half = ["paladin", "ranger"].includes(classId);
-	const artificer = classId === "artificer";
-	if (!full && !half && !artificer) return [];
-	return fullCasterSlots[full ? level : artificer ? Math.ceil(level / 2) : Math.floor(level / 2)] || [];
-}
-function lssSlots(classId, level) {
-	const slots = standardSlotMaximums(classId, level);
+function lssSlots(slots) {
 	return Object.fromEntries(slots.map((value, index) => [`slots-${index + 1}`, { value }]));
 }
-function lssSlotState(classId, level, used = []) {
-	const slots = standardSlotMaximums(classId, level);
+function lssSlotState(slots, used = []) {
 	return Object.fromEntries(slots.flatMap((maximum, circle) => Array.from({ length: maximum }, (_, index) => [`level-${circle + 1}-slot-${index}`, { isChecked: index < (used[circle] || 0) }])));
 }
-function lssPact(classId, level, used = 0) {
-	if (classId !== "warlock" || level < 1) return {};
-	const slotLevel = Math.min(5, Math.ceil(level / 2));
-	const slotCount = level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4;
+function lssPact(pact, used = 0) {
+	if (!pact.slots || !pact.level) return {};
 	return {
-		level: { value: slotLevel },
-		slots: { value: slotCount },
-		used: { value: Math.max(0, Math.min(slotCount, used)) }
+		level: { value: pact.level },
+		slots: { value: pact.slots },
+		used: { value: Math.max(0, Math.min(pact.slots, used)) }
 	};
 }
 function lssSkills(selectedSkills, expertiseSkills) {
@@ -33014,6 +32856,8 @@ function createLongStoryShortExport(context) {
 	const spellAbility = classRules[character.className]?.spellAbility;
 	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
 	const prof = proficiencyBonus(character.level);
+	const sharedSpellSlots = resolveSpellSlots(character);
+	const pactMagic = resolvePactMagic(character);
 	const chosenSpells = [...new Set([
 		...character.spells,
 		...context.featSpellIds || [],
@@ -33147,10 +32991,10 @@ function createLongStoryShortExport(context) {
 			available: { classes: character.className ? [character.className] : [] }
 		},
 		spells: {
-			...lssSlots(character.className, character.level),
-			...lssSlotState(character.className, character.level, character.spellSlotsUsed)
+			...lssSlots(sharedSpellSlots),
+			...lssSlotState(sharedSpellSlots, character.spellSlotsUsed)
 		},
-		spellsPact: lssPact(character.className, character.level, character.pactSlotsUsed),
+		spellsPact: lssPact(pactMagic, character.pactSlotsUsed),
 		bonuses: [],
 		proficiency: prof,
 		stats: Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, {
@@ -48669,18 +48513,21 @@ function Builder() {
 				recovered -= restored;
 				if (!recovered) break;
 			}
+			const resolvedForRest = {
+				...current,
+				abilities: finalAbilityScores(current)
+			};
+			const persistentResourceKeys = new Set(characterResources(resolvedForRest).filter((resource) => !resource.isLongRest).map((resource) => resource.key));
+			const persistentResourceSpent = Object.fromEntries(Object.entries(current.resourceSpent || {}).filter(([key]) => persistentResourceKeys.has(key)));
 			return applySubclassLongRest({
 				...current,
-				currentHitPoints: estimatedHitPoints({
-					...current,
-					abilities: finalAbilityScores(current)
-				}),
+				currentHitPoints: estimatedHitPoints(resolvedForRest),
 				temporaryHitPoints: 0,
 				hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
 				hitDiceSpentByClass: spentByClass,
 				deathSaveSuccesses: 0,
 				deathSaveFailures: 0,
-				resourceSpent: {},
+				resourceSpent: persistentResourceSpent,
 				spellSlotsUsed: (current.spellSlotsUsed || []).map(() => 0),
 				pactSlotsUsed: 0
 			});
@@ -52531,9 +52378,9 @@ function Builder() {
 															}, spell.id);
 														})
 													}),
-													spellRule.slots.length > 0 && /* @__PURE__ */ jsxs("div", {
+													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
 														className: "mobile-slot-list mobile-spell-slots",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), spellRule.slots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
+														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
 															/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
 															/* @__PURE__ */ jsx("button", {
 																onClick: () => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum),
@@ -52550,25 +52397,25 @@ function Builder() {
 															})
 														] }, circle))]
 													}),
-													spellRule.pact && /* @__PURE__ */ jsxs("div", {
+													pactMagicSlots.slots > 0 && /* @__PURE__ */ jsxs("div", {
 														className: "mobile-slot-list mobile-spell-slots",
 														children: [/* @__PURE__ */ jsxs("h3", { children: [
 															"Ячейки договора · ",
-															spellRule.pact.level,
+															pactMagicSlots.level,
 															" круг"
 														] }), /* @__PURE__ */ jsxs("article", { children: [
 															/* @__PURE__ */ jsx("span", { children: "Договор" }),
 															/* @__PURE__ */ jsx("button", {
 																onClick: () => setCharacter((current) => ({
 																	...current,
-																	pactSlotsUsed: Math.min(spellRule.pact.slots, (current.pactSlotsUsed || 0) + 1)
+																	pactSlotsUsed: Math.min(pactMagicSlots.slots, (current.pactSlotsUsed || 0) + 1)
 																})),
 																children: "Потратить"
 															}),
 															/* @__PURE__ */ jsxs("b", { children: [
-																spellRule.pact.slots - (character.pactSlotsUsed || 0),
+																pactMagicSlots.slots - (character.pactSlotsUsed || 0),
 																" / ",
-																spellRule.pact.slots
+																pactMagicSlots.slots
 															] }),
 															/* @__PURE__ */ jsx("button", {
 																onClick: () => setCharacter((current) => ({
@@ -52640,9 +52487,9 @@ function Builder() {
 															})] }, control.key);
 														})]
 													}),
-													spellRule.slots.length > 0 && /* @__PURE__ */ jsxs("div", {
+													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
 														className: "mobile-slot-list",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), spellRule.slots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
+														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
 															/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
 															/* @__PURE__ */ jsx("button", {
 																onClick: () => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum),
@@ -53146,9 +52993,9 @@ function Builder() {
 													] }, item.area))]
 												})
 											] }),
-											spellRule.slots.length > 0 && /* @__PURE__ */ jsx("div", {
+											sharedSpellSlots.length > 0 && /* @__PURE__ */ jsx("div", {
 												className: "slot-usage-editor",
-												children: spellRule.slots.map((maximum, circle) => /* @__PURE__ */ jsxs("label", { children: [
+												children: sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("label", { children: [
 													/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
 													/* @__PURE__ */ jsx("input", {
 														type: "number",
@@ -53160,21 +53007,25 @@ function Builder() {
 													/* @__PURE__ */ jsxs("small", { children: ["потрачено из ", maximum] })
 												] }, circle))
 											}),
-											spellRule.pact && /* @__PURE__ */ jsx("div", {
+											pactMagicSlots.slots > 0 && /* @__PURE__ */ jsx("div", {
 												className: "slot-usage-editor",
 												children: /* @__PURE__ */ jsxs("label", { children: [
-													/* @__PURE__ */ jsx("span", { children: "Ячейки договора" }),
+													/* @__PURE__ */ jsxs("span", { children: [
+														"Ячейки договора · ",
+														pactMagicSlots.level,
+														" круг"
+													] }),
 													/* @__PURE__ */ jsx("input", {
 														type: "number",
 														min: "0",
-														max: spellRule.pact.slots,
+														max: pactMagicSlots.slots,
 														value: character.pactSlotsUsed || 0,
 														onChange: (event) => setCharacter((current) => ({
 															...current,
-															pactSlotsUsed: Math.max(0, Math.min(spellRule.pact.slots, +event.target.value))
+															pactSlotsUsed: Math.max(0, Math.min(pactMagicSlots.slots, +event.target.value))
 														}))
 													}),
-													/* @__PURE__ */ jsxs("small", { children: ["потрачено из ", spellRule.pact.slots] })
+													/* @__PURE__ */ jsxs("small", { children: ["потрачено из ", pactMagicSlots.slots] })
 												] })
 											}),
 											resources.length > 0 && /* @__PURE__ */ jsx("div", {
