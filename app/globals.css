@@ -1485,3 +1485,22 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .pdf-resource-page-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4mm 6mm; }
 .pdf-resource-page-grid .pdf-resource { border: .3mm solid #365b5e; padding: 3mm; }
 .pdf-page footer { margin: 0; padding: 0; border: 0; height: auto; min-height: 0; line-height: 1.2; }
+
+/* Keep the selected class sigil unobscured in the right-hand hero summary. */
+.summary .portrait.catalog-icon {
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+}
+.summary .portrait.catalog-icon::before,
+.summary .portrait.catalog-icon::after {
+  display: none !important;
+}
+.summary .portrait.catalog-icon svg {
+  position: relative;
+  z-index: 4;
+  opacity: 1 !important;
+  filter: none !important;
+}
