@@ -40710,11 +40710,6 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 //#region app/knownLimitations.ts
 var knownLimitations = [
 	{
-		area: "Аккаунты",
-		status: "Встроенный защищённый вход",
-		text: "Сайт использует вход ChatGPT и сохраняет персонажей в аккаунте после автоматического переноса из браузера. Отдельная регистрация почта + пароль и собственное подтверждение почты добавлены в план развития на случай появления поддерживаемого публичного контура авторизации; самодельная база паролей не используется."
-	},
-	{
 		area: "Helpmate",
 		status: "477 проверенных соответствий",
 		text: "Экспорт использует внутренний ID конкретного заклинания Helpmate, включая строковые TCoE_*. Если выбранной карточки нет в базе Helpmate, сайт заранее показывает точный список пропусков, переносит остальные заклинания и не подставляет выдуманные ID."
@@ -40725,19 +40720,9 @@ var knownLimitations = [
 		text: "Восстанавливаются личные данные, итоговые характеристики с повышениями по уровню, класс, раса, предыстория, владения, компетентность, заклинания и потраченные ячейки. Карточки автоматически связываются с каталогом по общей ссылке dnd.su; старые компактные файлы, в которых LSS оставил только закрытый ID без ссылки, сохраняются без потерь для обратного экспорта."
 	},
 	{
-		area: "Опциональные списки TCE",
-		status: "Расширенный каталог",
-		text: "В приложение включены 514 карточек из приложенного справочника и ранее поддерживаемые официальные заклинания. Для новых карточек используются их источники, классы, круги, школы, ритуальность и ссылки dnd.su."
-	},
-	{
 		area: "Long Story Short",
 		status: "Совместимо с обоими режимами",
 		text: "Новые заклинания экспортируются переносимым текстовым списком со ссылками dnd.su. При импорте ссылка автоматически определяет заклинание нашего каталога, а исходные карточки LSS дополнительно сохраняются по внутренним ID для обратного переноса."
-	},
-	{
-		area: "Атаки",
-		status: "Базовая автоматизация",
-		text: "Автоматически учитываются стартовое оружие, стандартный модификатор характеристики, владение, боевые стили и боевые заговоры. Временные эффекты и бонусы конкретных магических предметов пока нужно внести после импорта вручную."
 	}
 ];
 //#endregion
@@ -49953,16 +49938,17 @@ function Builder() {
 								className: "library-export-options",
 								children: [
 									/* @__PURE__ */ jsx("button", {
-										onClick: () => confirmLibraryExport("herolist"),
-										children: "HeroList JSON"
+										onClick: () => confirmLibraryExport("lss"),
+										children: "Long Story Short JSON"
 									}),
 									/* @__PURE__ */ jsx("button", {
 										onClick: () => confirmLibraryExport("helpmate"),
 										children: "Helpmate JSON"
 									}),
 									/* @__PURE__ */ jsx("button", {
-										onClick: () => confirmLibraryExport("lss"),
-										children: "Long Story Short JSON"
+										className: "primary-action",
+										onClick: () => confirmLibraryExport("herolist"),
+										children: "HeroList JSON"
 									})
 								]
 							}),
@@ -51786,7 +51772,11 @@ function Builder() {
 															children: Object.keys(abilityLabels).map((key) => {
 																const count = choice.asiChoices.filter((item) => item === key).length;
 																const previousBonus = advancements.filter((item) => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap((item) => item.asiChoices).filter((item) => item === key).length;
-																const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus;
+																const previousFeatBonus = featAbilityBonuses({
+																	...rulesCharacter,
+																	advancements: advancements.filter((item) => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level)
+																})[key] || 0;
+																const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
 																return /* @__PURE__ */ jsxs("section", { children: [
 																	/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
 																	/* @__PURE__ */ jsxs("div", {
@@ -53210,12 +53200,12 @@ function Builder() {
 												children: "Сбросить"
 											}),
 											/* @__PURE__ */ jsx("button", {
-												onClick: exportNative,
-												children: "Наш JSON"
-											}),
-											/* @__PURE__ */ jsx("button", {
 												onClick: () => window.print(),
 												children: "PDF-лист · страницы создаются автоматически"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: exportLongStoryShort,
+												children: "Long Story Short JSON"
 											}),
 											/* @__PURE__ */ jsx("button", {
 												onClick: exportHelpmate,
@@ -53223,8 +53213,8 @@ function Builder() {
 											}),
 											/* @__PURE__ */ jsx("button", {
 												className: "primary-action",
-												onClick: exportLongStoryShort,
-												children: "Long Story Short JSON"
+												onClick: exportNative,
+												children: "Наш JSON"
 											})
 										]
 									})
