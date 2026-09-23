@@ -31256,7 +31256,7 @@ var armorText = {
 	shield: "Щит (+2 к КД)",
 	woodShield: "Деревянный щит (+2 к КД)"
 };
-var simpleWeapons = [
+var simpleWeapons$1 = [
 	O$2("club", "Дубинка"),
 	O$2("dagger", "Кинжал"),
 	O$2("greatclub", "Палица"),
@@ -31304,7 +31304,7 @@ var instruments = [
 ].map((name, index) => O$2(`instrument-${index}`, name));
 var classEquipment = {
 	barbarian: {
-		groups: [G("primary", "Основное оружие", [O$2("greataxe", "Секира", ["Секира"], true), ...martialMelee.filter((option) => option.id !== "greataxe")]), G("secondary", "Запасное оружие", [O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"], true), ...simpleWeapons])],
+		groups: [G("primary", "Основное оружие", [O$2("greataxe", "Секира", ["Секира"], true), ...martialMelee.filter((option) => option.id !== "greataxe")]), G("secondary", "Запасное оружие", [O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"], true), ...simpleWeapons$1])],
 		fixed: [packText("explorer", "Набор путешественника"), "Метательное копьё ×4"]
 	},
 	bard: {
@@ -31312,7 +31312,7 @@ var classEquipment = {
 			G("weapon", "Оружие", [
 				O$2("rapier", "Рапира", ["Рапира"], true),
 				O$2("longsword", "Длинный меч"),
-				...simpleWeapons
+				...simpleWeapons$1
 			]),
 			G("pack", "Дорожный набор", [P("diplomat", "Набор дипломата", true), P("entertainer", "Набор артиста")]),
 			G("instrument", "Музыкальный инструмент", instruments.map((option) => option.id === "instrument-0" ? {
@@ -31330,13 +31330,13 @@ var classEquipment = {
 				O$2("leather", armorText.leather),
 				O$2("chain", `${armorText.chain} (если есть владение)`, [armorText.chain])
 			]),
-			G("ranged", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
+			G("ranged", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
 			G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")])
 		],
 		fixed: [armorText.shield, "Священный символ"]
 	},
 	druid: {
-		groups: [G("shield", "Защита или простое оружие", [O$2("wood-shield", armorText.woodShield, [armorText.woodShield], true), ...simpleWeapons]), G("weapon", "Рукопашное оружие", [O$2("scimitar", "Скимитар"), ...simpleWeapons.filter((option) => ![
+		groups: [G("shield", "Защита или простое оружие", [O$2("wood-shield", armorText.woodShield, [armorText.woodShield], true), ...simpleWeapons$1]), G("weapon", "Рукопашное оружие", [O$2("scimitar", "Скимитар"), ...simpleWeapons$1.filter((option) => ![
 			"light-crossbow",
 			"dart",
 			"shortbow",
@@ -31368,7 +31368,7 @@ var classEquipment = {
 		fixed: []
 	},
 	monk: {
-		groups: [G("weapon", "Оружие", [O$2("shortsword", "Короткий меч", ["Короткий меч"], true), ...simpleWeapons]), G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])],
+		groups: [G("weapon", "Оружие", [O$2("shortsword", "Короткий меч", ["Короткий меч"], true), ...simpleWeapons$1]), G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])],
 		fixed: ["Дротик ×10"]
 	},
 	paladin: {
@@ -31377,7 +31377,7 @@ var classEquipment = {
 				...option,
 				recommended: true
 			} : option)], 2),
-			G("secondary", "Дополнительное оружие", [O$2("javelins", "Пять метательных копий", ["Метательное копьё ×5"], true), ...simpleWeapons.filter((option) => ![
+			G("secondary", "Дополнительное оружие", [O$2("javelins", "Пять метательных копий", ["Метательное копьё ×5"], true), ...simpleWeapons$1.filter((option) => ![
 				"light-crossbow",
 				"dart",
 				"shortbow",
@@ -31418,7 +31418,7 @@ var classEquipment = {
 	},
 	sorcerer: {
 		groups: [
-			G("weapon", "Оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
+			G("weapon", "Оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
 			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
 			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
 		],
@@ -31426,10 +31426,10 @@ var classEquipment = {
 	},
 	warlock: {
 		groups: [
-			G("weapon", "Дальнее или простое оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons]),
+			G("weapon", "Дальнее или простое оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
 			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
 			G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("dungeoneer", "Набор исследователя подземелий")]),
-			G("simple", "Дополнительное простое оружие", simpleWeapons)
+			G("simple", "Дополнительное простое оружие", simpleWeapons$1)
 		],
 		fixed: [armorText.leather, "Кинжал ×2"]
 	},
@@ -31442,7 +31442,7 @@ var classEquipment = {
 		fixed: ["Книга заклинаний"]
 	},
 	artificer: {
-		groups: [G("weapons", "Два простых оружия", simpleWeapons, 2), G("armor", "Доспех", [O$2("studded", armorText.studded, [armorText.studded], true), O$2("scale", armorText.scale)])],
+		groups: [G("weapons", "Два простых оружия", simpleWeapons$1, 2), G("armor", "Доспех", [O$2("studded", armorText.studded, [armorText.studded], true), O$2("scale", armorText.scale)])],
 		fixed: [
 			"Лёгкий арбалет",
 			"Болт ×20",
@@ -31771,6 +31771,52 @@ var weaponDefinitions = {
 		finesse: true
 	}
 };
+var simpleWeapons = new Set([
+	"дубинка",
+	"кинжал",
+	"палица",
+	"ручной топор",
+	"метательное копьё",
+	"лёгкий молот",
+	"булава",
+	"боевой посох",
+	"серп",
+	"копьё",
+	"лёгкий арбалет",
+	"дротик",
+	"короткий лук",
+	"праща"
+]);
+var weaponPlurals = {
+	"дубинка": ["дубинки"],
+	"кинжал": ["кинжалы"],
+	"палица": ["палицы"],
+	"ручной топор": ["ручные топоры"],
+	"метательное копьё": ["метательные копья"],
+	"лёгкий молот": ["легкие молоты"],
+	"булава": ["булавы"],
+	"боевой посох": ["боевые посохи"],
+	"серп": ["серпы"],
+	"копьё": ["копья"],
+	"лёгкий арбалет": ["легкие арбалеты"],
+	"дротик": ["дротики"],
+	"короткий лук": ["короткие луки"],
+	"праща": ["пращи"],
+	"длинный меч": ["длинные мечи", "длинные и короткие мечи"],
+	"короткий меч": ["короткие мечи", "длинные и короткие мечи"],
+	"ручной арбалет": ["ручные арбалеты"],
+	"рапира": ["рапиры"],
+	"скимитар": ["скимитары"]
+};
+function weaponProficient(character, key) {
+	const permissions = characterProficiencies(character).weapons.flatMap((value) => value.toLowerCase().replace(/ё/g, "е").split(/\s*,\s*/));
+	if (permissions.some((value) => /прост(?:ое|ые) (?:и воинское )?оружие/.test(value)) && simpleWeapons.has(key)) return true;
+	if (permissions.some((value) => /воинск(?:ое|ие) оружие/.test(value)) && !simpleWeapons.has(key)) return true;
+	if (key === "короткий меч" && permissions.some((value) => /короткие мечи/.test(value))) return true;
+	if (key === "длинный меч" && permissions.some((value) => /длинные (?:и короткие )?мечи/.test(value))) return true;
+	const normalized = key.replace(/ё/g, "е");
+	return permissions.some((value) => value === normalized || (weaponPlurals[key] || []).some((alias) => alias === value));
+}
 var damagingCantrips = {
 	"acid-splash": {
 		dice: "d6",
@@ -31923,7 +31969,7 @@ function characterAttacks(character, spells) {
 	const totalLevel = characterLevel(character);
 	const prof = proficiencyBonus$2(totalLevel);
 	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
-	const equipment = selectedEquipment(character);
+	const equipment = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const seenWeapons = /* @__PURE__ */ new Set();
 	const weaponAttacks = equipment.flatMap((item) => {
 		const key = normalizeEquipmentName(item);
@@ -31932,6 +31978,7 @@ function characterAttacks(character, spells) {
 		seenWeapons.add(key);
 		const ability = weaponAbility(definition, character);
 		const abilityMod = abilityModifier$2(character.abilities[ability]);
+		const proficient = weaponProficient(character, key);
 		const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
 		const damageExtra = (styles.has("dueling") && !definition.ranged && !definition.twoHanded ? 2 : 0) + (styles.has("thrown-weapon") && definition.thrown ? 2 : 0);
 		const abilityVariable = `[${ability.toUpperCase()}]`;
@@ -31940,11 +31987,12 @@ function characterAttacks(character, spells) {
 			name: definition.name,
 			kind: "weapon",
 			ability,
-			proficient: true,
-			attackBonus: prof + abilityMod + attackBonusExtra,
+			proficient,
+			attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
 			attackBonusExtra,
 			damageFormula: `${definition.dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
-			damageDisplay: `${definition.dice}${signed$1(abilityMod + damageExtra)}`
+			damageDisplay: `${definition.dice}${signed$1(abilityMod + damageExtra)}`,
+			note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
 		}];
 	});
 	const featureAttacks = subclassAttacks(character, prof);
@@ -32515,7 +32563,7 @@ function summaryText(context) {
 		...spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : [],
 		`Ресурсы: ${resources.join("; ") || "нет"}`,
 		`Снаряжение: ${equipment.join(", ") || "нет"}`,
-		`Атаки: ${attacks.map((attack) => `${attack.name} — ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}`).join("; ") || "нет"}`,
+		`Атаки: ${attacks.map((attack) => `${attack.name} — ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
 		`Заклинания: ${selectedSpells.join(", ") || "нет"}`,
 		...preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : [],
 		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []
@@ -52492,7 +52540,8 @@ function Builder() {
 														children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", { children: [
 															/* @__PURE__ */ jsx("strong", { children: attack.name }),
 															/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}` }),
-															/* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
+															/* @__PURE__ */ jsx("code", { children: attack.damageDisplay }),
+															attack.note && /* @__PURE__ */ jsx("small", { children: attack.note })
 														] }, attack.id))
 													})
 												]
