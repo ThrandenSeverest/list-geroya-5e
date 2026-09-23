@@ -2508,9 +2508,9 @@ function Builder() {
             <h2 id="library-export-title">Выберите формат экспорта</h2>
             <p>{libraryExportTarget.kind === "folder" ? "Все персонажи папки будут упакованы в ZIP в выбранном формате." : "Будет скачан один JSON-файл выбранного формата."}</p>
             <div className="library-export-options">
-              <button onClick={() => confirmLibraryExport("herolist")}>HeroList JSON</button>
-              <button onClick={() => confirmLibraryExport("helpmate")}>Helpmate JSON</button>
               <button onClick={() => confirmLibraryExport("lss")}>Long Story Short JSON</button>
+              <button onClick={() => confirmLibraryExport("helpmate")}>Helpmate JSON</button>
+              <button className="primary-action" onClick={() => confirmLibraryExport("herolist")}>HeroList JSON</button>
             </div>
             <div><button onClick={() => setLibraryExportTarget(null)}>Отмена</button></div>
           </section>
@@ -3645,10 +3645,10 @@ function Builder() {
                   {resources.map(resource => <label key={resource.key}><span>{resource.name}</span><input type="number" min="0" max={resource.max} value={resourceCurrent(exportCharacter, resource)} onChange={event => setResourceCurrent(resource.key, +event.target.value, resource.max)} /><small>осталось из {resource.max}{resource.die ? ` · ${resource.die}` : ""}</small></label>)}
                 </div>}
                 <button onClick={resetCurrentCharacter}>Сбросить</button>
-                <button onClick={exportNative}>Наш JSON</button>
                 <button onClick={() => window.print()}>PDF-лист · страницы создаются автоматически</button>
+                <button onClick={exportLongStoryShort}>Long Story Short JSON</button>
                 <button onClick={exportHelpmate}>Helpmate JSON</button>
-                <button className="primary-action" onClick={exportLongStoryShort}>Long Story Short JSON</button>
+                <button className="primary-action" onClick={exportNative}>Наш JSON</button>
               </div>
             </div>
           )}
