@@ -31523,14 +31523,14 @@ var armorOptions = new Set([
 	"leather-bow",
 	"studded"
 ]);
-function modifier$1(score) {
+function modifier$2(score) {
 	return Math.floor((score - 10) / 2);
 }
 function isOneHandedWeapon(option) {
 	return (finesseWeapons.has(option.id) || strengthWeapons.has(option.id)) && !twoHandedWeapons.has(option.id);
 }
 function armorScore(option, abilities) {
-	const dexterity = modifier$1(abilities.dex);
+	const dexterity = modifier$2(abilities.dex);
 	if (option.id === "chain") return abilities.str >= 13 ? 160 : -1e3;
 	if (option.id === "scale") return (14 + Math.min(2, dexterity)) * 10 - (dexterity >= 3 ? 2 : 0);
 	if (option.id === "studded") return (12 + dexterity) * 10;
@@ -31553,8 +31553,8 @@ function conditionalProficiencyPenalty(classId, subclass, option) {
 }
 function optionScore(classId, option, abilities, context) {
 	const styles = new Set(context.classChoices?.["fighting-style"] || []);
-	const strength = modifier$1(abilities.str);
-	const dexterity = modifier$1(abilities.dex);
+	const strength = modifier$2(abilities.str);
+	const dexterity = modifier$2(abilities.dex);
 	const proficiencyPenalty = conditionalProficiencyPenalty(classId, context.subclass || "", option);
 	if (proficiencyPenalty) return proficiencyPenalty;
 	if (armorOptions.has(option.id)) return armorScore(option, abilities);
@@ -31608,7 +31608,7 @@ function selectedEquipment(character) {
 //#endregion
 //#region app/combat.ts
 var abilityModifier$2 = (score) => Math.floor((score - 10) / 2);
-var proficiencyBonus$1 = (level) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
+var proficiencyBonus$2 = (level) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 var weaponDefinitions = {
 	"дубинка": {
 		name: "Дубинка",
@@ -31921,7 +31921,7 @@ function subclassAttacks(character, prof) {
 }
 function characterAttacks(character, spells) {
 	const totalLevel = characterLevel(character);
-	const prof = proficiencyBonus$1(totalLevel);
+	const prof = proficiencyBonus$2(totalLevel);
 	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
 	const equipment = selectedEquipment(character);
 	const seenWeapons = /* @__PURE__ */ new Set();
@@ -31993,7 +31993,7 @@ function lssWeaponAttacks(attacks) {
 }
 //#endregion
 //#region app/armor.ts
-var modifier = (score) => Math.floor((score - 10) / 2);
+var modifier$1 = (score) => Math.floor((score - 10) / 2);
 function hasItem(items, pattern) {
 	return items.some((item) => pattern.test(item));
 }
@@ -32002,9 +32002,9 @@ function hasFeat(character, featId) {
 }
 function armorClassBreakdown(character) {
 	const items = selectedEquipment(character);
-	const dex = modifier(character.abilities.dex);
-	const con = modifier(character.abilities.con);
-	const wis = modifier(character.abilities.wis);
+	const dex = modifier$1(character.abilities.dex);
+	const con = modifier$1(character.abilities.con);
+	const wis = modifier$1(character.abilities.wis);
 	const shield = hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
 	const worn = [
 		{
@@ -32295,6 +32295,34 @@ function speedBreakdown(character) {
 	if (race === "shifter" && ["swiftstride", "motm-swiftstride"].includes(variant)) conditions.push("Смена быстронога: +10 к скорости только во время Смены");
 	if (race === "tabaxi") conditions.push("Кошачья ловкость: удвоение скорости только при активации");
 	return result;
+}
+//#endregion
+//#region app/derivedSkills.ts
+var modifier = (score) => Math.floor((score - 10) / 2);
+var proficiencyBonus$1 = (level) => Math.floor((Math.max(1, level) - 1) / 4) + 2;
+function skillBonusBreakdown(character, skill) {
+	const rule = skillKeys[skill];
+	if (!rule) throw new Error(`Unknown skill: ${skill}`);
+	const ability = modifier(character.abilities[rule.stat]);
+	const proficient = characterProficiencies(character).skills.includes(skill);
+	const expertise = proficient && characterExpertiseSkills(character).includes(skill);
+	const training = proficient ? proficiencyBonus$1(characterLevel(character)) * (expertise ? 2 : 1) : 0;
+	return {
+		value: ability + training,
+		ability,
+		training,
+		proficient,
+		expertise
+	};
+}
+function passivePerceptionBreakdown(character) {
+	const skill = skillBonusBreakdown(character, "Внимательность");
+	const observant = new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("observant") ? 5 : 0;
+	return {
+		value: 10 + skill.value + observant,
+		skill,
+		observant
+	};
 }
 //#endregion
 //#region app/exportFormats.ts
@@ -32620,7 +32648,7 @@ function createHelpmateExport(context) {
 		TrueMultiplier: 0,
 		Inspiration: character.inspiration ? 1 : 0,
 		Armor: armorClass(character),
-		Bditelnost: 10 + abilityModifier$1(character.abilities.wis) + (selectedSkills.has("Внимательность") ? proficiencyBonus(character.level) : 0),
+		Bditelnost: passivePerceptionBreakdown(character).value,
 		IniBonus: abilityModifier$1(character.abilities.dex),
 		IsPlaying: false,
 		Note: helpmateNote(context),
@@ -47622,7 +47650,7 @@ function Builder() {
 	const hitPoints = estimatedHitPoints(exportCharacter);
 	const hitDicePoolsForCharacter = hitDicePools(exportCharacter);
 	const availableHitDice = hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.max - pool.spent, 0);
-	const passivePerception = 10 + abilityModifier$1(finalAbilities.wis) + (proficiencies.skills.includes("Внимательность") ? proficiency : 0);
+	const passivePerception = passivePerceptionBreakdown(exportCharacter).value;
 	const pointRemaining = 27 - pointBuySpent(character.abilities);
 	const standardMode = character.abilityMethod === "standard";
 	const abilitiesComplete = standardMode ? Object.values(character.abilities).sort((a, b) => b - a).join(",") === standardArray.join(",") : pointRemaining === 0;
