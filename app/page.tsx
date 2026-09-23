@@ -53,7 +53,7 @@ import { characterAttacks } from "./combat";
 import { knownLimitations } from "./knownLimitations";
 import { characterExpertiseSkills, characterProficiencies, classSkillUsedElsewhere, proficiencyChoiceRequirements, proficiencyChoicesComplete, proficiencyChoiceUsedElsewhere } from "./proficiencies";
 import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource } from "./characterFiles";
-import { advancementChoiceComplete, featChoiceAvailability, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
+import { advancementChoiceComplete, featAbilityBonuses, featChoiceAvailability, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
 import { armorClassBreakdown } from "./armor";
 import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
@@ -3235,7 +3235,11 @@ function Builder() {
                           {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => {
                             const count = choice.asiChoices.filter(item => item === key).length;
                             const previousBonus = advancements.filter(item => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap(item => item.asiChoices).filter(item => item === key).length;
-                            const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus;
+                            const previousFeatBonus = featAbilityBonuses({
+                              ...rulesCharacter,
+                              advancements: advancements.filter(item => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level),
+                            })[key] || 0;
+                            const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
                             return <section key={key}>
                               <small>{abilityLabels[key]}</small>
                               <div className="score-control"><button onClick={() => changeAsiAbility(choice.key, key, -1)} disabled={count === 0}>−</button><strong>+{count}</strong><button onClick={() => changeAsiAbility(choice.key, key, 1)} disabled={choice.asiChoices.length >= 2 || count >= 2 || beforeAsi + count >= 20}>+</button></div>
