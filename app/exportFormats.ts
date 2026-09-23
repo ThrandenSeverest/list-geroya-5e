@@ -12,6 +12,7 @@ import { externalSkillId } from "./skillIds";
 import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMulticlass, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 import { normalizeExportText } from "./exportText";
 import { speedBreakdown } from "./speed";
+import { passivePerceptionBreakdown } from "./derivedSkills";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -434,7 +435,7 @@ export function createHelpmateExport(context: ExportContext) {
     TrueMultiplier: 0,
     Inspiration: character.inspiration ? 1 : 0,
     Armor: armorClass(character),
-    Bditelnost: 10 + abilityModifier(character.abilities.wis) + (selectedSkills.has("Внимательность") ? proficiencyBonus(character.level) : 0),
+    Bditelnost: passivePerceptionBreakdown(character).value,
     IniBonus: abilityModifier(character.abilities.dex),
     // Helpmate recalculates known spells and cantrips only for an idle import.
     IsPlaying: false,

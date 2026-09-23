@@ -56,6 +56,7 @@ import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource
 import { advancementChoiceComplete, featAbilityBonuses, featChoiceAvailability, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
 import { armorClassBreakdown } from "./armor";
 import { speedBreakdown } from "./speed";
+import { passivePerceptionBreakdown } from "./derivedSkills";
 import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
@@ -988,7 +989,7 @@ function Builder() {
   const hitPoints = estimatedHitPoints(exportCharacter);
   const hitDicePoolsForCharacter = hitDicePools(exportCharacter);
   const availableHitDice = hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.max - pool.spent, 0);
-  const passivePerception = 10 + abilityModifier(finalAbilities.wis) + (proficiencies.skills.includes("Внимательность") ? proficiency : 0);
+  const passivePerception = passivePerceptionBreakdown(exportCharacter).value;
   const pointSpent = pointBuySpent(character.abilities);
   const pointRemaining = 27 - pointSpent;
   const standardMode = character.abilityMethod === "standard";
