@@ -739,26 +739,22 @@ function standardSlotMaximums(classId: string, level: number) {
   return fullCasterSlots[casterLevel] || [];
 }
 
-function lssSlots(classId: string, level: number) {
-  const slots = standardSlotMaximums(classId, level);
+function lssSlots(slots: number[]) {
   return Object.fromEntries(slots.map((value, index) => [`slots-${index + 1}`, { value }]));
 }
 
-function lssSlotState(classId: string, level: number, used: number[] = []) {
-  const slots = standardSlotMaximums(classId, level);
+function lssSlotState(slots: number[], used: number[] = []) {
   return Object.fromEntries(slots.flatMap((maximum, circle) =>
     Array.from({ length: maximum }, (_, index) => [`level-${circle + 1}-slot-${index}`, { isChecked: index < (used[circle] || 0) }]),
   ));
 }
 
-function lssPact(classId: string, level: number, used = 0) {
-  if (classId !== "warlock" || level < 1) return {};
-  const slotLevel = Math.min(5, Math.ceil(level / 2));
-  const slotCount = level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4;
+function lssPact(pact: { slots: number; level: number }, used = 0) {
+  if (!pact.slots || !pact.level) return {};
   return {
-    level: { value: slotLevel },
-    slots: { value: slotCount },
-    used: { value: Math.max(0, Math.min(slotCount, used)) },
+    level: { value: pact.level },
+    slots: { value: pact.slots },
+    used: { value: Math.max(0, Math.min(pact.slots, used)) },
   };
 }
 
@@ -788,6 +784,8 @@ export function createLongStoryShortExport(context: ExportContext) {
   const spellAbility = classRules[character.className]?.spellAbility;
   const spellMod = spellAbility ? abilityModifier(character.abilities[spellAbility as keyof AbilityScores]) : 0;
   const prof = proficiencyBonus(character.level);
+  const sharedSpellSlots = resolveSpellSlots(character);
+  const pactMagic = resolvePactMagic(character);
   const chosenIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || [])])];
   const chosenSpells = chosenIds.map(id => spells.find(spell => spell.id === id)).filter(Boolean) as CatalogSpell[];
   const retainedCardIds = (values: string[] | undefined) => (values || []).filter(value => /^[0-9a-f]{24}$/i.test(value));
@@ -873,8 +871,8 @@ export function createLongStoryShortExport(context: ExportContext) {
       },
       available: { classes: character.className ? [character.className] : [] },
     },
-    spells: { ...lssSlots(character.className, character.level), ...lssSlotState(character.className, character.level, character.spellSlotsUsed) },
-    spellsPact: lssPact(character.className, character.level, character.pactSlotsUsed),
+    spells: { ...lssSlots(sharedSpellSlots), ...lssSlotState(sharedSpellSlots, character.spellSlotsUsed) },
+    spellsPact: lssPact(pactMagic, character.pactSlotsUsed),
     bonuses: [],
     proficiency: prof,
     stats: Object.fromEntries(
