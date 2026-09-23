@@ -8,6 +8,12 @@ on:
 permissions:
   contents: write
 
+# Only the newest verification for a branch may publish dist. This prevents
+# older runs from racing a newer main commit and failing with a non-fast-forward push.
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -42,11 +48,20 @@ jobs:
             echo "Committed dist already matches the source build."
             exit 0
           fi
+
+          # A newer commit may have landed while this build was running.
+          # Never publish dist compiled from an older source tree onto newer main.
+          git fetch origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "main advanced during this run; the newer workflow will publish its own dist."
+            exit 0
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add dist
           git commit -m "build: sync precompiled dist"
-          git push
+          git push origin HEAD:main
       - name: Verify committed dist matches source on pull requests
         if: github.event_name == 'pull_request'
         run: |
