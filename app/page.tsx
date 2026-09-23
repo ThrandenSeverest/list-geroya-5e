@@ -1816,15 +1816,22 @@ function Builder() {
         recovered -= restored;
         if (!recovered) break;
       }
+      const resolvedForRest = { ...current, abilities: finalAbilityScores(current) };
+      const persistentResourceKeys = new Set(characterResources(resolvedForRest)
+        .filter(resource => !resource.isLongRest)
+        .map(resource => resource.key));
+      const persistentResourceSpent = Object.fromEntries(
+        Object.entries(current.resourceSpent || {}).filter(([key]) => persistentResourceKeys.has(key)),
+      );
       return applySubclassLongRest({
         ...current,
-        currentHitPoints: estimatedHitPoints({ ...current, abilities: finalAbilityScores(current) }),
+        currentHitPoints: estimatedHitPoints(resolvedForRest),
         temporaryHitPoints: 0,
         hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
         hitDiceSpentByClass: spentByClass,
         deathSaveSuccesses: 0,
         deathSaveFailures: 0,
-        resourceSpent: {},
+        resourceSpent: persistentResourceSpent,
         spellSlotsUsed: (current.spellSlotsUsed || []).map(() => 0),
         pactSlotsUsed: 0,
       });
