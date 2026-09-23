@@ -277,7 +277,7 @@ function summaryText(context: ExportContext) {
     ...(spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : []),
     `Ресурсы: ${resources.join("; ") || "нет"}`,
     `Снаряжение: ${equipment.join(", ") || "нет"}`,
-    `Атаки: ${attacks.map(attack => `${attack.name} — ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}`).join("; ") || "нет"}`,
+    `Атаки: ${attacks.map(attack => `${attack.name} — ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
     `Заклинания: ${selectedSpells.join(", ") || "нет"}`,
     ...(preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : []),
     ...(alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []),

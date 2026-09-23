@@ -3,6 +3,7 @@ import { selectedEquipment } from "./equipment";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
 import { classRules } from "./rules";
 import { characterLevel, orderedCharacterClasses } from "./multiclass";
+import { characterProficiencies } from "./proficiencies";
 
 type AbilityKey = keyof AbilityScores;
 
@@ -67,6 +68,35 @@ const weaponDefinitions: Record<string, WeaponDefinition> = {
   "боевой молот": { name: "Боевой молот", dice: "1d8" },
   "кнут": { name: "Кнут", dice: "1d4", finesse: true },
 };
+
+const simpleWeapons = new Set([
+  "дубинка", "кинжал", "палица", "ручной топор", "метательное копьё", "лёгкий молот",
+  "булава", "боевой посох", "серп", "копьё", "лёгкий арбалет", "дротик", "короткий лук", "праща",
+]);
+
+const weaponPlurals: Record<string, string[]> = {
+  "дубинка": ["дубинки"], "кинжал": ["кинжалы"], "палица": ["палицы"],
+  "ручной топор": ["ручные топоры"], "метательное копьё": ["метательные копья"],
+  "лёгкий молот": ["легкие молоты"], "булава": ["булавы"],
+  "боевой посох": ["боевые посохи"], "серп": ["серпы"], "копьё": ["копья"],
+  "лёгкий арбалет": ["легкие арбалеты"], "дротик": ["дротики"],
+  "короткий лук": ["короткие луки"], "праща": ["пращи"],
+  "длинный меч": ["длинные мечи", "длинные и короткие мечи"],
+  "короткий меч": ["короткие мечи", "длинные и короткие мечи"],
+  "ручной арбалет": ["ручные арбалеты"], "рапира": ["рапиры"],
+  "скимитар": ["скимитары"],
+};
+
+function weaponProficient(character: ExportCharacter, key: string) {
+  const permissions = characterProficiencies(character).weapons
+    .flatMap(value => value.toLowerCase().replace(/ё/g, "е").split(/\s*,\s*/));
+  if (permissions.some(value => /прост(?:ое|ые) (?:и воинское )?оружие/.test(value)) && simpleWeapons.has(key)) return true;
+  if (permissions.some(value => /воинск(?:ое|ие) оружие/.test(value)) && !simpleWeapons.has(key)) return true;
+  if (key === "короткий меч" && permissions.some(value => /короткие мечи/.test(value))) return true;
+  if (key === "длинный меч" && permissions.some(value => /длинные (?:и короткие )?мечи/.test(value))) return true;
+  const normalized = key.replace(/ё/g, "е");
+  return permissions.some(value => value === normalized || (weaponPlurals[key] || []).some(alias => alias === value));
+}
 
 type CantripDefinition = {
   dice: string;
@@ -197,7 +227,8 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     ...(character.classChoices?.["fighting-style"] || []),
     ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.["fighting-style"] || []),
   ]);
-  const equipment = selectedEquipment(character);
+  const equipment = character.inventoryOverride === undefined ? selectedEquipment(character)
+    : character.inventoryOverride.split(/\n|\s*·\s*/).map(item => item.trim()).filter(Boolean);
   const seenWeapons = new Set<string>();
   const weaponAttacks = equipment.flatMap((item): CharacterAttack[] => {
     const key = normalizeEquipmentName(item);
@@ -206,6 +237,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     seenWeapons.add(key);
     const ability = weaponAbility(definition, character);
     const abilityMod = abilityModifier(character.abilities[ability]);
+    const proficient = weaponProficient(character, key);
     const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
     const damageExtra = (styles.has("dueling") && !definition.ranged && !definition.twoHanded ? 2 : 0)
       + (styles.has("thrown-weapon") && definition.thrown ? 2 : 0);
@@ -215,11 +247,12 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       name: definition.name,
       kind: "weapon",
       ability,
-      proficient: true,
-      attackBonus: prof + abilityMod + attackBonusExtra,
+      proficient,
+      attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
       attackBonusExtra,
       damageFormula: `${definition.dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
       damageDisplay: `${definition.dice}${signed(abilityMod + damageExtra)}`,
+      note: proficient ? undefined : "Нет владения оружием: бонус мастерства не прибавлен к атаке.",
     }];
   });
 
