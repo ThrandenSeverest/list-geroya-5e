@@ -55,6 +55,7 @@ import { characterExpertiseSkills, characterProficiencies, classSkillUsedElsewhe
 import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource } from "./characterFiles";
 import { advancementChoiceComplete, featAbilityBonuses, featChoiceAvailability, featChoiceGroups, featGrantedSpellIds } from "./featChoices";
 import { armorClassBreakdown } from "./armor";
+import { speedBreakdown } from "./speed";
 import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
@@ -3444,7 +3445,7 @@ function Builder() {
                   <div className="mobile-stat-grid">
                     {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{finalAbilities[key]}</strong><span>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</span></div>)}
                   </div>
-                  <div className="mobile-quick-grid"><div><small>КД</small><strong>{ac.value}</strong></div><div><small>Инициатива</small><strong>{abilityModifier(finalAbilities.dex) >= 0 ? "+" : ""}{abilityModifier(finalAbilities.dex)}</strong></div><div><small>Скорость</small><strong>{character.race === "dwarf" ? 25 : chosenRaceVariant?.id === "wood" ? 35 : 30}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  <div className="mobile-quick-grid"><div><small>КД</small><strong>{ac.value}</strong></div><div><small>Инициатива</small><strong>{abilityModifier(finalAbilities.dex) >= 0 ? "+" : ""}{abilityModifier(finalAbilities.dex)}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
                   <p><b>Раса:</b> {selectedRace?.name} · <b>Класс:</b> {selectedClass?.name} · <b>Предыстория:</b> {selectedBackground?.name}</p>
                 </div>}
 
@@ -3514,7 +3515,7 @@ function Builder() {
                     <div className="combat-row">
                       <div className="shield" title={`${ac.base}${ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""}`}><strong>{ac.value}</strong><span>КД</span></div>
                       <div className="combat-tile"><strong>{abilityModifier(finalAbilities.dex) >= 0 ? "+" : ""}{abilityModifier(finalAbilities.dex)}</strong><span>ИНИЦИАТИВА</span></div>
-                      <div className="combat-tile"><strong>{character.race === "dwarf" ? 25 : chosenRaceVariant?.id === "wood" ? 35 : 30}</strong><span>СКОРОСТЬ</span></div>
+                      <div className="combat-tile" title={[...speedBreakdown(exportCharacter).sources, ...speedBreakdown(exportCharacter).conditions].join("; ")}><strong>{speedBreakdown(exportCharacter).walk}</strong><span>СКОРОСТЬ</span></div>
                     </div>
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
                     <div className="sheet-box hp-current"><label>ТЕКУЩИЕ ХИТЫ<input aria-label="Текущие хиты" type="number" min="0" max={hitPoints} value={character.currentHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, currentHitPoints: Math.max(0, Math.min(hitPoints, Number(event.target.value) || 0)) }))} /></label><label>ВРЕМЕННЫЕ ХИТЫ<input aria-label="Временные хиты" type="number" min="0" value={character.temporaryHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, temporaryHitPoints: Math.max(0, Number(event.target.value) || 0) }))} /></label></div>
@@ -3598,7 +3599,7 @@ function Builder() {
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
                 initiative={abilityModifier(finalAbilities.dex)}
-                speed={character.race === "dwarf" ? 25 : chosenRaceVariant?.id === "wood" ? 35 : 30}
+                speed={speedBreakdown(exportCharacter).walk}
                 hitPoints={hitPoints}
                 hitDie={classRules[character.className]?.hitDie || 8}
                 hitDiceLabel={hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ")}

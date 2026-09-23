@@ -11,6 +11,7 @@ import { armorClass } from "./armor";
 import { externalSkillId } from "./skillIds";
 import { characterLevel, getClassLevel, getStartingClassId, hitDicePools, isMulticlass, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
 import { normalizeExportText } from "./exportText";
+import { speedBreakdown } from "./speed";
 
 export type AbilityScores = Record<"str" | "dex" | "con" | "int" | "wis" | "cha", number>;
 export type Currency = { gp: number; sp: number; cp: number; pp: number };
@@ -348,7 +349,7 @@ export function createHelpmateExport(context: ExportContext) {
   const saves = new Set(classRules[startingClassId]?.saves || []);
   const hitPoints = estimatedHitPoints(character);
   const darkvision = darkvisionDistance(raceFeatureList);
-  const fly = raceFeatureList.some(feature => feature.name.toLowerCase() === "полёт");
+  const movement = speedBreakdown(character);
   const parameters = (Object.keys(helpmateAbilityOrder) as (keyof AbilityScores)[]).map(key => ({
     Name: helpmateAbilityNames[key],
     Value: character.abilities[key],
@@ -397,7 +398,7 @@ export function createHelpmateExport(context: ExportContext) {
     UserRace: [race?.name, context.raceVariantName].filter(Boolean).join(" — "),
     TokenColor: "196|196|9|255",
     SecondName: null,
-    Speed: race?.id === "dwarf" ? 25 : 30,
+    Speed: movement.walk,
     IHaveLight: false,
     TorchValue: 0,
     TorchValueSecond: 0,
@@ -419,8 +420,8 @@ export function createHelpmateExport(context: ExportContext) {
     HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
     IsArmorTakeOf: false,
     TwoHanded: false,
-    FlyValue: fly ? 30 : 0,
-    IsFly: fly,
+    FlyValue: movement.fly || 0,
+    IsFly: Boolean(movement.fly),
     FamiliarId: null,
     // Helpmate stores this selector as a one-based ability index. Leaving 0
     // makes the app fall back to Strength even for Wisdom/Intelligence/Charisma casters.
@@ -901,7 +902,7 @@ export function createLongStoryShortExport(context: ExportContext) {
       deathFails: 0,
       deathSuccesses: 0,
       ac: { value: armorClass(character) },
-      speed: { value: race?.id === "dwarf" ? 25 : 30 },
+      speed: { value: speedBreakdown(character).walk },
       "hit-die": { value: `D${classRules[character.className]?.hitDie || 8}` },
       "hp-max-bonus": { value: 0 },
     },
