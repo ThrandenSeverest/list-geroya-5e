@@ -31666,6 +31666,22 @@ var weaponDefinitions = {
 		ranged: true,
 		twoHanded: true
 	},
+	"ручной арбалет": {
+		name: "Ручной арбалет",
+		dice: "1d6",
+		ranged: true
+	},
+	"тяжёлый арбалет": {
+		name: "Тяжёлый арбалет",
+		dice: "1d10",
+		ranged: true,
+		twoHanded: true
+	},
+	"духовая трубка": {
+		name: "Духовая трубка",
+		dice: "1",
+		ranged: true
+	},
 	"дротик": {
 		name: "Дротик",
 		dice: "1d4",
@@ -31909,8 +31925,8 @@ function monkMartialDie(level) {
 	return "1d4";
 }
 function weaponAbility(definition, character) {
+	if (definition.finesse) return character.abilities.dex > character.abilities.str ? "dex" : "str";
 	if (definition.ranged) return "dex";
-	if (definition.finesse && character.abilities.dex > character.abilities.str) return "dex";
 	return "str";
 }
 function subclassAttacks(character, prof) {
