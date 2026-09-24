@@ -111,7 +111,7 @@ const damagingCantrips: Record<string, CantripDefinition> = {
   "acid-splash": { dice: "d6", mode: "save", save: "dex", damageType: "Кислота" },
   firebolt: { dice: "d10", mode: "attack", damageType: "Огонь" },
   vicious: { dice: "d4", mode: "save", save: "wis", note: "При провале цель получает помеху на следующую атаку." },
-  eldritch: { dice: "d10", mode: "attack", note: "На 5, 11 и 17 уровнях создаёт соответственно 2, 3 и 4 отдельных луча." },
+  eldritch: { dice: "d10", mode: "attack", note: "Для каждого луча отдельный бросок атаки; цели можно выбирать отдельно." },
   "ray-of-frost": { dice: "d8", mode: "attack", damageType: "Холод", note: "Скорость цели уменьшается на 10 футов до начала вашего следующего хода." },
   "sacred-flame": { dice: "d8", mode: "save", save: "dex", note: "Цель не получает бонус от укрытия к спасброску." },
   "shocking-grasp": { dice: "d8", mode: "attack", damageType: "Электричество", note: "При попадании цель не может совершать реакции до начала своего следующего хода." },
@@ -263,10 +263,9 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
   });
 
   const featureAttacks = subclassAttacks(character, prof);
-  const spellAbility = classRules[character.className]?.spellAbility as AbilityKey | undefined;
+  const spellAbility = (classRules[character.className]?.spellAbility
+    || orderedCharacterClasses(character).map(entry => classRules[entry.classId]?.spellAbility).find(Boolean)) as AbilityKey | undefined;
   if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
-  const spellMod = abilityModifier(character.abilities[spellAbility]);
-  const saveDc = 8 + prof + spellMod;
   const diceCount = cantripDiceCount(totalLevel);
   const elementalAdeptTypes = new Set(
     (character.advancements || [])
@@ -284,23 +283,28 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     const definition = damagingCantrips[spell.id];
     if (!definition) return [];
     const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
-    const damageBonus = agonizing ? spellMod * diceCount : 0;
+    const sourceClassId = character.spellGrants?.find(grant => grant.spellId === spell.id && grant.classId)?.classId
+      || (spell.id === "eldritch" && orderedCharacterClasses(character).some(entry => entry.classId === "warlock") ? "warlock" : character.className);
+    const castingAbility = (classRules[sourceClassId]?.spellAbility || spellAbility) as AbilityKey;
+    const castingMod = abilityModifier(character.abilities[castingAbility]);
+    const damageBonus = agonizing ? abilityModifier(character.abilities.cha) : 0;
     const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType)
       ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.`
       : "";
-    return [{
-      id: `cantrip-${spell.id}`,
-      name: spell.name,
+    const rays = spell.id === "eldritch" ? diceCount : 1;
+    return Array.from({ length: rays }, (_, index): CharacterAttack => ({
+      id: `cantrip-${spell.id}${rays > 1 ? `-beam-${index + 1}` : ""}`,
+      name: `${spell.name}${rays > 1 ? ` · луч ${index + 1}/${rays}` : ""}`,
       kind: "cantrip",
-      ability: spellAbility,
+      ability: castingAbility,
       proficient: true,
-      attackBonus: definition.mode === "attack" ? prof + spellMod : undefined,
-      saveDc: definition.mode === "save" ? saveDc : undefined,
+      attackBonus: definition.mode === "attack" ? prof + castingMod : undefined,
+      saveDc: definition.mode === "save" ? 8 + prof + castingMod : undefined,
       attackBonusExtra: 0,
-      damageFormula: `${diceCount}${definition.dice}${agonizing ? `+[CHA]*${diceCount}` : ""}`,
-      damageDisplay: `${diceCount}${definition.dice}${damageBonus ? signed(damageBonus) : ""}`,
+      damageFormula: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : ""}`,
+      damageDisplay: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing && damageBonus ? signed(damageBonus) : ""}`,
       note: [definition.note, elementalAdept].filter(Boolean).join(" ") || undefined,
-    }];
+    }));
   });
 
   return [...weaponAttacks, ...featureAttacks, ...cantripAttacks];
