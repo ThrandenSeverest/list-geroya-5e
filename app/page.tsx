@@ -48,7 +48,7 @@ import { CatalogIcon } from "./catalogIcons";
 import { classSpellGroups, otherSpellSources } from "./spellSources";
 import { classChoiceGroups, classChoicesComplete, clearTashaOptionalState, resolvedClassChoiceFeatures, selectedClassChoiceIds } from "./classChoices";
 import { knownLanguageOptions, languageRule } from "./languages";
-import { characterResources, resourceCurrent, resourceRestLabel } from "./characterResources";
+import { characterResources, resourceCurrent, resourceRestLabel, spentResourcesAfterLongRest } from "./characterResources";
 import { backgroundEquipmentWithoutStartingGold, backgroundRule, backgroundStartingGold } from "./backgroundRules";
 import { backgroundChoiceGroups, backgroundFixedSkills } from "./backgroundChoices";
 import { defaultEquipmentSelections, equipmentComplete, equipmentOptionAdvice, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "./equipment";
@@ -1834,12 +1834,7 @@ function Builder() {
         if (!recovered) break;
       }
       const resolvedForRest = { ...current, abilities: finalAbilityScores(current) };
-      const persistentResourceKeys = new Set(characterResources(resolvedForRest)
-        .filter(resource => !resource.isLongRest)
-        .map(resource => resource.key));
-      const persistentResourceSpent = Object.fromEntries(
-        Object.entries(current.resourceSpent || {}).filter(([key]) => persistentResourceKeys.has(key)),
-      );
+      const persistentResourceSpent = spentResourcesAfterLongRest(resolvedForRest);
       return applySubclassLongRest({
         ...current,
         currentHitPoints: estimatedHitPoints(resolvedForRest),
@@ -3109,7 +3104,7 @@ function Builder() {
               <div className="spell-progression resource-progression">
                 <div className="ability-editor-head"><div><small>Счётчики на листе</small><h2>Классовые ресурсы</h2></div><span>{resources.length || "—"}</span></div>
                 {resources.length ? <div className="resource-preview-grid">
-                  {resources.map(resource => <div key={resource.key}><span>{resource.name}</span><div className="resource-marks preview-resource-marks">{Array.from({ length: Math.ceil(resource.max / (resource.unit || 1)) }, (_, index) => <i key={index} />)}</div><small>{resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : ""}{resourceRestLabel(resource)} отдых</small></div>)}
+                  {resources.map(resource => <div key={resource.key}><span>{resource.name}</span><div className="resource-marks preview-resource-marks">{Array.from({ length: Math.ceil(resource.max / (resource.unit || 1)) }, (_, index) => <i key={index} />)}</div><small>{resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : ""}{resourceRestLabel(resource)}</small></div>)}
                 </div> : <p className="muted">На этом уровне нет ограниченного классового ресурса.</p>}
               </div>
               {subclassRequirements.map(({ entry, data }) => {
@@ -3507,7 +3502,7 @@ function Builder() {
 
                 {mobileSheetTab === "resources" && <div className="mobile-sheet-panel">
                   <div className="mobile-rest-actions"><button onClick={takeShortRest}>Восстановить после короткого отдыха</button><button onClick={takeLongRest}>Восстановить после длинного отдыха</button></div>
-                  <div className="mobile-resource-list">{resources.map(resource => <article key={resource.key}><div><strong>{resource.name}</strong><small>{resourceRestLabel(resource)} отдых</small></div><button onClick={() => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max)}>−</button><b>{resourceCurrent(exportCharacter, resource)} / {resource.max}</b><button onClick={() => setResourceCurrent(resource.key, Math.min(resource.max, resourceCurrent(exportCharacter, resource) + (resource.unit || 1)), resource.max)}>+</button></article>)}</div>
+                  <div className="mobile-resource-list">{resources.map(resource => <article key={resource.key}><div><strong>{resource.name}</strong><small>{resourceRestLabel(resource)}</small></div><button onClick={() => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max)}>−</button><b>{resourceCurrent(exportCharacter, resource)} / {resource.max}</b><button onClick={() => setResourceCurrent(resource.key, Math.min(resource.max, resourceCurrent(exportCharacter, resource) + (resource.unit || 1)), resource.max)}>+</button></article>)}</div>
                   {runtimeControls.length > 0 && <section className="mobile-runtime-controls"><h3>Состояния подклассов</h3>{runtimeControls.map(control => {
                     const currentValue = subclassRuntimeValue(exportCharacter, control.key);
                     const currentOption = control.options.find(option => option.id === String(currentValue));
@@ -3554,7 +3549,7 @@ function Builder() {
                         const unit = resource.unit || 1;
                         const marks = Math.ceil(resource.max / unit);
                         const spentMarks = Math.ceil((resource.max - resourceCurrent(exportCharacter, resource)) / unit);
-                        return <div className="sheet-resource" key={resource.key}><span>{resource.name}{resource.die ? ` (${resource.die})` : ""}{unit > 1 ? ` · 1 круг = ${unit} хитов` : ""}</span><div className="resource-marks">{Array.from({ length: marks }, (_, index) => <button type="button" className={index < spentMarks ? "spent" : ""} aria-label={`${resource.name}: ${index < spentMarks ? "снять" : "отметить"} расход ${index + 1}`} onClick={() => setResourceCurrent(resource.key, resource.max - (index < spentMarks ? index : index + 1) * unit, resource.max)} key={index} />)}</div><small>{resourceRestLabel(resource)} отдых</small></div>;
+                        return <div className="sheet-resource" key={resource.key}><span>{resource.name}{resource.die ? ` (${resource.die})` : ""}{unit > 1 ? ` · 1 круг = ${unit} хитов` : ""}</span><div className="resource-marks">{Array.from({ length: marks }, (_, index) => <button type="button" className={index < spentMarks ? "spent" : ""} aria-label={`${resource.name}: ${index < spentMarks ? "снять" : "отметить"} расход ${index + 1}`} onClick={() => setResourceCurrent(resource.key, resource.max - (index < spentMarks ? index : index + 1) * unit, resource.max)} key={index} />)}</div><small>{resourceRestLabel(resource)}</small></div>;
                       })}
                       <h3>РЕСУРСЫ</h3>
                     </div>}

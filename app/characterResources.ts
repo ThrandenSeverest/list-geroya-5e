@@ -13,9 +13,10 @@ export type CharacterResource = {
 };
 
 export function resourceRestLabel(resource: Pick<CharacterResource, "isShortRest" | "isLongRest">) {
-  if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный";
-  if (resource.isShortRest) return "короткий";
-  return "продолжительный";
+  if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный отдых";
+  if (resource.isShortRest) return "короткий отдых";
+  if (resource.isLongRest) return "продолжительный отдых";
+  return "не восстанавливается отдыхом";
 }
 
 function rageMaximum(level: number) {
@@ -197,4 +198,11 @@ export function resourceSpent(character: ExportCharacter, resource: CharacterRes
 
 export function resourceCurrent(character: ExportCharacter, resource: CharacterResource) {
   return resource.max - resourceSpent(character, resource);
+}
+
+export function spentResourcesAfterLongRest(character: ExportCharacter): Record<string, number> {
+  const persistentKeys = new Set(characterResources(character)
+    .filter(resource => !resource.isLongRest).map(resource => resource.key));
+  return Object.fromEntries(Object.entries(character.resourceSpent || {})
+    .filter(([key]) => persistentKeys.has(key)));
 }

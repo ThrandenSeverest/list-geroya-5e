@@ -264,7 +264,7 @@ function ResourceList({ resources }: { resources: PdfResource[] }) {
       {marks <= 24 ? <span className="pdf-resource-marks" aria-label={`Потрачено ${resource.max - resource.current} из ${resource.max}`}>
         {Array.from({ length: marks }, (_, index) => <i className={index < spentMarks ? "spent" : ""} key={index} />)}
       </span> : <span className="pdf-resource-counter">Осталось: {resource.current} / {resource.max}</span>}
-      <small className="pdf-resource-rest">{resourceRestLabel(resource)} отдых</small>
+      <small className="pdf-resource-rest">{resourceRestLabel(resource)}</small>
     </div>;
   })}</>;
 }

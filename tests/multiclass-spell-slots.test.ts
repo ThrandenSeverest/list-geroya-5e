@@ -51,3 +51,17 @@ test("Pact Magic follows actual warlock level regardless of starting class", () 
   assert.deepEqual(resolvePactMagic(fighterWarlock), { slots: 2, level: 2 });
   assert.deepEqual(resolvePactMagic(warlockFighter), { slots: 2, level: 2 });
 });
+
+test("paladin and ranger gain spell circles at levels 7, 9 and 17", () => {
+  for (const classId of ["paladin", "ranger"]) {
+    assert.deepEqual(resolveSpellSlots(character([{ classId, level: 7 }])), [4, 3]);
+    assert.deepEqual(resolveSpellSlots(character([{ classId, level: 9 }])), [4, 3, 2]);
+    assert.deepEqual(resolveSpellSlots(character([{ classId, level: 17 }])), [4, 3, 3, 3, 1]);
+  }
+});
+
+test("half casters combine only when multiclass Spellcasting applies", () => {
+  assert.deepEqual(resolveSpellSlots(character([{ classId: "paladin", level: 7 }, { classId: "ranger", level: 9 }])), [4, 3, 3, 1]);
+  assert.deepEqual(resolveSpellSlots(character([{ classId: "ranger", level: 5 }, { classId: "wizard", level: 5 }])), [4, 3, 3, 1]);
+  assert.deepEqual(resolveSpellSlots(character([{ classId: "fighter", subclassId: "eldritchknight", level: 6 }, { classId: "rogue", subclassId: "arcanetrickster", level: 6 }])), [4, 3]);
+});
