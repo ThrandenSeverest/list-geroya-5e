@@ -212,7 +212,12 @@ const helpmateLanguageIds: Readonly<Record<string, string>> = Object.freeze({
 });
 
 function helpmateNote(context: ExportContext) {
-  const formatted = summaryText(context)
+  const ordinaryCasters = orderedCharacterClasses(context.character).filter(entry =>
+    entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster);
+  const warning = ordinaryCasters.length > 1 && resolveSpellSlots(context.character).some(Boolean)
+    ? "\n\nПеренос ячеек в Helpmate: общий пул мультикласса сохранён в заметках; настройте его вручную. Автоматический перенос общего пула для нескольких заклинательских классов пока не поддерживается."
+    : "";
+  const formatted = (summaryText(context) + warning)
     .split(/\n\n+/)
     // Languages have a dedicated Helpmate field. Keeping them in Note makes
     // Helpmate render the same proficiencies twice.
@@ -254,6 +259,8 @@ function summaryText(context: ExportContext) {
   const attacks = characterAttacks(character, spells);
   const proficiencies = characterProficiencies(character);
   const classSummary = classes.map(entry => `${entry.classId}${entry.subclassId ? ` (${entry.subclassId})` : ""} ${entry.level}`).join(" / ");
+  const sharedSlots = resolveSpellSlots(character);
+  const pact = resolvePactMagic(character);
   const hitDice = hitDicePools(character).map(pool => `${pool.max}к${pool.die}${pool.spent ? ` (потрачено ${pool.spent})` : ""}`).join(" + ");
   const spellSources = classes.flatMap(entry => {
     const ability = classRules[entry.classId]?.spellAbility as keyof AbilityScores | undefined;
@@ -284,6 +291,8 @@ function summaryText(context: ExportContext) {
     `Классовые особенности:\n${featureText(classFeatureList)}`,
     ...(spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + spellMod}`] : []),
     ...(spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : []),
+    ...(sharedSlots.some(Boolean) ? [`Общие ячейки заклинаний (осталось / максимум): ${sharedSlots.map((max, index) => `${index + 1} круг: ${Math.max(0, max - (character.spellSlotsUsed?.[index] || 0))} / ${max}`).join("; ")}`] : []),
+    ...(pact.slots ? [`Магия договора (осталось / максимум): ${pact.level} круг: ${Math.max(0, pact.slots - (character.pactSlotsUsed || 0))} / ${pact.slots}`] : []),
     `Ресурсы: ${resources.join("; ") || "нет"}`,
     `Снаряжение: ${equipment.join(", ") || "нет"}`,
     `Атаки: ${attacks.map(attack => `${attack.name} — ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,

@@ -45,7 +45,8 @@ function waitForServer(url, server, timeout=30000) {
   const browser=await chromium.launch({headless:true,executablePath:process.env.PDF_TEST_CHROMIUM,args:['--no-sandbox','--disable-gpu','--disable-dev-shm-usage','--no-zygote']});
   try {
    const page=await browser.newPage({viewport:{width:1100,height:1400}});
-   page.on('pageerror',error=>console.log('ERROR',error.message));
+   const pageErrors=[];
+   page.on('pageerror',error=>pageErrors.push(error.message));
    for(const count of [0,1,2,3,5,6,12,24]) {
     await page.goto('http://127.0.0.1:5174/tests/pdf-layout/index.html?resources='+count);
     await page.locator('.pdf-primary-grid').waitFor();
@@ -59,6 +60,11 @@ function waitForServer(url, server, timeout=30000) {
       return {grid:rect(grid),resources:rect(resources),inventory:rect(inventory),footer:rect(footer),zoom:document.querySelector('.pdf-primary-content').style.zoom,pages:document.querySelectorAll('.pdf-page').length,count:document.querySelectorAll('.pdf-resource').length,overflow:[...document.querySelectorAll('.pdf-resource-page-grid')].map(element=>rect(element).bottom>rect(element.parentElement.querySelector('footer')).top)};
      });
      if(result.resources.bottom>result.inventory.top+.5 || result.grid.bottom>result.footer.top-2 || result.overflow.some(Boolean) || result.count!==count)throw Error(JSON.stringify({count,media,result}));
+     if(pageErrors.length)throw Error('PDF runtime errors: '+pageErrors.join('; '));
+     if(media==='print'){
+      const pdf=await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
+      if(pdf.subarray(0,5).toString()!=='%PDF-' || pdf.length<1000)throw Error('Chromium did not produce a valid PDF');
+     }
      console.log(JSON.stringify({count,media,zoom:result.zoom,pages:result.pages}));
     }
    }

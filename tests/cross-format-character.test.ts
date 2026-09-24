@@ -66,3 +66,17 @@ test("a multiclass fixture agrees across sheet, PDF, LSS, Helpmate and native JS
   assert.match(pdf, /Кинжал/);
   assert.match(pdf, /Применяется вручную/);
 });
+
+test("Helpmate preserves unsupported shared multiclass slots in notes with an explicit warning", () => {
+  const hero = { ...character, level: 7,
+    classes: [{ classId: "wizard", level: 5, acquiredAtCharacterLevel: 1 }, { classId: "cleric", level: 2, acquiredAtCharacterLevel: 6 }],
+    spellSlotsUsed: [1, 2, 1, 0],
+  } as ExportCharacter;
+  const exported = createHelpmateExport({ character: hero, spells, raceFeatureList: [], classFeatureList: [] });
+  assert.match(exported.Note, /1 круг: 3 \/ 4; 2 круг: 1 \/ 3; 3 круг: 2 \/ 3; 4 круг: 1 \/ 1/);
+  assert.match(exported.Note, /настройте его вручную/);
+  assert(exported.Classes.every(item => item.SpellCells.every(cell => cell.Level === 0)));
+  const ordinaryAndPact = createHelpmateExport({ character: { ...character, pactSlotsUsed: 1 }, spells, raceFeatureList: [], classFeatureList: [] });
+  assert.match(ordinaryAndPact.Note, /Магия договора.*1 круг: 1 \/ 2/);
+  assert.doesNotMatch(ordinaryAndPact.Note, /настройте его вручную/);
+});
