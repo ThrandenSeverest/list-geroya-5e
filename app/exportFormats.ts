@@ -176,6 +176,9 @@ export function estimatedHitPoints(character: ExportCharacter) {
   const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
   return Math.max(1, history.reduce((total, entry) => {
     const hitDie = classRules[entry.classId]?.hitDie || 8;
+    // Legacy roll/manual hpGain is stored as the final gain for this level,
+    // already including the Constitution modifier. Old saves do not record
+    // the die result or CON at that level, so adding CON here would double it.
     const gain = entry.characterLevel === 1
       ? hitDie + constitution
       : entry.hpMode === "roll" || entry.hpMode === "manual"
