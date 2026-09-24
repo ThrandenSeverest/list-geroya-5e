@@ -30666,9 +30666,10 @@ function spellIdFromLssCardId(cardId) {
 //#endregion
 //#region app/characterResources.ts
 function resourceRestLabel(resource) {
-	if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный";
-	if (resource.isShortRest) return "короткий";
-	return "продолжительный";
+	if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный отдых";
+	if (resource.isShortRest) return "короткий отдых";
+	if (resource.isLongRest) return "продолжительный отдых";
+	return "не восстанавливается отдыхом";
 }
 function rageMaximum(level) {
 	if (level >= 17) return 6;
@@ -31317,6 +31318,10 @@ function resourceSpent(character, resource) {
 }
 function resourceCurrent(character, resource) {
 	return resource.max - resourceSpent(character, resource);
+}
+function spentResourcesAfterLongRest(character) {
+	const persistentKeys = new Set(characterResources(character).filter((resource) => !resource.isLongRest).map((resource) => resource.key));
+	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
 }
 //#endregion
 //#region app/equipment.ts
@@ -45062,9 +45067,9 @@ function ResourceList({ resources }) {
 						resource.max
 					]
 				}),
-				/* @__PURE__ */ jsxs("small", {
+				/* @__PURE__ */ jsx("small", {
 					className: "pdf-resource-rest",
-					children: [resourceRestLabel(resource), " отдых"]
+					children: resourceRestLabel(resource)
 				})
 			]
 		}, resource.name);
@@ -49055,8 +49060,7 @@ function Builder() {
 				...current,
 				abilities: finalAbilityScores(current)
 			};
-			const persistentResourceKeys = new Set(characterResources(resolvedForRest).filter((resource) => !resource.isLongRest).map((resource) => resource.key));
-			const persistentResourceSpent = Object.fromEntries(Object.entries(current.resourceSpent || {}).filter(([key]) => persistentResourceKeys.has(key)));
+			const persistentResourceSpent = spentResourcesAfterLongRest(resolvedForRest);
 			return applySubclassLongRest({
 				...current,
 				currentHitPoints: estimatedHitPoints(resolvedForRest),
@@ -51847,11 +51851,7 @@ function Builder() {
 													className: "resource-marks preview-resource-marks",
 													children: Array.from({ length: Math.ceil(resource.max / (resource.unit || 1)) }, (_, index) => /* @__PURE__ */ jsx("i", {}, index))
 												}),
-												/* @__PURE__ */ jsxs("small", { children: [
-													resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : "",
-													resourceRestLabel(resource),
-													" отдых"
-												] })
+												/* @__PURE__ */ jsxs("small", { children: [resource.unit && resource.unit > 1 ? `1 круг = ${resource.unit} хитов · ` : resource.die ? `${resource.die} · ` : "", resourceRestLabel(resource)] })
 											] }, resource.key))
 										}) : /* @__PURE__ */ jsx("p", {
 											className: "muted",
@@ -53072,7 +53072,7 @@ function Builder() {
 													/* @__PURE__ */ jsx("div", {
 														className: "mobile-resource-list",
 														children: resources.map((resource) => /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: resource.name }), /* @__PURE__ */ jsxs("small", { children: [resourceRestLabel(resource), " отдых"] })] }),
+															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: resource.name }), /* @__PURE__ */ jsx("small", { children: resourceRestLabel(resource) })] }),
 															/* @__PURE__ */ jsx("button", {
 																onClick: () => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max),
 																children: "−"
@@ -53391,7 +53391,7 @@ function Builder() {
 																				onClick: () => setResourceCurrent(resource.key, resource.max - (index < spentMarks ? index : index + 1) * unit, resource.max)
 																			}, index))
 																		}),
-																		/* @__PURE__ */ jsxs("small", { children: [resourceRestLabel(resource), " отдых"] })
+																		/* @__PURE__ */ jsx("small", { children: resourceRestLabel(resource) })
 																	]
 																}, resource.key);
 															}), /* @__PURE__ */ jsx("h3", { children: "РЕСУРСЫ" })]
