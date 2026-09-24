@@ -1516,3 +1516,11 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .brand-mark.experimental-site-mark img {
   filter: brightness(0) saturate(100%) invert(79%) sepia(38%) saturate(692%) hue-rotate(354deg) brightness(102%) contrast(88%);
 }
+
+.hp-roll-editor { grid-column: 1 / -1; padding: 10px 12px; border: 1px solid #b6aaa0; border-radius: 8px; font-size: 12px; }
+.hp-roll-editor summary { cursor: pointer; font-weight: 700; }
+.hp-roll-editor p { margin: 8px 0; line-height: 1.4; }
+.hp-roll-editor label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 5px 0; }
+.hp-roll-editor input { width: 76px; padding: 4px 6px; }
+.hp-roll-editor small { display: block; width: 100%; }
+.hp-roll-editor button { padding: 4px 8px; }

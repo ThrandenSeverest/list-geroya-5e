@@ -1,6 +1,7 @@
 "use client";
 
 import { markFeature, effectHandlingLabel } from "./featureHandling";
+import { setHitPointRoll } from "./hpProgress";
 import { classPreparedSpellIds, migrateSpellPreparation, setClassPreparedSpells } from "./spellPreparation";
 import { HeroQuiz } from "./HeroQuiz";
 import { buildRecommendedCharacter, standardAbilityBuild, standardArray, swapStandardAbility } from "./recommendedBuild";
@@ -689,6 +690,26 @@ function savedCharacterExportContext(value: ExportCharacter) {
     featSpellIds,
     alwaysPreparedSpellIds,
   };
+}
+
+function HitPointRollEditor({ character, onChange }: { character: ExportCharacter; onChange: (level: number, roll: number | null) => void }) {
+  const history = normalizedLevelHistory(character).filter(entry => entry.characterLevel > 1);
+  if (!history.length) return null;
+  return <details className="hp-roll-editor"><summary>Броски хитов по уровням</summary>
+    <p>Введите результат кости без модификатора Телосложения. Старое значение не изменится, пока вы не введёте новый бросок.</p>
+    {history.map(entry => {
+      const die = classRules[entry.classId]?.hitDie || 8;
+      const raw = entry.hpGainFormat === "raw-roll-plus-con-v1" && entry.hpMode === "roll";
+      return <label key={entry.characterLevel}>Уровень {entry.characterLevel} · {entry.classId}, к{die}
+        <input aria-label={`Бросок хитов за уровень ${entry.characterLevel}`} type="number" min="1" max={die}
+          value={raw ? entry.hpGain ?? "" : ""}
+          placeholder={entry.hpGain !== undefined && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее"}
+          onChange={event => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))} />
+        {entry.hpGain !== undefined && !raw && <small>Сохранён готовый прирост; исходный бросок неизвестен.</small>}
+        {(raw || entry.hpMode === "manual") && <button type="button" onClick={() => onChange(entry.characterLevel, null)}>Использовать среднее</button>}
+      </label>;
+    })}
+  </details>;
 }
 
 export default function Home() {
@@ -1737,6 +1758,10 @@ function Builder() {
         : item);
       return migrateMulticlassCharacter({ ...safe, classes, classChoices: { ...choices, [groupKey]: next } });
     });
+  }
+
+  function updateHitPointRoll(level: number, roll: number | null) {
+    setCharacter(current => setHitPointRoll(current, level, roll));
   }
 
   function setUsedSlots(circle: number, value: number, maximum: number) {
@@ -3502,6 +3527,7 @@ function Builder() {
 
                 {mobileSheetTab === "resources" && <div className="mobile-sheet-panel">
                   <div className="mobile-rest-actions"><button onClick={takeShortRest}>Восстановить после короткого отдыха</button><button onClick={takeLongRest}>Восстановить после длинного отдыха</button></div>
+                  <HitPointRollEditor character={character} onChange={updateHitPointRoll} />
                   <div className="mobile-resource-list">{resources.map(resource => <article key={resource.key}><div><strong>{resource.name}</strong><small>{resourceRestLabel(resource)}</small></div><button onClick={() => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max)}>−</button><b>{resourceCurrent(exportCharacter, resource)} / {resource.max}</b><button onClick={() => setResourceCurrent(resource.key, Math.min(resource.max, resourceCurrent(exportCharacter, resource) + (resource.unit || 1)), resource.max)}>+</button></article>)}</div>
                   {runtimeControls.length > 0 && <section className="mobile-runtime-controls"><h3>Состояния подклассов</h3>{runtimeControls.map(control => {
                     const currentValue = subclassRuntimeValue(exportCharacter, control.key);
@@ -3544,6 +3570,7 @@ function Builder() {
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
                     <div className="sheet-box hp-current"><label>ТЕКУЩИЕ ХИТЫ<input aria-label="Текущие хиты" type="number" min="0" max={hitPoints} value={character.currentHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, currentHitPoints: Math.max(0, Math.min(hitPoints, Number(event.target.value) || 0)) }))} /></label><label>ВРЕМЕННЫЕ ХИТЫ<input aria-label="Временные хиты" type="number" min="0" value={character.temporaryHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, temporaryHitPoints: Math.max(0, Number(event.target.value) || 0) }))} /></label></div>
                     <div className="sheet-box hit-dice"><strong>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</strong><span>КОСТИ ХИТОВ</span><label>{availableHitDice} / {characterLevel(character)}</label></div>
+                    <HitPointRollEditor character={character} onChange={updateHitPointRoll} />
                     {resources.length > 0 && <div className={`sheet-box sheet-resources sheet-resources--${resourceDensity}`}>
                       {resources.map(resource => {
                         const unit = resource.unit || 1;
