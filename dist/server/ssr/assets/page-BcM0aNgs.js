@@ -32659,7 +32659,7 @@ function estimatedHitPoints(character) {
 	const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
 	return Math.max(1, history.reduce((total, entry) => {
 		const hitDie = classRules[entry.classId]?.hitDie || 8;
-		return total + (entry.characterLevel === 1 ? hitDie + constitution : entry.hpMode === "roll" || entry.hpMode === "manual" ? Math.max(1, entry.hpGain || 1) : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
+		return total + (entry.characterLevel === 1 ? hitDie + constitution : entry.hpMode === "roll" || entry.hpMode === "manual" ? entry.hpGainFormat === "raw-roll-plus-con-v1" && Number.isInteger(entry.hpGain) ? Math.max(1, Math.min(hitDie, Math.max(1, entry.hpGain)) + constitution) : Math.max(1, entry.hpGain || 1) : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
 	}, 0));
 }
 function makeId() {
