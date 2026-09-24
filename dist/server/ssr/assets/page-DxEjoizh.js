@@ -32058,7 +32058,7 @@ function hasFeat(character, featId) {
 	return (character.advancements || []).some((choice) => choice.featId === featId) || (character.feats || []).includes(featId);
 }
 function armorClassBreakdown(character) {
-	const items = selectedEquipment(character);
+	const items = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const dex = modifier$2(character.abilities.dex);
 	const con = modifier$2(character.abilities.con);
 	const wis = modifier$2(character.abilities.wis);
@@ -32131,13 +32131,15 @@ function armorClassBreakdown(character) {
 			name: "Кожаный доспех"
 		}
 	].find((armor) => hasItem(items, armor.pattern));
+	const mediumArmorMaster = hasFeat(character, "medium-armor-master");
 	let value = 10 + dex;
 	let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
 	let wearingArmor = false;
 	if (worn) {
-		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(2, dex) : 0;
+		const dexCap = mediumArmorMaster ? 3 : 2;
+		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
 		value = worn.ac + dexBonus;
-		base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? " + Ловкость (макс. +2)" : ""}`;
+		base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
 		wearingArmor = true;
 	} else if (character.race === "tortle") {
 		value = 17;
@@ -32163,7 +32165,7 @@ function armorClassBreakdown(character) {
 		value += 2;
 		bonuses.push("щит +2");
 	}
-	const styles = new Set(character.classChoices?.["fighting-style"] || []);
+	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
 	if (wearingArmor && styles.has("defense")) {
 		value += 1;
 		bonuses.push("стиль «Оборона» +1");
@@ -32172,14 +32174,18 @@ function armorClassBreakdown(character) {
 		value += 1;
 		bonuses.push("встроенная защита кованого +1");
 	}
-	if (hasFeat(character, "dual-wielder") && !shield) {
-		value += 1;
-		bonuses.push("«Использование двух оружий» +1");
-	}
+	const conditions = [];
+	if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
+	if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
+	if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
+	if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
+	if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
+	if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
 	return {
 		value,
 		base,
-		bonuses
+		bonuses,
+		conditions
 	};
 }
 function armorClass(character) {
@@ -45135,6 +45141,14 @@ function PdfCharacterSheet(props) {
 												/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: props.speed }), /* @__PURE__ */ jsx("span", { children: "Скорость" })] })
 											]
 										}),
+										!!props.acNotes?.length && /* @__PURE__ */ jsxs("p", {
+											className: "pdf-inline-stats",
+											children: [
+												/* @__PURE__ */ jsx("b", { children: "Условная КД:" }),
+												" ",
+												props.acNotes.join(" ")
+											]
+										}),
 										!!props.initiativeNotes?.length && /* @__PURE__ */ jsxs("p", {
 											className: "pdf-inline-stats",
 											children: ["Инициатива: ", props.initiativeNotes.join("; ")]
@@ -52527,7 +52541,14 @@ function Builder() {
 													/* @__PURE__ */ jsxs("div", {
 														className: "mobile-quick-grid",
 														children: [
-															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "КД" }), /* @__PURE__ */ jsx("strong", { children: ac.value })] }),
+															/* @__PURE__ */ jsxs("div", {
+																title: [
+																	ac.base,
+																	...ac.bonuses,
+																	...ac.conditions
+																].join("; "),
+																children: [/* @__PURE__ */ jsx("small", { children: "КД" }), /* @__PURE__ */ jsx("strong", { children: ac.value })]
+															}),
 															/* @__PURE__ */ jsxs("div", {
 																title: [...initiative.sources, ...initiative.notes].join("; "),
 																children: [/* @__PURE__ */ jsx("small", { children: "Инициатива" }), /* @__PURE__ */ jsxs("strong", { children: [initiative.value >= 0 ? "+" : "", initiative.value] })]
@@ -52536,6 +52557,7 @@ function Builder() {
 															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Бонус мастерства" }), /* @__PURE__ */ jsxs("strong", { children: ["+", proficiency] })] })
 														]
 													}),
+													ac.conditions.length > 0 && /* @__PURE__ */ jsxs("small", { children: ["Условная КД: ", ac.conditions.join(" ")] }),
 													initiative.notes.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
 														/* @__PURE__ */ jsx("b", { children: "Инициатива:" }),
 														" ",
@@ -53073,7 +53095,11 @@ function Builder() {
 															children: [
 																/* @__PURE__ */ jsxs("div", {
 																	className: "shield",
-																	title: `${ac.base}${ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""}`,
+																	title: [
+																		ac.base,
+																		...ac.bonuses,
+																		...ac.conditions
+																	].join("; "),
 																	children: [/* @__PURE__ */ jsx("strong", { children: ac.value }), /* @__PURE__ */ jsx("span", { children: "КД" })]
 																}),
 																/* @__PURE__ */ jsxs("div", {
@@ -53297,12 +53323,17 @@ function Builder() {
 																/* @__PURE__ */ jsx("h3", { children: "СТАРТОВОЕ СНАРЯЖЕНИЕ" }),
 																/* @__PURE__ */ jsx("p", { children: [...displayedInventory, ...customEquipment].join(" · ") || "Не выбрано" }),
 																/* @__PURE__ */ jsxs("p", { children: [
-																	/* @__PURE__ */ jsx("b", { children: "Расчёт КД:" }),
+																	/* @__PURE__ */ jsx("b", { children: "Постоянная КД:" }),
 																	" ",
 																	ac.base,
 																	ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : "",
 																	" = ",
 																	/* @__PURE__ */ jsx("b", { children: ac.value })
+																] }),
+																ac.conditions.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: "Условные эффекты:" }),
+																	" ",
+																	ac.conditions.join(" ")
 																] })
 															]
 														})
@@ -53334,6 +53365,7 @@ function Builder() {
 											expertise
 										},
 										ac: ac.value,
+										acNotes: ac.conditions,
 										initiative: initiative.value,
 										initiativeNotes: initiative.notes,
 										speed: speedBreakdown(exportCharacter).walk,
