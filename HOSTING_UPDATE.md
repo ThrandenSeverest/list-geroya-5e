@@ -37,16 +37,20 @@ backup, заменяет только код, применяет Alembic и пр
 
 ## Как выпускать новое обновление
 
-Перед каждым обновлением `main` нужно собрать и закоммитить свежий `dist`:
+При публикации исходников в `main` workflow **Verify HeroList** сам собирает
+production `dist`, обновляет `BUILD_INFO.json` (дата, версия, исходный SHA),
+проверяет PDF, запуск свежей сборки и backend. Только после успешных проверок
+он публикует коммит `build: sync precompiled dist`. Дождитесь зелёного Verify
+и этого коммита перед обновлением хостинга. Вручную редактировать `dist` нельзя.
+
+Для локальной сборки при необходимости:
 
 ```bash
 bash scripts/build-committed-dist.sh
-git add dist package.json package-lock.json
 ```
 
-`dist/BUILD_INFO.json` создаётся автоматически. GitHub workflow по-прежнему
-проверяет исходники, но на хостинг отправляется именно уже собранная версия из
-`dist`.
+Не запускайте параллельные ручные публикации `dist`: используйте штатную
+синхронизацию CI. На хостинг отправляется уже собранная папка `dist`.
 
 `vinext`, `react` и `react-dom` находятся в production `dependencies`.
 Frontend запускается напрямую через `deployment/start-frontend.mjs`, поэтому

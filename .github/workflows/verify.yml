@@ -41,6 +41,10 @@ jobs:
           exit 1
       - run: npm ci
       - run: npm run build
+      - name: Finalize production build metadata and runtime placeholders
+        run: |
+          python3 scripts/sanitize-committed-dist.py
+          python3 scripts/write-build-info.py
       - name: Verify PDF screen and print layout
         timeout-minutes: 5
         run: |
