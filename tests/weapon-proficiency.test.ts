@@ -59,3 +59,32 @@ test("Dueling applies only to the one hand mode and proficiency applies to both"
   assert.deepEqual(attacks.map(attack => attack.attackBonus), [2, 2]);
   assert(attacks.every(attack => !attack.proficient && /Нет владения/.test(attack.note || "")));
 });
+
+test("missing martial ranged weapons appear with correct damage and proficiency in LSS", () => {
+  for (const [name, dice] of [["Ручной арбалет", "1d6"], ["Тяжёлый арбалет", "1d10"], ["Духовая трубка", "1"]]) {
+    const attack = weapon(hero("fighter", name));
+    assert.equal(attack.name, name);
+    assert.equal(attack.ability, "dex");
+    assert.equal(attack.attackBonus, 3);
+    assert.equal(attack.damageFormula, `${dice}+[DEX]`);
+    assert.equal(attack.damageDisplay, `${dice}+1`);
+    const exported = lssWeaponAttacks([attack])[0];
+    assert.equal(exported.dmg.value, `${dice}+[DEX]`);
+    assert.equal(exported.isProf, true);
+    assert.equal(weapon(hero("wizard", name)).proficient, false);
+  }
+  assert.equal(weapon(hero("bard", "Ручной арбалет")).proficient, true);
+  assert.equal(weapon(hero("rogue", "Ручной арбалет")).proficient, true);
+  assert.equal(weapon(hero("bard", "Тяжёлый арбалет")).proficient, false);
+});
+
+test("ranged finesse darts can use Strength while retaining Archery and thrown style", () => {
+  const strong = { ...hero("fighter", "Дротик"), classChoices: { "fighting-style": ["archery", "thrown-weapon"] } } as ExportCharacter;
+  const attack = weapon(strong);
+  assert.equal(attack.ability, "str");
+  assert.equal(attack.attackBonus, 6);
+  assert.equal(attack.damageDisplay, "1d4+4");
+  assert.equal(lssWeaponAttacks([attack])[0].dmg.value, "1d4+[STR]+2");
+  assert.equal(weapon({ ...strong, abilities: { ...strong.abilities, dex: 18 } }).ability, "dex");
+  assert.equal(weapon(hero("fighter", "Короткий лук")).ability, "dex");
+});

@@ -48,6 +48,9 @@ const weaponDefinitions: Record<string, WeaponDefinition> = {
   "серп": { name: "Серп", dice: "1d4" },
   "копьё": { name: "Копьё", dice: "1d6", versatileDice: "1d8", thrown: true },
   "лёгкий арбалет": { name: "Лёгкий арбалет", dice: "1d8", ranged: true, twoHanded: true },
+  "ручной арбалет": { name: "Ручной арбалет", dice: "1d6", ranged: true },
+  "тяжёлый арбалет": { name: "Тяжёлый арбалет", dice: "1d10", ranged: true, twoHanded: true },
+  "духовая трубка": { name: "Духовая трубка", dice: "1", ranged: true },
   "дротик": { name: "Дротик", dice: "1d4", ranged: true, finesse: true, thrown: true },
   "короткий лук": { name: "Короткий лук", dice: "1d6", ranged: true, twoHanded: true },
   "длинный лук": { name: "Длинный лук", dice: "1d8", ranged: true, twoHanded: true },
@@ -149,8 +152,8 @@ function monkMartialDie(level: number) {
 }
 
 function weaponAbility(definition: WeaponDefinition, character: ExportCharacter): AbilityKey {
+  if (definition.finesse) return character.abilities.dex > character.abilities.str ? "dex" : "str";
   if (definition.ranged) return "dex";
-  if (definition.finesse && character.abilities.dex > character.abilities.str) return "dex";
   return "str";
 }
 
