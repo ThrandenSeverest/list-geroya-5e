@@ -46,3 +46,31 @@ test("race and item grants without a caster class retain their source", () => {
   ];
   assert.deepEqual(otherSpellSources(character, spells).map(entry => entry.source), ["Расовая особенность", "Волшебная палочка"]);
 });
+
+import { classPreparedSpellIds, migrateSpellPreparation, setClassPreparedSpells } from "../app/spellPreparation";
+
+test("duplicate prepared spell is independent per class and survives native JSON round trip", () => {
+  const legacy = { ...hero(), mobilePreparedConfigured: true, preparedSpells: ["detectmagic"], spells: ["detectmagic"],
+    spellGrants: ["wizard", "cleric"].map(classId => ({ spellId: "detectmagic", classId, sourceId: classId, sourceType: "class" as const, mode: "prepared" as const })) };
+  const migrated = migrateSpellPreparation(legacy);
+  assert.deepEqual(classPreparedSpellIds(migrated, "wizard"), ["detectmagic"]);
+  assert.deepEqual(classPreparedSpellIds(migrated, "cleric"), ["detectmagic"]);
+  const edited = setClassPreparedSpells(migrated, "wizard", []);
+  const loaded = migrateSpellPreparation(JSON.parse(JSON.stringify(edited)));
+  assert.deepEqual(classPreparedSpellIds(loaded, "wizard"), []);
+  assert.deepEqual(classPreparedSpellIds(loaded, "cleric"), ["detectmagic"]);
+  assert.deepEqual(loaded.preparedSpells, ["detectmagic"]);
+  const groups = classSpellGroups(loaded, spells);
+  assert.equal(groups[0].spells.find(entry => entry.spell.id === "detectmagic")?.prepared, false);
+  assert.equal(groups[1].spells.find(entry => entry.spell.id === "detectmagic")?.prepared, true);
+  assert.deepEqual(migrateSpellPreparation(loaded), loaded);
+});
+
+test("editing wizard preparation preserves defaults and always-prepared domain spells of cleric", () => {
+  const legacy = { ...hero(), spells: [...hero().spells, "curewounds"], spellGrants: [...hero().spellGrants!,
+    { spellId: "curewounds", classId: "cleric", sourceType: "class" as const, sourceId: "cleric", mode: "prepared" as const }] };
+  const edited = setClassPreparedSpells(legacy, "wizard", []);
+  assert.deepEqual(classPreparedSpellIds(edited, "cleric"), ["curewounds"]);
+  const cleric = classSpellGroups(edited, spells).find(group => group.classId === "cleric")!;
+  assert.equal(cleric.spells.find(entry => entry.spell.id === "bless")?.prepared, true);
+});

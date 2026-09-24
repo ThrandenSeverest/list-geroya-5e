@@ -1,5 +1,6 @@
 "use client";
 
+import { classPreparedSpellIds, migrateSpellPreparation, setClassPreparedSpells } from "./spellPreparation";
 import { HeroQuiz } from "./HeroQuiz";
 import { buildRecommendedCharacter, standardAbilityBuild, standardArray, swapStandardAbility } from "./recommendedBuild";
 import type { QuizResult } from "./quizEngine";
@@ -108,7 +109,7 @@ const initial: ExportCharacter = {
   expertiseSkills: [],
   level: 1,
   spells: [],
-  preparedSpells: [],
+  preparedSpells: [], preparedSpellsByClass: {},
   name: "",
   playerName: "",
   experience: 0,
@@ -627,7 +628,7 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
     normalized.preparedSpells = optimalPreparedSpellIds(normalized, spells, normalized.spells);
   }
   const repaired = repairBackgroundAdvancement(normalized);
-  return migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements));
+  return migrateSpellPreparation(migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements)));
 }
 
 function savedCharacterExportContext(value: ExportCharacter) {
@@ -1010,10 +1011,8 @@ function Builder() {
   const ordinarySpellIds = activeSpellIds.filter(id => !alwaysPreparedSet.has(id));
   const selectedCantrips = ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === 0);
   const selectedLeveled = ordinarySpellIds.filter(id => (spells.find(item => item.id === id)?.level || 0) > 0);
-  const selectedPrepared = (character.preparedSpells || []).filter(id => selectedLeveled.includes(id));
-  const mobilePreparedIds = spellRule.mode === "prepared" && !character.mobilePreparedConfigured
-    ? selectedLeveled.slice(0, spellRule.prepared || selectedLeveled.length)
-    : selectedPrepared;
+  const selectedPrepared = classPreparedSpellIds(character, activeSpellClassId).filter(id => selectedLeveled.includes(id));
+  const mobilePreparedIds = selectedPrepared;
   const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === level).length);
   const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
   const featSlots = advancementSlots.length;
@@ -1158,7 +1157,7 @@ function Builder() {
     if (step === 1) setCharacter(current => {
       const safe = normalizeCharacter(current);
       const keptBonuses = (safe.advancements || []).filter(choice => choice.bonus);
-      return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
+      return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], preparedSpellsByClass: {}, lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
     });
     if (step === 3) {
       const option = backgrounds.find(item => item.id === id);
@@ -1293,7 +1292,7 @@ function Builder() {
       if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
       if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
       if (rule.mode === "spellbook") {
-        const prepared = (character.preparedSpells || []).filter(id => leveled.includes(id));
+        const prepared = classPreparedSpellIds(character, classId).filter(id => leveled.includes(id));
         if (prepared.length < (rule.prepared || 0)) add(7, `Не подготовлены заклинания класса «${className}»: ${prepared.length} из ${rule.prepared}.`);
       }
     });
@@ -1411,10 +1410,9 @@ function Builder() {
         const nextGrants = grants.filter(grant => grant.classId !== activeSpellClassId || grant.spellId !== id);
         const remainsSelected = nextGrants.some(grant => grant.spellId === id);
         return {
-          ...current,
+          ...setClassPreparedSpells(current, activeSpellClassId, classPreparedSpellIds(current, activeSpellClassId).filter(spell => spell !== id)),
           spellGrants: nextGrants,
           spells: remainsSelected ? current.spells : current.spells.filter(spell => spell !== id),
-          preparedSpells: remainsSelected ? current.preparedSpells : (current.preparedSpells || []).filter(spell => spell !== id),
         };
       }
       const sameKind = selectedForClass.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
@@ -1427,7 +1425,7 @@ function Builder() {
         if (breaksCumulativeLimit) return current;
       }
       return {
-        ...current,
+        ...(spellRule.mode === "prepared" && level > 0 ? setClassPreparedSpells(current, activeSpellClassId, [...classPreparedSpellIds(current, activeSpellClassId), id]) : current),
         spells: current.spells.includes(id) ? current.spells : [...current.spells, id],
         spellGrants: [...grants, { spellId: id, sourceType: "class", sourceId: activeSpellClassId, classId: activeSpellClassId, mode: spellRule.mode === "spellbook" ? "spellbook" : spellRule.mode === "prepared" ? "prepared" : "known" }],
       };
@@ -1437,10 +1435,10 @@ function Builder() {
   function togglePreparedSpell(id: string) {
     setCharacter(current => {
       if (!current.spells.includes(id) || (spells.find(spell => spell.id === id)?.level || 0) === 0) return current;
-      const selected = current.preparedSpells || [];
-      if (selected.includes(id)) return { ...current, preparedSpells: selected.filter(spell => spell !== id) };
+      const selected = classPreparedSpellIds(current, activeSpellClassId);
+      if (selected.includes(id)) return setClassPreparedSpells(current, activeSpellClassId, selected.filter(spell => spell !== id));
       if (selected.length >= (spellRule.prepared || 0)) return current;
-      return { ...current, preparedSpells: [...selected, id] };
+      return setClassPreparedSpells(current, activeSpellClassId, [...selected, id]);
     });
   }
 
@@ -1454,9 +1452,8 @@ function Builder() {
       const available = spellRule.mode === "prepared"
         ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(scoped, spell) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
         : classSpellIds.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) > 0);
-      const initialPrepared = spellRule.mode === "prepared" && !current.mobilePreparedConfigured
-        ? classSpellIds.filter(spellId => available.includes(spellId)).slice(0, spellRule.prepared || available.length)
-        : (current.preparedSpells || []).filter(spellId => available.includes(spellId) && classSpellIds.includes(spellId));
+      const initialPrepared = classPreparedSpellIds(current, activeSpellClassId).filter(spellId => available.includes(spellId));
+      if (!available.includes(id)) return current;
       const next = initialPrepared.includes(id)
         ? initialPrepared.filter(spellId => spellId !== id)
         : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
@@ -1468,8 +1465,7 @@ function Builder() {
         ...grants.filter(grant => grant.classId !== activeSpellClassId || (spells.find(spell => spell.id === grant.spellId)?.level || 0) === 0),
         ...next.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "prepared" as const })),
       ] : grants;
-      return { ...current, spells: nextSpells, spellGrants: nextGrants,
-        preparedSpells: [...new Set([...(current.preparedSpells || []).filter(spellId => !classSpellIds.includes(spellId) || otherClassIds.has(spellId)), ...next])], mobilePreparedConfigured: true };
+      return { ...setClassPreparedSpells(current, activeSpellClassId, next), spells: nextSpells, spellGrants: nextGrants };
     });
   }
 
@@ -1623,7 +1619,7 @@ function Builder() {
         levelHistory: (safe.levelHistory || []).slice(0, -1),
         level: characterLevel(safe) - 1,
         spells: [],
-        preparedSpells: [],
+        preparedSpells: [], preparedSpellsByClass: {},
         spellGrants: [],
         spellSlotsUsed: [],
         pactSlotsUsed: 0,
@@ -1637,7 +1633,7 @@ function Builder() {
     const nextHistory = delta > 0
       ? [...(safe.levelHistory || []), { characterLevel: characterLevel(safe) + 1, classId, classLevelAfter: nextLevel }]
       : (safe.levelHistory || []).slice(0, -1);
-    const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], spellGrants: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
+    const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], preparedSpellsByClass: {}, spellGrants: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
     const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
     return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
   }
@@ -1652,7 +1648,7 @@ function Builder() {
         classes: [...orderedCharacterClasses(safe), { classId, level: 1, acquiredAtCharacterLevel: nextLevel, classSkills: [] }],
         levelHistory: [...(safe.levelHistory || normalizedLevelHistory(safe)), { characterLevel: nextLevel, classId, classLevelAfter: 1 }],
         level: nextLevel,
-        spells: [], preparedSpells: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {},
+        spells: [], preparedSpells: [], preparedSpellsByClass: {}, spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {},
       });
     });
   }
@@ -1686,7 +1682,7 @@ function Builder() {
         levelHistory: Array.from({ length: totalLevel }, (_, index) => ({ characterLevel: index + 1, classId: startingClassId, classLevelAfter: index + 1 })),
         level: totalLevel,
         spells: [],
-        preparedSpells: [],
+        preparedSpells: [], preparedSpellsByClass: {},
         spellGrants: [],
         spellSlotsUsed: [],
         pactSlotsUsed: 0,
@@ -1896,9 +1892,8 @@ function Builder() {
       const retainedIds = otherGrants.map(grant => grant.spellId);
       const mode: SpellGrant["mode"] = spellRule.mode === "spellbook" ? "spellbook" : spellRule.mode === "prepared" ? "prepared" : "known";
       return {
-        ...current,
+        ...setClassPreparedSpells(current, activeSpellClassId, preparedSpells),
         spells: [...new Set([...retainedIds, ...ids])],
-        preparedSpells: [...new Set([...(current.preparedSpells || []).filter(id => retainedIds.includes(id)), ...preparedSpells])],
         spellGrants: [...otherGrants, ...ids.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode }))],
         lssSpellCards: undefined,
       };
@@ -1912,7 +1907,7 @@ function Builder() {
         : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: current.className, classId: current.className, mode: "known" as const }));
       const otherGrants = grants.filter(grant => grant.classId !== activeSpellClassId);
       const retainedIds = otherGrants.map(grant => grant.spellId);
-      return { ...current, spells: [...new Set(retainedIds)], preparedSpells: (current.preparedSpells || []).filter(id => retainedIds.includes(id)), spellGrants: otherGrants, lssSpellCards: undefined };
+      return { ...setClassPreparedSpells(current, activeSpellClassId, []), spells: [...new Set(retainedIds)], spellGrants: otherGrants, lssSpellCards: undefined };
     });
   }
 

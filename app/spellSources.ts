@@ -1,3 +1,4 @@
+import { classPreparedSpellIds } from "./spellPreparation";
 import type { CatalogSpell } from "./catalog";
 import { alwaysPreparedSpellEntries, spellSelectionRuleForClass } from "./characterRules";
 import type { ExportCharacter, SpellGrant } from "./exportFormats";
@@ -34,8 +35,7 @@ export function classSpellGroups(character: ExportCharacter, catalog: CatalogSpe
       if (!spell) continue;
       spells.set(spell.id, {
         spell, classId: entry.classId, source: grant.sourceType === "class" ? entry.classId : grant.sourceId,
-        prepared: spell.level === 0 || rule.mode === "known" || (character.preparedSpells || []).includes(spell.id)
-          || (rule.mode === "prepared" && !character.mobilePreparedConfigured),
+        prepared: spell.level === 0 || rule.mode === "known" || classPreparedSpellIds(character, entry.classId).includes(spell.id) || grant.mode === "always-prepared",
         alwaysPrepared: grant.mode === "always-prepared",
       });
     }

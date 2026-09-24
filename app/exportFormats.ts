@@ -1,3 +1,4 @@
+import { preparedSpellIds as resolvedPreparedSpellIds } from "./spellPreparation";
 import type { CatalogOption, CatalogSpell } from "./catalog";
 import { dndSpellUrl, helpmateSpellId } from "./exportIds";
 import { abilityLabels, classRules, skillKeys, type Feature } from "./rules";
@@ -82,6 +83,8 @@ export type ExportCharacter = {
   level: number;
   spells: string[];
   preparedSpells?: string[];
+  preparationVersion?: 1;
+  preparedSpellsByClass?: Record<string, string[]>;
   mobilePreparedConfigured?: boolean;
   /** Opaque LSS card ids retained for a lossless LSS -> app -> LSS round trip. */
   lssSpellCards?: {
@@ -231,9 +234,8 @@ function summaryText(context: ExportContext) {
   const selectedSpells = spellIds.map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
   const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
   const preparedSpellIds = new Set([
-    ...(character.preparedSpells || []),
+    ...resolvedPreparedSpellIds(character),
     ...(context.alwaysPreparedSpellIds || []),
-    ...(spellSelectionRule(character).mode === "prepared" ? character.spells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0) : []),
   ]);
   const preparedSpellNames = [...preparedSpellIds].map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
   const alwaysPreparedNames = [...alwaysPrepared].map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
@@ -800,8 +802,7 @@ export function createLongStoryShortExport(context: ExportContext) {
   const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
   const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
   const preparedSpellNames = [...new Set([
-    ...(character.preparedSpells || []),
-    ...(spellSelectionRule(character).mode === "prepared" ? character.spells.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0) : []),
+    ...resolvedPreparedSpellIds(character),
     ...(context.alwaysPreparedSpellIds || []),
   ])].map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean) as string[];
   const alwaysPreparedNames = (context.alwaysPreparedSpellIds || [])
