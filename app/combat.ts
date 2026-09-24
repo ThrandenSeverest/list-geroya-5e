@@ -27,6 +27,7 @@ export type CharacterAttack = {
 type WeaponDefinition = {
   name: string;
   dice: string;
+  versatileDice?: string;
   ranged?: boolean;
   finesse?: boolean;
   thrown?: boolean;
@@ -41,31 +42,31 @@ const weaponDefinitions: Record<string, WeaponDefinition> = {
   "метательное копьё": { name: "Метательное копьё", dice: "1d6", thrown: true },
   "лёгкий молот": { name: "Лёгкий молот", dice: "1d4", thrown: true },
   "булава": { name: "Булава", dice: "1d6" },
-  "боевой посох": { name: "Боевой посох", dice: "1d6" },
+  "боевой посох": { name: "Боевой посох", dice: "1d6", versatileDice: "1d8" },
   "серп": { name: "Серп", dice: "1d4" },
-  "копьё": { name: "Копьё", dice: "1d6", thrown: true },
+  "копьё": { name: "Копьё", dice: "1d6", versatileDice: "1d8", thrown: true },
   "лёгкий арбалет": { name: "Лёгкий арбалет", dice: "1d8", ranged: true, twoHanded: true },
   "дротик": { name: "Дротик", dice: "1d4", ranged: true, finesse: true, thrown: true },
   "короткий лук": { name: "Короткий лук", dice: "1d6", ranged: true, twoHanded: true },
   "длинный лук": { name: "Длинный лук", dice: "1d8", ranged: true, twoHanded: true },
   "праща": { name: "Праща", dice: "1d4", ranged: true },
-  "боевой топор": { name: "Боевой топор", dice: "1d8" },
+  "боевой топор": { name: "Боевой топор", dice: "1d8", versatileDice: "1d10" },
   "цеп": { name: "Цеп", dice: "1d8" },
   "глефа": { name: "Глефа", dice: "1d10", twoHanded: true },
   "секира": { name: "Секира", dice: "1d12", twoHanded: true },
   "двуручный меч": { name: "Двуручный меч", dice: "2d6", twoHanded: true },
   "алебарда": { name: "Алебарда", dice: "1d10", twoHanded: true },
   "длинное копьё": { name: "Длинное копьё", dice: "1d12" },
-  "длинный меч": { name: "Длинный меч", dice: "1d8" },
+  "длинный меч": { name: "Длинный меч", dice: "1d8", versatileDice: "1d10" },
   "молот": { name: "Молот", dice: "2d6", twoHanded: true },
   "моргенштерн": { name: "Моргенштерн", dice: "1d8" },
   "пика": { name: "Пика", dice: "1d10", twoHanded: true },
   "рапира": { name: "Рапира", dice: "1d8", finesse: true },
   "скимитар": { name: "Скимитар", dice: "1d6", finesse: true },
   "короткий меч": { name: "Короткий меч", dice: "1d6", finesse: true },
-  "трезубец": { name: "Трезубец", dice: "1d6", thrown: true },
+  "трезубец": { name: "Трезубец", dice: "1d6", versatileDice: "1d8", thrown: true },
   "боевая кирка": { name: "Боевая кирка", dice: "1d8" },
-  "боевой молот": { name: "Боевой молот", dice: "1d8" },
+  "боевой молот": { name: "Боевой молот", dice: "1d8", versatileDice: "1d10" },
   "кнут": { name: "Кнут", dice: "1d4", finesse: true },
 };
 
@@ -239,21 +240,26 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     const abilityMod = abilityModifier(character.abilities[ability]);
     const proficient = weaponProficient(character, key);
     const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
-    const damageExtra = (styles.has("dueling") && !definition.ranged && !definition.twoHanded ? 2 : 0)
-      + (styles.has("thrown-weapon") && definition.thrown ? 2 : 0);
     const abilityVariable = `[${ability.toUpperCase()}]`;
-    return [{
-      id: `weapon-${key}`,
-      name: definition.name,
-      kind: "weapon",
-      ability,
-      proficient,
-      attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
-      attackBonusExtra,
-      damageFormula: `${definition.dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
-      damageDisplay: `${definition.dice}${signed(abilityMod + damageExtra)}`,
-      note: proficient ? undefined : "Нет владения оружием: бонус мастерства не прибавлен к атаке.",
-    }];
+    const makeAttack = (dice: string, twoHands: boolean): CharacterAttack => {
+      const damageExtra = (styles.has("dueling") && !twoHands && !definition.ranged && !definition.twoHanded ? 2 : 0)
+        + (styles.has("thrown-weapon") && definition.thrown && !twoHands ? 2 : 0);
+      return {
+        id: `weapon-${key}${definition.versatileDice ? twoHands ? "-two-hands" : "-one-hand" : ""}`,
+        name: `${definition.name}${definition.versatileDice ? twoHands ? " (2 руки)" : " (1 рука)" : ""}`,
+        kind: "weapon",
+        ability,
+        proficient,
+        attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
+        attackBonusExtra,
+        damageFormula: `${dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
+        damageDisplay: `${dice}${signed(abilityMod + damageExtra)}`,
+        note: proficient ? undefined : "Нет владения оружием: бонус мастерства не прибавлен к атаке.",
+      };
+    };
+    return definition.versatileDice
+      ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)]
+      : [makeAttack(definition.dice, false)];
   });
 
   const featureAttacks = subclassAttacks(character, prof);

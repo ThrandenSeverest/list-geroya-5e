@@ -38,3 +38,24 @@ test("racial and multiclass weapon training applies", () => {
   assert.equal(weapon(multiclass).proficient, true);
   assert.equal(weapon(multiclass).attackBonus, 4);
 });
+
+test("2014 versatile weapons expose separate one and two hand damage in sheet and LSS", () => {
+  for (const [name, oneHand, twoHands] of [
+    ["Боевой посох", "1d6", "1d8"], ["Копьё", "1d6", "1d8"],
+    ["Боевой топор", "1d8", "1d10"], ["Длинный меч", "1d8", "1d10"],
+    ["Трезубец", "1d6", "1d8"], ["Боевой молот", "1d8", "1d10"],
+  ]) {
+    const attacks = characterAttacks(hero("fighter", name), []);
+    assert.deepEqual(attacks.map(attack => attack.name), [`${name} (1 рука)`, `${name} (2 руки)`]);
+    assert.deepEqual(attacks.map(attack => attack.damageDisplay), [`${oneHand}+2`, `${twoHands}+2`]);
+    assert.deepEqual(lssWeaponAttacks(attacks).map(attack => attack.dmg.value), [`${oneHand}+[STR]`, `${twoHands}+[STR]`]);
+  }
+});
+
+test("Dueling applies only to the one hand mode and proficiency applies to both", () => {
+  const character = { ...hero("wizard"), classChoices: { "fighting-style": ["dueling"] } } as ExportCharacter;
+  const attacks = characterAttacks(character, []);
+  assert.deepEqual(attacks.map(attack => attack.damageDisplay), ["1d8+4", "1d10+2"]);
+  assert.deepEqual(attacks.map(attack => attack.attackBonus), [2, 2]);
+  assert(attacks.every(attack => !attack.proficient && /Нет владения/.test(attack.note || "")));
+});
