@@ -1,6 +1,6 @@
 import type { ExportCharacter } from "./exportFormats";
 import { selectedEquipment } from "./equipment";
-import { getClassProgress, getClassLevel, normalizedLevelHistory } from "./multiclass";
+import { characterLevel, getClassProgress, getClassLevel, normalizedLevelHistory, orderedCharacterClasses } from "./multiclass";
 
 const modifier = (score: number) => Math.floor((score - 10) / 2);
 
@@ -16,10 +16,12 @@ export type ArmorClassBreakdown = {
   value: number;
   base: string;
   bonuses: string[];
+  conditions: string[];
 };
 
 export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreakdown {
-  const items = selectedEquipment(character);
+  const items = character.inventoryOverride === undefined ? selectedEquipment(character)
+    : character.inventoryOverride.split(/\n|\s*·\s*/).map(item => item.trim()).filter(Boolean);
   const dex = modifier(character.abilities.dex);
   const con = modifier(character.abilities.con);
   const wis = modifier(character.abilities.wis);
@@ -39,14 +41,16 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     { pattern: /кожан(?:ый|ая) доспех/i, ac: 11, dex: "full", name: "Кожаный доспех" },
   ];
   const worn = armors.find(armor => hasItem(items, armor.pattern));
+  const mediumArmorMaster = hasFeat(character, "medium-armor-master");
   let value = 10 + dex;
   let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
   let wearingArmor = false;
 
   if (worn) {
-    const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(2, dex) : 0;
+    const dexCap = mediumArmorMaster ? 3 : 2;
+    const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
     value = worn.ac + dexBonus;
-    base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? " + Ловкость (макс. +2)" : ""}`;
+    base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
     wearingArmor = true;
   } else if (character.race === "tortle") {
     value = 17;
@@ -75,7 +79,10 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     value += 2;
     bonuses.push("щит +2");
   }
-  const styles = new Set(character.classChoices?.["fighting-style"] || []);
+  const styles = new Set([
+    ...(character.classChoices?.["fighting-style"] || []),
+    ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.["fighting-style"] || []),
+  ]);
   if (wearingArmor && styles.has("defense")) {
     value += 1;
     bonuses.push("стиль «Оборона» +1");
@@ -84,11 +91,14 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     value += 1;
     bonuses.push("встроенная защита кованого +1");
   }
-  if (hasFeat(character, "dual-wielder") && !shield) {
-    value += 1;
-    bonuses.push("«Использование двух оружий» +1");
-  }
-  return { value, base, bonuses };
+  const conditions: string[] = [];
+  if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
+  if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
+  if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
+  if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
+  if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
+  if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
+  return { value, base, bonuses, conditions };
 }
 
 export function armorClass(character: ExportCharacter) {

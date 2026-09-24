@@ -3464,7 +3464,8 @@ function Builder() {
                   <div className="mobile-stat-grid">
                     {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{finalAbilities[key]}</strong><span>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</span></div>)}
                   </div>
-                  <div className="mobile-quick-grid"><div><small>КД</small><strong>{ac.value}</strong></div><div title={[...initiative.sources, ...initiative.notes].join("; ")}><small>Инициатива</small><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  <div className="mobile-quick-grid"><div title={[ac.base, ...ac.bonuses, ...ac.conditions].join("; ")}><small>КД</small><strong>{ac.value}</strong></div><div title={[...initiative.sources, ...initiative.notes].join("; ")}><small>Инициатива</small><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  {ac.conditions.length > 0 && <small>Условная КД: {ac.conditions.join(" ")}</small>}
                   {initiative.notes.length > 0 && <p><b>Инициатива:</b> {initiative.notes.join("; ")}</p>}
                   <p><b>Раса:</b> {selectedRace?.name} · <b>Класс:</b> {selectedClass?.name} · <b>Предыстория:</b> {selectedBackground?.name}</p>
                 </div>}
@@ -3543,7 +3544,7 @@ function Builder() {
                   </section>
                   <section className="sheet-combat">
                     <div className="combat-row">
-                      <div className="shield" title={`${ac.base}${ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""}`}><strong>{ac.value}</strong><span>КД</span></div>
+                      <div className="shield" title={[ac.base, ...ac.bonuses, ...ac.conditions].join("; ")}><strong>{ac.value}</strong><span>КД</span></div>
                       <div className="combat-tile" title={[...initiative.sources, ...initiative.notes].join("; ")}><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong><span>ИНИЦИАТИВА</span></div>
                       <div className="combat-tile" title={[...speedBreakdown(exportCharacter).sources, ...speedBreakdown(exportCharacter).conditions].join("; ")}><strong>{speedBreakdown(exportCharacter).walk}</strong><span>СКОРОСТЬ</span></div>
                     </div>
@@ -3608,7 +3609,7 @@ function Builder() {
                       <p>{selectedBackground?.description}</p>
                       <p><b>{selectedBackgroundRule.feature.name}.</b> {selectedBackgroundRule.feature.description}</p>
                     </div>
-                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{[...displayedInventory, ...customEquipment].join(" · ") || "Не выбрано"}</p><p><b>Расчёт КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p></div>
+                    <div className="sheet-box feature-box"><h3>СТАРТОВОЕ СНАРЯЖЕНИЕ</h3><p>{[...displayedInventory, ...customEquipment].join(" · ") || "Не выбрано"}</p><p><b>Постоянная КД:</b> {ac.base}{ac.bonuses.length ? `; ${ac.bonuses.join(", ")}` : ""} = <b>{ac.value}</b></p>{ac.conditions.length > 0 && <p><b>Условные эффекты:</b> {ac.conditions.join(" ")}</p>}</div>
                   </section>
                 </div>
               </div>
@@ -3631,6 +3632,7 @@ function Builder() {
                 savingThrows={classRules[character.startingClassId || character.className]?.saves || []}
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
+                acNotes={ac.conditions}
                 initiative={initiative.value}
                 initiativeNotes={initiative.notes}
                 speed={speedBreakdown(exportCharacter).walk}
