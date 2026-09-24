@@ -1,5 +1,6 @@
-import { effectHandlingLabel } from "./featureHandling";
 "use client";
+
+import { effectHandlingLabel } from "./featureHandling";
 
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CatalogSpell } from "./catalog";

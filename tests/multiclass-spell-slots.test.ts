@@ -16,7 +16,7 @@ function character(classes: Array<{ classId: string; level: number; subclassId?:
       classSkills: [],
       choiceValues: {},
     })),
-  } as ExportCharacter;
+  } as unknown as ExportCharacter;
 }
 
 test("single-class half casters use their class progression", () => {

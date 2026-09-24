@@ -936,7 +936,7 @@ function Builder() {
     const features = detailedFeatures(resolvedClassChoiceFeatures(scoped,
       documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
-    )).map(feature => ({ ...feature, name: `${className} · ${feature.name}` }));
+    )).map(feature => markFeature({ ...feature, name: `${className} · ${feature.name}` }, "class", entry.classId));
     return { key: `${entry.classId}:${entry.subclassId || "base"}`, title: `${className}${subclass ? ` · ${subclass.name}` : ""}`, features };
   });
   const selectedClassFeatures = selectedClassFeatureSections.flatMap(section => section.features);
@@ -1043,7 +1043,7 @@ function Builder() {
       const names = (choice.featChoices?.[group.key] || []).map(id => group.options.find(option => option.id === id)?.name || id);
       return names.length ? `${group.title}: ${names.join(", ")}` : "";
     }).filter(Boolean);
-    return [{ name: feat.name, description: [feat.description, ...details].join(" ") }];
+    return [markFeature({ name: feat.name, description: [feat.description, ...details].join(" ") }, "feat", "", feat.id)];
   });
   const attacks = characterAttacks({ ...exportCharacter, spells: [...new Set([...exportCharacter.spells, ...grantedFeatSpells])] }, spells);
   const ac = armorClassBreakdown(exportCharacter);

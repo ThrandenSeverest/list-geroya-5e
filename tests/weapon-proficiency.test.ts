@@ -7,7 +7,7 @@ const hero = (className = "wizard", inventoryOverride = "Длинный меч")
   race: "human", raceVariant: "standard", className, level: 3, background: "",
   classSkills: [], backgroundSkills: [], abilities: { str: 14, dex: 12, con: 12, int: 14, wis: 10, cha: 10 },
   spells: [], inventoryOverride,
-} as ExportCharacter);
+} as unknown as ExportCharacter);
 
 const weapon = (character: ExportCharacter) => characterAttacks(character, [])[0];
 
