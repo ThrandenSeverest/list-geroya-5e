@@ -47993,10 +47993,10 @@ function Builder() {
 			level: entry.level
 		};
 		const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
-		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => ({
+		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
-		}));
+		}, "class", entry.classId));
 		return {
 			key: `${entry.classId}:${entry.subclassId || "base"}`,
 			title: `${className}${subclass ? ` · ${subclass.name}` : ""}`,
@@ -48119,10 +48119,10 @@ function Builder() {
 			const names = (choice.featChoices?.[group.key] || []).map((id) => group.options.find((option) => option.id === id)?.name || id);
 			return names.length ? `${group.title}: ${names.join(", ")}` : "";
 		}).filter(Boolean);
-		return [{
+		return [markFeature({
 			name: feat.name,
 			description: [feat.description, ...details].join(" ")
-		}];
+		}, "feat", "", feat.id)];
 	});
 	const attacks = characterAttacks({
 		...exportCharacter,
