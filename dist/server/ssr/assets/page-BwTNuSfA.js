@@ -1,6 +1,64 @@
 import { Component, createElement, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
+//#region app/featureHandling.ts
+var classHandling = {
+	barbarian: {
+		"Быстрое передвижение": "conditional",
+		"Ярость": "manual"
+	},
+	bard: { "Мастер на все руки": "automatic" },
+	fighter: { "Всплеск действий": "manual" },
+	rogue: { "Скрытая атака": "manual" }
+};
+var raceHandling = {
+	tabaxi: {
+		"Кошачья ловкость": "conditional",
+		"Кошачье проворство": "conditional",
+		"Кошачьи когти": "automatic"
+	},
+	tortle: {
+		"Когти": "automatic",
+		"Защита панцирем": "conditional",
+		"Защита в панцире": "conditional"
+	},
+	minotaur: {
+		"Рога": "automatic",
+		"Бодание с разбега": "conditional"
+	},
+	centaur: {
+		"Копыта": "automatic",
+		"Разбег": "conditional"
+	},
+	aarakocra: { "Когти": "automatic" },
+	leonin: { "Когти": "automatic" },
+	lizardfolk: {
+		"Укус": "automatic",
+		"Голодная пасть": "conditional"
+	},
+	dhampir: { "Вампирский укус": "automatic" },
+	shifter: { "Клыки длиннозуба": "conditional" }
+};
+var featHandling = {
+	alert: "automatic",
+	observant: "automatic",
+	mobile: "automatic",
+	"medium-armor-master": "automatic",
+	"defensive-duelist": "conditional",
+	"dual-wielder": "conditional"
+};
+function markFeature(feature, source, id, featId) {
+	const name = source === "class" ? feature.name.split(" · ").at(-1) || feature.name : feature.name;
+	const effectHandling = source === "class" ? classHandling[id]?.[name] : source === "race" ? raceHandling[id]?.[name] : featHandling[featId || ""];
+	return effectHandling ? {
+		...feature,
+		effectHandling
+	} : feature;
+}
+function effectHandlingLabel(handling) {
+	return handling === "automatic" ? "Учтено автоматически" : handling === "conditional" ? "Условный эффект" : handling === "manual" ? "Применяется вручную" : "";
+}
+//#endregion
 //#region app/spellData.ts
 var link = (name) => `https://dnd.su/spells/?search=${encodeURIComponent(name)}`;
 var X = (id, name, source, level, school, classes, description, ritual = false) => ({
@@ -44903,7 +44961,11 @@ function FeatureDescription({ description }) {
 function FeatureList({ features }) {
 	return /* @__PURE__ */ jsx("div", {
 		className: "pdf-feature-list",
-		children: features.map((feature, index) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsx("h3", { children: feature.name }), /* @__PURE__ */ jsx(FeatureDescription, { description: feature.description })] }, `${feature.name}-${index}`))
+		children: features.map((feature, index) => /* @__PURE__ */ jsxs("article", { children: [
+			/* @__PURE__ */ jsx("h3", { children: feature.name }),
+			feature.effectHandling && /* @__PURE__ */ jsx("small", { children: effectHandlingLabel(feature.effectHandling) }),
+			/* @__PURE__ */ jsx(FeatureDescription, { description: feature.description })
+		] }, `${feature.name}-${index}`))
 	});
 }
 function featureWeight(feature) {
@@ -45020,6 +45082,7 @@ function RacialTraitList({ features }) {
 			return /* @__PURE__ */ jsxs("p", { children: [
 				/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
 				" ",
+				feature.effectHandling && /* @__PURE__ */ jsxs("small", { children: [effectHandlingLabel(feature.effectHandling), ". "] }),
 				summary
 			] }, `${feature.name}-${index}`);
 		})
@@ -47601,10 +47664,10 @@ function savedCharacterExportContext(value) {
 			level: entry.level
 		};
 		const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
-		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => ({
+		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
-		}));
+		}, "class", entry.classId));
 	});
 	const chosenRaceVariant = selectedRaceVariant(exportCharacter.race, exportCharacter.raceVariant);
 	const chosenSubclass = selectedSubclass(exportCharacter.className, exportCharacter.subclass || "");
@@ -47616,10 +47679,10 @@ function savedCharacterExportContext(value) {
 			const names = (choice.featChoices?.[group.key] || []).map((id) => group.options.find((option) => option.id === id)?.name || id);
 			return names.length ? `${group.title}: ${names.join(", ")}` : "";
 		}).filter(Boolean);
-		return [{
+		return [markFeature({
 			name: feat.name,
 			description: [feat.description, ...details].join(" ")
-		}];
+		}, "feat", "", feat.id)];
 	});
 	const featSpellIds = featGrantedSpellIds(exportCharacter);
 	const alwaysPreparedSpellIds = [...new Set(orderedCharacterClasses(exportCharacter).flatMap((entry) => alwaysPreparedSpellEntries({
@@ -47914,7 +47977,7 @@ function Builder() {
 	})).filter((group) => group.spells.length > 0);
 	const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key].filter((option) => !allowed(activeBan, key, option.id)).length, 0) : 0;
 	const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
-	const selectedRaceFeatures = resolvedRaceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags);
+	const selectedRaceFeatures = resolvedRaceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags).map((feature) => markFeature(feature, "race", character.race));
 	const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
 	const selectedClassFeatureSections = multiclassEntries.map((entry) => {
 		const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
@@ -53139,6 +53202,16 @@ function Builder() {
 															}
 														}))
 													})] }, key)),
+													/* @__PURE__ */ jsx("h3", { children: "Особенности" }),
+													[
+														...selectedRaceFeatures,
+														...selectedClassFeatures,
+														...selectedFeatFeatures
+													].map((feature, index) => /* @__PURE__ */ jsxs("article", { children: [
+														/* @__PURE__ */ jsx("strong", { children: feature.name }),
+														feature.effectHandling && /* @__PURE__ */ jsxs("small", { children: [" · ", effectHandlingLabel(feature.effectHandling)] }),
+														/* @__PURE__ */ jsx("p", { children: feature.description })
+													] }, `${feature.name}-${index}`)),
 													customNotes.map((note) => /* @__PURE__ */ jsxs("article", {
 														className: "homebrew-note",
 														children: [/* @__PURE__ */ jsx("strong", { children: note.name }), /* @__PURE__ */ jsx("p", { children: note.description })]
@@ -53426,11 +53499,21 @@ function Builder() {
 																selectedRaceFeatures.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
 																	" ",
+																	feature.effectHandling && /* @__PURE__ */ jsxs("small", { children: [
+																		" ",
+																		effectHandlingLabel(feature.effectHandling),
+																		". "
+																	] }),
 																	feature.description
 																] }, feature.name)),
 																selectedClassFeatureSections.map((section) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("h4", { children: [section.title, ": классовые особенности"] }), section.features.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
 																	" ",
+																	feature.effectHandling && /* @__PURE__ */ jsxs("small", { children: [
+																		" ",
+																		effectHandlingLabel(feature.effectHandling),
+																		". "
+																	] }),
 																	feature.description
 																] }, `${feature.level}-${feature.name}`))] }, section.key)),
 																runtimeFeatures.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
@@ -53441,6 +53524,11 @@ function Builder() {
 																selectedFeatFeatures.length > 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("h4", { children: "Черты" }), selectedFeatFeatures.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
 																	" ",
+																	feature.effectHandling && /* @__PURE__ */ jsxs("small", { children: [
+																		" ",
+																		effectHandlingLabel(feature.effectHandling),
+																		". "
+																	] }),
 																	feature.description
 																] }, feature.name))] }),
 																customFeatures.length > 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("h4", { children: "Пользовательские способности" }), customFeatures.map((feature) => /* @__PURE__ */ jsxs("p", { children: [
