@@ -22149,6 +22149,3690 @@ function setClassPreparedSpells(character, classId, ids) {
 function preparedSpellIds(character) {
 	return migrateSpellPreparation(character).preparedSpells || [];
 }
+//#endregion
+//#region app/helpmateSpellMap.ts
+var verifiedHelpmateSpellIds = Object.freeze({
+	"absorb": "502",
+	"acid-splash": "13",
+	"aid": "236",
+	"alarm": "313",
+	"alter-self": "323",
+	"animate-dead": "35",
+	"animate-objects": "364",
+	"antimagic-field": "263",
+	"arcane-eye": "151",
+	"arcane-lock": "29",
+	"armoragathys": "59",
+	"arms-of-hadar": "305",
+	"aura-of-vitality": "3",
+	"bane": "254",
+	"banishment": "116",
+	"barkskin": "74",
+	"beacon-of-hope": "158",
+	"bestow-curse": "285",
+	"bless": "9",
+	"blight": "96",
+	"blindness-deafness": "45",
+	"blink": "161",
+	"blur": "295",
+	"booming": "TCoE_1",
+	"branding-smite": "131",
+	"burning-hands": "203",
+	"call-lightning": "272",
+	"calm-emotions": "102",
+	"catapult": "472",
+	"ceremony": "541",
+	"chain-lightning": "233",
+	"charm-person": "221",
+	"chill-touch": "140",
+	"chromatic-orb": "86",
+	"circle-of-power": "135",
+	"clairvoyance": "238",
+	"cloud-of-daggers": "190",
+	"cloudkill": "191",
+	"command": "276",
+	"commune": "198",
+	"comprehend-languages": "252",
+	"coneofcold": "133",
+	"confusion": "325",
+	"conjure-animals": "267",
+	"conjure-barrage": "268",
+	"conjure-elemental": "275",
+	"conjure-minor-elementals": "271",
+	"contagion": "92",
+	"counterspell": "132",
+	"crusaders-mantle": "156",
+	"curewounds": "145",
+	"darkness": "353",
+	"darkvision": "368",
+	"death-ward": "104",
+	"demiplane": "55",
+	"detect-thoughts": "196",
+	"detectmagic": "195",
+	"dimensiondoor": "228",
+	"disguise-self": "157",
+	"disintegrate": "299",
+	"dispel-magic": "301",
+	"dissonant-whispers": "56",
+	"divination": "266",
+	"divine-favor": "10",
+	"divine-word": "12",
+	"dominate-beast": "239",
+	"dominate-monster": "241",
+	"dominate-person": "240",
+	"eldritch": "168",
+	"elemental-weapon": "339",
+	"enhanceability": "103",
+	"ensnaring-strike": "212",
+	"entangle": "211",
+	"etherealness": "64",
+	"faerie-fire": "207",
+	"false-life": "287",
+	"fear": "109",
+	"feather-fall": "223",
+	"find-steed": "246",
+	"findfamiliar": "248",
+	"finger-of-death": "229",
+	"fire-shield": "206",
+	"fireball": "205",
+	"firebolt": "204",
+	"flame-strike": "181",
+	"flaming-sphere": "289",
+	"fly": "249",
+	"fog-cloud": "351",
+	"forcecage": "107",
+	"foresight": "264",
+	"freedom-of-movement": "308",
+	"gaseous-form": "41",
+	"gate": "36",
+	"gentle-repose": "186",
+	"globe-invulnerability": "342",
+	"glyph-of-warding": "219",
+	"goodberry": "78",
+	"grease": "315",
+	"greaterinvisibility": "38",
+	"greaterrestoration": "39",
+	"greenflame": "TCoE_2",
+	"guardian-of-faith": "340",
+	"guidance": "105",
+	"guiding-bolt": "178",
+	"hail-of-thorns": "50",
+	"haste": "100",
+	"heal": "250",
+	"healing-spirit": "471",
+	"healingword": "144",
+	"heat-metal": "298",
+	"heroes-feast": "230",
+	"heroism": "42",
+	"hex": "312",
+	"hold-monster": "110",
+	"holdperson": "356",
+	"holy-aura": "6",
+	"hunters-mark": "164",
+	"hypnotic-pattern": "44",
+	"ice-storm": "49",
+	"identify": "210",
+	"inflict-wounds": "177",
+	"invisibility": "183",
+	"leomunds-tiny-hut": "143",
+	"lesser-restoration": "155",
+	"levitate": "139",
+	"light": "307",
+	"lightningbolt": "175",
+	"longstrider": "316",
+	"mage-armor": "60",
+	"mage-hand": "26",
+	"magic-missile": "27",
+	"magic-weapon": "153",
+	"major-image": "197",
+	"mass-cure-wounds": "171",
+	"mass-heal": "172",
+	"mass-healing-word": "170",
+	"masssuggestion": "169",
+	"maze": "138",
+	"melfs-acid-arrow": "159",
+	"mending": "258",
+	"message": "331",
+	"meteor": "163",
+	"mind-sliver": "TCoE_4",
+	"mindwhip": "TCoE_9",
+	"minorillusion": "154",
+	"mirror-image": "218",
+	"mistystep": "352",
+	"moonbeam": "146",
+	"nondetection": "185",
+	"pass": "8",
+	"phantasmal-force": "31",
+	"planeShift": "95",
+	"plant-growth": "304",
+	"polymorph": "260",
+	"power-word-kill": "322",
+	"powerstun": "321",
+	"prayer-of-healing": "173",
+	"prestidigitation": "91",
+	"produce-flame": "336",
+	"protection-evil-good": "99",
+	"protection-from-energy": "106",
+	"raise-dead": "208",
+	"ray-of-enfeeblement": "148",
+	"ray-of-frost": "149",
+	"ray-of-sickness": "147",
+	"resurrection": "33",
+	"revivify": "24",
+	"rope-trick": "350",
+	"sacred-flame": "311",
+	"sanctuary": "354",
+	"scorching-ray": "225",
+	"scrying": "176",
+	"searing-smite": "224",
+	"see-invisibility": "20",
+	"sending": "256",
+	"shadow-blade": "532",
+	"shadowmoil": "491",
+	"shape-water": "539",
+	"shapechange": "251",
+	"shatter": "62",
+	"shield": "70",
+	"shield-of-faith": "69",
+	"shocking-grasp": "66",
+	"silence": "349",
+	"simulacrum": "237",
+	"sleep": "98",
+	"sleet-storm": "162",
+	"slow": "83",
+	"spare-the-dying": "94",
+	"speak-with-animals": "292",
+	"speak-with-dead": "293",
+	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
+	"spell-doc-aganazzar_s_scorcher": "495",
+	"spell-doc-animal_friendship": "72",
+	"spell-doc-animal_messenger": "259",
+	"spell-doc-animal_shapes": "261",
+	"spell-doc-antilife_shell": "262",
+	"spell-doc-antipathy_sympathy": "2",
+	"spell-doc-arcane_gate": "150",
+	"spell-doc-astral_projection": "284",
+	"spell-doc-augury": "40",
+	"spell-doc-aura_of_life": "4",
+	"spell-doc-aura_of_purity": "5",
+	"spell-doc-awaken": "282",
+	"spell-doc-banishing_smite": "117",
+	"spell-doc-beast_bond": "464",
+	"spell-doc-beast_sense": "76",
+	"spell-doc-bigby_s_hand": "57",
+	"spell-doc-blade_barrier": "338",
+	"spell-doc-blade_of_disaster": "TCoE_22",
+	"spell-doc-blade_ward": "101",
+	"spell-doc-blinding_smite": "213",
+	"spell-doc-bones_of_the_earth": "475",
+	"spell-doc-catnap": "459",
+	"spell-doc-cause_fear": "455",
+	"spell-doc-chaos_bolt": "525",
+	"spell-doc-charm_monster": "494",
+	"spell-doc-circle_of_death": "136",
+	"spell-doc-clone": "54",
+	"spell-doc-color_spray": "306",
+	"spell-doc-commune_with_nature": "199",
+	"spell-doc-compelled_duel": "37",
+	"spell-doc-compulsion": "278",
+	"spell-doc-conjure_celestial": "273",
+	"spell-doc-conjure_fey": "274",
+	"spell-doc-conjure_volley": "269",
+	"spell-doc-conjure_woodland_beings": "270",
+	"spell-doc-contact_other_plane": "309",
+	"spell-doc-contingency": "265",
+	"spell-doc-continual_flame": "18",
+	"spell-doc-control_flames": "450",
+	"spell-doc-control_water": "21",
+	"spell-doc-control_weather": "22",
+	"spell-doc-control_winds": "449",
+	"spell-doc-cordon_of_arrows": "81",
+	"spell-doc-create_bonfire": "528",
+	"spell-doc-create_food_and_water": "335",
+	"spell-doc-create_homunculus": "527",
+	"spell-doc-create_or_destroy_water": "333",
+	"spell-doc-create_undead": "334",
+	"spell-doc-creation": "366",
+	"spell-doc-crown_of_madness": "134",
+	"spell-doc-crown_of_stars": "474",
+	"spell-doc-dancing_lights": "234",
+	"spell-doc-danse_macabre": "501",
+	"spell-doc-dawn": "517",
+	"spell-doc-daylight": "58",
+	"spell-doc-delayed_blast_fireball": "87",
+	"spell-doc-destructive_wave": "296",
+	"spell-doc-detect_evil_and_good": "194",
+	"spell-doc-detect_poison_and_disease": "193",
+	"spell-doc-dispel_evil_and_good": "300",
+	"spell-doc-dragon_s_breath": "461",
+	"spell-doc-drawmij_s_instant_summons": "68",
+	"spell-doc-dream": "19",
+	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
+	"spell-doc-druid_grove": "518",
+	"spell-doc-druidcraft": "123",
+	"spell-doc-dust_devil": "514",
+	"spell-doc-earth_tremor": "460",
+	"spell-doc-earthbind": "537",
+	"spell-doc-earthquake": "111",
+	"spell-doc-elemental_bane": "510",
+	"spell-doc-enemies_abound": "467",
+	"spell-doc-enervation": "486",
+	"spell-doc-enlarge_reduce": "355",
+	"spell-doc-enthrall": "303",
+	"spell-doc-erupting_earth": "466",
+	"spell-doc-evard_s_black_tentacles": "67",
+	"spell-doc-expeditious_retreat": "257",
+	"spell-doc-eyebite": "297",
+	"spell-doc-fabricate": "118",
+	"spell-doc-far_step": "458",
+	"spell-doc-feeblemind": "317",
+	"spell-doc-feign_death": "280",
+	"spell-doc-find_greater_steed": "504",
+	"spell-doc-find_the_path": "245",
+	"spell-doc-find_traps": "243",
+	"spell-doc-fire_storm": "201",
+	"spell-doc-flame_arrows": "513",
+	"spell-doc-flame_blade": "48",
+	"spell-doc-flesh_to_stone": "209",
+	"spell-doc-forbiddance": "89",
+	"spell-doc-friends": "71",
+	"spell-doc-frostbite": "492",
+	"spell-doc-geas": "189",
+	"spell-doc-giant_insect": "43",
+	"spell-doc-glibness": "179",
+	"spell-doc-grasping_vine": "85",
+	"spell-doc-guardian_of_nature": "530",
+	"spell-doc-guards_and_wards": "341",
+	"spell-doc-gust": "542",
+	"spell-doc-gust_of_wind": "255",
+	"spell-doc-hallow": "310",
+	"spell-doc-hallucinatory_terrain": "167",
+	"spell-doc-harm": "253",
+	"spell-doc-hellish_rebuke": "1",
+	"spell-doc-holy_weapon": "519",
+	"spell-doc-hunger_of_hadar": "47",
+	"spell-doc-ice_knife": "477",
+	"spell-doc-illusory_dragon": "468",
+	"spell-doc-illusory_script": "182",
+	"spell-doc-immolation": "470",
+	"spell-doc-imprisonment": "97",
+	"spell-doc-incendiary_cloud": "34",
+	"spell-doc-infernal_calling": "469",
+	"spell-doc-infestation": "483",
+	"spell-doc-insect_plague": "180",
+	"spell-doc-intellect_fortress": "TCoE_10",
+	"spell-doc-investiture_of_flame": "490",
+	"spell-doc-investiture_of_ice": "489",
+	"spell-doc-investiture_of_stone": "488",
+	"spell-doc-investiture_of_wind": "487",
+	"spell-doc-invulnerability": "485",
+	"spell-doc-jump": "286",
+	"spell-doc-knock": "217",
+	"spell-doc-legend_lore": "115",
+	"spell-doc-leomund_s_secret_chest": "142",
+	"spell-doc-life_transference": "498",
+	"spell-doc-lightning_arrow": "174",
+	"spell-doc-lightning_lure": "TCoE_3",
+	"spell-doc-locate_animals_or_plants": "242",
+	"spell-doc-locate_creature": "247",
+	"spell-doc-locate_object": "244",
+	"spell-doc-maddening_darkness": "493",
+	"spell-doc-maelstrom": "451",
+	"spell-doc-magic_circle": "152",
+	"spell-doc-magic_jar": "30",
+	"spell-doc-magic_mouth": "28",
+	"spell-doc-magic_stone": "454",
+	"spell-doc-mass_polymorph": "481",
+	"spell-doc-maximilian_s_earthen_grasp": "465",
+	"spell-doc-meld_into_stone": "318",
+	"spell-doc-melf_s_minute_meteors": "479",
+	"spell-doc-mental_prison": "480",
+	"spell-doc-mighty_fortress": "482",
+	"spell-doc-mind_blank": "328",
+	"spell-doc-mind_spike": "511",
+	"spell-doc-mirage_arcane": "343",
+	"spell-doc-mislead": "93",
+	"spell-doc-modify_memory": "119",
+	"spell-doc-mold_earth": "478",
+	"spell-doc-mordenkainen_s_faithful_hound": "17",
+	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
+	"spell-doc-mordenkainen_s_private_sanctum": "128",
+	"spell-doc-mordenkainen_s_sword": "166",
+	"spell-doc-move_earth": "53",
+	"spell-doc-negative_energy_flood": "505",
+	"spell-doc-nystul_s_magic_aura": "188",
+	"spell-doc-otiluke_s_freezing_sphere": "215",
+	"spell-doc-otiluke_s_resilient_sphere": "216",
+	"spell-doc-otto_s_irresistible_dance": "187",
+	"spell-doc-passwall": "327",
+	"spell-doc-phantasmal_killer": "32",
+	"spell-doc-phantom_steed": "279",
+	"spell-doc-planar_ally": "232",
+	"spell-doc-planar_binding": "231",
+	"spell-doc-poison_spray": "63",
+	"spell-doc-power_word_heal": "320",
+	"spell-doc-power_word_pain": "522",
+	"spell-doc-primal_savagery": "496",
+	"spell-doc-primordial_ward": "497",
+	"spell-doc-prismatic_spray": "291",
+	"spell-doc-prismatic_wall": "290",
+	"spell-doc-programmed_illusion": "82",
+	"spell-doc-project_image": "283",
+	"spell-doc-protection_from_poison": "108",
+	"spell-doc-psychic_scream": "512",
+	"spell-doc-purify_food_and_drink": "222",
+	"spell-doc-pyrotechnics": "500",
+	"spell-doc-rary_s_telepathic_bond": "160",
+	"spell-doc-regenerate": "302",
+	"spell-doc-reincarnate": "365",
+	"spell-doc-remove_curse": "326",
+	"spell-doc-resistance": "332",
+	"spell-doc-reverse_gravity": "120",
+	"spell-doc-scatter": "516",
+	"spell-doc-seeming": "281",
+	"spell-doc-sequester": "122",
+	"spell-doc-shillelagh": "73",
+	"spell-doc-sickening_radiance": "448",
+	"spell-doc-silent_image": "7",
+	"spell-doc-skill_empowerment": "538",
+	"spell-doc-skywrite": "484",
+	"spell-doc-snare": "520",
+	"spell-doc-snilloc_s_snowball_swarm": "526",
+	"spell-doc-soul_cage": "473",
+	"spell-doc-speak_with_plants": "294",
+	"spell-doc-spider_climb": "226",
+	"spell-doc-spirit_shroud": "TCoE_11",
+	"spell-doc-staggering_smite": "200",
+	"spell-doc-stone_shape": "121",
+	"spell-doc-storm_of_vengeance": "51",
+	"spell-doc-storm_sphere": "531",
+	"spell-doc-summon_aberration": "TCoE_15",
+	"spell-doc-summon_beast": "TCoE_7",
+	"spell-doc-summon_celestial": "TCoE_18",
+	"spell-doc-summon_construct": "TCoE_16",
+	"spell-doc-summon_elemental": "TCoE_17",
+	"spell-doc-summon_fiend": "TCoE_19",
+	"spell-doc-summon_greater_demon": "507",
+	"spell-doc-summon_lesser_demons": "508",
+	"spell-doc-summon_shadowspawn": "TCoE_13",
+	"spell-doc-summon_undead": "TCoE_14",
+	"spell-doc-swift_quiver": "14",
+	"spell-doc-sword_burst": "TCoE_5",
+	"spell-doc-symbol": "114",
+	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
+	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
+	"spell-doc-telepathy": "345",
+	"spell-doc-teleportation_circle": "137",
+	"spell-doc-temple_of_the_gods": "540",
+	"spell-doc-tenser_s_floating_disk": "346",
+	"spell-doc-tenser_s_transformation": "533",
+	"spell-doc-thunder_step": "457",
+	"spell-doc-thunderclap": "515",
+	"spell-doc-thunderous_smite": "52",
+	"spell-doc-tidal_wave": "509",
+	"spell-doc-tiny_servant": "476",
+	"spell-doc-tongues": "61",
+	"spell-doc-transmute_rock": "506",
+	"spell-doc-transport_via_plants": "288",
+	"spell-doc-tree_stride": "65",
+	"spell-doc-true_polymorph": "127",
+	"spell-doc-true_strike": "165",
+	"spell-doc-tsunami": "84",
+	"spell-doc-unseen_servant": "184",
+	"spell-doc-vitriolic_sphere": "462",
+	"spell-doc-wall_of_ice": "141",
+	"spell-doc-wall_of_light": "529",
+	"spell-doc-wall_of_sand": "499",
+	"spell-doc-wall_of_stone": "130",
+	"spell-doc-wall_of_thorns": "347",
+	"spell-doc-wall_of_water": "452",
+	"spell-doc-warding_wind": "463",
+	"spell-doc-water_walk": "88",
+	"spell-doc-watery_sphere": "453",
+	"spell-doc-weird": "324",
+	"spell-doc-whirlwind": "524",
+	"spell-doc-wind_walk": "90",
+	"spell-doc-word_of_recall": "319",
+	"spell-doc-wrath_of_nature": "456",
+	"spell-doc-zephyr_strike": "534",
+	"spike-growth": "77",
+	"spiritguardians": "75",
+	"spiritual-weapon": "11",
+	"steelwind": "535",
+	"stinking-cloud": "113",
+	"stoneskin": "129",
+	"suggestion": "23",
+	"summonfey": "TCoE_12",
+	"sunbeam": "329",
+	"sunburst": "330",
+	"synaptic-static": "521",
+	"tashas-hideous-laughter": "79",
+	"telekinesis": "344",
+	"teleport": "367",
+	"thaumaturgy": "80",
+	"thorn-whip": "348",
+	"thunderwave": "25",
+	"time-stop": "214",
+	"toll-the-dead": "503",
+	"true-seeing": "126",
+	"trueResurrection": "125",
+	"vampiric-touch": "277",
+	"vicious": "112",
+	"wall-of-fire": "202",
+	"wallforce": "314",
+	"warding-bond": "220",
+	"water-breathing": "235",
+	"web": "227",
+	"wind-wall": "337",
+	"wish": "124",
+	"witch-bolt": "15",
+	"word-radiance": "523",
+	"wrathful-smite": "46",
+	"zone-of-truth": "192"
+});
+//#endregion
+//#region app/exportIds.ts
+/**
+* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
+* LSS text blocks also need a stable public URL for every selected spell.
+*/
+var dndSpellRefs = {
+	"acid-splash": ["13", "acid_splash"],
+	"chill-touch": ["140", "chill_touch"],
+	"firebolt": ["204", "fire_bolt"],
+	"guidance": ["105", "guidance"],
+	"minorillusion": ["154", "minor_illusion"],
+	"vicious": ["112", "vicious_mockery"],
+	"eldritch": ["168", "eldritch_blast"],
+	"booming": ["458", "booming_blade"],
+	"greenflame": ["459", "green_flame_blade"],
+	"absorb": ["401", "absorb_elements"],
+	"armoragathys": ["59", "armor_of_agathys"],
+	"bless": ["9", "bless"],
+	"curewounds": ["145", "cure_wounds"],
+	"detectmagic": ["195", "detect_magic"],
+	"findfamiliar": ["248", "find_familiar"],
+	"goodberry": ["78", "goodberry"],
+	"healingword": ["144", "healing_word"],
+	"hex": ["312", "hex"],
+	"shield": ["70", "shield"],
+	"silvery": ["3946", "silvery_barbs"],
+	"aid": ["236", "aid"],
+	"darkness": ["353", "darkness"],
+	"enhanceability": ["103", "enhance_ability"],
+	"holdperson": ["356", "hold_person"],
+	"levitate": ["139", "levitate"],
+	"mistystep": ["352", "misty_step"],
+	"pass": ["8", "pass_without_trace"],
+	"mindwhip": ["3053", "tasha_s_mind_whip"],
+	"counterspell": ["132", "counterspell"],
+	"fireball": ["205", "fireball"],
+	"fly": ["249", "fly"],
+	"haste": ["100", "haste"],
+	"lightningbolt": ["175", "lightning_bolt"],
+	"revivify": ["24", "revivify"],
+	"spiritguardians": ["75", "spirit_guardians"],
+	"summonfey": ["3070", "summon_fey"],
+	"banishment": ["116", "banishment"],
+	"dimensiondoor": ["228", "dimension_door"],
+	"greaterinvisibility": ["38", "greater_invisibility"],
+	"polymorph": ["260", "polymorph"],
+	"shadowmoil": ["478", "shadow_of_moil"],
+	"coneofcold": ["133", "cone_of_cold"],
+	"greaterrestoration": ["39", "greater_restoration"],
+	"steelwind": ["493", "steel_wind_strike"],
+	"wallforce": ["314", "wall_of_force"],
+	"heal": ["250", "heal"],
+	"masssuggestion": ["169", "mass_suggestion"],
+	"disintegrate": ["299", "disintegrate"],
+	"forcecage": ["107", "forcecage"],
+	"planeShift": ["95", "plane_shift"],
+	"draconic": ["3814", "draconic_transformation"],
+	"demiplane": ["55", "demiplane"],
+	"maze": ["138", "maze"],
+	"powerstun": ["321", "power_word_stun"],
+	"foresight": ["264", "foresight"],
+	"meteor": ["163", "meteor_swarm"],
+	"trueResurrection": ["125", "true_resurrection"],
+	"wish": ["124", "wish"],
+	"light": ["307", "light"],
+	"mage-hand": ["26", "mage_hand"],
+	"mending": ["258", "mending"],
+	"message": ["331", "message"],
+	"prestidigitation": ["91", "prestidigitation"],
+	"ray-of-frost": ["149", "ray_of_frost"],
+	"sacred-flame": ["311", "sacred_flame"],
+	"shocking-grasp": ["66", "shocking_grasp"],
+	"spare-the-dying": ["94", "spare_the_dying"],
+	"thaumaturgy": ["80", "thaumaturgy"],
+	"thorn-whip": ["348", "thorn_whip"],
+	"produce-flame": ["336", "produce_flame"],
+	"shape-water": ["414", "shape_water"],
+	"toll-the-dead": ["457", "toll_the_dead"],
+	"mind-sliver": ["3050", "mind_sliver"],
+	"word-radiance": ["455", "word_of_radiance"],
+	"alarm": ["313", "alarm"],
+	"bane": ["254", "bane"],
+	"burning-hands": ["203", "burning_hands"],
+	"charm-person": ["221", "charm_person"],
+	"chromatic-orb": ["86", "chromatic_orb"],
+	"command": ["276", "command"],
+	"comprehend-languages": ["252", "comprehend_languages"],
+	"disguise-self": ["157", "disguise_self"],
+	"dissonant-whispers": ["56", "dissonant_whispers"],
+	"divine-favor": ["10", "divine_favor"],
+	"ensnaring-strike": ["212", "ensnaring_strike"],
+	"entangle": ["211", "entangle"],
+	"faerie-fire": ["207", "faerie_fire"],
+	"false-life": ["287", "false_life"],
+	"feather-fall": ["223", "feather_fall"],
+	"fog-cloud": ["351", "fog_cloud"],
+	"grease": ["315", "grease"],
+	"hail-of-thorns": ["50", "hail_of_thorns"],
+	"heroism": ["42", "heroism"],
+	"hunters-mark": ["164", "hunter_s_mark"],
+	"identify": ["210", "identify"],
+	"inflict-wounds": ["177", "inflict_wounds"],
+	"longstrider": ["316", "longstrider"],
+	"mage-armor": ["60", "mage_armor"],
+	"magic-missile": ["27", "magic_missile"],
+	"protection-evil-good": ["99", "protection_from_evil_and_good"],
+	"sanctuary": ["354", "sanctuary"],
+	"sleep": ["98", "sleep"],
+	"speak-with-animals": ["292", "speak_with_animals"],
+	"thunderwave": ["25", "thunderwave"],
+	"witch-bolt": ["15", "witch_bolt"],
+	"ceremony": ["465", "ceremony"],
+	"catapult": ["386", "catapult"],
+	"alter-self": ["323", "alter_self"],
+	"arcane-lock": ["29", "arcane_lock"],
+	"barkskin": ["74", "barkskin"],
+	"blindness-deafness": ["45", "blindness_deafness"],
+	"blur": ["295", "blur"],
+	"branding-smite": ["131", "branding_smite"],
+	"calm-emotions": ["102", "calm_emotions"],
+	"cloud-of-daggers": ["190", "cloud_of_daggers"],
+	"darkvision": ["368", "darkvision"],
+	"find-steed": ["246", "find_steed"],
+	"flaming-sphere": ["289", "flaming_sphere"],
+	"heat-metal": ["298", "heat_metal"],
+	"invisibility": ["183", "invisibility"],
+	"lesser-restoration": ["155", "lesser_restoration"],
+	"magic-weapon": ["153", "magic_weapon"],
+	"moonbeam": ["146", "moonbeam"],
+	"prayer-of-healing": ["173", "prayer_of_healing"],
+	"scorching-ray": ["225", "scorching_ray"],
+	"see-invisibility": ["20", "see_invisibility"],
+	"shatter": ["62", "shatter"],
+	"silence": ["349", "silence"],
+	"spike-growth": ["77", "spike_growth"],
+	"spiritual-weapon": ["11", "spiritual_weapon"],
+	"suggestion": ["23", "suggestion"],
+	"web": ["227", "web"],
+	"shadow-blade": ["470", "shadow_blade"],
+	"healing-spirit": ["468", "healing_spirit"],
+	"animate-dead": ["35", "animate_dead"],
+	"beacon-of-hope": ["158", "beacon_of_hope"],
+	"bestow-curse": ["285", "bestow_curse"],
+	"call-lightning": ["272", "call_lightning"],
+	"clairvoyance": ["238", "clairvoyance"],
+	"conjure-animals": ["267", "conjure_animals"],
+	"dispel-magic": ["301", "dispel_magic"],
+	"fear": ["109", "fear"],
+	"glyph-of-warding": ["219", "glyph_of_warding"],
+	"hypnotic-pattern": ["44", "hypnotic_pattern"],
+	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
+	"major-image": ["197", "major_image"],
+	"mass-healing-word": ["170", "mass_healing_word"],
+	"plant-growth": ["304", "plant_growth"],
+	"protection-from-energy": ["106", "protection_from_energy"],
+	"sleet-storm": ["162", "sleet_storm"],
+	"slow": ["83", "slow"],
+	"speak-with-dead": ["293", "speak_with_dead"],
+	"water-breathing": ["235", "water_breathing"],
+	"crusaders-mantle": ["156", "crusader_s_mantle"],
+	"aura-of-vitality": ["3", "aura_of_vitality"],
+	"arcane-eye": ["151", "arcane_eye"],
+	"blight": ["96", "blight"],
+	"confusion": ["325", "confusion"],
+	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
+	"death-ward": ["104", "death_ward"],
+	"divination": ["266", "divination"],
+	"dominate-beast": ["239", "dominate_beast"],
+	"freedom-of-movement": ["308", "freedom_of_movement"],
+	"guardian-of-faith": ["340", "guardian_of_faith"],
+	"ice-storm": ["49", "ice_storm"],
+	"stoneskin": ["129", "stoneskin"],
+	"wall-of-fire": ["202", "wall_of_fire"],
+	"animate-objects": ["364", "animate_objects"],
+	"circle-of-power": ["135", "circle_of_power"],
+	"cloudkill": ["191", "cloudkill"],
+	"commune": ["198", "commune"],
+	"conjure-elemental": ["275", "conjure_elemental"],
+	"contagion": ["92", "contagion"],
+	"dominate-person": ["240", "dominate_person"],
+	"flame-strike": ["181", "flame_strike"],
+	"hold-monster": ["110", "hold_monster"],
+	"mass-cure-wounds": ["171", "mass_cure_wounds"],
+	"raise-dead": ["208", "raise_dead"],
+	"scrying": ["176", "scrying"],
+	"telekinesis": ["344", "telekinesis"],
+	"synaptic-static": ["491", "synaptic_static"],
+	"chain-lightning": ["233", "chain_lightning"],
+	"heroes-feast": ["230", "heroes_feast"],
+	"globe-invulnerability": ["342", "globe_of_invulnerability"],
+	"sunbeam": ["329", "sunbeam"],
+	"true-seeing": ["126", "true_seeing"],
+	"divine-word": ["12", "divine_word"],
+	"etherealness": ["64", "etherealness"],
+	"finger-of-death": ["229", "finger_of_death"],
+	"resurrection": ["33", "resurrection"],
+	"simulacrum": ["237", "simulacrum"],
+	"teleport": ["367", "teleport"],
+	"antimagic-field": ["263", "antimagic_field"],
+	"dominate-monster": ["241", "dominate_monster"],
+	"holy-aura": ["6", "holy_aura"],
+	"sunburst": ["330", "sunburst"],
+	"gate": ["36", "gate"],
+	"mass-heal": ["172", "mass_heal"],
+	"power-word-kill": ["322", "power_word_kill"],
+	"shapechange": ["251", "shapechange"],
+	"time-stop": ["214", "time_stop"],
+	"arms-of-hadar": ["305", "arms_of_hadar"],
+	"guiding-bolt": ["178", "guiding_bolt"],
+	"ray-of-sickness": ["147", "ray_of_sickness"],
+	"searing-smite": ["224", "searing_smite"],
+	"shield-of-faith": ["69", "shield_of_faith"],
+	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
+	"wrathful-smite": ["46", "wrathful_smite"],
+	"blink": ["161", "blink"],
+	"detect-thoughts": ["196", "detect_thoughts"],
+	"gentle-repose": ["186", "gentle_repose"],
+	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
+	"mirror-image": ["218", "mirror_image"],
+	"phantasmal-force": ["31", "phantasmal_force"],
+	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
+	"rope-trick": ["350", "rope_trick"],
+	"warding-bond": ["220", "warding_bond"],
+	"zone-of-truth": ["192", "zone_of_truth"],
+	"conjure-barrage": ["268", "conjure_barrage"],
+	"elemental-weapon": ["339", "elemental_weapon"],
+	"gaseous-form": ["41", "gaseous_form"],
+	"nondetection": ["185", "nondetection"],
+	"sending": ["256", "sending"],
+	"stinking-cloud": ["113", "stinking_cloud"],
+	"vampiric-touch": ["277", "vampiric_touch"],
+	"wind-wall": ["337", "wind_wall"],
+	"fire-shield": ["206", "fire_shield"]
+};
+var helpmateSpellIds = verifiedHelpmateSpellIds;
+function helpmateSpellId(id) {
+	return helpmateSpellIds[id] || null;
+}
+function dndSpellUrl(id) {
+	const reference = dndSpellRefs[id];
+	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
+	return documentSpells.find((spell) => spell.id === id)?.url || null;
+}
+var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
+var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
+var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
+	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
+	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
+})));
+/**
+* LSS uses the public dnd.su page as the stable source reference for a spell.
+* Accept absolute/relative links and ignore the mutable transliterated suffix:
+* the numeric dnd.su page id is the canonical part shared with our catalog.
+*/
+function spellIdFromDndUrl(value) {
+	if (typeof value !== "string") return null;
+	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
+	if (match) return spellIdByDndNumber[match[1]] || null;
+	try {
+		const parsed = new URL(value, "https://dnd.su");
+		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
+		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
+	} catch {
+		return null;
+	}
+}
+/**
+* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
+* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
+* URL-bearing card objects never need this fallback.
+*/
+var lssCardDndNumbers = Object.freeze({
+	"65d3c169f3d820fa1add429e": "140",
+	"65d3c168f3d820fa1add425f": "204",
+	"65d3c170f3d820fa1add4759": "258",
+	"65d3c16af3d820fa1add434d": "60",
+	"65d3c16df3d820fa1add45f4": "221",
+	"65d3c16af3d820fa1add437e": "98",
+	"65d3c172f3d820fa1add48b7": "183",
+	"65d3c16ef3d820fa1add465d": "103",
+	"65d3c16df3d820fa1add4561": "44",
+	"65d3c171f3d820fa1add47ec": "109"
+});
+function spellIdFromLssCardId(cardId) {
+	const number = lssCardDndNumbers[cardId];
+	return number ? spellIdByDndNumber[number] || null : null;
+}
+//#endregion
+//#region app/characterResources.ts
+function resourceRestLabel(resource) {
+	if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный отдых";
+	if (resource.isShortRest) return "короткий отдых";
+	if (resource.isLongRest) return "продолжительный отдых";
+	return "не восстанавливается отдыхом";
+}
+function rageMaximum(level) {
+	if (level >= 17) return 6;
+	if (level >= 12) return 5;
+	if (level >= 6) return 4;
+	if (level >= 3) return 3;
+	return 2;
+}
+var add = (list, condition, resource) => condition && list.push(resource);
+function racialResources(character) {
+	const resources = [];
+	const level = characterLevel(character);
+	const pb = 2 + Math.floor((Math.max(1, level) - 1) / 4);
+	const modern = selectedRaceVariant(character.race, character.raceVariant || "base")?.source === "MPMM";
+	const pool = (race, key, name, max, short = false) => add(resources, character.race === race, {
+		key,
+		name,
+		max,
+		isShortRest: short,
+		isLongRest: true
+	});
+	pool("dragonborn", "breath-weapon", "Оружие дыхания", 1, true);
+	pool("halforc", "relentless-endurance", "Непоколебимая стойкость", 1);
+	pool("goliath", "stones-endurance", "Каменная стойкость", modern ? pb : 1, !modern);
+	pool("firbolg", "hidden-step", "Скрытый шаг", modern ? pb : 1, !modern);
+	pool("goblin", "fury-of-the-small", "Ярость малого", modern ? pb : 1, !modern);
+	pool("eladrin", "fey-step", "Фейский шаг", modern ? pb : 1, !modern);
+	pool("shadarkai", "blessing-raven-queen", "Благословение Королевы Воронов", modern ? pb : 1);
+	pool("reborn", "knowledge-past-life", "Знания из прошлой жизни", pb);
+	pool("aasimar", "healing-hands", "Исцеляющие руки", 1);
+	if (level >= 3) pool("aasimar", "celestial-revelation", "Небесное откровение", 1);
+	pool("lizardfolk", "hungry-jaws", "Голодная пасть", modern ? pb : 1, !modern);
+	pool("shifter", "shifting", "Смена", modern ? pb : 1, !modern);
+	pool("harengon", "rabbit-hop", "Прыжок кролика", pb);
+	pool("hadozee", "hadozee-dodge", "Стойкость хадози", pb);
+	pool("giff", "astral-spark", "Астральная искра", pb);
+	pool("autognome", "built-for-success", "Создан для успеха", pb);
+	pool("dhampir", "vampiric-bite-empowerment", "Вампирский укус · усиление", pb);
+	pool("leonin", "daunting-roar", "Ужасающий рёв", 1, true);
+	if (modern) {
+		pool("orc", "adrenaline-rush", "Выброс адреналина", pb);
+		pool("orc", "relentless-endurance", "Непоколебимая стойкость", 1);
+		pool("hobgoblin", "fey-gift", "Дар фей", pb);
+		pool("hobgoblin", "fortune-from-many", "Удача многих", pb);
+		pool("kenku", "kenku-recall", "Воспоминание кенку", pb);
+		pool("deepgnome", "svirfneblin-camouflage", "Камуфляж свирфнеблина", pb);
+		pool("kobold", "draconic-cry", "Драконий крик", pb);
+	} else {
+		pool("hobgoblin", "saving-face", "Спасение лица", 1, true);
+		pool("kobold", "grovel-cower-beg", "Пресмыкаться и умолять", 1, true);
+	}
+	return resources;
+}
+function singleClassResources(character) {
+	const resources = [];
+	const level = getClassLevel(character, character.className) || character.level;
+	const pb = 2 + Math.floor((Math.max(1, characterLevel(character)) - 1) / 4);
+	const ability = (key) => Math.max(1, Math.floor((character.abilities[key] - 10) / 2));
+	const subclass = character.subclass || "";
+	add(resources, new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId).filter(Boolean)]).has("lucky"), {
+		key: "lucky",
+		name: "Везунчик · очки удачи",
+		max: 3,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "barbarian", {
+		key: "rage",
+		name: "Ярость",
+		max: rageMaximum(level),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "barbarian" && subclass === "wildmagic" && level >= 3, {
+		key: "wild-magic-awareness",
+		name: "Магическое чутьё",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "barbarian" && subclass === "wildmagic" && level >= 6, {
+		key: "bolstering-magic",
+		name: "Подпитывающая магия",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "barbarian" && subclass === "beast" && level >= 10, {
+		key: "infectious-fury",
+		name: "Заразная ярость",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "barbarian" && subclass === "beast" && level >= 14, {
+		key: "call-the-hunt",
+		name: "Призыв охоты",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "bard", {
+		key: "bardic-inspiration",
+		name: "Вдохновение барда",
+		max: ability("cha"),
+		die: level >= 15 ? "к12" : level >= 10 ? "к10" : level >= 5 ? "к8" : "к6",
+		isShortRest: level >= 5,
+		isLongRest: true
+	});
+	add(resources, character.className === "cleric" && level >= 2, {
+		key: "channel-divinity",
+		name: "Божественный канал",
+		max: level >= 18 ? 3 : level >= 6 ? 2 : 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "cleric" && !!character.useTasha && level >= 2, {
+		key: "harness-divine-power",
+		name: "Направление божественной силы",
+		max: level >= 18 ? 3 : level >= 6 ? 2 : 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "cleric" && subclass === "tempest" && level >= 1, {
+		key: "wrath-of-storm",
+		name: "Гнев бури",
+		max: ability("wis"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "cleric" && subclass === "peace" && level >= 1, {
+		key: "emboldening-bond",
+		name: "Укрепляющая связь",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "cleric" && subclass === "order" && level >= 6, {
+		key: "embodiment-of-law",
+		name: "Воплощение закона",
+		max: ability("wis"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "druid" && level >= 2, {
+		key: "wild-shape",
+		name: "Дикий облик",
+		max: 2,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "druid" && subclass === "spores" && level >= 6, {
+		key: "fungal-infestation",
+		name: "Грибная инфекция",
+		max: ability("wis"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter", {
+		key: "second-wind",
+		name: "Второе дыхание",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && level >= 2, {
+		key: "action-surge",
+		name: "Всплеск действий",
+		max: level >= 17 ? 2 : 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && level >= 9, {
+		key: "indomitable",
+		name: "Упорный",
+		max: level >= 17 ? 3 : level >= 13 ? 2 : 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "battlemaster" && level >= 3, {
+		key: "superiority-dice",
+		name: "Кости превосходства",
+		max: level >= 15 ? 6 : level >= 7 ? 5 : 4,
+		die: level >= 18 ? "к12" : level >= 10 ? "к10" : "к8",
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "arcanearcher" && level >= 3, {
+		key: "arcane-shot",
+		name: "Магический выстрел",
+		max: 2,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "runeknight" && level >= 3, {
+		key: "giants-might",
+		name: "Мощь великана",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "samurai" && level >= 3, {
+		key: "fighting-spirit",
+		name: "Боевой дух",
+		max: 3,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 3, {
+		key: "unleash-incarnation",
+		name: "Высвобождение воплощения",
+		max: ability("con"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 10, {
+		key: "shadow-martyr",
+		name: "Мученик тени",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 15, {
+		key: "reclaim-potential",
+		name: "Возвращение потенциала",
+		max: ability("con"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "psi-warrior" && level >= 3, {
+		key: "psi-warrior-dice",
+		name: "Кости псионической энергии",
+		max: pb * 2,
+		die: level >= 17 ? "к12" : level >= 11 ? "к10" : level >= 5 ? "к8" : "к6",
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "fighter" && subclass === "psi-warrior" && level >= 3, {
+		key: "psi-warrior-recovery",
+		name: "Восстановление псионической кости",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "monk" && level >= 2, {
+		key: "ki",
+		name: "Ци",
+		max: level,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "paladin", {
+		key: "lay-on-hands",
+		name: "Наложение рук",
+		max: level * 5,
+		unit: 5,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "paladin" && level >= 3, {
+		key: "channel-divinity",
+		name: "Божественный канал",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "paladin" && !!character.useTasha && level >= 3, {
+		key: "harness-divine-power",
+		name: "Направление божественной силы",
+		max: level >= 15 ? 3 : level >= 7 ? 2 : 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "paladin" && subclass === "glory" && level >= 15, {
+		key: "glorious-defense",
+		name: "Славная защита",
+		max: ability("cha"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-favored-foe"] || []).includes("favored-foe"), {
+		key: "favored-foe",
+		name: "Предпочтительный противник",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") && level >= 10, {
+		key: "tireless",
+		name: "Неутомимый",
+		max: pb,
+		die: "к8",
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-natures-veil"] || []).includes("natures-veil") && level >= 10, {
+		key: "natures-veil",
+		name: "Покров природы",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	if (character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-primal-awareness"] || []).includes("primal-awareness")) for (const [at, key, name] of [
+		[
+			3,
+			"speak-with-animals",
+			"Разговор с животными"
+		],
+		[
+			5,
+			"beast-sense",
+			"Животные чувства"
+		],
+		[
+			9,
+			"speak-with-plants",
+			"Разговор с растениями"
+		],
+		[
+			13,
+			"locate-creature",
+			"Поиск существа"
+		],
+		[
+			17,
+			"commune-with-nature",
+			"Общение с природой"
+		]
+	]) add(resources, level >= at, {
+		key: `primal-awareness:${key}`,
+		name: `${name} без ячейки`,
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "horizonwalker" && level >= 3, {
+		key: "detect-portal",
+		name: "Обнаружение портала",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "monster-slayer" && level >= 3, {
+		key: "hunters-sense",
+		name: "Чутьё охотника",
+		max: ability("wis"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "swarmkeeper" && level >= 7, {
+		key: "writhing-tide",
+		name: "Извивающийся поток",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "swarmkeeper" && level >= 15, {
+		key: "swarming-dispersal",
+		name: "Рассеивающий рой",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 3, {
+		key: "drake-companion-free",
+		name: "Призыв дрейка без ячейки",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 11, {
+		key: "drake-breath-free",
+		name: "Дыхание дрейка без ячейки",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 15, {
+		key: "reflexive-resistance",
+		name: "Совершенная связь · сопротивление",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "rogue" && subclass === "soulknife" && level >= 3, {
+		key: "psionic-energy",
+		name: "Псионическая энергия",
+		max: pb * 2,
+		die: level >= 17 ? "к12" : level >= 11 ? "к10" : level >= 5 ? "к8" : "к6",
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 3, {
+		key: "wails-from-grave",
+		name: "Вопли из могилы",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 9, {
+		key: "tokens-of-departed",
+		name: "Жетоны усопших",
+		max: pb,
+		isShortRest: false,
+		isLongRest: false
+	});
+	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 13, {
+		key: "ghost-walk",
+		name: "Призрачная прогулка",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "rogue" && level >= 20, {
+		key: "stroke-of-luck",
+		name: "Удачливый поворот",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && level >= 2, {
+		key: "sorcery-points",
+		name: "Очки чародейства",
+		max: level,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "wildmagic", {
+		key: "tides-of-chaos",
+		name: "Поток хаоса",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "divinesoul", {
+		key: "favored-by-gods",
+		name: "Благоволение богов",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "shadow", {
+		key: "strength-of-the-grave",
+		name: "Сила могилы",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 1, {
+		key: "restore-balance",
+		name: "Восстановление баланса",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 14, {
+		key: "trance-of-order",
+		name: "Транс порядка · бесплатное применение",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 18, {
+		key: "clockwork-cavalcade",
+		name: "Заводная кавалькада · бесплатное применение",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "archfey", {
+		key: "fey-presence",
+		name: "Фейская внешность",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "hexblade", {
+		key: "hexblades-curse",
+		name: "Проклятие клинка",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "celestial", {
+		key: "healing-light",
+		name: "Исцеляющий свет",
+		max: level + 1,
+		die: "к6",
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "undying" && level >= 6, {
+		key: "defy-death",
+		name: "Бросить вызов смерти",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "undying" && level >= 14, {
+		key: "indestructible-life",
+		name: "Несокрушимая жизнь",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 1, {
+		key: "tentacle-of-deeps",
+		name: "Щупальце глубин",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 10, {
+		key: "evards-tentacles-free",
+		name: "Чёрные щупальца Эварда без ячейки",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 14, {
+		key: "fathomless-plunge",
+		name: "Погружение в бездну",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "undead" && level >= 1, {
+		key: "form-of-dread",
+		name: "Облик ужаса",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "warlock" && subclass === "undead" && level >= 14, {
+		key: "spirit-projection",
+		name: "Проекция духа",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard", {
+		key: "arcane-recovery",
+		name: "Восстановление магии",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "bladesinging" && level >= 2, {
+		key: "bladesong",
+		name: "Песнь клинка",
+		max: 2,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "divination" && level >= 2, {
+		key: "portent",
+		name: "Предзнаменование",
+		max: level >= 14 ? 3 : 2,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 2, {
+		key: "chronal-shift",
+		name: "Хроно-сдвиг",
+		max: 2,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 6, {
+		key: "momentary-stasis",
+		name: "Мгновенный стазис",
+		max: ability("int"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 10, {
+		key: "arcane-abeyance",
+		name: "Тайный резерв",
+		max: 1,
+		isShortRest: true,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "graviturgy" && level >= 10, {
+		key: "violent-attraction",
+		name: "Жестокое притяжение",
+		max: ability("int"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "wizard" && subclass === "graviturgy" && level >= 14, {
+		key: "event-horizon",
+		name: "Горизонт событий · бесплатное применение",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "artificer" && level >= 7, {
+		key: "flash-of-genius",
+		name: "Вспышка гениальности",
+		max: ability("int"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "artificer" && subclass === "alchemist" && level >= 3, {
+		key: "experimental-elixir",
+		name: "Экспериментальный эликсир",
+		max: level >= 15 ? 3 : level >= 6 ? 2 : 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "artificer" && subclass === "artillerist" && level >= 3, {
+		key: "eldritch-cannon",
+		name: "Бесплатная магическая пушка",
+		max: 1,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "artificer" && subclass === "armorer" && level >= 3, {
+		key: "defensive-field",
+		name: "Защитное поле",
+		max: pb,
+		isShortRest: false,
+		isLongRest: true
+	});
+	add(resources, character.className === "artificer" && subclass === "battlesmith" && level >= 9, {
+		key: "arcane-jolt",
+		name: "Магический импульс",
+		max: ability("int"),
+		isShortRest: false,
+		isLongRest: true
+	});
+	return resources;
+}
+/** Resources are resolved once per source class. Identical named pools such as
+* Channel Divinity remain one shared pool instead of being doubled. */
+function characterResources(character) {
+	const merged = new Map(racialResources(character).map((resource) => [resource.key, resource]));
+	for (const entry of orderedCharacterClasses(character)) for (const resource of singleClassResources(classView(character, entry))) {
+		const previous = merged.get(resource.key);
+		if (!previous || resource.max > previous.max) merged.set(resource.key, resource);
+	}
+	return [...merged.values()];
+}
+function resourceSpent(character, resource) {
+	return Math.max(0, Math.min(resource.max, character.resourceSpent?.[resource.key] || 0));
+}
+function resourceCurrent(character, resource) {
+	return resource.max - resourceSpent(character, resource);
+}
+function spentResourcesAfterLongRest(character) {
+	const persistentKeys = new Set(characterResources(character).filter((resource) => !resource.isLongRest).map((resource) => resource.key));
+	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
+}
+//#endregion
+//#region app/equipment.ts
+var O$2 = (id, label, items = [label], recommended = false) => ({
+	id,
+	label,
+	items,
+	recommended
+});
+var G = (key, label, options, count = 1) => ({
+	key,
+	label,
+	count,
+	options
+});
+var packContents = {
+	burglar: "рюкзак, 1 000 шариков, 10 футов нити, колокольчик, 5 свечей, ломик, молоток, 10 шлямбуров, закрытый фонарь, 2 фляги масла, 5 рационов, трутница, бурдюк и 50 футов пеньковой верёвки",
+	diplomat: "сундук, 2 футляра для карт и свитков, комплект отличной одежды, чернила, перо, лампа, 2 фляги масла, 5 листов бумаги, духи, сургуч и мыло",
+	dungeoneer: "рюкзак, ломик, молоток, 10 шлямбуров, 10 факелов, трутница, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
+	entertainer: "рюкзак, спальник, 2 костюма, 5 свечей, 5 рационов, бурдюк и набор для грима",
+	explorer: "рюкзак, спальник, столовый набор, трутница, 10 факелов, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
+	priest: "рюкзак, одеяло, 10 свечей, трутница, коробка для пожертвований, 2 блока благовоний, кадило, облачение, 2 рациона и бурдюк",
+	scholar: "рюкзак, научная книга, чернила, перо, 10 листов пергамента, мешочек песка и небольшой нож"
+};
+var packText = (id, name) => `${name} (${packContents[id]})`;
+var P = (id, name, recommended = false) => O$2(id, packText(id, name), [packText(id, name)], recommended);
+var armorText = {
+	leather: "Кожаный доспех (КД 11 + Лов.)",
+	studded: "Проклёпанная кожа (КД 12 + Лов.)",
+	scale: "Чешуйчатый доспех (КД 14 + Лов., максимум +2)",
+	chain: "Кольчуга (КД 16; Сила 13)",
+	shield: "Щит (+2 к КД)",
+	woodShield: "Деревянный щит (+2 к КД)"
+};
+var simpleWeapons$1 = [
+	O$2("club", "Дубинка"),
+	O$2("dagger", "Кинжал"),
+	O$2("greatclub", "Палица"),
+	O$2("handaxe", "Ручной топор"),
+	O$2("javelin", "Метательное копьё"),
+	O$2("light-hammer", "Лёгкий молот"),
+	O$2("mace", "Булава"),
+	O$2("quarterstaff", "Боевой посох"),
+	O$2("sickle", "Серп"),
+	O$2("spear", "Копьё"),
+	O$2("light-crossbow", "Лёгкий арбалет"),
+	O$2("dart", "Дротик"),
+	O$2("shortbow", "Короткий лук"),
+	O$2("sling", "Праща")
+];
+var martialMelee = [
+	O$2("battleaxe", "Боевой топор"),
+	O$2("flail", "Цеп"),
+	O$2("glaive", "Глефа"),
+	O$2("greataxe", "Секира"),
+	O$2("greatsword", "Двуручный меч"),
+	O$2("halberd", "Алебарда"),
+	O$2("lance", "Длинное копьё"),
+	O$2("longsword", "Длинный меч"),
+	O$2("maul", "Молот"),
+	O$2("morningstar", "Моргенштерн"),
+	O$2("pike", "Пика"),
+	O$2("rapier", "Рапира"),
+	O$2("scimitar", "Скимитар"),
+	O$2("shortsword", "Короткий меч"),
+	O$2("trident", "Трезубец"),
+	O$2("war-pick", "Боевая кирка"),
+	O$2("warhammer", "Боевой молот"),
+	O$2("whip", "Кнут")
+];
+var instruments = [
+	"Лютня",
+	"Флейта",
+	"Лира",
+	"Рожок",
+	"Барабан",
+	"Виола",
+	"Свирель",
+	"Шалмей"
+].map((name, index) => O$2(`instrument-${index}`, name));
+var classEquipment = {
+	barbarian: {
+		groups: [G("primary", "Основное оружие", [O$2("greataxe", "Секира", ["Секира"], true), ...martialMelee.filter((option) => option.id !== "greataxe")]), G("secondary", "Запасное оружие", [O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"], true), ...simpleWeapons$1])],
+		fixed: [packText("explorer", "Набор путешественника"), "Метательное копьё ×4"]
+	},
+	bard: {
+		groups: [
+			G("weapon", "Оружие", [
+				O$2("rapier", "Рапира", ["Рапира"], true),
+				O$2("longsword", "Длинный меч"),
+				...simpleWeapons$1
+			]),
+			G("pack", "Дорожный набор", [P("diplomat", "Набор дипломата", true), P("entertainer", "Набор артиста")]),
+			G("instrument", "Музыкальный инструмент", instruments.map((option) => option.id === "instrument-0" ? {
+				...option,
+				recommended: true
+			} : option))
+		],
+		fixed: [armorText.leather, "Кинжал"]
+	},
+	cleric: {
+		groups: [
+			G("weapon", "Основное оружие", [O$2("mace", "Булава", ["Булава"], true), O$2("warhammer", "Боевой молот (если есть владение)")]),
+			G("armor", "Доспех", [
+				O$2("scale", armorText.scale, [armorText.scale], true),
+				O$2("leather", armorText.leather),
+				O$2("chain", `${armorText.chain} (если есть владение)`, [armorText.chain])
+			]),
+			G("ranged", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
+			G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: [armorText.shield, "Священный символ"]
+	},
+	druid: {
+		groups: [G("shield", "Защита или простое оружие", [O$2("wood-shield", armorText.woodShield, [armorText.woodShield], true), ...simpleWeapons$1]), G("weapon", "Рукопашное оружие", [O$2("scimitar", "Скимитар"), ...simpleWeapons$1.filter((option) => ![
+			"light-crossbow",
+			"dart",
+			"shortbow",
+			"sling"
+		].includes(option.id)).map((option) => option.id === "dagger" ? {
+			...option,
+			recommended: true
+		} : option)])],
+		fixed: [
+			armorText.leather,
+			packText("explorer", "Набор путешественника"),
+			"Фокусировка друидов"
+		]
+	},
+	fighter: {
+		groups: [
+			G("armor", "Доспех и дальнее оружие", [O$2("chain", armorText.chain, [armorText.chain], true), O$2("leather-bow", `${armorText.leather}, длинный лук и 20 стрел`, [
+				armorText.leather,
+				"Длинный лук",
+				"Стрела ×20"
+			])]),
+			G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [O$2("shield", armorText.shield, [armorText.shield], true), ...martialMelee.map((option) => option.id === "longsword" ? {
+				...option,
+				recommended: true
+			} : option)], 2),
+			G("secondary", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"])]),
+			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: []
+	},
+	monk: {
+		groups: [G("weapon", "Оружие", [O$2("shortsword", "Короткий меч", ["Короткий меч"], true), ...simpleWeapons$1]), G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])],
+		fixed: ["Дротик ×10"]
+	},
+	paladin: {
+		groups: [
+			G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [O$2("shield", armorText.shield, [armorText.shield], true), ...martialMelee.map((option) => option.id === "longsword" ? {
+				...option,
+				recommended: true
+			} : option)], 2),
+			G("secondary", "Дополнительное оружие", [O$2("javelins", "Пять метательных копий", ["Метательное копьё ×5"], true), ...simpleWeapons$1.filter((option) => ![
+				"light-crossbow",
+				"dart",
+				"shortbow",
+				"sling"
+			].includes(option.id))]),
+			G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: [armorText.chain, "Священный символ"]
+	},
+	ranger: {
+		groups: [
+			G("armor", "Доспех", [O$2("scale", armorText.scale, [armorText.scale], true), O$2("leather", armorText.leather)]),
+			G("melee", "Рукопашное оружие", [
+				O$2("two-shortswords", "Два коротких меча", ["Короткий меч ×2"], true),
+				O$2("two-clubs", "Две дубинки", ["Дубинка ×2"]),
+				O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"]),
+				O$2("two-spears", "Два копья", ["Копьё ×2"])
+			]),
+			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: ["Длинный лук", "Стрела ×20"]
+	},
+	rogue: {
+		groups: [
+			G("primary", "Основное оружие", [O$2("rapier", "Рапира", ["Рапира"], true), O$2("shortsword", "Короткий меч")]),
+			G("secondary", "Дополнительное оружие", [O$2("shortbow", "Короткий лук и 20 стрел", ["Короткий лук", "Стрела ×20"], true), O$2("shortsword", "Короткий меч")]),
+			G("pack", "Дорожный набор", [
+				P("burglar", "Набор взломщика", true),
+				P("dungeoneer", "Набор исследователя подземелий"),
+				P("explorer", "Набор путешественника")
+			])
+		],
+		fixed: [
+			armorText.leather,
+			"Кинжал ×2",
+			"Воровские инструменты"
+		]
+	},
+	sorcerer: {
+		groups: [
+			G("weapon", "Оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
+			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: ["Кинжал ×2"]
+	},
+	warlock: {
+		groups: [
+			G("weapon", "Дальнее или простое оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
+			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+			G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("dungeoneer", "Набор исследователя подземелий")]),
+			G("simple", "Дополнительное простое оружие", simpleWeapons$1)
+		],
+		fixed: [armorText.leather, "Кинжал ×2"]
+	},
+	wizard: {
+		groups: [
+			G("weapon", "Оружие", [O$2("quarterstaff", "Боевой посох", ["Боевой посох"], true), O$2("dagger", "Кинжал")]),
+			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
+			G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("explorer", "Набор путешественника")])
+		],
+		fixed: ["Книга заклинаний"]
+	},
+	artificer: {
+		groups: [G("weapons", "Два простых оружия", simpleWeapons$1, 2), G("armor", "Доспех", [O$2("studded", armorText.studded, [armorText.studded], true), O$2("scale", armorText.scale)])],
+		fixed: [
+			"Лёгкий арбалет",
+			"Болт ×20",
+			"Воровские инструменты",
+			packText("dungeoneer", "Набор исследователя подземелий")
+		]
+	}
+};
+function equipmentRule(classId) {
+	return classEquipment[classId] || {
+		groups: [],
+		fixed: []
+	};
+}
+function defaultEquipmentSelections(classId) {
+	return equipmentRule(classId).groups.find((group) => group.key === "focus")?.options.some((option) => option.id === "arcane") ? { focus: ["arcane"] } : {};
+}
+function equipmentComplete(character) {
+	return equipmentRule(character.className).groups.every((group) => (character.equipmentSelections?.[group.key] || []).length === group.count);
+}
+var finesseWeapons = new Set([
+	"dagger",
+	"rapier",
+	"scimitar",
+	"shortsword",
+	"whip"
+]);
+var rangedWeapons = new Set([
+	"crossbow",
+	"light-crossbow",
+	"dart",
+	"shortbow",
+	"sling",
+	"leather-bow"
+]);
+var heavyWeapons = new Set([
+	"glaive",
+	"greataxe",
+	"greatsword",
+	"halberd",
+	"maul",
+	"pike"
+]);
+var twoHandedWeapons = new Set([
+	...heavyWeapons,
+	"light-crossbow",
+	"shortbow",
+	"crossbow",
+	"leather-bow"
+]);
+var strengthWeapons = new Set([
+	"club",
+	"greatclub",
+	"handaxe",
+	"javelin",
+	"javelins",
+	"light-hammer",
+	"mace",
+	"quarterstaff",
+	"sickle",
+	"spear",
+	"battleaxe",
+	"flail",
+	"lance",
+	"longsword",
+	"morningstar",
+	"trident",
+	"war-pick",
+	"warhammer",
+	"two-handaxes",
+	"two-clubs",
+	"two-spears"
+]);
+var armorOptions = new Set([
+	"chain",
+	"scale",
+	"leather",
+	"leather-bow",
+	"studded"
+]);
+function modifier$3(score) {
+	return Math.floor((score - 10) / 2);
+}
+function isOneHandedWeapon(option) {
+	return (finesseWeapons.has(option.id) || strengthWeapons.has(option.id)) && !twoHandedWeapons.has(option.id);
+}
+function armorScore(option, abilities) {
+	const dexterity = modifier$3(abilities.dex);
+	if (option.id === "chain") return abilities.str >= 13 ? 160 : -1e3;
+	if (option.id === "scale") return (14 + Math.min(2, dexterity)) * 10 - (dexterity >= 3 ? 2 : 0);
+	if (option.id === "studded") return (12 + dexterity) * 10;
+	if (option.id === "leather-bow") return (11 + dexterity) * 10 + 8;
+	if (option.id === "leather") return (11 + dexterity) * 10;
+	return 0;
+}
+function conditionalProficiencyPenalty(classId, subclass, option) {
+	if (classId !== "cleric") return 0;
+	const martialDomains = new Set(["war", "twilight"]);
+	const heavyDomains = new Set([
+		"life",
+		"war",
+		"forge",
+		"twilight"
+	]);
+	if (option.id === "warhammer" && !martialDomains.has(subclass)) return -1e3;
+	if (option.id === "chain" && !heavyDomains.has(subclass)) return -1e3;
+	return 0;
+}
+function optionScore(classId, option, abilities, context) {
+	const styles = new Set(context.classChoices?.["fighting-style"] || []);
+	const strength = modifier$3(abilities.str);
+	const dexterity = modifier$3(abilities.dex);
+	const proficiencyPenalty = conditionalProficiencyPenalty(classId, context.subclass || "", option);
+	if (proficiencyPenalty) return proficiencyPenalty;
+	if (armorOptions.has(option.id)) return armorScore(option, abilities);
+	if (option.id === "shield" || option.id === "wood-shield") {
+		if (styles.has("two-weapon") || styles.has("great-weapon")) return -100;
+		return 90 + (styles.has("protection") || styles.has("dueling") ? 18 : 0);
+	}
+	if (heavyWeapons.has(option.id)) {
+		if (abilities.str < 13) return -500;
+		const greatWeaponMaster = context.feats?.includes("great-weapon-master");
+		const highestDamageHeavy = option.id === "greatsword" || option.id === "maul";
+		return 55 + strength * 12 + (styles.has("great-weapon") ? 24 : 0) + (greatWeaponMaster && highestDamageHeavy ? 80 : 0) + (option.recommended ? 1 : 0);
+	}
+	if (rangedWeapons.has(option.id)) return 50 + dexterity * 12 + (styles.has("archery") ? 24 : 0) + (option.recommended ? 1 : 0);
+	if (finesseWeapons.has(option.id)) return 46 + Math.max(strength, dexterity) * 12 + (styles.has("dueling") ? 12 : 0) + (styles.has("two-weapon") ? 10 : 0) + (option.recommended ? 1 : 0);
+	if (strengthWeapons.has(option.id)) return 46 + strength * 12 + (styles.has("dueling") ? 10 : 0) + (styles.has("two-weapon") ? 6 : 0) + (option.recommended ? 1 : 0);
+	return option.recommended ? 20 : 10;
+}
+function recommendedForGroup(classId, group, abilities, context) {
+	const ranked = [...group.options].sort((left, right) => optionScore(classId, right, abilities, context) - optionScore(classId, left, abilities, context));
+	if (group.count !== 2 || !group.options.some((option) => option.id === "shield")) return ranked.slice(0, group.count);
+	const styles = new Set(context.classChoices?.["fighting-style"] || []);
+	if (styles.has("great-weapon") && abilities.str >= 13) return ranked.filter((option) => option.id !== "shield").slice(0, 2);
+	if (context.feats?.includes("great-weapon-master") && abilities.str >= 13) {
+		const best = ranked.filter((option) => option.id === "greatsword" || option.id === "maul");
+		if (best.length) return best.slice(0, group.count);
+	}
+	if (styles.has("two-weapon")) return ranked.filter((option) => option.id !== "shield" && isOneHandedWeapon(option)).slice(0, 2);
+	return [group.options.find((option) => option.id === "shield"), ranked.find((option) => option.id !== "shield" && isOneHandedWeapon(option)) || ranked.find((option) => option.id !== "shield")].filter(Boolean);
+}
+function optimalEquipmentSelections(classId, abilities, context = {}) {
+	return Object.fromEntries(equipmentRule(classId).groups.map((group) => [group.key, recommendedForGroup(classId, group, abilities, context).map((option) => option.id)]));
+}
+function equipmentOptionAdvice(option, abilities) {
+	if (option.id === "components") return "Содержит обычные материальные компоненты без указанной стоимости; нужный компонент достаётся свободной рукой.";
+	if (option.id === "arcane") return "Заменяет обычные материальные компоненты без указанной стоимости. Расходуемые и имеющие цену компоненты всё равно нужны отдельно.";
+	if (option.id === "chain") return abilities.str < 13 ? `Не рекомендуется: Сила ${abilities.str}; без Силы 13 скорость снижается на 10 футов.` : "Требование кольчуги выполнено: Сила 13+.";
+	if (heavyWeapons.has(option.id) && abilities.str < 13) return `Не рекомендуется: тяжёлое оружие использует Силу, сейчас ${abilities.str}.`;
+	if ((finesseWeapons.has(option.id) || rangedWeapons.has(option.id)) && abilities.dex > abilities.str) return "Подходит текущему герою: опирается на более высокую Ловкость.";
+	return "";
+}
+function selectedEquipment(character) {
+	const rule = equipmentRule(character.className);
+	const chosen = rule.groups.flatMap((group) => (character.equipmentSelections?.[group.key] || []).flatMap((id) => group.options.find((option) => option.id === id)?.items || []));
+	return [
+		...rule.fixed,
+		...chosen,
+		...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment)
+	];
+}
+//#endregion
+//#region app/naturalAttacks.ts
+var naturalWeapons = {
+	aarakocra: {
+		name: "Когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	centaur: {
+		name: "Копыта",
+		die: 6,
+		legacyDie: 4,
+		damage: "дробящий"
+	},
+	lizardfolk: {
+		name: "Укус",
+		die: 6,
+		damage: "рубящий"
+	},
+	minotaur: {
+		name: "Рога",
+		die: 6,
+		damage: "колющий"
+	},
+	satyr: {
+		name: "Бараньи рога",
+		die: 6,
+		legacyDie: 4,
+		damage: "дробящий"
+	},
+	tabaxi: {
+		name: "Кошачьи когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	tortle: {
+		name: "Когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	leonin: {
+		name: "Когти",
+		die: 4,
+		damage: "рубящий"
+	},
+	dhampir: {
+		name: "Вампирский укус",
+		die: 4,
+		damage: "колющий",
+		ability: "con",
+		condition: "При половине хитов или меньше — преимущество. Усиление укуса применяется отдельно; число усилений равно БМ за продолжительный отдых."
+	}
+};
+function naturalAttacks(character) {
+	const weapon = character.race === "shifter" && ["longtooth", "motm-longtooth"].includes(character.raceVariant) ? {
+		name: "Клыки длиннозуба",
+		die: 6,
+		damage: "колющий",
+		condition: "Только во время Смены; атака клыками доступна бонусным действием."
+	} : naturalWeapons[character.race];
+	if (!weapon) return [];
+	const die = selectedRaceVariant(character.race, character.raceVariant)?.source !== "MPMM" ? weapon.legacyDie || weapon.die : weapon.die;
+	const proficiency = 2 + Math.floor((characterLevel(character) - 1) / 4);
+	const make = (ability, damageDie, martial = false) => {
+		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
+		return {
+			id: `natural-${character.race}${martial ? "-martial-arts" : ""}`,
+			name: `${weapon.name}${martial ? " · Боевые искусства" : ""}`,
+			kind: "feature",
+			ability,
+			proficient: true,
+			attackBonus: proficiency + modifier,
+			attackBonusExtra: 0,
+			damageFormula: `1d${damageDie}+[${ability.toUpperCase()}]`,
+			damageDisplay: `1d${damageDie}${modifier >= 0 ? "+" : ""}${modifier}`,
+			note: [
+				`${weapon.damage} урон.`,
+				weapon.condition,
+				martial ? "Условный режим: только без доспехов и щита, когда соблюдены требования Боевых искусств." : ""
+			].filter(Boolean).join(" ")
+		};
+	};
+	const result = [make(weapon.ability || "str", die)];
+	const monk = getClassLevel(character, "monk");
+	if (monk && !weapon.ability) {
+		const martialDie = monk >= 17 ? 10 : monk >= 11 ? 8 : monk >= 5 ? 6 : 4;
+		result.push(make(character.abilities.dex > character.abilities.str ? "dex" : "str", Math.max(die, martialDie), true));
+	}
+	return result;
+}
+//#endregion
+//#region app/combat.ts
+var automaticAttacksNotice = "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа.";
+var abilityModifier$2 = (score) => Math.floor((score - 10) / 2);
+var proficiencyBonus$2 = (level) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
+var weaponDefinitions = {
+	"дубинка": {
+		name: "Дубинка",
+		dice: "1d4"
+	},
+	"кинжал": {
+		name: "Кинжал",
+		dice: "1d4",
+		finesse: true,
+		thrown: true
+	},
+	"палица": {
+		name: "Палица",
+		dice: "1d8",
+		twoHanded: true
+	},
+	"ручной топор": {
+		name: "Ручной топор",
+		dice: "1d6",
+		thrown: true
+	},
+	"метательное копьё": {
+		name: "Метательное копьё",
+		dice: "1d6",
+		thrown: true
+	},
+	"лёгкий молот": {
+		name: "Лёгкий молот",
+		dice: "1d4",
+		thrown: true
+	},
+	"булава": {
+		name: "Булава",
+		dice: "1d6"
+	},
+	"боевой посох": {
+		name: "Боевой посох",
+		dice: "1d6",
+		versatileDice: "1d8"
+	},
+	"серп": {
+		name: "Серп",
+		dice: "1d4"
+	},
+	"копьё": {
+		name: "Копьё",
+		dice: "1d6",
+		versatileDice: "1d8",
+		thrown: true
+	},
+	"лёгкий арбалет": {
+		name: "Лёгкий арбалет",
+		dice: "1d8",
+		ranged: true,
+		twoHanded: true
+	},
+	"ручной арбалет": {
+		name: "Ручной арбалет",
+		dice: "1d6",
+		ranged: true
+	},
+	"тяжёлый арбалет": {
+		name: "Тяжёлый арбалет",
+		dice: "1d10",
+		ranged: true,
+		twoHanded: true
+	},
+	"духовая трубка": {
+		name: "Духовая трубка",
+		dice: "1",
+		ranged: true
+	},
+	"дротик": {
+		name: "Дротик",
+		dice: "1d4",
+		ranged: true,
+		finesse: true,
+		thrown: true
+	},
+	"короткий лук": {
+		name: "Короткий лук",
+		dice: "1d6",
+		ranged: true,
+		twoHanded: true
+	},
+	"длинный лук": {
+		name: "Длинный лук",
+		dice: "1d8",
+		ranged: true,
+		twoHanded: true
+	},
+	"праща": {
+		name: "Праща",
+		dice: "1d4",
+		ranged: true
+	},
+	"боевой топор": {
+		name: "Боевой топор",
+		dice: "1d8",
+		versatileDice: "1d10"
+	},
+	"цеп": {
+		name: "Цеп",
+		dice: "1d8"
+	},
+	"глефа": {
+		name: "Глефа",
+		dice: "1d10",
+		twoHanded: true
+	},
+	"секира": {
+		name: "Секира",
+		dice: "1d12",
+		twoHanded: true
+	},
+	"двуручный меч": {
+		name: "Двуручный меч",
+		dice: "2d6",
+		twoHanded: true
+	},
+	"алебарда": {
+		name: "Алебарда",
+		dice: "1d10",
+		twoHanded: true
+	},
+	"длинное копьё": {
+		name: "Длинное копьё",
+		dice: "1d12"
+	},
+	"длинный меч": {
+		name: "Длинный меч",
+		dice: "1d8",
+		versatileDice: "1d10"
+	},
+	"молот": {
+		name: "Молот",
+		dice: "2d6",
+		twoHanded: true
+	},
+	"моргенштерн": {
+		name: "Моргенштерн",
+		dice: "1d8"
+	},
+	"пика": {
+		name: "Пика",
+		dice: "1d10",
+		twoHanded: true
+	},
+	"рапира": {
+		name: "Рапира",
+		dice: "1d8",
+		finesse: true
+	},
+	"скимитар": {
+		name: "Скимитар",
+		dice: "1d6",
+		finesse: true
+	},
+	"короткий меч": {
+		name: "Короткий меч",
+		dice: "1d6",
+		finesse: true
+	},
+	"трезубец": {
+		name: "Трезубец",
+		dice: "1d6",
+		versatileDice: "1d8",
+		thrown: true
+	},
+	"боевая кирка": {
+		name: "Боевая кирка",
+		dice: "1d8"
+	},
+	"боевой молот": {
+		name: "Боевой молот",
+		dice: "1d8",
+		versatileDice: "1d10"
+	},
+	"кнут": {
+		name: "Кнут",
+		dice: "1d4",
+		finesse: true
+	}
+};
+var simpleWeapons = new Set([
+	"дубинка",
+	"кинжал",
+	"палица",
+	"ручной топор",
+	"метательное копьё",
+	"лёгкий молот",
+	"булава",
+	"боевой посох",
+	"серп",
+	"копьё",
+	"лёгкий арбалет",
+	"дротик",
+	"короткий лук",
+	"праща"
+]);
+var weaponPlurals = {
+	"дубинка": ["дубинки"],
+	"кинжал": ["кинжалы"],
+	"палица": ["палицы"],
+	"ручной топор": ["ручные топоры"],
+	"метательное копьё": ["метательные копья"],
+	"лёгкий молот": ["легкие молоты"],
+	"булава": ["булавы"],
+	"боевой посох": ["боевые посохи"],
+	"серп": ["серпы"],
+	"копьё": ["копья"],
+	"лёгкий арбалет": ["легкие арбалеты"],
+	"дротик": ["дротики"],
+	"короткий лук": ["короткие луки"],
+	"праща": ["пращи"],
+	"длинный меч": ["длинные мечи", "длинные и короткие мечи"],
+	"короткий меч": ["короткие мечи", "длинные и короткие мечи"],
+	"ручной арбалет": ["ручные арбалеты"],
+	"рапира": ["рапиры"],
+	"скимитар": ["скимитары"]
+};
+function weaponProficient(character, key) {
+	const permissions = characterProficiencies(character).weapons.flatMap((value) => value.toLowerCase().replace(/ё/g, "е").split(/\s*,\s*/));
+	if (permissions.some((value) => /прост(?:ое|ые) (?:и воинское )?оружие/.test(value)) && simpleWeapons.has(key)) return true;
+	if (permissions.some((value) => /воинск(?:ое|ие) оружие/.test(value)) && !simpleWeapons.has(key)) return true;
+	if (key === "короткий меч" && permissions.some((value) => /короткие мечи/.test(value))) return true;
+	if (key === "длинный меч" && permissions.some((value) => /длинные (?:и короткие )?мечи/.test(value))) return true;
+	const normalized = key.replace(/ё/g, "е");
+	return permissions.some((value) => value === normalized || (weaponPlurals[key] || []).some((alias) => alias === value));
+}
+var damagingCantrips = {
+	"acid-splash": {
+		dice: "d6",
+		mode: "save",
+		save: "dex",
+		damageType: "Кислота"
+	},
+	firebolt: {
+		dice: "d10",
+		mode: "attack",
+		damageType: "Огонь"
+	},
+	vicious: {
+		dice: "d4",
+		mode: "save",
+		save: "wis",
+		note: "При провале цель получает помеху на следующую атаку."
+	},
+	eldritch: {
+		dice: "d10",
+		mode: "attack",
+		note: "Для каждого луча отдельный бросок атаки; цели можно выбирать отдельно."
+	},
+	"ray-of-frost": {
+		dice: "d8",
+		mode: "attack",
+		damageType: "Холод",
+		note: "Скорость цели уменьшается на 10 футов до начала вашего следующего хода."
+	},
+	"sacred-flame": {
+		dice: "d8",
+		mode: "save",
+		save: "dex",
+		note: "Цель не получает бонус от укрытия к спасброску."
+	},
+	"shocking-grasp": {
+		dice: "d8",
+		mode: "attack",
+		damageType: "Электричество",
+		note: "При попадании цель не может совершать реакции до начала своего следующего хода."
+	},
+	"thorn-whip": {
+		dice: "d6",
+		mode: "attack",
+		note: "Большую или меньшую цель можно подтянуть на 10 футов."
+	},
+	"produce-flame": {
+		dice: "d8",
+		mode: "attack",
+		damageType: "Огонь"
+	},
+	"toll-the-dead": {
+		dice: "d8",
+		mode: "save",
+		save: "wis",
+		note: "Если у цели не все хиты, используется d12 вместо d8."
+	},
+	"mind-sliver": {
+		dice: "d6",
+		mode: "save",
+		save: "int",
+		note: "Цель вычитает 1d4 из следующего спасброска до конца вашего следующего хода."
+	},
+	"word-radiance": {
+		dice: "d6",
+		mode: "save",
+		save: "con"
+	}
+};
+function normalizeEquipmentName(value) {
+	return value.toLowerCase().replace(/\s*\([^)]*\)\s*/g, "").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s+и\s+\d+\s+(болтов|стрел|снарядов)\s*$/i, "").trim();
+}
+function signed$1(value) {
+	return value >= 0 ? `+${value}` : `${value}`;
+}
+function cantripDiceCount(level) {
+	return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
+}
+function monkMartialDie(level) {
+	if (level >= 17) return "1d10";
+	if (level >= 11) return "1d8";
+	if (level >= 5) return "1d6";
+	return "1d4";
+}
+function weaponAbility(definition, character) {
+	if (definition.finesse) return character.abilities.dex > character.abilities.str ? "dex" : "str";
+	if (definition.ranged) return "dex";
+	return "str";
+}
+function subclassAttacks(character, prof) {
+	const result = [];
+	const add = (attack) => result.push(attack);
+	const attack = (id, name, ability, dice, note, damageBonus = abilityModifier$2(character.abilities[ability])) => {
+		const abilityMod = abilityModifier$2(character.abilities[ability]);
+		const bonus = typeof damageBonus === "number" ? damageBonus : 0;
+		add({
+			id,
+			name,
+			kind: "feature",
+			ability,
+			proficient: true,
+			attackBonus: prof + abilityMod,
+			attackBonusExtra: 0,
+			damageFormula: `${dice}+${typeof damageBonus === "string" ? damageBonus : `[${ability.toUpperCase()}]`}`,
+			damageDisplay: `${dice}${typeof damageBonus === "number" && bonus ? signed$1(bonus) : ""}`,
+			note
+		});
+	};
+	for (const entry of orderedCharacterClasses(character)) {
+		const subclass = entry.subclassId || "";
+		if (entry.classId === "barbarian" && subclass === "battlerager" && entry.level >= 3) attack("subclass-battlerager-spikes", "Шипы доспеха", "str", "1d4", "Доступно только в шипованном доспехе и во время ярости; атака выполняется бонусным действием.");
+		if (entry.classId === "barbarian" && subclass === "beast" && entry.level >= 3) {
+			attack("subclass-beast-bite", "Форма зверя: Укус", "str", "1d8", "Временное природное оружие только во время ярости; раз за ход при хп ниже половины попадание может восстановить хиты в размере БМ.");
+			attack("subclass-beast-claws", "Форма зверя: Когти", "str", "1d6", "Временное природное оружие только во время ярости; раз за ход после атаки когтем можно сделать ещё одну атаку когтем.");
+			attack("subclass-beast-tail", "Форма зверя: Хвост", "str", "1d8", "Временное природное оружие только во время ярости; досягаемость 10 футов, реакцией может повысить КД против одной атаки.");
+		}
+		if (entry.classId === "monk" && subclass === "astral-self" && entry.level >= 3) attack("subclass-astral-arms", "Руки астрального тела", "wis", monkMartialDie(entry.level), "Только пока проявлены астральные руки: силовой урон, +5 футов досягаемости в свой ход, для атаки и урона используется Мудрость.");
+		if (entry.classId === "bard" && subclass === "creation" && entry.level >= 6) add({
+			id: "subclass-creation-dancing-item",
+			name: "Оживлённый предмет: Силовой удар",
+			kind: "feature",
+			ability: "cha",
+			proficient: true,
+			attackBonus: prof + abilityModifier$2(character.abilities.cha),
+			attackBonusExtra: 0,
+			damageFormula: "1d10+[PB]",
+			damageDisplay: `1d10${signed$1(prof)}`,
+			note: `Временный спутник Dancing Item. КД 16; хиты ${10 + 5 * entry.level}; атака использует модификатор атаки заклинанием барда.`
+		});
+		if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) {
+			const abilityMod = abilityModifier$2(character.abilities.wis);
+			const extra = entry.level >= 15 ? "2d6" : entry.level >= 7 ? "1d6" : "";
+			add({
+				id: "subclass-drakewarden-bite",
+				name: "Дрейк: Укус",
+				kind: "feature",
+				ability: "wis",
+				proficient: true,
+				attackBonus: prof + abilityMod,
+				attackBonusExtra: 0,
+				damageFormula: `1d6+[PB]${extra ? `+${extra}` : ""}`,
+				damageDisplay: `1d6${signed$1(prof)}${extra ? ` + ${extra} стихией` : ""}`,
+				note: `Атака временного дрейка; КД ${14 + prof}, хиты ${5 + 5 * entry.level}. Стихийный тип выбирается при каждом призыве.`
+			});
+		}
+	}
+	return result;
+}
+function characterAttacks(character, spells) {
+	const totalLevel = characterLevel(character);
+	const prof = proficiencyBonus$2(totalLevel);
+	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	const equipment = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
+	const seenWeapons = /* @__PURE__ */ new Set();
+	const weaponAttacks = equipment.flatMap((item) => {
+		const key = normalizeEquipmentName(item);
+		const definition = weaponDefinitions[key];
+		if (!definition || seenWeapons.has(key)) return [];
+		seenWeapons.add(key);
+		const ability = weaponAbility(definition, character);
+		const abilityMod = abilityModifier$2(character.abilities[ability]);
+		const proficient = weaponProficient(character, key);
+		const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
+		const abilityVariable = `[${ability.toUpperCase()}]`;
+		const makeAttack = (dice, twoHands) => {
+			const damageExtra = (styles.has("dueling") && !twoHands && !definition.ranged && !definition.twoHanded ? 2 : 0) + (styles.has("thrown-weapon") && definition.thrown && !twoHands ? 2 : 0);
+			return {
+				id: `weapon-${key}${definition.versatileDice ? twoHands ? "-two-hands" : "-one-hand" : ""}`,
+				name: `${definition.name}${definition.versatileDice ? twoHands ? " (2 руки)" : " (1 рука)" : ""}`,
+				kind: "weapon",
+				ability,
+				proficient,
+				attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
+				attackBonusExtra,
+				damageFormula: `${dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
+				damageDisplay: `${dice}${signed$1(abilityMod + damageExtra)}`,
+				note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
+			};
+		};
+		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
+	});
+	const featureAttacks = [...naturalAttacks(character), ...subclassAttacks(character, prof)];
+	const spellAbility = classRules[character.className]?.spellAbility || orderedCharacterClasses(character).map((entry) => classRules[entry.classId]?.spellAbility).find(Boolean);
+	if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
+	const diceCount = cantripDiceCount(totalLevel);
+	const elementalAdeptTypes = new Set((character.advancements || []).filter((choice) => choice.featId === "elemental-adept").flatMap((choice) => choice.featChoices?.element || []));
+	const invocations = new Set([...character.classChoices?.invocations || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.invocations || [])]);
+	const cantripAttacks = character.spells.map((id) => spells.find((spell) => spell.id === id && spell.level === 0)).filter(Boolean).flatMap((spell) => {
+		const definition = damagingCantrips[spell.id];
+		if (!definition) return [];
+		const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
+		const castingAbility = classRules[character.spellGrants?.find((grant) => grant.spellId === spell.id && grant.classId)?.classId || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className)]?.spellAbility || spellAbility;
+		const castingMod = abilityModifier$2(character.abilities[castingAbility]);
+		const damageBonus = agonizing ? abilityModifier$2(character.abilities.cha) : 0;
+		const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType) ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.` : "";
+		const rays = spell.id === "eldritch" ? diceCount : 1;
+		return Array.from({ length: rays }, (_, index) => ({
+			id: `cantrip-${spell.id}${rays > 1 ? `-beam-${index + 1}` : ""}`,
+			name: `${spell.name}${rays > 1 ? ` · луч ${index + 1}/${rays}` : ""}`,
+			kind: "cantrip",
+			ability: castingAbility,
+			proficient: true,
+			attackBonus: definition.mode === "attack" ? prof + castingMod : void 0,
+			saveDc: definition.mode === "save" ? 8 + prof + castingMod : void 0,
+			attackBonusExtra: 0,
+			damageFormula: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : ""}`,
+			damageDisplay: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing && damageBonus ? signed$1(damageBonus) : ""}`,
+			note: [definition.note, elementalAdept].filter(Boolean).join(" ") || void 0
+		}));
+	});
+	return [
+		...weaponAttacks,
+		...featureAttacks,
+		...cantripAttacks
+	];
+}
+function lssWeaponAttacks(attacks) {
+	return attacks.filter((attack) => attack.kind === "weapon" || attack.attackBonus !== void 0).map((attack, index) => ({
+		id: `weapon-${Date.now()}-${index}`,
+		name: { value: attack.name },
+		dmg: { value: attack.damageFormula },
+		ability: attack.ability,
+		isProf: attack.proficient,
+		modBonus: { value: attack.attackBonusExtra }
+	}));
+}
+//#endregion
+//#region app/armor.ts
+var modifier$2 = (score) => Math.floor((score - 10) / 2);
+function hasItem(items, pattern) {
+	return items.some((item) => pattern.test(item));
+}
+function hasFeat(character, featId) {
+	return (character.advancements || []).some((choice) => choice.featId === featId) || (character.feats || []).includes(featId);
+}
+function armorClassBreakdown(character) {
+	const items = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
+	const dex = modifier$2(character.abilities.dex);
+	const con = modifier$2(character.abilities.con);
+	const wis = modifier$2(character.abilities.wis);
+	const shield = hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
+	const worn = [
+		{
+			pattern: /полулаты/i,
+			ac: 15,
+			dex: "max2",
+			name: "Полулаты"
+		},
+		{
+			pattern: /(?:^|\s)латы(?:$|\s)/i,
+			ac: 18,
+			dex: "none",
+			name: "Латы"
+		},
+		{
+			pattern: /наборн(?:ый|ая) доспех/i,
+			ac: 17,
+			dex: "none",
+			name: "Наборный доспех"
+		},
+		{
+			pattern: /кольчуга/i,
+			ac: 16,
+			dex: "none",
+			name: "Кольчуга"
+		},
+		{
+			pattern: /кольчат(?:ый|ая) доспех/i,
+			ac: 14,
+			dex: "none",
+			name: "Кольчатый доспех"
+		},
+		{
+			pattern: /нагрудник/i,
+			ac: 14,
+			dex: "max2",
+			name: "Кираса"
+		},
+		{
+			pattern: /чешуйчат/i,
+			ac: 14,
+			dex: "max2",
+			name: "Чешуйчатый доспех"
+		},
+		{
+			pattern: /кольчужн(?:ая|ый) рубах/i,
+			ac: 13,
+			dex: "max2",
+			name: "Кольчужная рубаха"
+		},
+		{
+			pattern: /шкурн(?:ый|ая) доспех/i,
+			ac: 12,
+			dex: "max2",
+			name: "Шкурный доспех"
+		},
+		{
+			pattern: /прокл[её]панн(?:ая|ый) кож/i,
+			ac: 12,
+			dex: "full",
+			name: "Проклёпанная кожа"
+		},
+		{
+			pattern: /кожан(?:ый|ая) доспех/i,
+			ac: 11,
+			dex: "full",
+			name: "Кожаный доспех"
+		}
+	].find((armor) => hasItem(items, armor.pattern));
+	const mediumArmorMaster = hasFeat(character, "medium-armor-master");
+	let value = 10 + dex;
+	let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
+	let wearingArmor = false;
+	if (worn) {
+		const dexCap = mediumArmorMaster ? 3 : 2;
+		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
+		value = worn.ac + dexBonus;
+		base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
+		wearingArmor = true;
+	} else if (character.race === "tortle") {
+		value = 17;
+		base = "Природный панцирь: 17";
+	} else if (character.race === "lizardfolk") {
+		value = 13 + dex;
+		base = "Природный доспех: 13 + Ловкость";
+	} else if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") {
+		value = 13 + dex;
+		base = "Драконья устойчивость: 13 + Ловкость";
+	} else {
+		const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
+		if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) {
+			value = 10 + dex + wis;
+			base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
+		} else if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) {
+			value = 10 + dex + con;
+			base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
+		}
+	}
+	const bonuses = [];
+	if (shield) {
+		value += 2;
+		bonuses.push("щит +2");
+	}
+	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	if (wearingArmor && styles.has("defense")) {
+		value += 1;
+		bonuses.push("стиль «Оборона» +1");
+	}
+	if (wearingArmor && character.race === "warforged") {
+		value += 1;
+		bonuses.push("встроенная защита кованого +1");
+	}
+	const conditions = [];
+	if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
+	if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
+	if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
+	if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
+	if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
+	if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
+	return {
+		value,
+		base,
+		bonuses,
+		conditions
+	};
+}
+function armorClass(character) {
+	return armorClassBreakdown(character).value;
+}
+//#endregion
+//#region app/skillIds.ts
+function normalizeSkillId(value) {
+	return value.trim().toLocaleLowerCase("ru").replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/gi, "");
+}
+var skillAliases = {
+	perception: "Внимательность",
+	attention: "Внимательность",
+	awareness: "Внимательность",
+	внимательность: "Внимательность",
+	восприятие: "Внимательность",
+	medicine: "Медицина",
+	medical: "Медицина",
+	медицина: "Медицина"
+};
+for (const [russianName, { key }] of Object.entries(skillKeys)) {
+	skillAliases[normalizeSkillId(russianName)] = russianName;
+	skillAliases[normalizeSkillId(key)] = russianName;
+}
+/** Converts external or legacy skill identifiers to HeroList's canonical Russian name. */
+function skillNameFromExternalId(value) {
+	return skillAliases[normalizeSkillId(value)] || "";
+}
+/** Converts a HeroList/legacy skill name to the canonical Long Story Short identifier. */
+function externalSkillId(value) {
+	const russianName = skillNameFromExternalId(value);
+	return russianName ? skillKeys[russianName]?.key || "" : "";
+}
+function normalizeImportedSkills(values) {
+	return [...new Set((values || []).map(skillNameFromExternalId).filter(Boolean))];
+}
+//#endregion
+//#region app/exportText.ts
+function cleanInlineMarkdown(value) {
+	return value.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/__([^_]+)__/g, "$1").replace(/~~([^~]+)~~/g, "$1");
+}
+function cleanPlainLine(value) {
+	return cleanInlineMarkdown(value).replace(/^\s{0,3}#{1,6}\s+/, "").replace(/^\s*[-*+]\s+/, "• ").trimEnd();
+}
+function isMarkdownTableSeparator(value) {
+	return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(value);
+}
+function tableCells(value) {
+	let row = value.trim();
+	if (row.startsWith("|")) row = row.slice(1);
+	if (row.endsWith("|")) row = row.slice(0, -1);
+	return row.split("|").map((cell) => cleanInlineMarkdown(cell.trim()));
+}
+/**
+* Converts Markdown that external character-sheet importers do not understand
+* into conservative plain text. In particular Markdown tables become one
+* readable paragraph per row instead of a stream of pipes and separator dashes.
+*/
+function normalizeExportText(value) {
+	const lines = String(value || "").replace(/\r\n?/g, "\n").replace(/\|\s+\|/g, "|\n|").split("\n");
+	const output = [];
+	for (let index = 0; index < lines.length;) {
+		const line = lines[index];
+		const next = lines[index + 1];
+		if (line.includes("|") && next !== void 0 && isMarkdownTableSeparator(next)) {
+			const firstPipe = line.indexOf("|");
+			if (firstPipe > 0) {
+				const prefix = cleanPlainLine(line.slice(0, firstPipe).trim());
+				if (prefix) output.push(prefix);
+			}
+			const headers = tableCells(firstPipe >= 0 ? line.slice(firstPipe) : line);
+			index += 2;
+			let rows = 0;
+			while (index < lines.length && lines[index].includes("|") && !isMarkdownTableSeparator(lines[index])) {
+				const cells = tableCells(lines[index]);
+				if (cells.length < 2) break;
+				const values = cells.map((cell, cellIndex) => {
+					if (!cell) return "";
+					const header = headers[cellIndex]?.trim();
+					return header ? `${header}: ${cell}` : cell;
+				}).filter(Boolean);
+				if (values.length) output.push(`• ${values.join("; ")}`);
+				rows += 1;
+				index += 1;
+			}
+			if (!rows && headers.some(Boolean)) output.push(headers.filter(Boolean).join(" — "));
+			continue;
+		}
+		if (isMarkdownTableSeparator(line)) {
+			index += 1;
+			continue;
+		}
+		output.push(cleanPlainLine(line));
+		index += 1;
+	}
+	return output.join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+//#endregion
+//#region app/speed.ts
+var baseSpeeds = {
+	dwarf: 25,
+	duergar: 25,
+	halfling: 25,
+	gnome: 25,
+	deepgnome: 25,
+	grung: 25,
+	locathah: 30,
+	centaur: 40,
+	satyr: 35,
+	leonin: 35,
+	dhampir: 35
+};
+function equipment(character) {
+	return character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
+}
+/** Permanent walking speed and separately available movement modes (feet). */
+function speedBreakdown(character) {
+	const race = character.race;
+	const variant = character.raceVariant;
+	const items = equipment(character);
+	const armored = items.some((item) => /полулаты|латы|наборн(?:ый|ая) доспех|кольчуга|кольчат(?:ый|ая) доспех|нагрудник|чешуйчат|кольчужн(?:ая|ый) рубах|шкурн(?:ый|ая) доспех|прокл[её]панн(?:ая|ый) кож|кожан(?:ый|ая) доспех/i.test(item));
+	const heavy = items.find((item) => /(?:^|\s)латы(?:$|\s|\()|наборн(?:ый|ая) доспех|кольчуга|кольчат(?:ый|ая) доспех/i.test(item));
+	const medium = items.some((item) => /полулаты|нагрудник|чешуйчат|кольчужн(?:ая|ый) рубах|шкурн(?:ый|ая) доспех/i.test(item));
+	const shield = items.some((item) => /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s|\()/i.test(item));
+	const base = race === "elf" && variant === "wood" || race === "genasi" && variant === "motm-air" ? 35 : race === "aarakocra" && variant === "legacy-ee" ? 25 : race === "duergar" && !variant.startsWith("legacy") || race === "deepgnome" && !variant.startsWith("legacy") ? 30 : baseSpeeds[race] ?? 30;
+	const sources = [`${race}${variant ? ` (${variant})` : ""}: ${base}`];
+	const conditions = [];
+	let walk = base;
+	if (new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("mobile")) {
+		walk += 10;
+		sources.push("Подвижный +10");
+	}
+	if (getClassLevel(character, "barbarian") >= 5) if (!heavy) {
+		walk += 10;
+		sources.push("Быстрое передвижение варвара +10");
+	} else conditions.push("Быстрое передвижение варвара не действует в тяжёлом доспехе");
+	const monk = getClassLevel(character, "monk");
+	if (monk >= 2) {
+		const bonus = monk >= 18 ? 30 : monk >= 14 ? 25 : monk >= 10 ? 20 : monk >= 6 ? 15 : 10;
+		if (!armored && !shield) {
+			walk += bonus;
+			sources.push(`Движение без доспехов монаха +${bonus}`);
+		} else conditions.push("Движение монаха не действует с доспехом или щитом");
+	}
+	const requiredStrength = heavy && /(?:^|\s)латы(?:$|\s|\()|наборн(?:ый|ая) доспех/i.test(heavy) ? 15 : heavy && /кольчуга/i.test(heavy) ? 13 : 0;
+	if (requiredStrength && race !== "dwarf" && race !== "duergar" && character.abilities.str < requiredStrength) {
+		walk -= 10;
+		sources.push(`Тяжёлый доспех (Сила ${requiredStrength}) −10`);
+	}
+	const result = {
+		walk: Math.max(0, walk),
+		sources,
+		conditions
+	};
+	const followsWalk = (kind) => {
+		result[kind] = result.walk;
+	};
+	if (race === "genasi" && (variant === "water" || variant === "motm-water") || ["triton", "seafelf"].includes(race) || race === "locathah") result.swim = variant === "motm-water" || variant === "base" && race === "triton" || race === "seafelf" && !variant.startsWith("legacy") ? walk : 30;
+	if (race === "tabaxi") variant.startsWith("legacy") ? result.climb = 20 : followsWalk("climb");
+	if (race === "dhampir") result.climb = walk;
+	if (race === "hadozee") result.climb = walk;
+	if (race === "grung") result.climb = 25;
+	if (race === "aarakocra" || race === "fairy" || race === "owlin") if (heavy || medium) conditions.push("Полёт недоступен в среднем или тяжёлом доспехе");
+	else result.fly = race === "aarakocra" && variant === "legacy-ee" ? 50 : walk;
+	if (race === "aasimar" && [
+		"protector",
+		"multiverse",
+		"motm-111"
+	].includes(variant)) conditions.push("Сияющая душа: полёт доступен только при активации преображения");
+	if (race === "shifter" && ["swiftstride", "motm-swiftstride"].includes(variant)) conditions.push("Смена быстронога: +10 к скорости только во время Смены");
+	if (race === "tabaxi") conditions.push("Кошачья ловкость: удвоение скорости только при активации");
+	return result;
+}
+//#endregion
+//#region app/derivedSkills.ts
+var modifier$1 = (score) => Math.floor((score - 10) / 2);
+var proficiencyBonus$1 = (level) => Math.floor((Math.max(1, level) - 1) / 4) + 2;
+function skillBonusBreakdown(character, skill) {
+	const rule = skillKeys[skill];
+	if (!rule) throw new Error(`Unknown skill: ${skill}`);
+	const ability = modifier$1(character.abilities[rule.stat]);
+	const proficient = characterProficiencies(character).skills.includes(skill);
+	const expertise = proficient && characterExpertiseSkills(character).includes(skill);
+	const training = proficient ? proficiencyBonus$1(characterLevel(character)) * (expertise ? 2 : 1) : 0;
+	return {
+		value: ability + training,
+		ability,
+		training,
+		proficient,
+		expertise
+	};
+}
+function passivePerceptionBreakdown(character) {
+	const skill = skillBonusBreakdown(character, "Внимательность");
+	const observant = new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("observant") ? 5 : 0;
+	return {
+		value: 10 + skill.value + observant,
+		skill,
+		observant
+	};
+}
+//#endregion
+//#region app/initiative.ts
+var modifier = (score) => Math.floor((score - 10) / 2);
+/** Permanent initiative modifier; roll-specific dice and advantage remain notes. */
+function initiativeBreakdown(character) {
+	const pb = Math.floor((characterLevel(character) - 1) / 4) + 2;
+	const sources = [];
+	const notes = [];
+	let value = modifier(character.abilities.dex);
+	sources.push(`Ловкость ${value >= 0 ? "+" : ""}${value}`);
+	const add = (amount, source) => {
+		value += amount;
+		sources.push(`${source} ${amount >= 0 ? "+" : ""}${amount}`);
+	};
+	if (new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("alert")) add(5, "Бдительный");
+	if (character.race === "harengon") add(pb, "Заячья реакция");
+	const bard = getClassProgress(character, "bard");
+	const champion = getClassProgress(character, "fighter");
+	if (character.race !== "harengon") {
+		const jack = bard && bard.level >= 2 ? Math.floor(pb / 2) : 0;
+		const athlete = champion?.subclassId === "champion" && champion.level >= 7 ? Math.ceil(pb / 2) : 0;
+		if (Math.max(jack, athlete)) add(Math.max(jack, athlete), athlete >= jack && athlete ? "Выдающийся атлет" : "Мастер на все руки");
+	}
+	const rogue = getClassProgress(character, "rogue");
+	if (rogue?.subclassId === "swashbuckler" && rogue.level >= 3) add(modifier(character.abilities.cha), "Лихая удаль");
+	const wizard = getClassProgress(character, "wizard");
+	if (wizard && wizard.level >= 2 && ["warmagic", "chronurgy"].includes(wizard.subclassId || "")) add(modifier(character.abilities.int), wizard.subclassId === "warmagic" ? "Тактическая смекалка" : "Хрональная осведомлённость");
+	const ranger = getClassProgress(character, "ranger");
+	if (ranger?.subclassId === "gloomstalker" && ranger.level >= 3) add(modifier(character.abilities.wis), "Ужасающая засада");
+	if (getClassProgress(character, "barbarian")?.level && getClassProgress(character, "barbarian").level >= 7) notes.push("Дикий инстинкт: преимущество на бросок инициативы");
+	if (getClassProgress(character, "paladin")?.subclassId === "watchers" && getClassProgress(character, "paladin").level >= 7) notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
+	if (getClassProgress(character, "cleric")?.subclassId === "twilight") notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
+	return {
+		value,
+		sources,
+		notes
+	};
+}
+//#endregion
+//#region app/exportFormats.ts
+function abilityModifier$1(score) {
+	return Math.floor((score - 10) / 2);
+}
+function proficiencyBonus(level) {
+	return 2 + Math.floor((Math.max(1, level) - 1) / 4);
+}
+var helpmateAbilityKey = {
+	str: 1,
+	dex: 2,
+	con: 3,
+	int: 4,
+	wis: 5,
+	cha: 6
+};
+function darkvisionDistance(features) {
+	return features.reduce((distance, feature) => {
+		if (!/т[её]мное зрение/i.test(feature.name)) return distance;
+		const featureDistance = /превосходное/i.test(feature.name) || /120\s*фут/i.test(feature.description) || /больш(ой|ую) дистанц/i.test(feature.description) ? 120 : 60;
+		return Math.max(distance, featureDistance);
+	}, 0);
+}
+function estimatedHitPoints(character) {
+	const constitution = abilityModifier$1(character.abilities.con);
+	const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
+	return Math.max(1, history.reduce((total, entry) => {
+		const hitDie = classRules[entry.classId]?.hitDie || 8;
+		return total + (entry.characterLevel === 1 ? hitDie + constitution : entry.hpMode === "roll" || entry.hpMode === "manual" ? entry.hpGainFormat === "raw-roll-plus-con-v1" && Number.isInteger(entry.hpGain) ? Math.max(1, Math.min(hitDie, Math.max(1, entry.hpGain)) + constitution) : Math.max(1, entry.hpGain || 1) : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
+	}, 0));
+}
+function makeId() {
+	const bytes = crypto.getRandomValues(new Uint8Array(16));
+	bytes[6] = bytes[6] & 15 | 64;
+	bytes[8] = bytes[8] & 63 | 128;
+	const value = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+	return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+}
+function featureText(features) {
+	return features.map((feature) => `${feature.name}. ${normalizeExportText(feature.description)}`).join("\n");
+}
+var helpmateLanguageIds = Object.freeze({
+	"Общий": "12",
+	"Гномий": "13",
+	"Дварфский": "14",
+	"Полуросликов": "15",
+	"Эльфийский": "16",
+	"Орочий": "17",
+	"Великаний": "18",
+	"Гоблинский": "19",
+	"Драконий": "20",
+	"Бездны": "21",
+	"Глубинная речь": "22",
+	"Инфернальный": "23",
+	"Небесный": "24",
+	"Первичный": "25",
+	"Подземный": "26",
+	"Сильван": "27",
+	"Ауран": "28",
+	"Телепатия": "29",
+	"Гитский": "31",
+	"Язык Жаболюдов": "32",
+	"Акван": "33",
+	"Терран": "34",
+	"Игнан": "35",
+	"Гноллий": "36",
+	"Язык Греллов": "37",
+	"Язык Крюкастых ужасов": "38",
+	"Модронский": "39",
+	"Отиджский": "40",
+	"Сахуагинский": "41",
+	"Слаадский": "42",
+	"Язык Сфинксов": "43",
+	"Три-кринский": "44",
+	"Друидический": "45",
+	"Троглодитский": "46",
+	"Язык Бурых увальней": "47",
+	"Язык Йети": "48",
+	"Язык Воргов": "49",
+	"Язык Гигантских сов": "50",
+	"Язык Гигантских лосей": "51",
+	"Язык Гигантских орлов": "52",
+	"Язык Мерцающих псов": "53",
+	"Язык Полярных волков": "54",
+	"Воровской жаргон": "55",
+	"Общий (Жесты)": "56",
+	"Тэйский": "57"
+});
+function helpmateNote(context) {
+	return summaryText(context).split(/\n\n+/).filter((block) => !/^Языки:\s*/i.test(block.trim())).map((block) => {
+		const [title, ...body] = block.split("\n");
+		const labeled = title.match(/^([^:]+):\s*(.*)$/);
+		if (!labeled) return block;
+		return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\n${body.join("\n")}` : ""}`;
+	}).join("\n").replace(/\r\n?/g, "\n").replace(/\n{2,}/g, "\n").replace(/\n/g, "\r\n");
+}
+function summaryText(context) {
+	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
+	const selectedSpells = [...new Set([
+		...character.spells,
+		...context.featSpellIds || [],
+		...context.alwaysPreparedSpellIds || []
+	])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
+	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const alwaysPreparedNames = [...alwaysPrepared].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const classes = orderedCharacterClasses(character);
+	const totalLevel = characterLevel(character);
+	const spellAbility = classRules[character.className]?.spellAbility;
+	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
+	const spellDc = spellAbility ? 8 + proficiencyBonus(totalLevel) + spellMod : 0;
+	const resources = characterResources(character).map((resource) => `${resource.name}: ${resourceCurrent(character, resource)} / ${resource.max}${resource.die ? ` (${resource.die})` : ""}`);
+	const backgroundData = backgroundRule(character.background, background);
+	const equipment = selectedEquipment(character);
+	const attacks = characterAttacks(character, spells);
+	const proficiencies = characterProficiencies(character);
+	const classSummary = classes.map((entry) => `${entry.classId}${entry.subclassId ? ` (${entry.subclassId})` : ""} ${entry.level}`).join(" / ");
+	const hitDice = hitDicePools(character).map((pool) => `${pool.max}к${pool.die}${pool.spent ? ` (потрачено ${pool.spent})` : ""}`).join(" + ");
+	const spellSources = classes.flatMap((entry) => {
+		const ability = classRules[entry.classId]?.spellAbility;
+		if (!ability) return [];
+		const mod = abilityModifier$1(character.abilities[ability]);
+		return [`${entry.classId} ${entry.level}: ${ability.toUpperCase()}, Сл ${8 + proficiencyBonus(totalLevel) + mod}, атака ${proficiencyBonus(totalLevel) + mod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + mod}`];
+	});
+	return [
+		`Имя: ${character.name || "Безымянный герой"}`,
+		`Игрок: ${character.playerName || ""}`,
+		`Классы: ${classSummary || `${characterClass?.name || ""}, уровень ${character.level}`}`,
+		`Общий уровень: ${totalLevel}; стартовый класс: ${getStartingClassId(character) || "не указан"}`,
+		`Кости хитов: ${hitDice || "нет"}`,
+		`Раса: ${race?.name || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
+		`Предыстория: ${background?.name || ""}`,
+		`Особенность предыстории: ${backgroundData.feature.name}. ${normalizeExportText(backgroundData.feature.description)}`,
+		`Навыки: ${proficiencies.skills.join(", ") || "нет"}`,
+		`Доспехи: ${proficiencies.armor.join(", ") || "нет"}`,
+		`Оружие: ${proficiencies.weapons.join(", ") || "нет"}`,
+		`Инструменты: ${proficiencies.tools.join(", ") || "нет"}`,
+		`Языки: ${proficiencies.languages.join(", ") || "нет"}`,
+		`Черты: ${(context.featNames || []).join(", ") || "нет"}`,
+		`Черты характера: ${character.personality.traits}`,
+		`Идеалы: ${character.personality.ideals}`,
+		`Привязанности: ${character.personality.bonds}`,
+		`Слабости: ${character.personality.flaws}`,
+		`Расовые особенности:\n${featureText(raceFeatureList)}`,
+		`Классовые особенности:\n${featureText(classFeatureList)}`,
+		...spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + spellMod}`] : [],
+		...spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : [],
+		`Ресурсы: ${resources.join("; ") || "нет"}`,
+		`Снаряжение: ${equipment.join(", ") || "нет"}`,
+		`Атаки: ${attacks.map((attack) => `${attack.name} — ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
+		`Примечание к атакам: ${automaticAttacksNotice}`,
+		`Заклинания: ${selectedSpells.join(", ") || "нет"}`,
+		...preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : [],
+		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []
+	].join("\n\n");
+}
+var helpmateAbilityOrder = {
+	str: ["Атлетика"],
+	dex: [
+		"Акробатика",
+		"Ловкость рук",
+		"Скрытность"
+	],
+	con: [],
+	int: [
+		"Магия",
+		"История",
+		"Расследование",
+		"Природа",
+		"Религия"
+	],
+	wis: [
+		"Уход за животными",
+		"Проницательность",
+		"Медицина",
+		"Внимательность",
+		"Выживание"
+	],
+	cha: [
+		"Обман",
+		"Запугивание",
+		"Выступление",
+		"Убеждение"
+	]
+};
+var helpmateAbilityNames = {
+	str: "STR",
+	dex: "DEX",
+	con: "CON",
+	int: "INT",
+	wis: "WIS",
+	cha: "CHA"
+};
+var helpmateClassIds = Object.freeze({
+	barbarian: "11",
+	bard: "12",
+	cleric: "13",
+	fighter: "14",
+	monk: "15",
+	paladin: "16",
+	ranger: "17",
+	rogue: "18",
+	sorcerer: "19",
+	warlock: "20",
+	wizard: "21",
+	druid: "22",
+	artificer: "23"
+});
+var helpmateSubclassClassIds = Object.freeze({
+	fighter: Object.freeze({ eldritchknight: "25" }),
+	rogue: Object.freeze({ arcanetrickster: "26" })
+});
+function helpmateSelectedSpellIds(context) {
+	return [...new Set([
+		...context.character.spells,
+		...context.featSpellIds || [],
+		...context.alwaysPreparedSpellIds || []
+	])];
+}
+function helpmateSkippedSpells(context) {
+	return helpmateSelectedSpellIds(context).filter((id) => !helpmateSpellId(id)).map((id) => context.spells.find((spell) => spell.id === id)).filter((spell) => Boolean(spell));
+}
+function createHelpmateExport(context) {
+	const { character, race, raceFeatureList } = context;
+	const selectedSkills = new Set(characterProficiencies(character).skills);
+	const classes = orderedCharacterClasses(character);
+	const totalLevel = characterLevel(character);
+	const startingClassId = getStartingClassId(character);
+	const saves = new Set(classRules[startingClassId]?.saves || []);
+	const hitPoints = estimatedHitPoints(character);
+	const darkvision = darkvisionDistance(raceFeatureList);
+	const movement = speedBreakdown(character);
+	const parameters = Object.keys(helpmateAbilityOrder).map((key) => ({
+		Name: helpmateAbilityNames[key],
+		Value: character.abilities[key],
+		UserSpasValue: 0,
+		Proficiency: saves.has(key),
+		Abilities: helpmateAbilityOrder[key].map((skill) => ({
+			UserValue: 0,
+			MinValue: 0,
+			Proficiency: selectedSkills.has(skill)
+		}))
+	}));
+	const selectedHelpmateSpellIds = helpmateSelectedSpellIds(context).map(helpmateSpellId).filter((id) => Boolean(id));
+	const ordinarySpellcasters = classes.filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster && entry.classId !== "warlock");
+	const sharedSlots = resolveSpellSlots(character);
+	const primarySpellcaster = classes.find((entry) => entry.classId === character.primarySpellcastingClassId) || classes.find((entry) => Boolean(classRules[entry.classId]?.spellAbility));
+	const spellAbility = primarySpellcaster ? classRules[primarySpellcaster.classId]?.spellAbility : void 0;
+	const spellModifier = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
+	const spellAttack = proficiencyBonus(character.level) + spellModifier;
+	const spellSaveDc = spellAbility ? 8 + spellAttack : null;
+	const pact = resolvePactMagic(character);
+	const classesPayload = classes.map((entry) => {
+		const selection = spellSelectionRuleForClass(character, entry.classId, entry.level);
+		const cells = [
+			...selection.cantrips ? [{
+				Level: 0,
+				Left: selection.cantrips,
+				Max: selection.cantrips
+			}] : [],
+			...entry.classId !== "warlock" && ordinarySpellcasters.length === 1 ? sharedSlots.map((max, index) => ({
+				Level: index + 1,
+				Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)),
+				Max: max
+			})) : [],
+			...entry.classId === "warlock" && pact.slots ? [{
+				Level: pact.level,
+				Left: Math.max(0, pact.slots - (character.pactSlotsUsed || 0)),
+				Max: pact.slots
+			}] : []
+		];
+		const id = helpmateSubclassClassIds[entry.classId]?.[entry.subclassId || ""] || helpmateClassIds[entry.classId];
+		if (!id) throw new Error(`Helpmate: неизвестный класс ${entry.classId}.`);
+		return {
+			Id: id,
+			Level: entry.level,
+			SpellCells: cells
+		};
+	});
+	if (new Set(classesPayload.map((entry) => entry.Id)).size !== classesPayload.length) throw new Error("Helpmate: два класса получили один идентификатор.");
+	if (classesPayload.reduce((sum, entry) => sum + entry.Level, 0) !== totalLevel) throw new Error("Helpmate: уровни классов не совпадают с общим уровнем.");
+	return {
+		Id: makeId(),
+		MyRaceId: null,
+		UserRace: [race?.name, context.raceVariantName].filter(Boolean).join(" — "),
+		TokenColor: "196|196|9|255",
+		SecondName: null,
+		Speed: movement.walk,
+		IHaveLight: false,
+		TorchValue: 0,
+		TorchValueSecond: 0,
+		CellEyeValue: darkvision,
+		EyeEnabled: darkvision > 0,
+		SoundFolder: null,
+		ImDoubleHeal: false,
+		SeeInTheDark: darkvision > 0,
+		Gold: character.currency.gp || 0,
+		Silver: character.currency.sp || 0,
+		Copper: character.currency.cp || 0,
+		HitPoints: hitPoints,
+		CurrentHitPoints: character.currentHitPoints ?? hitPoints,
+		TempHitPoints: character.temporaryHitPoints || 0,
+		TempCurrentHitPoints: character.temporaryHitPoints || 0,
+		HasInspiration: !!character.inspiration,
+		Alignment: 0,
+		HitDice: isMulticlass(character) ? 0 : classRules[character.className]?.hitDie || 8,
+		HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
+		IsArmorTakeOf: false,
+		TwoHanded: false,
+		FlyValue: movement.fly || 0,
+		IsFly: Boolean(movement.fly),
+		FamiliarId: null,
+		SelectedSaveThrowKey: spellAbility ? helpmateAbilityKey[spellAbility] : 0,
+		SizeIndex: 2,
+		TagString: null,
+		Skills: [],
+		Languages: characterProficiencies(character).languages.map((language) => helpmateLanguageIds[language]).filter(Boolean).join("|") || "12",
+		Multiplier: 1,
+		TrueMultiplier: 0,
+		Inspiration: character.inspiration ? 1 : 0,
+		Armor: armorClass(character),
+		Bditelnost: passivePerceptionBreakdown(character).value,
+		IniBonus: initiativeBreakdown(character).value,
+		IsPlaying: false,
+		Note: helpmateNote(context),
+		FirstSpellText: spellSaveDc === null ? null : `Сл спасброска заклинаний: ${spellSaveDc}`,
+		SecondSpellText: spellSaveDc === null ? null : `Бонус атаки заклинанием: ${spellAttack >= 0 ? "+" : ""}${spellAttack}`,
+		Spells: selectedHelpmateSpellIds,
+		HandsCapacity: 1,
+		HandsItems: [],
+		MainHandsItems: [],
+		ArrowItems: [],
+		InventoryItems: [],
+		Parameters: parameters,
+		Classes: classesPayload,
+		DamageResist: "",
+		DamageImmun: "",
+		DamageVulner: "",
+		HasAura: false,
+		AuraSize: 15,
+		AuraAngle: 100,
+		AuraAngleSize: 360,
+		AuraOpacity: 1,
+		AuraType: "",
+		AuraColorEnable: true,
+		ShowAuraCells: false,
+		IsRotationEnable: false,
+		IsWallBlock: false,
+		ShowAuraToPlayers: true,
+		CustomAuraImage: null,
+		CustomStatuses: []
+	};
+}
+function richText(value, id) {
+	const content = normalizeExportText(value).split(/\n+/).map((line) => line.trim()).filter(Boolean).map((text) => ({
+		type: "paragraph",
+		content: [{
+			type: "text",
+			text
+		}]
+	}));
+	return { value: {
+		id: `hover-toolbar-${id}-${Date.now()}`,
+		data: {
+			type: "doc",
+			content: content.length ? content : [{ type: "paragraph" }]
+		}
+	} };
+}
+function richLabeledText(lines, id) {
+	const content = lines.flatMap(([label, value]) => {
+		const normalized = normalizeExportText(value || "нет").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+		return (normalized.length ? normalized : ["нет"]).map((text, index) => ({
+			type: "paragraph",
+			content: index === 0 ? [{
+				type: "text",
+				marks: [{ type: "bold" }],
+				text: `${label}: `
+			}, {
+				type: "text",
+				text
+			}] : [{
+				type: "text",
+				text
+			}]
+		}));
+	});
+	return { value: {
+		id: `hover-toolbar-${id}-${Date.now()}`,
+		data: {
+			type: "doc",
+			content
+		}
+	} };
+}
+function richFeatureText(features, id) {
+	const content = features.flatMap((feature) => {
+		const heading = `${feature.name}.`;
+		const lines = normalizeExportText(feature.description).split(/\n+/).map((line) => line.trim()).filter(Boolean);
+		if (!lines.length) return [{
+			type: "paragraph",
+			content: [{
+				type: "text",
+				marks: [{ type: "bold" }],
+				text: heading
+			}]
+		}];
+		return lines.map((text, index) => ({
+			type: "paragraph",
+			content: index === 0 ? [{
+				type: "text",
+				marks: [{ type: "bold" }],
+				text: heading
+			}, {
+				type: "text",
+				text: ` ${text}`
+			}] : [{
+				type: "text",
+				text
+			}]
+		}));
+	});
+	return { value: {
+		id: `hover-toolbar-${id}-${Date.now()}`,
+		data: {
+			type: "doc",
+			content: content.length ? content : [{ type: "paragraph" }]
+		}
+	} };
+}
+var mechanicalVerbs = /бонусным действием|действием|реакци|спасброс|провер(?:к|ок)|атак|урон|трат|использ|соверш|накладыва|восстанавлив|до конца|в течение|раз за|после короткого|после продолжительного|помех|преимуществ|сопротивлен|иммунитет|игнорир|кость|считается|сл\s|кд/i;
+var briefGrant = /получаете владение|получаете компетентность|увеличивается на|повышается на|изучаете язык|изучаете .*заговор|получаете .*язык/i;
+/** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
+function conciseLssFeature(feature, required = false) {
+	if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
+	const sourceHasTable = /\|\s*:?-{3,}:?/.test(feature.description);
+	let description = normalizeExportText(feature.description).split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0].replace(/•\s*-{5,}[\s\S]*/g, "").replace(/[^\S\n]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+	if (sourceHasTable) {
+		description = description.split("\n").filter((line) => !/^•\s+[^;:]+:\s*.*;\s*[^;:]+:\s*/.test(line.trim())).join("\n").replace(/\n{3,}/g, "\n\n").trim();
+		if (!description) description = "Подробная таблица — в заметках.";
+	}
+	if (!description) return required ? {
+		...feature,
+		description: "Выбранная черта персонажа."
+	} : null;
+	if (feature.name === "Всплеск действий") return {
+		...feature,
+		description
+	};
+	const sentences = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((value) => value.trim()) || [description];
+	if (briefGrant.test(description) && !mechanicalVerbs.test(description.replace(briefGrant, ""))) description = sentences.slice(0, 2).join(" ");
+	else if (description.length > 900) {
+		const important = sentences.filter((sentence) => mechanicalVerbs.test(sentence));
+		description = [...new Set([sentences[0], ...important])].join(" ").slice(0, 1400).trim();
+	}
+	return {
+		...feature,
+		description
+	};
+}
+var lssNoteWidths = [
+	76,
+	36,
+	76,
+	36,
+	76,
+	36
+];
+var lssNoteLineLimit = 19;
+function lssWrappedLines(value, width) {
+	return Math.max(1, Math.ceil(Math.max(1, value.trim().length) / width));
+}
+function splitLssLine(value, maxChars) {
+	if (value.length <= maxChars) return [value, ""];
+	let cut = value.lastIndexOf(" ", maxChars);
+	if (cut < Math.floor(maxChars * .55)) cut = maxChars;
+	return [value.slice(0, cut).trim(), value.slice(cut).trim()];
+}
+function distributeLssNotes(groups, count = 6) {
+	const entries = groups.flatMap((group) => group.features.map((feature) => {
+		const concise = conciseLssFeature(feature, group.required);
+		if (!concise) return null;
+		const noteFeature = group.full ? {
+			...feature,
+			description: normalizeExportText(feature.description)
+		} : concise;
+		return {
+			...noteFeature,
+			name: `${group.label} · ${noteFeature.name}`
+		};
+	})).filter(Boolean);
+	const notes = Array.from({ length: count }, () => []);
+	const usedLines = Array.from({ length: count }, () => 0);
+	let note = 0;
+	for (const feature of entries) {
+		const pending = normalizeExportText(feature.description).split(/\n+/).map((line) => line.trim()).filter(Boolean);
+		if (!pending.length) pending.push("—");
+		let continuation = false;
+		while (pending.length && note < count) {
+			const width = lssNoteWidths[note] || 60;
+			const heading = continuation ? `${feature.name} (продолжение)` : feature.name;
+			const headingLines = lssWrappedLines(heading, width);
+			if (usedLines[note] > 0 && usedLines[note] + headingLines + 1 >= lssNoteLineLimit) {
+				note += 1;
+				continue;
+			}
+			let remaining = Math.max(1, lssNoteLineLimit - usedLines[note] - headingLines);
+			const chunk = [];
+			while (pending.length && remaining > 0) {
+				const line = pending[0];
+				const lineLines = lssWrappedLines(line, width);
+				if (lineLines <= remaining) {
+					chunk.push(line);
+					pending.shift();
+					remaining -= lineLines;
+					continue;
+				}
+				if (chunk.length) break;
+				const [part, rest] = splitLssLine(line, Math.max(width, width * remaining));
+				chunk.push(part);
+				if (rest) pending[0] = rest;
+				else pending.shift();
+				remaining = 0;
+			}
+			const bodyLines = chunk.reduce((sum, line) => sum + lssWrappedLines(line, width), 0);
+			notes[note].push({
+				...feature,
+				name: heading,
+				description: chunk.join("\n")
+			});
+			usedLines[note] += headingLines + bodyLines;
+			continuation = true;
+			if (pending.length) note += 1;
+		}
+		if (pending.length) notes[count - 1].push({
+			...feature,
+			name: `${feature.name} (продолжение)`,
+			description: pending.join("\n")
+		});
+	}
+	return notes;
+}
+function lssFeatureOrder(feature) {
+	if (/дополнительн.*атак|мультиатак|четыре атаки/i.test(feature.name)) return -200;
+	if (/ув[её]ртливость|уворот/i.test(feature.name)) return -190;
+	return feature.level || 1;
+}
+function orderedLssFeatures(features) {
+	return features.map((feature, index) => ({
+		feature,
+		index
+	})).sort((a, b) => lssFeatureOrder(a.feature) - lssFeatureOrder(b.feature) || a.index - b.index).map((item) => item.feature);
+}
+function richSpellText(spells, level) {
+	const content = spells.filter((spell) => spell.level === level).map((spell) => ({
+		type: "paragraph",
+		content: [{
+			type: "text",
+			marks: [{
+				type: "link",
+				attrs: {
+					href: dndSpellUrl(spell.id) || spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
+					target: "_blank",
+					rel: "noopener noreferrer nofollow",
+					class: null
+				}
+			}],
+			text: spell.name
+		}]
+	}));
+	return { value: {
+		id: `hover-toolbar-spells-level-${level}-${Date.now()}`,
+		data: {
+			type: "doc",
+			content: content.length ? content : null
+		}
+	} };
+}
+var skillEnglish = Object.fromEntries(Object.values(skillKeys).map(({ key, stat }) => [key, {
+	baseStat: stat,
+	name: key
+}]));
+function lssSlots(slots) {
+	return Object.fromEntries(slots.map((value, index) => [`slots-${index + 1}`, { value }]));
+}
+function lssSlotState(slots, used = []) {
+	return Object.fromEntries(slots.flatMap((maximum, circle) => Array.from({ length: maximum }, (_, index) => [`level-${circle + 1}-slot-${index}`, { isChecked: index < (used[circle] || 0) }])));
+}
+function lssPact(pact, used = 0) {
+	if (!pact.slots || !pact.level) return {};
+	return {
+		level: { value: pact.level },
+		slots: { value: pact.slots },
+		used: { value: Math.max(0, Math.min(pact.slots, used)) }
+	};
+}
+function lssSkills(selectedSkills, expertiseSkills) {
+	const ordered = [
+		"acrobatics",
+		"investigation",
+		"athletics",
+		"perception",
+		"survival",
+		"performance",
+		"intimidation",
+		"history",
+		"sleight of hand",
+		"arcana",
+		"medicine",
+		"deception",
+		"nature",
+		"insight",
+		"religion",
+		"stealth",
+		"persuasion",
+		"animal handling"
+	];
+	const selectedEnglish = new Set([...selectedSkills].map(externalSkillId).filter(Boolean));
+	const expertiseEnglish = new Set([...expertiseSkills].map(externalSkillId).filter(Boolean));
+	return Object.fromEntries(ordered.map((key) => [key, {
+		...skillEnglish[key],
+		isProf: expertiseEnglish.has(key) ? 2 : selectedEnglish.has(key) ? 1 : 0
+	}]));
+}
+function createLongStoryShortExport(context) {
+	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
+	const proficiencies = characterProficiencies(character);
+	const selectedSkills = new Set(proficiencies.skills);
+	const expertiseSkills = new Set(characterExpertiseSkills(character));
+	const saves = new Set(classRules[character.className]?.saves || []);
+	const spellAbility = classRules[character.className]?.spellAbility;
+	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
+	const prof = proficiencyBonus(character.level);
+	const sharedSpellSlots = resolveSpellSlots(character);
+	const pactMagic = resolvePactMagic(character);
+	const chosenSpells = [...new Set([
+		...character.spells,
+		...context.featSpellIds || [],
+		...context.alwaysPreparedSpellIds || []
+	])].map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
+	const retainedCardIds = (values) => (values || []).filter((value) => /^[0-9a-f]{24}$/i.test(value));
+	const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
+	const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
+	const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
+	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const alwaysPreparedNames = (context.alwaysPreparedSpellIds || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const profLines = [
+		["Доспехи", proficiencies.armor.join(", ") || "нет"],
+		["Оружие", proficiencies.weapons.join(", ") || "нет"],
+		["Навыки", proficiencies.skills.join(", ") || "нет"],
+		["Инструменты", proficiencies.tools.join(", ") || "нет"],
+		["Языки", proficiencies.languages.join(", ") || "нет"],
+		...raceFeatureList.map((feature) => [`Раса · ${feature.name}`, feature.description])
+	];
+	const backgroundData = backgroundRule(character.background, background);
+	const equipment = selectedEquipment(character);
+	const attacks = characterAttacks(character, spells);
+	const spellMasteryNames = ["spell-mastery-1", "spell-mastery-2"].flatMap((key) => character.classChoices?.[key] || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const exportClassFeatures = orderedLssFeatures(classFeatureList.map((feature) => feature.name === "Мастерство заклинателя" && spellMasteryNames.length ? {
+		...feature,
+		description: `${spellMasteryNames.join(" и ")}: пока выбранные заклинания подготовлены, вы можете накладывать их на минимальном круге без траты ячеек.`
+	} : feature));
+	const conciseClassFeatures = exportClassFeatures.map((feature) => conciseLssFeature(feature)).filter(Boolean);
+	const allFeatFeatures = orderedLssFeatures(context.featFeatureList || []);
+	const primaryFeatFeatures = allFeatFeatures.slice(0, 2).map((feature) => conciseLssFeature(feature, true)).filter(Boolean);
+	const overflowFeatFeatures = allFeatFeatures.slice(2);
+	const noteColumns = distributeLssNotes([{
+		label: "Класс",
+		features: exportClassFeatures,
+		full: true
+	}, {
+		label: "Черта",
+		features: overflowFeatFeatures,
+		required: true,
+		full: true
+	}]);
+	const inner = {
+		jsonType: "character",
+		template: "default",
+		name: { value: character.name || "Безымянный герой" },
+		info: {
+			charClass: {
+				name: "charClass",
+				value: characterClass?.name || ""
+			},
+			charSubclass: {
+				name: "charSubclass",
+				value: context.subclassName || ""
+			},
+			level: {
+				name: "level",
+				value: character.level
+			},
+			background: {
+				name: "background",
+				value: background?.name || ""
+			},
+			playerName: {
+				name: "playerName",
+				value: character.playerName
+			},
+			race: {
+				name: "race",
+				value: [race?.name, context.raceVariantName].filter(Boolean).join(" · ")
+			},
+			alignment: {
+				name: "alignment",
+				value: character.alignment
+			},
+			experience: {
+				name: "experience",
+				value: ""
+			}
+		},
+		subInfo: {
+			age: {
+				name: "age",
+				value: ""
+			},
+			height: {
+				name: "height",
+				value: ""
+			},
+			weight: {
+				name: "weight",
+				value: ""
+			},
+			eyes: {
+				name: "eyes",
+				value: ""
+			},
+			skin: {
+				name: "skin",
+				value: ""
+			},
+			hair: {
+				name: "hair",
+				value: ""
+			}
+		},
+		spellsInfo: {
+			base: {
+				name: "base",
+				value: "",
+				...spellAbility ? {
+					label: "Базовая характеристика заклинаний",
+					code: spellAbility
+				} : {}
+			},
+			save: {
+				name: "save",
+				value: "",
+				label: "Сложность спасброска",
+				customModifier: null
+			},
+			mod: {
+				name: "mod",
+				value: "",
+				label: "Бонус атаки заклинанием",
+				customModifier: spellAbility ? spellMod : null
+			},
+			available: { classes: character.className ? [character.className] : [] }
+		},
+		spells: {
+			...lssSlots(sharedSpellSlots),
+			...lssSlotState(sharedSpellSlots, character.spellSlotsUsed)
+		},
+		spellsPact: lssPact(pactMagic, character.pactSlotsUsed),
+		bonuses: [],
+		proficiency: prof,
+		stats: Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, {
+			name: key,
+			score: character.abilities[key],
+			label: abilityLabels[key],
+			modifier: 0
+		}])),
+		saves: Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, {
+			name: key,
+			isProf: saves.has(key),
+			bonus: 0
+		}])),
+		skills: lssSkills(selectedSkills, expertiseSkills),
+		vitality: {
+			"hp-dice-current": { value: hitDicePools(character).reduce((total, pool) => total + pool.max - pool.spent, 0) },
+			"hp-dice-multi": {},
+			"hp-max-con-bonus": { value: 0 },
+			darkvision: { value: darkvisionDistance(raceFeatureList) },
+			"hp-max": { value: estimatedHitPoints(character) },
+			"hp-current": { value: character.currentHitPoints ?? estimatedHitPoints(character) },
+			"hp-temp": { value: character.temporaryHitPoints || 0 },
+			isDying: false,
+			deathFails: 0,
+			deathSuccesses: 0,
+			ac: { value: armorClass(character) },
+			speed: { value: speedBreakdown(character).walk },
+			"hit-die": { value: `D${classRules[character.className]?.hitDie || 8}` },
+			"hp-max-bonus": { value: 0 }
+		},
+		attunementsList: [{
+			id: `attunement-${Date.now()}`,
+			checked: false,
+			value: ""
+		}],
+		weaponsList: lssWeaponAttacks(attacks),
+		text: {
+			traits: richFeatureText(conciseClassFeatures, "traits"),
+			attacks: richText(attacks.map((attack) => `${attack.name}: ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}; урон ${attack.damageDisplay}${attack.note ? `. ${attack.note}` : ""}`).join("\n"), "attacks"),
+			"spells-level-0": richSpellText(chosenSpells, 0),
+			"spells-level-1": richSpellText(chosenSpells, 1),
+			"spells-level-2": richSpellText(chosenSpells, 2),
+			"spells-level-3": richSpellText(chosenSpells, 3),
+			"spells-level-4": richSpellText(chosenSpells, 4),
+			"spells-level-5": richSpellText(chosenSpells, 5),
+			...chosenSpells.some((spell) => spell.level >= 6) ? { "spells-level-6": richSpellText(chosenSpells, 6) } : {},
+			...chosenSpells.some((spell) => spell.level >= 7) ? { "spells-level-7": richSpellText(chosenSpells, 7) } : {},
+			...chosenSpells.some((spell) => spell.level >= 8) ? { "spells-level-8": richSpellText(chosenSpells, 8) } : {},
+			...chosenSpells.some((spell) => spell.level >= 9) ? { "spells-level-9": richSpellText(chosenSpells, 9) } : {},
+			equipment: richText(equipment.join("\n"), "equipment"),
+			background: richLabeledText([[background?.name || "Предыстория", background?.description || ""], [backgroundData.feature.name, backgroundData.feature.description]], "background"),
+			ideals: richText(character.personality.ideals, "ideals"),
+			personality: {
+				...richText(character.personality.traits, "personality"),
+				size: 0
+			},
+			flaws: {
+				...richText(character.personality.flaws, "flaws"),
+				size: 0
+			},
+			bonds: richText(character.personality.bonds, "bonds"),
+			allies: richText(backgroundData.feature.description, "allies"),
+			quests: richLabeledText([["Подготовленные заклинания", preparedSpellNames.join(", ") || "Нет"], ["Всегда подготовлены — вне лимита", alwaysPreparedNames.join(", ") || "Нет"]], "quests"),
+			prof: richLabeledText(profLines, "prof"),
+			"notes-1": {
+				...richFeatureText(noteColumns[0], "notes-1"),
+				size: 7
+			},
+			"notes-2": {
+				...richFeatureText(noteColumns[1], "notes-2"),
+				size: 7
+			},
+			"notes-3": {
+				...richFeatureText(noteColumns[2], "notes-3"),
+				size: 7
+			},
+			"notes-4": {
+				...richFeatureText(noteColumns[3], "notes-4"),
+				size: 7
+			},
+			"notes-5": {
+				...richFeatureText(noteColumns[4], "notes-5"),
+				size: 7
+			},
+			"notes-6": {
+				...richFeatureText(noteColumns[5], "notes-6"),
+				size: 7
+			},
+			features: richFeatureText(primaryFeatFeatures, "features"),
+			items: { value: { data: "" } }
+		},
+		coins: {},
+		resources: Object.fromEntries(characterResources(character).map((resource) => [resource.key, {
+			name: resource.die ? `${resource.name} (${resource.die})` : resource.name,
+			current: resourceCurrent(character, resource),
+			max: resource.max,
+			isShortRest: resource.isShortRest,
+			isLongRest: resource.isLongRest
+		}])),
+		bonusesSkills: {},
+		bonusesStats: {},
+		conditions: null,
+		wizardStep: "initial",
+		isDefault: true,
+		weapons: {},
+		hiddenName: character.name || "Безымянный герой",
+		casterClass: { value: characterClass?.name || "" },
+		avatar: {
+			jpeg: "",
+			webp: ""
+		},
+		inspiration: false,
+		exhaustion: "",
+		createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+		proficiencyCustom: 0
+	};
+	return {
+		tags: [],
+		disabledBlocks: {
+			"info-left": [],
+			"info-right": [],
+			"subinfo-left": [],
+			"subinfo-right": [],
+			"notes-left": [],
+			"notes-right": [],
+			_id: "6966767ee00af79ebacfb426"
+		},
+		edition: "2014",
+		spells: {
+			mode: hasRetainedCards ? "cards" : "text",
+			prepared: retainedPreparedCards,
+			book: retainedBookCards,
+			edition: character.lssSpellCards?.edition || "2014"
+		},
+		data: JSON.stringify(inner),
+		lastWriterSessionId: `${Date.now()}-list-geroya5e`,
+		linkAccess: "none",
+		rooms: [],
+		sheetEdition: "2014",
+		jsonType: "character",
+		version: "2",
+		wizard: {}
+	};
+}
+//#endregion
+//#region app/hpProgress.ts
+/** A conscious edit to one level; legacy totals are never inferred as raw rolls. */
+function setHitPointRoll(character, characterLevel, roll) {
+	const history = normalizedLevelHistory(character);
+	const index = history.findIndex((entry) => entry.characterLevel === characterLevel && characterLevel > 1);
+	if (index < 0) return character;
+	const die = classRules[history[index].classId]?.hitDie || 8;
+	if (roll !== null && (!Number.isInteger(roll) || roll < 1 || roll > die)) return character;
+	const updated = [...history];
+	updated[index] = roll === null ? {
+		...updated[index],
+		hpMode: "average",
+		hpGain: void 0,
+		hpGainFormat: void 0
+	} : {
+		...updated[index],
+		hpMode: "roll",
+		hpGain: roll,
+		hpGainFormat: "raw-roll-plus-con-v1"
+	};
+	const next = {
+		...character,
+		levelHistory: updated
+	};
+	return character.currentHitPoints === void 0 ? next : {
+		...next,
+		currentHitPoints: Math.min(character.currentHitPoints, estimatedHitPoints(next))
+	};
+}
 var quizData_default = {
 	version: "1.2.1",
 	coreQuestionIds: [
@@ -29893,3660 +33577,6 @@ function HeroQuiz({ onClose, onCreate }) {
 			})
 		]
 	});
-}
-//#endregion
-//#region app/helpmateSpellMap.ts
-var verifiedHelpmateSpellIds = Object.freeze({
-	"absorb": "502",
-	"acid-splash": "13",
-	"aid": "236",
-	"alarm": "313",
-	"alter-self": "323",
-	"animate-dead": "35",
-	"animate-objects": "364",
-	"antimagic-field": "263",
-	"arcane-eye": "151",
-	"arcane-lock": "29",
-	"armoragathys": "59",
-	"arms-of-hadar": "305",
-	"aura-of-vitality": "3",
-	"bane": "254",
-	"banishment": "116",
-	"barkskin": "74",
-	"beacon-of-hope": "158",
-	"bestow-curse": "285",
-	"bless": "9",
-	"blight": "96",
-	"blindness-deafness": "45",
-	"blink": "161",
-	"blur": "295",
-	"booming": "TCoE_1",
-	"branding-smite": "131",
-	"burning-hands": "203",
-	"call-lightning": "272",
-	"calm-emotions": "102",
-	"catapult": "472",
-	"ceremony": "541",
-	"chain-lightning": "233",
-	"charm-person": "221",
-	"chill-touch": "140",
-	"chromatic-orb": "86",
-	"circle-of-power": "135",
-	"clairvoyance": "238",
-	"cloud-of-daggers": "190",
-	"cloudkill": "191",
-	"command": "276",
-	"commune": "198",
-	"comprehend-languages": "252",
-	"coneofcold": "133",
-	"confusion": "325",
-	"conjure-animals": "267",
-	"conjure-barrage": "268",
-	"conjure-elemental": "275",
-	"conjure-minor-elementals": "271",
-	"contagion": "92",
-	"counterspell": "132",
-	"crusaders-mantle": "156",
-	"curewounds": "145",
-	"darkness": "353",
-	"darkvision": "368",
-	"death-ward": "104",
-	"demiplane": "55",
-	"detect-thoughts": "196",
-	"detectmagic": "195",
-	"dimensiondoor": "228",
-	"disguise-self": "157",
-	"disintegrate": "299",
-	"dispel-magic": "301",
-	"dissonant-whispers": "56",
-	"divination": "266",
-	"divine-favor": "10",
-	"divine-word": "12",
-	"dominate-beast": "239",
-	"dominate-monster": "241",
-	"dominate-person": "240",
-	"eldritch": "168",
-	"elemental-weapon": "339",
-	"enhanceability": "103",
-	"ensnaring-strike": "212",
-	"entangle": "211",
-	"etherealness": "64",
-	"faerie-fire": "207",
-	"false-life": "287",
-	"fear": "109",
-	"feather-fall": "223",
-	"find-steed": "246",
-	"findfamiliar": "248",
-	"finger-of-death": "229",
-	"fire-shield": "206",
-	"fireball": "205",
-	"firebolt": "204",
-	"flame-strike": "181",
-	"flaming-sphere": "289",
-	"fly": "249",
-	"fog-cloud": "351",
-	"forcecage": "107",
-	"foresight": "264",
-	"freedom-of-movement": "308",
-	"gaseous-form": "41",
-	"gate": "36",
-	"gentle-repose": "186",
-	"globe-invulnerability": "342",
-	"glyph-of-warding": "219",
-	"goodberry": "78",
-	"grease": "315",
-	"greaterinvisibility": "38",
-	"greaterrestoration": "39",
-	"greenflame": "TCoE_2",
-	"guardian-of-faith": "340",
-	"guidance": "105",
-	"guiding-bolt": "178",
-	"hail-of-thorns": "50",
-	"haste": "100",
-	"heal": "250",
-	"healing-spirit": "471",
-	"healingword": "144",
-	"heat-metal": "298",
-	"heroes-feast": "230",
-	"heroism": "42",
-	"hex": "312",
-	"hold-monster": "110",
-	"holdperson": "356",
-	"holy-aura": "6",
-	"hunters-mark": "164",
-	"hypnotic-pattern": "44",
-	"ice-storm": "49",
-	"identify": "210",
-	"inflict-wounds": "177",
-	"invisibility": "183",
-	"leomunds-tiny-hut": "143",
-	"lesser-restoration": "155",
-	"levitate": "139",
-	"light": "307",
-	"lightningbolt": "175",
-	"longstrider": "316",
-	"mage-armor": "60",
-	"mage-hand": "26",
-	"magic-missile": "27",
-	"magic-weapon": "153",
-	"major-image": "197",
-	"mass-cure-wounds": "171",
-	"mass-heal": "172",
-	"mass-healing-word": "170",
-	"masssuggestion": "169",
-	"maze": "138",
-	"melfs-acid-arrow": "159",
-	"mending": "258",
-	"message": "331",
-	"meteor": "163",
-	"mind-sliver": "TCoE_4",
-	"mindwhip": "TCoE_9",
-	"minorillusion": "154",
-	"mirror-image": "218",
-	"mistystep": "352",
-	"moonbeam": "146",
-	"nondetection": "185",
-	"pass": "8",
-	"phantasmal-force": "31",
-	"planeShift": "95",
-	"plant-growth": "304",
-	"polymorph": "260",
-	"power-word-kill": "322",
-	"powerstun": "321",
-	"prayer-of-healing": "173",
-	"prestidigitation": "91",
-	"produce-flame": "336",
-	"protection-evil-good": "99",
-	"protection-from-energy": "106",
-	"raise-dead": "208",
-	"ray-of-enfeeblement": "148",
-	"ray-of-frost": "149",
-	"ray-of-sickness": "147",
-	"resurrection": "33",
-	"revivify": "24",
-	"rope-trick": "350",
-	"sacred-flame": "311",
-	"sanctuary": "354",
-	"scorching-ray": "225",
-	"scrying": "176",
-	"searing-smite": "224",
-	"see-invisibility": "20",
-	"sending": "256",
-	"shadow-blade": "532",
-	"shadowmoil": "491",
-	"shape-water": "539",
-	"shapechange": "251",
-	"shatter": "62",
-	"shield": "70",
-	"shield-of-faith": "69",
-	"shocking-grasp": "66",
-	"silence": "349",
-	"simulacrum": "237",
-	"sleep": "98",
-	"sleet-storm": "162",
-	"slow": "83",
-	"spare-the-dying": "94",
-	"speak-with-animals": "292",
-	"speak-with-dead": "293",
-	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
-	"spell-doc-aganazzar_s_scorcher": "495",
-	"spell-doc-animal_friendship": "72",
-	"spell-doc-animal_messenger": "259",
-	"spell-doc-animal_shapes": "261",
-	"spell-doc-antilife_shell": "262",
-	"spell-doc-antipathy_sympathy": "2",
-	"spell-doc-arcane_gate": "150",
-	"spell-doc-astral_projection": "284",
-	"spell-doc-augury": "40",
-	"spell-doc-aura_of_life": "4",
-	"spell-doc-aura_of_purity": "5",
-	"spell-doc-awaken": "282",
-	"spell-doc-banishing_smite": "117",
-	"spell-doc-beast_bond": "464",
-	"spell-doc-beast_sense": "76",
-	"spell-doc-bigby_s_hand": "57",
-	"spell-doc-blade_barrier": "338",
-	"spell-doc-blade_of_disaster": "TCoE_22",
-	"spell-doc-blade_ward": "101",
-	"spell-doc-blinding_smite": "213",
-	"spell-doc-bones_of_the_earth": "475",
-	"spell-doc-catnap": "459",
-	"spell-doc-cause_fear": "455",
-	"spell-doc-chaos_bolt": "525",
-	"spell-doc-charm_monster": "494",
-	"spell-doc-circle_of_death": "136",
-	"spell-doc-clone": "54",
-	"spell-doc-color_spray": "306",
-	"spell-doc-commune_with_nature": "199",
-	"spell-doc-compelled_duel": "37",
-	"spell-doc-compulsion": "278",
-	"spell-doc-conjure_celestial": "273",
-	"spell-doc-conjure_fey": "274",
-	"spell-doc-conjure_volley": "269",
-	"spell-doc-conjure_woodland_beings": "270",
-	"spell-doc-contact_other_plane": "309",
-	"spell-doc-contingency": "265",
-	"spell-doc-continual_flame": "18",
-	"spell-doc-control_flames": "450",
-	"spell-doc-control_water": "21",
-	"spell-doc-control_weather": "22",
-	"spell-doc-control_winds": "449",
-	"spell-doc-cordon_of_arrows": "81",
-	"spell-doc-create_bonfire": "528",
-	"spell-doc-create_food_and_water": "335",
-	"spell-doc-create_homunculus": "527",
-	"spell-doc-create_or_destroy_water": "333",
-	"spell-doc-create_undead": "334",
-	"spell-doc-creation": "366",
-	"spell-doc-crown_of_madness": "134",
-	"spell-doc-crown_of_stars": "474",
-	"spell-doc-dancing_lights": "234",
-	"spell-doc-danse_macabre": "501",
-	"spell-doc-dawn": "517",
-	"spell-doc-daylight": "58",
-	"spell-doc-delayed_blast_fireball": "87",
-	"spell-doc-destructive_wave": "296",
-	"spell-doc-detect_evil_and_good": "194",
-	"spell-doc-detect_poison_and_disease": "193",
-	"spell-doc-dispel_evil_and_good": "300",
-	"spell-doc-dragon_s_breath": "461",
-	"spell-doc-drawmij_s_instant_summons": "68",
-	"spell-doc-dream": "19",
-	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
-	"spell-doc-druid_grove": "518",
-	"spell-doc-druidcraft": "123",
-	"spell-doc-dust_devil": "514",
-	"spell-doc-earth_tremor": "460",
-	"spell-doc-earthbind": "537",
-	"spell-doc-earthquake": "111",
-	"spell-doc-elemental_bane": "510",
-	"spell-doc-enemies_abound": "467",
-	"spell-doc-enervation": "486",
-	"spell-doc-enlarge_reduce": "355",
-	"spell-doc-enthrall": "303",
-	"spell-doc-erupting_earth": "466",
-	"spell-doc-evard_s_black_tentacles": "67",
-	"spell-doc-expeditious_retreat": "257",
-	"spell-doc-eyebite": "297",
-	"spell-doc-fabricate": "118",
-	"spell-doc-far_step": "458",
-	"spell-doc-feeblemind": "317",
-	"spell-doc-feign_death": "280",
-	"spell-doc-find_greater_steed": "504",
-	"spell-doc-find_the_path": "245",
-	"spell-doc-find_traps": "243",
-	"spell-doc-fire_storm": "201",
-	"spell-doc-flame_arrows": "513",
-	"spell-doc-flame_blade": "48",
-	"spell-doc-flesh_to_stone": "209",
-	"spell-doc-forbiddance": "89",
-	"spell-doc-friends": "71",
-	"spell-doc-frostbite": "492",
-	"spell-doc-geas": "189",
-	"spell-doc-giant_insect": "43",
-	"spell-doc-glibness": "179",
-	"spell-doc-grasping_vine": "85",
-	"spell-doc-guardian_of_nature": "530",
-	"spell-doc-guards_and_wards": "341",
-	"spell-doc-gust": "542",
-	"spell-doc-gust_of_wind": "255",
-	"spell-doc-hallow": "310",
-	"spell-doc-hallucinatory_terrain": "167",
-	"spell-doc-harm": "253",
-	"spell-doc-hellish_rebuke": "1",
-	"spell-doc-holy_weapon": "519",
-	"spell-doc-hunger_of_hadar": "47",
-	"spell-doc-ice_knife": "477",
-	"spell-doc-illusory_dragon": "468",
-	"spell-doc-illusory_script": "182",
-	"spell-doc-immolation": "470",
-	"spell-doc-imprisonment": "97",
-	"spell-doc-incendiary_cloud": "34",
-	"spell-doc-infernal_calling": "469",
-	"spell-doc-infestation": "483",
-	"spell-doc-insect_plague": "180",
-	"spell-doc-intellect_fortress": "TCoE_10",
-	"spell-doc-investiture_of_flame": "490",
-	"spell-doc-investiture_of_ice": "489",
-	"spell-doc-investiture_of_stone": "488",
-	"spell-doc-investiture_of_wind": "487",
-	"spell-doc-invulnerability": "485",
-	"spell-doc-jump": "286",
-	"spell-doc-knock": "217",
-	"spell-doc-legend_lore": "115",
-	"spell-doc-leomund_s_secret_chest": "142",
-	"spell-doc-life_transference": "498",
-	"spell-doc-lightning_arrow": "174",
-	"spell-doc-lightning_lure": "TCoE_3",
-	"spell-doc-locate_animals_or_plants": "242",
-	"spell-doc-locate_creature": "247",
-	"spell-doc-locate_object": "244",
-	"spell-doc-maddening_darkness": "493",
-	"spell-doc-maelstrom": "451",
-	"spell-doc-magic_circle": "152",
-	"spell-doc-magic_jar": "30",
-	"spell-doc-magic_mouth": "28",
-	"spell-doc-magic_stone": "454",
-	"spell-doc-mass_polymorph": "481",
-	"spell-doc-maximilian_s_earthen_grasp": "465",
-	"spell-doc-meld_into_stone": "318",
-	"spell-doc-melf_s_minute_meteors": "479",
-	"spell-doc-mental_prison": "480",
-	"spell-doc-mighty_fortress": "482",
-	"spell-doc-mind_blank": "328",
-	"spell-doc-mind_spike": "511",
-	"spell-doc-mirage_arcane": "343",
-	"spell-doc-mislead": "93",
-	"spell-doc-modify_memory": "119",
-	"spell-doc-mold_earth": "478",
-	"spell-doc-mordenkainen_s_faithful_hound": "17",
-	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
-	"spell-doc-mordenkainen_s_private_sanctum": "128",
-	"spell-doc-mordenkainen_s_sword": "166",
-	"spell-doc-move_earth": "53",
-	"spell-doc-negative_energy_flood": "505",
-	"spell-doc-nystul_s_magic_aura": "188",
-	"spell-doc-otiluke_s_freezing_sphere": "215",
-	"spell-doc-otiluke_s_resilient_sphere": "216",
-	"spell-doc-otto_s_irresistible_dance": "187",
-	"spell-doc-passwall": "327",
-	"spell-doc-phantasmal_killer": "32",
-	"spell-doc-phantom_steed": "279",
-	"spell-doc-planar_ally": "232",
-	"spell-doc-planar_binding": "231",
-	"spell-doc-poison_spray": "63",
-	"spell-doc-power_word_heal": "320",
-	"spell-doc-power_word_pain": "522",
-	"spell-doc-primal_savagery": "496",
-	"spell-doc-primordial_ward": "497",
-	"spell-doc-prismatic_spray": "291",
-	"spell-doc-prismatic_wall": "290",
-	"spell-doc-programmed_illusion": "82",
-	"spell-doc-project_image": "283",
-	"spell-doc-protection_from_poison": "108",
-	"spell-doc-psychic_scream": "512",
-	"spell-doc-purify_food_and_drink": "222",
-	"spell-doc-pyrotechnics": "500",
-	"spell-doc-rary_s_telepathic_bond": "160",
-	"spell-doc-regenerate": "302",
-	"spell-doc-reincarnate": "365",
-	"spell-doc-remove_curse": "326",
-	"spell-doc-resistance": "332",
-	"spell-doc-reverse_gravity": "120",
-	"spell-doc-scatter": "516",
-	"spell-doc-seeming": "281",
-	"spell-doc-sequester": "122",
-	"spell-doc-shillelagh": "73",
-	"spell-doc-sickening_radiance": "448",
-	"spell-doc-silent_image": "7",
-	"spell-doc-skill_empowerment": "538",
-	"spell-doc-skywrite": "484",
-	"spell-doc-snare": "520",
-	"spell-doc-snilloc_s_snowball_swarm": "526",
-	"spell-doc-soul_cage": "473",
-	"spell-doc-speak_with_plants": "294",
-	"spell-doc-spider_climb": "226",
-	"spell-doc-spirit_shroud": "TCoE_11",
-	"spell-doc-staggering_smite": "200",
-	"spell-doc-stone_shape": "121",
-	"spell-doc-storm_of_vengeance": "51",
-	"spell-doc-storm_sphere": "531",
-	"spell-doc-summon_aberration": "TCoE_15",
-	"spell-doc-summon_beast": "TCoE_7",
-	"spell-doc-summon_celestial": "TCoE_18",
-	"spell-doc-summon_construct": "TCoE_16",
-	"spell-doc-summon_elemental": "TCoE_17",
-	"spell-doc-summon_fiend": "TCoE_19",
-	"spell-doc-summon_greater_demon": "507",
-	"spell-doc-summon_lesser_demons": "508",
-	"spell-doc-summon_shadowspawn": "TCoE_13",
-	"spell-doc-summon_undead": "TCoE_14",
-	"spell-doc-swift_quiver": "14",
-	"spell-doc-sword_burst": "TCoE_5",
-	"spell-doc-symbol": "114",
-	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
-	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
-	"spell-doc-telepathy": "345",
-	"spell-doc-teleportation_circle": "137",
-	"spell-doc-temple_of_the_gods": "540",
-	"spell-doc-tenser_s_floating_disk": "346",
-	"spell-doc-tenser_s_transformation": "533",
-	"spell-doc-thunder_step": "457",
-	"spell-doc-thunderclap": "515",
-	"spell-doc-thunderous_smite": "52",
-	"spell-doc-tidal_wave": "509",
-	"spell-doc-tiny_servant": "476",
-	"spell-doc-tongues": "61",
-	"spell-doc-transmute_rock": "506",
-	"spell-doc-transport_via_plants": "288",
-	"spell-doc-tree_stride": "65",
-	"spell-doc-true_polymorph": "127",
-	"spell-doc-true_strike": "165",
-	"spell-doc-tsunami": "84",
-	"spell-doc-unseen_servant": "184",
-	"spell-doc-vitriolic_sphere": "462",
-	"spell-doc-wall_of_ice": "141",
-	"spell-doc-wall_of_light": "529",
-	"spell-doc-wall_of_sand": "499",
-	"spell-doc-wall_of_stone": "130",
-	"spell-doc-wall_of_thorns": "347",
-	"spell-doc-wall_of_water": "452",
-	"spell-doc-warding_wind": "463",
-	"spell-doc-water_walk": "88",
-	"spell-doc-watery_sphere": "453",
-	"spell-doc-weird": "324",
-	"spell-doc-whirlwind": "524",
-	"spell-doc-wind_walk": "90",
-	"spell-doc-word_of_recall": "319",
-	"spell-doc-wrath_of_nature": "456",
-	"spell-doc-zephyr_strike": "534",
-	"spike-growth": "77",
-	"spiritguardians": "75",
-	"spiritual-weapon": "11",
-	"steelwind": "535",
-	"stinking-cloud": "113",
-	"stoneskin": "129",
-	"suggestion": "23",
-	"summonfey": "TCoE_12",
-	"sunbeam": "329",
-	"sunburst": "330",
-	"synaptic-static": "521",
-	"tashas-hideous-laughter": "79",
-	"telekinesis": "344",
-	"teleport": "367",
-	"thaumaturgy": "80",
-	"thorn-whip": "348",
-	"thunderwave": "25",
-	"time-stop": "214",
-	"toll-the-dead": "503",
-	"true-seeing": "126",
-	"trueResurrection": "125",
-	"vampiric-touch": "277",
-	"vicious": "112",
-	"wall-of-fire": "202",
-	"wallforce": "314",
-	"warding-bond": "220",
-	"water-breathing": "235",
-	"web": "227",
-	"wind-wall": "337",
-	"wish": "124",
-	"witch-bolt": "15",
-	"word-radiance": "523",
-	"wrathful-smite": "46",
-	"zone-of-truth": "192"
-});
-//#endregion
-//#region app/exportIds.ts
-/**
-* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
-* LSS text blocks also need a stable public URL for every selected spell.
-*/
-var dndSpellRefs = {
-	"acid-splash": ["13", "acid_splash"],
-	"chill-touch": ["140", "chill_touch"],
-	"firebolt": ["204", "fire_bolt"],
-	"guidance": ["105", "guidance"],
-	"minorillusion": ["154", "minor_illusion"],
-	"vicious": ["112", "vicious_mockery"],
-	"eldritch": ["168", "eldritch_blast"],
-	"booming": ["458", "booming_blade"],
-	"greenflame": ["459", "green_flame_blade"],
-	"absorb": ["401", "absorb_elements"],
-	"armoragathys": ["59", "armor_of_agathys"],
-	"bless": ["9", "bless"],
-	"curewounds": ["145", "cure_wounds"],
-	"detectmagic": ["195", "detect_magic"],
-	"findfamiliar": ["248", "find_familiar"],
-	"goodberry": ["78", "goodberry"],
-	"healingword": ["144", "healing_word"],
-	"hex": ["312", "hex"],
-	"shield": ["70", "shield"],
-	"silvery": ["3946", "silvery_barbs"],
-	"aid": ["236", "aid"],
-	"darkness": ["353", "darkness"],
-	"enhanceability": ["103", "enhance_ability"],
-	"holdperson": ["356", "hold_person"],
-	"levitate": ["139", "levitate"],
-	"mistystep": ["352", "misty_step"],
-	"pass": ["8", "pass_without_trace"],
-	"mindwhip": ["3053", "tasha_s_mind_whip"],
-	"counterspell": ["132", "counterspell"],
-	"fireball": ["205", "fireball"],
-	"fly": ["249", "fly"],
-	"haste": ["100", "haste"],
-	"lightningbolt": ["175", "lightning_bolt"],
-	"revivify": ["24", "revivify"],
-	"spiritguardians": ["75", "spirit_guardians"],
-	"summonfey": ["3070", "summon_fey"],
-	"banishment": ["116", "banishment"],
-	"dimensiondoor": ["228", "dimension_door"],
-	"greaterinvisibility": ["38", "greater_invisibility"],
-	"polymorph": ["260", "polymorph"],
-	"shadowmoil": ["478", "shadow_of_moil"],
-	"coneofcold": ["133", "cone_of_cold"],
-	"greaterrestoration": ["39", "greater_restoration"],
-	"steelwind": ["493", "steel_wind_strike"],
-	"wallforce": ["314", "wall_of_force"],
-	"heal": ["250", "heal"],
-	"masssuggestion": ["169", "mass_suggestion"],
-	"disintegrate": ["299", "disintegrate"],
-	"forcecage": ["107", "forcecage"],
-	"planeShift": ["95", "plane_shift"],
-	"draconic": ["3814", "draconic_transformation"],
-	"demiplane": ["55", "demiplane"],
-	"maze": ["138", "maze"],
-	"powerstun": ["321", "power_word_stun"],
-	"foresight": ["264", "foresight"],
-	"meteor": ["163", "meteor_swarm"],
-	"trueResurrection": ["125", "true_resurrection"],
-	"wish": ["124", "wish"],
-	"light": ["307", "light"],
-	"mage-hand": ["26", "mage_hand"],
-	"mending": ["258", "mending"],
-	"message": ["331", "message"],
-	"prestidigitation": ["91", "prestidigitation"],
-	"ray-of-frost": ["149", "ray_of_frost"],
-	"sacred-flame": ["311", "sacred_flame"],
-	"shocking-grasp": ["66", "shocking_grasp"],
-	"spare-the-dying": ["94", "spare_the_dying"],
-	"thaumaturgy": ["80", "thaumaturgy"],
-	"thorn-whip": ["348", "thorn_whip"],
-	"produce-flame": ["336", "produce_flame"],
-	"shape-water": ["414", "shape_water"],
-	"toll-the-dead": ["457", "toll_the_dead"],
-	"mind-sliver": ["3050", "mind_sliver"],
-	"word-radiance": ["455", "word_of_radiance"],
-	"alarm": ["313", "alarm"],
-	"bane": ["254", "bane"],
-	"burning-hands": ["203", "burning_hands"],
-	"charm-person": ["221", "charm_person"],
-	"chromatic-orb": ["86", "chromatic_orb"],
-	"command": ["276", "command"],
-	"comprehend-languages": ["252", "comprehend_languages"],
-	"disguise-self": ["157", "disguise_self"],
-	"dissonant-whispers": ["56", "dissonant_whispers"],
-	"divine-favor": ["10", "divine_favor"],
-	"ensnaring-strike": ["212", "ensnaring_strike"],
-	"entangle": ["211", "entangle"],
-	"faerie-fire": ["207", "faerie_fire"],
-	"false-life": ["287", "false_life"],
-	"feather-fall": ["223", "feather_fall"],
-	"fog-cloud": ["351", "fog_cloud"],
-	"grease": ["315", "grease"],
-	"hail-of-thorns": ["50", "hail_of_thorns"],
-	"heroism": ["42", "heroism"],
-	"hunters-mark": ["164", "hunter_s_mark"],
-	"identify": ["210", "identify"],
-	"inflict-wounds": ["177", "inflict_wounds"],
-	"longstrider": ["316", "longstrider"],
-	"mage-armor": ["60", "mage_armor"],
-	"magic-missile": ["27", "magic_missile"],
-	"protection-evil-good": ["99", "protection_from_evil_and_good"],
-	"sanctuary": ["354", "sanctuary"],
-	"sleep": ["98", "sleep"],
-	"speak-with-animals": ["292", "speak_with_animals"],
-	"thunderwave": ["25", "thunderwave"],
-	"witch-bolt": ["15", "witch_bolt"],
-	"ceremony": ["465", "ceremony"],
-	"catapult": ["386", "catapult"],
-	"alter-self": ["323", "alter_self"],
-	"arcane-lock": ["29", "arcane_lock"],
-	"barkskin": ["74", "barkskin"],
-	"blindness-deafness": ["45", "blindness_deafness"],
-	"blur": ["295", "blur"],
-	"branding-smite": ["131", "branding_smite"],
-	"calm-emotions": ["102", "calm_emotions"],
-	"cloud-of-daggers": ["190", "cloud_of_daggers"],
-	"darkvision": ["368", "darkvision"],
-	"find-steed": ["246", "find_steed"],
-	"flaming-sphere": ["289", "flaming_sphere"],
-	"heat-metal": ["298", "heat_metal"],
-	"invisibility": ["183", "invisibility"],
-	"lesser-restoration": ["155", "lesser_restoration"],
-	"magic-weapon": ["153", "magic_weapon"],
-	"moonbeam": ["146", "moonbeam"],
-	"prayer-of-healing": ["173", "prayer_of_healing"],
-	"scorching-ray": ["225", "scorching_ray"],
-	"see-invisibility": ["20", "see_invisibility"],
-	"shatter": ["62", "shatter"],
-	"silence": ["349", "silence"],
-	"spike-growth": ["77", "spike_growth"],
-	"spiritual-weapon": ["11", "spiritual_weapon"],
-	"suggestion": ["23", "suggestion"],
-	"web": ["227", "web"],
-	"shadow-blade": ["470", "shadow_blade"],
-	"healing-spirit": ["468", "healing_spirit"],
-	"animate-dead": ["35", "animate_dead"],
-	"beacon-of-hope": ["158", "beacon_of_hope"],
-	"bestow-curse": ["285", "bestow_curse"],
-	"call-lightning": ["272", "call_lightning"],
-	"clairvoyance": ["238", "clairvoyance"],
-	"conjure-animals": ["267", "conjure_animals"],
-	"dispel-magic": ["301", "dispel_magic"],
-	"fear": ["109", "fear"],
-	"glyph-of-warding": ["219", "glyph_of_warding"],
-	"hypnotic-pattern": ["44", "hypnotic_pattern"],
-	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
-	"major-image": ["197", "major_image"],
-	"mass-healing-word": ["170", "mass_healing_word"],
-	"plant-growth": ["304", "plant_growth"],
-	"protection-from-energy": ["106", "protection_from_energy"],
-	"sleet-storm": ["162", "sleet_storm"],
-	"slow": ["83", "slow"],
-	"speak-with-dead": ["293", "speak_with_dead"],
-	"water-breathing": ["235", "water_breathing"],
-	"crusaders-mantle": ["156", "crusader_s_mantle"],
-	"aura-of-vitality": ["3", "aura_of_vitality"],
-	"arcane-eye": ["151", "arcane_eye"],
-	"blight": ["96", "blight"],
-	"confusion": ["325", "confusion"],
-	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
-	"death-ward": ["104", "death_ward"],
-	"divination": ["266", "divination"],
-	"dominate-beast": ["239", "dominate_beast"],
-	"freedom-of-movement": ["308", "freedom_of_movement"],
-	"guardian-of-faith": ["340", "guardian_of_faith"],
-	"ice-storm": ["49", "ice_storm"],
-	"stoneskin": ["129", "stoneskin"],
-	"wall-of-fire": ["202", "wall_of_fire"],
-	"animate-objects": ["364", "animate_objects"],
-	"circle-of-power": ["135", "circle_of_power"],
-	"cloudkill": ["191", "cloudkill"],
-	"commune": ["198", "commune"],
-	"conjure-elemental": ["275", "conjure_elemental"],
-	"contagion": ["92", "contagion"],
-	"dominate-person": ["240", "dominate_person"],
-	"flame-strike": ["181", "flame_strike"],
-	"hold-monster": ["110", "hold_monster"],
-	"mass-cure-wounds": ["171", "mass_cure_wounds"],
-	"raise-dead": ["208", "raise_dead"],
-	"scrying": ["176", "scrying"],
-	"telekinesis": ["344", "telekinesis"],
-	"synaptic-static": ["491", "synaptic_static"],
-	"chain-lightning": ["233", "chain_lightning"],
-	"heroes-feast": ["230", "heroes_feast"],
-	"globe-invulnerability": ["342", "globe_of_invulnerability"],
-	"sunbeam": ["329", "sunbeam"],
-	"true-seeing": ["126", "true_seeing"],
-	"divine-word": ["12", "divine_word"],
-	"etherealness": ["64", "etherealness"],
-	"finger-of-death": ["229", "finger_of_death"],
-	"resurrection": ["33", "resurrection"],
-	"simulacrum": ["237", "simulacrum"],
-	"teleport": ["367", "teleport"],
-	"antimagic-field": ["263", "antimagic_field"],
-	"dominate-monster": ["241", "dominate_monster"],
-	"holy-aura": ["6", "holy_aura"],
-	"sunburst": ["330", "sunburst"],
-	"gate": ["36", "gate"],
-	"mass-heal": ["172", "mass_heal"],
-	"power-word-kill": ["322", "power_word_kill"],
-	"shapechange": ["251", "shapechange"],
-	"time-stop": ["214", "time_stop"],
-	"arms-of-hadar": ["305", "arms_of_hadar"],
-	"guiding-bolt": ["178", "guiding_bolt"],
-	"ray-of-sickness": ["147", "ray_of_sickness"],
-	"searing-smite": ["224", "searing_smite"],
-	"shield-of-faith": ["69", "shield_of_faith"],
-	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
-	"wrathful-smite": ["46", "wrathful_smite"],
-	"blink": ["161", "blink"],
-	"detect-thoughts": ["196", "detect_thoughts"],
-	"gentle-repose": ["186", "gentle_repose"],
-	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
-	"mirror-image": ["218", "mirror_image"],
-	"phantasmal-force": ["31", "phantasmal_force"],
-	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
-	"rope-trick": ["350", "rope_trick"],
-	"warding-bond": ["220", "warding_bond"],
-	"zone-of-truth": ["192", "zone_of_truth"],
-	"conjure-barrage": ["268", "conjure_barrage"],
-	"elemental-weapon": ["339", "elemental_weapon"],
-	"gaseous-form": ["41", "gaseous_form"],
-	"nondetection": ["185", "nondetection"],
-	"sending": ["256", "sending"],
-	"stinking-cloud": ["113", "stinking_cloud"],
-	"vampiric-touch": ["277", "vampiric_touch"],
-	"wind-wall": ["337", "wind_wall"],
-	"fire-shield": ["206", "fire_shield"]
-};
-var helpmateSpellIds = verifiedHelpmateSpellIds;
-function helpmateSpellId(id) {
-	return helpmateSpellIds[id] || null;
-}
-function dndSpellUrl(id) {
-	const reference = dndSpellRefs[id];
-	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
-	return documentSpells.find((spell) => spell.id === id)?.url || null;
-}
-var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
-var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
-var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
-	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
-	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
-})));
-/**
-* LSS uses the public dnd.su page as the stable source reference for a spell.
-* Accept absolute/relative links and ignore the mutable transliterated suffix:
-* the numeric dnd.su page id is the canonical part shared with our catalog.
-*/
-function spellIdFromDndUrl(value) {
-	if (typeof value !== "string") return null;
-	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
-	if (match) return spellIdByDndNumber[match[1]] || null;
-	try {
-		const parsed = new URL(value, "https://dnd.su");
-		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
-		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
-	} catch {
-		return null;
-	}
-}
-/**
-* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
-* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
-* URL-bearing card objects never need this fallback.
-*/
-var lssCardDndNumbers = Object.freeze({
-	"65d3c169f3d820fa1add429e": "140",
-	"65d3c168f3d820fa1add425f": "204",
-	"65d3c170f3d820fa1add4759": "258",
-	"65d3c16af3d820fa1add434d": "60",
-	"65d3c16df3d820fa1add45f4": "221",
-	"65d3c16af3d820fa1add437e": "98",
-	"65d3c172f3d820fa1add48b7": "183",
-	"65d3c16ef3d820fa1add465d": "103",
-	"65d3c16df3d820fa1add4561": "44",
-	"65d3c171f3d820fa1add47ec": "109"
-});
-function spellIdFromLssCardId(cardId) {
-	const number = lssCardDndNumbers[cardId];
-	return number ? spellIdByDndNumber[number] || null : null;
-}
-//#endregion
-//#region app/characterResources.ts
-function resourceRestLabel(resource) {
-	if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный отдых";
-	if (resource.isShortRest) return "короткий отдых";
-	if (resource.isLongRest) return "продолжительный отдых";
-	return "не восстанавливается отдыхом";
-}
-function rageMaximum(level) {
-	if (level >= 17) return 6;
-	if (level >= 12) return 5;
-	if (level >= 6) return 4;
-	if (level >= 3) return 3;
-	return 2;
-}
-var add = (list, condition, resource) => condition && list.push(resource);
-function racialResources(character) {
-	const resources = [];
-	const level = characterLevel(character);
-	const pb = 2 + Math.floor((Math.max(1, level) - 1) / 4);
-	const modern = selectedRaceVariant(character.race, character.raceVariant || "base")?.source === "MPMM";
-	const pool = (race, key, name, max, short = false) => add(resources, character.race === race, {
-		key,
-		name,
-		max,
-		isShortRest: short,
-		isLongRest: true
-	});
-	pool("dragonborn", "breath-weapon", "Оружие дыхания", 1, true);
-	pool("halforc", "relentless-endurance", "Непоколебимая стойкость", 1);
-	pool("goliath", "stones-endurance", "Каменная стойкость", modern ? pb : 1, !modern);
-	pool("firbolg", "hidden-step", "Скрытый шаг", modern ? pb : 1, !modern);
-	pool("goblin", "fury-of-the-small", "Ярость малого", modern ? pb : 1, !modern);
-	pool("eladrin", "fey-step", "Фейский шаг", modern ? pb : 1, !modern);
-	pool("shadarkai", "blessing-raven-queen", "Благословение Королевы Воронов", modern ? pb : 1);
-	pool("reborn", "knowledge-past-life", "Знания из прошлой жизни", pb);
-	pool("aasimar", "healing-hands", "Исцеляющие руки", 1);
-	if (level >= 3) pool("aasimar", "celestial-revelation", "Небесное откровение", 1);
-	pool("lizardfolk", "hungry-jaws", "Голодная пасть", modern ? pb : 1, !modern);
-	pool("shifter", "shifting", "Смена", modern ? pb : 1, !modern);
-	pool("harengon", "rabbit-hop", "Прыжок кролика", pb);
-	pool("hadozee", "hadozee-dodge", "Стойкость хадози", pb);
-	pool("giff", "astral-spark", "Астральная искра", pb);
-	pool("autognome", "built-for-success", "Создан для успеха", pb);
-	pool("dhampir", "vampiric-bite-empowerment", "Вампирский укус · усиление", pb);
-	pool("leonin", "daunting-roar", "Ужасающий рёв", 1, true);
-	if (modern) {
-		pool("orc", "adrenaline-rush", "Выброс адреналина", pb);
-		pool("orc", "relentless-endurance", "Непоколебимая стойкость", 1);
-		pool("hobgoblin", "fey-gift", "Дар фей", pb);
-		pool("hobgoblin", "fortune-from-many", "Удача многих", pb);
-		pool("kenku", "kenku-recall", "Воспоминание кенку", pb);
-		pool("deepgnome", "svirfneblin-camouflage", "Камуфляж свирфнеблина", pb);
-		pool("kobold", "draconic-cry", "Драконий крик", pb);
-	} else {
-		pool("hobgoblin", "saving-face", "Спасение лица", 1, true);
-		pool("kobold", "grovel-cower-beg", "Пресмыкаться и умолять", 1, true);
-	}
-	return resources;
-}
-function singleClassResources(character) {
-	const resources = [];
-	const level = getClassLevel(character, character.className) || character.level;
-	const pb = 2 + Math.floor((Math.max(1, characterLevel(character)) - 1) / 4);
-	const ability = (key) => Math.max(1, Math.floor((character.abilities[key] - 10) / 2));
-	const subclass = character.subclass || "";
-	add(resources, new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId).filter(Boolean)]).has("lucky"), {
-		key: "lucky",
-		name: "Везунчик · очки удачи",
-		max: 3,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "barbarian", {
-		key: "rage",
-		name: "Ярость",
-		max: rageMaximum(level),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "barbarian" && subclass === "wildmagic" && level >= 3, {
-		key: "wild-magic-awareness",
-		name: "Магическое чутьё",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "barbarian" && subclass === "wildmagic" && level >= 6, {
-		key: "bolstering-magic",
-		name: "Подпитывающая магия",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "barbarian" && subclass === "beast" && level >= 10, {
-		key: "infectious-fury",
-		name: "Заразная ярость",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "barbarian" && subclass === "beast" && level >= 14, {
-		key: "call-the-hunt",
-		name: "Призыв охоты",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "bard", {
-		key: "bardic-inspiration",
-		name: "Вдохновение барда",
-		max: ability("cha"),
-		die: level >= 15 ? "к12" : level >= 10 ? "к10" : level >= 5 ? "к8" : "к6",
-		isShortRest: level >= 5,
-		isLongRest: true
-	});
-	add(resources, character.className === "cleric" && level >= 2, {
-		key: "channel-divinity",
-		name: "Божественный канал",
-		max: level >= 18 ? 3 : level >= 6 ? 2 : 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "cleric" && !!character.useTasha && level >= 2, {
-		key: "harness-divine-power",
-		name: "Направление божественной силы",
-		max: level >= 18 ? 3 : level >= 6 ? 2 : 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "cleric" && subclass === "tempest" && level >= 1, {
-		key: "wrath-of-storm",
-		name: "Гнев бури",
-		max: ability("wis"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "cleric" && subclass === "peace" && level >= 1, {
-		key: "emboldening-bond",
-		name: "Укрепляющая связь",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "cleric" && subclass === "order" && level >= 6, {
-		key: "embodiment-of-law",
-		name: "Воплощение закона",
-		max: ability("wis"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "druid" && level >= 2, {
-		key: "wild-shape",
-		name: "Дикий облик",
-		max: 2,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "druid" && subclass === "spores" && level >= 6, {
-		key: "fungal-infestation",
-		name: "Грибная инфекция",
-		max: ability("wis"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter", {
-		key: "second-wind",
-		name: "Второе дыхание",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && level >= 2, {
-		key: "action-surge",
-		name: "Всплеск действий",
-		max: level >= 17 ? 2 : 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && level >= 9, {
-		key: "indomitable",
-		name: "Упорный",
-		max: level >= 17 ? 3 : level >= 13 ? 2 : 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "battlemaster" && level >= 3, {
-		key: "superiority-dice",
-		name: "Кости превосходства",
-		max: level >= 15 ? 6 : level >= 7 ? 5 : 4,
-		die: level >= 18 ? "к12" : level >= 10 ? "к10" : "к8",
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "arcanearcher" && level >= 3, {
-		key: "arcane-shot",
-		name: "Магический выстрел",
-		max: 2,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "runeknight" && level >= 3, {
-		key: "giants-might",
-		name: "Мощь великана",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "samurai" && level >= 3, {
-		key: "fighting-spirit",
-		name: "Боевой дух",
-		max: 3,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 3, {
-		key: "unleash-incarnation",
-		name: "Высвобождение воплощения",
-		max: ability("con"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 10, {
-		key: "shadow-martyr",
-		name: "Мученик тени",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "echo-knight" && level >= 15, {
-		key: "reclaim-potential",
-		name: "Возвращение потенциала",
-		max: ability("con"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "psi-warrior" && level >= 3, {
-		key: "psi-warrior-dice",
-		name: "Кости псионической энергии",
-		max: pb * 2,
-		die: level >= 17 ? "к12" : level >= 11 ? "к10" : level >= 5 ? "к8" : "к6",
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "fighter" && subclass === "psi-warrior" && level >= 3, {
-		key: "psi-warrior-recovery",
-		name: "Восстановление псионической кости",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "monk" && level >= 2, {
-		key: "ki",
-		name: "Ци",
-		max: level,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "paladin", {
-		key: "lay-on-hands",
-		name: "Наложение рук",
-		max: level * 5,
-		unit: 5,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "paladin" && level >= 3, {
-		key: "channel-divinity",
-		name: "Божественный канал",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "paladin" && !!character.useTasha && level >= 3, {
-		key: "harness-divine-power",
-		name: "Направление божественной силы",
-		max: level >= 15 ? 3 : level >= 7 ? 2 : 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "paladin" && subclass === "glory" && level >= 15, {
-		key: "glorious-defense",
-		name: "Славная защита",
-		max: ability("cha"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-favored-foe"] || []).includes("favored-foe"), {
-		key: "favored-foe",
-		name: "Предпочтительный противник",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") && level >= 10, {
-		key: "tireless",
-		name: "Неутомимый",
-		max: pb,
-		die: "к8",
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-natures-veil"] || []).includes("natures-veil") && level >= 10, {
-		key: "natures-veil",
-		name: "Покров природы",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	if (character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-primal-awareness"] || []).includes("primal-awareness")) for (const [at, key, name] of [
-		[
-			3,
-			"speak-with-animals",
-			"Разговор с животными"
-		],
-		[
-			5,
-			"beast-sense",
-			"Животные чувства"
-		],
-		[
-			9,
-			"speak-with-plants",
-			"Разговор с растениями"
-		],
-		[
-			13,
-			"locate-creature",
-			"Поиск существа"
-		],
-		[
-			17,
-			"commune-with-nature",
-			"Общение с природой"
-		]
-	]) add(resources, level >= at, {
-		key: `primal-awareness:${key}`,
-		name: `${name} без ячейки`,
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "horizonwalker" && level >= 3, {
-		key: "detect-portal",
-		name: "Обнаружение портала",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "monster-slayer" && level >= 3, {
-		key: "hunters-sense",
-		name: "Чутьё охотника",
-		max: ability("wis"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "swarmkeeper" && level >= 7, {
-		key: "writhing-tide",
-		name: "Извивающийся поток",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "swarmkeeper" && level >= 15, {
-		key: "swarming-dispersal",
-		name: "Рассеивающий рой",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 3, {
-		key: "drake-companion-free",
-		name: "Призыв дрейка без ячейки",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 11, {
-		key: "drake-breath-free",
-		name: "Дыхание дрейка без ячейки",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "ranger" && subclass === "drakewarden" && level >= 15, {
-		key: "reflexive-resistance",
-		name: "Совершенная связь · сопротивление",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "rogue" && subclass === "soulknife" && level >= 3, {
-		key: "psionic-energy",
-		name: "Псионическая энергия",
-		max: pb * 2,
-		die: level >= 17 ? "к12" : level >= 11 ? "к10" : level >= 5 ? "к8" : "к6",
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 3, {
-		key: "wails-from-grave",
-		name: "Вопли из могилы",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 9, {
-		key: "tokens-of-departed",
-		name: "Жетоны усопших",
-		max: pb,
-		isShortRest: false,
-		isLongRest: false
-	});
-	add(resources, character.className === "rogue" && subclass === "phantom" && level >= 13, {
-		key: "ghost-walk",
-		name: "Призрачная прогулка",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "rogue" && level >= 20, {
-		key: "stroke-of-luck",
-		name: "Удачливый поворот",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && level >= 2, {
-		key: "sorcery-points",
-		name: "Очки чародейства",
-		max: level,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "wildmagic", {
-		key: "tides-of-chaos",
-		name: "Поток хаоса",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "divinesoul", {
-		key: "favored-by-gods",
-		name: "Благоволение богов",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "shadow", {
-		key: "strength-of-the-grave",
-		name: "Сила могилы",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 1, {
-		key: "restore-balance",
-		name: "Восстановление баланса",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 14, {
-		key: "trance-of-order",
-		name: "Транс порядка · бесплатное применение",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "sorcerer" && subclass === "clockwork" && level >= 18, {
-		key: "clockwork-cavalcade",
-		name: "Заводная кавалькада · бесплатное применение",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "archfey", {
-		key: "fey-presence",
-		name: "Фейская внешность",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "hexblade", {
-		key: "hexblades-curse",
-		name: "Проклятие клинка",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "celestial", {
-		key: "healing-light",
-		name: "Исцеляющий свет",
-		max: level + 1,
-		die: "к6",
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "undying" && level >= 6, {
-		key: "defy-death",
-		name: "Бросить вызов смерти",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "undying" && level >= 14, {
-		key: "indestructible-life",
-		name: "Несокрушимая жизнь",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 1, {
-		key: "tentacle-of-deeps",
-		name: "Щупальце глубин",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 10, {
-		key: "evards-tentacles-free",
-		name: "Чёрные щупальца Эварда без ячейки",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "fathomless" && level >= 14, {
-		key: "fathomless-plunge",
-		name: "Погружение в бездну",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "undead" && level >= 1, {
-		key: "form-of-dread",
-		name: "Облик ужаса",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "warlock" && subclass === "undead" && level >= 14, {
-		key: "spirit-projection",
-		name: "Проекция духа",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard", {
-		key: "arcane-recovery",
-		name: "Восстановление магии",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "bladesinging" && level >= 2, {
-		key: "bladesong",
-		name: "Песнь клинка",
-		max: 2,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "divination" && level >= 2, {
-		key: "portent",
-		name: "Предзнаменование",
-		max: level >= 14 ? 3 : 2,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 2, {
-		key: "chronal-shift",
-		name: "Хроно-сдвиг",
-		max: 2,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 6, {
-		key: "momentary-stasis",
-		name: "Мгновенный стазис",
-		max: ability("int"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "chronurgy" && level >= 10, {
-		key: "arcane-abeyance",
-		name: "Тайный резерв",
-		max: 1,
-		isShortRest: true,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "graviturgy" && level >= 10, {
-		key: "violent-attraction",
-		name: "Жестокое притяжение",
-		max: ability("int"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "wizard" && subclass === "graviturgy" && level >= 14, {
-		key: "event-horizon",
-		name: "Горизонт событий · бесплатное применение",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "artificer" && level >= 7, {
-		key: "flash-of-genius",
-		name: "Вспышка гениальности",
-		max: ability("int"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "artificer" && subclass === "alchemist" && level >= 3, {
-		key: "experimental-elixir",
-		name: "Экспериментальный эликсир",
-		max: level >= 15 ? 3 : level >= 6 ? 2 : 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "artificer" && subclass === "artillerist" && level >= 3, {
-		key: "eldritch-cannon",
-		name: "Бесплатная магическая пушка",
-		max: 1,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "artificer" && subclass === "armorer" && level >= 3, {
-		key: "defensive-field",
-		name: "Защитное поле",
-		max: pb,
-		isShortRest: false,
-		isLongRest: true
-	});
-	add(resources, character.className === "artificer" && subclass === "battlesmith" && level >= 9, {
-		key: "arcane-jolt",
-		name: "Магический импульс",
-		max: ability("int"),
-		isShortRest: false,
-		isLongRest: true
-	});
-	return resources;
-}
-/** Resources are resolved once per source class. Identical named pools such as
-* Channel Divinity remain one shared pool instead of being doubled. */
-function characterResources(character) {
-	const merged = new Map(racialResources(character).map((resource) => [resource.key, resource]));
-	for (const entry of orderedCharacterClasses(character)) for (const resource of singleClassResources(classView(character, entry))) {
-		const previous = merged.get(resource.key);
-		if (!previous || resource.max > previous.max) merged.set(resource.key, resource);
-	}
-	return [...merged.values()];
-}
-function resourceSpent(character, resource) {
-	return Math.max(0, Math.min(resource.max, character.resourceSpent?.[resource.key] || 0));
-}
-function resourceCurrent(character, resource) {
-	return resource.max - resourceSpent(character, resource);
-}
-function spentResourcesAfterLongRest(character) {
-	const persistentKeys = new Set(characterResources(character).filter((resource) => !resource.isLongRest).map((resource) => resource.key));
-	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
-}
-//#endregion
-//#region app/equipment.ts
-var O$2 = (id, label, items = [label], recommended = false) => ({
-	id,
-	label,
-	items,
-	recommended
-});
-var G = (key, label, options, count = 1) => ({
-	key,
-	label,
-	count,
-	options
-});
-var packContents = {
-	burglar: "рюкзак, 1 000 шариков, 10 футов нити, колокольчик, 5 свечей, ломик, молоток, 10 шлямбуров, закрытый фонарь, 2 фляги масла, 5 рационов, трутница, бурдюк и 50 футов пеньковой верёвки",
-	diplomat: "сундук, 2 футляра для карт и свитков, комплект отличной одежды, чернила, перо, лампа, 2 фляги масла, 5 листов бумаги, духи, сургуч и мыло",
-	dungeoneer: "рюкзак, ломик, молоток, 10 шлямбуров, 10 факелов, трутница, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
-	entertainer: "рюкзак, спальник, 2 костюма, 5 свечей, 5 рационов, бурдюк и набор для грима",
-	explorer: "рюкзак, спальник, столовый набор, трутница, 10 факелов, 10 рационов, бурдюк и 50 футов пеньковой верёвки",
-	priest: "рюкзак, одеяло, 10 свечей, трутница, коробка для пожертвований, 2 блока благовоний, кадило, облачение, 2 рациона и бурдюк",
-	scholar: "рюкзак, научная книга, чернила, перо, 10 листов пергамента, мешочек песка и небольшой нож"
-};
-var packText = (id, name) => `${name} (${packContents[id]})`;
-var P = (id, name, recommended = false) => O$2(id, packText(id, name), [packText(id, name)], recommended);
-var armorText = {
-	leather: "Кожаный доспех (КД 11 + Лов.)",
-	studded: "Проклёпанная кожа (КД 12 + Лов.)",
-	scale: "Чешуйчатый доспех (КД 14 + Лов., максимум +2)",
-	chain: "Кольчуга (КД 16; Сила 13)",
-	shield: "Щит (+2 к КД)",
-	woodShield: "Деревянный щит (+2 к КД)"
-};
-var simpleWeapons$1 = [
-	O$2("club", "Дубинка"),
-	O$2("dagger", "Кинжал"),
-	O$2("greatclub", "Палица"),
-	O$2("handaxe", "Ручной топор"),
-	O$2("javelin", "Метательное копьё"),
-	O$2("light-hammer", "Лёгкий молот"),
-	O$2("mace", "Булава"),
-	O$2("quarterstaff", "Боевой посох"),
-	O$2("sickle", "Серп"),
-	O$2("spear", "Копьё"),
-	O$2("light-crossbow", "Лёгкий арбалет"),
-	O$2("dart", "Дротик"),
-	O$2("shortbow", "Короткий лук"),
-	O$2("sling", "Праща")
-];
-var martialMelee = [
-	O$2("battleaxe", "Боевой топор"),
-	O$2("flail", "Цеп"),
-	O$2("glaive", "Глефа"),
-	O$2("greataxe", "Секира"),
-	O$2("greatsword", "Двуручный меч"),
-	O$2("halberd", "Алебарда"),
-	O$2("lance", "Длинное копьё"),
-	O$2("longsword", "Длинный меч"),
-	O$2("maul", "Молот"),
-	O$2("morningstar", "Моргенштерн"),
-	O$2("pike", "Пика"),
-	O$2("rapier", "Рапира"),
-	O$2("scimitar", "Скимитар"),
-	O$2("shortsword", "Короткий меч"),
-	O$2("trident", "Трезубец"),
-	O$2("war-pick", "Боевая кирка"),
-	O$2("warhammer", "Боевой молот"),
-	O$2("whip", "Кнут")
-];
-var instruments = [
-	"Лютня",
-	"Флейта",
-	"Лира",
-	"Рожок",
-	"Барабан",
-	"Виола",
-	"Свирель",
-	"Шалмей"
-].map((name, index) => O$2(`instrument-${index}`, name));
-var classEquipment = {
-	barbarian: {
-		groups: [G("primary", "Основное оружие", [O$2("greataxe", "Секира", ["Секира"], true), ...martialMelee.filter((option) => option.id !== "greataxe")]), G("secondary", "Запасное оружие", [O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"], true), ...simpleWeapons$1])],
-		fixed: [packText("explorer", "Набор путешественника"), "Метательное копьё ×4"]
-	},
-	bard: {
-		groups: [
-			G("weapon", "Оружие", [
-				O$2("rapier", "Рапира", ["Рапира"], true),
-				O$2("longsword", "Длинный меч"),
-				...simpleWeapons$1
-			]),
-			G("pack", "Дорожный набор", [P("diplomat", "Набор дипломата", true), P("entertainer", "Набор артиста")]),
-			G("instrument", "Музыкальный инструмент", instruments.map((option) => option.id === "instrument-0" ? {
-				...option,
-				recommended: true
-			} : option))
-		],
-		fixed: [armorText.leather, "Кинжал"]
-	},
-	cleric: {
-		groups: [
-			G("weapon", "Основное оружие", [O$2("mace", "Булава", ["Булава"], true), O$2("warhammer", "Боевой молот (если есть владение)")]),
-			G("armor", "Доспех", [
-				O$2("scale", armorText.scale, [armorText.scale], true),
-				O$2("leather", armorText.leather),
-				O$2("chain", `${armorText.chain} (если есть владение)`, [armorText.chain])
-			]),
-			G("ranged", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
-			G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: [armorText.shield, "Священный символ"]
-	},
-	druid: {
-		groups: [G("shield", "Защита или простое оружие", [O$2("wood-shield", armorText.woodShield, [armorText.woodShield], true), ...simpleWeapons$1]), G("weapon", "Рукопашное оружие", [O$2("scimitar", "Скимитар"), ...simpleWeapons$1.filter((option) => ![
-			"light-crossbow",
-			"dart",
-			"shortbow",
-			"sling"
-		].includes(option.id)).map((option) => option.id === "dagger" ? {
-			...option,
-			recommended: true
-		} : option)])],
-		fixed: [
-			armorText.leather,
-			packText("explorer", "Набор путешественника"),
-			"Фокусировка друидов"
-		]
-	},
-	fighter: {
-		groups: [
-			G("armor", "Доспех и дальнее оружие", [O$2("chain", armorText.chain, [armorText.chain], true), O$2("leather-bow", `${armorText.leather}, длинный лук и 20 стрел`, [
-				armorText.leather,
-				"Длинный лук",
-				"Стрела ×20"
-			])]),
-			G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [O$2("shield", armorText.shield, [armorText.shield], true), ...martialMelee.map((option) => option.id === "longsword" ? {
-				...option,
-				recommended: true
-			} : option)], 2),
-			G("secondary", "Дополнительное оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"])]),
-			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: []
-	},
-	monk: {
-		groups: [G("weapon", "Оружие", [O$2("shortsword", "Короткий меч", ["Короткий меч"], true), ...simpleWeapons$1]), G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])],
-		fixed: ["Дротик ×10"]
-	},
-	paladin: {
-		groups: [
-			G("primary", "Воинское оружие и/или щит — выберите 2 предмета", [O$2("shield", armorText.shield, [armorText.shield], true), ...martialMelee.map((option) => option.id === "longsword" ? {
-				...option,
-				recommended: true
-			} : option)], 2),
-			G("secondary", "Дополнительное оружие", [O$2("javelins", "Пять метательных копий", ["Метательное копьё ×5"], true), ...simpleWeapons$1.filter((option) => ![
-				"light-crossbow",
-				"dart",
-				"shortbow",
-				"sling"
-			].includes(option.id))]),
-			G("pack", "Дорожный набор", [P("priest", "Набор священника", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: [armorText.chain, "Священный символ"]
-	},
-	ranger: {
-		groups: [
-			G("armor", "Доспех", [O$2("scale", armorText.scale, [armorText.scale], true), O$2("leather", armorText.leather)]),
-			G("melee", "Рукопашное оружие", [
-				O$2("two-shortswords", "Два коротких меча", ["Короткий меч ×2"], true),
-				O$2("two-clubs", "Две дубинки", ["Дубинка ×2"]),
-				O$2("two-handaxes", "Два ручных топора", ["Ручной топор ×2"]),
-				O$2("two-spears", "Два копья", ["Копьё ×2"])
-			]),
-			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: ["Длинный лук", "Стрела ×20"]
-	},
-	rogue: {
-		groups: [
-			G("primary", "Основное оружие", [O$2("rapier", "Рапира", ["Рапира"], true), O$2("shortsword", "Короткий меч")]),
-			G("secondary", "Дополнительное оружие", [O$2("shortbow", "Короткий лук и 20 стрел", ["Короткий лук", "Стрела ×20"], true), O$2("shortsword", "Короткий меч")]),
-			G("pack", "Дорожный набор", [
-				P("burglar", "Набор взломщика", true),
-				P("dungeoneer", "Набор исследователя подземелий"),
-				P("explorer", "Набор путешественника")
-			])
-		],
-		fixed: [
-			armorText.leather,
-			"Кинжал ×2",
-			"Воровские инструменты"
-		]
-	},
-	sorcerer: {
-		groups: [
-			G("weapon", "Оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
-			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
-			G("pack", "Дорожный набор", [P("dungeoneer", "Набор исследователя подземелий", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: ["Кинжал ×2"]
-	},
-	warlock: {
-		groups: [
-			G("weapon", "Дальнее или простое оружие", [O$2("crossbow", "Лёгкий арбалет и 20 болтов", ["Лёгкий арбалет", "Болт ×20"], true), ...simpleWeapons$1]),
-			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
-			G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("dungeoneer", "Набор исследователя подземелий")]),
-			G("simple", "Дополнительное простое оружие", simpleWeapons$1)
-		],
-		fixed: [armorText.leather, "Кинжал ×2"]
-	},
-	wizard: {
-		groups: [
-			G("weapon", "Оружие", [O$2("quarterstaff", "Боевой посох", ["Боевой посох"], true), O$2("dagger", "Кинжал")]),
-			G("focus", "Способ работы с материальными компонентами", [O$2("components", "Мешочек с компонентами"), O$2("arcane", "Магическая фокусировка", ["Магическая фокусировка"], true)]),
-			G("pack", "Дорожный набор", [P("scholar", "Набор учёного", true), P("explorer", "Набор путешественника")])
-		],
-		fixed: ["Книга заклинаний"]
-	},
-	artificer: {
-		groups: [G("weapons", "Два простых оружия", simpleWeapons$1, 2), G("armor", "Доспех", [O$2("studded", armorText.studded, [armorText.studded], true), O$2("scale", armorText.scale)])],
-		fixed: [
-			"Лёгкий арбалет",
-			"Болт ×20",
-			"Воровские инструменты",
-			packText("dungeoneer", "Набор исследователя подземелий")
-		]
-	}
-};
-function equipmentRule(classId) {
-	return classEquipment[classId] || {
-		groups: [],
-		fixed: []
-	};
-}
-function defaultEquipmentSelections(classId) {
-	return equipmentRule(classId).groups.find((group) => group.key === "focus")?.options.some((option) => option.id === "arcane") ? { focus: ["arcane"] } : {};
-}
-function equipmentComplete(character) {
-	return equipmentRule(character.className).groups.every((group) => (character.equipmentSelections?.[group.key] || []).length === group.count);
-}
-var finesseWeapons = new Set([
-	"dagger",
-	"rapier",
-	"scimitar",
-	"shortsword",
-	"whip"
-]);
-var rangedWeapons = new Set([
-	"crossbow",
-	"light-crossbow",
-	"dart",
-	"shortbow",
-	"sling",
-	"leather-bow"
-]);
-var heavyWeapons = new Set([
-	"glaive",
-	"greataxe",
-	"greatsword",
-	"halberd",
-	"maul",
-	"pike"
-]);
-var twoHandedWeapons = new Set([
-	...heavyWeapons,
-	"light-crossbow",
-	"shortbow",
-	"crossbow",
-	"leather-bow"
-]);
-var strengthWeapons = new Set([
-	"club",
-	"greatclub",
-	"handaxe",
-	"javelin",
-	"javelins",
-	"light-hammer",
-	"mace",
-	"quarterstaff",
-	"sickle",
-	"spear",
-	"battleaxe",
-	"flail",
-	"lance",
-	"longsword",
-	"morningstar",
-	"trident",
-	"war-pick",
-	"warhammer",
-	"two-handaxes",
-	"two-clubs",
-	"two-spears"
-]);
-var armorOptions = new Set([
-	"chain",
-	"scale",
-	"leather",
-	"leather-bow",
-	"studded"
-]);
-function modifier$3(score) {
-	return Math.floor((score - 10) / 2);
-}
-function isOneHandedWeapon(option) {
-	return (finesseWeapons.has(option.id) || strengthWeapons.has(option.id)) && !twoHandedWeapons.has(option.id);
-}
-function armorScore(option, abilities) {
-	const dexterity = modifier$3(abilities.dex);
-	if (option.id === "chain") return abilities.str >= 13 ? 160 : -1e3;
-	if (option.id === "scale") return (14 + Math.min(2, dexterity)) * 10 - (dexterity >= 3 ? 2 : 0);
-	if (option.id === "studded") return (12 + dexterity) * 10;
-	if (option.id === "leather-bow") return (11 + dexterity) * 10 + 8;
-	if (option.id === "leather") return (11 + dexterity) * 10;
-	return 0;
-}
-function conditionalProficiencyPenalty(classId, subclass, option) {
-	if (classId !== "cleric") return 0;
-	const martialDomains = new Set(["war", "twilight"]);
-	const heavyDomains = new Set([
-		"life",
-		"war",
-		"forge",
-		"twilight"
-	]);
-	if (option.id === "warhammer" && !martialDomains.has(subclass)) return -1e3;
-	if (option.id === "chain" && !heavyDomains.has(subclass)) return -1e3;
-	return 0;
-}
-function optionScore(classId, option, abilities, context) {
-	const styles = new Set(context.classChoices?.["fighting-style"] || []);
-	const strength = modifier$3(abilities.str);
-	const dexterity = modifier$3(abilities.dex);
-	const proficiencyPenalty = conditionalProficiencyPenalty(classId, context.subclass || "", option);
-	if (proficiencyPenalty) return proficiencyPenalty;
-	if (armorOptions.has(option.id)) return armorScore(option, abilities);
-	if (option.id === "shield" || option.id === "wood-shield") {
-		if (styles.has("two-weapon") || styles.has("great-weapon")) return -100;
-		return 90 + (styles.has("protection") || styles.has("dueling") ? 18 : 0);
-	}
-	if (heavyWeapons.has(option.id)) {
-		if (abilities.str < 13) return -500;
-		const greatWeaponMaster = context.feats?.includes("great-weapon-master");
-		const highestDamageHeavy = option.id === "greatsword" || option.id === "maul";
-		return 55 + strength * 12 + (styles.has("great-weapon") ? 24 : 0) + (greatWeaponMaster && highestDamageHeavy ? 80 : 0) + (option.recommended ? 1 : 0);
-	}
-	if (rangedWeapons.has(option.id)) return 50 + dexterity * 12 + (styles.has("archery") ? 24 : 0) + (option.recommended ? 1 : 0);
-	if (finesseWeapons.has(option.id)) return 46 + Math.max(strength, dexterity) * 12 + (styles.has("dueling") ? 12 : 0) + (styles.has("two-weapon") ? 10 : 0) + (option.recommended ? 1 : 0);
-	if (strengthWeapons.has(option.id)) return 46 + strength * 12 + (styles.has("dueling") ? 10 : 0) + (styles.has("two-weapon") ? 6 : 0) + (option.recommended ? 1 : 0);
-	return option.recommended ? 20 : 10;
-}
-function recommendedForGroup(classId, group, abilities, context) {
-	const ranked = [...group.options].sort((left, right) => optionScore(classId, right, abilities, context) - optionScore(classId, left, abilities, context));
-	if (group.count !== 2 || !group.options.some((option) => option.id === "shield")) return ranked.slice(0, group.count);
-	const styles = new Set(context.classChoices?.["fighting-style"] || []);
-	if (styles.has("great-weapon") && abilities.str >= 13) return ranked.filter((option) => option.id !== "shield").slice(0, 2);
-	if (context.feats?.includes("great-weapon-master") && abilities.str >= 13) {
-		const best = ranked.filter((option) => option.id === "greatsword" || option.id === "maul");
-		if (best.length) return best.slice(0, group.count);
-	}
-	if (styles.has("two-weapon")) return ranked.filter((option) => option.id !== "shield" && isOneHandedWeapon(option)).slice(0, 2);
-	return [group.options.find((option) => option.id === "shield"), ranked.find((option) => option.id !== "shield" && isOneHandedWeapon(option)) || ranked.find((option) => option.id !== "shield")].filter(Boolean);
-}
-function optimalEquipmentSelections(classId, abilities, context = {}) {
-	return Object.fromEntries(equipmentRule(classId).groups.map((group) => [group.key, recommendedForGroup(classId, group, abilities, context).map((option) => option.id)]));
-}
-function equipmentOptionAdvice(option, abilities) {
-	if (option.id === "components") return "Содержит обычные материальные компоненты без указанной стоимости; нужный компонент достаётся свободной рукой.";
-	if (option.id === "arcane") return "Заменяет обычные материальные компоненты без указанной стоимости. Расходуемые и имеющие цену компоненты всё равно нужны отдельно.";
-	if (option.id === "chain") return abilities.str < 13 ? `Не рекомендуется: Сила ${abilities.str}; без Силы 13 скорость снижается на 10 футов.` : "Требование кольчуги выполнено: Сила 13+.";
-	if (heavyWeapons.has(option.id) && abilities.str < 13) return `Не рекомендуется: тяжёлое оружие использует Силу, сейчас ${abilities.str}.`;
-	if ((finesseWeapons.has(option.id) || rangedWeapons.has(option.id)) && abilities.dex > abilities.str) return "Подходит текущему герою: опирается на более высокую Ловкость.";
-	return "";
-}
-function selectedEquipment(character) {
-	const rule = equipmentRule(character.className);
-	const chosen = rule.groups.flatMap((group) => (character.equipmentSelections?.[group.key] || []).flatMap((id) => group.options.find((option) => option.id === id)?.items || []));
-	return [
-		...rule.fixed,
-		...chosen,
-		...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment)
-	];
-}
-//#endregion
-//#region app/naturalAttacks.ts
-var naturalWeapons = {
-	aarakocra: {
-		name: "Когти",
-		die: 6,
-		legacyDie: 4,
-		damage: "рубящий"
-	},
-	centaur: {
-		name: "Копыта",
-		die: 6,
-		legacyDie: 4,
-		damage: "дробящий"
-	},
-	lizardfolk: {
-		name: "Укус",
-		die: 6,
-		damage: "рубящий"
-	},
-	minotaur: {
-		name: "Рога",
-		die: 6,
-		damage: "колющий"
-	},
-	satyr: {
-		name: "Бараньи рога",
-		die: 6,
-		legacyDie: 4,
-		damage: "дробящий"
-	},
-	tabaxi: {
-		name: "Кошачьи когти",
-		die: 6,
-		legacyDie: 4,
-		damage: "рубящий"
-	},
-	tortle: {
-		name: "Когти",
-		die: 6,
-		legacyDie: 4,
-		damage: "рубящий"
-	},
-	leonin: {
-		name: "Когти",
-		die: 4,
-		damage: "рубящий"
-	},
-	dhampir: {
-		name: "Вампирский укус",
-		die: 4,
-		damage: "колющий",
-		ability: "con",
-		condition: "При половине хитов или меньше — преимущество. Усиление укуса применяется отдельно; число усилений равно БМ за продолжительный отдых."
-	}
-};
-function naturalAttacks(character) {
-	const weapon = character.race === "shifter" && ["longtooth", "motm-longtooth"].includes(character.raceVariant) ? {
-		name: "Клыки длиннозуба",
-		die: 6,
-		damage: "колющий",
-		condition: "Только во время Смены; атака клыками доступна бонусным действием."
-	} : naturalWeapons[character.race];
-	if (!weapon) return [];
-	const die = selectedRaceVariant(character.race, character.raceVariant)?.source !== "MPMM" ? weapon.legacyDie || weapon.die : weapon.die;
-	const proficiency = 2 + Math.floor((characterLevel(character) - 1) / 4);
-	const make = (ability, damageDie, martial = false) => {
-		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
-		return {
-			id: `natural-${character.race}${martial ? "-martial-arts" : ""}`,
-			name: `${weapon.name}${martial ? " · Боевые искусства" : ""}`,
-			kind: "feature",
-			ability,
-			proficient: true,
-			attackBonus: proficiency + modifier,
-			attackBonusExtra: 0,
-			damageFormula: `1d${damageDie}+[${ability.toUpperCase()}]`,
-			damageDisplay: `1d${damageDie}${modifier >= 0 ? "+" : ""}${modifier}`,
-			note: [
-				`${weapon.damage} урон.`,
-				weapon.condition,
-				martial ? "Условный режим: только без доспехов и щита, когда соблюдены требования Боевых искусств." : ""
-			].filter(Boolean).join(" ")
-		};
-	};
-	const result = [make(weapon.ability || "str", die)];
-	const monk = getClassLevel(character, "monk");
-	if (monk && !weapon.ability) {
-		const martialDie = monk >= 17 ? 10 : monk >= 11 ? 8 : monk >= 5 ? 6 : 4;
-		result.push(make(character.abilities.dex > character.abilities.str ? "dex" : "str", Math.max(die, martialDie), true));
-	}
-	return result;
-}
-//#endregion
-//#region app/combat.ts
-var automaticAttacksNotice = "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа.";
-var abilityModifier$2 = (score) => Math.floor((score - 10) / 2);
-var proficiencyBonus$2 = (level) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
-var weaponDefinitions = {
-	"дубинка": {
-		name: "Дубинка",
-		dice: "1d4"
-	},
-	"кинжал": {
-		name: "Кинжал",
-		dice: "1d4",
-		finesse: true,
-		thrown: true
-	},
-	"палица": {
-		name: "Палица",
-		dice: "1d8",
-		twoHanded: true
-	},
-	"ручной топор": {
-		name: "Ручной топор",
-		dice: "1d6",
-		thrown: true
-	},
-	"метательное копьё": {
-		name: "Метательное копьё",
-		dice: "1d6",
-		thrown: true
-	},
-	"лёгкий молот": {
-		name: "Лёгкий молот",
-		dice: "1d4",
-		thrown: true
-	},
-	"булава": {
-		name: "Булава",
-		dice: "1d6"
-	},
-	"боевой посох": {
-		name: "Боевой посох",
-		dice: "1d6",
-		versatileDice: "1d8"
-	},
-	"серп": {
-		name: "Серп",
-		dice: "1d4"
-	},
-	"копьё": {
-		name: "Копьё",
-		dice: "1d6",
-		versatileDice: "1d8",
-		thrown: true
-	},
-	"лёгкий арбалет": {
-		name: "Лёгкий арбалет",
-		dice: "1d8",
-		ranged: true,
-		twoHanded: true
-	},
-	"ручной арбалет": {
-		name: "Ручной арбалет",
-		dice: "1d6",
-		ranged: true
-	},
-	"тяжёлый арбалет": {
-		name: "Тяжёлый арбалет",
-		dice: "1d10",
-		ranged: true,
-		twoHanded: true
-	},
-	"духовая трубка": {
-		name: "Духовая трубка",
-		dice: "1",
-		ranged: true
-	},
-	"дротик": {
-		name: "Дротик",
-		dice: "1d4",
-		ranged: true,
-		finesse: true,
-		thrown: true
-	},
-	"короткий лук": {
-		name: "Короткий лук",
-		dice: "1d6",
-		ranged: true,
-		twoHanded: true
-	},
-	"длинный лук": {
-		name: "Длинный лук",
-		dice: "1d8",
-		ranged: true,
-		twoHanded: true
-	},
-	"праща": {
-		name: "Праща",
-		dice: "1d4",
-		ranged: true
-	},
-	"боевой топор": {
-		name: "Боевой топор",
-		dice: "1d8",
-		versatileDice: "1d10"
-	},
-	"цеп": {
-		name: "Цеп",
-		dice: "1d8"
-	},
-	"глефа": {
-		name: "Глефа",
-		dice: "1d10",
-		twoHanded: true
-	},
-	"секира": {
-		name: "Секира",
-		dice: "1d12",
-		twoHanded: true
-	},
-	"двуручный меч": {
-		name: "Двуручный меч",
-		dice: "2d6",
-		twoHanded: true
-	},
-	"алебарда": {
-		name: "Алебарда",
-		dice: "1d10",
-		twoHanded: true
-	},
-	"длинное копьё": {
-		name: "Длинное копьё",
-		dice: "1d12"
-	},
-	"длинный меч": {
-		name: "Длинный меч",
-		dice: "1d8",
-		versatileDice: "1d10"
-	},
-	"молот": {
-		name: "Молот",
-		dice: "2d6",
-		twoHanded: true
-	},
-	"моргенштерн": {
-		name: "Моргенштерн",
-		dice: "1d8"
-	},
-	"пика": {
-		name: "Пика",
-		dice: "1d10",
-		twoHanded: true
-	},
-	"рапира": {
-		name: "Рапира",
-		dice: "1d8",
-		finesse: true
-	},
-	"скимитар": {
-		name: "Скимитар",
-		dice: "1d6",
-		finesse: true
-	},
-	"короткий меч": {
-		name: "Короткий меч",
-		dice: "1d6",
-		finesse: true
-	},
-	"трезубец": {
-		name: "Трезубец",
-		dice: "1d6",
-		versatileDice: "1d8",
-		thrown: true
-	},
-	"боевая кирка": {
-		name: "Боевая кирка",
-		dice: "1d8"
-	},
-	"боевой молот": {
-		name: "Боевой молот",
-		dice: "1d8",
-		versatileDice: "1d10"
-	},
-	"кнут": {
-		name: "Кнут",
-		dice: "1d4",
-		finesse: true
-	}
-};
-var simpleWeapons = new Set([
-	"дубинка",
-	"кинжал",
-	"палица",
-	"ручной топор",
-	"метательное копьё",
-	"лёгкий молот",
-	"булава",
-	"боевой посох",
-	"серп",
-	"копьё",
-	"лёгкий арбалет",
-	"дротик",
-	"короткий лук",
-	"праща"
-]);
-var weaponPlurals = {
-	"дубинка": ["дубинки"],
-	"кинжал": ["кинжалы"],
-	"палица": ["палицы"],
-	"ручной топор": ["ручные топоры"],
-	"метательное копьё": ["метательные копья"],
-	"лёгкий молот": ["легкие молоты"],
-	"булава": ["булавы"],
-	"боевой посох": ["боевые посохи"],
-	"серп": ["серпы"],
-	"копьё": ["копья"],
-	"лёгкий арбалет": ["легкие арбалеты"],
-	"дротик": ["дротики"],
-	"короткий лук": ["короткие луки"],
-	"праща": ["пращи"],
-	"длинный меч": ["длинные мечи", "длинные и короткие мечи"],
-	"короткий меч": ["короткие мечи", "длинные и короткие мечи"],
-	"ручной арбалет": ["ручные арбалеты"],
-	"рапира": ["рапиры"],
-	"скимитар": ["скимитары"]
-};
-function weaponProficient(character, key) {
-	const permissions = characterProficiencies(character).weapons.flatMap((value) => value.toLowerCase().replace(/ё/g, "е").split(/\s*,\s*/));
-	if (permissions.some((value) => /прост(?:ое|ые) (?:и воинское )?оружие/.test(value)) && simpleWeapons.has(key)) return true;
-	if (permissions.some((value) => /воинск(?:ое|ие) оружие/.test(value)) && !simpleWeapons.has(key)) return true;
-	if (key === "короткий меч" && permissions.some((value) => /короткие мечи/.test(value))) return true;
-	if (key === "длинный меч" && permissions.some((value) => /длинные (?:и короткие )?мечи/.test(value))) return true;
-	const normalized = key.replace(/ё/g, "е");
-	return permissions.some((value) => value === normalized || (weaponPlurals[key] || []).some((alias) => alias === value));
-}
-var damagingCantrips = {
-	"acid-splash": {
-		dice: "d6",
-		mode: "save",
-		save: "dex",
-		damageType: "Кислота"
-	},
-	firebolt: {
-		dice: "d10",
-		mode: "attack",
-		damageType: "Огонь"
-	},
-	vicious: {
-		dice: "d4",
-		mode: "save",
-		save: "wis",
-		note: "При провале цель получает помеху на следующую атаку."
-	},
-	eldritch: {
-		dice: "d10",
-		mode: "attack",
-		note: "Для каждого луча отдельный бросок атаки; цели можно выбирать отдельно."
-	},
-	"ray-of-frost": {
-		dice: "d8",
-		mode: "attack",
-		damageType: "Холод",
-		note: "Скорость цели уменьшается на 10 футов до начала вашего следующего хода."
-	},
-	"sacred-flame": {
-		dice: "d8",
-		mode: "save",
-		save: "dex",
-		note: "Цель не получает бонус от укрытия к спасброску."
-	},
-	"shocking-grasp": {
-		dice: "d8",
-		mode: "attack",
-		damageType: "Электричество",
-		note: "При попадании цель не может совершать реакции до начала своего следующего хода."
-	},
-	"thorn-whip": {
-		dice: "d6",
-		mode: "attack",
-		note: "Большую или меньшую цель можно подтянуть на 10 футов."
-	},
-	"produce-flame": {
-		dice: "d8",
-		mode: "attack",
-		damageType: "Огонь"
-	},
-	"toll-the-dead": {
-		dice: "d8",
-		mode: "save",
-		save: "wis",
-		note: "Если у цели не все хиты, используется d12 вместо d8."
-	},
-	"mind-sliver": {
-		dice: "d6",
-		mode: "save",
-		save: "int",
-		note: "Цель вычитает 1d4 из следующего спасброска до конца вашего следующего хода."
-	},
-	"word-radiance": {
-		dice: "d6",
-		mode: "save",
-		save: "con"
-	}
-};
-function normalizeEquipmentName(value) {
-	return value.toLowerCase().replace(/\s*\([^)]*\)\s*/g, "").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s+и\s+\d+\s+(болтов|стрел|снарядов)\s*$/i, "").trim();
-}
-function signed$1(value) {
-	return value >= 0 ? `+${value}` : `${value}`;
-}
-function cantripDiceCount(level) {
-	return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
-}
-function monkMartialDie(level) {
-	if (level >= 17) return "1d10";
-	if (level >= 11) return "1d8";
-	if (level >= 5) return "1d6";
-	return "1d4";
-}
-function weaponAbility(definition, character) {
-	if (definition.finesse) return character.abilities.dex > character.abilities.str ? "dex" : "str";
-	if (definition.ranged) return "dex";
-	return "str";
-}
-function subclassAttacks(character, prof) {
-	const result = [];
-	const add = (attack) => result.push(attack);
-	const attack = (id, name, ability, dice, note, damageBonus = abilityModifier$2(character.abilities[ability])) => {
-		const abilityMod = abilityModifier$2(character.abilities[ability]);
-		const bonus = typeof damageBonus === "number" ? damageBonus : 0;
-		add({
-			id,
-			name,
-			kind: "feature",
-			ability,
-			proficient: true,
-			attackBonus: prof + abilityMod,
-			attackBonusExtra: 0,
-			damageFormula: `${dice}+${typeof damageBonus === "string" ? damageBonus : `[${ability.toUpperCase()}]`}`,
-			damageDisplay: `${dice}${typeof damageBonus === "number" && bonus ? signed$1(bonus) : ""}`,
-			note
-		});
-	};
-	for (const entry of orderedCharacterClasses(character)) {
-		const subclass = entry.subclassId || "";
-		if (entry.classId === "barbarian" && subclass === "battlerager" && entry.level >= 3) attack("subclass-battlerager-spikes", "Шипы доспеха", "str", "1d4", "Доступно только в шипованном доспехе и во время ярости; атака выполняется бонусным действием.");
-		if (entry.classId === "barbarian" && subclass === "beast" && entry.level >= 3) {
-			attack("subclass-beast-bite", "Форма зверя: Укус", "str", "1d8", "Временное природное оружие только во время ярости; раз за ход при хп ниже половины попадание может восстановить хиты в размере БМ.");
-			attack("subclass-beast-claws", "Форма зверя: Когти", "str", "1d6", "Временное природное оружие только во время ярости; раз за ход после атаки когтем можно сделать ещё одну атаку когтем.");
-			attack("subclass-beast-tail", "Форма зверя: Хвост", "str", "1d8", "Временное природное оружие только во время ярости; досягаемость 10 футов, реакцией может повысить КД против одной атаки.");
-		}
-		if (entry.classId === "monk" && subclass === "astral-self" && entry.level >= 3) attack("subclass-astral-arms", "Руки астрального тела", "wis", monkMartialDie(entry.level), "Только пока проявлены астральные руки: силовой урон, +5 футов досягаемости в свой ход, для атаки и урона используется Мудрость.");
-		if (entry.classId === "bard" && subclass === "creation" && entry.level >= 6) add({
-			id: "subclass-creation-dancing-item",
-			name: "Оживлённый предмет: Силовой удар",
-			kind: "feature",
-			ability: "cha",
-			proficient: true,
-			attackBonus: prof + abilityModifier$2(character.abilities.cha),
-			attackBonusExtra: 0,
-			damageFormula: "1d10+[PB]",
-			damageDisplay: `1d10${signed$1(prof)}`,
-			note: `Временный спутник Dancing Item. КД 16; хиты ${10 + 5 * entry.level}; атака использует модификатор атаки заклинанием барда.`
-		});
-		if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) {
-			const abilityMod = abilityModifier$2(character.abilities.wis);
-			const extra = entry.level >= 15 ? "2d6" : entry.level >= 7 ? "1d6" : "";
-			add({
-				id: "subclass-drakewarden-bite",
-				name: "Дрейк: Укус",
-				kind: "feature",
-				ability: "wis",
-				proficient: true,
-				attackBonus: prof + abilityMod,
-				attackBonusExtra: 0,
-				damageFormula: `1d6+[PB]${extra ? `+${extra}` : ""}`,
-				damageDisplay: `1d6${signed$1(prof)}${extra ? ` + ${extra} стихией` : ""}`,
-				note: `Атака временного дрейка; КД ${14 + prof}, хиты ${5 + 5 * entry.level}. Стихийный тип выбирается при каждом призыве.`
-			});
-		}
-	}
-	return result;
-}
-function characterAttacks(character, spells) {
-	const totalLevel = characterLevel(character);
-	const prof = proficiencyBonus$2(totalLevel);
-	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
-	const equipment = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
-	const seenWeapons = /* @__PURE__ */ new Set();
-	const weaponAttacks = equipment.flatMap((item) => {
-		const key = normalizeEquipmentName(item);
-		const definition = weaponDefinitions[key];
-		if (!definition || seenWeapons.has(key)) return [];
-		seenWeapons.add(key);
-		const ability = weaponAbility(definition, character);
-		const abilityMod = abilityModifier$2(character.abilities[ability]);
-		const proficient = weaponProficient(character, key);
-		const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
-		const abilityVariable = `[${ability.toUpperCase()}]`;
-		const makeAttack = (dice, twoHands) => {
-			const damageExtra = (styles.has("dueling") && !twoHands && !definition.ranged && !definition.twoHanded ? 2 : 0) + (styles.has("thrown-weapon") && definition.thrown && !twoHands ? 2 : 0);
-			return {
-				id: `weapon-${key}${definition.versatileDice ? twoHands ? "-two-hands" : "-one-hand" : ""}`,
-				name: `${definition.name}${definition.versatileDice ? twoHands ? " (2 руки)" : " (1 рука)" : ""}`,
-				kind: "weapon",
-				ability,
-				proficient,
-				attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
-				attackBonusExtra,
-				damageFormula: `${dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
-				damageDisplay: `${dice}${signed$1(abilityMod + damageExtra)}`,
-				note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
-			};
-		};
-		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
-	});
-	const featureAttacks = [...naturalAttacks(character), ...subclassAttacks(character, prof)];
-	const spellAbility = classRules[character.className]?.spellAbility || orderedCharacterClasses(character).map((entry) => classRules[entry.classId]?.spellAbility).find(Boolean);
-	if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
-	const diceCount = cantripDiceCount(totalLevel);
-	const elementalAdeptTypes = new Set((character.advancements || []).filter((choice) => choice.featId === "elemental-adept").flatMap((choice) => choice.featChoices?.element || []));
-	const invocations = new Set([...character.classChoices?.invocations || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.invocations || [])]);
-	const cantripAttacks = character.spells.map((id) => spells.find((spell) => spell.id === id && spell.level === 0)).filter(Boolean).flatMap((spell) => {
-		const definition = damagingCantrips[spell.id];
-		if (!definition) return [];
-		const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
-		const castingAbility = classRules[character.spellGrants?.find((grant) => grant.spellId === spell.id && grant.classId)?.classId || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className)]?.spellAbility || spellAbility;
-		const castingMod = abilityModifier$2(character.abilities[castingAbility]);
-		const damageBonus = agonizing ? abilityModifier$2(character.abilities.cha) : 0;
-		const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType) ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.` : "";
-		const rays = spell.id === "eldritch" ? diceCount : 1;
-		return Array.from({ length: rays }, (_, index) => ({
-			id: `cantrip-${spell.id}${rays > 1 ? `-beam-${index + 1}` : ""}`,
-			name: `${spell.name}${rays > 1 ? ` · луч ${index + 1}/${rays}` : ""}`,
-			kind: "cantrip",
-			ability: castingAbility,
-			proficient: true,
-			attackBonus: definition.mode === "attack" ? prof + castingMod : void 0,
-			saveDc: definition.mode === "save" ? 8 + prof + castingMod : void 0,
-			attackBonusExtra: 0,
-			damageFormula: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : ""}`,
-			damageDisplay: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing && damageBonus ? signed$1(damageBonus) : ""}`,
-			note: [definition.note, elementalAdept].filter(Boolean).join(" ") || void 0
-		}));
-	});
-	return [
-		...weaponAttacks,
-		...featureAttacks,
-		...cantripAttacks
-	];
-}
-function lssWeaponAttacks(attacks) {
-	return attacks.filter((attack) => attack.kind === "weapon" || attack.attackBonus !== void 0).map((attack, index) => ({
-		id: `weapon-${Date.now()}-${index}`,
-		name: { value: attack.name },
-		dmg: { value: attack.damageFormula },
-		ability: attack.ability,
-		isProf: attack.proficient,
-		modBonus: { value: attack.attackBonusExtra }
-	}));
-}
-//#endregion
-//#region app/armor.ts
-var modifier$2 = (score) => Math.floor((score - 10) / 2);
-function hasItem(items, pattern) {
-	return items.some((item) => pattern.test(item));
-}
-function hasFeat(character, featId) {
-	return (character.advancements || []).some((choice) => choice.featId === featId) || (character.feats || []).includes(featId);
-}
-function armorClassBreakdown(character) {
-	const items = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
-	const dex = modifier$2(character.abilities.dex);
-	const con = modifier$2(character.abilities.con);
-	const wis = modifier$2(character.abilities.wis);
-	const shield = hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
-	const worn = [
-		{
-			pattern: /полулаты/i,
-			ac: 15,
-			dex: "max2",
-			name: "Полулаты"
-		},
-		{
-			pattern: /(?:^|\s)латы(?:$|\s)/i,
-			ac: 18,
-			dex: "none",
-			name: "Латы"
-		},
-		{
-			pattern: /наборн(?:ый|ая) доспех/i,
-			ac: 17,
-			dex: "none",
-			name: "Наборный доспех"
-		},
-		{
-			pattern: /кольчуга/i,
-			ac: 16,
-			dex: "none",
-			name: "Кольчуга"
-		},
-		{
-			pattern: /кольчат(?:ый|ая) доспех/i,
-			ac: 14,
-			dex: "none",
-			name: "Кольчатый доспех"
-		},
-		{
-			pattern: /нагрудник/i,
-			ac: 14,
-			dex: "max2",
-			name: "Кираса"
-		},
-		{
-			pattern: /чешуйчат/i,
-			ac: 14,
-			dex: "max2",
-			name: "Чешуйчатый доспех"
-		},
-		{
-			pattern: /кольчужн(?:ая|ый) рубах/i,
-			ac: 13,
-			dex: "max2",
-			name: "Кольчужная рубаха"
-		},
-		{
-			pattern: /шкурн(?:ый|ая) доспех/i,
-			ac: 12,
-			dex: "max2",
-			name: "Шкурный доспех"
-		},
-		{
-			pattern: /прокл[её]панн(?:ая|ый) кож/i,
-			ac: 12,
-			dex: "full",
-			name: "Проклёпанная кожа"
-		},
-		{
-			pattern: /кожан(?:ый|ая) доспех/i,
-			ac: 11,
-			dex: "full",
-			name: "Кожаный доспех"
-		}
-	].find((armor) => hasItem(items, armor.pattern));
-	const mediumArmorMaster = hasFeat(character, "medium-armor-master");
-	let value = 10 + dex;
-	let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
-	let wearingArmor = false;
-	if (worn) {
-		const dexCap = mediumArmorMaster ? 3 : 2;
-		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
-		value = worn.ac + dexBonus;
-		base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
-		wearingArmor = true;
-	} else if (character.race === "tortle") {
-		value = 17;
-		base = "Природный панцирь: 17";
-	} else if (character.race === "lizardfolk") {
-		value = 13 + dex;
-		base = "Природный доспех: 13 + Ловкость";
-	} else if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") {
-		value = 13 + dex;
-		base = "Драконья устойчивость: 13 + Ловкость";
-	} else {
-		const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
-		if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) {
-			value = 10 + dex + wis;
-			base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
-		} else if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) {
-			value = 10 + dex + con;
-			base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
-		}
-	}
-	const bonuses = [];
-	if (shield) {
-		value += 2;
-		bonuses.push("щит +2");
-	}
-	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
-	if (wearingArmor && styles.has("defense")) {
-		value += 1;
-		bonuses.push("стиль «Оборона» +1");
-	}
-	if (wearingArmor && character.race === "warforged") {
-		value += 1;
-		bonuses.push("встроенная защита кованого +1");
-	}
-	const conditions = [];
-	if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
-	if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
-	if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
-	if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
-	if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
-	if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
-	return {
-		value,
-		base,
-		bonuses,
-		conditions
-	};
-}
-function armorClass(character) {
-	return armorClassBreakdown(character).value;
-}
-//#endregion
-//#region app/skillIds.ts
-function normalizeSkillId(value) {
-	return value.trim().toLocaleLowerCase("ru").replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/gi, "");
-}
-var skillAliases = {
-	perception: "Внимательность",
-	attention: "Внимательность",
-	awareness: "Внимательность",
-	внимательность: "Внимательность",
-	восприятие: "Внимательность",
-	medicine: "Медицина",
-	medical: "Медицина",
-	медицина: "Медицина"
-};
-for (const [russianName, { key }] of Object.entries(skillKeys)) {
-	skillAliases[normalizeSkillId(russianName)] = russianName;
-	skillAliases[normalizeSkillId(key)] = russianName;
-}
-/** Converts external or legacy skill identifiers to HeroList's canonical Russian name. */
-function skillNameFromExternalId(value) {
-	return skillAliases[normalizeSkillId(value)] || "";
-}
-/** Converts a HeroList/legacy skill name to the canonical Long Story Short identifier. */
-function externalSkillId(value) {
-	const russianName = skillNameFromExternalId(value);
-	return russianName ? skillKeys[russianName]?.key || "" : "";
-}
-function normalizeImportedSkills(values) {
-	return [...new Set((values || []).map(skillNameFromExternalId).filter(Boolean))];
-}
-//#endregion
-//#region app/exportText.ts
-function cleanInlineMarkdown(value) {
-	return value.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1").replace(/`([^`]+)`/g, "$1").replace(/\*\*([^*]+)\*\*/g, "$1").replace(/__([^_]+)__/g, "$1").replace(/~~([^~]+)~~/g, "$1");
-}
-function cleanPlainLine(value) {
-	return cleanInlineMarkdown(value).replace(/^\s{0,3}#{1,6}\s+/, "").replace(/^\s*[-*+]\s+/, "• ").trimEnd();
-}
-function isMarkdownTableSeparator(value) {
-	return /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(value);
-}
-function tableCells(value) {
-	let row = value.trim();
-	if (row.startsWith("|")) row = row.slice(1);
-	if (row.endsWith("|")) row = row.slice(0, -1);
-	return row.split("|").map((cell) => cleanInlineMarkdown(cell.trim()));
-}
-/**
-* Converts Markdown that external character-sheet importers do not understand
-* into conservative plain text. In particular Markdown tables become one
-* readable paragraph per row instead of a stream of pipes and separator dashes.
-*/
-function normalizeExportText(value) {
-	const lines = String(value || "").replace(/\r\n?/g, "\n").replace(/\|\s+\|/g, "|\n|").split("\n");
-	const output = [];
-	for (let index = 0; index < lines.length;) {
-		const line = lines[index];
-		const next = lines[index + 1];
-		if (line.includes("|") && next !== void 0 && isMarkdownTableSeparator(next)) {
-			const firstPipe = line.indexOf("|");
-			if (firstPipe > 0) {
-				const prefix = cleanPlainLine(line.slice(0, firstPipe).trim());
-				if (prefix) output.push(prefix);
-			}
-			const headers = tableCells(firstPipe >= 0 ? line.slice(firstPipe) : line);
-			index += 2;
-			let rows = 0;
-			while (index < lines.length && lines[index].includes("|") && !isMarkdownTableSeparator(lines[index])) {
-				const cells = tableCells(lines[index]);
-				if (cells.length < 2) break;
-				const values = cells.map((cell, cellIndex) => {
-					if (!cell) return "";
-					const header = headers[cellIndex]?.trim();
-					return header ? `${header}: ${cell}` : cell;
-				}).filter(Boolean);
-				if (values.length) output.push(`• ${values.join("; ")}`);
-				rows += 1;
-				index += 1;
-			}
-			if (!rows && headers.some(Boolean)) output.push(headers.filter(Boolean).join(" — "));
-			continue;
-		}
-		if (isMarkdownTableSeparator(line)) {
-			index += 1;
-			continue;
-		}
-		output.push(cleanPlainLine(line));
-		index += 1;
-	}
-	return output.join("\n").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-}
-//#endregion
-//#region app/speed.ts
-var baseSpeeds = {
-	dwarf: 25,
-	duergar: 25,
-	halfling: 25,
-	gnome: 25,
-	deepgnome: 25,
-	grung: 25,
-	locathah: 30,
-	centaur: 40,
-	satyr: 35,
-	leonin: 35,
-	dhampir: 35
-};
-function equipment(character) {
-	return character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
-}
-/** Permanent walking speed and separately available movement modes (feet). */
-function speedBreakdown(character) {
-	const race = character.race;
-	const variant = character.raceVariant;
-	const items = equipment(character);
-	const armored = items.some((item) => /полулаты|латы|наборн(?:ый|ая) доспех|кольчуга|кольчат(?:ый|ая) доспех|нагрудник|чешуйчат|кольчужн(?:ая|ый) рубах|шкурн(?:ый|ая) доспех|прокл[её]панн(?:ая|ый) кож|кожан(?:ый|ая) доспех/i.test(item));
-	const heavy = items.find((item) => /(?:^|\s)латы(?:$|\s|\()|наборн(?:ый|ая) доспех|кольчуга|кольчат(?:ый|ая) доспех/i.test(item));
-	const medium = items.some((item) => /полулаты|нагрудник|чешуйчат|кольчужн(?:ая|ый) рубах|шкурн(?:ый|ая) доспех/i.test(item));
-	const shield = items.some((item) => /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s|\()/i.test(item));
-	const base = race === "elf" && variant === "wood" || race === "genasi" && variant === "motm-air" ? 35 : race === "aarakocra" && variant === "legacy-ee" ? 25 : race === "duergar" && !variant.startsWith("legacy") || race === "deepgnome" && !variant.startsWith("legacy") ? 30 : baseSpeeds[race] ?? 30;
-	const sources = [`${race}${variant ? ` (${variant})` : ""}: ${base}`];
-	const conditions = [];
-	let walk = base;
-	if (new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("mobile")) {
-		walk += 10;
-		sources.push("Подвижный +10");
-	}
-	if (getClassLevel(character, "barbarian") >= 5) if (!heavy) {
-		walk += 10;
-		sources.push("Быстрое передвижение варвара +10");
-	} else conditions.push("Быстрое передвижение варвара не действует в тяжёлом доспехе");
-	const monk = getClassLevel(character, "monk");
-	if (monk >= 2) {
-		const bonus = monk >= 18 ? 30 : monk >= 14 ? 25 : monk >= 10 ? 20 : monk >= 6 ? 15 : 10;
-		if (!armored && !shield) {
-			walk += bonus;
-			sources.push(`Движение без доспехов монаха +${bonus}`);
-		} else conditions.push("Движение монаха не действует с доспехом или щитом");
-	}
-	const requiredStrength = heavy && /(?:^|\s)латы(?:$|\s|\()|наборн(?:ый|ая) доспех/i.test(heavy) ? 15 : heavy && /кольчуга/i.test(heavy) ? 13 : 0;
-	if (requiredStrength && race !== "dwarf" && race !== "duergar" && character.abilities.str < requiredStrength) {
-		walk -= 10;
-		sources.push(`Тяжёлый доспех (Сила ${requiredStrength}) −10`);
-	}
-	const result = {
-		walk: Math.max(0, walk),
-		sources,
-		conditions
-	};
-	const followsWalk = (kind) => {
-		result[kind] = result.walk;
-	};
-	if (race === "genasi" && (variant === "water" || variant === "motm-water") || ["triton", "seafelf"].includes(race) || race === "locathah") result.swim = variant === "motm-water" || variant === "base" && race === "triton" || race === "seafelf" && !variant.startsWith("legacy") ? walk : 30;
-	if (race === "tabaxi") variant.startsWith("legacy") ? result.climb = 20 : followsWalk("climb");
-	if (race === "dhampir") result.climb = walk;
-	if (race === "hadozee") result.climb = walk;
-	if (race === "grung") result.climb = 25;
-	if (race === "aarakocra" || race === "fairy" || race === "owlin") if (heavy || medium) conditions.push("Полёт недоступен в среднем или тяжёлом доспехе");
-	else result.fly = race === "aarakocra" && variant === "legacy-ee" ? 50 : walk;
-	if (race === "aasimar" && [
-		"protector",
-		"multiverse",
-		"motm-111"
-	].includes(variant)) conditions.push("Сияющая душа: полёт доступен только при активации преображения");
-	if (race === "shifter" && ["swiftstride", "motm-swiftstride"].includes(variant)) conditions.push("Смена быстронога: +10 к скорости только во время Смены");
-	if (race === "tabaxi") conditions.push("Кошачья ловкость: удвоение скорости только при активации");
-	return result;
-}
-//#endregion
-//#region app/derivedSkills.ts
-var modifier$1 = (score) => Math.floor((score - 10) / 2);
-var proficiencyBonus$1 = (level) => Math.floor((Math.max(1, level) - 1) / 4) + 2;
-function skillBonusBreakdown(character, skill) {
-	const rule = skillKeys[skill];
-	if (!rule) throw new Error(`Unknown skill: ${skill}`);
-	const ability = modifier$1(character.abilities[rule.stat]);
-	const proficient = characterProficiencies(character).skills.includes(skill);
-	const expertise = proficient && characterExpertiseSkills(character).includes(skill);
-	const training = proficient ? proficiencyBonus$1(characterLevel(character)) * (expertise ? 2 : 1) : 0;
-	return {
-		value: ability + training,
-		ability,
-		training,
-		proficient,
-		expertise
-	};
-}
-function passivePerceptionBreakdown(character) {
-	const skill = skillBonusBreakdown(character, "Внимательность");
-	const observant = new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("observant") ? 5 : 0;
-	return {
-		value: 10 + skill.value + observant,
-		skill,
-		observant
-	};
-}
-//#endregion
-//#region app/initiative.ts
-var modifier = (score) => Math.floor((score - 10) / 2);
-/** Permanent initiative modifier; roll-specific dice and advantage remain notes. */
-function initiativeBreakdown(character) {
-	const pb = Math.floor((characterLevel(character) - 1) / 4) + 2;
-	const sources = [];
-	const notes = [];
-	let value = modifier(character.abilities.dex);
-	sources.push(`Ловкость ${value >= 0 ? "+" : ""}${value}`);
-	const add = (amount, source) => {
-		value += amount;
-		sources.push(`${source} ${amount >= 0 ? "+" : ""}${amount}`);
-	};
-	if (new Set([...character.feats || [], ...(character.advancements || []).map((choice) => choice.featId)]).has("alert")) add(5, "Бдительный");
-	if (character.race === "harengon") add(pb, "Заячья реакция");
-	const bard = getClassProgress(character, "bard");
-	const champion = getClassProgress(character, "fighter");
-	if (character.race !== "harengon") {
-		const jack = bard && bard.level >= 2 ? Math.floor(pb / 2) : 0;
-		const athlete = champion?.subclassId === "champion" && champion.level >= 7 ? Math.ceil(pb / 2) : 0;
-		if (Math.max(jack, athlete)) add(Math.max(jack, athlete), athlete >= jack && athlete ? "Выдающийся атлет" : "Мастер на все руки");
-	}
-	const rogue = getClassProgress(character, "rogue");
-	if (rogue?.subclassId === "swashbuckler" && rogue.level >= 3) add(modifier(character.abilities.cha), "Лихая удаль");
-	const wizard = getClassProgress(character, "wizard");
-	if (wizard && wizard.level >= 2 && ["warmagic", "chronurgy"].includes(wizard.subclassId || "")) add(modifier(character.abilities.int), wizard.subclassId === "warmagic" ? "Тактическая смекалка" : "Хрональная осведомлённость");
-	const ranger = getClassProgress(character, "ranger");
-	if (ranger?.subclassId === "gloomstalker" && ranger.level >= 3) add(modifier(character.abilities.wis), "Ужасающая засада");
-	if (getClassProgress(character, "barbarian")?.level && getClassProgress(character, "barbarian").level >= 7) notes.push("Дикий инстинкт: преимущество на бросок инициативы");
-	if (getClassProgress(character, "paladin")?.subclassId === "watchers" && getClassProgress(character, "paladin").level >= 7) notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
-	if (getClassProgress(character, "cleric")?.subclassId === "twilight") notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
-	return {
-		value,
-		sources,
-		notes
-	};
-}
-//#endregion
-//#region app/exportFormats.ts
-function abilityModifier$1(score) {
-	return Math.floor((score - 10) / 2);
-}
-function proficiencyBonus(level) {
-	return 2 + Math.floor((Math.max(1, level) - 1) / 4);
-}
-var helpmateAbilityKey = {
-	str: 1,
-	dex: 2,
-	con: 3,
-	int: 4,
-	wis: 5,
-	cha: 6
-};
-function darkvisionDistance(features) {
-	return features.reduce((distance, feature) => {
-		if (!/т[её]мное зрение/i.test(feature.name)) return distance;
-		const featureDistance = /превосходное/i.test(feature.name) || /120\s*фут/i.test(feature.description) || /больш(ой|ую) дистанц/i.test(feature.description) ? 120 : 60;
-		return Math.max(distance, featureDistance);
-	}, 0);
-}
-function estimatedHitPoints(character) {
-	const constitution = abilityModifier$1(character.abilities.con);
-	const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
-	return Math.max(1, history.reduce((total, entry) => {
-		const hitDie = classRules[entry.classId]?.hitDie || 8;
-		return total + (entry.characterLevel === 1 ? hitDie + constitution : entry.hpMode === "roll" || entry.hpMode === "manual" ? entry.hpGainFormat === "raw-roll-plus-con-v1" && Number.isInteger(entry.hpGain) ? Math.max(1, Math.min(hitDie, Math.max(1, entry.hpGain)) + constitution) : Math.max(1, entry.hpGain || 1) : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
-	}, 0));
-}
-function makeId() {
-	const bytes = crypto.getRandomValues(new Uint8Array(16));
-	bytes[6] = bytes[6] & 15 | 64;
-	bytes[8] = bytes[8] & 63 | 128;
-	const value = [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-	return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
-}
-function featureText(features) {
-	return features.map((feature) => `${feature.name}. ${normalizeExportText(feature.description)}`).join("\n");
-}
-var helpmateLanguageIds = Object.freeze({
-	"Общий": "12",
-	"Гномий": "13",
-	"Дварфский": "14",
-	"Полуросликов": "15",
-	"Эльфийский": "16",
-	"Орочий": "17",
-	"Великаний": "18",
-	"Гоблинский": "19",
-	"Драконий": "20",
-	"Бездны": "21",
-	"Глубинная речь": "22",
-	"Инфернальный": "23",
-	"Небесный": "24",
-	"Первичный": "25",
-	"Подземный": "26",
-	"Сильван": "27",
-	"Ауран": "28",
-	"Телепатия": "29",
-	"Гитский": "31",
-	"Язык Жаболюдов": "32",
-	"Акван": "33",
-	"Терран": "34",
-	"Игнан": "35",
-	"Гноллий": "36",
-	"Язык Греллов": "37",
-	"Язык Крюкастых ужасов": "38",
-	"Модронский": "39",
-	"Отиджский": "40",
-	"Сахуагинский": "41",
-	"Слаадский": "42",
-	"Язык Сфинксов": "43",
-	"Три-кринский": "44",
-	"Друидический": "45",
-	"Троглодитский": "46",
-	"Язык Бурых увальней": "47",
-	"Язык Йети": "48",
-	"Язык Воргов": "49",
-	"Язык Гигантских сов": "50",
-	"Язык Гигантских лосей": "51",
-	"Язык Гигантских орлов": "52",
-	"Язык Мерцающих псов": "53",
-	"Язык Полярных волков": "54",
-	"Воровской жаргон": "55",
-	"Общий (Жесты)": "56",
-	"Тэйский": "57"
-});
-function helpmateNote(context) {
-	return summaryText(context).split(/\n\n+/).filter((block) => !/^Языки:\s*/i.test(block.trim())).map((block) => {
-		const [title, ...body] = block.split("\n");
-		const labeled = title.match(/^([^:]+):\s*(.*)$/);
-		if (!labeled) return block;
-		return `<zag s=1>${labeled[1]}</zag>${labeled[2] ? ` ${labeled[2]}` : ""}${body.length ? `\n${body.join("\n")}` : ""}`;
-	}).join("\n").replace(/\r\n?/g, "\n").replace(/\n{2,}/g, "\n").replace(/\n/g, "\r\n");
-}
-function summaryText(context) {
-	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
-	const selectedSpells = [...new Set([
-		...character.spells,
-		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
-	])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
-	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const alwaysPreparedNames = [...alwaysPrepared].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const classes = orderedCharacterClasses(character);
-	const totalLevel = characterLevel(character);
-	const spellAbility = classRules[character.className]?.spellAbility;
-	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
-	const spellDc = spellAbility ? 8 + proficiencyBonus(totalLevel) + spellMod : 0;
-	const resources = characterResources(character).map((resource) => `${resource.name}: ${resourceCurrent(character, resource)} / ${resource.max}${resource.die ? ` (${resource.die})` : ""}`);
-	const backgroundData = backgroundRule(character.background, background);
-	const equipment = selectedEquipment(character);
-	const attacks = characterAttacks(character, spells);
-	const proficiencies = characterProficiencies(character);
-	const classSummary = classes.map((entry) => `${entry.classId}${entry.subclassId ? ` (${entry.subclassId})` : ""} ${entry.level}`).join(" / ");
-	const hitDice = hitDicePools(character).map((pool) => `${pool.max}к${pool.die}${pool.spent ? ` (потрачено ${pool.spent})` : ""}`).join(" + ");
-	const spellSources = classes.flatMap((entry) => {
-		const ability = classRules[entry.classId]?.spellAbility;
-		if (!ability) return [];
-		const mod = abilityModifier$1(character.abilities[ability]);
-		return [`${entry.classId} ${entry.level}: ${ability.toUpperCase()}, Сл ${8 + proficiencyBonus(totalLevel) + mod}, атака ${proficiencyBonus(totalLevel) + mod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + mod}`];
-	});
-	return [
-		`Имя: ${character.name || "Безымянный герой"}`,
-		`Игрок: ${character.playerName || ""}`,
-		`Классы: ${classSummary || `${characterClass?.name || ""}, уровень ${character.level}`}`,
-		`Общий уровень: ${totalLevel}; стартовый класс: ${getStartingClassId(character) || "не указан"}`,
-		`Кости хитов: ${hitDice || "нет"}`,
-		`Раса: ${race?.name || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
-		`Предыстория: ${background?.name || ""}`,
-		`Особенность предыстории: ${backgroundData.feature.name}. ${normalizeExportText(backgroundData.feature.description)}`,
-		`Навыки: ${proficiencies.skills.join(", ") || "нет"}`,
-		`Доспехи: ${proficiencies.armor.join(", ") || "нет"}`,
-		`Оружие: ${proficiencies.weapons.join(", ") || "нет"}`,
-		`Инструменты: ${proficiencies.tools.join(", ") || "нет"}`,
-		`Языки: ${proficiencies.languages.join(", ") || "нет"}`,
-		`Черты: ${(context.featNames || []).join(", ") || "нет"}`,
-		`Черты характера: ${character.personality.traits}`,
-		`Идеалы: ${character.personality.ideals}`,
-		`Привязанности: ${character.personality.bonds}`,
-		`Слабости: ${character.personality.flaws}`,
-		`Расовые особенности:\n${featureText(raceFeatureList)}`,
-		`Классовые особенности:\n${featureText(classFeatureList)}`,
-		...spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + spellMod}`] : [],
-		...spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : [],
-		`Ресурсы: ${resources.join("; ") || "нет"}`,
-		`Снаряжение: ${equipment.join(", ") || "нет"}`,
-		`Атаки: ${attacks.map((attack) => `${attack.name} — ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
-		`Примечание к атакам: ${automaticAttacksNotice}`,
-		`Заклинания: ${selectedSpells.join(", ") || "нет"}`,
-		...preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : [],
-		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []
-	].join("\n\n");
-}
-var helpmateAbilityOrder = {
-	str: ["Атлетика"],
-	dex: [
-		"Акробатика",
-		"Ловкость рук",
-		"Скрытность"
-	],
-	con: [],
-	int: [
-		"Магия",
-		"История",
-		"Расследование",
-		"Природа",
-		"Религия"
-	],
-	wis: [
-		"Уход за животными",
-		"Проницательность",
-		"Медицина",
-		"Внимательность",
-		"Выживание"
-	],
-	cha: [
-		"Обман",
-		"Запугивание",
-		"Выступление",
-		"Убеждение"
-	]
-};
-var helpmateAbilityNames = {
-	str: "STR",
-	dex: "DEX",
-	con: "CON",
-	int: "INT",
-	wis: "WIS",
-	cha: "CHA"
-};
-var helpmateClassIds = Object.freeze({
-	barbarian: "11",
-	bard: "12",
-	cleric: "13",
-	fighter: "14",
-	monk: "15",
-	paladin: "16",
-	ranger: "17",
-	rogue: "18",
-	sorcerer: "19",
-	warlock: "20",
-	wizard: "21",
-	druid: "22",
-	artificer: "23"
-});
-var helpmateSubclassClassIds = Object.freeze({
-	fighter: Object.freeze({ eldritchknight: "25" }),
-	rogue: Object.freeze({ arcanetrickster: "26" })
-});
-function helpmateSelectedSpellIds(context) {
-	return [...new Set([
-		...context.character.spells,
-		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
-	])];
-}
-function helpmateSkippedSpells(context) {
-	return helpmateSelectedSpellIds(context).filter((id) => !helpmateSpellId(id)).map((id) => context.spells.find((spell) => spell.id === id)).filter((spell) => Boolean(spell));
-}
-function createHelpmateExport(context) {
-	const { character, race, raceFeatureList } = context;
-	const selectedSkills = new Set(characterProficiencies(character).skills);
-	const classes = orderedCharacterClasses(character);
-	const totalLevel = characterLevel(character);
-	const startingClassId = getStartingClassId(character);
-	const saves = new Set(classRules[startingClassId]?.saves || []);
-	const hitPoints = estimatedHitPoints(character);
-	const darkvision = darkvisionDistance(raceFeatureList);
-	const movement = speedBreakdown(character);
-	const parameters = Object.keys(helpmateAbilityOrder).map((key) => ({
-		Name: helpmateAbilityNames[key],
-		Value: character.abilities[key],
-		UserSpasValue: 0,
-		Proficiency: saves.has(key),
-		Abilities: helpmateAbilityOrder[key].map((skill) => ({
-			UserValue: 0,
-			MinValue: 0,
-			Proficiency: selectedSkills.has(skill)
-		}))
-	}));
-	const selectedHelpmateSpellIds = helpmateSelectedSpellIds(context).map(helpmateSpellId).filter((id) => Boolean(id));
-	const ordinarySpellcasters = classes.filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster && entry.classId !== "warlock");
-	const sharedSlots = resolveSpellSlots(character);
-	const primarySpellcaster = classes.find((entry) => entry.classId === character.primarySpellcastingClassId) || classes.find((entry) => Boolean(classRules[entry.classId]?.spellAbility));
-	const spellAbility = primarySpellcaster ? classRules[primarySpellcaster.classId]?.spellAbility : void 0;
-	const spellModifier = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
-	const spellAttack = proficiencyBonus(character.level) + spellModifier;
-	const spellSaveDc = spellAbility ? 8 + spellAttack : null;
-	const pact = resolvePactMagic(character);
-	const classesPayload = classes.map((entry) => {
-		const selection = spellSelectionRuleForClass(character, entry.classId, entry.level);
-		const cells = [
-			...selection.cantrips ? [{
-				Level: 0,
-				Left: selection.cantrips,
-				Max: selection.cantrips
-			}] : [],
-			...entry.classId !== "warlock" && ordinarySpellcasters.length === 1 ? sharedSlots.map((max, index) => ({
-				Level: index + 1,
-				Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)),
-				Max: max
-			})) : [],
-			...entry.classId === "warlock" && pact.slots ? [{
-				Level: pact.level,
-				Left: Math.max(0, pact.slots - (character.pactSlotsUsed || 0)),
-				Max: pact.slots
-			}] : []
-		];
-		const id = helpmateSubclassClassIds[entry.classId]?.[entry.subclassId || ""] || helpmateClassIds[entry.classId];
-		if (!id) throw new Error(`Helpmate: неизвестный класс ${entry.classId}.`);
-		return {
-			Id: id,
-			Level: entry.level,
-			SpellCells: cells
-		};
-	});
-	if (new Set(classesPayload.map((entry) => entry.Id)).size !== classesPayload.length) throw new Error("Helpmate: два класса получили один идентификатор.");
-	if (classesPayload.reduce((sum, entry) => sum + entry.Level, 0) !== totalLevel) throw new Error("Helpmate: уровни классов не совпадают с общим уровнем.");
-	return {
-		Id: makeId(),
-		MyRaceId: null,
-		UserRace: [race?.name, context.raceVariantName].filter(Boolean).join(" — "),
-		TokenColor: "196|196|9|255",
-		SecondName: null,
-		Speed: movement.walk,
-		IHaveLight: false,
-		TorchValue: 0,
-		TorchValueSecond: 0,
-		CellEyeValue: darkvision,
-		EyeEnabled: darkvision > 0,
-		SoundFolder: null,
-		ImDoubleHeal: false,
-		SeeInTheDark: darkvision > 0,
-		Gold: character.currency.gp || 0,
-		Silver: character.currency.sp || 0,
-		Copper: character.currency.cp || 0,
-		HitPoints: hitPoints,
-		CurrentHitPoints: character.currentHitPoints ?? hitPoints,
-		TempHitPoints: character.temporaryHitPoints || 0,
-		TempCurrentHitPoints: character.temporaryHitPoints || 0,
-		HasInspiration: !!character.inspiration,
-		Alignment: 0,
-		HitDice: isMulticlass(character) ? 0 : classRules[character.className]?.hitDie || 8,
-		HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
-		IsArmorTakeOf: false,
-		TwoHanded: false,
-		FlyValue: movement.fly || 0,
-		IsFly: Boolean(movement.fly),
-		FamiliarId: null,
-		SelectedSaveThrowKey: spellAbility ? helpmateAbilityKey[spellAbility] : 0,
-		SizeIndex: 2,
-		TagString: null,
-		Skills: [],
-		Languages: characterProficiencies(character).languages.map((language) => helpmateLanguageIds[language]).filter(Boolean).join("|") || "12",
-		Multiplier: 1,
-		TrueMultiplier: 0,
-		Inspiration: character.inspiration ? 1 : 0,
-		Armor: armorClass(character),
-		Bditelnost: passivePerceptionBreakdown(character).value,
-		IniBonus: initiativeBreakdown(character).value,
-		IsPlaying: false,
-		Note: helpmateNote(context),
-		FirstSpellText: spellSaveDc === null ? null : `Сл спасброска заклинаний: ${spellSaveDc}`,
-		SecondSpellText: spellSaveDc === null ? null : `Бонус атаки заклинанием: ${spellAttack >= 0 ? "+" : ""}${spellAttack}`,
-		Spells: selectedHelpmateSpellIds,
-		HandsCapacity: 1,
-		HandsItems: [],
-		MainHandsItems: [],
-		ArrowItems: [],
-		InventoryItems: [],
-		Parameters: parameters,
-		Classes: classesPayload,
-		DamageResist: "",
-		DamageImmun: "",
-		DamageVulner: "",
-		HasAura: false,
-		AuraSize: 15,
-		AuraAngle: 100,
-		AuraAngleSize: 360,
-		AuraOpacity: 1,
-		AuraType: "",
-		AuraColorEnable: true,
-		ShowAuraCells: false,
-		IsRotationEnable: false,
-		IsWallBlock: false,
-		ShowAuraToPlayers: true,
-		CustomAuraImage: null,
-		CustomStatuses: []
-	};
-}
-function richText(value, id) {
-	const content = normalizeExportText(value).split(/\n+/).map((line) => line.trim()).filter(Boolean).map((text) => ({
-		type: "paragraph",
-		content: [{
-			type: "text",
-			text
-		}]
-	}));
-	return { value: {
-		id: `hover-toolbar-${id}-${Date.now()}`,
-		data: {
-			type: "doc",
-			content: content.length ? content : [{ type: "paragraph" }]
-		}
-	} };
-}
-function richLabeledText(lines, id) {
-	const content = lines.flatMap(([label, value]) => {
-		const normalized = normalizeExportText(value || "нет").split(/\n+/).map((line) => line.trim()).filter(Boolean);
-		return (normalized.length ? normalized : ["нет"]).map((text, index) => ({
-			type: "paragraph",
-			content: index === 0 ? [{
-				type: "text",
-				marks: [{ type: "bold" }],
-				text: `${label}: `
-			}, {
-				type: "text",
-				text
-			}] : [{
-				type: "text",
-				text
-			}]
-		}));
-	});
-	return { value: {
-		id: `hover-toolbar-${id}-${Date.now()}`,
-		data: {
-			type: "doc",
-			content
-		}
-	} };
-}
-function richFeatureText(features, id) {
-	const content = features.flatMap((feature) => {
-		const heading = `${feature.name}.`;
-		const lines = normalizeExportText(feature.description).split(/\n+/).map((line) => line.trim()).filter(Boolean);
-		if (!lines.length) return [{
-			type: "paragraph",
-			content: [{
-				type: "text",
-				marks: [{ type: "bold" }],
-				text: heading
-			}]
-		}];
-		return lines.map((text, index) => ({
-			type: "paragraph",
-			content: index === 0 ? [{
-				type: "text",
-				marks: [{ type: "bold" }],
-				text: heading
-			}, {
-				type: "text",
-				text: ` ${text}`
-			}] : [{
-				type: "text",
-				text
-			}]
-		}));
-	});
-	return { value: {
-		id: `hover-toolbar-${id}-${Date.now()}`,
-		data: {
-			type: "doc",
-			content: content.length ? content : [{ type: "paragraph" }]
-		}
-	} };
-}
-var mechanicalVerbs = /бонусным действием|действием|реакци|спасброс|провер(?:к|ок)|атак|урон|трат|использ|соверш|накладыва|восстанавлив|до конца|в течение|раз за|после короткого|после продолжительного|помех|преимуществ|сопротивлен|иммунитет|игнорир|кость|считается|сл\s|кд/i;
-var briefGrant = /получаете владение|получаете компетентность|увеличивается на|повышается на|изучаете язык|изучаете .*заговор|получаете .*язык/i;
-/** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
-function conciseLssFeature(feature, required = false) {
-	if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
-	const sourceHasTable = /\|\s*:?-{3,}:?/.test(feature.description);
-	let description = normalizeExportText(feature.description).split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0].replace(/•\s*-{5,}[\s\S]*/g, "").replace(/[^\S\n]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
-	if (sourceHasTable) {
-		description = description.split("\n").filter((line) => !/^•\s+[^;:]+:\s*.*;\s*[^;:]+:\s*/.test(line.trim())).join("\n").replace(/\n{3,}/g, "\n\n").trim();
-		if (!description) description = "Подробная таблица — в заметках.";
-	}
-	if (!description) return required ? {
-		...feature,
-		description: "Выбранная черта персонажа."
-	} : null;
-	if (feature.name === "Всплеск действий") return {
-		...feature,
-		description
-	};
-	const sentences = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((value) => value.trim()) || [description];
-	if (briefGrant.test(description) && !mechanicalVerbs.test(description.replace(briefGrant, ""))) description = sentences.slice(0, 2).join(" ");
-	else if (description.length > 900) {
-		const important = sentences.filter((sentence) => mechanicalVerbs.test(sentence));
-		description = [...new Set([sentences[0], ...important])].join(" ").slice(0, 1400).trim();
-	}
-	return {
-		...feature,
-		description
-	};
-}
-var lssNoteWidths = [
-	76,
-	36,
-	76,
-	36,
-	76,
-	36
-];
-var lssNoteLineLimit = 19;
-function lssWrappedLines(value, width) {
-	return Math.max(1, Math.ceil(Math.max(1, value.trim().length) / width));
-}
-function splitLssLine(value, maxChars) {
-	if (value.length <= maxChars) return [value, ""];
-	let cut = value.lastIndexOf(" ", maxChars);
-	if (cut < Math.floor(maxChars * .55)) cut = maxChars;
-	return [value.slice(0, cut).trim(), value.slice(cut).trim()];
-}
-function distributeLssNotes(groups, count = 6) {
-	const entries = groups.flatMap((group) => group.features.map((feature) => {
-		const concise = conciseLssFeature(feature, group.required);
-		if (!concise) return null;
-		const noteFeature = group.full ? {
-			...feature,
-			description: normalizeExportText(feature.description)
-		} : concise;
-		return {
-			...noteFeature,
-			name: `${group.label} · ${noteFeature.name}`
-		};
-	})).filter(Boolean);
-	const notes = Array.from({ length: count }, () => []);
-	const usedLines = Array.from({ length: count }, () => 0);
-	let note = 0;
-	for (const feature of entries) {
-		const pending = normalizeExportText(feature.description).split(/\n+/).map((line) => line.trim()).filter(Boolean);
-		if (!pending.length) pending.push("—");
-		let continuation = false;
-		while (pending.length && note < count) {
-			const width = lssNoteWidths[note] || 60;
-			const heading = continuation ? `${feature.name} (продолжение)` : feature.name;
-			const headingLines = lssWrappedLines(heading, width);
-			if (usedLines[note] > 0 && usedLines[note] + headingLines + 1 >= lssNoteLineLimit) {
-				note += 1;
-				continue;
-			}
-			let remaining = Math.max(1, lssNoteLineLimit - usedLines[note] - headingLines);
-			const chunk = [];
-			while (pending.length && remaining > 0) {
-				const line = pending[0];
-				const lineLines = lssWrappedLines(line, width);
-				if (lineLines <= remaining) {
-					chunk.push(line);
-					pending.shift();
-					remaining -= lineLines;
-					continue;
-				}
-				if (chunk.length) break;
-				const [part, rest] = splitLssLine(line, Math.max(width, width * remaining));
-				chunk.push(part);
-				if (rest) pending[0] = rest;
-				else pending.shift();
-				remaining = 0;
-			}
-			const bodyLines = chunk.reduce((sum, line) => sum + lssWrappedLines(line, width), 0);
-			notes[note].push({
-				...feature,
-				name: heading,
-				description: chunk.join("\n")
-			});
-			usedLines[note] += headingLines + bodyLines;
-			continuation = true;
-			if (pending.length) note += 1;
-		}
-		if (pending.length) notes[count - 1].push({
-			...feature,
-			name: `${feature.name} (продолжение)`,
-			description: pending.join("\n")
-		});
-	}
-	return notes;
-}
-function lssFeatureOrder(feature) {
-	if (/дополнительн.*атак|мультиатак|четыре атаки/i.test(feature.name)) return -200;
-	if (/ув[её]ртливость|уворот/i.test(feature.name)) return -190;
-	return feature.level || 1;
-}
-function orderedLssFeatures(features) {
-	return features.map((feature, index) => ({
-		feature,
-		index
-	})).sort((a, b) => lssFeatureOrder(a.feature) - lssFeatureOrder(b.feature) || a.index - b.index).map((item) => item.feature);
-}
-function richSpellText(spells, level) {
-	const content = spells.filter((spell) => spell.level === level).map((spell) => ({
-		type: "paragraph",
-		content: [{
-			type: "text",
-			marks: [{
-				type: "link",
-				attrs: {
-					href: dndSpellUrl(spell.id) || spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
-					target: "_blank",
-					rel: "noopener noreferrer nofollow",
-					class: null
-				}
-			}],
-			text: spell.name
-		}]
-	}));
-	return { value: {
-		id: `hover-toolbar-spells-level-${level}-${Date.now()}`,
-		data: {
-			type: "doc",
-			content: content.length ? content : null
-		}
-	} };
-}
-var skillEnglish = Object.fromEntries(Object.values(skillKeys).map(({ key, stat }) => [key, {
-	baseStat: stat,
-	name: key
-}]));
-function lssSlots(slots) {
-	return Object.fromEntries(slots.map((value, index) => [`slots-${index + 1}`, { value }]));
-}
-function lssSlotState(slots, used = []) {
-	return Object.fromEntries(slots.flatMap((maximum, circle) => Array.from({ length: maximum }, (_, index) => [`level-${circle + 1}-slot-${index}`, { isChecked: index < (used[circle] || 0) }])));
-}
-function lssPact(pact, used = 0) {
-	if (!pact.slots || !pact.level) return {};
-	return {
-		level: { value: pact.level },
-		slots: { value: pact.slots },
-		used: { value: Math.max(0, Math.min(pact.slots, used)) }
-	};
-}
-function lssSkills(selectedSkills, expertiseSkills) {
-	const ordered = [
-		"acrobatics",
-		"investigation",
-		"athletics",
-		"perception",
-		"survival",
-		"performance",
-		"intimidation",
-		"history",
-		"sleight of hand",
-		"arcana",
-		"medicine",
-		"deception",
-		"nature",
-		"insight",
-		"religion",
-		"stealth",
-		"persuasion",
-		"animal handling"
-	];
-	const selectedEnglish = new Set([...selectedSkills].map(externalSkillId).filter(Boolean));
-	const expertiseEnglish = new Set([...expertiseSkills].map(externalSkillId).filter(Boolean));
-	return Object.fromEntries(ordered.map((key) => [key, {
-		...skillEnglish[key],
-		isProf: expertiseEnglish.has(key) ? 2 : selectedEnglish.has(key) ? 1 : 0
-	}]));
-}
-function createLongStoryShortExport(context) {
-	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
-	const proficiencies = characterProficiencies(character);
-	const selectedSkills = new Set(proficiencies.skills);
-	const expertiseSkills = new Set(characterExpertiseSkills(character));
-	const saves = new Set(classRules[character.className]?.saves || []);
-	const spellAbility = classRules[character.className]?.spellAbility;
-	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
-	const prof = proficiencyBonus(character.level);
-	const sharedSpellSlots = resolveSpellSlots(character);
-	const pactMagic = resolvePactMagic(character);
-	const chosenSpells = [...new Set([
-		...character.spells,
-		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
-	])].map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
-	const retainedCardIds = (values) => (values || []).filter((value) => /^[0-9a-f]{24}$/i.test(value));
-	const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
-	const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
-	const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
-	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const alwaysPreparedNames = (context.alwaysPreparedSpellIds || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const profLines = [
-		["Доспехи", proficiencies.armor.join(", ") || "нет"],
-		["Оружие", proficiencies.weapons.join(", ") || "нет"],
-		["Навыки", proficiencies.skills.join(", ") || "нет"],
-		["Инструменты", proficiencies.tools.join(", ") || "нет"],
-		["Языки", proficiencies.languages.join(", ") || "нет"],
-		...raceFeatureList.map((feature) => [`Раса · ${feature.name}`, feature.description])
-	];
-	const backgroundData = backgroundRule(character.background, background);
-	const equipment = selectedEquipment(character);
-	const attacks = characterAttacks(character, spells);
-	const spellMasteryNames = ["spell-mastery-1", "spell-mastery-2"].flatMap((key) => character.classChoices?.[key] || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const exportClassFeatures = orderedLssFeatures(classFeatureList.map((feature) => feature.name === "Мастерство заклинателя" && spellMasteryNames.length ? {
-		...feature,
-		description: `${spellMasteryNames.join(" и ")}: пока выбранные заклинания подготовлены, вы можете накладывать их на минимальном круге без траты ячеек.`
-	} : feature));
-	const conciseClassFeatures = exportClassFeatures.map((feature) => conciseLssFeature(feature)).filter(Boolean);
-	const allFeatFeatures = orderedLssFeatures(context.featFeatureList || []);
-	const primaryFeatFeatures = allFeatFeatures.slice(0, 2).map((feature) => conciseLssFeature(feature, true)).filter(Boolean);
-	const overflowFeatFeatures = allFeatFeatures.slice(2);
-	const noteColumns = distributeLssNotes([{
-		label: "Класс",
-		features: exportClassFeatures,
-		full: true
-	}, {
-		label: "Черта",
-		features: overflowFeatFeatures,
-		required: true,
-		full: true
-	}]);
-	const inner = {
-		jsonType: "character",
-		template: "default",
-		name: { value: character.name || "Безымянный герой" },
-		info: {
-			charClass: {
-				name: "charClass",
-				value: characterClass?.name || ""
-			},
-			charSubclass: {
-				name: "charSubclass",
-				value: context.subclassName || ""
-			},
-			level: {
-				name: "level",
-				value: character.level
-			},
-			background: {
-				name: "background",
-				value: background?.name || ""
-			},
-			playerName: {
-				name: "playerName",
-				value: character.playerName
-			},
-			race: {
-				name: "race",
-				value: [race?.name, context.raceVariantName].filter(Boolean).join(" · ")
-			},
-			alignment: {
-				name: "alignment",
-				value: character.alignment
-			},
-			experience: {
-				name: "experience",
-				value: ""
-			}
-		},
-		subInfo: {
-			age: {
-				name: "age",
-				value: ""
-			},
-			height: {
-				name: "height",
-				value: ""
-			},
-			weight: {
-				name: "weight",
-				value: ""
-			},
-			eyes: {
-				name: "eyes",
-				value: ""
-			},
-			skin: {
-				name: "skin",
-				value: ""
-			},
-			hair: {
-				name: "hair",
-				value: ""
-			}
-		},
-		spellsInfo: {
-			base: {
-				name: "base",
-				value: "",
-				...spellAbility ? {
-					label: "Базовая характеристика заклинаний",
-					code: spellAbility
-				} : {}
-			},
-			save: {
-				name: "save",
-				value: "",
-				label: "Сложность спасброска",
-				customModifier: null
-			},
-			mod: {
-				name: "mod",
-				value: "",
-				label: "Бонус атаки заклинанием",
-				customModifier: spellAbility ? spellMod : null
-			},
-			available: { classes: character.className ? [character.className] : [] }
-		},
-		spells: {
-			...lssSlots(sharedSpellSlots),
-			...lssSlotState(sharedSpellSlots, character.spellSlotsUsed)
-		},
-		spellsPact: lssPact(pactMagic, character.pactSlotsUsed),
-		bonuses: [],
-		proficiency: prof,
-		stats: Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, {
-			name: key,
-			score: character.abilities[key],
-			label: abilityLabels[key],
-			modifier: 0
-		}])),
-		saves: Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, {
-			name: key,
-			isProf: saves.has(key),
-			bonus: 0
-		}])),
-		skills: lssSkills(selectedSkills, expertiseSkills),
-		vitality: {
-			"hp-dice-current": { value: hitDicePools(character).reduce((total, pool) => total + pool.max - pool.spent, 0) },
-			"hp-dice-multi": {},
-			"hp-max-con-bonus": { value: 0 },
-			darkvision: { value: darkvisionDistance(raceFeatureList) },
-			"hp-max": { value: estimatedHitPoints(character) },
-			"hp-current": { value: character.currentHitPoints ?? estimatedHitPoints(character) },
-			"hp-temp": { value: character.temporaryHitPoints || 0 },
-			isDying: false,
-			deathFails: 0,
-			deathSuccesses: 0,
-			ac: { value: armorClass(character) },
-			speed: { value: speedBreakdown(character).walk },
-			"hit-die": { value: `D${classRules[character.className]?.hitDie || 8}` },
-			"hp-max-bonus": { value: 0 }
-		},
-		attunementsList: [{
-			id: `attunement-${Date.now()}`,
-			checked: false,
-			value: ""
-		}],
-		weaponsList: lssWeaponAttacks(attacks),
-		text: {
-			traits: richFeatureText(conciseClassFeatures, "traits"),
-			attacks: richText(attacks.map((attack) => `${attack.name}: ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}; урон ${attack.damageDisplay}${attack.note ? `. ${attack.note}` : ""}`).join("\n"), "attacks"),
-			"spells-level-0": richSpellText(chosenSpells, 0),
-			"spells-level-1": richSpellText(chosenSpells, 1),
-			"spells-level-2": richSpellText(chosenSpells, 2),
-			"spells-level-3": richSpellText(chosenSpells, 3),
-			"spells-level-4": richSpellText(chosenSpells, 4),
-			"spells-level-5": richSpellText(chosenSpells, 5),
-			...chosenSpells.some((spell) => spell.level >= 6) ? { "spells-level-6": richSpellText(chosenSpells, 6) } : {},
-			...chosenSpells.some((spell) => spell.level >= 7) ? { "spells-level-7": richSpellText(chosenSpells, 7) } : {},
-			...chosenSpells.some((spell) => spell.level >= 8) ? { "spells-level-8": richSpellText(chosenSpells, 8) } : {},
-			...chosenSpells.some((spell) => spell.level >= 9) ? { "spells-level-9": richSpellText(chosenSpells, 9) } : {},
-			equipment: richText(equipment.join("\n"), "equipment"),
-			background: richLabeledText([[background?.name || "Предыстория", background?.description || ""], [backgroundData.feature.name, backgroundData.feature.description]], "background"),
-			ideals: richText(character.personality.ideals, "ideals"),
-			personality: {
-				...richText(character.personality.traits, "personality"),
-				size: 0
-			},
-			flaws: {
-				...richText(character.personality.flaws, "flaws"),
-				size: 0
-			},
-			bonds: richText(character.personality.bonds, "bonds"),
-			allies: richText(backgroundData.feature.description, "allies"),
-			quests: richLabeledText([["Подготовленные заклинания", preparedSpellNames.join(", ") || "Нет"], ["Всегда подготовлены — вне лимита", alwaysPreparedNames.join(", ") || "Нет"]], "quests"),
-			prof: richLabeledText(profLines, "prof"),
-			"notes-1": {
-				...richFeatureText(noteColumns[0], "notes-1"),
-				size: 7
-			},
-			"notes-2": {
-				...richFeatureText(noteColumns[1], "notes-2"),
-				size: 7
-			},
-			"notes-3": {
-				...richFeatureText(noteColumns[2], "notes-3"),
-				size: 7
-			},
-			"notes-4": {
-				...richFeatureText(noteColumns[3], "notes-4"),
-				size: 7
-			},
-			"notes-5": {
-				...richFeatureText(noteColumns[4], "notes-5"),
-				size: 7
-			},
-			"notes-6": {
-				...richFeatureText(noteColumns[5], "notes-6"),
-				size: 7
-			},
-			features: richFeatureText(primaryFeatFeatures, "features"),
-			items: { value: { data: "" } }
-		},
-		coins: {},
-		resources: Object.fromEntries(characterResources(character).map((resource) => [resource.key, {
-			name: resource.die ? `${resource.name} (${resource.die})` : resource.name,
-			current: resourceCurrent(character, resource),
-			max: resource.max,
-			isShortRest: resource.isShortRest,
-			isLongRest: resource.isLongRest
-		}])),
-		bonusesSkills: {},
-		bonusesStats: {},
-		conditions: null,
-		wizardStep: "initial",
-		isDefault: true,
-		weapons: {},
-		hiddenName: character.name || "Безымянный герой",
-		casterClass: { value: characterClass?.name || "" },
-		avatar: {
-			jpeg: "",
-			webp: ""
-		},
-		inspiration: false,
-		exhaustion: "",
-		createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-		proficiencyCustom: 0
-	};
-	return {
-		tags: [],
-		disabledBlocks: {
-			"info-left": [],
-			"info-right": [],
-			"subinfo-left": [],
-			"subinfo-right": [],
-			"notes-left": [],
-			"notes-right": [],
-			_id: "6966767ee00af79ebacfb426"
-		},
-		edition: "2014",
-		spells: {
-			mode: hasRetainedCards ? "cards" : "text",
-			prepared: retainedPreparedCards,
-			book: retainedBookCards,
-			edition: character.lssSpellCards?.edition || "2014"
-		},
-		data: JSON.stringify(inner),
-		lastWriterSessionId: `${Date.now()}-list-geroya5e`,
-		linkAccess: "none",
-		rooms: [],
-		sheetEdition: "2014",
-		jsonType: "character",
-		version: "2",
-		wizard: {}
-	};
 }
 //#endregion
 //#region app/backgroundChoices.ts
@@ -47713,6 +47743,44 @@ function savedCharacterExportContext(value) {
 		alwaysPreparedSpellIds
 	};
 }
+function HitPointRollEditor({ character, onChange }) {
+	const history = normalizedLevelHistory(character).filter((entry) => entry.characterLevel > 1);
+	if (!history.length) return null;
+	return /* @__PURE__ */ jsxs("details", {
+		className: "hp-roll-editor",
+		children: [
+			/* @__PURE__ */ jsx("summary", { children: "Броски хитов по уровням" }),
+			/* @__PURE__ */ jsx("p", { children: "Введите результат кости без модификатора Телосложения. Старое значение не изменится, пока вы не введёте новый бросок." }),
+			history.map((entry) => {
+				const die = classRules[entry.classId]?.hitDie || 8;
+				const raw = entry.hpGainFormat === "raw-roll-plus-con-v1" && entry.hpMode === "roll";
+				return /* @__PURE__ */ jsxs("label", { children: [
+					"Уровень ",
+					entry.characterLevel,
+					" · ",
+					entry.classId,
+					", к",
+					die,
+					/* @__PURE__ */ jsx("input", {
+						"aria-label": `Бросок хитов за уровень ${entry.characterLevel}`,
+						type: "number",
+						min: "1",
+						max: die,
+						value: raw ? entry.hpGain ?? "" : "",
+						placeholder: entry.hpGain !== void 0 && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее",
+						onChange: (event) => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))
+					}),
+					entry.hpGain !== void 0 && !raw && /* @__PURE__ */ jsx("small", { children: "Сохранён готовый прирост; исходный бросок неизвестен." }),
+					(raw || entry.hpMode === "manual") && /* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => onChange(entry.characterLevel, null),
+						children: "Использовать среднее"
+					})
+				] }, entry.characterLevel);
+			})
+		]
+	});
+}
 function Home() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, {}) });
 }
@@ -48953,6 +49021,9 @@ function Builder() {
 				}
 			});
 		});
+	}
+	function updateHitPointRoll(level, roll) {
+		setCharacter((current) => setHitPointRoll(current, level, roll));
 	}
 	function setUsedSlots(circle, value, maximum) {
 		setCharacter((current) => {
@@ -53069,6 +53140,10 @@ function Builder() {
 															children: "Восстановить после длинного отдыха"
 														})]
 													}),
+													/* @__PURE__ */ jsx(HitPointRollEditor, {
+														character,
+														onChange: updateHitPointRoll
+													}),
 													/* @__PURE__ */ jsx("div", {
 														className: "mobile-resource-list",
 														children: resources.map((resource) => /* @__PURE__ */ jsxs("article", { children: [
@@ -53367,6 +53442,10 @@ function Builder() {
 																	characterLevel(character)
 																] })
 															]
+														}),
+														/* @__PURE__ */ jsx(HitPointRollEditor, {
+															character,
+															onChange: updateHitPointRoll
 														}),
 														resources.length > 0 && /* @__PURE__ */ jsxs("div", {
 															className: `sheet-box sheet-resources sheet-resources--${resourceDensity}`,
