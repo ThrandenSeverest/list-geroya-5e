@@ -31606,6 +31606,99 @@ function selectedEquipment(character) {
 	];
 }
 //#endregion
+//#region app/naturalAttacks.ts
+var naturalWeapons = {
+	aarakocra: {
+		name: "Когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	centaur: {
+		name: "Копыта",
+		die: 6,
+		legacyDie: 4,
+		damage: "дробящий"
+	},
+	lizardfolk: {
+		name: "Укус",
+		die: 6,
+		damage: "рубящий"
+	},
+	minotaur: {
+		name: "Рога",
+		die: 6,
+		damage: "колющий"
+	},
+	satyr: {
+		name: "Бараньи рога",
+		die: 6,
+		legacyDie: 4,
+		damage: "дробящий"
+	},
+	tabaxi: {
+		name: "Кошачьи когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	tortle: {
+		name: "Когти",
+		die: 6,
+		legacyDie: 4,
+		damage: "рубящий"
+	},
+	leonin: {
+		name: "Когти",
+		die: 4,
+		damage: "рубящий"
+	},
+	dhampir: {
+		name: "Вампирский укус",
+		die: 4,
+		damage: "колющий",
+		ability: "con",
+		condition: "При половине хитов или меньше — преимущество. Усиление укуса применяется отдельно; число усилений равно БМ за продолжительный отдых."
+	}
+};
+function naturalAttacks(character) {
+	const weapon = character.race === "shifter" && ["longtooth", "motm-longtooth"].includes(character.raceVariant) ? {
+		name: "Клыки длиннозуба",
+		die: 6,
+		damage: "колющий",
+		condition: "Только во время Смены; атака клыками доступна бонусным действием."
+	} : naturalWeapons[character.race];
+	if (!weapon) return [];
+	const die = selectedRaceVariant(character.race, character.raceVariant)?.source !== "MPMM" ? weapon.legacyDie || weapon.die : weapon.die;
+	const proficiency = 2 + Math.floor((characterLevel(character) - 1) / 4);
+	const make = (ability, damageDie, martial = false) => {
+		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
+		return {
+			id: `natural-${character.race}${martial ? "-martial-arts" : ""}`,
+			name: `${weapon.name}${martial ? " · Боевые искусства" : ""}`,
+			kind: "feature",
+			ability,
+			proficient: true,
+			attackBonus: proficiency + modifier,
+			attackBonusExtra: 0,
+			damageFormula: `1d${damageDie}+[${ability.toUpperCase()}]`,
+			damageDisplay: `1d${damageDie}${modifier >= 0 ? "+" : ""}${modifier}`,
+			note: [
+				`${weapon.damage} урон.`,
+				weapon.condition,
+				martial ? "Условный режим: только без доспехов и щита, когда соблюдены требования Боевых искусств." : ""
+			].filter(Boolean).join(" ")
+		};
+	};
+	const result = [make(weapon.ability || "str", die)];
+	const monk = getClassLevel(character, "monk");
+	if (monk && !weapon.ability) {
+		const martialDie = monk >= 17 ? 10 : monk >= 11 ? 8 : monk >= 5 ? 6 : 4;
+		result.push(make(character.abilities.dex > character.abilities.str ? "dex" : "str", Math.max(die, martialDie), true));
+	}
+	return result;
+}
+//#endregion
 //#region app/combat.ts
 var automaticAttacksNotice = "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа.";
 var abilityModifier$2 = (score) => Math.floor((score - 10) / 2);
@@ -32021,7 +32114,7 @@ function characterAttacks(character, spells) {
 		};
 		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
 	});
-	const featureAttacks = subclassAttacks(character, prof);
+	const featureAttacks = [...naturalAttacks(character), ...subclassAttacks(character, prof)];
 	const spellAbility = classRules[character.className]?.spellAbility || orderedCharacterClasses(character).map((entry) => classRules[entry.classId]?.spellAbility).find(Boolean);
 	if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
 	const diceCount = cantripDiceCount(totalLevel);
