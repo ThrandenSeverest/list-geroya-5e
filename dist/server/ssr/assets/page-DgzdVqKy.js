@@ -40750,6 +40750,75 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 	});
 }
 //#endregion
+//#region app/spellSources.ts
+/** Keep class associations even when two classes grant the same catalog spell. */
+function classSpellGroups(character, catalog) {
+	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
+	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
+		spellId,
+		sourceType: "class",
+		sourceId: character.className,
+		classId: character.className,
+		mode: "known"
+	}));
+	return orderedCharacterClasses(character).flatMap((entry) => {
+		const scoped = {
+			...character,
+			className: entry.classId,
+			subclass: entry.subclassId || "",
+			level: entry.level
+		};
+		const rule = spellSelectionRuleForClass(scoped, entry.classId, entry.level);
+		if (!rule.caster) return [];
+		const automatic = alwaysPreparedSpellEntries(scoped, catalog);
+		const spells = /* @__PURE__ */ new Map();
+		for (const grant of grants.filter((grant) => grant.classId === entry.classId)) {
+			const spell = byId.get(grant.spellId);
+			if (!spell) continue;
+			spells.set(spell.id, {
+				spell,
+				classId: entry.classId,
+				source: grant.sourceType === "class" ? entry.classId : grant.sourceId,
+				prepared: spell.level === 0 || rule.mode === "known" || (character.preparedSpells || []).includes(spell.id) || rule.mode === "prepared" && !character.mobilePreparedConfigured,
+				alwaysPrepared: grant.mode === "always-prepared"
+			});
+		}
+		for (const grant of automatic) {
+			const spell = byId.get(grant.id);
+			if (!spell) continue;
+			const existing = spells.get(grant.id);
+			spells.set(grant.id, {
+				spell,
+				classId: entry.classId,
+				source: grant.source,
+				prepared: existing?.prepared || grant.mode === "always-prepared" || grant.mode === "known",
+				alwaysPrepared: grant.mode === "always-prepared"
+			});
+		}
+		return [{
+			classId: entry.classId,
+			level: entry.level,
+			preparedMaximum: rule.prepared,
+			spells: [...spells.values()].sort((a, b) => a.spell.level - b.spell.level || a.spell.name.localeCompare(b.spell.name, "ru"))
+		}];
+	});
+}
+function otherSpellSources(character, catalog) {
+	const casterIds = new Set(orderedCharacterClasses(character).filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map((entry) => entry.classId));
+	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
+	return (character.spellGrants || []).flatMap((grant) => {
+		if (grant.classId && casterIds.has(grant.classId)) return [];
+		const spell = byId.get(grant.spellId);
+		return spell ? [{
+			spell,
+			classId: "other",
+			source: grant.sourceId || grant.sourceType,
+			prepared: true,
+			alwaysPrepared: grant.mode === "always-prepared"
+		}] : [];
+	});
+}
+//#endregion
 //#region app/knownLimitations.ts
 var knownLimitations = [
 	{
@@ -44928,7 +44997,7 @@ function PdfCharacterSheet(props) {
 		...detail
 	})).sort((left, right) => abilityOrder.indexOf(left.stat) - abilityOrder.indexOf(right.stat) || left.name.localeCompare(right.name, "ru"));
 	const hasSpellPage = Boolean(props.spellAbility || props.spells.length);
-	const wizardPrepared = props.classId === "wizard";
+	const wizardPrepared = props.spells.some((spell) => spell.classSource === "Волшебник") || props.classId === "wizard";
 	const orderedSpells = [...props.spells].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "ru"));
 	const spellPages = hasSpellPage ? paginateSpells(orderedSpells, wizardPrepared) : [];
 	const spellCardPages = orderedSpells.length ? paginateSpellCards(orderedSpells) : [];
@@ -45119,7 +45188,18 @@ function PdfCharacterSheet(props) {
 											/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
 											/* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
 										] }), attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Атаки ещё не выбраны." }),
-										props.spellAbility && /* @__PURE__ */ jsxs("div", {
+										props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
+											className: "pdf-spell-numbers",
+											children: props.spellcastingSources.map((source) => /* @__PURE__ */ jsxs("span", { children: [
+												/* @__PURE__ */ jsx("b", { children: source.name }),
+												" · ",
+												source.ability,
+												" · Сл ",
+												source.dc,
+												" · атака ",
+												signed(source.attack)
+											] }, source.name))
+										}) : props.spellAbility && /* @__PURE__ */ jsxs("div", {
 											className: "pdf-spell-numbers",
 											children: [
 												/* @__PURE__ */ jsxs("span", { children: ["Базовая характеристика ", /* @__PURE__ */ jsx("b", { children: props.spellAbility })] }),
@@ -45250,13 +45330,17 @@ function PdfCharacterSheet(props) {
 							title: "Книга заклинаний",
 							page: pageNumber
 						}),
-						spellPageIndex === 0 && /* @__PURE__ */ jsx("div", {
+						spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
 							className: "pdf-slot-strip",
-							children: props.spellSlots.map((slots, index) => /* @__PURE__ */ jsxs("div", { children: [
+							children: [props.spellSlots.map((slots, index) => /* @__PURE__ */ jsxs("div", { children: [
 								/* @__PURE__ */ jsxs("small", { children: [index + 1, " круг"] }),
 								/* @__PURE__ */ jsx("strong", { children: slots }),
 								/* @__PURE__ */ jsx("span", { children: Array.from({ length: slots }, (_, slot) => /* @__PURE__ */ jsx("i", {}, slot)) })
-							] }, index))
+							] }, index)), props.pactSlots && props.pactSlots.slots > 0 && /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [
+								"Договор · ",
+								props.pactSlots.level,
+								" круг"
+							] }), /* @__PURE__ */ jsx("strong", { children: props.pactSlots.slots })] })]
 						}),
 						wizardPrepared && spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
 							className: "pdf-prepared-summary",
@@ -45279,12 +45363,15 @@ function PdfCharacterSheet(props) {
 									/* @__PURE__ */ jsx("span", { children: spell.level }),
 									/* @__PURE__ */ jsxs("strong", { children: [
 										spell.name,
+										" · ",
+										spell.classSource,
+										spell.grantSource ? ` (${spell.grantSource})` : "",
 										spell.ritual ? " Р" : "",
 										spell.alwaysPrepared ? " †" : ""
 									] }),
 									/* @__PURE__ */ jsx("span", { children: spellComponentLabel(spell) }),
-									wizardPrepared && /* @__PURE__ */ jsx("span", { children: spell.level === 0 ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○" })
-								] }, spell.id))]
+									wizardPrepared && /* @__PURE__ */ jsx("span", { children: spell.level === 0 || spell.classSource !== "Волшебник" ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○" })
+								] }, `${spell.classSource}-${spell.id}`))]
 							}, columnIndex))
 						}),
 						/* @__PURE__ */ jsxs("p", {
@@ -45319,11 +45406,15 @@ function PdfCharacterSheet(props) {
 							children: pageSpells.map((spell) => /* @__PURE__ */ jsxs("article", {
 								className: `pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`,
 								children: [
-									/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [
-										spell.level === 0 ? "Заговор" : `${spell.level} круг`,
-										" · ",
-										spell.school
-									] }), /* @__PURE__ */ jsxs("h3", { children: [spell.name, spell.ritual ? " Р" : ""] })] }), /* @__PURE__ */ jsx("b", { children: spell.source })] }),
+									/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [
+										/* @__PURE__ */ jsxs("small", { children: [
+											spell.level === 0 ? "Заговор" : `${spell.level} круг`,
+											" · ",
+											spell.school
+										] }),
+										/* @__PURE__ */ jsxs("h3", { children: [spell.name, spell.ritual ? " Р" : ""] }),
+										/* @__PURE__ */ jsxs("small", { children: [spell.classSource, spell.grantSource ? ` · ${spell.grantSource}` : ""] })
+									] }), /* @__PURE__ */ jsx("b", { children: spell.source })] }),
 									/* @__PURE__ */ jsxs("dl", { children: [
 										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Накладывание" }), /* @__PURE__ */ jsx("dd", { children: spell.castingTime || "—" })] }),
 										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Дистанция" }), /* @__PURE__ */ jsx("dd", { children: spell.range || "—" })] }),
@@ -45332,7 +45423,7 @@ function PdfCharacterSheet(props) {
 									] }),
 									/* @__PURE__ */ jsx("p", { children: spell.description })
 								]
-							}, spell.id))
+							}, `${spell.classSource}-${spell.id}`))
 						}),
 						/* @__PURE__ */ jsxs("footer", { children: [
 							"Лист Героя 5e · Карточки заклинаний",
@@ -47766,8 +47857,8 @@ function Builder() {
 	const currentSpellGrants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
 		sourceType: "class",
-		sourceId: activeSpellClassId,
-		classId: activeSpellClassId,
+		sourceId: character.className,
+		classId: character.className,
 		mode: "known"
 	}));
 	const activeSpellIds = currentSpellGrants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
@@ -47782,9 +47873,12 @@ function Builder() {
 	const completedAdvancements = advancements.filter((choice) => advancementChoiceComplete(choice, spells, character.level, character));
 	const selectedFeatNames = advancementFields.feats.map((id) => feats.find((item) => item.id === id)?.name).filter(Boolean);
 	const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
+	const sourcedSpellGroups = classSpellGroups(exportCharacter, availableSpellCatalog);
+	const sourcedSpells = sourcedSpellGroups.flatMap((group) => group.spells);
+	const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog).filter((entry) => !grantedFeatSpells.includes(entry.spell.id));
 	const mobileSpellPool = [...new Map((spellRule.mode === "prepared" ? [
 		...selectedCantrips.map((id) => spells.find((spell) => spell.id === id)),
-		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(rulesCharacter, spell)),
+		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(spellCharacter, spell)),
 		...alwaysPrepared.map((id) => spells.find((spell) => spell.id === id)),
 		...grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)),
 		...customSpells
@@ -48208,8 +48302,8 @@ function Builder() {
 			const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
-				sourceId: activeSpellClassId,
-				classId: activeSpellClassId,
+				sourceId: current.className,
+				classId: current.className,
 				mode: "known"
 			}));
 			const selectedForClass = grants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
@@ -48259,14 +48353,37 @@ function Builder() {
 	}
 	function toggleMobilePreparedSpell(id) {
 		setCharacter((current) => {
-			const available = spellRule.mode === "prepared" ? availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(current, spell) && !alwaysPreparedSet.has(spell.id)).map((spell) => spell.id) : current.spells.filter((spellId) => (spells.find((spell) => spell.id === spellId)?.level || 0) > 0);
-			const initialPrepared = spellRule.mode === "prepared" && !current.mobilePreparedConfigured ? current.spells.filter((spellId) => available.includes(spellId)).slice(0, spellRule.prepared || available.length) : (current.preparedSpells || []).filter((spellId) => available.includes(spellId));
+			const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
+				spellId,
+				sourceType: "class",
+				sourceId: current.className,
+				classId: current.className,
+				mode: "prepared"
+			}));
+			const classSpellIds = grants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
+			const scoped = {
+				...current,
+				className: activeSpellClassId,
+				subclass: activeSpellClass?.entry.subclassId || "",
+				level: activeSpellClass?.entry.level || current.level
+			};
+			const available = spellRule.mode === "prepared" ? availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(scoped, spell) && !alwaysPreparedSet.has(spell.id)).map((spell) => spell.id) : classSpellIds.filter((spellId) => (spells.find((spell) => spell.id === spellId)?.level || 0) > 0);
+			const initialPrepared = spellRule.mode === "prepared" && !current.mobilePreparedConfigured ? classSpellIds.filter((spellId) => available.includes(spellId)).slice(0, spellRule.prepared || available.length) : (current.preparedSpells || []).filter((spellId) => available.includes(spellId) && classSpellIds.includes(spellId));
 			const next = initialPrepared.includes(id) ? initialPrepared.filter((spellId) => spellId !== id) : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
-			const nextSpells = spellRule.mode === "prepared" ? [...current.spells.filter((spellId) => (spells.find((spell) => spell.id === spellId)?.level || 0) === 0), ...next] : current.spells;
+			const otherClassIds = new Set(grants.filter((grant) => grant.classId !== activeSpellClassId).map((grant) => grant.spellId));
+			const nextSpells = spellRule.mode === "prepared" ? [...new Set([...current.spells.filter((spellId) => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (spells.find((spell) => spell.id === spellId)?.level || 0) === 0), ...next])] : current.spells;
+			const nextGrants = spellRule.mode === "prepared" ? [...grants.filter((grant) => grant.classId !== activeSpellClassId || (spells.find((spell) => spell.id === grant.spellId)?.level || 0) === 0), ...next.map((spellId) => ({
+				spellId,
+				sourceType: "class",
+				sourceId: activeSpellClassId,
+				classId: activeSpellClassId,
+				mode: "prepared"
+			}))] : grants;
 			return {
 				...current,
 				spells: nextSpells,
-				preparedSpells: next,
+				spellGrants: nextGrants,
+				preparedSpells: [...new Set([...(current.preparedSpells || []).filter((spellId) => !classSpellIds.includes(spellId) || otherClassIds.has(spellId)), ...next])],
 				mobilePreparedConfigured: true
 			};
 		});
@@ -48769,8 +48886,8 @@ function Builder() {
 			const otherGrants = (current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
-				sourceId: activeSpellClassId,
-				classId: activeSpellClassId,
+				sourceId: current.className,
+				classId: current.className,
 				mode: "known"
 			}))).filter((grant) => grant.classId !== activeSpellClassId);
 			const retainedIds = otherGrants.map((grant) => grant.spellId);
@@ -48795,8 +48912,8 @@ function Builder() {
 			const otherGrants = (current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
-				sourceId: activeSpellClassId,
-				classId: activeSpellClassId,
+				sourceId: current.className,
+				classId: current.className,
 				mode: "known"
 			}))).filter((grant) => grant.classId !== activeSpellClassId);
 			const retainedIds = otherGrants.map((grant) => grant.spellId);
@@ -52560,37 +52677,111 @@ function Builder() {
 												children: [
 													/* @__PURE__ */ jsxs("div", {
 														className: "mobile-prepared-head",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Заклинания" }), /* @__PURE__ */ jsx("span", { children: mobileSpellPool.length })]
+														children: [/* @__PURE__ */ jsx("h3", { children: "Заклинания по классам" }), /* @__PURE__ */ jsx("span", { children: sourcedSpells.length })]
 													}),
-													spellRule.prepared !== void 0 && /* @__PURE__ */ jsxs("p", {
+													sourcedSpellGroups.map((group) => /* @__PURE__ */ jsxs("section", { children: [
+														/* @__PURE__ */ jsxs("div", {
+															className: "mobile-prepared-head",
+															children: [/* @__PURE__ */ jsxs("h3", { children: [
+																classes.find((item) => item.id === group.classId)?.name || group.classId,
+																" ",
+																group.level
+															] }), /* @__PURE__ */ jsx("span", { children: group.spells.length })]
+														}),
+														group.preparedMaximum !== void 0 && /* @__PURE__ */ jsxs("p", {
+															className: "mobile-prepared-limit",
+															children: [
+																"Лимит подготовки: ",
+																group.preparedMaximum,
+																". Заговоры и всегда подготовленные заклинания его не занимают."
+															]
+														}),
+														/* @__PURE__ */ jsx("div", {
+															className: "mobile-spell-list",
+															children: group.spells.map(({ spell, source, prepared, alwaysPrepared }) => /* @__PURE__ */ jsxs("button", {
+																className: prepared ? "prepared" : "",
+																type: "button",
+																onClick: () => {
+																	if (group.classId !== activeSpellClassId) setSpellClassId(group.classId);
+																	else if (group.preparedMaximum !== void 0 && spell.level > 0 && !alwaysPrepared) toggleMobilePreparedSpell(spell.id);
+																},
+																title: group.classId !== activeSpellClassId ? "Выбрать класс для подготовки" : alwaysPrepared ? "Всегда подготовлено" : "Заклинание класса",
+																children: [
+																	/* @__PURE__ */ jsx("span", { children: spell.level === 0 ? "∞" : alwaysPrepared ? "◆" : prepared ? "●" : "○" }),
+																	/* @__PURE__ */ jsx("strong", { children: spell.name }),
+																	/* @__PURE__ */ jsxs("small", { children: [
+																		levelLabel(spell.level),
+																		" · ",
+																		source === group.classId ? classes.find((item) => item.id === source)?.name || source : source
+																	] })
+																]
+															}, spell.id))
+														})
+													] }, group.classId)),
+													grantedFeatSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Черты" }), /* @__PURE__ */ jsx("div", {
+														className: "mobile-spell-list",
+														children: grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)).filter((spell) => !!spell).map((spell) => /* @__PURE__ */ jsxs("button", {
+															type: "button",
+															className: "prepared",
+															children: [
+																/* @__PURE__ */ jsx("span", { children: "◆" }),
+																/* @__PURE__ */ jsx("strong", { children: spell.name }),
+																/* @__PURE__ */ jsxs("small", { children: [levelLabel(spell.level), " · Черта"] })
+															]
+														}, spell.id))
+													})] }),
+													otherGrantedSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
+														className: "mobile-spell-list",
+														children: otherGrantedSpells.map(({ spell, source }) => /* @__PURE__ */ jsxs("button", {
+															type: "button",
+															className: "prepared",
+															children: [
+																/* @__PURE__ */ jsx("span", { children: "◆" }),
+																/* @__PURE__ */ jsx("strong", { children: spell.name }),
+																/* @__PURE__ */ jsxs("small", { children: [
+																	levelLabel(spell.level),
+																	" · ",
+																	source
+																] })
+															]
+														}, `${source}-${spell.id}`))
+													})] }),
+													customSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Хоумбрю" }), /* @__PURE__ */ jsx("div", {
+														className: "mobile-spell-list",
+														children: customSpells.map((spell) => /* @__PURE__ */ jsxs("button", {
+															type: "button",
+															className: "prepared",
+															children: [
+																/* @__PURE__ */ jsx("span", { children: "◆" }),
+																/* @__PURE__ */ jsx("strong", { children: spell.name }),
+																/* @__PURE__ */ jsxs("small", { children: [levelLabel(spell.level), " · Хоумбрю"] })
+															]
+														}, spell.id))
+													})] }),
+													spellRule.prepared !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("p", {
 														className: "mobile-prepared-limit",
 														children: [
-															"Подготовлено: ",
-															/* @__PURE__ */ jsx("b", { children: mobilePreparedIds.length }),
+															"Выбор для класса «",
+															classes.find((item) => item.id === activeSpellClassId)?.name || activeSpellClassId,
+															"»: ",
+															mobilePreparedIds.length,
 															" из ",
-															/* @__PURE__ */ jsx("b", { children: spellRule.prepared }),
-															". Заговоры и всегда подготовленные заклинания лимит не занимают."
+															spellRule.prepared,
+															"."
 														]
-													}),
-													!spellRule.caster && !mobileSpellPool.length ? /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }) : /* @__PURE__ */ jsx("div", {
+													}), /* @__PURE__ */ jsx("div", {
 														className: "mobile-spell-list",
-														children: mobileSpellPool.map((spell) => {
-															const automatic = spell.level === 0 || spell.source === "Хоумбрю" || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
-															const prepared = automatic || mobilePreparedIds.includes(spell.id);
-															const canToggle = spell.level > 0 && !automatic && spellRule.prepared !== void 0;
-															return /* @__PURE__ */ jsxs("button", {
-																className: prepared ? "prepared" : "",
-																onClick: () => canToggle && toggleMobilePreparedSpell(spell.id),
-																"aria-disabled": !canToggle,
-																title: canToggle ? "Подготовить или снять подготовку" : automatic ? "Доступно всегда" : "Известное заклинание",
-																children: [
-																	/* @__PURE__ */ jsx("span", { children: spell.level === 0 ? "∞" : automatic ? "◆" : prepared ? "●" : "○" }),
-																	/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																	/* @__PURE__ */ jsx("small", { children: levelLabel(spell.level) })
-																]
-															}, spell.id);
-														})
-													}),
+														children: mobileSpellPool.filter((spell) => spell.level > 0 && !sourcedSpellGroups.find((group) => group.classId === activeSpellClassId)?.spells.some((entry) => entry.spell.id === spell.id)).map((spell) => /* @__PURE__ */ jsxs("button", {
+															type: "button",
+															onClick: () => toggleMobilePreparedSpell(spell.id),
+															children: [
+																/* @__PURE__ */ jsx("span", { children: "○" }),
+																/* @__PURE__ */ jsx("strong", { children: spell.name }),
+																/* @__PURE__ */ jsx("small", { children: levelLabel(spell.level) })
+															]
+														}, spell.id))
+													})] }),
+													!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === void 0 && /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }),
 													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
 														className: "mobile-slot-list mobile-spell-slots",
 														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
@@ -52990,44 +53181,61 @@ function Builder() {
 																		]
 																	}, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Выберите стартовое оружие или боевой заговор." })]
 																}),
-																spellAbilityKey && /* @__PURE__ */ jsxs("p", { children: [
-																	/* @__PURE__ */ jsx("b", { children: "Сл заклинаний:" }),
-																	" ",
-																	spellSaveDc,
-																	" · ",
-																	/* @__PURE__ */ jsx("b", { children: "атака:" }),
-																	" ",
-																	spellAttackBonus >= 0 ? "+" : "",
-																	spellAttackBonus
-																] }),
-																[...new Set([
-																	...character.spells,
-																	...grantedFeatSpells,
-																	...alwaysPrepared
-																])].length ? [...new Set([
-																	...character.spells,
-																	...grantedFeatSpells,
-																	...alwaysPrepared
-																])].map((id) => {
-																	const spell = spells.find((item) => item.id === id);
-																	if (!spell) return null;
-																	const status = alwaysPrepared.includes(id) ? "всегда подготовлено, вне лимита" : spellRule.mode === "spellbook" && spell.level > 0 ? selectedPrepared.includes(id) ? "подготовлено" : "в книге" : spellRule.mode === "prepared" && spell.level > 0 ? "подготовлено" : "";
+																sourcedSpellGroups.map((group) => {
+																	const ability = classRules[group.classId]?.spellAbility;
+																	if (!ability) return null;
+																	const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
 																	return /* @__PURE__ */ jsxs("p", { children: [
-																		/* @__PURE__ */ jsx("a", {
-																			href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
-																			target: "_blank",
-																			rel: "noreferrer",
-																			children: /* @__PURE__ */ jsx("b", { children: spell.name })
-																		}),
-																		" — ",
-																		levelLabel(spell.level),
-																		", ",
-																		spell.school,
-																		". ",
-																		spell.description,
-																		status ? ` (${status})` : ""
-																	] }, id);
-																}) : /* @__PURE__ */ jsx("p", { children: "Заклинания не выбраны." })
+																		/* @__PURE__ */ jsxs("b", { children: [
+																			classes.find((item) => item.id === group.classId)?.name || group.classId,
+																			" · ",
+																			abilityLabels[ability],
+																			":"
+																		] }),
+																		" Сл ",
+																		8 + attack,
+																		", атака ",
+																		attack >= 0 ? "+" : "",
+																		attack
+																	] }, group.classId);
+																}),
+																sourcedSpellGroups.map((group) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("h4", { children: [
+																	classes.find((item) => item.id === group.classId)?.name || group.classId,
+																	" ",
+																	group.level
+																] }), group.spells.map(({ spell, source, prepared, alwaysPrepared }) => /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("a", {
+																		href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
+																		target: "_blank",
+																		rel: "noreferrer",
+																		children: /* @__PURE__ */ jsx("b", { children: spell.name })
+																	}),
+																	" — ",
+																	levelLabel(spell.level),
+																	", ",
+																	spell.school,
+																	". ",
+																	spell.description,
+																	" (",
+																	source === group.classId ? classes.find((item) => item.id === source)?.name || source : source,
+																	alwaysPrepared ? "; всегда подготовлено, вне лимита" : prepared && spell.level > 0 ? "; подготовлено" : "",
+																	")"
+																] }, spell.id))] }, group.classId)),
+																grantedFeatSpells.map((id) => spells.find((item) => item.id === id)).filter((spell) => !!spell).map((spell) => /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: spell.name }),
+																	" — ",
+																	levelLabel(spell.level),
+																	" (черта)"
+																] }, `feat-${spell.id}`)),
+																otherGrantedSpells.map(({ spell, source }) => /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: spell.name }),
+																	" — ",
+																	levelLabel(spell.level),
+																	" (источник: ",
+																	source,
+																	")"
+																] }, `${source}-${spell.id}`)),
+																!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && /* @__PURE__ */ jsx("p", { children: "Заклинания не выбраны." })
 															]
 														})
 													]
@@ -53164,20 +53372,44 @@ function Builder() {
 										spellAbility: spellAbilityKey ? abilityLabels[spellAbilityKey] : void 0,
 										spellSaveDc: spellAbilityKey ? spellSaveDc : void 0,
 										spellAttackBonus: spellAbilityKey ? spellAttackBonus : void 0,
-										spellSlots: spellRule.slots,
-										preparedMaximum: spellRule.prepared,
-										spells: [...new Set([
-											...currentSpellGrants.map((grant) => grant.spellId),
-											...grantedFeatSpells,
-											...allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared
-										])].map((id) => spells.find((spell) => spell.id === id)).filter(Boolean).map((spell) => ({
-											...spell,
-											prepared: (character.preparedSpells || []).includes(spell.id),
-											alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell.id)
-										})).concat(customSpells.map((spell) => ({
+										spellSlots: sharedSpellSlots,
+										pactSlots: pactMagicSlots,
+										preparedMaximum: sourcedSpellGroups.find((group) => group.classId === "wizard")?.preparedMaximum,
+										spellcastingSources: sourcedSpellGroups.flatMap((group) => {
+											const ability = classRules[group.classId]?.spellAbility;
+											if (!ability) return [];
+											const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
+											return [{
+												name: classes.find((item) => item.id === group.classId)?.name || group.classId,
+												ability: abilityLabels[ability],
+												dc: 8 + attack,
+												attack
+											}];
+										}),
+										spells: sourcedSpells.map((entry) => ({
+											...entry.spell,
+											prepared: entry.prepared,
+											alwaysPrepared: entry.alwaysPrepared,
+											classSource: classes.find((item) => item.id === entry.classId)?.name || entry.classId,
+											grantSource: entry.source === entry.classId ? "" : entry.source
+										})).concat(otherGrantedSpells.map((entry) => ({
+											...entry.spell,
+											prepared: true,
+											alwaysPrepared: entry.alwaysPrepared,
+											classSource: "Другой источник",
+											grantSource: entry.source
+										})), grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)).filter((spell) => !!spell).map((spell) => ({
 											...spell,
 											prepared: true,
-											alwaysPrepared: true
+											alwaysPrepared: true,
+											classSource: "Черта",
+											grantSource: ""
+										})), customSpells.map((spell) => ({
+											...spell,
+											prepared: true,
+											alwaysPrepared: true,
+											classSource: "Хоумбрю",
+											grantSource: ""
 										})))
 									}),
 									/* @__PURE__ */ jsxs("div", {
