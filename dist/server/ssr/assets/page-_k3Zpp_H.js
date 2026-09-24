@@ -31646,7 +31646,8 @@ var weaponDefinitions = {
 	},
 	"боевой посох": {
 		name: "Боевой посох",
-		dice: "1d6"
+		dice: "1d6",
+		versatileDice: "1d8"
 	},
 	"серп": {
 		name: "Серп",
@@ -31655,6 +31656,7 @@ var weaponDefinitions = {
 	"копьё": {
 		name: "Копьё",
 		dice: "1d6",
+		versatileDice: "1d8",
 		thrown: true
 	},
 	"лёгкий арбалет": {
@@ -31689,7 +31691,8 @@ var weaponDefinitions = {
 	},
 	"боевой топор": {
 		name: "Боевой топор",
-		dice: "1d8"
+		dice: "1d8",
+		versatileDice: "1d10"
 	},
 	"цеп": {
 		name: "Цеп",
@@ -31721,7 +31724,8 @@ var weaponDefinitions = {
 	},
 	"длинный меч": {
 		name: "Длинный меч",
-		dice: "1d8"
+		dice: "1d8",
+		versatileDice: "1d10"
 	},
 	"молот": {
 		name: "Молот",
@@ -31755,6 +31759,7 @@ var weaponDefinitions = {
 	"трезубец": {
 		name: "Трезубец",
 		dice: "1d6",
+		versatileDice: "1d8",
 		thrown: true
 	},
 	"боевая кирка": {
@@ -31763,7 +31768,8 @@ var weaponDefinitions = {
 	},
 	"боевой молот": {
 		name: "Боевой молот",
-		dice: "1d8"
+		dice: "1d8",
+		versatileDice: "1d10"
 	},
 	"кнут": {
 		name: "Кнут",
@@ -31980,20 +31986,23 @@ function characterAttacks(character, spells) {
 		const abilityMod = abilityModifier$2(character.abilities[ability]);
 		const proficient = weaponProficient(character, key);
 		const attackBonusExtra = styles.has("archery") && definition.ranged ? 2 : 0;
-		const damageExtra = (styles.has("dueling") && !definition.ranged && !definition.twoHanded ? 2 : 0) + (styles.has("thrown-weapon") && definition.thrown ? 2 : 0);
 		const abilityVariable = `[${ability.toUpperCase()}]`;
-		return [{
-			id: `weapon-${key}`,
-			name: definition.name,
-			kind: "weapon",
-			ability,
-			proficient,
-			attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
-			attackBonusExtra,
-			damageFormula: `${definition.dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
-			damageDisplay: `${definition.dice}${signed$1(abilityMod + damageExtra)}`,
-			note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
-		}];
+		const makeAttack = (dice, twoHands) => {
+			const damageExtra = (styles.has("dueling") && !twoHands && !definition.ranged && !definition.twoHanded ? 2 : 0) + (styles.has("thrown-weapon") && definition.thrown && !twoHands ? 2 : 0);
+			return {
+				id: `weapon-${key}${definition.versatileDice ? twoHands ? "-two-hands" : "-one-hand" : ""}`,
+				name: `${definition.name}${definition.versatileDice ? twoHands ? " (2 руки)" : " (1 рука)" : ""}`,
+				kind: "weapon",
+				ability,
+				proficient,
+				attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
+				attackBonusExtra,
+				damageFormula: `${dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
+				damageDisplay: `${dice}${signed$1(abilityMod + damageExtra)}`,
+				note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
+			};
+		};
+		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
 	});
 	const featureAttacks = subclassAttacks(character, prof);
 	const spellAbility = classRules[character.className]?.spellAbility;
