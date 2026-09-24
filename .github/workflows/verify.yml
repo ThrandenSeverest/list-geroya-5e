@@ -41,6 +41,38 @@ jobs:
           exit 1
       - run: npm ci
       - run: npm run build
+      - name: Verify PDF screen and print layout
+        timeout-minutes: 5
+        run: |
+          npm install --prefix /tmp/herolist-browser --no-save --package-lock=false playwright@1.51.1
+          /tmp/herolist-browser/node_modules/.bin/playwright install --with-deps chromium
+          PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/pdf-layout/check.cjs
+      - name: Verify newly built production runtime
+        timeout-minutes: 2
+        run: |
+          # Startup rotates runtime secrets. Test a copy so the published build is untouched.
+          mkdir -p /tmp/herolist-built-runtime
+          cp -a dist deployment package.json /tmp/herolist-built-runtime/
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/herolist-built-runtime/node_modules
+          cd /tmp/herolist-built-runtime
+          PORT=3998 HOST=127.0.0.1 npm start >/tmp/herolist-built-frontend.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:3998/ >/dev/null && curl --fail --silent http://127.0.0.1:3998/account >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/herolist-built-frontend.log
+          exit 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r backend/requirements.txt
+      - run: python -m pytest
+        working-directory: backend
       - name: Sync precompiled dist on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
@@ -67,10 +99,3 @@ jobs:
         run: |
           python3 scripts/normalize-dist-for-compare.py /tmp/herolist-committed-dist dist
           diff -qr /tmp/herolist-committed-dist dist
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-      - run: pip install -r backend/requirements.txt
-      - run: python -m pytest
-        working-directory: backend
