@@ -1,3 +1,4 @@
+import { naturalAttacks } from "./naturalAttacks";
 import type { CatalogSpell } from "./catalog";
 import { selectedEquipment } from "./equipment";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
@@ -267,7 +268,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       : [makeAttack(definition.dice, false)];
   });
 
-  const featureAttacks = subclassAttacks(character, prof);
+  const featureAttacks = [...naturalAttacks(character), ...subclassAttacks(character, prof)];
   const spellAbility = (classRules[character.className]?.spellAbility
     || orderedCharacterClasses(character).map(entry => classRules[entry.classId]?.spellAbility).find(Boolean)) as AbilityKey | undefined;
   if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
