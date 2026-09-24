@@ -9,7 +9,7 @@ import { abilityLabels, skillKeys, type Feature } from "./rules";
 import { spellComponentLabel } from "./spellComponents";
 
 type PdfResource = { name: string; current: number; max: number; die?: string; unit?: number; isShortRest: boolean; isLongRest: boolean };
-type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boolean };
+type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boolean; classSource: string; grantSource?: string };
 
 export type PdfCharacterSheetProps = {
   identity: {
@@ -53,6 +53,8 @@ export type PdfCharacterSheetProps = {
   spellSaveDc?: number;
   spellAttackBonus?: number;
   spellSlots: number[];
+  pactSlots?: { slots: number; level: number };
+  spellcastingSources?: { name: string; ability: string; dc: number; attack: number }[];
   preparedMaximum?: number;
   spells: PdfSpell[];
 };
@@ -326,7 +328,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     .map(([name, detail]) => ({ name, ...detail }))
     .sort((left, right) => abilityOrder.indexOf(left.stat) - abilityOrder.indexOf(right.stat) || left.name.localeCompare(right.name, "ru"));
   const hasSpellPage = Boolean(props.spellAbility || props.spells.length);
-  const wizardPrepared = props.classId === "wizard";
+  const wizardPrepared = props.spells.some(spell => spell.classSource === "Волшебник") || props.classId === "wizard";
   const orderedSpells = [...props.spells].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "ru"));
   const spellPages = hasSpellPage ? paginateSpells(orderedSpells, wizardPrepared) : [];
   const spellCardPages = orderedSpells.length ? paginateSpellCards(orderedSpells) : [];
@@ -407,7 +409,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
         <section className="pdf-panel pdf-attacks"><h2>Оружие и боевые заклинания</h2>
           <div className="pdf-attack-head"><b>Название</b><b>Попадание / Сл</b><b>Урон</b></div>
           {props.attacks.length ? props.attacks.map(attack => <article key={attack.id}><div><b>{attack.name}</b><span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code></div>{attack.note && <p>{attack.note}</p>}</article>) : <p>Атаки ещё не выбраны.</p>}
-          {props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>}
+          {props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>}
           <div className="pdf-racial-traits"><h3>Расовые способности</h3><RacialTraitList features={props.raceFeatures} /></div>
         </section>
         <InventoryPanel equipment={props.equipment} currency={props.currency} mode={inventoryMode} onModeChange={changeInventoryMode} />
@@ -453,16 +455,16 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       const pageNumber = firstSpellPageNumber + spellPageIndex;
       return <section className="pdf-page pdf-spell-page" key={`spell-page-${spellPageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · заклинания${spellPageIndex ? " · продолжение" : ""}`} title="Книга заклинаний" page={pageNumber} />
-        {spellPageIndex === 0 && <div className="pdf-slot-strip">{props.spellSlots.map((slots, index) => <div key={index}><small>{index + 1} круг</small><strong>{slots}</strong><span>{Array.from({ length: slots }, (_, slot) => <i key={slot} />)}</span></div>)}</div>}
+        {spellPageIndex === 0 && <div className="pdf-slot-strip">{props.spellSlots.map((slots, index) => <div key={index}><small>{index + 1} круг</small><strong>{slots}</strong><span>{Array.from({ length: slots }, (_, slot) => <i key={slot} />)}</span></div>)}{props.pactSlots && props.pactSlots.slots > 0 && <div><small>Договор · {props.pactSlots.level} круг</small><strong>{props.pactSlots.slots}</strong></div>}</div>}
         {wizardPrepared && spellPageIndex === 0 && <div className="pdf-prepared-summary"><span>Максимум подготовленных: <b>{props.preparedMaximum ?? 0}</b></span><button type="button" onClick={() => setShowPreparedMarks(value => !value)}>{showPreparedMarks ? "Очистить отметки для печати" : "Показать текущую подготовку"}</button></div>}
         <div className={`pdf-spell-columns${wizardPrepared ? " wizard" : ""}`}>
           {columns.map((column, columnIndex) => <div className={`pdf-spell-table${wizardPrepared ? " wizard" : ""}`} key={columnIndex}>
             <header><b>Кр.</b><b>Заклинание</b><b>В/С/М</b>{wizardPrepared && <b>Подг.</b>}</header>
-            {column.map(spell => <div key={spell.id}>
+            {column.map(spell => <div key={`${spell.classSource}-${spell.id}`}>
               <span>{spell.level}</span>
-              <strong>{spell.name}{spell.ritual ? " Р" : ""}{spell.alwaysPrepared ? " †" : ""}</strong>
+              <strong>{spell.name} · {spell.classSource}{spell.grantSource ? ` (${spell.grantSource})` : ""}{spell.ritual ? " Р" : ""}{spell.alwaysPrepared ? " †" : ""}</strong>
               <span>{spellComponentLabel(spell)}</span>
-              {wizardPrepared && <span>{spell.level === 0 ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○"}</span>}
+              {wizardPrepared && <span>{spell.level === 0 || spell.classSource !== "Волшебник" ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○"}</span>}
             </div>)}
           </div>)}
         </div>
@@ -476,8 +478,8 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       return <section className="pdf-page pdf-spell-card-page" key={`spell-card-page-${cardPageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`} title="Карточки заклинаний" page={pageNumber} />
         <div className="pdf-spell-card-grid">
-          {pageSpells.map(spell => <article className={`pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`} key={spell.id}>
-            <header><div><small>{spell.level === 0 ? "Заговор" : `${spell.level} круг`} · {spell.school}</small><h3>{spell.name}{spell.ritual ? " Р" : ""}</h3></div><b>{spell.source}</b></header>
+          {pageSpells.map(spell => <article className={`pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`} key={`${spell.classSource}-${spell.id}`}>
+            <header><div><small>{spell.level === 0 ? "Заговор" : `${spell.level} круг`} · {spell.school}</small><h3>{spell.name}{spell.ritual ? " Р" : ""}</h3><small>{spell.classSource}{spell.grantSource ? ` · ${spell.grantSource}` : ""}</small></div><b>{spell.source}</b></header>
             <dl>
               <div><dt>Накладывание</dt><dd>{spell.castingTime || "—"}</dd></div>
               <div><dt>Дистанция</dt><dd>{spell.range || "—"}</dd></div>

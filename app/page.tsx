@@ -43,6 +43,7 @@ import {
   variantsFor,
 } from "./characterRules";
 import { CatalogIcon } from "./catalogIcons";
+import { classSpellGroups, otherSpellSources } from "./spellSources";
 import { classChoiceGroups, classChoicesComplete, clearTashaOptionalState, resolvedClassChoiceFeatures, selectedClassChoiceIds } from "./classChoices";
 import { knownLanguageOptions, languageRule } from "./languages";
 import { characterResources, resourceCurrent, resourceRestLabel } from "./characterResources";
@@ -1004,7 +1005,7 @@ function Builder() {
   });
   const currentSpellGrants = character.spellGrants?.length
     ? character.spellGrants
-    : character.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+    : character.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: character.className, classId: character.className, mode: "known" as const }));
   const activeSpellIds = currentSpellGrants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
   const ordinarySpellIds = activeSpellIds.filter(id => !alwaysPreparedSet.has(id));
   const selectedCantrips = ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === 0);
@@ -1019,10 +1020,14 @@ function Builder() {
   const completedAdvancements = advancements.filter(choice => advancementChoiceComplete(choice, spells, character.level, character));
   const selectedFeatNames = advancementFields.feats.map(id => feats.find(item => item.id === id)?.name).filter(Boolean) as string[];
   const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
+  const sourcedSpellGroups = classSpellGroups(exportCharacter, availableSpellCatalog);
+  const sourcedSpells = sourcedSpellGroups.flatMap(group => group.spells);
+  const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog)
+    .filter(entry => !grantedFeatSpells.includes(entry.spell.id));
   const mobileSpellPool = [...new Map((spellRule.mode === "prepared"
     ? [
         ...selectedCantrips.map(id => spells.find(spell => spell.id === id)),
-        ...availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(rulesCharacter, spell)),
+        ...availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(spellCharacter, spell)),
         ...alwaysPrepared.map(id => spells.find(spell => spell.id === id)),
         ...grantedFeatSpells.map(id => spells.find(spell => spell.id === id)),
         ...customSpells,
@@ -1400,7 +1405,7 @@ function Builder() {
       if (alwaysPreparedSet.has(id)) return current;
       const grants = current.spellGrants?.length
         ? current.spellGrants
-        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: current.className, classId: current.className, mode: "known" as const }));
       const selectedForClass = grants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
       if (selectedForClass.includes(id)) {
         const nextGrants = grants.filter(grant => grant.classId !== activeSpellClassId || grant.spellId !== id);
@@ -1441,19 +1446,30 @@ function Builder() {
 
   function toggleMobilePreparedSpell(id: string) {
     setCharacter(current => {
+      const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map(spellId => ({
+        spellId, sourceType: "class" as const, sourceId: current.className, classId: current.className, mode: "prepared" as const,
+      }));
+      const classSpellIds = grants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
+      const scoped = { ...current, className: activeSpellClassId, subclass: activeSpellClass?.entry.subclassId || "", level: activeSpellClass?.entry.level || current.level };
       const available = spellRule.mode === "prepared"
-        ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(current, spell) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
-        : current.spells.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) > 0);
+        ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(scoped, spell) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
+        : classSpellIds.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) > 0);
       const initialPrepared = spellRule.mode === "prepared" && !current.mobilePreparedConfigured
-        ? current.spells.filter(spellId => available.includes(spellId)).slice(0, spellRule.prepared || available.length)
-        : (current.preparedSpells || []).filter(spellId => available.includes(spellId));
+        ? classSpellIds.filter(spellId => available.includes(spellId)).slice(0, spellRule.prepared || available.length)
+        : (current.preparedSpells || []).filter(spellId => available.includes(spellId) && classSpellIds.includes(spellId));
       const next = initialPrepared.includes(id)
         ? initialPrepared.filter(spellId => spellId !== id)
         : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
+      const otherClassIds = new Set(grants.filter(grant => grant.classId !== activeSpellClassId).map(grant => grant.spellId));
       const nextSpells = spellRule.mode === "prepared"
-        ? [...current.spells.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) === 0), ...next]
+        ? [...new Set([...current.spells.filter(spellId => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (spells.find(spell => spell.id === spellId)?.level || 0) === 0), ...next])]
         : current.spells;
-      return { ...current, spells: nextSpells, preparedSpells: next, mobilePreparedConfigured: true };
+      const nextGrants: SpellGrant[] = spellRule.mode === "prepared" ? [
+        ...grants.filter(grant => grant.classId !== activeSpellClassId || (spells.find(spell => spell.id === grant.spellId)?.level || 0) === 0),
+        ...next.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "prepared" as const })),
+      ] : grants;
+      return { ...current, spells: nextSpells, spellGrants: nextGrants,
+        preparedSpells: [...new Set([...(current.preparedSpells || []).filter(spellId => !classSpellIds.includes(spellId) || otherClassIds.has(spellId)), ...next])], mobilePreparedConfigured: true };
     });
   }
 
@@ -1875,7 +1891,7 @@ function Builder() {
     setCharacter(current => {
       const grants = current.spellGrants?.length
         ? current.spellGrants
-        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: current.className, classId: current.className, mode: "known" as const }));
       const otherGrants = grants.filter(grant => grant.classId !== activeSpellClassId);
       const retainedIds = otherGrants.map(grant => grant.spellId);
       const mode: SpellGrant["mode"] = spellRule.mode === "spellbook" ? "spellbook" : spellRule.mode === "prepared" ? "prepared" : "known";
@@ -1893,7 +1909,7 @@ function Builder() {
     setCharacter(current => {
       const grants = current.spellGrants?.length
         ? current.spellGrants
-        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: activeSpellClassId, classId: activeSpellClassId, mode: "known" as const }));
+        : current.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: current.className, classId: current.className, mode: "known" as const }));
       const otherGrants = grants.filter(grant => grant.classId !== activeSpellClassId);
       const retainedIds = otherGrants.map(grant => grant.spellId);
       return { ...current, spells: [...new Set(retainedIds)], preparedSpells: (current.preparedSpells || []).filter(id => retainedIds.includes(id)), spellGrants: otherGrants, lssSpellCards: undefined };
@@ -3469,14 +3485,24 @@ function Builder() {
                 </div>}
 
                 {mobileSheetTab === "spells" && <div className="mobile-sheet-panel">
-                  <div className="mobile-prepared-head"><h3>Заклинания</h3><span>{mobileSpellPool.length}</span></div>
-                  {spellRule.prepared !== undefined && <p className="mobile-prepared-limit">Подготовлено: <b>{mobilePreparedIds.length}</b> из <b>{spellRule.prepared}</b>. Заговоры и всегда подготовленные заклинания лимит не занимают.</p>}
-                  {!spellRule.caster && !mobileSpellPool.length ? <p>У персонажа нет доступных заклинаний.</p> : <div className="mobile-spell-list">{mobileSpellPool.map(spell => {
-                    const automatic = spell.level === 0 || spell.source === "Хоумбрю" || alwaysPreparedSet.has(spell.id) || grantedFeatSpells.includes(spell.id);
-                    const prepared = automatic || mobilePreparedIds.includes(spell.id);
-                    const canToggle = spell.level > 0 && !automatic && spellRule.prepared !== undefined;
-                    return <button key={spell.id} className={prepared ? "prepared" : ""} onClick={() => canToggle && toggleMobilePreparedSpell(spell.id)} aria-disabled={!canToggle} title={canToggle ? "Подготовить или снять подготовку" : automatic ? "Доступно всегда" : "Известное заклинание"}><span>{spell.level === 0 ? "∞" : automatic ? "◆" : prepared ? "●" : "○"}</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button>;
-                  })}</div>}
+                  <div className="mobile-prepared-head"><h3>Заклинания по классам</h3><span>{sourcedSpells.length}</span></div>
+                  {sourcedSpellGroups.map(group => <section key={group.classId}>
+                    <div className="mobile-prepared-head"><h3>{classes.find(item => item.id === group.classId)?.name || group.classId} {group.level}</h3><span>{group.spells.length}</span></div>
+                    {group.preparedMaximum !== undefined && <p className="mobile-prepared-limit">Лимит подготовки: {group.preparedMaximum}. Заговоры и всегда подготовленные заклинания его не занимают.</p>}
+                    <div className="mobile-spell-list">{group.spells.map(({ spell, source, prepared, alwaysPrepared }) =>
+                      <button key={spell.id} className={prepared ? "prepared" : ""} type="button"
+                        onClick={() => { if (group.classId !== activeSpellClassId) setSpellClassId(group.classId); else if (group.preparedMaximum !== undefined && spell.level > 0 && !alwaysPrepared) toggleMobilePreparedSpell(spell.id); }}
+                        title={group.classId !== activeSpellClassId ? "Выбрать класс для подготовки" : alwaysPrepared ? "Всегда подготовлено" : "Заклинание класса"}>
+                        <span>{spell.level === 0 ? "∞" : alwaysPrepared ? "◆" : prepared ? "●" : "○"}</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · {source === group.classId ? classes.find(item => item.id === source)?.name || source : source}</small>
+                      </button>)}</div>
+                  </section>)}
+                  {grantedFeatSpells.length > 0 && <section><h3>Черты</h3><div className="mobile-spell-list">{grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => <button key={spell.id} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · Черта</small></button>)}</div></section>}
+                  {otherGrantedSpells.length > 0 && <section><h3>Другие источники</h3><div className="mobile-spell-list">{otherGrantedSpells.map(({ spell, source }) => <button key={`${source}-${spell.id}`} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · {source}</small></button>)}</div></section>}
+                  {customSpells.length > 0 && <section><h3>Хоумбрю</h3><div className="mobile-spell-list">{customSpells.map(spell => <button key={spell.id} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · Хоумбрю</small></button>)}</div></section>}
+                  {spellRule.prepared !== undefined && <><p className="mobile-prepared-limit">Выбор для класса «{classes.find(item => item.id === activeSpellClassId)?.name || activeSpellClassId}»: {mobilePreparedIds.length} из {spellRule.prepared}.</p>
+                    <div className="mobile-spell-list">{mobileSpellPool.filter(spell => spell.level > 0 && !sourcedSpellGroups.find(group => group.classId === activeSpellClassId)?.spells.some(entry => entry.spell.id === spell.id)).map(spell =>
+                      <button key={spell.id} type="button" onClick={() => toggleMobilePreparedSpell(spell.id)}><span>○</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button>)}</div></>}
+                  {!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === undefined && <p>У персонажа нет доступных заклинаний.</p>}
                   {sharedSpellSlots.length > 0 && <div className="mobile-slot-list mobile-spell-slots"><h3>Ячейки заклинаний</h3>{sharedSpellSlots.map((maximum, circle) => <article key={circle}><span>{circle + 1} круг</span><button onClick={() => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum)}>Потратить</button><b>{maximum - (character.spellSlotsUsed?.[circle] || 0)} / {maximum}</b><button onClick={() => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum)}>Вернуть</button></article>)}</div>}
                   {pactMagicSlots.slots > 0 && <div className="mobile-slot-list mobile-spell-slots"><h3>Ячейки договора · {pactMagicSlots.level} круг</h3><article><span>Договор</span><button onClick={() => setCharacter(current => ({ ...current, pactSlotsUsed: Math.min(pactMagicSlots.slots, (current.pactSlotsUsed || 0) + 1) }))}>Потратить</button><b>{pactMagicSlots.slots - (character.pactSlotsUsed || 0)} / {pactMagicSlots.slots}</b><button onClick={() => setCharacter(current => ({ ...current, pactSlotsUsed: Math.max(0, (current.pactSlotsUsed || 0) - 1) }))}>Вернуть</button></article></div>}
                 </div>}
@@ -3547,17 +3573,19 @@ function Builder() {
                           </div>
                         )) : <p>Выберите стартовое оружие или боевой заговор.</p>}
                       </div>
-                      {spellAbilityKey && <p><b>Сл заклинаний:</b> {spellSaveDc} · <b>атака:</b> {spellAttackBonus >= 0 ? "+" : ""}{spellAttackBonus}</p>}
-                      {[...new Set([...character.spells, ...grantedFeatSpells, ...alwaysPrepared])].length ? [...new Set([...character.spells, ...grantedFeatSpells, ...alwaysPrepared])].map(id => {
-                        const spell = spells.find(item => item.id === id);
-                        if (!spell) return null;
-                        const status = alwaysPrepared.includes(id)
-                          ? "всегда подготовлено, вне лимита"
-                          : spellRule.mode === "spellbook" && spell.level > 0
-                            ? selectedPrepared.includes(id) ? "подготовлено" : "в книге"
-                            : spellRule.mode === "prepared" && spell.level > 0 ? "подготовлено" : "";
-                        return <p key={id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer"><b>{spell.name}</b></a> — {levelLabel(spell.level)}, {spell.school}. {spell.description}{status ? ` (${status})` : ""}</p>;
-                      }) : <p>Заклинания не выбраны.</p>}
+                      {sourcedSpellGroups.map(group => {
+                        const ability = classRules[group.classId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+                        if (!ability) return null;
+                        const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier(finalAbilities[ability]);
+                        return <p key={group.classId}><b>{classes.find(item => item.id === group.classId)?.name || group.classId} · {abilityLabels[ability]}:</b> Сл {8 + attack}, атака {attack >= 0 ? "+" : ""}{attack}</p>;
+                      })}
+                      {sourcedSpellGroups.map(group => <div key={group.classId}>
+                        <h4>{classes.find(item => item.id === group.classId)?.name || group.classId} {group.level}</h4>
+                        {group.spells.map(({ spell, source, prepared, alwaysPrepared }) =>
+                          <p key={spell.id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer"><b>{spell.name}</b></a> — {levelLabel(spell.level)}, {spell.school}. {spell.description} ({source === group.classId ? classes.find(item => item.id === source)?.name || source : source}{alwaysPrepared ? "; всегда подготовлено, вне лимита" : prepared && spell.level > 0 ? "; подготовлено" : ""})</p>)}</div>)}
+                      {grantedFeatSpells.map(id => spells.find(item => item.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => <p key={`feat-${spell.id}`}><b>{spell.name}</b> — {levelLabel(spell.level)} (черта)</p>)}
+                      {otherGrantedSpells.map(({ spell, source }) => <p key={`${source}-${spell.id}`}><b>{spell.name}</b> — {levelLabel(spell.level)} (источник: {source})</p>)}
+                      {!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && <p>Заклинания не выбраны.</p>}
                     </div>
                   </section>
                   <section className="sheet-story">
@@ -3627,17 +3655,19 @@ function Builder() {
                 spellAbility={spellAbilityKey ? abilityLabels[spellAbilityKey] : undefined}
                 spellSaveDc={spellAbilityKey ? spellSaveDc : undefined}
                 spellAttackBonus={spellAbilityKey ? spellAttackBonus : undefined}
-                spellSlots={spellRule.slots}
-                preparedMaximum={spellRule.prepared}
-                spells={[...new Set([
-                  ...currentSpellGrants.map(grant => grant.spellId),
-                  ...grantedFeatSpells,
-                  ...(allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared),
-                ])].map(id => spells.find(spell => spell.id === id)).filter(Boolean).map(spell => ({
-                  ...spell!,
-                  prepared: (character.preparedSpells || []).includes(spell!.id),
-                  alwaysPrepared: (allAutomaticSubclassSpellIds.length ? allAutomaticSubclassSpellIds : alwaysPrepared).includes(spell!.id),
-                })).concat(customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true })))}
+                spellSlots={sharedSpellSlots}
+                pactSlots={pactMagicSlots}
+                preparedMaximum={sourcedSpellGroups.find(group => group.classId === "wizard")?.preparedMaximum}
+                spellcastingSources={sourcedSpellGroups.flatMap(group => {
+                  const ability = classRules[group.classId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+                  if (!ability) return [];
+                  const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier(finalAbilities[ability]);
+                  return [{ name: classes.find(item => item.id === group.classId)?.name || group.classId, ability: abilityLabels[ability], dc: 8 + attack, attack }];
+                })}
+                spells={sourcedSpells.map(entry => ({ ...entry.spell, prepared: entry.prepared, alwaysPrepared: entry.alwaysPrepared,
+                  classSource: classes.find(item => item.id === entry.classId)?.name || entry.classId,
+                  grantSource: entry.source === entry.classId ? "" : entry.source,
+                })).concat(otherGrantedSpells.map(entry => ({ ...entry.spell, prepared: true, alwaysPrepared: entry.alwaysPrepared, classSource: "Другой источник", grantSource: entry.source })), grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Черта", grantSource: "" })), customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Хоумбрю", grantSource: "" })))}
               />
               <div ref={exportPanelRef} className="export-panel">
                 <div>
