@@ -31607,6 +31607,7 @@ function selectedEquipment(character) {
 }
 //#endregion
 //#region app/combat.ts
+var automaticAttacksNotice = "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа.";
 var abilityModifier$2 = (score) => Math.floor((score - 10) / 2);
 var proficiencyBonus$2 = (level) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 var weaponDefinitions = {
@@ -32580,6 +32581,7 @@ function summaryText(context) {
 		`Ресурсы: ${resources.join("; ") || "нет"}`,
 		`Снаряжение: ${equipment.join(", ") || "нет"}`,
 		`Атаки: ${attacks.map((attack) => `${attack.name} — ${attack.attackBonus !== void 0 ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
+		`Примечание к атакам: ${automaticAttacksNotice}`,
 		`Заклинания: ${selectedSpells.join(", ") || "нет"}`,
 		...preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : [],
 		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []
@@ -45190,6 +45192,7 @@ function PdfCharacterSheet(props) {
 									className: "pdf-panel pdf-attacks",
 									children: [
 										/* @__PURE__ */ jsx("h2", { children: "Оружие и боевые заклинания" }),
+										/* @__PURE__ */ jsx("p", { children: automaticAttacksNotice }),
 										/* @__PURE__ */ jsxs("div", {
 											className: "pdf-attack-head",
 											children: [
@@ -52692,7 +52695,8 @@ function Builder() {
 															/* @__PURE__ */ jsx("code", { children: attack.damageDisplay }),
 															attack.note && /* @__PURE__ */ jsx("small", { children: attack.note })
 														] }, attack.id))
-													})
+													}),
+													/* @__PURE__ */ jsx("small", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." })
 												]
 											}),
 											mobileSheetTab === "spells" && /* @__PURE__ */ jsxs("div", {
@@ -53189,6 +53193,7 @@ function Builder() {
 															className: "sheet-box spell-summary",
 															children: [
 																/* @__PURE__ */ jsx("h3", { children: "АТАКИ И ЗАКЛИНАНИЯ" }),
+																/* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("small", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." }) }),
 																/* @__PURE__ */ jsxs("div", {
 																	className: "attack-table",
 																	children: [/* @__PURE__ */ jsxs("div", {
