@@ -1,5 +1,6 @@
 "use client";
 
+import { markFeature, effectHandlingLabel } from "./featureHandling";
 import { classPreparedSpellIds, migrateSpellPreparation, setClassPreparedSpells } from "./spellPreparation";
 import { HeroQuiz } from "./HeroQuiz";
 import { buildRecommendedCharacter, standardAbilityBuild, standardArray, swapStandardAbility } from "./recommendedBuild";
@@ -648,7 +649,7 @@ function savedCharacterExportContext(value: ExportCharacter) {
     return detailedFeatures(resolvedClassChoiceFeatures(scoped,
       documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
-    )).map(feature => ({ ...feature, name: `${className} · ${feature.name}` }));
+    )).map(feature => markFeature({ ...feature, name: `${className} · ${feature.name}` }, "class", entry.classId));
   });
   const chosenRaceVariant = selectedRaceVariant(exportCharacter.race, exportCharacter.raceVariant);
   const chosenSubclass = selectedSubclass(exportCharacter.className, exportCharacter.subclass || "");
@@ -662,7 +663,7 @@ function savedCharacterExportContext(value: ExportCharacter) {
       const names = (choice.featChoices?.[group.key] || []).map(id => group.options.find(option => option.id === id)?.name || id);
       return names.length ? `${group.title}: ${names.join(", ")}` : "";
     }).filter(Boolean);
-    return [{ name: feat.name, description: [feat.description, ...details].join(" ") }];
+    return [markFeature({ name: feat.name, description: [feat.description, ...details].join(" ") }, "feat", "", feat.id)];
   });
   const featSpellIds = featGrantedSpellIds(exportCharacter);
   const alwaysPreparedSpellIds = [...new Set(orderedCharacterClasses(exportCharacter).flatMap(entry => alwaysPreparedSpellEntries({
@@ -926,7 +927,7 @@ function Builder() {
   })).filter(group => group.spells.length > 0);
   const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key as Category].filter(option => !allowed(activeBan, key as Category, option.id)).length, 0) : 0;
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
-  const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags);
+  const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags).map(feature => markFeature(feature, "race", character.race));
   const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
   const selectedClassFeatureSections = multiclassEntries.map(entry => {
     const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
@@ -3516,7 +3517,7 @@ function Builder() {
                 </div>}
 
                 {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel mobile-equipment-editor"><h3>Снаряжение</h3><label>Инвентарь<textarea value={character.inventoryOverride ?? equipmentItems.join("\n")} onChange={event => setCharacter(current => ({ ...current, inventoryOverride: event.target.value }))} aria-label="Инвентарь персонажа" placeholder="По одному предмету на строку" /></label>{customEquipment.length > 0 && <p><b>Хоумбрю:</b> {customEquipment.join(" · ")}</p>}<small>Можно переписать список полностью. Изменения сохраняются вместе с персонажем.</small><h3>Монеты</h3><div className="mobile-coin-grid">{(["gp", "sp", "cp", "pp"] as const).map(key => { const labels = { gp: "ЗМ", sp: "СМ", cp: "ММ", pp: "ПМ" } as const; return <label key={key}><span>{labels[key]}</span><input type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} aria-label={`${labels[key]}: количество`} /></label>; })}</div></div>}
-                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}{customNotes.map(note => <article className="homebrew-note" key={note.id}><strong>{note.name}</strong><p>{note.description}</p></article>)}</div>}
+                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}<h3>Особенности</h3>{[...selectedRaceFeatures, ...selectedClassFeatures, ...selectedFeatFeatures].map((feature, index) => <article key={`${feature.name}-${index}`}><strong>{feature.name}</strong>{feature.effectHandling && <small> · {effectHandlingLabel(feature.effectHandling)}</small>}<p>{feature.description}</p></article>)}{customNotes.map(note => <article className="homebrew-note" key={note.id}><strong>{note.name}</strong><p>{note.description}</p></article>)}</div>}
               </section>}
               <div className="sheet-page">
                 <header className="sheet-header">
@@ -3594,13 +3595,13 @@ function Builder() {
                       <h3>УМЕНИЯ И СПОСОБНОСТИ</h3>
                       <h4>{selectedRace?.name}: расовые особенности</h4>
                       {chosenRaceVariant && <p><b>{chosenRaceVariant.name}.</b> {chosenRaceVariant.description}</p>}
-                      {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}
+                      {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}
                       {selectedClassFeatureSections.map(section => <div key={section.key}>
                         <h4>{section.title}: классовые особенности</h4>
-                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
+                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}
                       </div>)}
                       {runtimeFeatures.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
-                      {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
+                      {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}</>}
                       {customFeatures.length > 0 && <><h4>Пользовательские способности</h4>{customFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>
                       <p>{selectedBackground?.description}</p>

@@ -1,3 +1,4 @@
+import { effectHandlingLabel } from "./featureHandling";
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
@@ -168,6 +169,7 @@ function FeatureList({ features }: { features: Feature[] }) {
   return <div className="pdf-feature-list">
     {features.map((feature, index) => <article key={`${feature.name}-${index}`}>
       <h3>{feature.name}</h3>
+      {feature.effectHandling && <small>{effectHandlingLabel(feature.effectHandling)}</small>}
       <FeatureDescription description={feature.description} />
     </article>)}
   </div>;
@@ -277,7 +279,7 @@ function RacialTraitList({ features }: { features: Feature[] }) {
   return <div className="pdf-compact-features">{features.map((feature, index) => {
     const text = compactRulesText(feature.description);
     const summary = text;
-    return <p key={`${feature.name}-${index}`}><b>{feature.name}.</b> {summary}</p>;
+    return <p key={`${feature.name}-${index}`}><b>{feature.name}.</b> {feature.effectHandling && <small>{effectHandlingLabel(feature.effectHandling)}. </small>}{summary}</p>;
   })}</div>;
 }
 

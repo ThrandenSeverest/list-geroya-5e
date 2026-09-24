@@ -2,6 +2,7 @@ export type Feature = {
   name: string;
   description: string;
   level?: number;
+  effectHandling?: "automatic" | "conditional" | "manual";
 };
 
 export type ClassRuleDetail = {
