@@ -22,3 +22,18 @@ test("legacy roll/manual hpGain remains an already calculated per-level gain", (
   // Preserve the stored final gains until an explicit versioned migration exists.
   assert.equal(estimatedHitPoints({ ...character, abilities: { ...character.abilities, con: 16 } }), 32);
 });
+
+test("explicit raw-roll format adds CON and tracks later changes, including minimum gain", () => {
+  const old = {
+    className: "fighter", level: 3, abilities: { str: 10, dex: 10, con: 14, int: 10, wis: 10, cha: 10 },
+    levelHistory: [
+      { characterLevel: 1, classId: "fighter", classLevelAfter: 1 },
+      { characterLevel: 2, classId: "fighter", classLevelAfter: 2, hpMode: "roll", hpGain: 4, hpGainFormat: "raw-roll-plus-con-v1" },
+      { characterLevel: 3, classId: "fighter", classLevelAfter: 3, hpMode: "roll", hpGain: 1, hpGainFormat: "raw-roll-plus-con-v1" },
+    ],
+  } as unknown as ExportCharacter;
+  assert.equal(estimatedHitPoints(old), 12 + 6 + 3);
+  assert.equal(estimatedHitPoints({ ...old, abilities: { ...old.abilities, con: 16 } }), 13 + 7 + 4);
+  assert.equal(estimatedHitPoints({ ...old, abilities: { ...old.abilities, con: 4 } }), 7 + 1 + 1);
+  assert.equal(estimatedHitPoints(JSON.parse(JSON.stringify(old))), 21);
+});

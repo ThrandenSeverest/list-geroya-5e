@@ -45,6 +45,8 @@ export type CharacterLevelEntry = {
   classLevelAfter: number;
   hpMode?: "average" | "roll" | "manual";
   hpGain?: number;
+  /** Explicit new format: hpGain is the raw hit-die roll; absent means legacy final gain. */
+  hpGainFormat?: "raw-roll-plus-con-v1";
 };
 export type SpellGrant = {
   spellId: string;
@@ -179,13 +181,15 @@ export function estimatedHitPoints(character: ExportCharacter) {
   const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
   return Math.max(1, history.reduce((total, entry) => {
     const hitDie = classRules[entry.classId]?.hitDie || 8;
-    // Legacy roll/manual hpGain is stored as the final gain for this level,
-    // already including the Constitution modifier. Old saves do not record
-    // the die result or CON at that level, so adding CON here would double it.
+    // Explicit v1 rolls use the raw die plus current CON, including retroactive
+    // changes. Unversioned legacy gains remain stored totals: the old die and
+    // CON at the time of the roll cannot be reconstructed.
     const gain = entry.characterLevel === 1
       ? hitDie + constitution
       : entry.hpMode === "roll" || entry.hpMode === "manual"
-        ? Math.max(1, entry.hpGain || 1)
+        ? entry.hpGainFormat === "raw-roll-plus-con-v1" && Number.isInteger(entry.hpGain)
+          ? Math.max(1, Math.min(hitDie, Math.max(1, entry.hpGain!)) + constitution)
+          : Math.max(1, entry.hpGain || 1)
         : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution);
     return total + gain;
   }, 0));
