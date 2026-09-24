@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CatalogSpell } from "./catalog";
-import type { CharacterAttack } from "./combat";
+import { automaticAttacksNotice, type CharacterAttack } from "./combat";
 import type { AbilityScores, Currency } from "./exportFormats";
 import { resourceRestLabel } from "./characterResources";
 import { abilityLabels, skillKeys, type Feature } from "./rules";
@@ -409,6 +409,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           </div>
         </section>
         <section className="pdf-panel pdf-attacks"><h2>Оружие и боевые заклинания</h2>
+          <p>{automaticAttacksNotice}</p>
           <div className="pdf-attack-head"><b>Название</b><b>Попадание / Сл</b><b>Урон</b></div>
           {props.attacks.length ? props.attacks.map(attack => <article key={attack.id}><div><b>{attack.name}</b><span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code></div>{attack.note && <p>{attack.note}</p>}</article>) : <p>Атаки ещё не выбраны.</p>}
           {props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>}

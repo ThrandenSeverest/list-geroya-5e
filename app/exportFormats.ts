@@ -5,7 +5,7 @@ import { spellSelectionRule, spellSelectionRuleForClass } from "./characterRules
 import { characterResources, resourceCurrent } from "./characterResources";
 import { backgroundRule } from "./backgroundRules";
 import { selectedEquipment } from "./equipment";
-import { characterAttacks, lssWeaponAttacks } from "./combat";
+import { automaticAttacksNotice, characterAttacks, lssWeaponAttacks } from "./combat";
 import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 import { armorClass } from "./armor";
 import { externalSkillId } from "./skillIds";
@@ -278,6 +278,7 @@ function summaryText(context: ExportContext) {
     `Ресурсы: ${resources.join("; ") || "нет"}`,
     `Снаряжение: ${equipment.join(", ") || "нет"}`,
     `Атаки: ${attacks.map(attack => `${attack.name} — ${attack.attackBonus !== undefined ? `атака ${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}, урон ${attack.damageDisplay}${attack.note ? ` (${attack.note})` : ""}`).join("; ") || "нет"}`,
+    `Примечание к атакам: ${automaticAttacksNotice}`,
     `Заклинания: ${selectedSpells.join(", ") || "нет"}`,
     ...(preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : []),
     ...(alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []),

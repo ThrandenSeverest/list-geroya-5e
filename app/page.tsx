@@ -50,7 +50,7 @@ import { characterResources, resourceCurrent, resourceRestLabel } from "./charac
 import { backgroundEquipmentWithoutStartingGold, backgroundRule, backgroundStartingGold } from "./backgroundRules";
 import { backgroundChoiceGroups, backgroundFixedSkills } from "./backgroundChoices";
 import { defaultEquipmentSelections, equipmentComplete, equipmentOptionAdvice, equipmentRule, optimalEquipmentSelections, selectedEquipment } from "./equipment";
-import { characterAttacks } from "./combat";
+import { automaticAttacksNotice, characterAttacks } from "./combat";
 import { knownLimitations } from "./knownLimitations";
 import { characterExpertiseSkills, characterProficiencies, classSkillUsedElsewhere, proficiencyChoiceRequirements, proficiencyChoicesComplete, proficiencyChoiceUsedElsewhere } from "./proficiencies";
 import { createNativeCharacterFile, parseCharacterFile, type CharacterFileSource } from "./characterFiles";
@@ -3483,6 +3483,7 @@ function Builder() {
                   <div className="mobile-rest-row"><div><span>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</span><small>{availableHitDice} / {characterLevel(character)}</small><b>к отдыху: {hitDiceToRoll}</b></div><button className="hit-die-step" onClick={() => setHitDiceToRoll(value => Math.max(0, value - 1))} disabled={!hitDiceToRoll} aria-label="Уменьшить число костей хитов">−</button><button className="hit-die-button" onClick={() => setHitDiceToRoll(value => Math.min(availableHitDice, value + 1))} disabled={availableHitDice <= hitDiceToRoll} aria-label="Добавить кость хитов к короткому отдыху">+</button><button onClick={takeShortRest}>Короткий отдых</button><button onClick={takeLongRest}>Длинный отдых</button></div>
                   {lastHitDieRoll !== null && <p className="mobile-roll-result">Восстановлено хитов: <b>{lastHitDieRoll}</b> (бросок выбранных костей + модификатор Телосложения к каждой)</p>}
                   <div className="mobile-attack-list">{attacks.map(attack => <article key={attack.id}><strong>{attack.name}</strong><span>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code>{attack.note && <small>{attack.note}</small>}</article>)}</div>
+                  <small>{automaticAttacksNotice}</small>
                 </div>}
 
                 {mobileSheetTab === "spells" && <div className="mobile-sheet-panel">
@@ -3563,6 +3564,7 @@ function Builder() {
                     </div>}
                     <div className="sheet-box spell-summary">
                       <h3>АТАКИ И ЗАКЛИНАНИЯ</h3>
+                      <p><small>{automaticAttacksNotice}</small></p>
                       <div className="attack-table">
                         <div className="attack-head"><b>Атака</b><b>Попадание / Сл</b><b>Урон</b></div>
                         {attacks.length ? attacks.map(attack => (

@@ -7,6 +7,8 @@ import { characterProficiencies } from "./proficiencies";
 
 type AbilityKey = keyof AbilityScores;
 
+export const automaticAttacksNotice = "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа.";
+
 const abilityModifier = (score: number) => Math.floor((score - 10) / 2);
 const proficiencyBonus = (level: number) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 
