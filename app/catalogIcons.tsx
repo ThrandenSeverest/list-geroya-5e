@@ -1,3 +1,4 @@
+import { assetUrl } from "./assetUrl";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -206,11 +207,11 @@ addRaceSheet("races-spelljammer", ["autognome", "astralelf", "giff", "plasmoid",
 
 export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false }: CatalogIconProps) {
   if (kind === "race" && id === "locathah") {
-    return <span className={`${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`} aria-hidden="true" title={fallback} />;
+    return <span className={`${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`} aria-hidden="true" title={fallback} style={{ "--experimental-sheet": `url("${assetUrl("experimental/locathah.png")}")` } as CSSProperties} />;
   }
   const experimentalIcon = experimental ? (kind === "class" ? experimentalClasses[id] : kind === "race" ? experimentalRaces[id] : undefined) : undefined;
   if (experimentalIcon) {
-    return <span className={`${className} catalog-icon experimental-catalog-icon`} aria-hidden="true" title={fallback} data-sheet={experimentalIcon.sheet} style={{ "--experimental-sheet": `url('/experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png')` } as CSSProperties} />;
+    return <span className={`${className} catalog-icon experimental-catalog-icon`} aria-hidden="true" title={fallback} data-sheet={experimentalIcon.sheet} style={{ "--experimental-sheet": `url("${assetUrl(`experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png`)}")` } as CSSProperties} />;
   }
   const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || ScrollText;
   const Secondary = kind === "race" ? raceSecondaryIcons[id] : kind === "class" ? classSecondaryIcons[id] : undefined;

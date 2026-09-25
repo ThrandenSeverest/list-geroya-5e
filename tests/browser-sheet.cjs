@@ -17,8 +17,26 @@ const character = {
   currentHitPoints:30, spells:[], classSkills:[], backgroundSkills:[],
   currency:{gp:0,sp:0,cp:0,pp:0}, personality:{traits:'',ideals:'',bonds:'',flaws:''},
 };
+async function verifyImages(page) {
+  const failures = await page.evaluate(async () => {
+    const sources = [...document.images].map(image => image.currentSrc || image.src);
+    for (const element of document.querySelectorAll('.experimental-catalog-icon')) {
+      const value = getComputedStyle(element).getPropertyValue('--experimental-sheet');
+      const match = value.match(/url\(["']?(.*?)["']?\)/);
+      if(match) sources.push(new URL(match[1], document.baseURI).href);
+    }
+    return (await Promise.all([...new Set(sources)].map(async src => {
+      const image = new Image(); image.src = src;
+      try { await image.decode(); return image.naturalWidth ? null : src; }
+      catch { return src; }
+    }))).filter(Boolean);
+  });
+  assert.deepEqual(failures, [], 'Every logo, acknowledgement and catalog image must load');
+}
 async function openSheet(page) {
   await page.getByRole('button', {name:'Продолжить текущего персонажа',exact:true}).click();
+  await page.locator('.experimental-catalog-icon').first().waitFor();
+  await verifyImages(page);
   await page.locator('nav.steps button').filter({hasText:'Итог'}).click();
   await page.locator('.pdf-hp strong').waitFor();
 }
@@ -44,6 +62,8 @@ async function saved(page) {
           ]}));
         },{key,character});
         await page.goto(url);
+        await page.getByRole('button',{name:'Лист Героя — главная',exact:true}).waitFor();
+        await verifyImages(page);
         await openSheet(page);
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'30');
         const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');
