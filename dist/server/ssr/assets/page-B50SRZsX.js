@@ -25162,7 +25162,7 @@ function createHelpmateExport(context) {
 				Left: selection.cantrips,
 				Max: selection.cantrips
 			}] : [],
-			...entry.classId !== "warlock" && ordinarySpellcasters.length === 1 ? sharedSlots.map((max, index) => ({
+			...ordinarySpellcasters.length === 1 && entry.classId === ordinarySpellcasters[0].classId ? sharedSlots.map((max, index) => ({
 				Level: index + 1,
 				Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)),
 				Max: max
@@ -47765,7 +47765,7 @@ function HitPointRollEditor({ character, onChange }) {
 		className: "hp-roll-editor",
 		children: [
 			/* @__PURE__ */ jsx("summary", { children: "Броски хитов по уровням" }),
-			/* @__PURE__ */ jsx("p", { children: "Введите результат кости без модификатора Телосложения. Старое значение не изменится, пока вы не введёте новый бросок." }),
+			/* @__PURE__ */ jsx("p", { children: "Введите результат кости без модификатора Телосложения. Старые числа учитываются как готовый прирост. Если сохранённое число было результатом кости, подтвердите это кнопкой ниже — модификатор Телосложения будет добавлен отдельно." }),
 			history.map((entry) => {
 				const die = classRules[entry.classId]?.hitDie || 8;
 				const raw = entry.hpGainFormat === "raw-roll-plus-con-v1" && entry.hpMode === "roll";
@@ -47785,7 +47785,16 @@ function HitPointRollEditor({ character, onChange }) {
 						placeholder: entry.hpGain !== void 0 && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее",
 						onChange: (event) => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))
 					}),
-					entry.hpGain !== void 0 && !raw && /* @__PURE__ */ jsx("small", { children: "Сохранён готовый прирост; исходный бросок неизвестен." }),
+					entry.hpGain !== void 0 && !raw && /* @__PURE__ */ jsxs("small", { children: [
+						"Старое значение: ",
+						entry.hpGain,
+						". Пока учитывается как готовый прирост; исходный бросок неизвестен."
+					] }),
+					entry.hpGain !== void 0 && !raw && Number.isInteger(entry.hpGain) && entry.hpGain >= 1 && entry.hpGain <= die && /* @__PURE__ */ jsxs("button", {
+						type: "button",
+						onClick: () => onChange(entry.characterLevel, entry.hpGain),
+						children: ["Это результат кости: ", entry.hpGain]
+					}),
 					(raw || entry.hpGain !== void 0) && /* @__PURE__ */ jsx("button", {
 						type: "button",
 						onClick: () => onChange(entry.characterLevel, null),
