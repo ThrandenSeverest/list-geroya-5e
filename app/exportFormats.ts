@@ -401,7 +401,7 @@ export function createHelpmateExport(context: ExportContext) {
       // A shared normal pool is safe to serialize when exactly one class has
       // Spellcasting. Its placement for two ordinary casters is intentionally
       // not guessed until a real Helpmate fixture confirms it.
-      ...(entry.classId !== "warlock" && ordinarySpellcasters.length === 1
+      ...(ordinarySpellcasters.length === 1 && entry.classId === ordinarySpellcasters[0].classId
         ? sharedSlots.map((max, index) => ({ Level: index + 1, Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)), Max: max }))
         : []),
       ...(entry.classId === "warlock" && pact.slots ? [{ Level: pact.level, Left: Math.max(0, pact.slots - (character.pactSlotsUsed || 0)), Max: pact.slots }] : []),

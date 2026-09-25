@@ -75,7 +75,14 @@ async function saved(page) {
         },key);
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'31');
         assert.equal((await saved(page)).slots[0].character.currentHitPoints,30);
-        // The untouched legacy roll has an explicit average action.
+        // Legacy values change interpretation only after explicit confirmation.
+        assert.equal((await saved(page)).slots[0].character.levelHistory[1].hpGainFormat,undefined);
+        await editor.getByRole('button',{name:'Это результат кости: 8',exact:true}).click();
+        await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.levelHistory[1].hpGainFormat==='raw-roll-plus-con-v1',key);
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'34');
+        assert.equal((await saved(page)).slots[0].character.currentHitPoints,30);
+        assert.equal((await saved(page)).slots[1].character.levelHistory[1].hpGainFormat,undefined);
+        // An explicit average action remains available after confirmation.
         await editor.locator('label').filter({hasText:'Уровень 2'}).getByRole('button',{name:'Использовать среднее'}).click();
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.levelHistory[1].hpMode==='average',key);
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'32');

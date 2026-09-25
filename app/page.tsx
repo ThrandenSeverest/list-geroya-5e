@@ -698,7 +698,7 @@ function HitPointRollEditor({ character, onChange }: { character: ExportCharacte
   const history = normalizedLevelHistory(character).filter(entry => entry.characterLevel > 1);
   if (!history.length) return null;
   return <details className="hp-roll-editor"><summary>Броски хитов по уровням</summary>
-    <p>Введите результат кости без модификатора Телосложения. Старое значение не изменится, пока вы не введёте новый бросок.</p>
+    <p>Введите результат кости без модификатора Телосложения. Старые числа учитываются как готовый прирост. Если сохранённое число было результатом кости, подтвердите это кнопкой ниже — модификатор Телосложения будет добавлен отдельно.</p>
     {history.map(entry => {
       const die = classRules[entry.classId]?.hitDie || 8;
       const raw = entry.hpGainFormat === "raw-roll-plus-con-v1" && entry.hpMode === "roll";
@@ -707,7 +707,9 @@ function HitPointRollEditor({ character, onChange }: { character: ExportCharacte
           value={raw ? entry.hpGain ?? "" : ""}
           placeholder={entry.hpGain !== undefined && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее"}
           onChange={event => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))} />
-        {entry.hpGain !== undefined && !raw && <small>Сохранён готовый прирост; исходный бросок неизвестен.</small>}
+        {entry.hpGain !== undefined && !raw && <small>Старое значение: {entry.hpGain}. Пока учитывается как готовый прирост; исходный бросок неизвестен.</small>}
+        {entry.hpGain !== undefined && !raw && Number.isInteger(entry.hpGain) && entry.hpGain >= 1 && entry.hpGain <= die &&
+          <button type="button" onClick={() => onChange(entry.characterLevel, entry.hpGain!)}>Это результат кости: {entry.hpGain}</button>}
         {(raw || entry.hpGain !== undefined) && <button type="button" onClick={() => onChange(entry.characterLevel, null)}>Использовать среднее</button>}
       </label>;
     })}

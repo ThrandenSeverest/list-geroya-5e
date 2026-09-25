@@ -80,3 +80,23 @@ test("Helpmate preserves unsupported shared multiclass slots in notes with an ex
   assert.match(ordinaryAndPact.Note, /Магия договора.*1 круг: 1 \/ 2/);
   assert.doesNotMatch(ordinaryAndPact.Note, /настройте его вручную/);
 });
+
+test("Helpmate assigns ordinary slots only to their caster, matching the wizard/rogue fixture", () => {
+  for (const reverse of [false, true]) {
+    const classes = [
+      { classId: "wizard", level: 5, acquiredAtCharacterLevel: reverse ? 6 : 1 },
+      { classId: "rogue", level: 5, acquiredAtCharacterLevel: reverse ? 1 : 6 },
+    ];
+    const exported = createHelpmateExport({ character: {
+      ...character, className: reverse ? "rogue" : "wizard", startingClassId: reverse ? "rogue" : "wizard",
+      level: 10, classes: reverse ? [...classes].reverse() : classes, spellSlotsUsed: [1, 2, 1],
+    }, spells, raceFeatureList: [], classFeatureList: [] });
+    assert.deepEqual(exported.Classes.find(entry => entry.Id === "18")?.SpellCells, []);
+    assert.deepEqual(exported.Classes.find(entry => entry.Id === "21")?.SpellCells, [
+      { Level: 0, Left: 4, Max: 4 },
+      { Level: 1, Left: 3, Max: 4 },
+      { Level: 2, Left: 1, Max: 3 },
+      { Level: 3, Left: 1, Max: 2 },
+    ]);
+  }
+});
