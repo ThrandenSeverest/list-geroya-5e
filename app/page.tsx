@@ -3464,6 +3464,7 @@ function Builder() {
                 <label>Вдохновение<select value={character.inspiration ? "yes" : "no"} onChange={event => setCharacter(current => ({ ...current, inspiration: event.target.value === "yes" }))}><option value="no">Нет</option><option value="yes">Есть</option></select></label>
                 <button className={`mobile-sheet-toggle${mobileSheet ? " active" : ""}`} onClick={() => setMobileSheet(value => !value)}>Мобильный лист <small>ЭКСПЕРИМЕНТАЛЬНО</small></button>
               </div>
+              {!mobileSheet && <div className="desktop-hp-roll-editor"><HitPointRollEditor character={character} onChange={updateHitPointRoll} /></div>}
               {mobileSheet && <section className="mobile-character-sheet">
                 <header>
                   <div><small>{selectedRace?.name} · {selectedClass?.name} {character.level}</small><h2>{character.name || "Безымянный герой"}</h2></div>
@@ -3570,7 +3571,6 @@ function Builder() {
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
                     <div className="sheet-box hp-current"><label>ТЕКУЩИЕ ХИТЫ<input aria-label="Текущие хиты" type="number" min="0" max={hitPoints} value={character.currentHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, currentHitPoints: Math.max(0, Math.min(hitPoints, Number(event.target.value) || 0)) }))} /></label><label>ВРЕМЕННЫЕ ХИТЫ<input aria-label="Временные хиты" type="number" min="0" value={character.temporaryHitPoints || ""} placeholder=" " onChange={event => setCharacter(current => ({ ...current, temporaryHitPoints: Math.max(0, Number(event.target.value) || 0) }))} /></label></div>
                     <div className="sheet-box hit-dice"><strong>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</strong><span>КОСТИ ХИТОВ</span><label>{availableHitDice} / {characterLevel(character)}</label></div>
-                    <HitPointRollEditor character={character} onChange={updateHitPointRoll} />
                     {resources.length > 0 && <div className={`sheet-box sheet-resources sheet-resources--${resourceDensity}`}>
                       {resources.map(resource => {
                         const unit = resource.unit || 1;

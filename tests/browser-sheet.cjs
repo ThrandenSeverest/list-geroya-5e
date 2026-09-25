@@ -20,7 +20,7 @@ const character = {
 async function openSheet(page) {
   await page.getByRole('button', {name:'Продолжить текущего персонажа',exact:true}).click();
   await page.locator('nav.steps button').filter({hasText:'Итог'}).click();
-  await page.locator('.sheet-box.hp strong').waitFor();
+  await page.locator('.pdf-hp strong').waitFor();
 }
 async function saved(page) {
   return page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
@@ -45,30 +45,30 @@ async function saved(page) {
         },{key,character});
         await page.goto(url);
         await openSheet(page);
-        assert.equal(await page.locator('.sheet-box.hp strong').textContent(),'30');
-        const editor=page.locator('.sheet-combat .hp-roll-editor');
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'30');
+        const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');
         await editor.locator('summary').click();
         await editor.getByRole('spinbutton',{name:'Бросок хитов за уровень 3',exact:true}).fill('7');
         await page.waitForFunction(key=>{
           const v=JSON.parse(localStorage.getItem(key));
           return v.slots.find(s=>s.id==='hp-active').character.levelHistory[2].hpGain===7;
         },key);
-        assert.equal(await page.locator('.sheet-box.hp strong').textContent(),'31');
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'31');
         assert.equal((await saved(page)).slots[0].character.currentHitPoints,30);
         // The untouched legacy roll has an explicit average action.
         await editor.locator('label').filter({hasText:'Уровень 2'}).getByRole('button',{name:'Использовать среднее'}).click();
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.levelHistory[1].hpMode==='average',key);
-        assert.equal(await page.locator('.sheet-box.hp strong').textContent(),'32');
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'32');
         await page.getByRole('button',{name:/Мобильный лист/}).click();
         const mobile=page.locator('.mobile-character-sheet');
         await mobile.getByRole('button',{name:'Ресурсы',exact:true}).click();
         await mobile.locator('.hp-roll-editor summary').click();
         await mobile.getByRole('spinbutton',{name:'Бросок хитов за уровень 3',exact:true}).fill('2');
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.currentHitPoints===27,key);
-        assert.equal(await page.locator('.sheet-box.hp strong').textContent(),'27');
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'27');
         await page.reload();
         await openSheet(page);
-        assert.equal(await page.locator('.sheet-box.hp strong').textContent(),'27');
+        assert.equal(await page.locator('.pdf-hp strong').textContent(),'27');
         const vault=await saved(page);
         assert.equal(vault.activeId,'hp-active');
         assert.deepEqual(vault.slots.map(s=>s.id),['hp-active','hp-preserved']);

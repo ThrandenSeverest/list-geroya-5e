@@ -1524,3 +1524,5 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .hp-roll-editor input { width: 76px; padding: 4px 6px; }
 .hp-roll-editor small { display: block; width: 100%; }
 .hp-roll-editor button { padding: 4px 8px; }
+
+@media print { .desktop-hp-roll-editor { display: none !important; } }
