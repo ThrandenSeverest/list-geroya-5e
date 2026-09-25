@@ -9,11 +9,21 @@ test("curated features distinguish applied values, conditions and manual use", (
   assert.equal(markFeature(feature("Воин · Всплеск действий"), "class", "fighter").effectHandling, "manual");
   assert.equal(markFeature(feature("Когти"), "race", "tortle").effectHandling, "automatic");
   assert.equal(markFeature(feature("Защита панцирем"), "race", "tortle").effectHandling, "conditional");
-  assert.equal(markFeature(feature("Бдительный"), "feat", "", "alert").effectHandling, "automatic");
+  assert.equal(markFeature(feature("Бдительный"), "feat", "", "alert").effectHandling, "conditional");
   assert.equal(effectHandlingLabel("manual"), "Применяется вручную");
 });
-test("unreviewed entries stay unmarked, even if their prose mentions a bonus", () => {
+test("unreviewed entries require manual use and never imply automation", () => {
   const unknown = feature("Неизвестный бонус к скорости +10");
-  assert.deepEqual(markFeature(unknown, "class", "fighter"), unknown);
-  assert.deepEqual(markFeature(feature("Быстрое передвижение"), "class", "wizard"), feature("Быстрое передвижение"));
+  assert.deepEqual(markFeature(unknown, "class", "fighter"), { ...unknown, effectHandling: "manual" });
+  assert.equal(markFeature(feature("Быстрое передвижение"), "class", "wizard").effectHandling, "manual");
+});
+
+test("all sources have a marker; explicit handling survives and input stays unchanged", () => {
+  for (const source of ["class", "race", "feat", "background", "custom"] as const) {
+    const input = feature("Новая особенность");
+    assert.equal(markFeature(input, source, "unknown").effectHandling, "manual");
+    assert.equal(input.effectHandling, undefined);
+    assert.equal(markFeature({ ...input, effectHandling: "conditional" }, source, "unknown").effectHandling, "conditional");
+  }
+  assert.equal(effectHandlingLabel(undefined), "Применяется вручную");
 });

@@ -111,9 +111,22 @@ type CantripDefinition = {
   save?: AbilityKey;
   damageType?: "Кислота" | "Холод" | "Огонь" | "Электричество" | "Звук";
   note?: string;
+  fixedDice?: boolean;
+  addAbility?: boolean;
 };
 
 const damagingCantrips: Record<string, CantripDefinition> = {
+  "chill-touch": { dice: "d8", mode: "attack", note: "Цель не восстанавливает хиты до начала вашего следующего хода; нежить атакует вас с помехой до конца вашего следующего хода." },
+  "spell-doc-poison_spray": { dice: "d12", mode: "save", save: "con" },
+  "spell-doc-create_bonfire": { dice: "d8", mode: "save", save: "dex", damageType: "Огонь", note: "Концентрация. Проверяйте попадание цели в область и условия повторного урона." },
+  "spell-doc-frostbite": { dice: "d6", mode: "save", save: "con", damageType: "Холод", note: "При провале — помеха на следующую атаку оружием до конца следующего хода цели." },
+  "spell-doc-infestation": { dice: "d6", mode: "save", save: "con", note: "При провале — случайное перемещение на 5 футов, если цель может двигаться; не провоцирует атаки." },
+  "spell-doc-primal_savagery": { dice: "d10", mode: "attack", damageType: "Кислота", note: "Рукопашная атака заклинанием, 5 футов." },
+  "spell-doc-thunderclap": { dice: "d6", mode: "save", save: "con", damageType: "Звук", note: "Все остальные существа в пределах 5 футов; звук слышен на 100 футов." },
+  "spell-doc-lightning_lure": { dice: "d8", mode: "save", save: "str", damageType: "Электричество", note: "Урон только если после подтягивания цель оказалась в пределах 5 футов." },
+  "spell-doc-sword_burst": { dice: "d6", mode: "save", save: "dex", note: "Все остальные существа в пределах 5 футов." },
+  "spell-doc-sapping_sting": { dice: "d4", mode: "save", save: "con", note: "При провале цель также падает ничком." },
+  "spell-doc-magic_stone": { dice: "d6", mode: "attack", fixedDice: true, addAbility: true, note: "Только после зачарования камня; дальнобойная атака заклинанием. Урон не растёт с уровнем. Магия камня заканчивается после атаки." },
   "acid-splash": { dice: "d6", mode: "save", save: "dex", damageType: "Кислота" },
   firebolt: { dice: "d10", mode: "attack", damageType: "Огонь" },
   vicious: { dice: "d4", mode: "save", save: "wis", note: "При провале цель получает помеху на следующую атаку." },
@@ -180,6 +193,21 @@ function subclassAttacks(character: ExportCharacter, prof: number): CharacterAtt
 
   for (const entry of orderedCharacterClasses(character)) {
     const subclass = entry.subclassId || "";
+    if (entry.classId === "rogue" && subclass === "soulknife" && entry.level >= 3) {
+      const ability = character.abilities.dex > character.abilities.str ? "dex" : "str";
+      attack("subclass-soulknife-main", "Психический клинок", ability, "1d6", "Только при действии Атака и свободной руке; психический урон, метание до 60 футов.");
+      attack("subclass-soulknife-bonus", "Психический клинок · бонусное действие", ability, "1d4", "После атаки первым клинком, если другая рука свободна; модификатор характеристики добавляется к урону.");
+    }
+    if (entry.classId === "monk" && subclass === "sun-soul" && entry.level >= 3) {
+      attack("subclass-sun-soul-bolt", "Луч сияющего солнца", "dex", monkMartialDie(entry.level), "Дальнобойная атака заклинанием, 30 футов, излучение; заменяет атаку действия Атака. Ещё два луча бонусным действием стоят 1 ци.");
+    }
+    if (entry.classId === "artificer" && subclass === "artillerist" && entry.level >= 3) {
+      const dice = entry.level >= 9 ? "3d8" : "2d8";
+      attack("subclass-artillerist-ballista", "Пушка · Силовая баллиста", "int", dice, "Только при активной пушке соответствующего типа; бонусное действие, 120 футов, силовой урон, отталкивание 5 футов.", "0");
+      add({ id: "subclass-artillerist-flamethrower", name: "Пушка · Огнемёт", kind: "feature", ability: "int",
+        proficient: true, attackBonusExtra: 0, saveDc: 8 + prof + abilityModifier(character.abilities.int),
+        damageFormula: dice, damageDisplay: dice, note: "Только при активной пушке соответствующего типа; бонусное действие, конус 15 футов, спасбросок Ловкости: половина огненного урона при успехе." });
+    }
     if (entry.classId === "barbarian" && subclass === "battlerager" && entry.level >= 3) {
       attack("subclass-battlerager-spikes", "Шипы доспеха", "str", "1d4", "Доступно только в шипованном доспехе и во время ярости; атака выполняется бонусным действием.");
     }
@@ -208,16 +236,16 @@ function subclassAttacks(character: ExportCharacter, prof: number): CharacterAtt
       });
     }
     if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) {
-      const abilityMod = abilityModifier(character.abilities.wis);
+      const abilityMod = 3;
       const extra = entry.level >= 15 ? "2d6" : entry.level >= 7 ? "1d6" : "";
       add({
         id: "subclass-drakewarden-bite",
         name: "Дрейк: Укус",
         kind: "feature",
-        ability: "wis",
+        ability: "str",
         proficient: true,
         attackBonus: prof + abilityMod,
-        attackBonusExtra: 0,
+        attackBonusExtra: 3 - abilityModifier(character.abilities.str),
         damageFormula: `1d6+[PB]${extra ? `+${extra}` : ""}`,
         damageDisplay: `1d6${signed(prof)}${extra ? ` + ${extra} стихией` : ""}`,
         note: `Атака временного дрейка; КД ${14 + prof}, хиты ${5 + 5 * entry.level}. Стихийный тип выбирается при каждом призыве.`,
@@ -282,18 +310,41 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     ...(character.classChoices?.invocations || []),
     ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.invocations || []),
   ]);
-  const chosenCantrips = character.spells
+  const chosenCantrips = [...new Set([...(character.spells || []), ...(character.spellGrants || []).map(grant => grant.spellId)])]
     .map(id => spells.find(spell => spell.id === id && spell.level === 0))
     .filter(Boolean) as CatalogSpell[];
   const cantripAttacks = chosenCantrips.flatMap((spell): CharacterAttack[] => {
     const definition = damagingCantrips[spell.id];
-    if (!definition) return [];
+    if (!definition && !["booming", "greenflame", "spell-doc-shillelagh"].includes(spell.id)) return [];
     const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
     const sourceClassId = character.spellGrants?.find(grant => grant.spellId === spell.id && grant.classId)?.classId
       || (spell.id === "eldritch" && orderedCharacterClasses(character).some(entry => entry.classId === "warlock") ? "warlock" : character.className);
     const castingAbility = (classRules[sourceClassId]?.spellAbility || spellAbility) as AbilityKey;
     const castingMod = abilityModifier(character.abilities[castingAbility]);
-    const damageBonus = agonizing ? abilityModifier(character.abilities.cha) : 0;
+    if (["booming", "greenflame", "spell-doc-shillelagh"].includes(spell.id)) {
+      return weaponAttacks.filter(weapon => {
+        if (spell.id === "spell-doc-shillelagh") return /^(Дубинка|Боевой посох)/.test(weapon.name);
+        const key = normalizeEquipmentName(weapon.name);
+        return weaponDefinitions[key] && !weaponDefinitions[key].ranged;
+      }).map((weapon): CharacterAttack => {
+        if (spell.id === "spell-doc-shillelagh") {
+          const extra = Number(weapon.damageFormula.match(/\+\[(?:STR|DEX)\]\+(\d+)$/)?.[1] || 0);
+          return { ...weapon, id: `cantrip-${spell.id}-${weapon.id}`, name: `${spell.name} · ${weapon.name}`, kind: "cantrip",
+            ability: castingAbility, attackBonus: castingMod + (weapon.proficient ? prof : 0),
+            attackBonusExtra: 0, damageFormula: `1d8+[${castingAbility.toUpperCase()}]${extra ? `+${extra}` : ""}`,
+            damageDisplay: `1d8${signed(castingMod + extra)}`, note: "Условный профиль: после наложения Дубинки, пока держите зачарованное оружие; 1 минута. Кость не растёт с уровнем." };
+        }
+        const extraDice = diceCount - 1;
+        return { ...weapon, id: `cantrip-${spell.id}-${weapon.id}`, name: `${spell.name} · ${weapon.name}`, kind: "cantrip",
+          damageFormula: `${weapon.damageFormula}${extraDice ? `+${extraDice}d8` : ""}`,
+          damageDisplay: `${weapon.damageDisplay}${extraDice ? ` + ${extraDice}d8` : ""}`,
+          note: [weapon.note, "Наложение заговора: одна атака оружием по цели в пределах 5 футов; оружие стоимостью не менее 1 см.",
+            spell.id === "booming" ? `Отдельно: ${diceCount}d8 звуком при добровольном перемещении цели на 5+ футов до начала вашего следующего хода.`
+            : `Отдельно второй цели в пределах 5 футов: ${extraDice ? `${extraDice}d8${signed(castingMod)}` : castingMod} огнём.`].filter(Boolean).join(" ") };
+      });
+    }
+    if (!definition) return [];
+    const damageBonus = agonizing ? abilityModifier(character.abilities.cha) : definition.addAbility ? castingMod : 0;
     const elementalAdept = definition.damageType && elementalAdeptTypes.has(definition.damageType)
       ? `Стихийный адепт (${definition.damageType.toLowerCase()}): сопротивление этому урону игнорируется, а каждая 1 на кости урона считается 2.`
       : "";
@@ -307,9 +358,9 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       attackBonus: definition.mode === "attack" ? prof + castingMod : undefined,
       saveDc: definition.mode === "save" ? 8 + prof + castingMod : undefined,
       attackBonusExtra: 0,
-      damageFormula: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : ""}`,
-      damageDisplay: `${spell.id === "eldritch" ? 1 : diceCount}${definition.dice}${agonizing && damageBonus ? signed(damageBonus) : ""}`,
-      note: [definition.note, elementalAdept].filter(Boolean).join(" ") || undefined,
+      damageFormula: `${spell.id === "eldritch" || definition.fixedDice ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : definition.addAbility ? `+[${castingAbility.toUpperCase()}]` : ""}`,
+      damageDisplay: `${spell.id === "eldritch" || definition.fixedDice ? 1 : diceCount}${definition.dice}${damageBonus ? signed(damageBonus) : ""}`,
+      note: [definition.save ? `Спасбросок: ${definition.save.toUpperCase()}.` : "", definition.note, elementalAdept].filter(Boolean).join(" ") || undefined,
     }));
   });
 
