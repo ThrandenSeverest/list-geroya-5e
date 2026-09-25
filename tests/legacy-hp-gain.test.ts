@@ -59,3 +59,23 @@ test("an explicit level edit records a raw die and never silently migrates anoth
   assert.equal(average.levelHistory?.[1].hpGain, undefined);
   assert.equal(estimatedHitPoints(average), 12 + 8 + 7);
 });
+
+test("HP edits clamp against resolved CON without changing stored base abilities", () => {
+  const hero = {
+    className: "fighter", level: 3, race: "dwarf", raceVariant: "mountain",
+    abilities: { str: 13, dex: 12, con: 14, int: 10, wis: 10, cha: 10 },
+    levelHistory: [
+      { characterLevel: 1, classId: "fighter", classLevelAfter: 1 },
+      { characterLevel: 2, classId: "fighter", classLevelAfter: 2, hpMode: "roll", hpGain: 8 },
+      { characterLevel: 3, classId: "fighter", classLevelAfter: 3, hpMode: "roll", hpGain: 6, hpGainFormat: "raw-roll-plus-con-v1" },
+    ], currentHitPoints: 30,
+  } as unknown as ExportCharacter;
+  const resolvedAbilities = { ...hero.abilities, con: 16 };
+  const raised = setHitPointRoll(hero, 3, 7, resolvedAbilities);
+  assert.equal(raised.currentHitPoints, 30);
+  assert.equal(estimatedHitPoints({ ...raised, abilities: resolvedAbilities }), 31);
+  assert.deepEqual(raised.abilities, hero.abilities);
+  assert.deepEqual(raised.levelHistory?.[1], hero.levelHistory?.[1]);
+  const lowered = setHitPointRoll(raised, 3, 2, resolvedAbilities);
+  assert.equal(lowered.currentHitPoints, 26);
+});

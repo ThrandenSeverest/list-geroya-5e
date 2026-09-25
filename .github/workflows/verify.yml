@@ -64,6 +64,7 @@ jobs:
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           for attempt in {1..20}; do
             if curl --fail --silent http://127.0.0.1:3998/ >/dev/null && curl --fail --silent http://127.0.0.1:3998/account >/dev/null; then
+              PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node "$GITHUB_WORKSPACE/tests/browser-sheet.cjs"
               exit 0
             fi
             sleep 1

@@ -706,7 +706,7 @@ function HitPointRollEditor({ character, onChange }: { character: ExportCharacte
           placeholder={entry.hpGain !== undefined && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее"}
           onChange={event => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))} />
         {entry.hpGain !== undefined && !raw && <small>Сохранён готовый прирост; исходный бросок неизвестен.</small>}
-        {(raw || entry.hpMode === "manual") && <button type="button" onClick={() => onChange(entry.characterLevel, null)}>Использовать среднее</button>}
+        {(raw || entry.hpGain !== undefined) && <button type="button" onClick={() => onChange(entry.characterLevel, null)}>Использовать среднее</button>}
       </label>;
     })}
   </details>;
@@ -1761,7 +1761,7 @@ function Builder() {
   }
 
   function updateHitPointRoll(level: number, roll: number | null) {
-    setCharacter(current => setHitPointRoll(current, level, roll));
+    setCharacter(current => setHitPointRoll(current, level, roll, finalAbilities));
   }
 
   function setUsedSlots(circle: number, value: number, maximum: number) {
