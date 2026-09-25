@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  ...(process.env.HEROLIST_PAGES === "1" ? { output: "export" as const, trailingSlash: true, images: { unoptimized: true } } : {}),
 };
 
 export default nextConfig;

@@ -2,6 +2,7 @@ import vinext from "vinext";
 import { defineConfig } from "vite";
 
 export default defineConfig(() => ({
+  base: process.env.HEROLIST_PAGES === "1" ? `${process.env.NEXT_PUBLIC_BASE_PATH || "/list-geroya-5e"}/` : "/",
   server: {
     host: "0.0.0.0",
     allowedHosts: true as const,

@@ -1,0 +1,91 @@
+name: Publish GitHub Pages
+on:
+  workflow_run:
+    workflows: ["Verify HeroList"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: herolist-pages
+  cancel-in-progress: true
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build static test site
+        run: npm run build
+        env:
+          HEROLIST_PAGES: "1"
+          NEXT_PUBLIC_BASE_PATH: /list-geroya-5e
+      - name: Prepare Pages files
+        run: |
+          find dist/client -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec sed -i -e 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/assets/_vinext_fonts#g' -e 's#url(/assets/_vinext_fonts#url(/list-geroya-5e/assets/_vinext_fonts#g' {} +
+          touch dist/client/.nojekyll
+          python3 scripts/write-build-info.py
+          cp dist/BUILD_INFO.json dist/client/BUILD_INFO.json
+      - name: Verify static desktop and mobile flows
+        run: |
+          npm install --prefix /tmp/herolist-browser --no-save --package-lock=false playwright@1.51.1
+          /tmp/herolist-browser/node_modules/.bin/playwright install --with-deps chromium
+          mkdir -p /tmp/herolist-pages-preview
+          ln -s "$GITHUB_WORKSPACE/dist/client" /tmp/herolist-pages-preview/list-geroya-5e
+          python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-pages-preview >/tmp/herolist-pages-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:3997/list-geroya-5e/ >/dev/null; then
+              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/browser-sheet.cjs
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/herolist-pages-preview.log
+          exit 1
+      - name: Update Pages branch
+        run: |
+          git fetch origin gh-pages
+          git worktree add /tmp/herolist-pages origin/gh-pages
+          rsync -a --delete --exclude=.git dist/client/ /tmp/herolist-pages/
+          cd /tmp/herolist-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "Deploy verified main ${{ github.event.workflow_run.head_sha || github.sha }}"
+          git push origin HEAD:gh-pages
+      - name: Request Pages build and verify publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
+          expected=$(git -C /tmp/herolist-pages rev-parse HEAD)
+          for attempt in {1..20}; do
+            status=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.status')
+            commit=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.commit')
+            if [ "$commit" = "$expected" ] && [ "$status" = "built" ]; then
+              site=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
+              curl --fail --silent --show-error "${site}BUILD_INFO.json?revision=$expected" > /tmp/published-build-info.json
+              diff dist/client/BUILD_INFO.json /tmp/published-build-info.json
+              echo "Published $site at $expected"
+              exit 0
+            fi
+            if [ "$commit" = "$expected" ] && [ "$status" = "errored" ]; then
+              gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest"
+              exit 1
+            fi
+            sleep 15
+          done
+          echo "Timed out verifying GitHub Pages publication"
+          exit 1
