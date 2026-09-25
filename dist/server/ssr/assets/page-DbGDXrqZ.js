@@ -1,6 +1,12 @@
 import { Component, createElement, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
+//#region app/assetUrl.ts
+/** Public assets must share the build base on both root hosting and project Pages. */
+function assetUrl(path) {
+	return `${"/".replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
+}
+//#endregion
 //#region app/featureHandling.ts
 var classHandling = {
 	barbarian: {
@@ -40969,7 +40975,8 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 	if (kind === "race" && id === "locathah") return /* @__PURE__ */ jsx("span", {
 		className: `${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`,
 		"aria-hidden": "true",
-		title: fallback
+		title: fallback,
+		style: { "--experimental-sheet": `url("${assetUrl("experimental/locathah.png")}")` }
 	});
 	const experimentalIcon = experimental ? kind === "class" ? experimentalClasses[id] : kind === "race" ? experimentalRaces[id] : void 0 : void 0;
 	if (experimentalIcon) return /* @__PURE__ */ jsx("span", {
@@ -40977,7 +40984,7 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 		"aria-hidden": "true",
 		title: fallback,
 		"data-sheet": experimentalIcon.sheet,
-		style: { "--experimental-sheet": `url('/experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png')` }
+		style: { "--experimental-sheet": `url("${assetUrl(`experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png`)}")` }
 	});
 	const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || ScrollText;
 	const Secondary = kind === "race" ? raceSecondaryIcons[id] : kind === "class" ? classSecondaryIcons[id] : void 0;
@@ -49806,10 +49813,33 @@ function Builder() {
 		setView("builder");
 		resetFilters(10, false);
 	}
-	if (view === "home" || view === "quiz") return /* @__PURE__ */ jsx("main", {
+	if (view === "home" || view === "quiz") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
-		children: view === "quiz" ? /* @__PURE__ */ jsx(HeroQuiz, {
+		children: [view === "home" && /* @__PURE__ */ jsxs("header", {
+			className: "topbar",
+			children: [/* @__PURE__ */ jsxs("button", {
+				className: "brand",
+				onClick: () => setView("home"),
+				"aria-label": "Лист Героя — главная",
+				children: [
+					/* @__PURE__ */ jsx("span", {
+						className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
+						children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+							src: assetUrl("experimental/site-mark.png"),
+							alt: ""
+						}) : "✦"
+					}),
+					"Лист Героя ",
+					/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
+				]
+			}), /* @__PURE__ */ jsx("button", {
+				className: `experimental-toggle theme-${siteTheme}`,
+				onClick: cycleSiteTheme,
+				title: `Включить ${nextThemeName} дизайн`,
+				children: "Дизайн сайта"
+			})]
+		}), view === "quiz" ? /* @__PURE__ */ jsx(HeroQuiz, {
 			onClose: () => setView("home"),
 			onCreate: createFromQuiz
 		}) : /* @__PURE__ */ jsxs("div", {
@@ -49878,7 +49908,7 @@ function Builder() {
 							target: "_blank",
 							rel: "noreferrer",
 							children: [/* @__PURE__ */ jsx("img", {
-								src: "acknowledgements/velmira.png",
+								src: assetUrl("acknowledgements/velmira.png"),
 								alt: "Вельмира"
 							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "@WiseHomeAI_bot · Вельмира" }), /* @__PURE__ */ jsx("small", { children: "За помощь в запуске сайта" })] })]
 						}),
@@ -49887,14 +49917,14 @@ function Builder() {
 							target: "_blank",
 							rel: "noreferrer",
 							children: [/* @__PURE__ */ jsx("img", {
-								src: "acknowledgements/krugovorot-mirov.png",
+								src: assetUrl("acknowledgements/krugovorot-mirov.png"),
 								alt: "Сообщество «Круговорот Миров»"
 							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "«Круговорот Миров»" }), /* @__PURE__ */ jsx("small", { children: "За поддержку и помощь в развитии" })] })]
 						})
 					]
 				})]
 			})]
-		})
+		})]
 	});
 	if (view === "homebrew") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
@@ -49909,7 +49939,7 @@ function Builder() {
 						/* @__PURE__ */ jsx("span", {
 							className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
 							children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
-								src: "/experimental/site-mark.png",
+								src: assetUrl("experimental/site-mark.png"),
 								alt: ""
 							}) : "✦"
 						}),
@@ -50105,7 +50135,7 @@ function Builder() {
 								/* @__PURE__ */ jsx("span", {
 									className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
 									children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
-										src: "/experimental/site-mark.png",
+										src: assetUrl("experimental/site-mark.png"),
 										alt: ""
 									}) : "✦"
 								}),
@@ -50512,7 +50542,7 @@ function Builder() {
 								/* @__PURE__ */ jsx("span", {
 									className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
 									children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
-										src: "/experimental/site-mark.png",
+										src: assetUrl("experimental/site-mark.png"),
 										alt: ""
 									}) : "✦"
 								}),
@@ -50760,7 +50790,7 @@ function Builder() {
 							/* @__PURE__ */ jsx("span", {
 								className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
 								children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
-									src: "/experimental/site-mark.png",
+									src: assetUrl("experimental/site-mark.png"),
 									alt: ""
 								}) : "✦"
 							}),
