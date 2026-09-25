@@ -108,15 +108,15 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CInSl2Wn.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CInSl2Wn.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CInSl2Wn.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}]}],"$L3"]}]],"$L4"],"route:/":"$L5","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:4uhn5s1wvoptc","deploymentVersion":"4631fc29-31d0-4618-9200-e3d6a993489e","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CInSl2Wn.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CInSl2Wn.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CInSl2Wn.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}]}],"$L3"]}]],"$L4"],"route:/account/":"$L5","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"4631fc29-31d0-4618-9200-e3d6a993489e","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
 6:I["8c0f216c4604",[],"Children",1]
 7:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
 8:I["8c0f216c4604",[],"Slot",1]
 9:I["593f344dc510",[],"RedirectBoundary",1]
 3:["$","body",null,{"className":"__variable_geist_0tvmz3h __variable_geist_mono_1diim1n antialiased","children":["$","$L6",null,{}]}]
 4:null
-5:[[["$","meta",null,{"charSet":"utf-8"}],[["$","title","0",{"children":"Лист Героя 5e — создание персонажа D&D 2014"}],["$","meta","1",{"name":"description","content":"Пошаговый конструктор персонажа D&D 5e в редакции 2014 года."}],["$","link","2",{"rel":"shortcut icon","href":"/favicon.ico"}],["$","link","3",{"rel":"icon","href":"/favicon.ico"}],["$","meta","4",{"name":"codex-preview","content":"development"}]],[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]],["$","$L7",null,{"segmentMap":{"children":[]},"children":["$","$L8",null,{"id":"layout:/","parallelSlots":"$undefined","children":["$","$L9",null,{"children":["$","$L7",null,{"segmentMap":{"children":[]},"children":["$","$L8",null,{"id":"page:/"}]}]}]}]}]]
-a:I["6efdf509a785",[],"default",1]
+5:[[["$","meta",null,{"charSet":"utf-8"}],[["$","title","0",{"children":"Лист Героя 5e — создание персонажа D&D 2014"}],["$","meta","1",{"name":"description","content":"Пошаговый конструктор персонажа D&D 5e в редакции 2014 года."}],["$","link","2",{"rel":"shortcut icon","href":"/favicon.ico"}],["$","link","3",{"rel":"icon","href":"/favicon.ico"}],["$","meta","4",{"name":"codex-preview","content":"development"}]],[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]],["$","$L7",null,{"segmentMap":{"children":["account"]},"children":["$","$L8",null,{"id":"layout:/","parallelSlots":"$undefined","children":["$","$L9",null,{"children":["$","$L7",null,{"segmentMap":{"children":[]},"children":["$","$L8",null,{"id":"page:/account/"}]}]}]}]}]]
+a:I["724dcbd470a5",[],"default",1]
 1:["$","$La",null,{"params":"$@b","searchParams":"$@c"}]
 b:{}
 c:{}
