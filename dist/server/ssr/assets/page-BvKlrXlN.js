@@ -25811,7 +25811,7 @@ function createLongStoryShortExport(context) {
 //#endregion
 //#region app/hpProgress.ts
 /** A conscious edit to one level; legacy totals are never inferred as raw rolls. */
-function setHitPointRoll(character, characterLevel, roll) {
+function setHitPointRoll(character, characterLevel, roll, resolvedAbilities = character.abilities) {
 	const history = normalizedLevelHistory(character);
 	const index = history.findIndex((entry) => entry.characterLevel === characterLevel && characterLevel > 1);
 	if (index < 0) return character;
@@ -25835,7 +25835,10 @@ function setHitPointRoll(character, characterLevel, roll) {
 	};
 	return character.currentHitPoints === void 0 ? next : {
 		...next,
-		currentHitPoints: Math.min(character.currentHitPoints, estimatedHitPoints(next))
+		currentHitPoints: Math.min(character.currentHitPoints, estimatedHitPoints({
+			...next,
+			abilities: resolvedAbilities
+		}))
 	};
 }
 var quizData_default = {
@@ -47776,7 +47779,7 @@ function HitPointRollEditor({ character, onChange }) {
 						onChange: (event) => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))
 					}),
 					entry.hpGain !== void 0 && !raw && /* @__PURE__ */ jsx("small", { children: "Сохранён готовый прирост; исходный бросок неизвестен." }),
-					(raw || entry.hpMode === "manual") && /* @__PURE__ */ jsx("button", {
+					(raw || entry.hpGain !== void 0) && /* @__PURE__ */ jsx("button", {
 						type: "button",
 						onClick: () => onChange(entry.characterLevel, null),
 						children: "Использовать среднее"
@@ -49028,7 +49031,7 @@ function Builder() {
 		});
 	}
 	function updateHitPointRoll(level, roll) {
-		setCharacter((current) => setHitPointRoll(current, level, roll));
+		setCharacter((current) => setHitPointRoll(current, level, roll, finalAbilities));
 	}
 	function setUsedSlots(circle, value, maximum) {
 		setCharacter((current) => {
@@ -49842,6 +49845,7 @@ function Builder() {
 						]
 					}),
 					/* @__PURE__ */ jsx("button", {
+						disabled: !ready,
 						onClick: () => setView("builder"),
 						children: "Продолжить текущего персонажа"
 					})
@@ -52774,6 +52778,13 @@ function Builder() {
 											})
 										]
 									}),
+									!mobileSheet && /* @__PURE__ */ jsx("div", {
+										className: "desktop-hp-roll-editor",
+										children: /* @__PURE__ */ jsx(HitPointRollEditor, {
+											character,
+											onChange: updateHitPointRoll
+										})
+									}),
 									mobileSheet && /* @__PURE__ */ jsxs("section", {
 										className: "mobile-character-sheet",
 										children: [
@@ -53447,10 +53458,6 @@ function Builder() {
 																	characterLevel(character)
 																] })
 															]
-														}),
-														/* @__PURE__ */ jsx(HitPointRollEditor, {
-															character,
-															onChange: updateHitPointRoll
 														}),
 														resources.length > 0 && /* @__PURE__ */ jsxs("div", {
 															className: `sheet-box sheet-resources sheet-resources--${resourceDensity}`,
