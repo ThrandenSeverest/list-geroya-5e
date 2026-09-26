@@ -118,20 +118,34 @@ function homebrewOptions(entities, type) {
 	}));
 }
 function homebrewSpells(entities) {
-	return entities.filter((e) => e.type === "spell").map((e) => ({
-		id: e.id,
-		name: e.name,
-		source: "Homebrew",
-		description: e.description,
-		level: e.level || 0,
-		school: e.school || "Авторская",
-		classes: e.spellClasses?.length ? e.spellClasses : [],
-		ritual: e.ritual,
-		castingTime: e.castingTime,
-		range: e.range,
-		duration: e.concentration ? `Концентрация · ${e.duration || ""}` : e.duration,
-		components: e.components
-	}));
+	const damage = (rows) => (rows || []).map((row) => `${row.formula} ${row.type}`).join(" + ");
+	return entities.filter((e) => e.type === "spell").map((e) => {
+		const mechanics = e.spellMechanics;
+		const rules = mechanics ? [
+			`Урон: ${damage(mechanics.damage)}.`,
+			...(mechanics.cantripScaling || []).map((row) => `С ${row.level}-го уровня: +${damage(row.damage)}${row.effect ? `; ${row.effect}` : ""}.`),
+			mechanics.slotScaling ? `Ячейка выше базовой: +${damage(mechanics.slotScaling.damage)} за каждые ${mechanics.slotScaling.every} круга${mechanics.slotScaling.effect ? `; ${mechanics.slotScaling.effect}` : ""}.` : ""
+		].filter(Boolean).join(" ") : "";
+		return {
+			id: e.id,
+			name: e.name,
+			source: "Homebrew",
+			description: [
+				e.description,
+				rules,
+				e.higherLevels
+			].filter(Boolean).join("\n\n"),
+			level: e.level || 0,
+			school: e.school || "Авторская",
+			classes: e.spellClasses?.length ? e.spellClasses : [],
+			ritual: e.ritual,
+			castingTime: e.castingTime,
+			range: e.range,
+			duration: e.concentration ? `Концентрация · ${e.duration || ""}` : e.duration,
+			components: e.components,
+			mechanics
+		};
+	});
 }
 function homebrewSpellAvailable(classId, spell, entities) {
 	if (!spell.id.startsWith("hb:") && !entities.some((e) => e.type === "spell" && e.id === spell.id)) return !!entities.find((e) => e.type === "class" && e.id === classId)?.spellList?.includes(spell.id);
@@ -25289,6 +25303,21 @@ function normalizeEquipmentName(value) {
 function signed$1(value) {
 	return value >= 0 ? `+${value}` : `${value}`;
 }
+var damageTypeNames = {
+	acid: "кислотой",
+	bludgeoning: "дробящий",
+	cold: "холодом",
+	fire: "огнём",
+	force: "силовым полем",
+	lightning: "электричеством",
+	necrotic: "некротический",
+	piercing: "колющий",
+	poison: "ядом",
+	psychic: "психический",
+	radiant: "излучением",
+	slashing: "рубящий",
+	thunder: "звуком"
+};
 function cantripDiceCount(level) {
 	return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
 }
@@ -25422,12 +25451,12 @@ function characterAttacks(character, spells) {
 		...naturalAttacks(character),
 		...subclassAttacks(character, prof)
 	];
-	const spellAbility = classRules[character.className]?.spellAbility || orderedCharacterClasses(character).map((entry) => classRules[entry.classId]?.spellAbility).find(Boolean);
-	if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
+	const spellAbility = classRuleFor(character, character.className)?.spellAbility || orderedCharacterClasses(character).map((entry) => classRuleFor(character, entry.classId)?.spellAbility).find(Boolean);
 	const diceCount = cantripDiceCount(totalLevel);
 	const elementalAdeptTypes = new Set((character.advancements || []).filter((choice) => choice.featId === "elemental-adept").flatMap((choice) => choice.featChoices?.element || []));
 	const invocations = new Set([...character.classChoices?.invocations || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.invocations || [])]);
-	const cantripAttacks = [...new Set([...character.spells || [], ...(character.spellGrants || []).map((grant) => grant.spellId)])].map((id) => spells.find((spell) => spell.id === id && spell.level === 0)).filter(Boolean).flatMap((spell) => {
+	const chosenSpellIds = [...new Set([...character.spells || [], ...(character.spellGrants || []).map((grant) => grant.spellId)])];
+	const cantripAttacks = chosenSpellIds.map((id) => spells.find((spell) => spell.id === id && spell.level === 0)).filter(Boolean).flatMap((spell) => {
 		const definition = damagingCantrips[spell.id];
 		if (!definition && ![
 			"booming",
@@ -25435,7 +25464,7 @@ function characterAttacks(character, spells) {
 			"spell-doc-shillelagh"
 		].includes(spell.id)) return [];
 		const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
-		const castingAbility = classRules[character.spellGrants?.find((grant) => grant.spellId === spell.id && grant.classId)?.classId || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className)]?.spellAbility || spellAbility;
+		const castingAbility = classRuleFor(character, character.spellGrants?.find((grant) => grant.spellId === spell.id && grant.classId)?.classId || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className))?.spellAbility || spellAbility || spell.mechanics?.ability || "int";
 		const castingMod = abilityModifier$2(character.abilities[castingAbility]);
 		if ([
 			"booming",
@@ -25498,10 +25527,43 @@ function characterAttacks(character, spells) {
 			].filter(Boolean).join(" ") || void 0
 		}));
 	});
+	const homebrewSpellAttacks = chosenSpellIds.flatMap((id) => {
+		const spell = spells.find((entry) => entry.id === id), mechanics = spell?.mechanics;
+		if (!spell || !mechanics) return [];
+		const sourceClassId = character.spellGrants?.find((grant) => grant.spellId === id && grant.classId)?.classId || orderedCharacterClasses(character).find((entry) => spell.classes.includes(entry.classId))?.classId || character.className;
+		const ability = mechanics.ability || classRuleFor(character, sourceClassId)?.spellAbility || spellAbility || "int";
+		const mod = abilityModifier$2(character.abilities[ability]);
+		const symbolic = (formula) => formula.replace(/@mod\.spell/g, `[${ability.toUpperCase()}]`).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => `[${String(key).toUpperCase()}]`).replace(/@pb/g, "[PB]").replace(/@level/g, String(totalLevel));
+		const displayed = (formula) => formula.replace(/@mod\.spell/g, String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => String(abilityModifier$2(character.abilities[key]))).replace(/@pb/g, String(prof)).replace(/@level/g, String(totalLevel));
+		const scale = spell.level === 0 ? (mechanics.cantripScaling || []).filter((row) => row.level <= totalLevel) : [];
+		const parts = [...mechanics.damage, ...scale.flatMap((row) => row.damage)];
+		const formula = parts.map((part) => symbolic(part.formula)).join(" + ");
+		const display = parts.map((part) => `${displayed(part.formula)} ${damageTypeNames[part.type] || part.type}`).join(" + ");
+		const upcast = mechanics.slotScaling;
+		const notes = [
+			mechanics.delivery === "save" ? `Спасбросок ${mechanics.saveAbility?.toUpperCase()}${mechanics.saveEffect === "half" ? " — половина урона при успехе" : ""}.` : mechanics.delivery === "automatic" ? "Урон без броска атаки и спасброска." : "Бросок атаки заклинанием.",
+			...scale.map((row) => row.effect).filter(Boolean),
+			upcast ? `Ячейка выше ${spell.level}-го круга: +${upcast.damage.map((part) => `${part.formula} ${damageTypeNames[part.type] || part.type}`).join(" + ")} за каждые ${upcast.every} ${upcast.every === 1 ? "круг" : "круга"}${upcast.effect ? `; ${upcast.effect}` : ""}.` : void 0
+		].filter(Boolean).join(" ");
+		return [{
+			id: `homebrew-spell-${spell.id}`,
+			name: spell.name,
+			kind: spell.level === 0 ? "cantrip" : "spell",
+			ability,
+			proficient: true,
+			attackBonus: mechanics.delivery === "attack" ? prof + mod : void 0,
+			saveDc: mechanics.delivery === "save" ? 8 + prof + mod : void 0,
+			attackBonusExtra: 0,
+			damageFormula: formula,
+			damageDisplay: display,
+			note: notes
+		}];
+	});
 	return [
 		...weaponAttacks,
 		...featureAttacks,
-		...cantripAttacks
+		...cantripAttacks,
+		...homebrewSpellAttacks
 	];
 }
 function lssWeaponAttacks(attacks) {
@@ -47897,6 +47959,28 @@ function validateHomebrew(entities, officialIds = []) {
 		if (e.requirements?.some((r) => r.type !== "selected_feature" || !r.id || !all.has(r.id))) add(e.id, "Требование: выберите существующую способность");
 		if (e.spellcasting?.recovery && !["long", "short_or_long"].includes(e.spellcasting.recovery)) add(e.id, "Магия: неизвестный способ восстановления ячеек");
 		if (e.spellcasting?.slots && Object.entries(e.spellcasting.slots).some(([level, slots]) => !Number.isInteger(Number(level)) || Number(level) < 1 || Number(level) > 20 || !Array.isArray(slots) || slots.length > 9 || slots.some((v) => !Number.isInteger(v) || v < 0 || v > 20))) add(e.id, "Магия: ячейки должны быть таблицей уровней 1–20");
+		if (e.spellMechanics !== void 0) {
+			const m = e.spellMechanics;
+			if (e.type !== "spell" || ![
+				"attack",
+				"save",
+				"automatic"
+			].includes(m.delivery) || !Array.isArray(m.damage) || !m.damage.length) add(e.id, "Урон заклинания: выберите способ попадания и хотя бы один бросок урона");
+			if (m.delivery === "save" && !m.saveAbility) add(e.id, "Урон заклинания: выберите характеристику спасброска");
+			const damage = [
+				...m.damage || [],
+				...(m.cantripScaling || []).flatMap((row) => row.damage || []),
+				...m.slotScaling?.damage || []
+			];
+			for (const row of damage) {
+				formula(e.id, row.formula);
+				if (!damageTypes.includes(row.type)) add(e.id, "Урон заклинания: неизвестный тип урона");
+			}
+			if ((m.cantripScaling || []).some((row) => !Number.isInteger(row.level) || row.level < 2 || row.level > 20 || !Array.isArray(row.damage))) add(e.id, "Развитие заговора: уровень должен быть от 2 до 20");
+			if ((e.level || 0) !== 0 && (m.cantripScaling?.length || 0) > 0) add(e.id, "Развитие по уровню персонажа доступно только заговорам");
+			if (m.slotScaling && (!Number.isInteger(m.slotScaling.every) || m.slotScaling.every < 1 || m.slotScaling.every > 9)) add(e.id, "Усиление ячейкой: шаг должен быть от 1 до 9 кругов");
+			if ((e.level || 0) === 0 && m.slotScaling) add(e.id, "Заговор не может усиливаться ячейкой");
+		}
 		for (const key of [
 			"effects",
 			"resources",
@@ -49030,11 +49114,14 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), "Требует настройки"] })] })
 								]
 							}),
-							tab === "Механика" && /* @__PURE__ */ jsx(Mechanics, {
+							tab === "Механика" && (draft.type === "spell" ? /* @__PURE__ */ jsx(SpellMechanicsEditor, {
+								draft,
+								update
+							}) : /* @__PURE__ */ jsx(Mechanics, {
 								draft,
 								update,
 								entities: refs
-							}),
+							})),
 							tab === "Особенности" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassFeatures, {
 								draft,
 								update,
@@ -49200,6 +49287,236 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 					})
 				})]
 			})
+		]
+	});
+}
+function DamageParts({ value, onChange }) {
+	return /* @__PURE__ */ jsxs("div", {
+		className: "hb-damage-parts",
+		children: [value.map((part, index) => /* @__PURE__ */ jsxs("div", {
+			className: "hb-row",
+			children: [
+				/* @__PURE__ */ jsx(Formula, {
+					label: "Бросок урона",
+					value: part.formula,
+					onChange: (formula) => onChange(value.map((row, i) => i === index ? {
+						...row,
+						formula
+					} : row))
+				}),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Тип урона",
+					value: part.type,
+					onChange: (type) => onChange(value.map((row, i) => i === index ? {
+						...row,
+						type
+					} : row)),
+					options: Object.fromEntries(damageTypes.map((type) => [type, tagNames[type] || type]))
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => onChange(value.filter((_, i) => i !== index)),
+					children: "Удалить"
+				})
+			]
+		}, index)), /* @__PURE__ */ jsx("button", {
+			type: "button",
+			onClick: () => onChange([...value, {
+				formula: "1d6",
+				type: "fire"
+			}]),
+			children: "+ Бросок урона"
+		})]
+	});
+}
+function SpellMechanicsEditor({ draft, update }) {
+	const mechanics = draft.spellMechanics;
+	const create = () => update({ spellMechanics: {
+		delivery: "attack",
+		damage: [{
+			formula: "1d6",
+			type: draft.tags?.find((tag) => damageTypes.includes(tag)) || "fire"
+		}]
+	} });
+	if (!mechanics) return /* @__PURE__ */ jsxs("div", {
+		className: "hb-spell-mechanics",
+		children: [
+			/* @__PURE__ */ jsx("h3", { children: "Урон заклинания" }),
+			/* @__PURE__ */ jsx("p", { children: "Добавьте механический бросок: он появится в атаках персонажа и сохранится в Homebrew JSON." }),
+			/* @__PURE__ */ jsx("button", {
+				type: "button",
+				onClick: create,
+				children: "+ Добавить бросок урона"
+			})
+		]
+	});
+	const patch = (value) => update({ spellMechanics: {
+		...mechanics,
+		...value
+	} });
+	const scaling = mechanics.cantripScaling || [];
+	return /* @__PURE__ */ jsxs("div", {
+		className: "hb-spell-mechanics",
+		children: [
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Урон заклинания" }), /* @__PURE__ */ jsxs("p", { children: [
+				"Формулы поддерживают кости и модификаторы. Например: ",
+				/* @__PURE__ */ jsx("code", { children: "8d6" }),
+				" или ",
+				/* @__PURE__ */ jsx("code", { children: "1d8 + @mod.wis" }),
+				"."
+			] })] }), /* @__PURE__ */ jsx("button", {
+				type: "button",
+				onClick: () => update({ spellMechanics: void 0 }),
+				children: "Удалить механику урона"
+			})] }),
+			/* @__PURE__ */ jsx(Select, {
+				label: "Как определяется попадание",
+				value: mechanics.delivery,
+				onChange: (delivery) => patch({
+					delivery,
+					saveAbility: delivery === "save" ? mechanics.saveAbility || "dex" : void 0
+				}),
+				options: {
+					attack: "Бросок атаки заклинанием",
+					save: "Спасбросок цели",
+					automatic: "Без броска атаки и спасброска"
+				}
+			}),
+			/* @__PURE__ */ jsx(Select, {
+				label: "Характеристика заклинания",
+				value: mechanics.ability || "",
+				onChange: (ability) => patch({ ability: ability || void 0 }),
+				options: {
+					"": "Характеристика класса",
+					...abilityLabels
+				}
+			}),
+			mechanics.delivery === "save" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
+				label: "Спасбросок цели",
+				value: mechanics.saveAbility || "dex",
+				onChange: (saveAbility) => patch({ saveAbility }),
+				options: abilityLabels
+			}), /* @__PURE__ */ jsx(Select, {
+				label: "При успешном спасброске",
+				value: mechanics.saveEffect || "none",
+				onChange: (saveEffect) => patch({ saveEffect }),
+				options: {
+					none: "Урона нет",
+					half: "Половина урона"
+				}
+			})] }),
+			/* @__PURE__ */ jsx("h4", { children: "Базовый урон" }),
+			/* @__PURE__ */ jsx(DamageParts, {
+				value: mechanics.damage,
+				onChange: (damage) => patch({ damage })
+			}),
+			(draft.level || 0) === 0 ? /* @__PURE__ */ jsxs("section", { children: [
+				/* @__PURE__ */ jsxs("h4", { children: ["Развитие заговора по уровню персонажа ", /* @__PURE__ */ jsx(HBHelp, { children: "Каждая строка добавляет указанные кости и эффект начиная с выбранного уровня. Стандартные ступени D&D 5e: 5, 11 и 17." })] }),
+				scaling.map((row, index) => /* @__PURE__ */ jsxs("fieldset", { children: [
+					/* @__PURE__ */ jsx(Field, {
+						label: "Начиная с уровня",
+						children: /* @__PURE__ */ jsx("input", {
+							"aria-label": "Уровень развития заговора",
+							type: "number",
+							min: 2,
+							max: 20,
+							value: row.level,
+							onChange: (event) => patch({ cantripScaling: scaling.map((item, i) => i === index ? {
+								...item,
+								level: Number(event.target.value)
+							} : item).sort((a, b) => a.level - b.level) })
+						})
+					}),
+					/* @__PURE__ */ jsx(DamageParts, {
+						value: row.damage,
+						onChange: (damage) => patch({ cantripScaling: scaling.map((item, i) => i === index ? {
+							...item,
+							damage
+						} : item) })
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Дополнительный эффект",
+						children: /* @__PURE__ */ jsx("textarea", {
+							value: row.effect || "",
+							placeholder: "Например: цель отталкивается ещё на 5 футов",
+							onChange: (event) => patch({ cantripScaling: scaling.map((item, i) => i === index ? {
+								...item,
+								effect: event.target.value
+							} : item) })
+						})
+					}),
+					/* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => patch({ cantripScaling: scaling.filter((_, i) => i !== index) }),
+						children: "Удалить ступень"
+					})
+				] }, index)),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => {
+						const preferred = [
+							5,
+							11,
+							17
+						].find((level) => !scaling.some((row) => row.level === level)) || Math.min(20, (scaling.at(-1)?.level || 1) + 1);
+						patch({ cantripScaling: [...scaling, {
+							level: preferred,
+							damage: [{
+								formula: mechanics.damage[0]?.formula || "1d6",
+								type: mechanics.damage[0]?.type || "fire"
+							}]
+						}].sort((a, b) => a.level - b.level) });
+					},
+					children: "+ Ступень развития"
+				})
+			] }) : /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("h4", { children: ["Усиление ячейкой более высокого круга ", /* @__PURE__ */ jsx(HBHelp, { children: "Добавка применяется за каждый указанный шаг выше базового круга. Для Огненного шара: шаг 1 и урон 1d6." })] }), mechanics.slotScaling ? /* @__PURE__ */ jsxs("fieldset", { children: [
+				/* @__PURE__ */ jsx(Field, {
+					label: "За каждые круги выше базового",
+					children: /* @__PURE__ */ jsx("input", {
+						"aria-label": "Шаг усиления ячейкой",
+						type: "number",
+						min: 1,
+						max: 9,
+						value: mechanics.slotScaling.every,
+						onChange: (event) => patch({ slotScaling: {
+							...mechanics.slotScaling,
+							every: Number(event.target.value)
+						} })
+					})
+				}),
+				/* @__PURE__ */ jsx(DamageParts, {
+					value: mechanics.slotScaling.damage,
+					onChange: (damage) => patch({ slotScaling: {
+						...mechanics.slotScaling,
+						damage
+					} })
+				}),
+				/* @__PURE__ */ jsx(Field, {
+					label: "Дополнительный эффект",
+					children: /* @__PURE__ */ jsx("textarea", {
+						value: mechanics.slotScaling.effect || "",
+						onChange: (event) => patch({ slotScaling: {
+							...mechanics.slotScaling,
+							effect: event.target.value
+						} })
+					})
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => patch({ slotScaling: void 0 }),
+					children: "Удалить усиление"
+				})
+			] }) : /* @__PURE__ */ jsx("button", {
+				type: "button",
+				onClick: () => patch({ slotScaling: {
+					every: 1,
+					damage: [{
+						formula: "1d6",
+						type: mechanics.damage[0]?.type || "fire"
+					}]
+				} }),
+				children: "+ Усиление от ячейки"
+			})] })
 		]
 	});
 }
@@ -51861,7 +52178,7 @@ function Builder() {
 	const attacks = characterAttacks({
 		...exportCharacter,
 		spells: [...new Set([...exportCharacter.spells, ...grantedFeatSpells])]
-	}, spells);
+	}, availableSpellCatalog);
 	const ac = armorClassBreakdown(exportCharacter);
 	const activeAdvancement = advancements.find((choice) => choice.key === advancementKey) || advancements.find((choice) => !choice.featId) || advancements[0];
 	const incompleteAsiAdvancements = advancements.filter((choice) => choice.featId === "asi" && choice.asiChoices.length < 2);
@@ -56486,7 +56803,7 @@ function Builder() {
 														className: "mobile-attack-list",
 														children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", { children: [
 															/* @__PURE__ */ jsx("strong", { children: attack.name }),
-															/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}` }),
+															/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : attack.saveDc !== void 0 ? `Сл ${attack.saveDc}` : "авто" }),
 															/* @__PURE__ */ jsx("code", { children: attack.damageDisplay }),
 															attack.note && /* @__PURE__ */ jsx("small", { children: attack.note })
 														] }, attack.id))
@@ -57016,14 +57333,14 @@ function Builder() {
 																		className: "attack-line",
 																		children: [
 																			/* @__PURE__ */ jsxs("span", { children: [attack.name, attack.kind === "cantrip" ? " ✦" : ""] }),
-																			/* @__PURE__ */ jsx("b", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}` }),
+																			/* @__PURE__ */ jsx("b", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : attack.saveDc !== void 0 ? `Сл ${attack.saveDc}` : "авто" }),
 																			/* @__PURE__ */ jsx("code", { children: attack.damageDisplay }),
 																			attack.note && /* @__PURE__ */ jsx("small", { children: attack.note })
 																		]
 																	}, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Выберите стартовое оружие или боевой заговор." })]
 																}),
 																sourcedSpellGroups.map((group) => {
-																	const ability = classRules[group.classId]?.spellAbility;
+																	const ability = classRuleFor(rulesCharacter, group.classId)?.spellAbility;
 																	if (!ability) return null;
 																	const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
 																	return /* @__PURE__ */ jsxs("p", { children: [
