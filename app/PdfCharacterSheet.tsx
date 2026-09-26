@@ -117,7 +117,7 @@ function parseFeatureTable(value: string): ParsedFeatureTable | null {
     .map(line => line.slice(1, -1).split("|").map(cleanFeatureTableCell));
 
   const separatorIndex = rows.findIndex(row =>
-    row.length >= 2 && row.every(cell => /^:?-{3,}:?$/.test(cell)),
+    row.length >= 1 && row.every(cell => /^:?-{3,}:?$/.test(cell)),
   );
   if (separatorIndex < 1) return null;
 
@@ -125,7 +125,7 @@ function parseFeatureTable(value: string): ParsedFeatureTable | null {
   const body = rows.slice(separatorIndex + 1).filter(row =>
     row.length === header.length && row.some(Boolean),
   );
-  if (header.length < 2 || body.length < 1) return null;
+  if (header.length < 1 || body.length < 1) return null;
 
   return {
     prefix: text.slice(0, start).trim(),
