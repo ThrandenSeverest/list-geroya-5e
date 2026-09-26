@@ -1,11 +1,11 @@
 export default {
-  "bootstrapScriptContent": "import(\"/assets/index-iJ0p229b.js\")",
+  "bootstrapScriptContent": "import(\"/assets/index-XnhpMy4R.js\")",
   "clientReferenceDeps": {
     "724dcbd470a5": {
       "js": [
-        "/assets/page-C180edwf.js",
+        "/assets/page-D8EqdKu5.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/index-iJ0p229b.js",
+        "/assets/index-XnhpMy4R.js",
         "/assets/framework-CXnKph_e.js",
         "/assets/query-D8Wk3mvj.js"
       ],
@@ -13,16 +13,16 @@ export default {
     },
     "6efdf509a785": {
       "js": [
-        "/assets/page-BKqeeWt1.js",
+        "/assets/page-TcfO46H2.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js",
-        "/assets/index-iJ0p229b.js"
+        "/assets/index-XnhpMy4R.js"
       ],
       "css": []
     },
     "593f344dc510": {
       "js": [
-        "/assets/index-iJ0p229b.js",
+        "/assets/index-XnhpMy4R.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js"
       ],
@@ -30,16 +30,16 @@ export default {
     },
     "15c18cfaeeff": {
       "js": [
-        "/assets/layout-segment-context-C-NOHfVX.js",
+        "/assets/layout-segment-context-BrwCN_60.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/index-iJ0p229b.js",
+        "/assets/index-XnhpMy4R.js",
         "/assets/framework-CXnKph_e.js"
       ],
       "css": []
     },
     "8c0f216c4604": {
       "js": [
-        "/assets/index-iJ0p229b.js",
+        "/assets/index-XnhpMy4R.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js"
       ],
@@ -50,7 +50,7 @@ export default {
     "app/layout.tsx": {
       "js": [],
       "css": [
-        "/assets/index-CQ5npbtc.css"
+        "/assets/index-ycWYPo6S.css"
       ]
     }
   }

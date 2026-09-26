@@ -1,4 +1,4 @@
-import { Component, createElement, forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Component, createElement, forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
 //#region app/homebrewTemplates.ts
@@ -105,6 +105,53 @@ function homebrewTableFeatures(entities) {
 		});
 		return features;
 	});
+}
+//#endregion
+//#region app/homebrewCatalog.ts
+function homebrewOptions(entities, type) {
+	return entities.filter((e) => e.type === type).map((e) => ({
+		id: e.id,
+		name: e.name,
+		source: "Homebrew",
+		description: e.summary || e.description,
+		tags: e.tags
+	}));
+}
+function homebrewSpells(entities) {
+	return entities.filter((e) => e.type === "spell").map((e) => ({
+		id: e.id,
+		name: e.name,
+		source: "Homebrew",
+		description: e.description,
+		level: e.level || 0,
+		school: e.school || "Авторская",
+		classes: e.spellClasses?.length ? e.spellClasses : [],
+		ritual: e.ritual,
+		castingTime: e.castingTime,
+		range: e.range,
+		duration: e.concentration ? `Концентрация · ${e.duration || ""}` : e.duration,
+		components: e.components
+	}));
+}
+function homebrewSpellAvailable(classId, spell, entities) {
+	if (!spell.id.startsWith("hb:") && !entities.some((e) => e.type === "spell" && e.id === spell.id)) return !!entities.find((e) => e.type === "class" && e.id === classId)?.spellList?.includes(spell.id);
+	const entity = entities.find((e) => e.id === spell.id && e.type === "spell");
+	return !!entity && (!entity.spellClasses?.length || entity.spellClasses.includes(classId));
+}
+function homebrewSubclassOptions(classId, entities) {
+	return entities.filter((e) => e.type === "subclass" && e.parentClassId?.replace("official:class:", "") === classId).map((e) => ({
+		id: e.id,
+		name: e.name,
+		source: "Homebrew",
+		description: e.description,
+		flags: void 0,
+		expandedSpells: void 0,
+		features: (e.features || []).map((f) => ({
+			name: f.name,
+			description: f.description,
+			level: f.level
+		}))
+	}));
 }
 //#endregion
 //#region app/assetUrl.ts
@@ -1480,6 +1527,20 @@ function activeHomebrew(c) {
 		if (!e) return;
 		seen.add(id);
 		result.push(e);
+		if (e.type === "class" || e.type === "subclass") {
+			for (const feature of e.features || []) if (feature.level <= classLevel(c, e.type === "class" ? e.id : e.parentClassId || "")) result.push({
+				schemaVersion: 2,
+				id: feature.id,
+				type: "ability",
+				name: feature.name,
+				description: feature.description,
+				updatedAt: e.updatedAt,
+				parentClassId: e.type === "class" ? e.id : e.parentClassId,
+				effects: feature.effects || [],
+				resources: feature.resources || [],
+				attacks: feature.attacks || []
+			});
+		}
 		if (e.type === "class" || e.type === "subclass") {
 			const l = classLevel(c, e.type === "class" ? e.id : e.parentClassId || "");
 			for (const [k, rows] of Object.entries(e.advancement || {})) if (Number(k) <= l) {
@@ -18695,6 +18756,10 @@ var fullCasterSlots$1 = [
 ];
 function spellcastingContribution(character, entry) {
 	const level = entry.level;
+	const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
+	if (custom?.mode === "full") return level;
+	if (custom?.mode === "half") return Math.floor(level / 2);
+	if (custom?.mode === "third") return Math.floor(level / 3);
 	if ([
 		"bard",
 		"cleric",
@@ -18712,11 +18777,21 @@ function multiclassCasterLevel(character) {
 	return orderedCharacterClasses(character).reduce((sum, entry) => sum + spellcastingContribution(character, entry), 0);
 }
 function resolveSpellSlots(character) {
-	const regularCasters = orderedCharacterClasses(character).filter((entry) => spellcastingContribution(character, entry) > 0);
+	const entries = orderedCharacterClasses(character);
+	if (entries.length === 1) {
+		const own = character.homebrew?.entities.find((e) => e.id === entries[0].classId && e.type === "class")?.spellcasting;
+		if (own?.mode === "custom") return own.slots?.[String(entries[0].level)] || [];
+	}
+	const regularCasters = entries.filter((entry) => spellcastingContribution(character, entry) > 0);
 	if (!regularCasters.length) return [];
 	if (regularCasters.length === 1) {
 		const entry = regularCasters[0];
 		const level = entry.level;
+		const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
+		if (custom?.mode === "custom") return custom.slots?.[String(level)] || [];
+		if (custom?.mode === "full") return fullCasterSlots$1[level] || [];
+		if (custom?.mode === "half") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (custom?.mode === "third") return fullCasterSlots$1[Math.ceil(level / 3)] || [];
 		if ([
 			"bard",
 			"cleric",
@@ -21534,7 +21609,7 @@ function knownSpellLevelLimits(classId, level, knownTable) {
 	}
 	return limits;
 }
-function spellSelectionRuleForClass(character, classId, classLevel) {
+function spellSelectionRuleForClass$1(character, classId, classLevel) {
 	const level = classLevel ?? character.level;
 	const cantrips = cantripTables[classId]?.[level] || 0;
 	const ability = classId === "wizard" || classId === "artificer" ? "int" : [
@@ -21651,8 +21726,8 @@ function spellSelectionRuleForClass(character, classId, classLevel) {
 		slots: []
 	};
 }
-function spellSelectionRule(character) {
-	return spellSelectionRuleForClass(character, character.className, character.level);
+function spellSelectionRule$1(character) {
+	return spellSelectionRuleForClass$1(character, character.className, character.level);
 }
 function asiLevelsForClass(className) {
 	if (className === "fighter") return [
@@ -22188,7 +22263,7 @@ function rankedSpellCatalog(character, catalog) {
 	});
 }
 function alwaysPreparedSpellEntries(character, catalog) {
-	const maximum = spellSelectionRule(character).maxLevel;
+	const maximum = spellSelectionRule$1(character).maxLevel;
 	const subclass = selectedSubclass(character.className, character.subclass || "");
 	const entries = (subclass?.alwaysPrepared || []).map((id) => ({
 		id,
@@ -22251,7 +22326,7 @@ function alwaysPreparedSpellIds(character, catalog) {
 	return alwaysPreparedSpellEntries(character, catalog).map((entry) => entry.id);
 }
 function optimalSpellIds(character, catalog) {
-	const rule = spellSelectionRule(character);
+	const rule = spellSelectionRule$1(character);
 	const alwaysPrepared = new Set(alwaysPreparedSpellIds(character, catalog));
 	const allowed = catalog.filter((spell) => spellAvailableToCharacter(character, spell) && spell.level <= rule.maxLevel && !alwaysPrepared.has(spell.id));
 	const ranked = rankedSpellCatalog(character, allowed);
@@ -22264,7 +22339,7 @@ function optimalSpellIds(character, catalog) {
 	return [...ranked.filter((spell) => spell.level === 0).slice(0, rule.cantrips).map((spell) => spell.id), ...selected];
 }
 function optimalPreparedSpellIds(character, catalog, selectedSpellIds) {
-	const rule = spellSelectionRule(character);
+	const rule = spellSelectionRule$1(character);
 	if (rule.mode !== "spellbook" || !rule.prepared) return [];
 	const selected = new Set(selectedSpellIds);
 	const ranked = rankedSpellCatalog(character, catalog).filter((spell) => spell.level > 0 && selected.has(spell.id));
@@ -22316,6 +22391,41 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
 }
 //#endregion
 //#region app/characterRules.ts
+function spellSelectionRuleForClass(character, classId, classLevel = character.level) {
+	const casting = (character.homebrew?.entities.find((e) => e.id === classId && e.type === "class"))?.spellcasting;
+	if (!casting || casting.mode === "none") return spellSelectionRuleForClass$1(character, classId, classLevel);
+	const level = Math.max(1, Math.min(20, classLevel));
+	const progression = casting.mode === "full" ? level : casting.mode === "half" ? Math.ceil(level / 2) : casting.mode === "third" ? Math.ceil(level / 3) : 0;
+	const slots = casting.mode === "custom" ? casting.slots?.[String(level)] || [] : casting.mode === "pact" ? [] : fullCasterSlots[progression] || [];
+	const maxLevel = casting.mode === "pact" ? Math.min(5, Math.ceil(level / 2)) : slots.length;
+	let prepared = 1;
+	try {
+		prepared = Math.max(1, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
+			"@level": level,
+			["@mod." + casting.ability]: Math.floor((character.abilities[casting.ability] - 10) / 2)
+		} })));
+	} catch {}
+	const mode = casting.selection || "known";
+	const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
+	const leveled = mode === "prepared" ? prepared : casting.known?.[level] ?? Math.max(2, level + 1);
+	return {
+		caster: maxLevel > 0 || cantrips > 0,
+		mode,
+		title: mode === "spellbook" ? "Заклинания в книге" : mode === "prepared" ? "Подготовленные заклинания" : "Известные заклинания",
+		cantrips,
+		leveled,
+		prepared: mode === "prepared" || mode === "spellbook" ? prepared : void 0,
+		maxLevel,
+		slots,
+		pact: casting.mode === "pact" ? {
+			slots: level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4,
+			level: maxLevel
+		} : void 0
+	};
+}
+function spellSelectionRule(character) {
+	return spellSelectionRuleForClass(character, character.className, character.level);
+}
 var RF = (name, description) => ({
 	name,
 	description
@@ -24643,10 +24753,15 @@ function equipmentOptionAdvice(option, abilities) {
 function selectedEquipment(character) {
 	const rule = equipmentRule(character.className);
 	const chosen = rule.groups.flatMap((group) => (character.equipmentSelections?.[group.key] || []).flatMap((id) => group.options.find((option) => option.id === id)?.items || []));
+	const custom = character.homebrew?.entities || [];
+	const classKit = custom.find((entity) => entity.id === character.className && entity.type === "class")?.equipment || [];
+	const backgroundKit = custom.find((entity) => entity.id === character.background && entity.type === "background")?.equipment || [];
 	return [
 		...rule.fixed,
+		...classKit,
 		...chosen,
-		...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment)
+		...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment),
+		...backgroundKit
 	];
 }
 //#endregion
@@ -41818,7 +41933,16 @@ addRaceSheet("races-spelljammer", [
 	"plasmoid",
 	"thrikreen"
 ]);
-function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false }) {
+function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false, image }) {
+	if (image?.startsWith("data:image/png;base64,")) return /* @__PURE__ */ jsx("span", {
+		className: `${className} catalog-icon homebrew-catalog-icon`,
+		"aria-hidden": "true",
+		title: fallback,
+		children: /* @__PURE__ */ jsx("img", {
+			src: image,
+			alt: ""
+		})
+	});
 	if (kind === "race" && id === "locathah") return /* @__PURE__ */ jsx("span", {
 		className: `${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`,
 		"aria-hidden": "true",
@@ -41833,7 +41957,7 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 		"data-sheet": experimentalIcon.sheet,
 		style: { "--experimental-sheet": `url("${assetUrl(`experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png`)}")` }
 	});
-	const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || ScrollText;
+	const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || (id.startsWith("hb:") ? kind === "class" ? Swords : kind === "race" ? UserRound : BookOpen : ScrollText);
 	const Secondary = kind === "race" ? raceSecondaryIcons[id] : kind === "class" ? classSecondaryIcons[id] : void 0;
 	return /* @__PURE__ */ jsxs("span", {
 		className: `${className} catalog-icon`,
@@ -47697,6 +47821,25 @@ function validateHomebrew(entities, officialIds = []) {
 		ids.add(e.id);
 		if (!(e.type in homebrewTypeLabels) || typeof e.name !== "string" || !e.name.trim() || typeof e.description !== "string") add(e.id, "Нужны допустимый тип, название и описание");
 		if (new TextEncoder().encode(JSON.stringify(e)).length > 32768) add(e.id, "Элемент превышает 32 КиБ; разделите способности на отдельные элементы");
+		if (e.icon !== void 0 && (![
+			"class",
+			"race",
+			"background"
+		].includes(e.type) || typeof e.icon !== "string" || !/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(e.icon) || e.icon.length > 18e3)) add(e.id, "Иконка: нужен небольшой PNG для класса, расы или предыстории");
+		if (e.features !== void 0) if (!["class", "subclass"].includes(e.type) || !Array.isArray(e.features) || e.features.length > 40) add(e.id, "Особенности допустимы только внутри класса или подкласса (до 40)");
+		else {
+			const used = /* @__PURE__ */ new Set();
+			for (const f of e.features) {
+				if (!f || typeof f.id !== "string" || !/^hb:[a-z0-9_-]+:ability:[a-z0-9_-]+$/.test(f.id) || used.has(f.id) || !Number.isInteger(f.level) || f.level < 1 || f.level > 20 || typeof f.name !== "string" || !f.name.trim() || typeof f.description !== "string") add(e.id, "Особенность: название, текст, уникальный ID и уровень 1–20 обязательны");
+				if (f?.id) used.add(f.id);
+				for (const effect of f?.effects || []) {
+					if (!effectTypes[effect.type]) add(e.id, "Неизвестный эффект особенности");
+					formula(e.id, effect.value);
+					formula(e.id, effect.when);
+				}
+			}
+		}
+		if (e.spellList?.some((id) => !all.has(id) && !all.has("official:spell:" + id))) add(e.id, "В списке заклинаний класса есть неизвестный ID");
 		for (const key of [
 			"effects",
 			"resources",
@@ -48368,6 +48511,8 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						className: "hb-tabs",
 						children: [
 							"Основное",
+							"Особенности",
+							"Заклинания",
 							"Механика",
 							"Прогрессия",
 							"Таблицы",
@@ -48456,6 +48601,14 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									onClick: () => navigator.clipboard?.writeText(draft.id),
 									children: "Копировать ID"
 								})]
+							}),
+							[
+								"class",
+								"race",
+								"background"
+							].includes(draft.type) && /* @__PURE__ */ jsx(IconPicker, {
+								draft,
+								update
 							}),
 							/* @__PURE__ */ jsx(Field, {
 								label: "Краткое описание",
@@ -48574,7 +48727,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									label: "Начальное снаряжение",
 									children: /* @__PURE__ */ jsx("textarea", {
 										value: draft.equipment?.join("\n") || "",
-										onChange: (e) => update({ equipment: e.target.value.split("\n") })
+										onChange: (e) => update({ equipment: e.target.value.split("\n").map((x) => x.trim()).filter(Boolean) })
 									})
 								}),
 								/* @__PURE__ */ jsxs(Field, {
@@ -48583,6 +48736,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 										label: "Прогрессия магии",
 										value: draft.spellcasting?.mode || "none",
 										onChange: (v) => update({ spellcasting: {
+											...draft.spellcasting,
 											mode: v,
 											ability: draft.spellcasting?.ability || "int"
 										} }),
@@ -48598,6 +48752,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 										label: "Характеристика магии",
 										value: draft.spellcasting?.ability || "int",
 										onChange: (v) => update({ spellcasting: {
+											...draft.spellcasting,
 											mode: draft.spellcasting?.mode || "none",
 											ability: v
 										} }),
@@ -48678,6 +48833,21 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 										onChange: (e) => update({ [key]: e.target.value })
 									})
 								}, key)),
+								/* @__PURE__ */ jsx(Field, {
+									label: "Доступно классам",
+									help: "Если ничего не выбрано, заклинание доступно всем заклинателям. ID класса назначается кнопкой.",
+									children: /* @__PURE__ */ jsx("div", {
+										className: "hb-toolbar",
+										children: [...classes, ...refs.filter((e) => e.type === "class").map((e) => ({
+											id: e.id,
+											name: e.name
+										}))].map((c) => /* @__PURE__ */ jsx("button", {
+											"aria-pressed": draft.spellClasses?.includes(c.id) || false,
+											onClick: () => update({ spellClasses: draft.spellClasses?.includes(c.id) ? draft.spellClasses.filter((id) => id !== c.id) : [...draft.spellClasses || [], c.id] }),
+											children: c.name
+										}, c.id))
+									})
+								}),
 								["concentration", "ritual"].map((key) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
 									type: "checkbox",
 									checked: draft[key] || false,
@@ -48706,6 +48876,15 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						draft,
 						update,
 						entities: refs
+					}),
+					tab === "Особенности" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassFeatures, {
+						draft,
+						update,
+						entities: refs
+					}),
+					tab === "Заклинания" && draft.type === "class" && /* @__PURE__ */ jsx(ClassSpellcasting, {
+						draft,
+						update
 					}),
 					tab === "Прогрессия" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("p", { children: "Уровни класса 1–20. Ссылки выбираются кнопками. Бонус мастерства рассчитывается по общему уровню персонажа." }), Array.from({ length: 20 }, (_, i) => i + 1).map((level) => /* @__PURE__ */ jsxs("details", {
 						className: "hb-level",
@@ -48842,81 +49021,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						]
 					})
 				]
-			}) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-				/* @__PURE__ */ jsxs("div", {
-					className: "hb-toolbar",
-					children: [/* @__PURE__ */ jsx("input", {
-						"aria-label": "Поиск Homebrew",
-						placeholder: "Поиск по имени, тегу, ID",
-						value: query,
-						onChange: (e) => setQuery(e.target.value)
-					}), /* @__PURE__ */ jsx(Select, {
-						label: "Фильтр Homebrew",
-						value: filter,
-						onChange: setFilter,
-						options: {
-							all: "Все типы",
-							...homebrewTypeLabels
-						}
-					})]
-				}),
-				/* @__PURE__ */ jsx("div", {
-					className: "hb-cards",
-					children: library.elements.filter((e) => (filter === "all" || e.type === filter) && (e.name + " " + e.id + " " + e.tags?.join(" ")).toLowerCase().includes(query.toLowerCase())).map((e) => /* @__PURE__ */ jsxs("article", { children: [
-						/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[e.type] }),
-						/* @__PURE__ */ jsx("h2", { children: e.name }),
-						/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 180) }),
-						/* @__PURE__ */ jsx("code", { children: e.id }),
-						/* @__PURE__ */ jsxs("div", {
-							className: "hb-toolbar",
-							children: [
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => open(e),
-									children: "Редактировать"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => apply(e),
-									children: e.type === "class" ? "Выбрать классом" : "Добавить персонажу"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => {
-										const n = newHomebrew(e.type, e.name + " — копия");
-										open({
-											...e,
-											...n,
-											description: e.description,
-											effects: e.effects,
-											resources: e.resources?.map((r) => ({
-												...r,
-												id: newHomebrew("resource").id
-											})),
-											attacks: e.attacks?.map((a) => ({
-												...a,
-												id: newHomebrew("attack").id
-											})),
-											advancement: e.advancement
-										});
-									},
-									children: "Дублировать"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => download({
-										schemaVersion: 2,
-										type: "homebrew-pack",
-										entities: homebrewExportClosure(e, library.elements)
-									}, "HeroList-" + e.type + ".json"),
-									children: "Экспорт"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => remove(e),
-									children: "Удалить"
-								})
-							]
-						})
-					] }, e.id))
-				}),
-				!library.elements.length && /* @__PURE__ */ jsx("p", { children: "Создайте первый элемент или загрузите пример Саванта." })
-			] })
+			}) : /* @__PURE__ */ jsx(HomebrewBrowser, {
+				library,
+				query,
+				setQuery,
+				filter,
+				setFilter,
+				open,
+				apply,
+				remove,
+				download
+			})
 		]
 	});
 }
@@ -49557,6 +49672,428 @@ function TableEditor({ draft, update }) {
 				children: "− Строка"
 			}) })] }, i)) })] })
 		})
+	] });
+}
+function IconPicker({ draft, update }) {
+	const ref = useRef(null), [message, setMessage] = useState("");
+	const upload = async (file) => {
+		if (!file) return;
+		try {
+			if (file.type !== "image/png" || file.size > 512 * 1024) throw Error("Нужен PNG размером до 512 КиБ");
+			const url = URL.createObjectURL(file);
+			try {
+				const image = new Image();
+				image.src = url;
+				await image.decode();
+				if (image.width > 4096 || image.height > 4096) throw Error("Изображение не должно превышать 4096 × 4096");
+				for (const size of [
+					96,
+					80,
+					64,
+					48
+				]) {
+					const canvas = document.createElement("canvas");
+					canvas.width = canvas.height = size;
+					const scale = Math.min(size / image.width, size / image.height);
+					canvas.getContext("2d").drawImage(image, (size - image.width * scale) / 2, (size - image.height * scale) / 2, image.width * scale, image.height * scale);
+					const icon = canvas.toDataURL("image/png");
+					if (icon.length <= 18e3) {
+						update({ icon });
+						setMessage(`Иконка готова · ${size} × ${size}`);
+						return;
+					}
+				}
+				throw Error("PNG слишком сложный для иконки. Используйте изображение с простым фоном.");
+			} finally {
+				URL.revokeObjectURL(url);
+			}
+		} catch (e) {
+			setMessage(e.message);
+		}
+	};
+	return /* @__PURE__ */ jsx(Field, {
+		label: "Иконка",
+		help: "PNG уменьшается для библиотеки Homebrew. Без файла используется символ в оформлении legacy-дизайна.",
+		children: /* @__PURE__ */ jsxs("div", {
+			className: "hb-icon-preview",
+			children: [/* @__PURE__ */ jsx(CatalogIcon, {
+				id: draft.id,
+				kind: draft.type,
+				fallback: draft.name,
+				image: draft.icon
+			}), /* @__PURE__ */ jsxs("div", { children: [
+				/* @__PURE__ */ jsx("input", {
+					ref,
+					type: "file",
+					accept: "image/png,.png",
+					"aria-label": "Загрузить PNG иконки",
+					onChange: (e) => {
+						upload(e.target.files?.[0]);
+						e.target.value = "";
+					}
+				}),
+				/* @__PURE__ */ jsx("button", {
+					onClick: () => ref.current?.click(),
+					children: "Загрузить PNG"
+				}),
+				draft.icon && /* @__PURE__ */ jsx("button", {
+					onClick: () => update({ icon: void 0 }),
+					children: "Вернуть стандартную иконку"
+				}),
+				message && /* @__PURE__ */ jsx("small", {
+					role: "status",
+					children: message
+				})
+			] })]
+		})
+	});
+}
+function ClassFeatures({ draft, update, entities }) {
+	const rows = draft.features || [];
+	const patch = (i, p) => update({ features: rows.map((f, n) => n === i ? {
+		...f,
+		...p
+	} : f) });
+	return /* @__PURE__ */ jsxs("section", { children: [
+		/* @__PURE__ */ jsxs("h3", { children: [
+			"Способности ",
+			draft.type === "subclass" ? "подкласса" : "класса",
+			" ",
+			/* @__PURE__ */ jsx(HBHelp, { children: "Хранятся внутри этого класса и появляются на листе с указанного уровня. ID создаётся автоматически; отдельная запись в библиотеке не требуется." })
+		] }),
+		/* @__PURE__ */ jsx("p", { children: "Добавьте название, уровень и текст. Если способность меняет механику, откройте «Эффекты способности» и выберите эффект, ресурс или атаку." }),
+		/* @__PURE__ */ jsx("div", {
+			className: "hb-feature-list",
+			children: rows.map((feature, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
+				/* @__PURE__ */ jsx(Field, {
+					label: "Уровень",
+					children: /* @__PURE__ */ jsx("input", {
+						type: "number",
+						min: 1,
+						max: 20,
+						value: feature.level,
+						onChange: (e) => patch(i, { level: Number(e.target.value) })
+					})
+				}),
+				/* @__PURE__ */ jsx(Field, {
+					label: "Название",
+					children: /* @__PURE__ */ jsx("input", {
+						value: feature.name,
+						onChange: (e) => patch(i, { name: e.target.value })
+					})
+				}),
+				/* @__PURE__ */ jsx(Field, {
+					label: "Описание",
+					children: /* @__PURE__ */ jsx("textarea", {
+						rows: 5,
+						value: feature.description,
+						onChange: (e) => patch(i, { description: e.target.value })
+					})
+				}),
+				/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Эффекты способности" }), /* @__PURE__ */ jsx(Mechanics, {
+					draft: {
+						...draft,
+						id: feature.id,
+						type: "ability",
+						effects: feature.effects || [],
+						resources: feature.resources || [],
+						attacks: feature.attacks || [],
+						actions: [],
+						choices: []
+					},
+					update: (p) => patch(i, Object.fromEntries(Object.entries(p).filter(([key]) => [
+						"effects",
+						"resources",
+						"attacks"
+					].includes(key)))),
+					entities
+				})] }),
+				/* @__PURE__ */ jsx("button", {
+					onClick: () => update({ features: rows.filter((_, n) => n !== i) }),
+					children: "Удалить способность"
+				})
+			] }, feature.id))
+		}),
+		/* @__PURE__ */ jsxs("button", {
+			onClick: () => update({ features: [...rows, {
+				id: newHomebrew("ability").id,
+				level: draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1,
+				name: "Новая способность",
+				description: ""
+			}] }),
+			children: ["+ Способность в этом ", draft.type === "subclass" ? "подклассе" : "классе"]
+		})
+	] });
+}
+function ClassSpellcasting({ draft, update }) {
+	const casting = draft.spellcasting || {
+		mode: "none",
+		ability: "int"
+	};
+	const patch = (p) => update({ spellcasting: {
+		...casting,
+		...p
+	} });
+	const [query, setQuery] = useState("");
+	return /* @__PURE__ */ jsxs("section", { children: [
+		/* @__PURE__ */ jsx("h3", { children: "Заклинания класса" }),
+		/* @__PURE__ */ jsx(Field, {
+			label: "Прогрессия ячеек",
+			children: /* @__PURE__ */ jsx(Select, {
+				value: casting.mode,
+				label: "Прогрессия магии",
+				onChange: (mode) => patch({ mode }),
+				options: {
+					none: "Нет магии",
+					full: "Полный заклинатель",
+					half: "Половинный",
+					third: "Треть",
+					pact: "Магия договора",
+					custom: "Свои ячейки в JSON"
+				}
+			})
+		}),
+		casting.mode !== "none" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+			/* @__PURE__ */ jsx(Field, {
+				label: "Характеристика",
+				children: /* @__PURE__ */ jsx(Select, {
+					value: casting.ability,
+					label: "Характеристика магии",
+					onChange: (ability) => patch({ ability }),
+					options: abilityLabels
+				})
+			}),
+			/* @__PURE__ */ jsx(Field, {
+				label: "Как получает заклинания",
+				children: /* @__PURE__ */ jsx(Select, {
+					value: casting.selection || "known",
+					label: "Режим изучения",
+					onChange: (selection) => patch({ selection }),
+					options: {
+						known: "Известные",
+						prepared: "Подготовленные",
+						spellbook: "Книга заклинаний"
+					}
+				})
+			}),
+			casting.selection === "prepared" && /* @__PURE__ */ jsx(Formula, {
+				label: "Число подготовленных",
+				value: casting.preparedFormula || "@level + @mod." + casting.ability,
+				onChange: (preparedFormula) => patch({ preparedFormula })
+			}),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-spell-levels",
+				children: Array.from({ length: 20 }, (_, i) => i + 1).map((level) => /* @__PURE__ */ jsxs("label", { children: [
+					"Уровень ",
+					level,
+					/* @__PURE__ */ jsxs("span", { children: ["Заговоры ", /* @__PURE__ */ jsx("input", {
+						type: "number",
+						min: 0,
+						max: 20,
+						value: casting.cantrips?.[level] ?? 0,
+						onChange: (e) => patch({ cantrips: Object.assign([...casting.cantrips || []], { [level]: Number(e.target.value) }) })
+					})] }),
+					casting.selection !== "prepared" && /* @__PURE__ */ jsxs("span", { children: ["Известно ", /* @__PURE__ */ jsx("input", {
+						type: "number",
+						min: 0,
+						max: 100,
+						value: casting.known?.[level] ?? 0,
+						onChange: (e) => patch({ known: Object.assign([...casting.known || []], { [level]: Number(e.target.value) }) })
+					})] })
+				] }, level))
+			}),
+			/* @__PURE__ */ jsx("p", { children: "Если поле оставлено нулём, на этом уровне класс не получает новых известных заклинаний или заговоров. Настройте уровни по своей таблице." })
+		] }),
+		/* @__PURE__ */ jsx("h4", { children: "Официальные заклинания в списке класса" }),
+		/* @__PURE__ */ jsx("input", {
+			"aria-label": "Найти заклинание для класса",
+			placeholder: "Название заклинания",
+			value: query,
+			onChange: (e) => setQuery(e.target.value)
+		}),
+		/* @__PURE__ */ jsx("div", {
+			className: "hb-toolbar",
+			children: spells.filter((s) => (s.name + " " + s.school).toLowerCase().includes(query.toLowerCase())).slice(0, 40).map((s) => /* @__PURE__ */ jsxs("button", {
+				"aria-pressed": draft.spellList?.includes(s.id) || false,
+				onClick: () => update({ spellList: draft.spellList?.includes(s.id) ? draft.spellList.filter((x) => x !== s.id) : [...draft.spellList || [], s.id] }),
+				children: [
+					s.name,
+					" · ",
+					s.level
+				]
+			}, s.id))
+		}),
+		/* @__PURE__ */ jsxs("small", { children: [
+			"Выбрано: ",
+			draft.spellList?.length || 0,
+			". Кнопки сохраняют ID автоматически."
+		] })
+	] });
+}
+function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, apply, remove, download }) {
+	const [sort, setSort] = useState("newest"), [showParts, setShowParts] = useState(false), [source, setSource] = useState("all");
+	const owned = /* @__PURE__ */ new Map();
+	for (const parent of library.elements.filter((e) => e.type === "class" || e.type === "subclass")) {
+		const owner = parent.type === "subclass" ? parent.parentClassId || parent.id : parent.id;
+		for (const rows of Object.values(parent.advancement || {})) for (const row of rows) if (row.id) owned.set(row.id, owner);
+		for (const choice of parent.choices || []) for (const id of choice.from) owned.set(id, owner);
+	}
+	for (const entry of library.elements) if (entry.parentClassId && entry.type === "ability") owned.set(entry.id, entry.parentClassId);
+	const visible = library.elements.filter((e) => {
+		return (e.name + " " + e.id + " " + e.tags?.join(" ") + " " + e.summary).toLowerCase().includes(query.toLowerCase()) && (filter === "all" || e.type === filter) && (source === "all" || source === "example" === (e.source?.kind === "example")) && (showParts || !owned.has(e.id) || !!query);
+	}).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ru") : sort === "type" ? a.type.localeCompare(b.type) || a.name.localeCompare(b.name, "ru") : b.updatedAt.localeCompare(a.updatedAt));
+	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+		/* @__PURE__ */ jsxs("div", {
+			className: "hb-browser-tools",
+			children: [
+				/* @__PURE__ */ jsx("input", {
+					"aria-label": "Поиск Homebrew",
+					placeholder: "Название, тег или ID",
+					value: query,
+					onChange: (e) => setQuery(e.target.value)
+				}),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Фильтр Homebrew",
+					value: filter,
+					onChange: setFilter,
+					options: {
+						all: "Все типы",
+						...homebrewTypeLabels
+					}
+				}),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Сортировка Homebrew",
+					value: sort,
+					onChange: setSort,
+					options: {
+						newest: "Сначала новые",
+						name: "По названию",
+						type: "По типу"
+					}
+				}),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Происхождение Homebrew",
+					value: source,
+					onChange: setSource,
+					options: {
+						all: "Все",
+						mine: "Мои",
+						example: "Примеры"
+					}
+				})
+			]
+		}),
+		/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+			type: "checkbox",
+			checked: showParts,
+			onChange: (e) => setShowParts(e.target.checked)
+		}), " Показывать дочерние элементы отдельно"] }),
+		/* @__PURE__ */ jsxs("p", { children: [
+			visible.length,
+			" записей · ",
+			library.elements.length,
+			" всего. Особенности класса показаны внутри карточки класса."
+		] }),
+		/* @__PURE__ */ jsx("div", {
+			className: "hb-browser-results",
+			children: visible.map((e) => /* @__PURE__ */ jsxs("article", {
+				className: "hb-library-row",
+				children: [
+					/* @__PURE__ */ jsx(CatalogIcon, {
+						id: e.id,
+						kind: e.type === "class" ? "class" : e.type === "race" ? "race" : "background",
+						fallback: e.name,
+						image: e.icon
+					}),
+					/* @__PURE__ */ jsxs("div", { children: [
+						/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[e.type], owned.has(e.id) ? " · особенность класса" : ""] }),
+						/* @__PURE__ */ jsx("h2", { children: e.name }),
+						/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
+						(e.type === "class" || e.type === "subclass") && /* @__PURE__ */ jsxs("details", { children: [
+							/* @__PURE__ */ jsxs("summary", { children: [
+								"Способности и прогрессия (",
+								e.features?.length || 0,
+								" встроенных)"
+							] }),
+							e.features?.map((f) => /* @__PURE__ */ jsxs("p", { children: [
+								f.level,
+								" ур. · ",
+								f.name
+							] }, f.id)),
+							e.type === "class" && library.elements.filter((child) => owned.get(child.id) === e.id && !Object.values(e.advancement || {}).flat().some((r) => r.id === child.id)).map((child) => /* @__PURE__ */ jsxs("button", {
+								onClick: () => open(child),
+								children: [child.name, " · открыть"]
+							}, child.id)),
+							Object.entries(e.advancement || {}).flatMap(([level, rows]) => rows.filter((r) => r.id && owned.get(r.id) === (e.type === "subclass" ? e.parentClassId : e.id)).map((r) => {
+								const child = library.elements.find((x) => x.id === r.id);
+								return child && /* @__PURE__ */ jsxs("button", {
+									onClick: () => open(child),
+									children: [
+										level,
+										" ур. · ",
+										child.name
+									]
+								}, r.id);
+							}))
+						] })
+					] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "hb-toolbar",
+						children: [
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => open(e),
+								children: "Редактировать"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => apply(e),
+								children: e.type === "class" ? "Выбрать" : "Добавить"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => download({
+									schemaVersion: 2,
+									type: "homebrew-pack",
+									entities: homebrewExportClosure(e, library.elements)
+								}, "HeroList-" + e.type + ".json"),
+								children: "Экспорт"
+							}),
+							/* @__PURE__ */ jsxs("details", { children: [
+								/* @__PURE__ */ jsx("summary", { children: "Ещё" }),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => {
+										const n = newHomebrew(e.type, e.name + " — копия");
+										open({
+											...e,
+											...n,
+											features: e.features?.map((f) => ({
+												...f,
+												id: newHomebrew("ability").id
+											})),
+											resources: e.resources?.map((r) => ({
+												...r,
+												id: newHomebrew("resource").id
+											})),
+											attacks: e.attacks?.map((a) => ({
+												...a,
+												id: newHomebrew("attack").id
+											})),
+											advancement: {}
+										});
+									},
+									children: "Дублировать"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => {
+										remove(e);
+									},
+									children: "Удалить"
+								})
+							] })
+						]
+					})
+				]
+			}, e.id))
+		}),
+		!library.elements.length && /* @__PURE__ */ jsx("p", { children: "Создайте первый элемент или загрузите пример Саванта." })
 	] });
 }
 //#endregion
@@ -50463,8 +51000,12 @@ function savedCharacterExportContext(value) {
 			subclass: entry.subclassId || "",
 			level: entry.level
 		};
-		const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
-		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		const className = classes.find((option) => option.id === entry.classId)?.name || exportCharacter.homebrew?.entities.find((e) => e.id === entry.classId)?.name || entry.classId;
+		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || exportCharacter.homebrew?.entities.find((e) => e.id === entry.classId)?.features?.map((f) => ({
+			name: f.name,
+			description: f.description,
+			level: f.level
+		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
@@ -50569,7 +51110,7 @@ function Builder() {
 	const [banSource, setBanSource] = useState("Все");
 	const [banBookSource, setBanBookSource] = useState("PHB");
 	const [search, setSearch] = useState("");
-	const [selectedSources, setSelectedSources] = useState(() => catalogSources(spells));
+	const [selectedSources, setSelectedSources] = useState(() => [...catalogSources(spells), "Homebrew"]);
 	const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
 	const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
 	const [siteTheme, setSiteTheme] = useState("classic");
@@ -50753,9 +51294,9 @@ function Builder() {
 		setSiteTheme(next);
 		localStorage.setItem("list-geroya-site-theme", next);
 	}
-	const availableRaces = useMemo(() => races.filter((option) => allowed(activeBan, "races", option.id)), [activeBan]);
-	const availableClasses = useMemo(() => classes.filter((option) => allowed(activeBan, "classes", option.id)), [activeBan]);
-	const availableBackgrounds = useMemo(() => backgrounds.filter((option) => allowed(activeBan, "backgrounds", option.id)), [activeBan]);
+	const availableRaces = [...races.filter((option) => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements, "race")];
+	const availableClasses = [...classes.filter((option) => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements, "class")];
+	const availableBackgrounds = [...backgrounds.filter((option) => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements, "background")];
 	const homebrewOption = (id) => {
 		const entity = homebrew.elements.find((e) => e.id === id);
 		return entity ? {
@@ -50771,10 +51312,13 @@ function Builder() {
 	const multiclassEntries = orderedCharacterClasses(character);
 	const selectedBackground = backgrounds.find((option) => option.id === character.background) || homebrewOption(character.background);
 	const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
-	const classRule = classSkillRules[character.className] || {
-		count: 0,
-		skills: []
-	};
+	const classRule = classSkillRules[character.className] || (() => {
+		const own = homebrew.elements.find((e) => e.id === character.className && e.type === "class")?.skillChoices;
+		return {
+			count: own?.count || 0,
+			skills: own?.from.map((id) => Object.entries(skillKeys).find(([, v]) => v.key === id)?.[0] || id) || []
+		};
+	})();
 	const fixedBackgroundSkills = character.backgroundSkills;
 	const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap((rule) => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
 	const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
@@ -50814,7 +51358,7 @@ function Builder() {
 		abilities: finalAbilities
 	};
 	const spellRule = activeSpellClass?.rule || spellSelectionRule(spellCharacter);
-	const sourceAvailableSpells = sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked);
+	const sourceAvailableSpells = [...sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked), ...homebrewSpells(homebrew.elements)];
 	const availableSpellCatalog = sourceAvailableSpells.filter((spell) => allowed(activeBan, "spells", spell.id) && (!rulesCharacter.tceFullBanned || spell.source !== "TCE"));
 	const alwaysPreparedEntries = alwaysPreparedSpellEntries(spellCharacter, availableSpellCatalog);
 	const alwaysPrepared = alwaysPreparedEntries.map((entry) => entry.id);
@@ -50828,7 +51372,7 @@ function Builder() {
 	}, availableSpellCatalog).map((entry) => entry.id)))];
 	const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
 	const filtered = currentOptions.filter((option) => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
-	const selectableSpells = availableSpellCatalog.filter((spell) => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
+	const selectableSpells = availableSpellCatalog.filter((spell) => (spellAvailableToCharacter(spellCharacter, spell) || homebrewSpellAvailable(spellCharacter.className, spell, homebrew.elements)) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
 	const spellSchools = [...new Set(selectableSpells.map((spell) => spell.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
 	const castingTimes = [...new Set(selectableSpells.map((spell) => spell.castingTime).filter((value) => !!value))].sort((a, b) => a.localeCompare(b, "ru"));
 	const filteredSpells = selectableSpells.filter((spell) => {
@@ -50842,17 +51386,30 @@ function Builder() {
 	const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key].filter((option) => !allowed(activeBan, key, option.id)).length, 0) : 0;
 	const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
 	const selectedRaceFeatures = resolvedRaceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags).map((feature) => markFeature(feature, "race", character.race));
-	const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
+	const subclassData = (id) => {
+		const base = subclassRule(id);
+		const custom = homebrewSubclassOptions(id, homebrew.elements);
+		return custom.length ? {
+			level: homebrew.elements.find((e) => e.type === "class" && e.id === id)?.subclass?.chooseAtLevel || base?.level || 3,
+			options: [...base?.options || [], ...custom]
+		} : base;
+	};
+	const subclassFor = (id, sub) => subclassData(id)?.options.find((e) => e.id === sub);
+	const chosenSubclass = subclassFor(character.className, character.subclass || "");
 	const selectedClassFeatureSections = multiclassEntries.map((entry) => {
-		const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
+		const subclass = subclassFor(entry.classId, entry.subclassId || "");
 		const scoped = {
 			...rulesCharacter,
 			className: entry.classId,
 			subclass: entry.subclassId || "",
 			level: entry.level
 		};
-		const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
-		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		const className = availableClasses.find((option) => option.id === entry.classId)?.name || entry.classId;
+		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find((e) => e.id === entry.classId)?.features?.map((f) => ({
+			name: f.name,
+			description: f.description,
+			level: f.level
+		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
@@ -50877,6 +51434,7 @@ function Builder() {
 	const sharedSpellSlots = resolveSpellSlots(exportCharacter);
 	const pactMagicSlots = resolvePactMagic(exportCharacter);
 	const classEquipment = equipmentRule(character.className);
+	const authoredEquipment = [...homebrew.elements.find((e) => e.id === character.className && e.type === "class")?.equipment || [], ...homebrew.elements.find((e) => e.id === character.background && e.type === "background")?.equipment || []];
 	const equipmentItems = selectedEquipment(exportCharacter);
 	const displayedInventory = character.inventoryOverride === void 0 ? equipmentItems : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const languageRequirements = languageRule(exportCharacter);
@@ -50886,7 +51444,8 @@ function Builder() {
 	const knownLanguages = proficiencies.languages;
 	const resources = characterResources(exportCharacter);
 	const attachedHomebrew = [...new Map([...activeHomebrew(exportCharacter), ...homebrew.elements.filter((element) => element.characterId === vault.activeId)].map((e) => [e.id, e])).values()];
-	const customFeatures = attachedHomebrew.filter((element) => element.type === "ability").map((element) => ({
+	const ownedFeatureIds = new Set(homebrew.elements.filter((e) => e.type === "class" || e.type === "subclass").flatMap((e) => [...e.features?.map((f) => f.id) || [], ...Object.values(e.advancement || {}).flatMap((rows) => rows.filter((row) => row.type === "feature").map((row) => row.id || ""))]));
+	const customFeatures = attachedHomebrew.filter((element) => element.type === "ability" && !ownedFeatureIds.has(element.id)).map((element) => ({
 		name: element.name,
 		description: element.description
 	}));
@@ -50917,7 +51476,7 @@ function Builder() {
 	});
 	const resourceMarkCount = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
 	const resourceDensity = resources.length >= 6 || resourceMarkCount >= 32 ? "micro" : resources.length >= 4 || resourceMarkCount >= 22 ? "dense" : resources.length >= 3 || resourceMarkCount >= 14 ? "compact" : "normal";
-	const spellAbilityKey = classRules[activeSpellClassId]?.spellAbility;
+	const spellAbilityKey = classRuleFor(rulesCharacter, activeSpellClassId)?.spellAbility;
 	const spellcastingModifier = spellAbilityKey ? abilityModifier$1(finalAbilities[spellAbilityKey]) : 0;
 	const spellSaveDc = spellAbilityKey ? 8 + proficiency + spellcastingModifier : 0;
 	const spellAttackBonus = spellAbilityKey ? proficiency + spellcastingModifier : 0;
@@ -50932,7 +51491,7 @@ function Builder() {
 	const variantBonus = raceAbilityBonuses(character);
 	const racialProficiencies = raceProficiencies(character);
 	const subclassRequirements = multiclassEntries.flatMap((entry) => {
-		const data = subclassRule(entry.classId);
+		const data = subclassData(entry.classId);
 		return data && entry.level >= data.level ? [{
 			entry,
 			data
@@ -50947,11 +51506,11 @@ function Builder() {
 	}));
 	const activeSpellIds = currentSpellGrants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
 	const ordinarySpellIds = activeSpellIds.filter((id) => !alwaysPreparedSet.has(id));
-	const selectedCantrips = ordinarySpellIds.filter((id) => spells.find((item) => item.id === id)?.level === 0);
-	const selectedLeveled = ordinarySpellIds.filter((id) => (spells.find((item) => item.id === id)?.level || 0) > 0);
+	const selectedCantrips = ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === 0);
+	const selectedLeveled = ordinarySpellIds.filter((id) => (availableSpellCatalog.find((item) => item.id === id)?.level || 0) > 0);
 	const selectedPrepared = classPreparedSpellIds(character, activeSpellClassId).filter((id) => selectedLeveled.includes(id));
 	const mobilePreparedIds = selectedPrepared;
-	const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter((id) => spells.find((item) => item.id === id)?.level === level).length);
+	const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === level).length);
 	const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
 	const featSlots = advancementSlots.length;
 	const completedAdvancements = advancements.filter((choice) => advancementChoiceComplete(choice, spells, character.level, character));
@@ -50962,7 +51521,7 @@ function Builder() {
 	const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog).filter((entry) => !grantedFeatSpells.includes(entry.spell.id));
 	const mobileSpellPool = [...new Map((spellRule.mode === "prepared" ? [
 		...selectedCantrips.map((id) => spells.find((spell) => spell.id === id)),
-		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(spellCharacter, spell)),
+		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(spellCharacter, spell) || homebrewSpellAvailable(spellCharacter.className, spell, homebrew.elements))),
 		...alwaysPrepared.map((id) => spells.find((spell) => spell.id === id)),
 		...grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)),
 		...customSpells
@@ -51033,7 +51592,7 @@ function Builder() {
 	function resetFilters(nextStep, showTutorial = true) {
 		setStep(nextStep);
 		setSearch("");
-		setSelectedSources(nextStep === 7 ? catalogSources(sourceAvailableSpells) : ["PHB"]);
+		setSelectedSources(nextStep === 7 ? catalogSources(sourceAvailableSpells) : ["PHB", "Homebrew"]);
 		setDetailsId("");
 		setSpellLevel("all");
 		setRitualFilter("all");
@@ -51119,7 +51678,7 @@ function Builder() {
 			}, keptBonuses));
 		});
 		if (step === 3) {
-			const option = backgrounds.find((item) => item.id === id);
+			const option = availableBackgrounds.find((item) => item.id === id);
 			const backgroundSkills = backgroundFixedSkills(id);
 			const startingGold = backgroundStartingGold(id, option);
 			setCharacter((current) => {
@@ -51254,8 +51813,8 @@ function Builder() {
 			const rule = spellSelectionRuleForClass(scoped, classId, candidate.entry.level);
 			const automatic = new Set(alwaysPreparedSpellEntries(scoped, availableSpellCatalog).map((entry) => entry.id));
 			const ids = currentSpellGrants.filter((grant) => grant.classId === classId && !automatic.has(grant.spellId)).map((grant) => grant.spellId);
-			const cantrips = ids.filter((id) => spells.find((spell) => spell.id === id)?.level === 0);
-			const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
+			const cantrips = ids.filter((id) => availableSpellCatalog.find((spell) => spell.id === id)?.level === 0);
+			const leveled = ids.filter((id) => (availableSpellCatalog.find((spell) => spell.id === id)?.level || 0) > 0);
 			const className = classes.find((option) => option.id === classId)?.name || classId;
 			if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
 			if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
@@ -51381,7 +51940,7 @@ function Builder() {
 		}));
 	}
 	function toggleSpell(id) {
-		const level = spells.find((spell) => spell.id === id)?.level || 0;
+		const level = availableSpellCatalog.find((spell) => spell.id === id)?.level || 0;
 		setCharacter((current) => {
 			if (alwaysPreparedSet.has(id)) return current;
 			const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
@@ -51401,11 +51960,11 @@ function Builder() {
 					spells: remainsSelected ? current.spells : current.spells.filter((spell) => spell !== id)
 				};
 			}
-			const sameKind = selectedForClass.filter((spellId) => (spells.find((item) => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
+			const sameKind = selectedForClass.filter((spellId) => (availableSpellCatalog.find((item) => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
 			const cap = level === 0 ? spellRule.cantrips : spellRule.leveled;
 			if (sameKind.length >= cap) return current;
 			if (level > 0 && spellRule.levelLimits) {
-				if (spellRule.levelLimits.some((limit, circle) => circle > 0 && circle <= level && selectedForClass.filter((spellId) => (spells.find((item) => item.id === spellId)?.level || 0) >= circle).length >= limit)) return current;
+				if (spellRule.levelLimits.some((limit, circle) => circle > 0 && circle <= level && selectedForClass.filter((spellId) => (availableSpellCatalog.find((item) => item.id === spellId)?.level || 0) >= circle).length >= limit)) return current;
 			}
 			return {
 				...spellRule.mode === "prepared" && level > 0 ? setClassPreparedSpells(current, activeSpellClassId, [...classPreparedSpellIds(current, activeSpellClassId), id]) : current,
@@ -51422,7 +51981,7 @@ function Builder() {
 	}
 	function togglePreparedSpell(id) {
 		setCharacter((current) => {
-			if (!current.spells.includes(id) || (spells.find((spell) => spell.id === id)?.level || 0) === 0) return current;
+			if (!current.spells.includes(id) || (availableSpellCatalog.find((spell) => spell.id === id)?.level || 0) === 0) return current;
 			const selected = classPreparedSpellIds(current, activeSpellClassId);
 			if (selected.includes(id)) return setClassPreparedSpells(current, activeSpellClassId, selected.filter((spell) => spell !== id));
 			if (selected.length >= (spellRule.prepared || 0)) return current;
@@ -51445,12 +52004,12 @@ function Builder() {
 				subclass: activeSpellClass?.entry.subclassId || "",
 				level: activeSpellClass?.entry.level || current.level
 			};
-			const available = spellRule.mode === "prepared" ? availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(scoped, spell) && !alwaysPreparedSet.has(spell.id)).map((spell) => spell.id) : classSpellIds.filter((spellId) => (spells.find((spell) => spell.id === spellId)?.level || 0) > 0);
+			const available = spellRule.mode === "prepared" ? availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(scoped, spell) || homebrewSpellAvailable(scoped.className, spell, homebrew.elements)) && !alwaysPreparedSet.has(spell.id)).map((spell) => spell.id) : classSpellIds.filter((spellId) => (availableSpellCatalog.find((spell) => spell.id === spellId)?.level || 0) > 0);
 			const initialPrepared = classPreparedSpellIds(current, activeSpellClassId).filter((spellId) => available.includes(spellId));
 			if (!available.includes(id)) return current;
 			const next = initialPrepared.includes(id) ? initialPrepared.filter((spellId) => spellId !== id) : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
 			const otherClassIds = new Set(grants.filter((grant) => grant.classId !== activeSpellClassId).map((grant) => grant.spellId));
-			const nextSpells = spellRule.mode === "prepared" ? [...new Set([...current.spells.filter((spellId) => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (spells.find((spell) => spell.id === spellId)?.level || 0) === 0), ...next])] : current.spells;
+			const nextSpells = spellRule.mode === "prepared" ? [...new Set([...current.spells.filter((spellId) => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (availableSpellCatalog.find((spell) => spell.id === spellId)?.level || 0) === 0), ...next])] : current.spells;
 			const nextGrants = spellRule.mode === "prepared" ? [...grants.filter((grant) => grant.classId !== activeSpellClassId || (spells.find((spell) => spell.id === grant.spellId)?.level || 0) === 0), ...next.map((spellId) => ({
 				spellId,
 				sourceType: "class",
@@ -52907,8 +53466,8 @@ function Builder() {
 						/* @__PURE__ */ jsx("div", {
 							className: "character-grid",
 							children: visibleSlots.map((slot) => {
-								const itemClass = classes.find((item) => item.id === slot.character.className);
-								const itemRace = races.find((item) => item.id === slot.character.race);
+								const itemClass = classes.find((item) => item.id === slot.character.className) || homebrewOption(slot.character.className);
+								const itemRace = races.find((item) => item.id === slot.character.race) || homebrewOption(slot.character.race);
 								return /* @__PURE__ */ jsxs("article", {
 									className: slot.id === vault.activeId ? "active" : "",
 									children: [
@@ -52924,7 +53483,8 @@ function Builder() {
 											id: itemClass?.id || itemRace?.id,
 											kind: itemClass ? "class" : "race",
 											fallback: itemClass?.name || itemRace?.name || "Новый герой",
-											experimental: usesOrnateIcons
+											experimental: usesOrnateIcons,
+											image: homebrew.elements.find((e) => e.id === (itemClass?.id || itemRace?.id))?.icon
 										}),
 										/* @__PURE__ */ jsxs("div", { children: [
 											/* @__PURE__ */ jsx("small", { children: slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}` }),
@@ -53800,7 +54360,7 @@ function Builder() {
 										children: [
 											"Шаг ",
 											step + 1,
-											" · официальный каталог"
+											" · каталог персонажа"
 										]
 									}),
 									/* @__PURE__ */ jsx("h1", { children: headings[step] }),
@@ -53868,13 +54428,17 @@ function Builder() {
 								}),
 								/* @__PURE__ */ jsxs("div", {
 									className: "catalog-meta",
-									children: [filtered.length, " вариантов · только официальные источники"]
+									children: [filtered.length, " вариантов · официальные источники и Homebrew"]
 								}),
 								/* @__PURE__ */ jsx("div", {
 									className: "card-grid",
 									children: filtered.map((option) => {
 										const selected = (step === 0 ? character.race : step === 1 ? character.className : character.background) === option.id;
-										const detailFeatures = step === 0 ? resolvedRaceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags) : step === 1 ? documentedClassFeatures(option.id, void 0, false, classRules[option.id]?.features || [], [], []) : [{ ...backgroundRule(option.id, option).feature }];
+										const detailFeatures = step === 0 ? resolvedRaceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags) : step === 1 ? documentedClassFeatures(option.id, void 0, false, classRules[option.id]?.features || homebrew.elements.find((e) => e.id === option.id)?.features?.map((f) => ({
+											name: f.name,
+											description: f.description,
+											level: f.level
+										})) || [], [], []) : [{ ...backgroundRule(option.id, option).feature }];
 										return /* @__PURE__ */ jsxs("article", {
 											className: `choice-card ${selected ? "selected" : ""}`,
 											children: [
@@ -53882,7 +54446,8 @@ function Builder() {
 													id: option.id,
 													kind: step === 0 ? "race" : step === 1 ? "class" : "background",
 													fallback: option.name,
-													experimental: usesOrnateIcons
+													experimental: usesOrnateIcons,
+													image: homebrew.elements.find((e) => e.id === option.id)?.icon
 												}),
 												/* @__PURE__ */ jsxs("div", { children: [
 													/* @__PURE__ */ jsxs("div", {
@@ -54315,7 +54880,11 @@ function Builder() {
 										className: "equipment-fixed",
 										children: [
 											/* @__PURE__ */ jsx("h3", { children: "Также получаете автоматически" }),
-											/* @__PURE__ */ jsx("p", { children: [...classEquipment.fixed, ...backgroundEquipmentWithoutStartingGold(selectedBackgroundRule.equipment)].join(" · ") || "Нет фиксированного снаряжения." }),
+											/* @__PURE__ */ jsx("p", { children: [
+												...classEquipment.fixed,
+												...authoredEquipment,
+												...backgroundEquipmentWithoutStartingGold(selectedBackgroundRule.equipment)
+											].join(" · ") || "Нет фиксированного снаряжения." }),
 											classEquipment.fixed.includes("Кольчуга") && finalAbilities.str < 13 && /* @__PURE__ */ jsx("small", { children: "Кольчуга предусмотрена стартовым набором класса, но при Силе ниже 13 снижает скорость на 10 футов. Она не считается оптимальной рекомендацией." })
 										]
 									}),
@@ -54974,7 +55543,7 @@ function Builder() {
 										/* @__PURE__ */ jsx("h2", { children: "Автоматические заклинания" }),
 										/* @__PURE__ */ jsx("p", { children: "Выданы классом или подклассом сверх обычного лимита. Под каждым заклинанием указан режим." })
 									] }), /* @__PURE__ */ jsx("div", { children: alwaysPreparedEntries.map((entry) => {
-										const spell = spells.find((item) => item.id === entry.id);
+										const spell = availableSpellCatalog.find((item) => item.id === entry.id);
 										return spell ? /* @__PURE__ */ jsxs("span", {
 											className: "always-prepared-spell",
 											children: [/* @__PURE__ */ jsxs("a", {
@@ -55009,7 +55578,7 @@ function Builder() {
 										}),
 										/* @__PURE__ */ jsx("p", { children: "Это полный выбранный список. Кнопка «Выбрать оптимальный» сначала очищает прежний список и заново заполняет и книгу, и подготовку." }),
 										/* @__PURE__ */ jsx("div", { children: ordinarySpellIds.map((id) => {
-											const spell = spells.find((item) => item.id === id);
+											const spell = availableSpellCatalog.find((item) => item.id === id);
 											return spell ? /* @__PURE__ */ jsxs("button", {
 												onClick: () => toggleSpell(id),
 												children: [
@@ -55035,7 +55604,7 @@ function Builder() {
 										}),
 										/* @__PURE__ */ jsx("p", { children: "Заговоры не подготавливаются. Выберите заклинания из книги; автоматически подготовленные заклинания находятся выше и не расходуют этот лимит." }),
 										/* @__PURE__ */ jsx("div", { children: selectedLeveled.map((id) => {
-											const spell = spells.find((item) => item.id === id);
+											const spell = availableSpellCatalog.find((item) => item.id === id);
 											return spell ? /* @__PURE__ */ jsxs("button", {
 												className: selectedPrepared.includes(id) ? "selected" : "",
 												onClick: () => togglePreparedSpell(id),
@@ -56520,7 +57089,8 @@ function Builder() {
 								kind: selectedClass ? "class" : "race",
 								fallback: selectedClass?.name || selectedRace?.name || "Новый герой",
 								className: "portrait",
-								experimental: usesOrnateIcons
+								experimental: usesOrnateIcons,
+								image: homebrew.elements.find((e) => e.id === (selectedClass?.id || selectedRace?.id))?.icon
 							}),
 							/* @__PURE__ */ jsx("h2", { children: character.name || selectedRace?.name || "Новый герой" }),
 							/* @__PURE__ */ jsxs("p", {
