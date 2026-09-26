@@ -34,8 +34,8 @@ def test_homebrew_is_private_and_validated():
     client.post("/api/auth/login",json={"email":"a@example.test","password":"very-long-pass"})
     library={"version":1,"elements":[{"id":"hb-1","type":"spell","name":"Искра","description":"Авторское заклинание","updatedAt":"2026-09-15T00:00:00Z"}]}
     assert client.put("/api/homebrew",json={"library":library}).json()["saved"]
-    assert client.get("/api/homebrew").json()["library"]==library
-    assert client.put("/api/homebrew",json={"library":{"version":1,"elements":[{"id":"x","type":"race","name":"Нет","updatedAt":"2026-09-15T00:00:00Z"}]}}).status_code==400
+    assert client.get("/api/homebrew").json()["library"]=={**library,"version":2,"schemaVersion":2}
+    assert client.put("/api/homebrew",json={"library":{"version":1,"elements":[{"id":"x","type":"unknown","name":"Нет","updatedAt":"2026-09-15T00:00:00Z"}]}}).status_code==400
 
 def test_vault_is_compacted_and_legacy_rows_remain_readable():
     client.post("/api/auth/login",json={"email":"a@example.test","password":"very-long-pass"})
@@ -61,11 +61,11 @@ def test_homebrew_entities_are_normalized_ordered_and_limited():
     ]
     library={"version":1,"elements":elements}
     assert client.put("/api/homebrew",json={"library":library}).status_code==200
-    assert client.get("/api/homebrew").json()["library"]==library
+    assert client.get("/api/homebrew").json()["library"]=={**library,"version":2,"schemaVersion":2}
     db=SessionLocal(); rows=db.query(HomebrewEntity).order_by(HomebrewEntity.sort_index).all()
     assert [row.id for row in rows]==["second","first"] and rows[0].payload_codec=="zlib-json"
     assert db.query(HomebrewLibrary).one().library_json=="{}"; db.close()
-    too_many={"version":1,"elements":[{"id":str(i),"type":"note","name":"N","updatedAt":"2026-09-15T00:00:00Z"} for i in range(101)]}
+    too_many={"version":1,"elements":[{"id":str(i),"type":"note","name":"N","updatedAt":"2026-09-15T00:00:00Z"} for i in range(1001)]}
     assert client.put("/api/homebrew",json={"library":too_many}).status_code==413
 
 def test_telegram_link_keeps_email_user_id_and_vault(monkeypatch):
@@ -96,3 +96,11 @@ def test_legacy_recovery_is_read_only_exports_and_can_link(monkeypatch):
     monkeypatch.setattr(external_auth,"verified_identity",verified)
     assert client.post("/api/auth/external/link",json={"token":"ok"}).status_code==200
     assert client.get("/api/vault").json()["vault"]==recovery_vault
+
+
+def test_homebrew_v2_reusable_classes_races_subclasses_and_tables():
+    client.post("/api/auth/login",json={"email":"a@example.test","password":"very-long-pass"})
+    elements=[{"id":f"hb:test:{kind}:sample","schemaVersion":2,"type":kind,"name":kind,"description":"Пример","updatedAt":"2026-09-26T00:00:00Z","table":{"columns":["Уровень","Бонус"],"rows":[["1","2"]]}} for kind in ("class","subclass","race","table")]
+    library={"version":2,"schemaVersion":2,"elements":elements}
+    assert client.put("/api/homebrew",json={"library":library}).status_code==200
+    assert client.get("/api/homebrew").json()["library"]==library

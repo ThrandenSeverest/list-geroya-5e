@@ -896,10 +896,11 @@ function Builder() {
     () => backgrounds.filter(option => allowed(activeBan, "backgrounds", option.id)),
     [activeBan],
   );
-  const selectedRace = races.find(option => option.id === character.race);
-  const selectedClass = classes.find(option => option.id === character.className);
+  const homebrewOption = (id: string) => { const entity = homebrew.elements.find(e => e.id === id); return entity ? { id, name: entity.name, description: entity.description, source: "Homebrew", tags: entity.tags } : undefined; };
+  const selectedRace = races.find(option => option.id === character.race) || homebrewOption(character.race);
+  const selectedClass = classes.find(option => option.id === character.className) || homebrewOption(character.className);
   const multiclassEntries = orderedCharacterClasses(character);
-  const selectedBackground = backgrounds.find(option => option.id === character.background);
+  const selectedBackground = backgrounds.find(option => option.id === character.background) || homebrewOption(character.background);
   const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
   const classRule = classSkillRules[character.className] || { count: 0, skills: [] };
   const fixedBackgroundSkills = character.backgroundSkills;
@@ -3650,7 +3651,7 @@ function Builder() {
                   playerName: character.playerName,
                   experience: character.experience || 0,
                   inspiration: !!character.inspiration,
-                  className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || entry.classId} ${entry.level}`).join(" / ") || "Класс не выбран",
+                  className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId} ${entry.level}`).join(" / ") || "Класс не выбран",
                   subclassName: multiclassEntries.length > 1 ? undefined : chosenSubclass?.name,
                   raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
                   backgroundName: selectedBackground?.name || "Предыстория не выбрана",

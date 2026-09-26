@@ -75,6 +75,7 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     }
   }
 
+  for (const row of hbEffects(character, "ac_formula")) { if (row.value > value) { value = row.value; base = `${row.source.name}: формула КД ${row.value}`; } }
   const bonuses: string[] = [];
   if (shield) {
     value += 2;
@@ -99,7 +100,6 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
   if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
   if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
-  for (const row of hbEffects(character, "ac_formula")) { if (row.value > value) { value = row.value; bonuses.push(`${row.source.name}: формула КД ${row.value}`); } }
   for (const row of hbEffects(character, "ac_bonus")) { value += row.value; bonuses.push(`${row.source.name} ${row.value >= 0 ? "+" : ""}${row.value}`); }
   return { value, base, bonuses, conditions };
 }
