@@ -46156,6 +46156,29 @@ function spellCardDensity(spell) {
 	if (length > 430) return "compact";
 	return "normal";
 }
+function PdfSpellCard({ spell }) {
+	return /* @__PURE__ */ jsxs("article", {
+		className: `pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`,
+		children: [
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [
+				/* @__PURE__ */ jsxs("small", { children: [
+					spell.level === 0 ? "Заговор" : `${spell.level} круг`,
+					" · ",
+					spell.school
+				] }),
+				/* @__PURE__ */ jsxs("h3", { children: [spell.name, spell.ritual ? " Р" : ""] }),
+				/* @__PURE__ */ jsxs("small", { children: [spell.classSource, spell.grantSource ? ` · ${spell.grantSource}` : ""] })
+			] }), /* @__PURE__ */ jsx("b", { children: spell.source })] }),
+			/* @__PURE__ */ jsxs("dl", { children: [
+				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Накладывание" }), /* @__PURE__ */ jsx("dd", { children: spell.castingTime || "—" })] }),
+				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Дистанция" }), /* @__PURE__ */ jsx("dd", { children: spell.range || "—" })] }),
+				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Компоненты" }), /* @__PURE__ */ jsx("dd", { children: spell.components || spellComponentLabel(spell) || "—" })] }),
+				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Длительность" }), /* @__PURE__ */ jsx("dd", { children: spell.duration || "—" })] })
+			] }),
+			/* @__PURE__ */ jsx("p", { children: spell.description || "Описание заклинания появится здесь." })
+		]
+	});
+}
 function paginateResources(resources) {
 	const pages = [[]];
 	let used = 0;
@@ -46758,27 +46781,7 @@ function PdfCharacterSheet(props) {
 						}),
 						/* @__PURE__ */ jsx("div", {
 							className: "pdf-spell-card-grid",
-							children: pageSpells.map((spell) => /* @__PURE__ */ jsxs("article", {
-								className: `pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`,
-								children: [
-									/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [
-										/* @__PURE__ */ jsxs("small", { children: [
-											spell.level === 0 ? "Заговор" : `${spell.level} круг`,
-											" · ",
-											spell.school
-										] }),
-										/* @__PURE__ */ jsxs("h3", { children: [spell.name, spell.ritual ? " Р" : ""] }),
-										/* @__PURE__ */ jsxs("small", { children: [spell.classSource, spell.grantSource ? ` · ${spell.grantSource}` : ""] })
-									] }), /* @__PURE__ */ jsx("b", { children: spell.source })] }),
-									/* @__PURE__ */ jsxs("dl", { children: [
-										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Накладывание" }), /* @__PURE__ */ jsx("dd", { children: spell.castingTime || "—" })] }),
-										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Дистанция" }), /* @__PURE__ */ jsx("dd", { children: spell.range || "—" })] }),
-										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Компоненты" }), /* @__PURE__ */ jsx("dd", { children: spell.components || spellComponentLabel(spell) || "—" })] }),
-										/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Длительность" }), /* @__PURE__ */ jsx("dd", { children: spell.duration || "—" })] })
-									] }),
-									/* @__PURE__ */ jsx("p", { children: spell.description })
-								]
-							}, `${spell.classSource}-${spell.id}`))
+							children: pageSpells.map((spell) => /* @__PURE__ */ jsx(PdfSpellCard, { spell }, `${spell.classSource}-${spell.id}`))
 						}),
 						/* @__PURE__ */ jsxs("footer", { children: [
 							"Лист Героя 5e · Карточки заклинаний",
@@ -49114,6 +49117,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), "Требует настройки"] })] })
 								]
 							}),
+							tab === "Основное" && draft.type === "spell" && /* @__PURE__ */ jsx(SpellCardPreview, { draft }),
 							tab === "Механика" && (draft.type === "spell" ? /* @__PURE__ */ jsx(SpellMechanicsEditor, {
 								draft,
 								update
@@ -49288,6 +49292,27 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 				})]
 			})
 		]
+	});
+}
+function SpellCardPreview({ draft }) {
+	const catalog = homebrewSpells([draft])[0];
+	if (!catalog) return null;
+	const classNames = (draft.spellClasses || []).map((id) => classes.find((entry) => entry.id === id)?.name || id).join(", ") || "Все классы";
+	const spell = {
+		...catalog,
+		name: catalog.name || "Новое заклинание",
+		prepared: true,
+		alwaysPrepared: false,
+		classSource: classNames
+	};
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-spell-preview",
+		"aria-label": "Предпросмотр карточки заклинания",
+		children: [/* @__PURE__ */ jsxs("div", { children: [
+			/* @__PURE__ */ jsx("small", { children: "Итоговый лист" }),
+			/* @__PURE__ */ jsx("h3", { children: "Предпросмотр карточки" }),
+			/* @__PURE__ */ jsx("p", { children: "Карточка обновляется сразу. Механический урон и усиление добавляются в её описание автоматически." })
+		] }), /* @__PURE__ */ jsx(PdfSpellCard, { spell })]
 	});
 }
 function DamageParts({ value, onChange }) {
