@@ -42091,8 +42091,27 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 }
 //#endregion
 //#region app/spellSources.ts
+/**
+* HB classes are real classes for the duration of the character sheet, but
+* their ids are intentionally not part of the built-in catalog. Register
+* their display names in the shared catalog view so every existing consumer
+* (mobile sheet, spellcasting summary and PDF) resolves the same name instead
+* of leaking ids such as hb:shaman:class:shaman.
+*/
+function registerHomebrewClasses(character) {
+	for (const entry of orderedCharacterClasses(character)) {
+		if (!entry.classId.startsWith("hb:")) continue;
+		if (classes.some((item) => item.id === entry.classId)) continue;
+		const definition = character.homebrew?.entities?.find((item) => item.id === entry.classId && item.type === "class");
+		if (definition?.name) classes.push({
+			id: entry.classId,
+			name: definition.name
+		});
+	}
+}
 /** Keep class associations even when two classes grant the same catalog spell. */
 function classSpellGroups(character, catalog) {
+	registerHomebrewClasses(character);
 	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
 	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
