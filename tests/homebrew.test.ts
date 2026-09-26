@@ -8,7 +8,7 @@ import { subclassTemplate, homebrewTableFeatures } from '../app/homebrewTemplate
 import { createNativeCharacterFile } from '../app/characterFiles';
 import { resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
 import { spells } from '../app/catalog';
-import { alwaysPreparedSpellEntries } from '../app/characterRules';
+import { alwaysPreparedSpellEntries, optimalSpellIds } from '../app/characterRules';
 import { estimatedHitPoints, type ExportCharacter } from '../app/exportFormats';
 import { characterAttacks } from '../app/combat';
 import savant from '../app/savantExample.json';
@@ -59,6 +59,11 @@ test('inline class features belong to one reusable class and unlock at their cla
  assert.ok(homebrewSpellAvailable(own.id,homebrewSpells([customSpell])[0],[own,customSpell]));
  assert.ok(!homebrewSpellAvailable('wizard',homebrewSpells([customSpell])[0],[own,customSpell]));
  const hero=bindHomebrewLibrary({...base,className:own.id,level:2,classes:[{classId:own.id,level:2,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[]}}, {elements:[own,customSpell]});
+ const spellCatalog=[...spells,...homebrewSpells([customSpell])];
+ const customRule=spellSelectionRuleForClass(hero,own.id,2);
+ const optimized=optimalSpellIds(hero,spellCatalog,spell=>homebrewSpellAvailable(own.id,spell,[own,customSpell]),customRule);
+ assert.ok(optimized.includes('magic-missile'));
+ assert.ok(optimized.includes(customSpell.id));
  assert.ok(activeHomebrew(hero).some(e=>e.name==='Ремесло'));
  assert.ok(!activeHomebrew({...hero,level:1,classes:[{classId:own.id,level:1,acquiredAtCharacterLevel:1}]}).some(e=>e.name==='Ремесло'));
  assert.equal(spellSelectionRuleForClass(hero,own.id,2).leveled,3);

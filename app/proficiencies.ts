@@ -219,8 +219,8 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     ...character.backgroundSkills,
     ...classes.flatMap(entry => entry.classSkills?.length ? entry.classSkills : (entry.classId === startingClassId ? character.classSkills : [])),
   ].filter(skill => skillNames.includes(skill));
-  const armor = [classRuleFor(character, startingClassId)?.armor || ""];
-  const weapons = [classRuleFor(character, startingClassId)?.weapons || ""];
+  const armor = (classRuleFor(character, startingClassId)?.armor || "").split(/\s*,\s*/).filter(Boolean);
+  const weapons = (classRuleFor(character, startingClassId)?.weapons || "").split(/\s*,\s*/).filter(Boolean);
   const tools = [...(fixedClassTools[startingClassId] || [])];
   const multiclassTraining: Record<string, { armor?: string[]; weapons?: string[]; tools?: string[] }> = {
     barbarian: { armor: ["Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
@@ -323,4 +323,3 @@ export function characterExpertiseSkills(character: ExportCharacter) {
   const proficient = new Set(characterProficiencies(character).skills);
   return unique(values).filter(skill => proficient.has(skill));
 }
-

@@ -768,11 +768,15 @@ export function alwaysPreparedSpellIds(character: ExportCharacter, catalog: Cata
   return alwaysPreparedSpellEntries(character, catalog).map(entry => entry.id);
 }
 
-export function optimalSpellIds(character: ExportCharacter, catalog: CatalogSpell[]) {
-  const rule = spellSelectionRule(character);
+export function optimalSpellIds(
+  character: ExportCharacter,
+  catalog: CatalogSpell[],
+  isAvailable: (spell: CatalogSpell) => boolean = spell => spellAvailableToCharacter(character, spell),
+  rule: SpellSelectionRule = spellSelectionRule(character),
+) {
   const alwaysPrepared = new Set(alwaysPreparedSpellIds(character, catalog));
   const allowed = catalog.filter(spell =>
-    spellAvailableToCharacter(character, spell) && spell.level <= rule.maxLevel && !alwaysPrepared.has(spell.id),
+    isAvailable(spell) && spell.level <= rule.maxLevel && !alwaysPrepared.has(spell.id),
   );
   const ranked = rankedSpellCatalog(character, allowed);
   const targets = recommendedLevelTargets(character, rule, allowed);

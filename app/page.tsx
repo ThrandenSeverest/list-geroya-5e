@@ -1922,7 +1922,7 @@ function Builder() {
 
   function chooseOptimalSpells() {
     const value = spellCharacter;
-    const ids = optimalSpellIds(value, availableSpellCatalog);
+    const ids = optimalSpellIds(value, availableSpellCatalog, spell => spellAvailableToCharacter(value, spell) || homebrewSpellAvailable(value.className, spell, homebrew.elements), spellRule);
     const preparedSpells = optimalPreparedSpellIds(value, availableSpellCatalog, ids);
     setCharacter(current => {
       const grants = current.spellGrants?.length
@@ -3658,7 +3658,7 @@ function Builder() {
                   playerName: character.playerName,
                   experience: character.experience || 0,
                   inspiration: !!character.inspiration,
-                  className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId} ${entry.level}`).join(" / ") || "Класс не выбран",
+                  className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`).join(" / ") || "Класс не выбран",
                   subclassName: multiclassEntries.length > 1 ? undefined : chosenSubclass?.name,
                   raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
                   backgroundName: selectedBackground?.name || "Предыстория не выбрана",
