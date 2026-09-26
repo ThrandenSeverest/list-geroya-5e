@@ -1,4 +1,4 @@
-import { hbAttacks } from "./homebrewEngine";
+import { classRuleFor, hbAttacks } from "./homebrewEngine";
 import { naturalAttacks } from "./naturalAttacks";
 import type { CatalogSpell } from "./catalog";
 import { selectedEquipment } from "./equipment";
@@ -17,7 +17,7 @@ const proficiencyBonus = (level: number) => 2 + Math.floor((Math.max(1, level) -
 export type CharacterAttack = {
   id: string;
   name: string;
-  kind: "weapon" | "cantrip" | "feature";
+  kind: "weapon" | "cantrip" | "spell" | "feature";
   ability: AbilityKey;
   proficient: boolean;
   attackBonus?: number;
@@ -154,6 +154,7 @@ function normalizeEquipmentName(value: string) {
 function signed(value: number) {
   return value >= 0 ? `+${value}` : `${value}`;
 }
+const damageTypeNames:Record<string,string>={acid:'кислотой',bludgeoning:'дробящий',cold:'холодом',fire:'огнём',force:'силовым полем',lightning:'электричеством',necrotic:'некротический',piercing:'колющий',poison:'ядом',psychic:'психический',radiant:'излучением',slashing:'рубящий',thunder:'звуком'};
 
 function cantripDiceCount(level: number) {
   return level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
@@ -298,9 +299,8 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
   });
 
   const featureAttacks = [...hbAttacks(character), ...naturalAttacks(character), ...subclassAttacks(character, prof)];
-  const spellAbility = (classRules[character.className]?.spellAbility
-    || orderedCharacterClasses(character).map(entry => classRules[entry.classId]?.spellAbility).find(Boolean)) as AbilityKey | undefined;
-  if (!spellAbility) return [...weaponAttacks, ...featureAttacks];
+  const spellAbility = (classRuleFor(character,character.className)?.spellAbility
+    || orderedCharacterClasses(character).map(entry => classRuleFor(character,entry.classId)?.spellAbility).find(Boolean)) as AbilityKey | undefined;
   const diceCount = cantripDiceCount(totalLevel);
   const elementalAdeptTypes = new Set(
     (character.advancements || [])
@@ -311,7 +311,8 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     ...(character.classChoices?.invocations || []),
     ...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.invocations || []),
   ]);
-  const chosenCantrips = [...new Set([...(character.spells || []), ...(character.spellGrants || []).map(grant => grant.spellId)])]
+  const chosenSpellIds = [...new Set([...(character.spells || []), ...(character.spellGrants || []).map(grant => grant.spellId)])];
+  const chosenCantrips = chosenSpellIds
     .map(id => spells.find(spell => spell.id === id && spell.level === 0))
     .filter(Boolean) as CatalogSpell[];
   const cantripAttacks = chosenCantrips.flatMap((spell): CharacterAttack[] => {
@@ -320,7 +321,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
     const sourceClassId = character.spellGrants?.find(grant => grant.spellId === spell.id && grant.classId)?.classId
       || (spell.id === "eldritch" && orderedCharacterClasses(character).some(entry => entry.classId === "warlock") ? "warlock" : character.className);
-    const castingAbility = (classRules[sourceClassId]?.spellAbility || spellAbility) as AbilityKey;
+    const castingAbility = (classRuleFor(character,sourceClassId)?.spellAbility || spellAbility || spell.mechanics?.ability || "int") as AbilityKey;
     const castingMod = abilityModifier(character.abilities[castingAbility]);
     if (["booming", "greenflame", "spell-doc-shillelagh"].includes(spell.id)) {
       return weaponAttacks.filter(weapon => {
@@ -365,7 +366,31 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
     }));
   });
 
-  return [...weaponAttacks, ...featureAttacks, ...cantripAttacks];
+  const homebrewSpellAttacks = chosenSpellIds.flatMap((id):CharacterAttack[]=>{
+    const spell=spells.find(entry=>entry.id===id),mechanics=spell?.mechanics;if(!spell||!mechanics)return [];
+    const sourceClassId=character.spellGrants?.find(grant=>grant.spellId===id&&grant.classId)?.classId
+      || orderedCharacterClasses(character).find(entry=>spell.classes.includes(entry.classId))?.classId
+      || character.className;
+    const ability=(mechanics.ability||classRuleFor(character,sourceClassId)?.spellAbility||spellAbility||"int") as AbilityKey;
+    const mod=abilityModifier(character.abilities[ability]);
+    const symbolic=(formula:string)=>formula.replace(/@mod\.spell/g,`[${ability.toUpperCase()}]`).replace(/@mod\.(str|dex|con|int|wis|cha)/g,(_,key)=>`[${String(key).toUpperCase()}]`).replace(/@pb/g,"[PB]").replace(/@level/g,String(totalLevel));
+    const displayed=(formula:string)=>formula.replace(/@mod\.spell/g,String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g,(_,key)=>String(abilityModifier(character.abilities[key as AbilityKey]))).replace(/@pb/g,String(prof)).replace(/@level/g,String(totalLevel));
+    const scale=spell.level===0?(mechanics.cantripScaling||[]).filter(row=>row.level<=totalLevel):[];
+    const parts=[...mechanics.damage,...scale.flatMap(row=>row.damage)];
+    const formula=parts.map(part=>symbolic(part.formula)).join(" + ");
+    const display=parts.map(part=>`${displayed(part.formula)} ${damageTypeNames[part.type]||part.type}`).join(" + ");
+    const upcast=mechanics.slotScaling;
+    const notes=[
+      mechanics.delivery==='save'?`Спасбросок ${mechanics.saveAbility?.toUpperCase()}${mechanics.saveEffect==='half'?' — половина урона при успехе':''}.`:mechanics.delivery==='automatic'?'Урон без броска атаки и спасброска.':'Бросок атаки заклинанием.',
+      ...scale.map(row=>row.effect).filter(Boolean),
+      upcast?`Ячейка выше ${spell.level}-го круга: +${upcast.damage.map(part=>`${part.formula} ${damageTypeNames[part.type]||part.type}`).join(' + ')} за каждые ${upcast.every} ${upcast.every===1?'круг':'круга'}${upcast.effect?`; ${upcast.effect}`:''}.`:undefined,
+    ].filter(Boolean).join(' ');
+    return [{id:`homebrew-spell-${spell.id}`,name:spell.name,kind:spell.level===0?'cantrip':'spell',ability,proficient:true,
+      attackBonus:mechanics.delivery==='attack'?prof+mod:undefined,saveDc:mechanics.delivery==='save'?8+prof+mod:undefined,attackBonusExtra:0,
+      damageFormula:formula,damageDisplay:display,note:notes}];
+  });
+
+  return [...weaponAttacks, ...featureAttacks, ...cantripAttacks, ...homebrewSpellAttacks];
 }
 
 export function lssWeaponAttacks(attacks: CharacterAttack[]) {
@@ -380,4 +405,3 @@ export function lssWeaponAttacks(attacks: CharacterAttack[]) {
       modBonus: { value: attack.attackBonusExtra },
     }));
 }
-

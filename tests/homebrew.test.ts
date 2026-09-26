@@ -10,6 +10,7 @@ import { resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
 import { spells } from '../app/catalog';
 import { alwaysPreparedSpellEntries } from '../app/characterRules';
 import { estimatedHitPoints, type ExportCharacter } from '../app/exportFormats';
+import { characterAttacks } from '../app/combat';
 import savant from '../app/savantExample.json';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
@@ -79,4 +80,18 @@ test('Shaman style choices respect class level, focus and uniqueness across tier
  assert.deepEqual(shortRestSpellSlots({...hero,homebrew:{...hero.homebrew!,entities:[{...cls,spellcasting:{...cls.spellcasting!,recovery:'long'}},focus,totem]}}),[0,1]);
  const hpFocus={...focus,effects:[{type:'hp_per_level',value:1}]};const withHp=bindHomebrewLibrary({...hero,classes:[{classId:cls.id,level:3,acquiredAtCharacterLevel:1},{classId:'fighter',level:12,acquiredAtCharacterLevel:4}]},{elements:[cls,hpFocus,totem]});
  assert.equal(estimatedHitPoints(withHp)-estimatedHitPoints({...withHp,homebrew:{...withHp.homebrew!,choices:{}}}),3);
+});
+
+test('Homebrew spell damage supports cantrip tiers and slot upcasting',async()=>{
+ const cls:HomebrewElement={id:'hb:test:class:mage',type:'class',name:'Маг',description:'',updatedAt:'',hitDie:'d6',spellcasting:{mode:'full',ability:'wis'},spellList:[]};
+ const cantrip:HomebrewElement={id:'hb:test:spell:spark',type:'spell',name:'Искра',description:'',updatedAt:'',level:0,spellClasses:[cls.id],spellMechanics:{delivery:'save',saveAbility:'dex',saveEffect:'half',damage:[{formula:'1d8',type:'fire'}],cantripScaling:[{level:5,damage:[{formula:'1d8',type:'fire'}]},{level:11,damage:[{formula:'1d8',type:'fire'}],effect:'Цель светится'}]}};
+ const blast:HomebrewElement={id:'hb:test:spell:blast',type:'spell',name:'Взрыв',description:'',updatedAt:'',level:3,spellClasses:[cls.id],spellMechanics:{delivery:'attack',damage:[{formula:'8d6',type:'fire'}],slotScaling:{every:1,damage:[{formula:'1d6',type:'fire'}]}}};
+ assert.deepEqual(validateHomebrew([cls,cantrip,blast]),[]);
+ const {homebrewSpells}=await import('../app/homebrewCatalog');
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:11,classes:[{classId:cls.id,level:11,acquiredAtCharacterLevel:1}],spells:[cantrip.id,blast.id]},{elements:[cls,cantrip,blast]});
+ const attacks=characterAttacks(hero,homebrewSpells([cantrip,blast]));
+ const spark=attacks.find(attack=>attack.id===`homebrew-spell-${cantrip.id}`)!;
+ const blastAttack=attacks.find(attack=>attack.id===`homebrew-spell-${blast.id}`)!;
+ assert.equal(spark.saveDc,14);assert.equal(spark.damageDisplay,'1d8 огнём + 1d8 огнём + 1d8 огнём');assert.match(spark.note||'',/Цель светится/);
+ assert.equal(blastAttack.attackBonus,6);assert.equal(blastAttack.damageFormula,'8d6');assert.match(blastAttack.note||'',/\+1d6 огнём/);
 });

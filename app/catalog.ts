@@ -7,6 +7,8 @@ export type CatalogOption = {
   details?: string[];
 };
 
+import type { HBSpellMechanics } from "./homebrew";
+
 export type CatalogSpell = CatalogOption & {
   level: number;
   school: string;
@@ -17,6 +19,7 @@ export type CatalogSpell = CatalogOption & {
   range?: string;
   components?: string;
   duration?: string;
+  mechanics?: HBSpellMechanics;
 };
 
 import { expandedSpells } from "./spellData";

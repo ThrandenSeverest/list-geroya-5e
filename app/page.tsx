@@ -1084,7 +1084,7 @@ function Builder() {
     }).filter(Boolean);
     return [markFeature({ name: feat.name, description: [feat.description, ...details].join(" ") }, "feat", "", feat.id)];
   });
-  const attacks = characterAttacks({ ...exportCharacter, spells: [...new Set([...exportCharacter.spells, ...grantedFeatSpells])] }, spells);
+  const attacks = characterAttacks({ ...exportCharacter, spells: [...new Set([...exportCharacter.spells, ...grantedFeatSpells])] }, availableSpellCatalog);
   const ac = armorClassBreakdown(exportCharacter);
   const activeAdvancement = advancements.find(choice => choice.key === advancementKey) || advancements.find(choice => !choice.featId) || advancements[0];
   const incompleteAsiAdvancements = advancements.filter(choice => choice.featId === "asi" && choice.asiChoices.length < 2);
@@ -3518,7 +3518,7 @@ function Builder() {
                   </section>}
                   <div className="mobile-rest-row"><div><span>{hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8"}</span><small>{availableHitDice} / {characterLevel(character)}</small><b>к отдыху: {hitDiceToRoll}</b></div><button className="hit-die-step" onClick={() => setHitDiceToRoll(value => Math.max(0, value - 1))} disabled={!hitDiceToRoll} aria-label="Уменьшить число костей хитов">−</button><button className="hit-die-button" onClick={() => setHitDiceToRoll(value => Math.min(availableHitDice, value + 1))} disabled={availableHitDice <= hitDiceToRoll} aria-label="Добавить кость хитов к короткому отдыху">+</button><button onClick={takeShortRest}>Короткий отдых</button><button onClick={takeLongRest}>Длинный отдых</button></div>
                   {lastHitDieRoll !== null && <p className="mobile-roll-result">Восстановлено хитов: <b>{lastHitDieRoll}</b> (бросок выбранных костей + модификатор Телосложения к каждой)</p>}
-                  <div className="mobile-attack-list">{attacks.map(attack => <article key={attack.id}><strong>{attack.name}</strong><span>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code>{attack.note && <small>{attack.note}</small>}</article>)}</div>
+                  <div className="mobile-attack-list">{attacks.map(attack => <article key={attack.id}><strong>{attack.name}</strong><span>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : attack.saveDc!==undefined?`Сл ${attack.saveDc}`:'авто'}</span><code>{attack.damageDisplay}</code>{attack.note && <small>{attack.note}</small>}</article>)}</div>
                   <small>{automaticAttacksNotice}</small>
                 </div>}
 
@@ -3607,14 +3607,14 @@ function Builder() {
                         {attacks.length ? attacks.map(attack => (
                           <div className="attack-line" key={attack.id}>
                             <span>{attack.name}{attack.kind === "cantrip" ? " ✦" : ""}</span>
-                            <b>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : `Сл ${attack.saveDc}`}</b>
+                            <b>{attack.attackBonus !== undefined ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : attack.saveDc!==undefined?`Сл ${attack.saveDc}`:'авто'}</b>
                             <code>{attack.damageDisplay}</code>
                             {attack.note && <small>{attack.note}</small>}
                           </div>
                         )) : <p>Выберите стартовое оружие или боевой заговор.</p>}
                       </div>
                       {sourcedSpellGroups.map(group => {
-                        const ability = classRules[group.classId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+                        const ability = classRuleFor(rulesCharacter,group.classId)?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
                         if (!ability) return null;
                         const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier(finalAbilities[ability]);
                         return <p key={group.classId}><b>{classes.find(item => item.id === group.classId)?.name || group.classId} · {abilityLabels[ability]}:</b> Сл {8 + attack}, атака {attack >= 0 ? "+" : ""}{attack}</p>;

@@ -3,6 +3,13 @@ export type HBAbility = 'str'|'dex'|'con'|'int'|'wis'|'cha';
 export type HBEffect = { type: string; value?: number|string; ability?: string; skill?: string; mode?: string; id?: string; group?: string; damage?: string; condition?: string; sense?: string; range?: number; formula?: string; when?: string; level?: number };
 export type HBResource = { id:string; name:string; max:number|string; restore:string[]; showOnSheet?:boolean; level?:number; when?:string };
 export type HBAttack = { id:string; name:string; ability:HBAbility; proficient:boolean; bonus?:number|string; damage:{formula:string;type:string}[]; actionType?:string; range?:string; saveAbility?:HBAbility; saveDc?:string; level?:number; when?:string; cost?:{resource:string;amount:number} };
+export type HBDamagePart = { formula:string; type:string };
+export type HBSpellScalingStep = { level:number; damage:HBDamagePart[]; effect?:string };
+export type HBSpellMechanics = {
+ delivery:'attack'|'save'|'automatic'; ability?:HBAbility; saveAbility?:HBAbility; saveEffect?:'none'|'half';
+ damage:HBDamagePart[]; cantripScaling?:HBSpellScalingStep[];
+ slotScaling?:{ every:number; damage:HBDamagePart[]; effect?:string };
+};
 export type HBChoice = { id:string; name:string; type:string; count:number; from:string[]; level?:number; choiceGroup?:string; uniqueAcrossGroup?:boolean };
 export type HBRequirement = { type:'selected_feature'; id:string; label?:string };
 export type HBSpellGrant = { spellId:string; level:number; mode?:'known'|'always-prepared'; countsAgainstKnown?:boolean; uses?:number; recovery?:'short_or_long'|'long' };
@@ -15,7 +22,7 @@ export type HomebrewElement = {
  features?:HBClassFeature[]; spellList?:string[]; spellGrants?:HBSpellGrant[];
  effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[]; actions?:HBAction[]; choices?:HBChoice[]; references?:string[];
  requirements?:HBRequirement[]; level?:number; school?:string; castingTime?:string; concentration?:boolean; ritual?:boolean;
- range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[];
+ range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[]; spellMechanics?:HBSpellMechanics;
  hitDie?:string; primaryAbility?:HBAbility; savingThrows?:HBAbility[]; skillChoices?:{count:number;from:string[]};
  equipment?:string[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];effects?:HBEffect[]};
  subclass?:{chooseAtLevel:number;featureLevels?:number[]}; advancement?:Record<string,HBProgression[]>; parentClassId?:string; parentRaceId?:string;

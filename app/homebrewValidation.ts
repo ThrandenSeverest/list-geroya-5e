@@ -1,4 +1,4 @@
-import { effectTypes, homebrewTypeLabels, type HomebrewElement } from './homebrew';
+import { damageTypes, effectTypes, homebrewTypeLabels, type HomebrewElement } from './homebrew';
 import { evaluateFormula } from './homebrewFormula';
 export type HBProblem={id:string;message:string};
 export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]=[]):HBProblem[]{
@@ -25,6 +25,17 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   if(e.requirements?.some(r=>r.type!=='selected_feature'||!r.id||!all.has(r.id)))add(e.id,'Требование: выберите существующую способность');
   if(e.spellcasting?.recovery&&!['long','short_or_long'].includes(e.spellcasting.recovery))add(e.id,'Магия: неизвестный способ восстановления ячеек');
   if(e.spellcasting?.slots&&Object.entries(e.spellcasting.slots).some(([level,slots])=>!Number.isInteger(Number(level))||Number(level)<1||Number(level)>20||!Array.isArray(slots)||slots.length>9||slots.some(v=>!Number.isInteger(v)||v<0||v>20)))add(e.id,'Магия: ячейки должны быть таблицей уровней 1–20');
+  if(e.spellMechanics!==undefined){
+   const m=e.spellMechanics;
+   if(e.type!=='spell'||!['attack','save','automatic'].includes(m.delivery)||!Array.isArray(m.damage)||!m.damage.length)add(e.id,'Урон заклинания: выберите способ попадания и хотя бы один бросок урона');
+   if(m.delivery==='save'&&!m.saveAbility)add(e.id,'Урон заклинания: выберите характеристику спасброска');
+   const damage=[...(m.damage||[]),...(m.cantripScaling||[]).flatMap(row=>row.damage||[]),...(m.slotScaling?.damage||[])];
+   for(const row of damage){formula(e.id,row.formula);if(!damageTypes.includes(row.type))add(e.id,'Урон заклинания: неизвестный тип урона');}
+   if((m.cantripScaling||[]).some(row=>!Number.isInteger(row.level)||row.level<2||row.level>20||!Array.isArray(row.damage)))add(e.id,'Развитие заговора: уровень должен быть от 2 до 20');
+   if((e.level||0)!==0&&(m.cantripScaling?.length||0)>0)add(e.id,'Развитие по уровню персонажа доступно только заговорам');
+   if(m.slotScaling&&(!Number.isInteger(m.slotScaling.every)||m.slotScaling.every<1||m.slotScaling.every>9))add(e.id,'Усиление ячейкой: шаг должен быть от 1 до 9 кругов');
+   if((e.level||0)===0&&m.slotScaling)add(e.id,'Заговор не может усиливаться ячейкой');
+  }
   for(const key of ['effects','resources','attacks','actions','choices','references'] as const)if(e[key]!==undefined&&!Array.isArray(e[key]))add(e.id,key+': требуется массив');
   for(const key of ['effects','resources','attacks','actions','choices'] as const)if(Array.isArray(e[key])&&e[key]!.some(row=>!row||typeof row!=='object'))add(e.id,key+': некорректная запись');
   if(problems.some(p=>p.id===e.id))continue;
