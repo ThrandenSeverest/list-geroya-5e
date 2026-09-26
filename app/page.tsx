@@ -74,7 +74,7 @@ import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellComp
 import { shortRestHitDieHealing } from "./restRules";
 import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeValue, subclassRuntimeControls, subclassRuntimeValue } from "./subclassRuntime";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
+import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from "./multiclass";
 import { HomebrewEditor, HomebrewOnSheet } from "./HomebrewEditor";
 import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor } from "./homebrewEngine";
 import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
@@ -1860,6 +1860,7 @@ function Builder() {
       hitDiceSpentByClass: spentByClass,
       resourceSpent: nextSpent,
       pactSlotsUsed: 0,
+      spellSlotsUsed: shortRestSpellSlots(bindHomebrewLibrary(current, homebrew)),
       ...(nextHitPoints > 0 ? { deathSaveSuccesses: 0, deathSaveFailures: 0 } : {}),
     }));
     setHitDiceToRoll(0);
@@ -3311,6 +3312,7 @@ function Builder() {
                   </div>
                 </div>
               )}
+              <HomebrewOnSheet character={exportCharacter} onChange={next => setCharacter(homebrewReferencesOnly({ ...next, abilities: character.abilities }))} />
             </div>
           )}
 

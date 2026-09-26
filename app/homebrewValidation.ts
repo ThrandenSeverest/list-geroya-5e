@@ -21,6 +21,10 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
    else {const used=new Set<string>();for(const f of e.features){if(!f||typeof f.id!=='string'||!/^hb:[a-z0-9_-]+:ability:[a-z0-9_-]+$/.test(f.id)||used.has(f.id)||!Number.isInteger(f.level)||f.level<1||f.level>20||typeof f.name!=='string'||!f.name.trim()||typeof f.description!=='string')add(e.id,'Особенность: название, текст, уникальный ID и уровень 1–20 обязательны');if(f?.id)used.add(f.id);for(const effect of f?.effects||[]){if(!effectTypes[effect.type])add(e.id,'Неизвестный эффект особенности');formula(e.id,effect.value);formula(e.id,effect.when);}}}
   }
   if(e.spellList?.some(id=>!all.has(id)&&!all.has('official:spell:'+id)))add(e.id,'В списке заклинаний класса есть неизвестный ID');
+  if(e.spellGrants?.some(grant=>!Number.isInteger(grant.level)||grant.level<1||grant.level>20||(!all.has(grant.spellId)&&!all.has('official:spell:'+grant.spellId))||grant.uses!==undefined&&(!Number.isInteger(grant.uses)||grant.uses<1||grant.uses>20)))add(e.id,'Бонусное заклинание: выберите заклинание, уровень и допустимое число применений');
+  if(e.requirements?.some(r=>r.type!=='selected_feature'||!r.id||!all.has(r.id)))add(e.id,'Требование: выберите существующую способность');
+  if(e.spellcasting?.recovery&&!['long','short_or_long'].includes(e.spellcasting.recovery))add(e.id,'Магия: неизвестный способ восстановления ячеек');
+  if(e.spellcasting?.slots&&Object.entries(e.spellcasting.slots).some(([level,slots])=>!Number.isInteger(Number(level))||Number(level)<1||Number(level)>20||!Array.isArray(slots)||slots.length>9||slots.some(v=>!Number.isInteger(v)||v<0||v>20)))add(e.id,'Магия: ячейки должны быть таблицей уровней 1–20');
   for(const key of ['effects','resources','attacks','actions','choices','references'] as const)if(e[key]!==undefined&&!Array.isArray(e[key]))add(e.id,key+': требуется массив');
   for(const key of ['effects','resources','attacks','actions','choices'] as const)if(Array.isArray(e[key])&&e[key]!.some(row=>!row||typeof row!=='object'))add(e.id,key+': некорректная запись');
   if(problems.some(p=>p.id===e.id))continue;
@@ -32,7 +36,7 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   for(const row of [...e.resources||[],...e.attacks||[],...e.actions||[],...e.choices||[]]){if(!row.id||localIds.has(row.id))add(e.id,'Повторяющийся или пустой вложенный ID');localIds.add(row.id);}
   for(const r of e.resources||[]){formula(e.id,r.max);formula(e.id,r.when);if(!Array.isArray(r.restore))add(e.id,'Ресурс: выберите восстановление');}
   for(const a of e.attacks||[]){if(!['str','dex','con','int','wis','cha'].includes(a.ability)||!Array.isArray(a.damage))add(e.id,'Атака: выберите характеристику и урон');else for(const d of a.damage)formula(e.id,d.formula);formula(e.id,a.bonus);formula(e.id,a.saveDc);formula(e.id,a.when);}
-  for(const c of e.choices||[])if(!Array.isArray(c.from)||!Number.isInteger(c.count)||c.count<1||c.count>50)add(e.id,'Выбор: количество 1–50 и список вариантов');
+  for(const c of e.choices||[]){if(!Array.isArray(c.from)||!Number.isInteger(c.count)||c.count<1||c.count>50)add(e.id,'Выбор: количество 1–50 и список вариантов');if(c.choiceGroup!==undefined&&(!c.choiceGroup.trim()||c.choiceGroup.length>80))add(e.id,'Выбор: название общей группы обязательно');if(c.uniqueAcrossGroup&&!c.choiceGroup)add(e.id,'Выбор: для запрета повторов задайте группу');for(const id of c.from||[])ref(e.id,id);}
   for(const [l,rows]of Object.entries(e.advancement||{})){if(!Number.isInteger(Number(l))||Number(l)<1||Number(l)>20||!Array.isArray(rows)){add(e.id,'Прогрессия: уровни 1–20');continue;}for(const r of rows)if(r.id&&r.type!=='choice')ref(e.id,r.id);}
   ref(e.id,e.parentClassId);ref(e.id,e.parentRaceId);
   for(const id of e.references||[])ref(e.id,id);

@@ -1,4 +1,4 @@
-import { classRuleFor, hbSum } from "./homebrewEngine";
+import { classRuleFor, hbEffects, hbSum } from "./homebrewEngine";
 import { preparedSpellIds as resolvedPreparedSpellIds } from "./spellPreparation";
 import type { CatalogOption, CatalogSpell } from "./catalog";
 import { dndSpellUrl, helpmateSpellId } from "./exportIds";
@@ -194,7 +194,7 @@ export function estimatedHitPoints(character: ExportCharacter) {
           : Math.max(1, entry.hpGain || 1)
         : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution);
     return total + gain;
-  }, 0) + hbSum(character, "hp_bonus") + hbSum(character, "hp_per_level") * characterLevel(character));
+  }, 0) + hbSum(character, "hp_bonus") + hbEffects(character, "hp_per_level").reduce((sum,entry)=>sum+entry.value*(entry.source.parentClassId?getClassLevel(character,entry.source.parentClassId.replace('official:class:','')):entry.source.type==='class'?getClassLevel(character,entry.source.id):characterLevel(character)),0));
 }
 
 function makeId() {
@@ -1021,4 +1021,3 @@ export function createLongStoryShortExport(context: ExportContext) {
     wizard: {},
   };
 }
-

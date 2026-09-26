@@ -161,7 +161,8 @@ export function multiclassCasterLevel(character: ExportCharacter) {
 
 export function resolveSpellSlots(character: ExportCharacter) {
   const entries=orderedCharacterClasses(character);
-  if(entries.length===1){const own=character.homebrew?.entities.find(e=>e.id===entries[0].classId&&e.type==='class')?.spellcasting;if(own?.mode==='custom')return own.slots?.[String(entries[0].level)]||[];}
+  const customPools=entries.map(entry=>({entry,casting:character.homebrew?.entities.find(e=>e.id===entry.classId&&e.type==='class')?.spellcasting})).filter(x=>x.casting?.mode==='custom');
+  if(customPools.length===1&&entries.every(entry=>entry.classId===customPools[0].entry.classId||spellcastingContribution(character,entry)===0))return customPools[0].casting?.slots?.[String(customPools[0].entry.level)]||[];
   const regularCasters = entries.filter(entry => spellcastingContribution(character, entry) > 0);
   if (!regularCasters.length) return [];
   if (regularCasters.length === 1) {
@@ -178,6 +179,14 @@ export function resolveSpellSlots(character: ExportCharacter) {
     if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots[Math.floor(level / 3)] || [];
   }
   return fullCasterSlots[multiclassCasterLevel(character)] || [];
+}
+
+export function shortRestSpellSlots(character: ExportCharacter) {
+  const entries=orderedCharacterClasses(character);
+  const eligible=entries.filter(entry=>character.homebrew?.entities.find(e=>e.id===entry.classId&&e.type==='class')?.spellcasting?.mode==='custom');
+  if(eligible.length!==1||entries.some(entry=>entry.classId!==eligible[0].classId&&spellcastingContribution(character,entry)>0))return character.spellSlotsUsed||[];
+  const casting=character.homebrew?.entities.find(e=>e.id===eligible[0].classId)?.spellcasting;
+  return casting?.recovery==='short_or_long'?(character.spellSlotsUsed||[]).map(()=>0):character.spellSlotsUsed||[];
 }
 
 export function resolvePactMagic(character: ExportCharacter) {

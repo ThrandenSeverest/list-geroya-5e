@@ -1,4 +1,4 @@
-import { hbAbilities } from "./homebrewEngine";
+import { hbAbilities, activeHomebrew, homebrewClassLevel } from "./homebrewEngine";
 export * from "./characterRules.base";
 
 import * as base from "./characterRules.base";
@@ -23,6 +23,20 @@ export function spellSelectionRuleForClass(character: ExportCharacter, classId: 
 }
 export function spellSelectionRule(character: ExportCharacter): base.SpellSelectionRule {
   return spellSelectionRuleForClass(character,character.className,character.level);
+}
+export function alwaysPreparedSpellEntries(character:ExportCharacter,catalog:import('./catalog').CatalogSpell[]):base.AlwaysPreparedSpell[]{
+ const entries=base.alwaysPreparedSpellEntries(character,catalog);
+ for(const source of activeHomebrew(character)){
+  if(!['class','subclass','ability'].includes(source.type)||source.type==='ability'&&!source.parentClassId)continue;
+  const classId=source.type==='class'?source.id:source.parentClassId?.replace('official:class:','')||'';
+  if(classId!==character.className)continue;
+  const level=homebrewClassLevel(character,classId);
+  for(const grant of source.spellGrants||[]){
+   const spell=catalog.find(item=>item.id===grant.spellId);
+   if(spell&&grant.level<=level&&grant.countsAgainstKnown===false)entries.push({id:spell.id,source:source.name,mode:grant.mode||'known'});
+  }
+ }
+ return entries.filter((entry,index)=>entries.findIndex(other=>other.id===entry.id)===index);
 }
 
 export type RaceVariant = base.RaceVariant;

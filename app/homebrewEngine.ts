@@ -1,10 +1,20 @@
 import type { ExportCharacter, AbilityScores } from './exportFormats';
 import { classRules, skillKeys, type ClassRuleDetail } from './rules';
+import { spells } from './catalog';
 import { homebrewTypeLabels, type HomebrewElement, type HBEffect } from './homebrew';
 import { evaluateFormula, type FormulaContext } from './homebrewFormula';
 export type HBCharacterData={entities:HomebrewElement[];activeIds:string[];choices?:Record<string,string[]>;equipped?:string[]};
 const level=(c:ExportCharacter)=>c.classes?.length?c.classes.reduce((s,x)=>s+x.level,0):c.level||1;
-const classLevel=(c:ExportCharacter,id:string)=>c.classes?.length?c.classes.find(x=>x.classId===id.replace('official:class:',''))?.level||0:c.className===id.replace('official:class:','')?c.level:0;
+export const homebrewClassLevel=(c:ExportCharacter,id:string)=>c.classes?.length?c.classes.find(x=>x.classId===id.replace('official:class:',''))?.level||0:c.className===id.replace('official:class:','')?c.level:0;
+const classLevel=homebrewClassLevel;
+export function homebrewChoiceReason(c:ExportCharacter,owner:HomebrewElement,choice:import('./homebrew').HBChoice,target:HomebrewElement,all:HomebrewElement[]):string {
+ const ownerLevel=owner.type==='class'?classLevel(c,owner.id):owner.parentClassId?classLevel(c,owner.parentClassId):level(c);
+ if(choice.level&&ownerLevel<choice.level)return `Требуется ${choice.level}-й уровень ${owner.type==='class'||owner.parentClassId?'класса':'персонажа'}`;
+ if(target.level&&ownerLevel<target.level)return `Требуется ${target.level}-й уровень ${owner.type==='class'||owner.parentClassId?'класса':'персонажа'}`;
+ for(const requirement of target.requirements||[])if(requirement.type==='selected_feature'&&!Object.values(c.homebrew?.choices||{}).some(ids=>ids.includes(requirement.id))&&!c.homebrew?.activeIds.includes(requirement.id))return `Требуется ${requirement.label||all.find(e=>e.id===requirement.id)?.name||requirement.id}`;
+ if(choice.uniqueAcrossGroup&&choice.choiceGroup&&owner.choices?.slice(0,owner.choices.findIndex(other=>other.id===choice.id)).some(other=>other.choiceGroup===choice.choiceGroup&&(c.homebrew?.choices?.[other.id]||[]).includes(target.id)))return 'Уже выбран в этой группе';
+ return '';
+}
 export function hbContext(c:ExportCharacter,source?:string):FormulaContext {
  const values:Record<string,number>={'@level':level(c),'@pb':2+Math.floor((level(c)-1)/4),'@currentHp':c.currentHitPoints||0,'@tempHp':c.temporaryHitPoints||0};
  for(const [k,v] of Object.entries(c.abilities)){values['@ability.'+k]=v;values['@mod.'+k]=Math.floor((v-10)/2);}
@@ -14,11 +24,11 @@ export function hbValue(c:ExportCharacter,value:number|string|undefined,source?:
 export function hbEnabled(c:ExportCharacter,row:{level?:number;when?:string},source:HomebrewElement){const l=source.type==='class'?classLevel(c,source.id):source.parentClassId?classLevel(c,source.parentClassId):level(c);if(row.level&&row.level>l)return false;try{return !row.when||!!evaluateFormula(row.when,hbContext(c,source.id));}catch{return false;}}
 export function activeHomebrew(c:ExportCharacter):HomebrewElement[]{
  const all=c.homebrew?.entities||[],byId=new Map(all.map(e=>[e.id,e])),seen=new Set<string>(),result:HomebrewElement[]=[];
- const visit=(id:string,depth=0)=>{if(seen.has(id)||depth>24||result.length>500)return;const e=byId.get(id);if(!e)return;seen.add(id);result.push(e);
+ const visit=(id:string,depth=0,parentClassId?:string)=>{if(seen.has(id)||depth>24||result.length>500)return;const e=byId.get(id);if(!e)return;seen.add(id);result.push(parentClassId&&!e.parentClassId?{...e,parentClassId}:e);
   if(e.type==='class'||e.type==='subclass')for(const feature of e.features||[])if(feature.level<=classLevel(c,e.type==='class'?e.id:e.parentClassId||''))result.push({schemaVersion:2,id:feature.id,type:'ability',name:feature.name,description:feature.description,updatedAt:e.updatedAt,parentClassId:e.type==='class'?e.id:e.parentClassId,effects:feature.effects||[],resources:feature.resources||[],attacks:feature.attacks||[]});
-  if(e.type==='class'||e.type==='subclass'){const l=classLevel(c,e.type==='class'?e.id:e.parentClassId||'');for(const [k,rows]of Object.entries(e.advancement||{}))if(Number(k)<=l)for(const row of rows)if(row.id&&row.type!=='choice')visit(row.id,depth+1);}
-  for(const x of e.effects||[])if(['grant_feature','grant_spell','grant_attack','grant_resource'].includes(x.type)&&x.id&&hbEnabled(c,x,e))visit(x.id,depth+1);
-  for(const choice of e.choices||[])if(hbEnabled(c,choice,e))for(const id of (c.homebrew?.choices?.[choice.id]||[]).filter(id=>choice.from.includes(id)).slice(0,choice.count))visit(id,depth+1);
+  if(e.type==='class'||e.type==='subclass'){const l=classLevel(c,e.type==='class'?e.id:e.parentClassId||'');for(const [k,rows]of Object.entries(e.advancement||{}))if(Number(k)<=l)for(const row of rows)if(row.id&&row.type!=='choice')visit(row.id,depth+1,e.type==='class'?e.id:e.parentClassId);}
+  for(const x of e.effects||[])if(['grant_feature','grant_spell','grant_attack','grant_resource'].includes(x.type)&&x.id&&hbEnabled(c,x,e))visit(x.id,depth+1,e.type==='class'?e.id:e.parentClassId||parentClassId);
+  for(const choice of e.choices||[])if(hbEnabled(c,choice,e))for(const id of (c.homebrew?.choices?.[choice.id]||[]).filter(id=>choice.from.includes(id)&&byId.has(id)&&!homebrewChoiceReason(c,e,choice,byId.get(id)!,all)).slice(0,choice.count))visit(id,depth+1,e.type==='class'?e.id:e.parentClassId||parentClassId);
  };
  for(const id of [...(c.homebrew?.activeIds||[]),c.className,c.race,c.raceVariant,c.subclass,c.background,...(c.classes||[]).flatMap(e=>[e.classId,e.subclassId||''])])if(id)visit(id);
  return result;
@@ -31,7 +41,7 @@ export function classRuleFor(c:ExportCharacter,id:string):ClassRuleDetail|undefi
  const e=c.homebrew?.entities.find(e=>e.id===id&&e.type==='class');if(!e)return classRules[id];
  return {hitDie:Number((e.hitDie||'d8').slice(1)),saves:e.savingThrows||[],armor:(e.effects||[]).filter(e=>e.type==='armor_proficiency').map(e=>({light:'Лёгкие доспехи',medium:'Средние доспехи',heavy:'Тяжёлые доспехи',shield:'Щиты'})[e.group as 'light']||e.group).join(', '),weapons:(e.effects||[]).filter(e=>e.type==='weapon_proficiency'||e.type==='weapon_group_proficiency').map(e=>e.group==='simple'?'Простое оружие':e.group==='martial'?'Воинское оружие':e.id||'').join(', '),spellAbility:e.spellcasting?.mode&&e.spellcasting.mode!=='none'?e.spellcasting.ability:undefined,features:activeHomebrew(c).filter(x=>x.type==='ability').map(x=>({name:x.name,description:x.description,effectHandling:'manual'}))};
 }
-export function hbResources(c:ExportCharacter){const map=new Map<string,{key:string;name:string;max:number;isShortRest:boolean;isLongRest:boolean}>();for(const e of activeHomebrew(c))for(const r of e.resources||[])if(hbEnabled(c,r,e)&&r.showOnSheet!==false)map.set(r.id,{key:r.id,name:r.name,max:Math.max(0,Math.floor(hbValue(c,r.max,e.id))),isShortRest:r.restore.includes('short_rest'),isLongRest:r.restore.includes('long_rest')});return [...map.values()];}
+export function hbResources(c:ExportCharacter){const map=new Map<string,{key:string;name:string;max:number;isShortRest:boolean;isLongRest:boolean}>();for(const e of activeHomebrew(c))for(const r of e.resources||[])if(hbEnabled(c,r,e)&&r.showOnSheet!==false)map.set(r.id,{key:r.id,name:r.name,max:Math.max(0,Math.floor(hbValue(c,r.max,e.id))),isShortRest:r.restore.includes('short_rest'),isLongRest:r.restore.includes('long_rest')});for(const source of activeHomebrew(c))if(source.type==='class'||source.parentClassId)for(const grant of source.spellGrants||[])if(grant.uses&&grant.level<=classLevel(c,source.type==='class'?source.id:source.parentClassId||'')){const key=source.id+':spell:'+grant.spellId;map.set(key,{key,name:source.name+' · '+(spells.find(e=>e.id===grant.spellId)?.name||c.homebrew?.entities.find(e=>e.id===grant.spellId)?.name||grant.spellId),max:grant.uses,isShortRest:grant.recovery==='short_or_long',isLongRest:true});}return [...map.values()];}
 export function hbAttacks(c:ExportCharacter){const map=new Map<string,import('./combat').CharacterAttack>();for(const e of activeHomebrew(c))for(const a of e.attacks||[])if(hbEnabled(c,a,e)){
  const mod=Math.floor((c.abilities[a.ability]-10)/2),pb=2+Math.floor((level(c)-1)/4),extra=hbValue(c,a.bonus,e.id);
  const formula=a.damage.map(d=>d.formula.replace(/@mod\.(str|dex|con|int|wis|cha)/g,(_,k)=>`[${k.toUpperCase()}]`).replace(/@pb/g,String(pb))).join(' + ');
