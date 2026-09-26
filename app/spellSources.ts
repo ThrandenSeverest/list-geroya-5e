@@ -1,5 +1,5 @@
 import { classPreparedSpellIds } from "./spellPreparation";
-import type { CatalogSpell } from "./catalog";
+import { classes, type CatalogSpell } from "./catalog";
 import { alwaysPreparedSpellEntries, spellSelectionRuleForClass } from "./characterRules";
 import type { ExportCharacter, SpellGrant } from "./exportFormats";
 import { orderedCharacterClasses } from "./multiclass";
@@ -19,8 +19,25 @@ export type ClassSpellGroup = {
   spells: SourcedSpell[];
 };
 
+/**
+ * HB classes are real classes for the duration of the character sheet, but
+ * their ids are intentionally not part of the built-in catalog. Register
+ * their display names in the shared catalog view so every existing consumer
+ * (mobile sheet, spellcasting summary and PDF) resolves the same name instead
+ * of leaking ids such as hb:shaman:class:shaman.
+ */
+function registerHomebrewClasses(character: ExportCharacter) {
+  for (const entry of orderedCharacterClasses(character)) {
+    if (!entry.classId.startsWith("hb:")) continue;
+    if (classes.some(item => item.id === entry.classId)) continue;
+    const definition = character.homebrew?.entities?.find(item => item.id === entry.classId && item.type === "class");
+    if (definition?.name) classes.push({ id: entry.classId, name: definition.name });
+  }
+}
+
 /** Keep class associations even when two classes grant the same catalog spell. */
 export function classSpellGroups(character: ExportCharacter, catalog: CatalogSpell[]): ClassSpellGroup[] {
+  registerHomebrewClasses(character);
   const byId = new Map(catalog.map(spell => [spell.id, spell]));
   const grants: SpellGrant[] = character.spellGrants?.length ? character.spellGrants :
     character.spells.map(spellId => ({ spellId, sourceType: "class", sourceId: character.className, classId: character.className, mode: "known" }));
@@ -63,17 +80,8 @@ export function spellSourceDisplayName(
   const catalogName = classCatalog.find(item => item.id === sourceId)?.name;
   if (catalogName) return catalogName;
 
-  // Homebrew classes are not part of the built-in catalog. Their id is an
-  // internal reference, while character.className is the displayed HB name
-  // in the character model. Never expose hb:* ids in the sheet.
-  if (character.className === sourceId) return character.className;
-
-  const characterClass = orderedCharacterClasses(character).find(entry => entry.classId === sourceId);
-  if (characterClass) {
-    const name = classCatalog.find(item => item.id === characterClass.classId)?.name;
-    if (name) return name;
-    if (characterClass.classId === character.className) return character.className;
-  }
+  const hbDefinition = character.homebrew?.entities?.find(item => item.id === sourceId && item.type === "class");
+  if (hbDefinition?.name) return hbDefinition.name;
 
   return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
 }
