@@ -45775,11 +45775,11 @@ function parseFeatureTable(value) {
 	const end = text.lastIndexOf("|");
 	if (start < 0 || end <= start) return null;
 	const rows = text.slice(start, end + 1).replace(/\|\s+\|/g, "|\n|").split(/\r?\n+/).map((line) => line.trim()).filter((line) => line.startsWith("|") && line.endsWith("|")).map((line) => line.slice(1, -1).split("|").map(cleanFeatureTableCell));
-	const separatorIndex = rows.findIndex((row) => row.length >= 2 && row.every((cell) => /^:?-{3,}:?$/.test(cell)));
+	const separatorIndex = rows.findIndex((row) => row.length >= 1 && row.every((cell) => /^:?-{3,}:?$/.test(cell)));
 	if (separatorIndex < 1) return null;
 	const header = rows[separatorIndex - 1];
 	const body = rows.slice(separatorIndex + 1).filter((row) => row.length === header.length && row.some(Boolean));
-	if (header.length < 2 || body.length < 1) return null;
+	if (header.length < 1 || body.length < 1) return null;
 	return {
 		prefix: text.slice(0, start).trim(),
 		suffix: text.slice(end + 1).trim(),
