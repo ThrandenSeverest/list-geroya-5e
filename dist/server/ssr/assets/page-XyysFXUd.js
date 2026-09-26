@@ -19277,8 +19277,8 @@ function characterProficiencies(character) {
 		...character.backgroundSkills,
 		...classes.flatMap((entry) => entry.classSkills?.length ? entry.classSkills : entry.classId === startingClassId ? character.classSkills : [])
 	].filter((skill) => skillNames$1.includes(skill));
-	const armor = [classRuleFor(character, startingClassId)?.armor || ""];
-	const weapons = [classRuleFor(character, startingClassId)?.weapons || ""];
+	const armor = (classRuleFor(character, startingClassId)?.armor || "").split(/\s*,\s*/).filter(Boolean);
+	const weapons = (classRuleFor(character, startingClassId)?.weapons || "").split(/\s*,\s*/).filter(Boolean);
 	const tools = [...fixedClassTools[startingClassId] || []];
 	const multiclassTraining = {
 		barbarian: {
@@ -22370,10 +22370,9 @@ function alwaysPreparedSpellEntries$1(character, catalog) {
 function alwaysPreparedSpellIds(character, catalog) {
 	return alwaysPreparedSpellEntries$1(character, catalog).map((entry) => entry.id);
 }
-function optimalSpellIds(character, catalog) {
-	const rule = spellSelectionRule$1(character);
+function optimalSpellIds(character, catalog, isAvailable = (spell) => spellAvailableToCharacter(character, spell), rule = spellSelectionRule$1(character)) {
 	const alwaysPrepared = new Set(alwaysPreparedSpellIds(character, catalog));
-	const allowed = catalog.filter((spell) => spellAvailableToCharacter(character, spell) && spell.level <= rule.maxLevel && !alwaysPrepared.has(spell.id));
+	const allowed = catalog.filter((spell) => isAvailable(spell) && spell.level <= rule.maxLevel && !alwaysPrepared.has(spell.id));
 	const ranked = rankedSpellCatalog(character, allowed);
 	const leveled = recommendedLevelTargets(character, rule, allowed).flatMap((count, level) => level > 0 ? ranked.filter((spell) => spell.level === level).slice(0, count) : []);
 	const selected = new Set(leveled.map((spell) => spell.id));
@@ -53181,7 +53180,7 @@ function Builder() {
 	}
 	function chooseOptimalSpells() {
 		const value = spellCharacter;
-		const ids = optimalSpellIds(value, availableSpellCatalog);
+		const ids = optimalSpellIds(value, availableSpellCatalog, (spell) => spellAvailableToCharacter(value, spell) || homebrewSpellAvailable(value.className, spell, homebrew.elements), spellRule);
 		const preparedSpells = optimalPreparedSpellIds(value, availableSpellCatalog, ids);
 		setCharacter((current) => {
 			const otherGrants = (current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
@@ -57520,7 +57519,7 @@ function Builder() {
 											playerName: character.playerName,
 											experience: character.experience || 0,
 											inspiration: !!character.inspiration,
-											className: multiclassEntries.map((entry) => `${classes.find((option) => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId} ${entry.level}`).join(" / ") || "Класс не выбран",
+											className: multiclassEntries.map((entry) => `${classes.find((option) => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`).join(" / ") || "Класс не выбран",
 											subclassName: multiclassEntries.length > 1 ? void 0 : chosenSubclass?.name,
 											raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
 											backgroundName: selectedBackground?.name || "Предыстория не выбрана",
