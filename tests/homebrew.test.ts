@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { evaluateFormula } from '../app/homebrewFormula';
 import { normalizeHomebrewLibrary, type HomebrewElement } from '../app/homebrew';
 import { validateHomebrew } from '../app/homebrewValidation';
-import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason } from '../app/homebrewEngine';
+import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, classRuleFor } from '../app/homebrewEngine';
 import { subclassTemplate, homebrewTableFeatures } from '../app/homebrewTemplates';
 import { createNativeCharacterFile } from '../app/characterFiles';
 import { resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
@@ -11,6 +11,7 @@ import { spells } from '../app/catalog';
 import { alwaysPreparedSpellEntries, optimalSpellIds } from '../app/characterRules';
 import { estimatedHitPoints, type ExportCharacter } from '../app/exportFormats';
 import { characterAttacks } from '../app/combat';
+import { homebrewPackages } from '../app/homebrewPackages';
 import savant from '../app/savantExample.json';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
@@ -26,6 +27,17 @@ test('Savant library validates, has nine subclasses and portable dependency clos
  assert.ok(pack.some(e=>e.type==='ability'));
  assert.deepEqual(validateHomebrew(pack),[]);
  assert.deepEqual(Object.keys(subclassTemplate(cls.id,library.elements)),['3','6','10','15']);
+});
+test('a class pack is one library work and exports reverse-linked children',()=>{
+ const source={kind:'homebrew',packId:'shaman-test'};
+ const cls={id:'hb:test:class:shaman',type:'class',name:'Шаман',description:'',updatedAt:'2026-09-27',hitDie:'d8',source} as HomebrewElement;
+ const subclass={id:'hb:test:subclass:spirits',type:'subclass',name:'Путь духов',description:'',updatedAt:'2026-09-27',parentClassId:cls.id,source} as HomebrewElement;
+ const spell={id:'hb:test:spell:seance',type:'spell',name:'Сеанс',description:'',updatedAt:'2026-09-27',spellClasses:[cls.id],level:1,source} as HomebrewElement;
+ const note={id:'hb:test:note:readme',type:'note',name:'Примечание',description:'',updatedAt:'2026-09-27',references:[cls.id],source} as HomebrewElement;
+ const packs=homebrewPackages([cls,subclass,spell,note]);
+ assert.equal(packs.length,1);
+ assert.equal(packs[0].members.length,4);
+ assert.deepEqual(new Set(homebrewExportClosure(cls,[cls,subclass,spell,note]).map(e=>e.id)),new Set([cls.id,subclass.id,spell.id,note.id]));
 });
 test('one library supports multiple characters; play state and exports never duplicate definitions',()=>{
  const r:HomebrewElement={id:'hb:test:resource:focus',type:'resource',name:'Фокус',description:'',updatedAt:'',resources:[{id:'hb:test:resource:pool',name:'Фокус',max:3,restore:['short_rest']}]};
@@ -85,6 +97,12 @@ test('Shaman style choices respect class level, focus and uniqueness across tier
  assert.deepEqual(shortRestSpellSlots({...hero,homebrew:{...hero.homebrew!,entities:[{...cls,spellcasting:{...cls.spellcasting!,recovery:'long'}},focus,totem]}}),[0,1]);
  const hpFocus={...focus,effects:[{type:'hp_per_level',value:1}]};const withHp=bindHomebrewLibrary({...hero,classes:[{classId:cls.id,level:3,acquiredAtCharacterLevel:1},{classId:'fighter',level:12,acquiredAtCharacterLevel:4}]},{elements:[cls,hpFocus,totem]});
  assert.equal(estimatedHitPoints(withHp)-estimatedHitPoints({...withHp,homebrew:{...withHp.homebrew!,choices:{}}}),3);
+});
+
+test('Homebrew class proficiency IDs render like official Russian sheet labels',()=>{
+ const cls:HomebrewElement={id:'hb:test:class:shaman',type:'class',name:'Шаман',description:'',updatedAt:'',hitDie:'d8',effects:[{type:'weapon_group_proficiency',group:'simple'},{type:'weapon_proficiency',id:'blowgun'},{type:'weapon_proficiency',id:'net'}]};
+ const hero=bindHomebrewLibrary({...base,className:cls.id,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}]},{elements:[cls]});
+ assert.equal(classRuleFor(hero,cls.id)?.weapons,'Простое оружие, Духовая трубка, Сеть');
 });
 
 test('Homebrew spell damage supports cantrip tiers and slot upcasting',async()=>{

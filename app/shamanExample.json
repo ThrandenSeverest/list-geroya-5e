@@ -1,0 +1,3878 @@
+{
+  "schemaVersion": 2,
+  "type": "homebrew-pack",
+  "name": "Шаман (laserllama 5.6.1) — HeroList",
+  "version": "1.0.0",
+  "source": {
+    "url": "https://dnd.su/homebrew/class/389-shaman/",
+    "author": "laserllama",
+    "ruleset": "D&D 5e 2014"
+  },
+  "rootId": "hb:shaman:class:shaman",
+  "entities": [
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:class:shaman",
+      "id": "hb:shaman:class:shaman",
+      "type": "class",
+      "name": "Шаман",
+      "description": "Духовный проводник laserllama v5.6.1. Основная характеристика — Мудрость. Кость Хитов d8. Ключевые механики: Сакральный фокус, связанные тотемы, Первобытная магия с единоуровневыми ячейками и Спиритизм на 3-м уровне.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "armor_proficiency",
+          "group": "light"
+        },
+        {
+          "type": "armor_proficiency",
+          "group": "shield"
+        },
+        {
+          "type": "weapon_group_proficiency",
+          "group": "simple"
+        },
+        {
+          "type": "weapon_proficiency",
+          "id": "blowgun"
+        },
+        {
+          "type": "weapon_proficiency",
+          "id": "net"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [
+        {
+          "id": "shaman-sacred-focus",
+          "name": "Сакральный фокус",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:focus-body",
+            "hb:shaman:ability:focus-heart",
+            "hb:shaman:ability:focus-mind",
+            "hb:shaman:ability:focus-soul"
+          ],
+          "level": 1
+        },
+        {
+          "id": "shaman-totems-1",
+          "name": "Связанные тотемы — выбор на 1-м уровне",
+          "type": "ability",
+          "count": 2,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 1,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-4",
+          "name": "Связанные тотемы — выбор на 4-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 4,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-6",
+          "name": "Связанные тотемы — выбор на 6-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 6,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-9",
+          "name": "Связанные тотемы — выбор на 9-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 9,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-12",
+          "name": "Связанные тотемы — выбор на 12-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 12,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-15",
+          "name": "Связанные тотемы — выбор на 15-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 15,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-totems-18",
+          "name": "Связанные тотемы — выбор на 18-м уровне",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:totem-bear",
+            "hb:shaman:ability:totem-crossroads",
+            "hb:shaman:ability:totem-eagle",
+            "hb:shaman:ability:totem-earthquake",
+            "hb:shaman:ability:totem-harvest",
+            "hb:shaman:ability:totem-hound",
+            "hb:shaman:ability:totem-mountain",
+            "hb:shaman:ability:totem-panther",
+            "hb:shaman:ability:totem-pond",
+            "hb:shaman:ability:totem-mire",
+            "hb:shaman:ability:totem-rains",
+            "hb:shaman:ability:totem-twilight",
+            "hb:shaman:ability:totem-waves",
+            "hb:shaman:ability:totem-whirlwind",
+            "hb:shaman:ability:totem-winds",
+            "hb:shaman:ability:totem-bloom",
+            "hb:shaman:ability:totem-eruption",
+            "hb:shaman:ability:totem-growth",
+            "hb:shaman:ability:totem-grave",
+            "hb:shaman:ability:totem-light",
+            "hb:shaman:ability:totem-joy",
+            "hb:shaman:ability:totem-mystic",
+            "hb:shaman:ability:totem-swamp",
+            "hb:shaman:ability:totem-wilderness",
+            "hb:shaman:ability:totem-wrath",
+            "hb:shaman:ability:totem-hunt",
+            "hb:shaman:ability:totem-slime",
+            "hb:shaman:ability:totem-river",
+            "hb:shaman:ability:totem-cave",
+            "hb:shaman:ability:totem-dawn",
+            "hb:shaman:ability:totem-fey",
+            "hb:shaman:ability:totem-sun",
+            "hb:shaman:ability:totem-vine",
+            "hb:shaman:ability:totem-binding",
+            "hb:shaman:ability:totem-eclipse",
+            "hb:shaman:ability:totem-elements",
+            "hb:shaman:ability:totem-sapling",
+            "hb:shaman:ability:totem-sky"
+          ],
+          "level": 18,
+          "choiceGroup": "shaman-totems",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-great-spirit",
+          "name": "Великий дух тотема",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:great-spirit-death",
+            "hb:shaman:ability:great-spirit-life",
+            "hb:shaman:ability:great-spirit-moon",
+            "hb:shaman:ability:great-spirit-sun"
+          ],
+          "level": 11
+        }
+      ],
+      "hitDie": "d8",
+      "primaryAbility": "wis",
+      "savingThrows": [
+        "wis",
+        "cha"
+      ],
+      "skillChoices": {
+        "count": 2,
+        "from": [
+          "performance",
+          "arcana",
+          "medicine",
+          "nature",
+          "insight",
+          "religion",
+          "animal handling"
+        ]
+      },
+      "equipment": [
+        "Боевой посох или любое простое оружие",
+        "Короткий лук и 20 стрел или 5 метательных копий",
+        "Набор священника или набор исследователя подземелий",
+        "Кожаный доспех и один предмет-тотем"
+      ],
+      "startingGold": "4d4 * 10",
+      "multiclass": {
+        "requirements": [
+          {
+            "ability": "wis",
+            "min": 13
+          }
+        ],
+        "effects": [
+          {
+            "type": "armor_proficiency",
+            "group": "light"
+          },
+          {
+            "type": "armor_proficiency",
+            "group": "shield"
+          },
+          {
+            "type": "weapon_group_proficiency",
+            "group": "simple"
+          }
+        ]
+      },
+      "subclass": {
+        "chooseAtLevel": 3,
+        "featureLevels": [
+          3,
+          6,
+          10,
+          14
+        ]
+      },
+      "advancement": {
+        "3": [
+          {
+            "type": "subclass"
+          }
+        ],
+        "4": [
+          {
+            "type": "asi_or_feat"
+          }
+        ],
+        "8": [
+          {
+            "type": "asi_or_feat"
+          }
+        ],
+        "12": [
+          {
+            "type": "asi_or_feat"
+          }
+        ],
+        "16": [
+          {
+            "type": "asi_or_feat"
+          }
+        ],
+        "19": [
+          {
+            "type": "asi_or_feat"
+          }
+        ]
+      },
+      "features": [
+        {
+          "id": "hb:shaman:ability:sacred-focus",
+          "level": 1,
+          "name": "Сакральный фокус",
+          "description": "Выберите Тело, Сердце, Разум или Душу. Выбор доступен в Homebrew-блоке персонажа.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:totems",
+          "level": 1,
+          "name": "Тотемы",
+          "description": "На 1-м уровне выберите 2 тотема; дополнительные — на 4, 6, 9, 12, 15 и 18 уровнях. Если у тотема есть требование, оно должно быть выполнено. Сл тотема = 8 + БМ + модификатор Мудрости.",
+          "effects": [],
+          "resources": [],
+          "attacks": [
+            {
+              "id": "hb:shaman:attack:totem-onslaught",
+              "name": "Наступление тотемов",
+              "ability": "wis",
+              "proficient": true,
+              "damage": [
+                {
+                  "formula": "1d8",
+                  "type": "necrotic"
+                }
+              ],
+              "actionType": "action",
+              "range": "60 футов",
+              "saveAbility": "cha",
+              "saveDc": "8 + @pb + @mod.wis"
+            }
+          ]
+        },
+        {
+          "id": "hb:shaman:ability:primal-magic",
+          "level": 2,
+          "name": "Первобытная магия",
+          "description": "Заклинатель на Мудрости с собственным списком. Все ячейки имеют один уровень по таблице и по исходным правилам восстанавливаются после короткого или продолжительного отдыха. Известные ритуальные заклинания шамана можно накладывать ритуалом.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:spiritualism",
+          "level": 3,
+          "name": "Спиритизм",
+          "description": "Выберите подкласс. Умения приходят на 3, 6, 10 и 14 уровнях шамана.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:onslaught-5",
+          "level": 5,
+          "name": "Наступление тотемов: 2к8",
+          "description": "Урон «Наступления тотемов» становится 2к8.",
+          "effects": [],
+          "resources": [],
+          "attacks": [
+            {
+              "id": "hb:shaman:attack:totem-onslaught",
+              "name": "Наступление тотемов",
+              "ability": "wis",
+              "proficient": true,
+              "damage": [
+                {
+                  "formula": "2d8",
+                  "type": "necrotic"
+                }
+              ],
+              "actionType": "action",
+              "range": "60 футов",
+              "saveAbility": "cha",
+              "saveDc": "8 + @pb + @mod.wis"
+            }
+          ]
+        },
+        {
+          "id": "hb:shaman:ability:totemic-versatility",
+          "level": 5,
+          "name": "Тотемная многогранность",
+          "description": "После продолжительного отдыха можно заменить один известный тотем другим, требования которого выполнены.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:great-totem-spirit",
+          "level": 11,
+          "name": "Великий дух тотема",
+          "description": "Выберите один Великий дух. Он даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:onslaught-11",
+          "level": 11,
+          "name": "Наступление тотемов: 3к8",
+          "description": "Урон «Наступления тотемов» становится 3к8.",
+          "effects": [],
+          "resources": [],
+          "attacks": [
+            {
+              "id": "hb:shaman:attack:totem-onslaught",
+              "name": "Наступление тотемов",
+              "ability": "wis",
+              "proficient": true,
+              "damage": [
+                {
+                  "formula": "3d8",
+                  "type": "necrotic"
+                }
+              ],
+              "actionType": "action",
+              "range": "60 футов",
+              "saveAbility": "cha",
+              "saveDc": "8 + @pb + @mod.wis"
+            }
+          ]
+        },
+        {
+          "id": "hb:shaman:ability:onslaught-17",
+          "level": 17,
+          "name": "Наступление тотемов: 4к8",
+          "description": "Урон «Наступления тотемов» становится 4к8.",
+          "effects": [],
+          "resources": [],
+          "attacks": [
+            {
+              "id": "hb:shaman:attack:totem-onslaught",
+              "name": "Наступление тотемов",
+              "ability": "wis",
+              "proficient": true,
+              "damage": [
+                {
+                  "formula": "4d8",
+                  "type": "necrotic"
+                }
+              ],
+              "actionType": "action",
+              "range": "60 футов",
+              "saveAbility": "cha",
+              "saveDc": "8 + @pb + @mod.wis"
+            }
+          ]
+        },
+        {
+          "id": "hb:shaman:ability:spiritual-ascension",
+          "level": 20,
+          "name": "Духовное вознесение",
+          "description": "Вы перестаёте стареть, становитесь невосприимчивы к болезням, состоянию «отравлен» и урону ядом. После длинного отдыха можно создать тотем души ценой одного связанного тотема; после смерти дух может вернуться в выращенную копию тела до следующего рассвета.",
+          "effects": [
+            {
+              "type": "condition_immunity",
+              "condition": "poisoned"
+            },
+            {
+              "type": "damage_immunity",
+              "damage": "poison"
+            }
+          ],
+          "resources": [],
+          "attacks": []
+        }
+      ],
+      "spellcasting": {
+        "mode": "custom",
+        "ability": "wis",
+        "selection": "known",
+        "cantrips": [
+          0,
+          0,
+          2,
+          2,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ],
+        "known": [
+          0,
+          0,
+          3,
+          4,
+          5,
+          6,
+          6,
+          7,
+          7,
+          8,
+          8,
+          9,
+          9,
+          10,
+          10,
+          11,
+          11,
+          11,
+          12,
+          12,
+          12
+        ],
+        "slots": {
+          "1": [],
+          "2": [
+            2
+          ],
+          "3": [
+            0,
+            2
+          ],
+          "4": [
+            0,
+            2
+          ],
+          "5": [
+            0,
+            0,
+            2
+          ],
+          "6": [
+            0,
+            0,
+            2
+          ],
+          "7": [
+            0,
+            0,
+            0,
+            2
+          ],
+          "8": [
+            0,
+            0,
+            0,
+            2
+          ],
+          "9": [
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          "10": [
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          "11": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "12": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "13": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "14": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "15": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "16": [
+            0,
+            0,
+            0,
+            0,
+            3
+          ],
+          "17": [
+            0,
+            0,
+            0,
+            0,
+            4
+          ],
+          "18": [
+            0,
+            0,
+            0,
+            0,
+            4
+          ],
+          "19": [
+            0,
+            0,
+            0,
+            0,
+            4
+          ],
+          "20": [
+            0,
+            0,
+            0,
+            0,
+            4
+          ]
+        },
+        "recovery": "short_or_long"
+      },
+      "spellList": [
+        "spell-doc-magic_stone",
+        "spell-doc-control_flames",
+        "spell-doc-shillelagh",
+        "spell-doc-blade_ward",
+        "shape-water",
+        "chill-touch",
+        "spell-doc-mold_earth",
+        "spell-doc-frostbite",
+        "spell-doc-thunderclap",
+        "produce-flame",
+        "spell-doc-create_bonfire",
+        "spell-doc-primal_savagery",
+        "toll-the-dead",
+        "guidance",
+        "spare-the-dying",
+        "thaumaturgy",
+        "spell-doc-gust",
+        "spell-doc-poison_spray",
+        "bless",
+        "witch-bolt",
+        "spell-doc-cause_fear",
+        "heroism",
+        "armoragathys",
+        "dissonant-whispers",
+        "spell-doc-tasha_s_caustic_brew",
+        "spell-doc-animal_friendship",
+        "protection-evil-good",
+        "spell-doc-beast_bond",
+        "curewounds",
+        "inflict-wounds",
+        "spell-doc-detect_evil_and_good",
+        "entangle",
+        "absorb",
+        "findfamiliar",
+        "spell-doc-expeditious_retreat",
+        "command",
+        "false-life",
+        "bane",
+        "hex",
+        "longstrider",
+        "fog-cloud",
+        "sanctuary",
+        "sleep",
+        "ceremony",
+        "shield-of-faith",
+        "pass",
+        "spell-doc-continual_flame",
+        "spell-doc-augury",
+        "spell-doc-flame_blade",
+        "barkskin",
+        "spell-doc-protection_from_poison",
+        "spell-doc-warding_wind",
+        "moonbeam",
+        "gentle-repose",
+        "spell-doc-gust_of_wind",
+        "aid",
+        "spell-doc-locate_animals_or_plants",
+        "spell-doc-dust_devil",
+        "heat-metal",
+        "blur",
+        "alter-self",
+        "mistystep",
+        "darkness",
+        "spell-doc-earthbind",
+        "enhanceability",
+        "spike-growth",
+        "spell-doc-wall_of_water",
+        "gaseous-form",
+        "spell-doc-thunder_step",
+        "spell-doc-daylight",
+        "spiritguardians",
+        "slow",
+        "stinking-cloud",
+        "protection-from-energy",
+        "leomunds-tiny-hut",
+        "sleet-storm",
+        "nondetection",
+        "spell-doc-life_transference",
+        "spell-doc-wall_of_sand",
+        "clairvoyance",
+        "spell-doc-tidal_wave",
+        "spell-doc-feign_death",
+        "speak-with-dead",
+        "dispel-magic",
+        "plant-growth",
+        "spell-doc-meld_into_stone",
+        "spell-doc-remove_curse",
+        "wind-wall",
+        "elemental-weapon",
+        "haste",
+        "spell-doc-sickening_radiance",
+        "spell-doc-mordenkainen_s_faithful_hound",
+        "spell-doc-control_water",
+        "spell-doc-watery_sphere",
+        "spell-doc-giant_insect",
+        "ice-storm",
+        "banishment",
+        "arcane-eye",
+        "stoneskin",
+        "fire-shield",
+        "divination",
+        "spell-doc-elemental_bane",
+        "freedom-of-movement",
+        "spell-doc-guardian_of_nature",
+        "spell-doc-grasping_vine",
+        "spell-doc-dream",
+        "spell-doc-maelstrom",
+        "spell-doc-wrath_of_nature",
+        "spell-doc-far_step",
+        "scrying",
+        "cloudkill",
+        "spell-doc-commune_with_nature",
+        "spell-doc-planar_binding",
+        "spell-doc-antilife_shell",
+        "spell-doc-awaken",
+        "spell-doc-dawn",
+        "spell-doc-dispel_evil_and_good",
+        "spell-doc-reincarnate",
+        "spell-doc-skill_empowerment",
+        "hb:shaman:spell:seance",
+        "hb:shaman:spell:otherworldly-grasp",
+        "hb:shaman:spell:ghastly-flight",
+        "hb:shaman:spell:totemic-cowl",
+        "hb:shaman:spell:dire-wail",
+        "hb:shaman:spell:spectral-passage",
+        "hb:shaman:spell:spiritual-sundering"
+      ],
+      "table": {
+        "columns": [
+          "Ур.",
+          "Умения",
+          "Тотемы",
+          "Заговоры",
+          "Заклинания",
+          "Ячейки"
+        ],
+        "rows": [
+          [
+            "1",
+            "Сакральный фокус; Тотемы",
+            "2",
+            "—",
+            "—",
+            "—"
+          ],
+          [
+            "2",
+            "Первобытная магия",
+            "2",
+            "2",
+            "3",
+            "2 × 1 ур."
+          ],
+          [
+            "3",
+            "Спиритизм",
+            "2",
+            "2",
+            "4",
+            "2 × 2 ур."
+          ],
+          [
+            "4",
+            "Увеличение характеристик",
+            "3",
+            "3",
+            "5",
+            "2 × 2 ур."
+          ],
+          [
+            "5",
+            "Тотемная многогранность",
+            "3",
+            "3",
+            "6",
+            "2 × 3 ур."
+          ],
+          [
+            "6",
+            "Умение спиритизма",
+            "4",
+            "3",
+            "6",
+            "2 × 3 ур."
+          ],
+          [
+            "7",
+            "—",
+            "4",
+            "3",
+            "7",
+            "2 × 4 ур."
+          ],
+          [
+            "8",
+            "Увеличение характеристик",
+            "4",
+            "3",
+            "7",
+            "2 × 4 ур."
+          ],
+          [
+            "9",
+            "—",
+            "5",
+            "3",
+            "8",
+            "2 × 5 ур."
+          ],
+          [
+            "10",
+            "Умение спиритизма",
+            "5",
+            "4",
+            "8",
+            "2 × 5 ур."
+          ],
+          [
+            "11",
+            "Великий дух (6-й)",
+            "5",
+            "4",
+            "9",
+            "3 × 5 ур."
+          ],
+          [
+            "12",
+            "Увеличение характеристик",
+            "6",
+            "4",
+            "9",
+            "3 × 5 ур."
+          ],
+          [
+            "13",
+            "Великий дух (7-й)",
+            "6",
+            "4",
+            "10",
+            "3 × 5 ур."
+          ],
+          [
+            "14",
+            "Умение спиритизма",
+            "6",
+            "4",
+            "10",
+            "3 × 5 ур."
+          ],
+          [
+            "15",
+            "Великий дух (8-й)",
+            "7",
+            "4",
+            "11",
+            "3 × 5 ур."
+          ],
+          [
+            "16",
+            "Увеличение характеристик",
+            "7",
+            "4",
+            "11",
+            "3 × 5 ур."
+          ],
+          [
+            "17",
+            "Великий дух (9-й)",
+            "7",
+            "4",
+            "11",
+            "4 × 5 ур."
+          ],
+          [
+            "18",
+            "—",
+            "8",
+            "4",
+            "12",
+            "4 × 5 ур."
+          ],
+          [
+            "19",
+            "Увеличение характеристик",
+            "8",
+            "4",
+            "12",
+            "4 × 5 ур."
+          ],
+          [
+            "20",
+            "Духовное вознесение",
+            "8",
+            "4",
+            "12",
+            "4 × 5 ур."
+          ]
+        ]
+      }
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:seance",
+      "id": "hb:shaman:spell:seance",
+      "type": "spell",
+      "name": "Сеанс",
+      "description": "Небольшое духовное воздействие: безвредный сенсорный эффект, краткое проявление малого духа, зажигание или тушение небольшого огня, либо краткое указание на близкую духовную аномалию.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 0,
+      "school": "Преобразование",
+      "castingTime": "1 действие",
+      "range": "30 футов",
+      "duration": "1 действие",
+      "components": "В, С",
+      "concentration": false,
+      "ritual": false,
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:otherworldly-grasp",
+      "id": "hb:shaman:spell:otherworldly-grasp",
+      "type": "spell",
+      "name": "Потусторонняя хватка",
+      "description": "Рукопашная атака заклинанием. При попадании: 1к8 некротического урона и 1к4 временных хитов на время концентрации. На 5/11/17 уровнях обе величины становятся 2/3/4 костями.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 0,
+      "school": "Иллюзия",
+      "castingTime": "1 действие",
+      "range": "На себя",
+      "duration": "Концентрация, до 1 минуты",
+      "components": "С, М (пустая рука)",
+      "concentration": true,
+      "ritual": false,
+      "higherLevels": "5-й: 2к8 и 2к4; 11-й: 3к8 и 3к4; 17-й: 4к8 и 4к4.",
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:ghastly-flight",
+      "id": "hb:shaman:spell:ghastly-flight",
+      "type": "spell",
+      "name": "Ужасный полёт",
+      "description": "Линия 60×5 футов. Спасбросок Телосложения: при провале 2к8 некротического урона и запрет восстановления хитов до начала вашего следующего хода; при успехе половина урона без запрета лечения.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "school": "Вызов",
+      "castingTime": "1 действие",
+      "range": "На себя (линия 60 футов)",
+      "duration": "Мгновенная",
+      "components": "В, С, М (порошкообразные останки существа)",
+      "concentration": false,
+      "ritual": false,
+      "higherLevels": "+1к8 за каждый уровень ячейки выше 1-го.",
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:totemic-cowl",
+      "id": "hb:shaman:spell:totemic-cowl",
+      "type": "spell",
+      "name": "Тотемный колпак",
+      "description": "Согласная цель уменьшает каждый получаемый ею урон на 1.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 2,
+      "school": "Ограждение",
+      "castingTime": "1 действие",
+      "range": "Касание",
+      "duration": "Концентрация, до 1 часа",
+      "components": "В, С, М (лист с первого дня осени)",
+      "concentration": true,
+      "ritual": false,
+      "higherLevels": "Снижение урона +1 за каждый уровень ячейки выше 2-го.",
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:dire-wail",
+      "id": "hb:shaman:spell:dire-wail",
+      "type": "spell",
+      "name": "Жуткий вопль",
+      "description": "Выбранные существа в радиусе 30 футов делают спасбросок Телосложения. Провал: 4к10 урона звуком и глухота; повторный спасбросок в конце хода. Успех: половина урона без длительного эффекта.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "school": "Некромантия",
+      "castingTime": "1 действие",
+      "range": "На себя (радиус 30 футов)",
+      "duration": "1 минута",
+      "components": "В",
+      "concentration": false,
+      "ritual": false,
+      "higherLevels": "+1к10 за каждый уровень ячейки выше 3-го.",
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:spectral-passage",
+      "id": "hb:shaman:spell:spectral-passage",
+      "type": "spell",
+      "name": "Спектральное прохождение",
+      "description": "Согласная цель становится полубесплотной и может проходить через существ и предметы как через труднопроходимую местность. Завершение движения внутри препятствия выталкивает наружу и наносит 1к10 силового урона за каждые 5 футов вынужденного перемещения.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "school": "Преобразование",
+      "castingTime": "1 действие",
+      "range": "Касание",
+      "duration": "Концентрация, до 1 минуты",
+      "components": "В, С, М (предмет, через который прошёл дух)",
+      "concentration": true,
+      "ritual": false,
+      "higherLevels": "+1 цель за каждый уровень ячейки выше 3-го.",
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:spell:spiritual-sundering",
+      "id": "hb:shaman:spell:spiritual-sundering",
+      "type": "spell",
+      "name": "Духовное разделение",
+      "description": "Сфера радиусом 20 футов в пределах 120 футов. Спасбросок Харизмы: провал — 8к6 некротического урона и на 1 минуту −1к6 к спасброскам Интеллекта, Мудрости и Харизмы; повторный спасбросок Харизмы в конце хода. Успех — половина урона без штрафа.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "school": "Очарование",
+      "castingTime": "1 действие",
+      "range": "120 футов",
+      "duration": "Мгновенная",
+      "components": "В, С",
+      "concentration": false,
+      "ritual": false,
+      "spellClasses": [
+        "hb:shaman:class:shaman"
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:focus-body",
+      "id": "hb:shaman:ability:focus-body",
+      "type": "ability",
+      "name": "Сакральный фокус: Тело",
+      "description": "Максимум хитов увеличивается на 1 за каждый уровень шамана.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "hp_per_level",
+          "value": 1
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:focus-heart",
+      "id": "hb:shaman:ability:focus-heart",
+      "type": "ability",
+      "name": "Сакральный фокус: Сердце",
+      "description": "Перед спасброском можно потратить одну Кость Хитов, чтобы совершить этот спасбросок с преимуществом.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:focus-mind",
+      "id": "hb:shaman:ability:focus-mind",
+      "type": "ability",
+      "name": "Сакральный фокус: Разум",
+      "description": "К проверкам характеристик и спасброскам Интеллекта или Харизмы добавляется модификатор Мудрости. Спасброски автоматизированы; общий бонус к проверкам пока требует ручного применения.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "saving_throw_bonus",
+          "ability": "int",
+          "formula": "@mod.wis"
+        },
+        {
+          "type": "saving_throw_bonus",
+          "ability": "cha",
+          "formula": "@mod.wis"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:focus-soul",
+      "id": "hb:shaman:ability:focus-soul",
+      "type": "ability",
+      "name": "Сакральный фокус: Душа",
+      "description": "Без доспеха и щита КД = 10 + модификатор Ловкости + модификатор Мудрости. Оставлено описанием, потому что текущая схема не умеет безопасно проверять «без доспеха и щита».",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-bear",
+      "id": "hb:shaman:ability:totem-bear",
+      "type": "ability",
+      "name": "Тотем медведя",
+      "description": "Бонусным действием вырастить магические когти: безоружные удары 1к6 + Сила рубящего урона, либо 1к8 + Сила, если обе руки свободны.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-crossroads",
+      "id": "hb:shaman:ability:totem-crossroads",
+      "type": "ability",
+      "name": "Тотем перекрёстка",
+      "description": "Требование: Сакральный фокус «Сердце».\nПока вы в сознании, действует эффект «Разговор с животными»; с 5-го уровня шамана также «Разговор с растениями».",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-heart",
+          "label": "Сакральный фокус «Сердце»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-eagle",
+      "id": "hb:shaman:ability:totem-eagle",
+      "type": "ability",
+      "name": "Тотем орла",
+      "description": "Владение Внимательностью; преимущество на проверки Внимательности, основанные на зрении.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "skill_proficiency",
+          "skill": "perception"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-earthquake",
+      "id": "hb:shaman:ability:totem-earthquake",
+      "type": "ability",
+      "name": "Тотем землетрясения",
+      "description": "Раз в ход при попадании рукопашной атакой оружием добавьте урон того же типа: 1к6; 1к8 на 6-м, 1к10 на 11-м, 1к12 на 17-м уровне шамана.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-harvest",
+      "id": "hb:shaman:ability:totem-harvest",
+      "type": "ability",
+      "name": "Тотем урожая",
+      "description": "Требование: Сакральный фокус «Душа».\nПосле короткого или продолжительного отдыха создаёт «Чудо-ягоды» без ячейки и материальных компонентов; ягоды действуют до следующего отдыха.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-soul",
+          "label": "Сакральный фокус «Душа»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-hound",
+      "id": "hb:shaman:ability:totem-hound",
+      "type": "ability",
+      "name": "Тотем гончей",
+      "description": "Владение Выживанием; преимущество на проверки Выживания в природной среде.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "skill_proficiency",
+          "skill": "survival"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-mountain",
+      "id": "hb:shaman:ability:totem-mountain",
+      "type": "ability",
+      "name": "Тотем горы",
+      "description": "Требование: Сакральный фокус «Тело».\nБез доспеха и щита КД = 13 + модификатор Телосложения (минимум 13).",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-body",
+          "label": "Сакральный фокус «Тело»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-panther",
+      "id": "hb:shaman:ability:totem-panther",
+      "type": "ability",
+      "name": "Тотем пантеры",
+      "description": "Владение Скрытностью; преимущество на Скрытность при попытке спрятаться в природной среде.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "skill_proficiency",
+          "skill": "stealth"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-pond",
+      "id": "hb:shaman:ability:totem-pond",
+      "type": "ability",
+      "name": "Тотем пруда",
+      "description": "Под водой можно задерживать дыхание на 1 час; преимущество на проверки и спасброски для сопротивления захвату.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-mire",
+      "id": "hb:shaman:ability:totem-mire",
+      "type": "ability",
+      "name": "Тотем трясины",
+      "description": "Требование: Сакральный фокус «Разум».\nЗащита разума от чтения мыслей, определения эмоций/мировоззрения и нежелательного прорицания; противники с помехой читают ваши намерения Проницательностью.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-mind",
+          "label": "Сакральный фокус «Разум»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-rains",
+      "id": "hb:shaman:ability:totem-rains",
+      "type": "ability",
+      "name": "Тотем дождей",
+      "description": "Сопротивление кислоте и яду; преимущество на спасброски против состояния «отравлен».",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "damage_resistance",
+          "damage": "acid"
+        },
+        {
+          "type": "damage_resistance",
+          "damage": "poison"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-twilight",
+      "id": "hb:shaman:ability:totem-twilight",
+      "type": "ability",
+      "name": "Тотем сумерек",
+      "description": "Тёмное зрение 120 футов; с 9-го уровня шамана позволяет видеть и в магической тьме.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "sense",
+          "sense": "darkvision",
+          "range": 120
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-waves",
+      "id": "hb:shaman:ability:totem-waves",
+      "type": "ability",
+      "name": "Тотем волн",
+      "description": "Реакцией превратить полученное критическое попадание в обычное. 1 раз за короткий/длинный отдых; с 12-го уровня — 2 раза.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [
+        {
+          "id": "hb:shaman:resource:totem-waves",
+          "name": "Тотем волн",
+          "max": "1 + (@classLevel(\"hb:shaman:class:shaman\") >= 12)",
+          "restore": [
+            "short_rest",
+            "long_rest"
+          ],
+          "showOnSheet": true
+        }
+      ],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-whirlwind",
+      "id": "hb:shaman:ability:totem-whirlwind",
+      "type": "ability",
+      "name": "Тотем вихря",
+      "description": "При критическом попадании рукопашной атакой оружием можно реакцией совершить ещё одну атаку по той же цели.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-winds",
+      "id": "hb:shaman:ability:totem-winds",
+      "type": "ability",
+      "name": "Тотем ветров",
+      "description": "Скорость ходьбы +5 футов; +10 на 5-м, +15 на 11-м, +20 на 17-м уровне шамана.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 1,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-bloom",
+      "id": "hb:shaman:ability:totem-bloom",
+      "type": "ability",
+      "name": "Тотем цветения",
+      "description": "Требование: Сакральный фокус «Душа».\n«Рост растений» без ячейки 1 раз за короткий/длинный отдых; если способность не тратилась после прошлого длинного отдыха, длительный вариант может влиять на землю вокруг во время отдыха.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-soul",
+          "label": "Сакральный фокус «Душа»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-eruption",
+      "id": "hb:shaman:ability:totem-eruption",
+      "type": "ability",
+      "name": "Тотем извержения",
+      "description": "Раз в ход при попадании рукопашной атакой можно потратить ячейку Первобытной магии и добавить 1к8 за уровень ячейки (макс. 5к8) выбранного типа: холод, огонь, молния, магический дробящий или звук.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-growth",
+      "id": "hb:shaman:ability:totem-growth",
+      "type": "ability",
+      "name": "Тотем роста",
+      "description": "Требование: Сакральный фокус «Тело».\nБонусным действием наложить на себя увеличение из «Увеличение/уменьшение» без ячейки и концентрации; 1 раз за короткий/длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-body",
+          "label": "Сакральный фокус «Тело»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-grave",
+      "id": "hb:shaman:ability:totem-grave",
+      "type": "ability",
+      "name": "Тотем могилы",
+      "description": "Потратить ячейку Первобытной магии, чтобы сотворить «Восставший труп» без обычных материальных компонентов; затем требуется короткий/длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-light",
+      "id": "hb:shaman:ability:totem-light",
+      "type": "ability",
+      "name": "Тотем света",
+      "description": "Когда заклинанием 1-го уровня или выше восстанавливаете хиты другому существу, получаете временные хиты = модификатору Мудрости.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-joy",
+      "id": "hb:shaman:ability:totem-joy",
+      "type": "ability",
+      "name": "Тотем радости",
+      "description": "Требование: Сакральный фокус «Сердце».\nБонусным действием получить временные хиты = уровню шамана; 1 раз за длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-heart",
+          "label": "Сакральный фокус «Сердце»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-mystic",
+      "id": "hb:shaman:ability:totem-mystic",
+      "type": "ability",
+      "name": "Тотем мистика",
+      "description": "Требование: Сакральный фокус «Разум».\nДействием «Обнаружение мыслей» без ячейки и без вербальных/соматических компонентов.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman",
+      "requirements": [
+        {
+          "type": "selected_feature",
+          "id": "hb:shaman:ability:focus-mind",
+          "label": "Сакральный фокус «Разум»"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-swamp",
+      "id": "hb:shaman:ability:totem-swamp",
+      "type": "ability",
+      "name": "Тотем болота",
+      "description": "Действием существа в радиусе 15 футов делают спасбросок Телосложения; при провале отравлены до начала вашего следующего хода, при успехе иммунны к этому эффекту на 24 часа.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-wilderness",
+      "id": "hb:shaman:ability:totem-wilderness",
+      "type": "ability",
+      "name": "Тотем дикой природы",
+      "description": "«Призыв духа зверя» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-wrath",
+      "id": "hb:shaman:ability:totem-wrath",
+      "type": "ability",
+      "name": "Тотем гнева",
+      "description": "При провале цели против «Наступления тотемов» добавьте модификатор Мудрости к урону.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 5,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-hunt",
+      "id": "hb:shaman:ability:totem-hunt",
+      "type": "ability",
+      "name": "Тотем охоты",
+      "description": "Раз в ход дайте себе преимущество на бросок атаки, если в 5 футах от цели находится ваш союзник.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 7,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-slime",
+      "id": "hb:shaman:ability:totem-slime",
+      "type": "ability",
+      "name": "Тотем слизи",
+      "description": "Бонусным действием стать податливым: проходить через щели шириной до 1 дюйма и освобождаться от немагических оков или захвата за 5 футов перемещения.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 7,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-river",
+      "id": "hb:shaman:ability:totem-river",
+      "type": "ability",
+      "name": "Тотем реки",
+      "description": "Дышите воздухом и водой; скорость плавания равна скорости ходьбы.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "movement_mode",
+          "mode": "swim",
+          "formula": "@speed.walk"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 7,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-cave",
+      "id": "hb:shaman:ability:totem-cave",
+      "type": "ability",
+      "name": "Тотем пещеры",
+      "description": "Виброчувствительность 30 футов, пока соприкасаетесь с землёй.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 9,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-dawn",
+      "id": "hb:shaman:ability:totem-dawn",
+      "type": "ability",
+      "name": "Тотем рассвета",
+      "description": "После длинного отдыха выбранное вами существо получает эффект «Защита от смерти» без траты ячейки.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 9,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-fey",
+      "id": "hb:shaman:ability:totem-fey",
+      "type": "ability",
+      "name": "Тотем фей",
+      "description": "«Призыв духа феи» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 9,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-sun",
+      "id": "hb:shaman:ability:totem-sun",
+      "type": "ability",
+      "name": "Тотем солнца",
+      "description": "После проваленного спасброска можно перебросить его. 1 раз за короткий/длинный отдых; с 15-го уровня — 2 раза.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [
+        {
+          "id": "hb:shaman:resource:totem-sun",
+          "name": "Тотем солнца",
+          "max": "1 + (@classLevel(\"hb:shaman:class:shaman\") >= 15)",
+          "restore": [
+            "short_rest",
+            "long_rest"
+          ],
+          "showOnSheet": true
+        }
+      ],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 9,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-vine",
+      "id": "hb:shaman:ability:totem-vine",
+      "type": "ability",
+      "name": "Тотем лозы",
+      "description": "Можно накладывать «Опутывающий удар» как заклинание 1-го уровня без траты ячейки.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 9,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-binding",
+      "id": "hb:shaman:ability:totem-binding",
+      "type": "ability",
+      "name": "Тотем связывания",
+      "description": "Действием восстановить одну потраченную ячейку Первобытной магии; 1 раз за длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 15,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-eclipse",
+      "id": "hb:shaman:ability:totem-eclipse",
+      "type": "ability",
+      "name": "Тотем затмения",
+      "description": "Сопротивление урону от заклинаний.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 15,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-elements",
+      "id": "hb:shaman:ability:totem-elements",
+      "type": "ability",
+      "name": "Тотем стихий",
+      "description": "«Призыв духа элементаля» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 15,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-sapling",
+      "id": "hb:shaman:ability:totem-sapling",
+      "type": "ability",
+      "name": "Тотем саженца",
+      "description": "В начале хода, если у вас больше 0 хитов и не больше половины максимума, восстановите хиты = модификатору Мудрости.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 15,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:totem-sky",
+      "id": "hb:shaman:ability:totem-sky",
+      "type": "ability",
+      "name": "Тотем неба",
+      "description": "Скорость полёта равна скорости ходьбы; урон от падения уменьшается на уровень шамана.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "movement_mode",
+          "mode": "fly",
+          "formula": "@speed.walk"
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 15,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:great-spirit-death",
+      "id": "hb:shaman:ability:great-spirit-death",
+      "type": "ability",
+      "name": "Великий дух смерти",
+      "description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Окаменение.\n13-й уровень шамана — Перст смерти.\n15-й уровень шамана — Ужасное увядание Аби-Далзима.\n17-й уровень шамана — Слово силы: смерть.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 11,
+      "parentClassId": "hb:shaman:class:shaman",
+      "references": [
+        "official:spell:spell-doc-flesh_to_stone",
+        "official:spell:finger-of-death",
+        "official:spell:spell-doc-abi_dalzim_s_horrid_wilting",
+        "official:spell:power-word-kill"
+      ],
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-flesh_to_stone",
+          "level": 11,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "finger-of-death",
+          "level": 13,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "spell-doc-abi_dalzim_s_horrid_wilting",
+          "level": 15,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "power-word-kill",
+          "level": 17,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:great-spirit-life",
+      "id": "hb:shaman:ability:great-spirit-life",
+      "type": "ability",
+      "name": "Великий дух жизни",
+      "description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Полное исцеление.\n13-й уровень шамана — Регенерация.\n15-й уровень шамана — Аура святости.\n17-й уровень шамана — Слово силы: исцеление.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 11,
+      "parentClassId": "hb:shaman:class:shaman",
+      "references": [
+        "official:spell:heal",
+        "official:spell:spell-doc-regenerate",
+        "official:spell:holy-aura",
+        "official:spell:spell-doc-power_word_heal"
+      ],
+      "spellGrants": [
+        {
+          "spellId": "heal",
+          "level": 11,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "spell-doc-regenerate",
+          "level": 13,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "holy-aura",
+          "level": 15,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "spell-doc-power_word_heal",
+          "level": 17,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:great-spirit-moon",
+      "id": "hb:shaman:ability:great-spirit-moon",
+      "type": "ability",
+      "name": "Великий дух луны",
+      "description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Первородный страж.\n13-й уровень шамана — Изменение тяготения.\n15-й уровень шамана — Преграда магии.\n17-й уровень шамана — Проекция в астрал.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 11,
+      "parentClassId": "hb:shaman:class:shaman",
+      "references": [
+        "official:spell:spell-doc-primordial_ward",
+        "official:spell:spell-doc-reverse_gravity",
+        "official:spell:antimagic-field",
+        "official:spell:spell-doc-astral_projection"
+      ],
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-primordial_ward",
+          "level": 11,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "spell-doc-reverse_gravity",
+          "level": 13,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "antimagic-field",
+          "level": 15,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "spell-doc-astral_projection",
+          "level": 17,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:great-spirit-sun",
+      "id": "hb:shaman:ability:great-spirit-sun",
+      "type": "ability",
+      "name": "Великий дух солнца",
+      "description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Солнечный луч.\n13-й уровень шамана — Воскрешение.\n15-й уровень шамана — Солнечный ожог.\n17-й уровень шамана — Истинное воскрешение.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 11,
+      "parentClassId": "hb:shaman:class:shaman",
+      "references": [
+        "official:spell:sunbeam",
+        "official:spell:resurrection",
+        "official:spell:sunburst",
+        "official:spell:trueResurrection"
+      ],
+      "spellGrants": [
+        {
+          "spellId": "sunbeam",
+          "level": 11,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "resurrection",
+          "level": 13,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "sunburst",
+          "level": 15,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        },
+        {
+          "spellId": "trueResurrection",
+          "level": 17,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:subclass:curse-binder",
+      "id": "hb:shaman:subclass:curse-binder",
+      "type": "subclass",
+      "name": "Связующий проклятия",
+      "description": "Спиритизм проклятий и зловещих духов.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "parentClassId": "hb:shaman:class:shaman",
+      "features": [
+        {
+          "id": "hb:shaman:ability:curse-spells",
+          "level": 3,
+          "name": "Заклинания Связующего проклятия",
+          "description": "Всегда известны и не считаются в лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:evil-eye",
+          "level": 3,
+          "name": "Злой глаз",
+          "description": "Реакцией, когда видимое существо в 60 футах делает проверку, атаку или спасбросок, наложите помеху.",
+          "effects": [],
+          "resources": [
+            {
+              "id": "hb:shaman:resource:evil-eye",
+              "name": "Злой глаз",
+              "max": "max(1, @mod.wis)",
+              "restore": [
+                "long_rest"
+              ],
+              "showOnSheet": true
+            }
+          ],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:totemic-curse",
+          "level": 3,
+          "name": "Тотемическое проклятие",
+          "description": "После провала «Наступления тотемов» выберите: уменьшение скорости; запрет лечения + дополнительный некротический урон при получении урона; либо штраф Мудрости к проверкам и атакам. Цель может действием повторять спасбросок.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:sinister-spellcasting",
+          "level": 6,
+          "name": "Зловещее заклинательство",
+          "description": "Когда шаманский заговор или «Наступление тотемов» наносит урон, добавьте модификатор Мудрости (минимум +1) к одному броску урона.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:shamanic-defense",
+          "level": 10,
+          "name": "Шаманская защита",
+          "description": "После длинного отдыха выберите один тип стихийного/мистического урона и получите сопротивление ему; при получении такого урона от видимого существа можно реакцией применить к нему «Наступление тотемов». Выбор типа ведётся вручную.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:unrestrained-spellcasting",
+          "level": 14,
+          "name": "Необузданное заклинательство",
+          "description": "Действием сотворить «Создание нежити» как заклинание 6-го круга без ячейки и компонентов; 1 раз за длинный отдых.",
+          "effects": [],
+          "resources": [
+            {
+              "id": "hb:shaman:resource:unrestrained-spellcasting",
+              "name": "Необузданное заклинательство",
+              "max": 1,
+              "restore": [
+                "long_rest"
+              ],
+              "showOnSheet": true
+            }
+          ],
+          "attacks": []
+        }
+      ],
+      "spellGrants": [
+        {
+          "spellId": "blindness-deafness",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "ray-of-enfeeblement",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "bestow-curse",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "vampiric-touch",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "blight",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-phantasmal_killer",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "contagion",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-enervation",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:subclass:spirit-warrior",
+      "id": "hb:shaman:subclass:spirit-warrior",
+      "type": "subclass",
+      "name": "Воин духа",
+      "description": "Боевой спиритизм, связывающий духов с оружием и телом.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [
+        {
+          "id": "shaman-weapon-spirit",
+          "name": "Дух тотемного оружия",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:weapon-spirit-challenge",
+            "hb:shaman:ability:weapon-spirit-drain",
+            "hb:shaman:ability:weapon-spirit-might"
+          ],
+          "level": 3
+        }
+      ],
+      "parentClassId": "hb:shaman:class:shaman",
+      "features": [
+        {
+          "id": "hb:shaman:ability:spirit-warrior-spells",
+          "level": 3,
+          "name": "Заклинания Воина духа",
+          "description": "Всегда известны и не считаются в лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:ancestral-knowledge",
+          "level": 3,
+          "name": "Знания предков",
+          "description": "Владение средними доспехами и воинским оружием.",
+          "effects": [
+            {
+              "type": "armor_proficiency",
+              "group": "medium"
+            },
+            {
+              "type": "weapon_group_proficiency",
+              "group": "martial"
+            }
+          ],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:totem-weapon",
+          "level": 3,
+          "name": "Тотемное оружие",
+          "description": "После длинного отдыха привяжите дух к рукопашному оружию. Для атак и урона можно использовать Мудрость вместо Силы; атаки считаются магическими. Конкретный дух выбирается ниже.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:extra-attack-spirit-warrior",
+          "level": 6,
+          "name": "Дополнительная атака",
+          "description": "Действием Атака совершаете две атаки. Одну можно заменить шаманским заговором или «Наступлением тотемов».",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:grave-warrior",
+          "level": 10,
+          "name": "Воин могилы",
+          "description": "Когда хиты падают до 0 без мгновенной смерти, можно потратить одну Кость Хитов и вместо этого остаться с 1 хитом.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:spirit-champion",
+          "level": 14,
+          "name": "Духовный чемпион",
+          "description": "Бонусным действием на 1 минуту: Рывок бонусным действием; сопротивление дробящему/колющему/рубящему урону от непосеребрённого оружия; раз в ход попадание тотемным оружием может применить «Наступление тотемов» как при провале. 1 раз за короткий/длинный отдых.",
+          "effects": [],
+          "resources": [
+            {
+              "id": "hb:shaman:resource:spirit-champion",
+              "name": "Духовный чемпион",
+              "max": 1,
+              "restore": [
+                "short_rest",
+                "long_rest"
+              ],
+              "showOnSheet": true
+            }
+          ],
+          "attacks": []
+        }
+      ],
+      "spellGrants": [
+        {
+          "spellId": "magic-weapon",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spiritual-weapon",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "clairvoyance",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-spirit_shroud",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "guardian-of-faith",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-staggering_smite",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-contact_other_plane",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "steelwind",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:subclass:medicine-man",
+      "id": "hb:shaman:subclass:medicine-man",
+      "type": "subclass",
+      "name": "Знахарь",
+      "description": "Исцеляющий спиритизм, передающий силу тотемов союзникам.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "parentClassId": "hb:shaman:class:shaman",
+      "features": [
+        {
+          "id": "hb:shaman:ability:medicine-spells",
+          "level": 3,
+          "name": "Заклинания Знахаря",
+          "description": "Всегда известны и не считаются в лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:lifegiver",
+          "level": 3,
+          "name": "Жизнедатель",
+          "description": "Действием коснитесь существа (не нежить/конструкт): оно восстанавливает 1к8 + модификатор Мудрости хитов. Использований = уровень шамана.",
+          "effects": [],
+          "resources": [
+            {
+              "id": "hb:shaman:resource:lifegiver",
+              "name": "Жизнедатель",
+              "max": "@classLevel(\"hb:shaman:class:shaman\")",
+              "restore": [
+                "long_rest"
+              ],
+              "showOnSheet": true
+            }
+          ],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:totemic-blessing",
+          "level": 3,
+          "name": "Тотемное благословление",
+          "description": "«Наступление тотемов» наносит излучение вместо некротического урона. После длинного отдыха можно передать союзнику один из связанных тотемов, временно теряя его эффект; число переданных тотемов растёт с уровнем.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:mystic-focus",
+          "level": 6,
+          "name": "Мистический фокус",
+          "description": "В ход, когда действием накладываете заклинание Знахаря или восстанавливаете хиты существу, можно бонусным действием использовать «Наступление тотемов».",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:empowered-blessing",
+          "level": 10,
+          "name": "Усиленное благословение",
+          "description": "Союзник с переданным тотемом может действием применить «Наступление тотемов» с вашей Сл и получает связанные с наступлением свойства этого тотема.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:selfless-ward",
+          "level": 10,
+          "name": "Бескорыстный подопечный",
+          "description": "Получаете +1 ко всем спасброскам, включая спасброски от смерти, за каждый переданный другому существу тотем. Число переданных тотемов ведётся вручную.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:spiritual-awakening",
+          "level": 14,
+          "name": "Духовное пробуждение",
+          "description": "Реакцией при спасброске от смерти видимого существа можете переместиться к нему, коснуться и восстановить уровень шамана + модификатор Мудрости хитов; на себе — без реакции. 1 раз за короткий/длинный отдых, затем можно повторить за ячейку.",
+          "effects": [],
+          "resources": [
+            {
+              "id": "hb:shaman:resource:spiritual-awakening",
+              "name": "Духовное пробуждение",
+              "max": 1,
+              "restore": [
+                "short_rest",
+                "long_rest"
+              ],
+              "showOnSheet": true
+            }
+          ],
+          "attacks": []
+        }
+      ],
+      "spellGrants": [
+        {
+          "spellId": "lesser-restoration",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "warding-bond",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "beacon-of-hope",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "revivify",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-aura_of_life",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "death-ward",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-creation",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "greaterrestoration",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:subclass:wild-heart",
+      "id": "hb:shaman:subclass:wild-heart",
+      "type": "subclass",
+      "name": "Дикое сердце",
+      "description": "Спиритизм превращения в Великого зверя.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [
+        {
+          "id": "shaman-adaptation-3",
+          "name": "Звериная адаптация (3-й уровень)",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:adaptation-flexible",
+            "hb:shaman:ability:adaptation-mountain",
+            "hb:shaman:ability:adaptation-aquatic"
+          ],
+          "level": 3,
+          "choiceGroup": "shaman-adaptations",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-adaptation-6",
+          "name": "Звериная адаптация (6-й уровень)",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:adaptation-flexible",
+            "hb:shaman:ability:adaptation-mountain",
+            "hb:shaman:ability:adaptation-aquatic"
+          ],
+          "level": 6,
+          "choiceGroup": "shaman-adaptations",
+          "uniqueAcrossGroup": true
+        },
+        {
+          "id": "shaman-adaptation-10",
+          "name": "Звериная адаптация (10-й уровень)",
+          "type": "ability",
+          "count": 1,
+          "from": [
+            "hb:shaman:ability:adaptation-flexible",
+            "hb:shaman:ability:adaptation-mountain",
+            "hb:shaman:ability:adaptation-aquatic"
+          ],
+          "level": 10,
+          "choiceGroup": "shaman-adaptations",
+          "uniqueAcrossGroup": true
+        }
+      ],
+      "parentClassId": "hb:shaman:class:shaman",
+      "features": [
+        {
+          "id": "hb:shaman:ability:wild-heart-spells",
+          "level": 3,
+          "name": "Заклинания Дикого сердца",
+          "description": "Всегда известны и не считаются в лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:beast-adaptation",
+          "level": 3,
+          "name": "Звериная адаптация",
+          "description": "Выберите одну адаптацию на 3-м уровне и ещё по одной на 6-м и 10-м.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:totemic-wild-shape",
+          "level": 3,
+          "name": "Тотемная дикая форма",
+          "description": "Бонусным действием потратьте ячейку Первобытной магии и на срок до 1 часа превратитесь в Великого зверя. Форма использует физические характеристики и отдельные хиты зверя, сохраняет ваши ментальные характеристики, навыки и спасброски; число звериных черт = уровень потраченной ячейки.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:great-beast-statblock",
+          "level": 3,
+          "name": "Великий зверь — блок статистики",
+          "description": "КД 13 + БМ. Хиты: (10 + уровень шамана) × 6. Сила 18, Ловкость 14, Телосложение 16; ментальные характеристики ваши. Тёмное зрение 60 футов. Укус: +4+БМ, 1к6+4 колющего. Растерзание: +4+БМ, 2к6+4 рубящего. Черты: Агрессивный, Амфибия, Рывок, Обострённые чувства, Большой, Лёгкий шаг, Тактика стаи, Мощное телосложение, Свирепая хватка, Прыжок стоя, Жестокий укус.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:fierce-strikes",
+          "level": 6,
+          "name": "Свирепые удары",
+          "description": "В форме Великого зверя при действии Укус или Растерзание совершаете ещё одну такую атаку; атаки формы считаются магическими.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:fury-of-wild",
+          "level": 10,
+          "name": "Ярость дикой природы",
+          "description": "В форме Великого зверя бонусным действием потратьте Кость Хитов и восстановите выпавшее значение + модификатор Мудрости хитов; излишек становится временными хитами.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        },
+        {
+          "id": "hb:shaman:ability:apex-predator",
+          "level": 14,
+          "name": "Высший хищник",
+          "description": "В форме Великого зверя Сила, Ловкость и Телосложение +2 (макс. 20), +1 к атакам и урону, а Укус и Растерзание наносят дополнительно 1к6 урона.",
+          "effects": [],
+          "resources": [],
+          "attacks": []
+        }
+      ],
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-animal_messenger",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-beast_sense",
+          "level": 3,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "conjure-animals",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "fear",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "dominate-beast",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-locate_creature",
+          "level": 7,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "hold-monster",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-tree_stride",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ]
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:weapon-spirit-challenge",
+      "id": "hb:shaman:ability:weapon-spirit-challenge",
+      "type": "ability",
+      "name": "Дух вызова",
+      "description": "Попадание тотемным оружием даёт цели помеху на атаки по целям, кроме вас, до начала вашего следующего хода.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:weapon-spirit-drain",
+      "id": "hb:shaman:ability:weapon-spirit-drain",
+      "type": "ability",
+      "name": "Дух истощения",
+      "description": "Раз в ход попадание тотемным оружием можно сделать некротическим и получить временные хиты = модификатору Мудрости.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:weapon-spirit-might",
+      "id": "hb:shaman:ability:weapon-spirit-might",
+      "type": "ability",
+      "name": "Дух могущества",
+      "description": "С тотемным оружием добавляйте модификатор Мудрости к проверкам и спасброскам Силы; атаки им по схваченным вами целям совершаются с преимуществом.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:adaptation-flexible",
+      "id": "hb:shaman:ability:adaptation-flexible",
+      "type": "ability",
+      "name": "Звериная адаптация: Гибкая",
+      "description": "Скорость ходьбы и дальность прыжков +10 футов; игнорируете труднопроходимую местность.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [
+        {
+          "type": "speed_bonus",
+          "mode": "walk",
+          "value": 10
+        }
+      ],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:adaptation-mountain",
+      "id": "hb:shaman:ability:adaptation-mountain",
+      "type": "ability",
+      "name": "Звериная адаптация: Горная",
+      "description": "Скорость лазания равна скорости ходьбы; можно лазать по отвесным поверхностям и потолку без проверок.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:ability:adaptation-aquatic",
+      "id": "hb:shaman:ability:adaptation-aquatic",
+      "type": "ability",
+      "name": "Звериная адаптация: Водная",
+      "description": "Скорость плавания равна скорости ходьбы; под водой Рывок бонусным действием и задержка дыхания до 1 часа.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "level": 3,
+      "parentClassId": "hb:shaman:class:shaman"
+    },
+    {
+      "schemaVersion": 2,
+      "uid": "hb:shaman:note:integration-notes",
+      "id": "hb:shaman:note:integration-notes",
+      "type": "note",
+      "name": "Шаман — заметка по интеграции",
+      "description": "Пакет рассчитан на текущую схему HeroList Homebrew v2. Основная прогрессия, магия, тотемы и подклассы заведены. Часть событийных механик требует ручного отслеживания; подробности — в отдельном отчёте.",
+      "updatedAt": "2026-09-26T14:15:00.000Z",
+      "version": "5.6.1",
+      "source": {
+        "kind": "homebrew",
+        "packId": "shaman-5.6.1",
+        "author": "laserllama",
+        "url": "https://dnd.su/homebrew/class/389-shaman/"
+      },
+      "tags": [
+        "shaman",
+        "laserllama",
+        "5e-2014"
+      ],
+      "effects": [],
+      "resources": [],
+      "attacks": [],
+      "actions": [],
+      "choices": [],
+      "references": [
+        "hb:shaman:class:shaman"
+      ]
+    }
+  ]
+}

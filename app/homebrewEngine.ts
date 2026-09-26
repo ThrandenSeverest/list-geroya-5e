@@ -3,6 +3,7 @@ import { classRules, skillKeys, type ClassRuleDetail } from './rules';
 import { spells } from './catalog';
 import { homebrewTypeLabels, type HomebrewElement, type HBEffect } from './homebrew';
 import { evaluateFormula, type FormulaContext } from './homebrewFormula';
+import { homebrewPackageFor } from './homebrewPackages';
 export type HBCharacterData={entities:HomebrewElement[];activeIds:string[];choices?:Record<string,string[]>;equipped?:string[]};
 const level=(c:ExportCharacter)=>c.classes?.length?c.classes.reduce((s,x)=>s+x.level,0):c.level||1;
 export const homebrewClassLevel=(c:ExportCharacter,id:string)=>c.classes?.length?c.classes.find(x=>x.classId===id.replace('official:class:',''))?.level||0:c.className===id.replace('official:class:','')?c.level:0;
@@ -37,9 +38,10 @@ export function hbEffects(c:ExportCharacter,type?:string){return activeHomebrew(
 export function hbSum(c:ExportCharacter,type:string,filter:(e:HBEffect)=>boolean=()=>true){return hbEffects(c,type).filter(x=>filter(x.effect)).reduce((sum,x)=>sum+x.value,0);}
 export function hbAbilities(c:ExportCharacter,base:AbilityScores){const result={...base};for(const key of Object.keys(result) as (keyof AbilityScores)[]){result[key]+=hbSum(c,'ability_bonus',e=>e.ability===key);for(const x of hbEffects(c,'ability_minimum'))if(x.effect.ability===key)result[key]=Math.max(result[key],x.value);}return result;}
 export function hbSkillName(id:string){const normalized=id.replace(/^skill:/,'').replace(/-/g,' ');return Object.entries(skillKeys).find(([name,data])=>name===id||data.key===normalized)?.[0]||id;}
+const weaponProficiencyNames:Record<string,string>={club:'Дубинка',dagger:'Кинжал',greatclub:'Палица',handaxe:'Ручной топор',javelin:'Метательное копьё','light-hammer':'Лёгкий молот',mace:'Булава',quarterstaff:'Боевой посох',sickle:'Серп',spear:'Копьё','light-crossbow':'Лёгкий арбалет',dart:'Дротик',shortbow:'Короткий лук',sling:'Праща',battleaxe:'Боевой топор',flail:'Цеп',glaive:'Глефа',greataxe:'Секира',greatsword:'Двуручный меч',halberd:'Алебарда',lance:'Длинное копьё',longsword:'Длинный меч',maul:'Молот',morningstar:'Моргенштерн',pike:'Пика',rapier:'Рапира',scimitar:'Скимитар',shortsword:'Короткий меч',trident:'Трезубец','war-pick':'Боевая кирка',warhammer:'Боевой молот',whip:'Кнут','hand-crossbow':'Ручной арбалет','heavy-crossbow':'Тяжёлый арбалет',longbow:'Длинный лук',blowgun:'Духовая трубка',net:'Сеть'};
 export function classRuleFor(c:ExportCharacter,id:string):ClassRuleDetail|undefined{
  const e=c.homebrew?.entities.find(e=>e.id===id&&e.type==='class');if(!e)return classRules[id];
- return {hitDie:Number((e.hitDie||'d8').slice(1)),saves:e.savingThrows||[],armor:(e.effects||[]).filter(e=>e.type==='armor_proficiency').map(e=>({light:'Лёгкие доспехи',medium:'Средние доспехи',heavy:'Тяжёлые доспехи',shield:'Щиты'})[e.group as 'light']||e.group).join(', '),weapons:(e.effects||[]).filter(e=>e.type==='weapon_proficiency'||e.type==='weapon_group_proficiency').map(e=>e.group==='simple'?'Простое оружие':e.group==='martial'?'Воинское оружие':e.id||'').join(', '),spellAbility:e.spellcasting?.mode&&e.spellcasting.mode!=='none'?e.spellcasting.ability:undefined,features:activeHomebrew(c).filter(x=>x.type==='ability').map(x=>({name:x.name,description:x.description,effectHandling:'manual'}))};
+ return {hitDie:Number((e.hitDie||'d8').slice(1)),saves:e.savingThrows||[],armor:(e.effects||[]).filter(e=>e.type==='armor_proficiency').map(e=>({light:'Лёгкие доспехи',medium:'Средние доспехи',heavy:'Тяжёлые доспехи',shield:'Щиты'})[e.group as 'light']||e.group).join(', '),weapons:(e.effects||[]).filter(e=>e.type==='weapon_proficiency'||e.type==='weapon_group_proficiency').map(e=>e.group==='simple'?'Простое оружие':e.group==='martial'?'Воинское оружие':weaponProficiencyNames[e.id||'']||e.id||'').join(', '),spellAbility:e.spellcasting?.mode&&e.spellcasting.mode!=='none'?e.spellcasting.ability:undefined,features:activeHomebrew(c).filter(x=>x.type==='ability').map(x=>({name:x.name,description:x.description,effectHandling:'manual'}))};
 }
 export function hbResources(c:ExportCharacter){const map=new Map<string,{key:string;name:string;max:number;isShortRest:boolean;isLongRest:boolean}>();for(const e of activeHomebrew(c))for(const r of e.resources||[])if(hbEnabled(c,r,e)&&r.showOnSheet!==false)map.set(r.id,{key:r.id,name:r.name,max:Math.max(0,Math.floor(hbValue(c,r.max,e.id))),isShortRest:r.restore.includes('short_rest'),isLongRest:r.restore.includes('long_rest')});for(const source of activeHomebrew(c))if(source.type==='class'||source.parentClassId)for(const grant of source.spellGrants||[])if(grant.uses&&grant.level<=classLevel(c,source.type==='class'?source.id:source.parentClassId||'')){const key=source.id+':spell:'+grant.spellId;map.set(key,{key,name:source.name+' · '+(spells.find(e=>e.id===grant.spellId)?.name||c.homebrew?.entities.find(e=>e.id===grant.spellId)?.name||grant.spellId),max:grant.uses,isShortRest:grant.recovery==='short_or_long',isLongRest:true});}return [...map.values()];}
 export function hbAttacks(c:ExportCharacter){const map=new Map<string,import('./combat').CharacterAttack>();for(const e of activeHomebrew(c))for(const a of e.attacks||[])if(hbEnabled(c,a,e)){
@@ -64,7 +66,13 @@ export function homebrewExportClosure(root:HomebrewElement,library:HomebrewEleme
   // Includes nested choices, progression, parents, pack members and interactive tags.
   const refs=JSON.stringify(entity).match(/hb:[a-z0-9_-]+:[a-z]+:[a-z0-9_-]+/g)||[];
   for(const ref of refs)if(ref!==id)visit(ref);
- };visit(root.id);return result;
+ };
+ // A class pack also owns reverse-linked subclasses, spells and notes. Start
+ // from every member before following ordinary references so an exported class
+ // is complete even when a child points to its parent (the common schema).
+ const pack=homebrewPackageFor(root,library);
+ for(const member of pack?.members||[root])visit(member.id);
+ return result;
 }
 
 export function homebrewExportWarning(c:ExportCharacter):string {
