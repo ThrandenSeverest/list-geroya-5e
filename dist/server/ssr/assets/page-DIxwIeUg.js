@@ -13050,6 +13050,80 @@ function evaluateFormula(input, context) {
 	return result;
 }
 //#endregion
+//#region app/homebrewPackages.ts
+/**
+* Homebrew still uses stable entities internally, but the library presents a
+* class (or another root) and all of its implementation details as one pack.
+* This keeps old v2 JSON compatible while avoiding dozens of peer-level cards.
+*/
+function homebrewPackages(elements) {
+	const byId = new Map(elements.map((element) => [element.id, element]));
+	const classes = elements.filter((element) => element.type === "class");
+	const owner = /* @__PURE__ */ new Map();
+	const packRoot = /* @__PURE__ */ new Map();
+	for (const element of classes) {
+		owner.set(element.id, element.id);
+		if (element.source?.packId) packRoot.set(element.source.packId, element.id);
+	}
+	for (const element of elements) {
+		const root = element.source?.packId && packRoot.get(element.source.packId);
+		if (root) owner.set(element.id, root);
+	}
+	for (let pass = 0; pass < elements.length; pass += 1) {
+		let changed = false;
+		for (const element of elements) {
+			if (owner.has(element.id)) continue;
+			const root = [
+				element.parentClassId,
+				...element.spellClasses || [],
+				...element.references || []
+			].filter((id) => !!id).map((id) => owner.get(id) || (byId.get(id)?.type === "class" ? id : void 0)).find(Boolean);
+			if (root) {
+				owner.set(element.id, root);
+				changed = true;
+			}
+		}
+		for (const parent of elements) {
+			const root = owner.get(parent.id);
+			if (!root) continue;
+			const childIds = [...(parent.choices || []).flatMap((choice) => choice.from), ...Object.values(parent.advancement || {}).flatMap((rows) => rows.map((row) => row.id).filter((id) => !!id))];
+			for (const id of childIds) if (byId.has(id) && !owner.has(id)) {
+				owner.set(id, root);
+				changed = true;
+			}
+		}
+		if (!changed) break;
+	}
+	return elements.filter((element) => owner.get(element.id) === element.id || !owner.has(element.id)).map((root) => {
+		const rootId = owner.get(root.id) || root.id;
+		const members = elements.filter((element) => (owner.get(element.id) || element.id) === rootId);
+		const counts = {};
+		for (const member of members) counts[member.type] = (counts[member.type] || 0) + 1;
+		return {
+			id: rootId,
+			name: root.name,
+			root,
+			members,
+			counts
+		};
+	});
+}
+function homebrewPackageFor(element, elements) {
+	return homebrewPackages(elements).find((pack) => pack.members.some((member) => member.id === element.id));
+}
+function homebrewPackageLabel(pack) {
+	const parts = [];
+	const count = (type, one, many) => {
+		const value = pack.counts[type] || 0;
+		if (value) parts.push(`${value} ${value === 1 ? one : many}`);
+	};
+	count("subclass", "подкласс", "подкласса");
+	count("ability", "вариант", "вариантов");
+	count("spell", "заклинание", "заклинаний");
+	count("table", "таблица", "таблиц");
+	return parts.join(" · ") || `${pack.members.length} элемент`;
+}
+//#endregion
 //#region app/homebrewEngine.ts
 var level = (c) => c.classes?.length ? c.classes.reduce((s, x) => s + x.level, 0) : c.level || 1;
 var homebrewClassLevel = (c, id) => c.classes?.length ? c.classes.find((x) => x.classId === id.replace("official:class:", ""))?.level || 0 : c.className === id.replace("official:class:", "") ? c.level : 0;
@@ -13177,6 +13251,45 @@ function hbSkillName(id) {
 	const normalized = id.replace(/^skill:/, "").replace(/-/g, " ");
 	return Object.entries(skillKeys).find(([name, data]) => name === id || data.key === normalized)?.[0] || id;
 }
+var weaponProficiencyNames = {
+	club: "Дубинка",
+	dagger: "Кинжал",
+	greatclub: "Палица",
+	handaxe: "Ручной топор",
+	javelin: "Метательное копьё",
+	"light-hammer": "Лёгкий молот",
+	mace: "Булава",
+	quarterstaff: "Боевой посох",
+	sickle: "Серп",
+	spear: "Копьё",
+	"light-crossbow": "Лёгкий арбалет",
+	dart: "Дротик",
+	shortbow: "Короткий лук",
+	sling: "Праща",
+	battleaxe: "Боевой топор",
+	flail: "Цеп",
+	glaive: "Глефа",
+	greataxe: "Секира",
+	greatsword: "Двуручный меч",
+	halberd: "Алебарда",
+	lance: "Длинное копьё",
+	longsword: "Длинный меч",
+	maul: "Молот",
+	morningstar: "Моргенштерн",
+	pike: "Пика",
+	rapier: "Рапира",
+	scimitar: "Скимитар",
+	shortsword: "Короткий меч",
+	trident: "Трезубец",
+	"war-pick": "Боевая кирка",
+	warhammer: "Боевой молот",
+	whip: "Кнут",
+	"hand-crossbow": "Ручной арбалет",
+	"heavy-crossbow": "Тяжёлый арбалет",
+	longbow: "Длинный лук",
+	blowgun: "Духовая трубка",
+	net: "Сеть"
+};
 function classRuleFor(c, id) {
 	const e = c.homebrew?.entities.find((e) => e.id === id && e.type === "class");
 	if (!e) return classRules[id];
@@ -13189,7 +13302,7 @@ function classRuleFor(c, id) {
 			heavy: "Тяжёлые доспехи",
 			shield: "Щиты"
 		})[e.group] || e.group).join(", "),
-		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : e.id || "").join(", "),
+		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : weaponProficiencyNames[e.id || ""] || e.id || "").join(", "),
 		spellAbility: e.spellcasting?.mode && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
 		features: activeHomebrew(c).filter((x) => x.type === "ability").map((x) => ({
 			name: x.name,
@@ -13282,7 +13395,8 @@ function homebrewExportClosure(root, library) {
 		const refs = JSON.stringify(entity).match(/hb:[a-z0-9_-]+:[a-z]+:[a-z0-9_-]+/g) || [];
 		for (const ref of refs) if (ref !== id) visit(ref);
 	};
-	visit(root.id);
+	const pack = homebrewPackageFor(root, library);
+	for (const member of pack?.members || [root]) visit(member.id);
 	return result;
 }
 function homebrewExportWarning(c) {
@@ -48102,9 +48216,3737 @@ function validateHomebrew(entities, officialIds = []) {
 	if (!problems.length) for (const e of entities) visit(e.id);
 	return problems;
 }
-//#endregion
-//#region app/savantExample.json
-var savantExample_default = /* @__PURE__ */ JSON.parse("[{\"schemaVersion\":2,\"uid\":\"savant-5.2-savant\",\"id\":\"hb:savant:class:savant\",\"type\":\"class\",\"name\":\"Савант\",\"description\":\"Редактируемый пример по механическому резюме Саванта 5.2 (laserllama). Условные реакции, Метка, подмена характеристик против Метки и решения мастера применяются вручную; постоянные эффекты задаются во вкладке Механика.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[{\"type\":\"armor_proficiency\",\"group\":\"light\"},{\"type\":\"weapon_group_proficiency\",\"group\":\"simple\"},{\"type\":\"weapon_proficiency\",\"id\":\"Кнут\"},{\"type\":\"weapon_proficiency\",\"id\":\"Короткий меч\"},{\"type\":\"weapon_proficiency\",\"id\":\"Рапира\"}],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[{\"id\":\"hb:savant:choice:research-1\",\"name\":\"Научное исследование 1\",\"type\":\"feature\",\"count\":1,\"from\":[\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\"],\"level\":1},{\"id\":\"hb:savant:choice:research-2\",\"name\":\"Научное исследование 2\",\"type\":\"feature\",\"count\":1,\"from\":[\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\"],\"level\":4},{\"id\":\"hb:savant:choice:research-3\",\"name\":\"Научное исследование 3\",\"type\":\"feature\",\"count\":1,\"from\":[\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\"],\"level\":7},{\"id\":\"hb:savant:choice:research-4\",\"name\":\"Научное исследование 4\",\"type\":\"feature\",\"count\":1,\"from\":[\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\"],\"level\":13},{\"id\":\"hb:savant:choice:research-5\",\"name\":\"Научное исследование 5\",\"type\":\"feature\",\"count\":1,\"from\":[\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\"],\"level\":18}],\"hitDie\":\"d8\",\"primaryAbility\":\"int\",\"savingThrows\":[\"int\",\"wis\"],\"skillChoices\":{\"count\":2,\"from\":[\"history\",\"arcana\",\"medicine\",\"nature\",\"insight\",\"investigation\",\"religion\",\"persuasion\"]},\"subclass\":{\"chooseAtLevel\":3,\"featureLevels\":[3,6,10,15]},\"multiclass\":{\"requirements\":[{\"ability\":\"int\",\"min\":13}]},\"spellcasting\":{\"mode\":\"none\",\"ability\":\"int\"},\"startingGold\":\"5d4 * 10\",\"equipment\":[\"Короткий меч\",\"Лёгкий арбалет\",\"20 болтов\",\"Ремесленные инструменты на выбор\",\"Кожаный доспех\",\"Набор учёного\"],\"advancement\":{\"1\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-1\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-2\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-3\"}],\"2\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-4\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-5\"}],\"3\":[{\"type\":\"subclass\"}],\"4\":[{\"type\":\"asi_or_feat\"}],\"5\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-8\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-9\"}],\"6\":[],\"7\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-10\"}],\"8\":[{\"type\":\"asi_or_feat\"}],\"9\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-11\"}],\"10\":[],\"11\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-12\"}],\"12\":[{\"type\":\"asi_or_feat\"}],\"13\":[],\"14\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-13\"}],\"15\":[],\"16\":[{\"type\":\"asi_or_feat\"}],\"17\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-14\"}],\"18\":[],\"19\":[{\"type\":\"asi_or_feat\"}],\"20\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-15\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-1\",\"id\":\"hb:savant:ability:feature-1\",\"type\":\"ability\",\"name\":\"Научные исследования\",\"description\":\"1-й уровень\\n\\nВы изучаете одно исследование из специального списка. Дополнительные исследования открываются по таблице класса: общее число известных исследований растёт до 5 к 18-му уровню. Для каждого исследования нужно соблюдать указанное требование по уровню.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":1},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-2\",\"id\":\"hb:savant:ability:feature-2\",\"type\":\"ability\",\"name\":\"Проницательный анализ\",\"description\":\"1-й уровень\\n\\nБонусным действием вы выбираете видимое существо в пределах 60 футов как Метку и поддерживаете концентрацию на нём по правилам концентрации. Метка действует, пока вы не потеряете концентрацию, цель не скроется от вас или вы не выберете новую цель.\\n\\nПосле попадания по Метке атакой либо после 1 минуты наблюдения можно узнать один параметр: наивысшее значение характеристики, наименьшее значение характеристики, КД, скорость, максимум хитов или тип существа.\\n\\nПротив Метки для атак и урона оружием можно использовать модификатор Интеллекта вместо Силы или Ловкости.\\n\\nПроверки Интеллекта и Мудрости для анализа или вспоминания сведений о Метке совершаются с преимуществом.\\n\\nДля удержания концентрации на Метке можно совершать спасбросок Интеллекта вместо Телосложения.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":1},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-3\",\"id\":\"hb:savant:ability:feature-3\",\"type\":\"ability\",\"name\":\"Предсказательная защита\",\"description\":\"1-й уровень\\n\\nПри расчёте КД разрешено использовать модификатор Интеллекта вместо модификатора Ловкости. Пока вы дееспособны, ваша Метка совершает броски атаки против вас с помехой.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":1},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-4\",\"id\":\"hb:savant:ability:feature-4\",\"type\":\"ability\",\"name\":\"Удивительный интеллект\",\"description\":\"2-й уровень\\n\\nВы получаете Кость Ума: к6, которая увеличивается до к8 на 5-м, к10 на 11-м и к12 на 17-м уровне. Если способность с Костью Ума требует спасброска, Сл = 8 + бонус мастерства + модификатор Интеллекта.\\n\\n### Благополучный расчёт\\n\\nКогда видимое существо атакует вас рукопашным оружием, реакцией бросьте Кость Ума и прибавьте результат к КД против этой атаки. Если из-за этого атака промахнулась, можно частью той же реакции переместиться на 10 футов без провоцирования атак.\\n\\n### Эффективное наблюдение\\n\\nКогда другое существо, способное вас слышать, атакует вашу Метку, реакцией добавьте к урону этой атаки результат Кости Ума.\\n\\n### Удивительная проницательность\\n\\nКогда другое слышащее вас существо совершает проверку навыка или инструмента, которым вы владеете, реакцией добавьте Кость Ума к проверке. Решение допускается после броска к20, но до объявления результата Мастером.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":2},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-5\",\"id\":\"hb:savant:ability:feature-5\",\"type\":\"ability\",\"name\":\"Острый ум\",\"description\":\"2-й уровень\\n\\nДействия Помощь и Поиск можно выполнять бонусным действием. Также бонусным действием можно выполнять проверки навыков Интеллекта, если они нужны для получения сведений о видимом существе или объекте. Помогать атаковать вашу Метку можно, находясь в пределах 5 футов от атакующего, даже если сама цель дальше 5 футов от вас.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":2},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-6\",\"id\":\"hb:savant:ability:feature-6\",\"type\":\"ability\",\"name\":\"Академическая дисциплина\",\"description\":\"3-й уровень\\n\\nВы выбираете один из девяти подклассов: Археолог, Врач, Натуралист, Следователь, Тактик, Кулинар, Оратор, Философ или Рунописец. Умения дисциплины даются на 3, 6, 10 и 15 уровнях.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-7\",\"id\":\"hb:savant:ability:feature-7\",\"type\":\"ability\",\"name\":\"Увеличение характеристик\",\"description\":\"4, 8, 12, 16 и 19 уровни\\n\\nПовышение одной характеристики на 2 или двух характеристик на 1, не выше 20. Если разрешены черты, вместо повышения можно взять черту.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-8\",\"id\":\"hb:savant:ability:feature-8\",\"type\":\"ability\",\"name\":\"Несравненное прозрение\",\"description\":\"5-й уровень\\n\\nКогда другое существо, способное вас слышать, совершает спасбросок, реакцией можно добавить к нему Кость Ума. Кроме того, к собственным спасброскам Интеллекта, Мудрости и Харизмы можно добавлять Кость Ума, если вы дееспособны.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":5},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-9\",\"id\":\"hb:savant:ability:feature-9\",\"type\":\"ability\",\"name\":\"Ускоренные рефлексы\",\"description\":\"5-й уровень; улучшения на 13-м и 18-м\\n\\nВы добавляете модификатор Интеллекта к инициативе и получаете вторую реакцию за раунд. На 13-м уровне реакций становится три, на 18-м — четыре. Один и тот же триггер может вызвать только одну вашу реакцию.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[{\"type\":\"initiative_bonus\",\"value\":\"@mod.int\",\"level\":5}],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":5},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-10\",\"id\":\"hb:savant:ability:feature-10\",\"type\":\"ability\",\"name\":\"Острая осведомлённость\",\"description\":\"7-й уровень\\n\\nПока вы дееспособны, вас нельзя застать врасплох. При броске инициативы можно реакцией применить Проницательный анализ к видимому существу в пределах 60 футов и сразу сделать его Меткой.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":7},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-11\",\"id\":\"hb:savant:ability:feature-11\",\"type\":\"ability\",\"name\":\"Эксперт в предсказании\",\"description\":\"9-й уровень\\n\\nПока вы дееспособны, все проверки характеристик и спасброски, которые вынуждает вас совершать ваша Метка, выполняются с преимуществом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":9},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-12\",\"id\":\"hb:savant:ability:feature-12\",\"type\":\"ability\",\"name\":\"Непревзойдённый гений\",\"description\":\"11-й уровень\\n\\nТри базовых применения Удивительного интеллекта усиливаются.\\n\\n### Благополучный расчёт\\n\\nЕсли реакция заставила рукопашную атаку по вам промахнуться, частью той же реакции можно совершить одну рукопашную атаку по атакующему.\\n\\n### Эффективное наблюдение\\n\\nРеакцию можно применять, когда одно слышащее вас существо атакует любое другое видимое вами существо. Если атакуют именно вашу Метку, к урону добавляются две Кости Ума вместо одной.\\n\\n### Удивительная проницательность\\n\\nПри помощи другому существу бросаются две Кости Ума, и к проверке добавляется больший результат.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":11},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-13\",\"id\":\"hb:savant:ability:feature-13\",\"type\":\"ability\",\"name\":\"Непоколебимая воля\",\"description\":\"14-й уровень\\n\\nВы получаете владение спасбросками Харизмы и совершаете с преимуществом спасброски против очарования и испуга.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[{\"type\":\"saving_throw_proficiency\",\"ability\":\"cha\",\"level\":14}],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":14},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-14\",\"id\":\"hb:savant:ability:feature-14\",\"type\":\"ability\",\"name\":\"Совершенный анализ\",\"description\":\"17-й уровень\\n\\nДействием вы предугадываете следующий ход Метки. До начала вашего следующего хода Метка совершает с помехой проверки характеристик, атаки и спасброски; выбранные вами существа получают преимущество на спасброски, которые Метка заставляет их совершать. После применения требуется короткий или продолжительный отдых для восстановления.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":17},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-15\",\"id\":\"hb:savant:ability:feature-15\",\"type\":\"ability\",\"name\":\"Несравненный интеллект\",\"description\":\"20-й уровень\\n\\nИнтеллект увеличивается на 4, максимум до 24. Если бросок Кости Ума ниже вашего модификатора Интеллекта, результат можно заменить значением модификатора Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":20},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-16\",\"id\":\"hb:savant:ability:feature-16\",\"type\":\"ability\",\"name\":\"Астрология\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Магией; к проверкам Интеллекта (Магия) добавляется Кость Ума. Во время продолжительного отдыха под видимым ночным небом бросьте к20 и запишите число. До следующего продолжительного отдыха один раз можно заранее заменить этим записанным результатом собственный бросок атаки, спасбросок или проверку характеристики.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-17\",\"id\":\"hb:savant:ability:feature-17\",\"type\":\"ability\",\"name\":\"Бушкрафт\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Природой; к проверкам Интеллекта (Природа) добавляется Кость Ума. За 10 минут, в том числе во время отдыха, из природных материалов с кинжалом или ручным топором можно сделать дубинку, 1к4 дротиков, метательное копьё, сеть, 10 футов верёвки либо бушкрафтовый силок. Силок ставится действием в соседнюю свободную клетку 5 футов; первое существо Большого размера или меньше, вошедшее туда, делает спасбросок Ловкости против Сл Удивительного интеллекта или становится опутанным. Действием оно может повторить спасбросок Силы против той же Сл и освободиться при успехе.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-18\",\"id\":\"hb:savant:ability:feature-18\",\"type\":\"ability\",\"name\":\"Быстрое обучение\",\"description\":\"Без требования по уровню\\n\\nПолучите владение одним навыком, инструментом или оружием либо один разговорный язык. За 1 час, который можно включить в отдых, это владение/язык можно заменить другим, если есть образец для обучения: учитель, книга на нужном языке, руководство по инструменту и т. п.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[]},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-19\",\"id\":\"hb:savant:ability:feature-19\",\"type\":\"ability\",\"name\":\"Эрудит\",\"description\":\"Без требования по уровню\\n\\nПолучите владение одним навыком из стартового списка Саванта, одним набором инструментов и одним языком: говорить, читать и писать.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[]},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-20\",\"id\":\"hb:savant:ability:feature-20\",\"type\":\"ability\",\"name\":\"Загадки\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Обманом; к проверкам Харизмы (Обман) добавляется Кость Ума. Вы можете вкладывать скрытые сообщения в обычную речь. За 1 час можно обучить другое существо понимать ваши загадки; при Интеллекте 11+ оно способно отвечать вам тем же способом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-21\",\"id\":\"hb:savant:ability:feature-21\",\"type\":\"ability\",\"name\":\"Искусство торговли\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Проницательностью; к проверкам Мудрости (Проницательность) добавляется Кость Ума. При торге с существом, чьи Интеллект и Мудрость ниже вашего Интеллекта, покупная цена снижается на 10%, а цена продажи повышается на 10%.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-22\",\"id\":\"hb:savant:ability:feature-22\",\"type\":\"ability\",\"name\":\"Конный спорт\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Уходом за животными; к проверкам Мудрости (Уход за животными) добавляется Кость Ума. Дрессированный скакун в бою делит с вами инициативу и действует вместе с вами. К его проверке, атаке или спасброску можно добавить Кость Ума; бонусным действием вы можете приказать ему атаковать или выполнить иное действие из его блока. За 8 часов и 50 зм материалов/корма можно обучить дружелюбное четвероногое существо как своего скакуна.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-23\",\"id\":\"hb:savant:ability:feature-23\",\"type\":\"ability\",\"name\":\"Лингвистика\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Убеждением; к проверкам Харизмы (Убеждение) добавляется Кость Ума. Вы изучаете число дополнительных языков, равное модификатору Интеллекта, с чтением и письмом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-24\",\"id\":\"hb:savant:ability:feature-24\",\"type\":\"ability\",\"name\":\"Мастерство стрельбы\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Ловкостью рук; к проверкам Ловкости (Ловкость рук) добавляется Кость Ума. Вы владеете всем воинским дальнобойным оружием. При дальнобойной атаке оружием можно заменить обычную кость урона оружия на вашу Кость Ума. Если в сеттинге есть огнестрельное оружие и персонаж знаком с ним, он считается владеющим простым и воинским огнестрельным оружием.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-25\",\"id\":\"hb:savant:ability:feature-25\",\"type\":\"ability\",\"name\":\"Музыкальное мастерство\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Выступлением; к проверкам Харизмы (Выступление) добавляется Кость Ума. Если вы играете/выступаете перед существом минимум 1 минуту, на 1 час получаете преимущество на проверки для социального взаимодействия с ним. Эффект прекращается, если вы или союзники вредите существу или его союзникам.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-26\",\"id\":\"hb:savant:ability:feature-26\",\"type\":\"ability\",\"name\":\"Наставничество\",\"description\":\"Без требования по уровню\\n\\nВ конце продолжительного отдыха можно обучить слышащего и понимающего вас гуманоида одному вашему навыку, инструменту или разговорному языку. Владение действует до конца следующего продолжительного отдыха.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[]},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-27\",\"id\":\"hb:savant:ability:feature-27\",\"type\":\"ability\",\"name\":\"Первая помощь\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Медициной; к проверкам Мудрости (Медицина) добавляется Кость Ума. Во время продолжительного отдыха, потратив 1 час и имея набор лекаря, создайте количество зелий лечения, равное модификатору Интеллекта (минимум 1). Неиспользованные зелья теряют силу через 24 часа.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-28\",\"id\":\"hb:savant:ability:feature-28\",\"type\":\"ability\",\"name\":\"Секреты и шёпот\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Скрытностью; к проверкам Ловкости (Скрытность) добавляется Кость Ума. После продолжительного отдыха в городе, посёлке или деревне вы узнаёте об одном важном событии, произошедшем там за последнюю неделю.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-29\",\"id\":\"hb:savant:ability:feature-29\",\"type\":\"ability\",\"name\":\"Соколиная охота\",\"description\":\"Требование: Савант 4-го уровня\\n\\nПолучаете сокола-компаньона со статистикой ястреба, но Интеллектом 8; вы обмениваетесь простыми идеями жестами и звуками. В бою сокол делит вашу инициативу и ходит сразу после вас; без команды использует Уклонение, но бонусным действием вы можете приказать другое действие. Если вы недееспособны, сокол действует свободно. При 0 хитов он делает спасброски смерти. Погибшего сокола можно заменить, потратив 8 часов и 5 зм на приманку.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-30\",\"id\":\"hb:savant:ability:feature-30\",\"type\":\"ability\",\"name\":\"Совершенное запоминание\",\"description\":\"Без требования по уровню\\n\\nПосле минимум 1 минуты наблюдения за существом или объектом вы в дальнейшем можете без проверки Интеллекта точно воспроизводить запомненные детали: карту, страницу, произведение искусства, внешность и т. п.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[]},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-31\",\"id\":\"hb:savant:ability:feature-31\",\"type\":\"ability\",\"name\":\"Теология\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Религией; к проверкам Интеллекта (Религия) добавляется Кость Ума. Вы изучаете Небесный язык. Также знаете заклинание «Церемония»: для вас ритуальное наложение занимает 10 минут, и раз за продолжительный отдых его можно сотворить без материальных компонентов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-32\",\"id\":\"hb:savant:ability:feature-32\",\"type\":\"ability\",\"name\":\"Традиции\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВладение Историей; к проверкам Интеллекта (История) добавляется Кость Ума. Если при общении с местным правителем или другой важной фигурой вы уместно используете местный обычай/традицию, соответствующая проверка совершается с преимуществом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-33\",\"id\":\"hb:savant:ability:feature-33\",\"type\":\"ability\",\"name\":\"Физическая развитость\",\"description\":\"Требование: Савант 4-го уровня\\n\\nВыберите Атлетику или Акробатику: получаете владение и добавляете Кость Ума к проверкам выбранного навыка. Скорость лазания и плавания становится равной скорости ходьбы. При прыжке с разбега к дистанции прыжка добавляется модификатор Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"level\":4},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-1\",\"id\":\"hb:savant:subclass:discipline-1\",\"type\":\"subclass\",\"name\":\"Археолог\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-35\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-36\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-37\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-38\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-39\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-35\",\"id\":\"hb:savant:ability:feature-35\",\"type\":\"ability\",\"name\":\"Студент истории\",\"description\":\"3-й уровень\\n\\nВладение Историей и Расследованием; к проверкам этих навыков добавляется Кость Ума. Если одно из владений уже есть, вместо него выбирается навык из списка Саванта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-36\",\"id\":\"hb:savant:ability:feature-36\",\"type\":\"ability\",\"name\":\"Авантюрный академик\",\"description\":\"3-й уровень\\n\\nВы приспособлены к опасным экспедициям и древним артефактам.\\n\\nСкорость лазания равна скорости ходьбы.\\n\\nК спасброскам, связанным с ловушками, добавляется Кость Ума.\\n\\nИгнорируются требования класса, расы и мировоззрения для настройки/использования магических предметов, свитков и зелий; для заклинаний таких предметов используется Интеллект.\\n\\nЗаклинания из магических предметов, свитков и зелий можно накладывать и поддерживать концентрацию на них одновременно с Проницательным анализом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-37\",\"id\":\"hb:savant:ability:feature-37\",\"type\":\"ability\",\"name\":\"Дерзкая решимость\",\"description\":\"6-й уровень\\n\\nК любому спасброску Ловкости и к проверке характеристики, связанной с ловушкой, добавляется Кость Ума. Если действием применён магический предмет, зелье или свиток, в тот же ход бонусным действием можно совершить одну атаку оружием.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-38\",\"id\":\"hb:savant:ability:feature-38\",\"type\":\"ability\",\"name\":\"Мастер знаний\",\"description\":\"10-й уровень\\n\\nПосле минимум 1 часа наблюдения за человеком, местом или предметом вы можете сверхъестественно вспомнить сведения о нём по принципу эффекта «Знание легенд»; объект не обязан быть легендарным, но если сведений не существует, ничего не узнаете. Когда вы используете магический предмет, его Сл спасброска повышается до вашей Сл Удивительного интеллекта, если исходная Сл не выше.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-39\",\"id\":\"hb:savant:ability:feature-39\",\"type\":\"ability\",\"name\":\"Магистр археологии\",\"description\":\"15-й уровень\\n\\nВы получаете сопротивление урону от заклинаний. После каждого короткого отдыха один настроенный на вас магический предмет может восстановить число потраченных зарядов, равное вашему модификатору Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-2\",\"id\":\"hb:savant:subclass:discipline-2\",\"type\":\"subclass\",\"name\":\"Врач\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-41\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-42\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-43\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-44\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-45\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-41\",\"id\":\"hb:savant:ability:feature-41\",\"type\":\"ability\",\"name\":\"Изучающий медицину\",\"description\":\"3-й уровень\\n\\nВладение Медициной и Ловкостью рук; к обеим проверкам добавляется Кость Ума. Если владение уже было, замените его навыком из списка Саванта.\\n\\nПроверку Мудрости (Медицина) можно заменить проверкой Интеллекта (Медицина).\\n\\nПосле 1 минуты осмотра существа вы определяете действующие на него болезни, яды и проклятия.\\n\\nРаз за ход после попадания по Метке оружием можно до начала следующего хода уменьшить её скорость на 5 × модификатор Интеллекта футов, минимум на 5 футов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-42\",\"id\":\"hb:savant:ability:feature-42\",\"type\":\"ability\",\"name\":\"Боевой медик\",\"description\":\"3-й уровень\\n\\nПосле короткого или продолжительного отдыха один комплект целителя, которого вы касаетесь, восстанавливает число использований, равное модификатору Интеллекта (минимум 1). Каждая из следующих медицинских процедур требует действия. При её применении можно потратить 1 использование комплекта целителя и вместо броска Кости Ума считать её результат максимальным.\\n\\n### Выброс адреналина\\n\\nКоснитесь существа: оно немедленно повторяет спасбросок против ослепления, очарования, оглушения, испуга, отравления либо одной болезни и добавляет к новому спасброску Кость Ума.\\n\\n### Перевязка ран\\n\\nКоснувшееся вами существо получает временные хиты в размере Кости Ума; эти временные хиты не могут превышать максимум его хитов.\\n\\n### Исцеляющий всплеск\\n\\nСущество может немедленно потратить одну Кость Хитов и восстановить Кость Хитов + модификатор Телосложения + Кость Ума хитов. Живое существо с 0 хитов стабилизируется даже без траты Кости Хитов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-43\",\"id\":\"hb:savant:ability:feature-43\",\"type\":\"ability\",\"name\":\"Полевой врач\",\"description\":\"6-й уровень\\n\\nБонусным действием каждый ход можно совершать Рывок или Отход. После применения Боевого медика действием в тот же ход можно бонусным действием совершить одну атаку оружием.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-44\",\"id\":\"hb:savant:ability:feature-44\",\"type\":\"ability\",\"name\":\"Эксперт медицины\",\"description\":\"10-й уровень\\n\\nУмения Боевого медика получают усиленные варианты. Для каждого отдельного существа первое усиленное применение между его продолжительными отдыхами проходит без побочного эффекта; каждое последующее усиленное применение до его следующего продолжительного отдыха даёт ему 1 уровень истощения.\\n\\n### Восстанавливающий толчок\\n\\nУсиленный Выброс адреналина автоматически снимает одно из следующего: испуг, оглушение, окаменение, ослепление, ошеломление, очарование, паралич, отравление, снижение одной характеристики или уменьшение максимума хитов.\\n\\n### Сшивание ран\\n\\nЕсли Перевязка ран проводится непрерывно 10 минут на живом существе, можно прикрепить отрубленные конечности/пальцы. Существо получает временные хиты, равные разнице между его текущими и максимальными хитами.\\n\\n### Реанимирующий всплеск\\n\\nУсиленный Исцеляющий всплеск возвращает к жизни существо, умершее не более минуты назад, если оно тратит одну Кость Хитов. Не действует при смерти от старости и не восстанавливает отсутствующие части тела. Временные хиты от этой способности исчезают, когда существо снова достигает максимума хитов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-45\",\"id\":\"hb:savant:ability:feature-45\",\"type\":\"ability\",\"name\":\"Магистр медицины\",\"description\":\"15-й уровень\\n\\nКаждому отдельному существу между продолжительными отдыхами можно применить уже два усиленных умения Боевого медика без истощения. При любом броске Кости Ума в рамках Боевого медика к результату дополнительно прибавляется модификатор Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-3\",\"id\":\"hb:savant:subclass:discipline-3\",\"type\":\"subclass\",\"name\":\"Натуралист\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-47\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-48\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-49\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-50\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-51\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-52\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-53\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-47\",\"id\":\"hb:savant:ability:feature-47\",\"type\":\"ability\",\"name\":\"Изучающий природу\",\"description\":\"3-й уровень\\n\\nВладение Природой и Выживанием; к проверкам этих навыков добавляется Кость Ума. При наличии владения вместо него выбирается другой навык Саванта. Проверку Мудрости (Уход за животными) можно заменить проверкой Интеллекта (Уход за животными).\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-48\",\"id\":\"hb:savant:ability:feature-48\",\"type\":\"ability\",\"name\":\"Дневник натуралиста\",\"description\":\"3-й уровень\\n\\nЗа 1 час во время короткого или продолжительного отдыха можно добавить запись о текущей среде либо об особом звере, растении или монстре, который был вашей Меткой за последние 24 часа. Утерянный дневник восстанавливается по памяти по 1 часу на каждую старую запись. Вы имеете преимущество на проверки Интеллекта по местной флоре, фауне, погоде и экосистемам, описанным в дневнике. Раз за ход к атаке против записанного существа добавляется Кость Ума.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-49\",\"id\":\"hb:savant:ability:feature-49\",\"type\":\"ability\",\"name\":\"Выживальщик\",\"description\":\"6-й уровень\\n\\nПроницательный анализ может назначить Меткой существо по следам и другим признакам его присутствия, даже без прямой видимости; скрывшееся существо не перестаёт быть Меткой. Вы бесплатно изучаете исследование «Физическая развитость»; если оно уже известно, вместо него берётся «Соколиная охота» или «Совершенное запоминание».\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-50\",\"id\":\"hb:savant:ability:feature-50\",\"type\":\"ability\",\"name\":\"Инструктор по выживанию\",\"description\":\"6-й уровень\\n\\nВ среде, описанной в дневнике, вы и до 10 путешествующих с вами существ игнорируете немагическую труднопроходимую местность, не можете заблудиться немагическим способом и можете двигаться скрытно в обычном темпе.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-51\",\"id\":\"hb:savant:ability:feature-51\",\"type\":\"ability\",\"name\":\"Углублённые исследования\",\"description\":\"10-й уровень\\n\\nВ дневник можно добавлять конкретные виды драконов, великанов, слизей и нежити. Конкретное записанное существо считается вашей Меткой для связанных способностей, даже если сейчас не назначено Меткой. Для описанной среды вы и до 10 спутников игнорируете магическую труднопроходимую местность и получаете преимущество на спасброски против враждебных эффектов этой среды.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-52\",\"id\":\"hb:savant:ability:feature-52\",\"type\":\"ability\",\"name\":\"Зов дикой природы\",\"description\":\"10-й уровень\\n\\nДействием выберите слышащее вас существо типа зверь, растение или монстр в пределах 30 футов. Оно делает спасбросок Мудрости против Сл Удивительного интеллекта; при провале очаровывается вами на 1 час. Если его Интеллект не меньше половины вашего уровня Саванта, оно автоматически преуспевает. Пока очаровано, дружественно вам и союзникам; бонусным действием вы отдаёте словесную команду на его следующий ход, после выполнения оно защищается до новой команды. При получении урона оно повторяет спасбросок; если успешно, вы можете реакцией вычесть из него Кость Ума. Успешно освободившееся существо иммунно к этому умению 24 часа. Одновременно очаровано не более одного существа. После применения требуется короткий или продолжительный отдых.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-53\",\"id\":\"hb:savant:ability:feature-53\",\"type\":\"ability\",\"name\":\"Магистр натуралист\",\"description\":\"15-й уровень\\n\\nВ дневник можно добавлять любое существо, кроме конструкта и гуманоида. Зов дикой природы длится до 8 часов; записанные в дневнике существа совершают спасброски против этого очарования с помехой. Ваши атаки против любых существ, описанных в дневнике, совершаются с преимуществом.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-4\",\"id\":\"hb:savant:subclass:discipline-4\",\"type\":\"subclass\",\"name\":\"Следователь\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-55\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-56\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-57\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-58\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-59\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-60\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-55\",\"id\":\"hb:savant:ability:feature-55\",\"type\":\"ability\",\"name\":\"Студент правды\",\"description\":\"3-й уровень\\n\\nВладение Проницательностью и Расследованием с удвоением бонуса мастерства к проверкам этих навыков. Если владение уже есть, получите другой навык из списка Саванта. Проверку Мудрости (Проницательность) можно заменить Интеллектом. Действие Поиск даёт объём информации, который обычно потребовал бы 1 минуты поиска.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-56\",\"id\":\"hb:savant:ability:feature-56\",\"type\":\"ability\",\"name\":\"Грубость и неуклюжесть\",\"description\":\"3-й уровень\\n\\nВы знаете воровской жаргон. Безоружный удар наносит дробящий урон Кость Ума + модификатор Силы. Когда в свой ход попадаете по Метке рукопашной атакой, можно заставить её сделать спасбросок Ловкости против Сл Удивительного интеллекта. При провале до начала вашего следующего хода выберите: цель ослеплена, оглохла или не может говорить; либо, если она Большого размера или меньше, падает ничком.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-57\",\"id\":\"hb:savant:ability:feature-57\",\"type\":\"ability\",\"name\":\"Искусная оборона\",\"description\":\"6-й уровень\\n\\nЕсли Благополучный расчёт заставляет атаку по вам промахнуться, вместо бесплатного перемещения можно заставить атакующего совершить спасбросок Ловкости против Сл Удивительного интеллекта и при провале применить к нему один эффект Грубости и неуклюжести.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-58\",\"id\":\"hb:savant:ability:feature-58\",\"type\":\"ability\",\"name\":\"Ухо к земле\",\"description\":\"6-й уровень\\n\\nПроверки Харизмы при общении на воровском жаргоне совершаются с преимуществом. Вы бесплатно изучаете исследование «Секреты и шёпот»; если оно уже известно, вместо него берётся «Совершенное запоминание» или «Традиции».\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-59\",\"id\":\"hb:savant:ability:feature-59\",\"type\":\"ability\",\"name\":\"Мастерский знаток\",\"description\":\"10-й уровень\\n\\nВы мгновенно распознаёте присутствие иллюзии или оборотня и сразу понимаете, когда ваша Метка лжёт. Если Метка провалила спасбросок против Грубости и неуклюжести, вместо обычного эффекта её можно ошеломить.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-60\",\"id\":\"hb:savant:ability:feature-60\",\"type\":\"ability\",\"name\":\"Магистр следования\",\"description\":\"15-й уровень\\n\\nВы получаете истинное зрение 30 футов. Когда вы попадаете атакой по Метке или применяете против неё Благополучный расчёт, можно превратить соответствующую атаку в критическое попадание. После этого требуется короткий или продолжительный отдых.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-5\",\"id\":\"hb:savant:subclass:discipline-5\",\"type\":\"subclass\",\"name\":\"Тактик\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-62\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-63\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-64\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-65\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-66\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-62\",\"id\":\"hb:savant:ability:feature-62\",\"type\":\"ability\",\"name\":\"Ученик войны\",\"description\":\"3-й уровень\\n\\nВладение Историей и Убеждением с удвоением бонуса мастерства; если владение уже есть, замените его навыком из списка Саванта.\\n\\nВладение щитами, средними доспехами и всем воинским оружием без свойства «тяжёлое».\\n\\nВладение двумя игровыми наборами; к проверкам с ними добавляется Кость Ума.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-63\",\"id\":\"hb:savant:ability:feature-63\",\"type\":\"ability\",\"name\":\"Тактический командир\",\"description\":\"3-й уровень\\n\\nПри совершении действия Атака одну из своих атак можно заменить Приказом, направленным на другое существо в пределах 30 футов, которое видит или слышит вас.\\n\\n### Приказ об атаке\\n\\nДо начала вашего следующего хода, когда цель Приказа в следующий раз совершит действие Атака, она может в рамках этого действия сделать одну дополнительную атаку оружием.\\n\\n### Приказ об обороне\\n\\nЦель получает преимущества действия Уклонение до начала своего следующего хода.\\n\\n### Приказ о маневрировании\\n\\nЦель может немедленно реакцией переместиться на расстояние до своей скорости, не провоцируя атак.\\n\\n### Приказ о поддержке\\n\\nЦель немедленно выполняет одно из действий: Помощь, Засада, Поиск, Изучение или Использовать предмет.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-64\",\"id\":\"hb:savant:ability:feature-64\",\"type\":\"ability\",\"name\":\"Стратегическое превосходство\",\"description\":\"6-й уровень\\n\\nКогда в свой ход совершаете действие Атака, можно сделать две атаки вместо одной. Одну из этих атак разрешено заменить действием Рывок, Отход или Помощь.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-65\",\"id\":\"hb:savant:ability:feature-65\",\"type\":\"ability\",\"name\":\"Тактический гений\",\"description\":\"10-й уровень\\n\\nКогда бросаете инициативу, до действий остальных существ можно отдать один Приказ. Кроме того, когда слышащее вас существо атакует вашу Метку, Эффективное наблюдение можно потратить на добавление Кости Ума к броску атаки вместо урона; решение принимается после броска, но до объявления попадания.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-66\",\"id\":\"hb:savant:ability:feature-66\",\"type\":\"ability\",\"name\":\"Мастер тактики\",\"description\":\"15-й уровень\\n\\nКаждый раз, когда вы отдаёте Приказ существу, оно может получить временные хиты в размере вашего модификатора Интеллекта, минимум 1.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-6\",\"id\":\"hb:savant:subclass:discipline-6\",\"type\":\"subclass\",\"name\":\"Кулинар\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-68\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-69\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-73\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-74\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-70\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-71\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-72\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-68\",\"id\":\"hb:savant:ability:feature-68\",\"type\":\"ability\",\"name\":\"Студент вкуса\",\"description\":\"3-й уровень\\n\\nВладение Природой и инструментами повара; бонус мастерства к этим проверкам удваивается. Если Природа уже известна, выберите другой навык Саванта. Во время короткого отдыха союзники, которые восстанавливают хиты Костями Хитов при наличии ваших инструментов и ингредиентов, дополнительно восстанавливают Кость Ума хитов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-69\",\"id\":\"hb:savant:ability:feature-69\",\"type\":\"ability\",\"name\":\"Поваренная книга авантюриста\",\"description\":\"3-й уровень\\n\\nВы начинаете с двух рецептов. Действием можно взять образец у существа, умершего не более 1 минуты назад; за 1 час во время отдыха с инструментами повара этот образец превращается в новый рецепт, если тип существа соответствует списку. В конце короткого или продолжительного отдыха готовится число Закусок, равное модификатору Интеллекта, минимум 1; каждая получает свойства одного известного рецепта, и для готовки больше не нужен новый образец. Закуски теряют силу в конце следующего короткого или продолжительного отдыха. Действием существо ест Закуску или кормит ею находящегося в сознании добровольца в пределах досягаемости. Одновременно действует только одна Закуска; новая отменяет старую. Потерянную книгу нужно восстанавливать свежими образцами; копия книги создаётся по 1 часу на рецепт.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-70\",\"id\":\"hb:savant:ability:feature-70\",\"type\":\"ability\",\"name\":\"На голову выше\",\"description\":\"6-й уровень\\n\\nДействием можно превратить уже приготовленную Закуску в Закуску другого известного рецепта. В ход, когда вы сами съели Закуску или накормили ею другое существо, можно бонусным действием совершить одну атаку оружием.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-71\",\"id\":\"hb:savant:ability:feature-71\",\"type\":\"ability\",\"name\":\"Улучшенные рецепты\",\"description\":\"10-й уровень\\n\\nКаждая съеденная Закуска, помимо своего обычного эффекта, даёт временные хиты в размере вашего уровня Саванта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-72\",\"id\":\"hb:savant:ability:feature-72\",\"type\":\"ability\",\"name\":\"Мастер кулинарии\",\"description\":\"15-й уровень\\n\\nВо время продолжительного отдыха можно приготовить пир для себя и количества существ, равного вашему уровню Саванта. До конца их следующего продолжительного отдыха участники пира: мгновенно избавляются от ядов и болезней и получают иммунитет к отравлению и испугу; их максимум хитов увеличивается на Кость Ума + модификатор Интеллекта; ко всем спасброскам Мудрости они добавляют модификатор Интеллекта (минимум +1).\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-73\",\"id\":\"hb:savant:ability:feature-73\",\"type\":\"ability\",\"name\":\"Создание собственных рецептов\",\"description\":\"Особое правило дисциплины\\n\\nРазрешается совместно с Мастером придумывать рецепты для отсутствующих в списке типов существ. Рекомендация источника: эффект должен длиться 1 час и быть сопоставим по силе с рецептами того же доступного уровня.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\"},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-74\",\"id\":\"hb:savant:ability:feature-74\",\"type\":\"ability\",\"name\":\"Рецепты из существ\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\"},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-7\",\"id\":\"hb:savant:subclass:discipline-7\",\"type\":\"subclass\",\"name\":\"Оратор\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[{\"id\":\"hb:savant:resource:rhetoric\",\"name\":\"Риторические приёмы\",\"max\":\"max(1,@mod.int)\",\"restore\":[\"short_rest\",\"long_rest\"],\"level\":3}],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-76\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-77\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-78\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-79\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-80\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-76\",\"id\":\"hb:savant:ability:feature-76\",\"type\":\"ability\",\"name\":\"Студент логики\",\"description\":\"3-й уровень\\n\\nВладение Обманом и Убеждением с удвоением бонуса мастерства; при наличии владения замените его навыком Саванта. Проверки Харизмы (Обман/Убеждение) можно выполнять Интеллектом вместо Харизмы. Бесплатно изучается одно исследование из: Лингвистика, Загадки, Традиции; оно не занимает лимит известных исследований.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-77\",\"id\":\"hb:savant:ability:feature-77\",\"type\":\"ability\",\"name\":\"Риторика\",\"description\":\"3-й уровень\\n\\nСл риторики = 8 + бонус мастерства + модификатор Интеллекта. Суммарное число применений риторических приёмов = модификатор Интеллекта (минимум 1); все применения восстанавливаются после короткого или продолжительного отдыха.\\n\\n### Убедительный диалог\\n\\nПосле минимум 1 минуты разговора с невраждебным существом вы очаровываете его до 1 часа. Эффект заканчивается, если вы или союзники причиняете ему вред.\\n\\n### Отвлекающая реплика\\n\\nРеакцией, когда слышащее вас существо в пределах 30 футов совершает атаку, заставьте его сделать спасбросок Мудрости. При провале из броска атаки вычитается Кость Ума.\\n\\n### Вдохновляющее слово\\n\\nДействием дайте слышащему вас существу в пределах 30 футов временные хиты = Кость Ума.\\n\\n### Успокаивающая речь\\n\\nДействием цель в пределах 30 футов совершает спасбросок Харизмы; при провале на 1 минуту становится безразличной к выбранным вами существам, к которым была враждебна. Вред от вас или союзника прекращает эффект.\\n\\n### Воодушевляющее замечание\\n\\nРеакцией добавьте Кость Ума к спасброску Интеллекта, Мудрости или Харизмы слышащего вас существа в пределах 30 футов.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-78\",\"id\":\"hb:savant:ability:feature-78\",\"type\":\"ability\",\"name\":\"Логический ум\",\"description\":\"6-й уровень\\n\\nСпасброски против заклинаний школы Очарования совершаются с преимуществом; вы иммунны к состоянию очарования. Когда риторический приём используется действием, в тот же ход можно бонусным действием совершить одну атаку оружием.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-79\",\"id\":\"hb:savant:ability:feature-79\",\"type\":\"ability\",\"name\":\"Бесподобная риторика\",\"description\":\"10-й уровень\\n\\nОткрываются два мощных приёма. Каждый из них можно применить один раз, затем требуется короткий или продолжительный отдых для восстановления именно этого приёма.\\n\\n### Мотивационное выступление\\n\\nЗа 1 минуту обратитесь к числу слышащих и понимающих вас существ до вашего уровня Саванта. Они получают временные хиты = уровень Саванта. Пока эти хиты сохраняются, они имеют преимущество против заклинаний Очарования и иммунитет к испугу.\\n\\n### Окончательный аргумент\\n\\nДействием обратитесь к числу слышащих и понимающих вас существ до уровня Саванта. Каждое делает спасбросок Мудрости; при провале очаровано вами на 24 часа по принципу «Множественного внушения». Если вы вредите существу, его эффект прекращается. Существо, с которым вы перед этим говорили не менее 1 минуты и которое не было враждебно, делает спасбросок с помехой.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-80\",\"id\":\"hb:savant:ability:feature-80\",\"type\":\"ability\",\"name\":\"Мастер-оратор\",\"description\":\"15-й уровень\\n\\nКогда существо сопротивляется вашей риторической способности спасброском, оно совершает его с помехой, если и его Интеллект, и его Мудрость ниже вашего Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-8\",\"id\":\"hb:savant:subclass:discipline-8\",\"type\":\"subclass\",\"name\":\"Философ\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-82\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-83\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-84\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-85\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-86\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-82\",\"id\":\"hb:savant:ability:feature-82\",\"type\":\"ability\",\"name\":\"Студент мысли\",\"description\":\"3-й уровень\\n\\nВладение Магией и Религией с удвоением бонуса мастерства; при наличии владения выберите другой навык Саванта. К проверкам для общения с существом другого плана или вспоминания сведений о нём добавляется Кость Ума. Проницательный анализ может дополнительно раскрывать: мировоззрение, базовую заклинательную характеристику (если есть), максимальный доступный уровень заклинаний или родной план.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-83\",\"id\":\"hb:savant:ability:feature-83\",\"type\":\"ability\",\"name\":\"Слова силы\",\"description\":\"3-й уровень\\n\\nДействием произнесите Слово Силы, направленное на слышащее вас существо в пределах 30 футов. Сл = 8 + бонус мастерства + модификатор Интеллекта. Суммарное число произнесений всех этих слов = модификатор Интеллекта (минимум 1); применения восстанавливаются после короткого или продолжительного отдыха.\\n\\n### Ступор\\n\\nСпасбросок Интеллекта. При провале 1 минуту цель вычитает ваш модификатор Интеллекта из первого броска атаки каждого своего хода. В конце каждого хода повторяет спасбросок.\\n\\n### Дезориентация\\n\\nСпасбросок Мудрости. При провале цель вычитает ваш модификатор Интеллекта из следующего спасброска, который ей придётся совершить.\\n\\n### Страх\\n\\nСпасбросок Мудрости. При провале 1 минуту цель испугана выбранным вами видимым ею существом; в конце каждого хода повторяет спасбросок.\\n\\n### Замри\\n\\nСпасбросок Силы. При провале скорость становится 0 на 1 минуту; в конце каждого хода повторяет спасбросок.\\n\\n### Замена\\n\\nВыберите двух существ: оба делают спасбросок Харизмы. Если оба провалили, мгновенно меняются местами. Любая цель может добровольно провалить этот спасбросок.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-84\",\"id\":\"hb:savant:ability:feature-84\",\"type\":\"ability\",\"name\":\"Непоколебимая собранность\",\"description\":\"6-й уровень\\n\\nЕсли вы провалили спасбросок против очарования, испуга или ошеломления, его можно считать успешным. После этого требуется короткий или продолжительный отдых.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-85\",\"id\":\"hb:savant:ability:feature-85\",\"type\":\"ability\",\"name\":\"Высшее понимание\",\"description\":\"10-й уровень\\n\\nВы изучаете два великих Слова Силы. Для их эффектов требуется концентрация как на заклинании. Каждое великое слово имеет отдельное одно использование, восстанавливающееся после короткого или продолжительного отдыха.\\n\\n### Изгнание\\n\\nЦель делает спасбросок Харизмы. При провале изгоняется до 1 минуты: с текущего родного плана — в безопасный демиплан, с чужого плана — на родной. В конце каждого хода повторяет спасбросок и при успехе возвращается в ближайшую свободную точку к месту изгнания.\\n\\n### Слабость\\n\\nЦель делает спасбросок Интеллекта. При провале ошеломлена на 1 минуту. Повторяет спасбросок в начале каждого хода и каждый раз при получении урона; при успехе эффект прекращается.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-86\",\"id\":\"hb:savant:ability:feature-86\",\"type\":\"ability\",\"name\":\"Мастер-философ\",\"description\":\"15-й уровень\\n\\nВы постоянно находитесь под эффектом по типу «Защиты от зла и добра». Когда аберрация, небожитель, элементаль, фея, исчадие или нежить заставляет вас совершить спасбросок, к нему добавляется Кость Ума.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-discipline-9\",\"id\":\"hb:savant:subclass:discipline-9\",\"type\":\"subclass\",\"name\":\"Рунописец\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"advancement\":{\"3\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-88\"},{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-89\"}],\"13\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-90\"}],\"6\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-91\"}],\"10\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-92\"}],\"15\":[{\"type\":\"feature\",\"id\":\"hb:savant:ability:feature-93\"}]}},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-88\",\"id\":\"hb:savant:ability:feature-88\",\"type\":\"ability\",\"name\":\"Ученик рун\",\"description\":\"3-й уровень\\n\\nВладение Историей и инструментами каллиграфа с удвоением бонуса мастерства. Если История уже известна, возьмите другой навык Саванта. Вы изучаете два рунических языка из списка: Великаний, Дварфийский, Драконий, Друидический, Первичный.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-89\",\"id\":\"hb:savant:ability:feature-89\",\"type\":\"ability\",\"name\":\"Руны силы\",\"description\":\"3-й уровень\\n\\nИзначально известны две руны. Дополнительная руна изучается на 6, 10, 13 и 17 уровнях; при получении уровня одну известную руну можно заменить. Во время продолжительного отдыха за 1 час инструментами каллиграфа известная руна наносится на немагический предмет на одном из известных рунических языков. Одна и та же известная руна может быть активна только на одном предмете. Носитель предмета получает пассивный эффект руны. Он может действием воззвать к руне, если говорит на языке надписи; после воззвания та же руна не может быть призвана снова до вашего следующего продолжительного отдыха. Сл рун = 8 + бонус мастерства + модификатор Интеллекта; модификатор рунической атаки = бонус мастерства + модификатор Интеллекта.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":3},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-90\",\"id\":\"hb:savant:ability:feature-90\",\"type\":\"ability\",\"name\":\"Список рун\",\"description\":\"### Руна воплощения\\n\\nПредмет: рукопашное оружие\\n\\nПри нанесении выберите кислоту, холод, огонь, яд или электричество. Попадание руническим оружием наносит дополнительно Кость Ума выбранного урона. Воззвание: при атаке или заклинании с этим типом урона можно вместо бросков урона применить максимальный результат.\\n\\n### Руна вызова\\n\\nТребование: Рунописец 6-го уровня. Предмет: пояс, кольцо или щит\\n\\nПассивно носитель действием может потратить любое количество оставшейся скорости и телепортироваться на не большее расстояние в видимую свободную точку без провоцирования атак. Воззвание: призвать на 1 минуту ранее виденное существо с ПО не выше половины вашего бонуса мастерства. Оно действует сразу после носителя на той же инициативе; бонусным действием носитель командует его движением и действием. Требуется концентрация; эффект заканчивается также при 0 хитов призванного существа.\\n\\n### Руна иллюзии\\n\\nПредмет: плащ, халат или доспех\\n\\nПассивно носитель действием меняет внешний вид, включая рост/вес, но не размер; может копировать виденную ранее расу/форму, при этом одежда и снаряжение не меняются. Обман обнаруживается проверкой Интеллекта (Расследование) против Сл рун. Воззвание: невидимость до 10 минут, прекращающаяся при атаке или когда носитель заставляет существо совершить спасбросок.\\n\\n### Руна некромантии\\n\\nПредмет: пояс, кольцо или доспех\\n\\nПассивно бонусным действием носитель получает временные хиты = модификатор Интеллекта, минимум 1. Воззвание: если его хиты падают до 0 без мгновенной смерти, вместо этого они становятся 1.\\n\\n### Руна ограждения\\n\\nТребование: Рунописец 6-го уровня. Предмет: щит, мантия или доспех\\n\\nРаз за ход носитель уменьшает урон от заклинания или иного магического эффекта на модификатор Интеллекта, минимум 1. Воззвание: сотворить «Контрзаклинание» реакцией или «Рассеивание магии» на уровне, равном вашему бонусу мастерства, используя ваш Интеллект.\\n\\n### Руна очарования\\n\\nПредмет: браслет, диадема, кольцо или ожерелье\\n\\nПассивно другие существа относятся к носителю на одну ступень дружелюбнее; эффект на конкретное существо прекращается, если носитель атакует его. Воззвание: наложить «Умиротворение», «Очарование личности» или «Приказ» на суммарное число целей до вашего бонуса мастерства.\\n\\n### Руна предсказания\\n\\nТребование: Рунописец 13-го уровня. Предмет: палочка, посох, мантия или магическая фокусировка\\n\\nПассивно носитель может ритуально сотворять «Опознание» и «Обнаружение магии» и получает к Проницательности бонус = модификатор Интеллекта, минимум +1. При нанесении руны вы бросаете к20 и записываете результат. Воззвание реакцией: когда существо в 30 футах от носителя делает атаку, проверку или спасбросок, заменить его к20 на записанный результат после броска, но до объявления успеха.\\n\\n### Руна преобразования\\n\\nТребование: Рунописец 13-го уровня. Предмет: браслет, диадема, кольцо или ожерелье\\n\\nПассивно носитель выбирает одно: скорость плавания 30 футов, лазания 30 футов или +10 футов к ходьбе; бонусным действием можно переключать режим. Воззвание: превратиться на 1 час в зверя с ПО не выше вашего уровня Саванта. Используются физические параметры и хиты зверя, сохраняются ментальные характеристики, мировоззрение и личность; снаряжение сливается с формой. При возвращении восстанавливаются прежние хиты, а избыточный урон при падении формы до 0 переносится на обычную форму.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":13},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-91\",\"id\":\"hb:savant:ability:feature-91\",\"type\":\"ability\",\"name\":\"Древняя магия\",\"description\":\"6-й уровень\\n\\nПредмет с вашей активной руной считается магическим. Во время короткого отдыха можно провести 10-минутный ритуал и восстановить возможность одного уже использованного сегодня воззвания к руне, позволяя применить её ещё раз до следующего продолжительного отдыха.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":6},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-92\",\"id\":\"hb:savant:ability:feature-92\",\"type\":\"ability\",\"name\":\"Рунический оберег\",\"description\":\"10-й уровень\\n\\nЛюбое существо, несущее предмет с вашей руной, получает бонус ко всем спасброскам = модификатор Интеллекта, минимум +1. После продолжительного отдыха одну известную руну можно заменить другой.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":10},{\"schemaVersion\":2,\"uid\":\"savant-5.2-feature-93\",\"id\":\"hb:savant:ability:feature-93\",\"type\":\"ability\",\"name\":\"Мастер рунического письма\",\"description\":\"15-й уровень\\n\\nКогда ваши хиты падают до 0 без мгновенной смерти, можно мгновенно рассеять одну из написанных вами активных рун вместе с её эффектами и вместо 0 хитов остаться на 1.\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"parentClassId\":\"hb:savant:class:savant\",\"level\":15},{\"schemaVersion\":2,\"uid\":\"savant-5.2-savant-5-2\",\"id\":\"hb:savant:pack:savant-5-2\",\"type\":\"pack\",\"name\":\"Савант 5.2 — пример\",\"description\":\"\",\"updatedAt\":\"2026-09-25T00:00:00Z\",\"version\":\"5.2.0\",\"source\":{\"kind\":\"example\",\"author\":\"laserllama; механическое резюме пользователя\",\"url\":\"https://dnd.su/homebrew/class/401-savant/\"},\"effects\":[],\"resources\":[],\"attacks\":[],\"actions\":[],\"choices\":[],\"entities\":[\"hb:savant:class:savant\",\"hb:savant:ability:feature-1\",\"hb:savant:ability:feature-2\",\"hb:savant:ability:feature-3\",\"hb:savant:ability:feature-4\",\"hb:savant:ability:feature-5\",\"hb:savant:ability:feature-6\",\"hb:savant:ability:feature-7\",\"hb:savant:ability:feature-8\",\"hb:savant:ability:feature-9\",\"hb:savant:ability:feature-10\",\"hb:savant:ability:feature-11\",\"hb:savant:ability:feature-12\",\"hb:savant:ability:feature-13\",\"hb:savant:ability:feature-14\",\"hb:savant:ability:feature-15\",\"hb:savant:ability:feature-16\",\"hb:savant:ability:feature-17\",\"hb:savant:ability:feature-18\",\"hb:savant:ability:feature-19\",\"hb:savant:ability:feature-20\",\"hb:savant:ability:feature-21\",\"hb:savant:ability:feature-22\",\"hb:savant:ability:feature-23\",\"hb:savant:ability:feature-24\",\"hb:savant:ability:feature-25\",\"hb:savant:ability:feature-26\",\"hb:savant:ability:feature-27\",\"hb:savant:ability:feature-28\",\"hb:savant:ability:feature-29\",\"hb:savant:ability:feature-30\",\"hb:savant:ability:feature-31\",\"hb:savant:ability:feature-32\",\"hb:savant:ability:feature-33\",\"hb:savant:subclass:discipline-1\",\"hb:savant:ability:feature-35\",\"hb:savant:ability:feature-36\",\"hb:savant:ability:feature-37\",\"hb:savant:ability:feature-38\",\"hb:savant:ability:feature-39\",\"hb:savant:subclass:discipline-2\",\"hb:savant:ability:feature-41\",\"hb:savant:ability:feature-42\",\"hb:savant:ability:feature-43\",\"hb:savant:ability:feature-44\",\"hb:savant:ability:feature-45\",\"hb:savant:subclass:discipline-3\",\"hb:savant:ability:feature-47\",\"hb:savant:ability:feature-48\",\"hb:savant:ability:feature-49\",\"hb:savant:ability:feature-50\",\"hb:savant:ability:feature-51\",\"hb:savant:ability:feature-52\",\"hb:savant:ability:feature-53\",\"hb:savant:subclass:discipline-4\",\"hb:savant:ability:feature-55\",\"hb:savant:ability:feature-56\",\"hb:savant:ability:feature-57\",\"hb:savant:ability:feature-58\",\"hb:savant:ability:feature-59\",\"hb:savant:ability:feature-60\",\"hb:savant:subclass:discipline-5\",\"hb:savant:ability:feature-62\",\"hb:savant:ability:feature-63\",\"hb:savant:ability:feature-64\",\"hb:savant:ability:feature-65\",\"hb:savant:ability:feature-66\",\"hb:savant:subclass:discipline-6\",\"hb:savant:ability:feature-68\",\"hb:savant:ability:feature-69\",\"hb:savant:ability:feature-70\",\"hb:savant:ability:feature-71\",\"hb:savant:ability:feature-72\",\"hb:savant:ability:feature-73\",\"hb:savant:ability:feature-74\",\"hb:savant:subclass:discipline-7\",\"hb:savant:ability:feature-76\",\"hb:savant:ability:feature-77\",\"hb:savant:ability:feature-78\",\"hb:savant:ability:feature-79\",\"hb:savant:ability:feature-80\",\"hb:savant:subclass:discipline-8\",\"hb:savant:ability:feature-82\",\"hb:savant:ability:feature-83\",\"hb:savant:ability:feature-84\",\"hb:savant:ability:feature-85\",\"hb:savant:ability:feature-86\",\"hb:savant:subclass:discipline-9\",\"hb:savant:ability:feature-88\",\"hb:savant:ability:feature-89\",\"hb:savant:ability:feature-90\",\"hb:savant:ability:feature-91\",\"hb:savant:ability:feature-92\",\"hb:savant:ability:feature-93\"]}]");
+var shamanExample_default = {
+	schemaVersion: 2,
+	type: "homebrew-pack",
+	name: "Шаман (laserllama 5.6.1) — HeroList",
+	version: "1.0.0",
+	source: {
+		"url": "https://dnd.su/homebrew/class/389-shaman/",
+		"author": "laserllama",
+		"ruleset": "D&D 5e 2014"
+	},
+	rootId: "hb:shaman:class:shaman",
+	entities: [
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:class:shaman",
+			"id": "hb:shaman:class:shaman",
+			"type": "class",
+			"name": "Шаман",
+			"description": "Духовный проводник laserllama v5.6.1. Основная характеристика — Мудрость. Кость Хитов d8. Ключевые механики: Сакральный фокус, связанные тотемы, Первобытная магия с единоуровневыми ячейками и Спиритизм на 3-м уровне.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [
+				{
+					"type": "armor_proficiency",
+					"group": "light"
+				},
+				{
+					"type": "armor_proficiency",
+					"group": "shield"
+				},
+				{
+					"type": "weapon_group_proficiency",
+					"group": "simple"
+				},
+				{
+					"type": "weapon_proficiency",
+					"id": "blowgun"
+				},
+				{
+					"type": "weapon_proficiency",
+					"id": "net"
+				}
+			],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [
+				{
+					"id": "shaman-sacred-focus",
+					"name": "Сакральный фокус",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:focus-body",
+						"hb:shaman:ability:focus-heart",
+						"hb:shaman:ability:focus-mind",
+						"hb:shaman:ability:focus-soul"
+					],
+					"level": 1
+				},
+				{
+					"id": "shaman-totems-1",
+					"name": "Связанные тотемы — выбор на 1-м уровне",
+					"type": "ability",
+					"count": 2,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 1,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-4",
+					"name": "Связанные тотемы — выбор на 4-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 4,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-6",
+					"name": "Связанные тотемы — выбор на 6-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 6,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-9",
+					"name": "Связанные тотемы — выбор на 9-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 9,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-12",
+					"name": "Связанные тотемы — выбор на 12-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 12,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-15",
+					"name": "Связанные тотемы — выбор на 15-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 15,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-totems-18",
+					"name": "Связанные тотемы — выбор на 18-м уровне",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:totem-bear",
+						"hb:shaman:ability:totem-crossroads",
+						"hb:shaman:ability:totem-eagle",
+						"hb:shaman:ability:totem-earthquake",
+						"hb:shaman:ability:totem-harvest",
+						"hb:shaman:ability:totem-hound",
+						"hb:shaman:ability:totem-mountain",
+						"hb:shaman:ability:totem-panther",
+						"hb:shaman:ability:totem-pond",
+						"hb:shaman:ability:totem-mire",
+						"hb:shaman:ability:totem-rains",
+						"hb:shaman:ability:totem-twilight",
+						"hb:shaman:ability:totem-waves",
+						"hb:shaman:ability:totem-whirlwind",
+						"hb:shaman:ability:totem-winds",
+						"hb:shaman:ability:totem-bloom",
+						"hb:shaman:ability:totem-eruption",
+						"hb:shaman:ability:totem-growth",
+						"hb:shaman:ability:totem-grave",
+						"hb:shaman:ability:totem-light",
+						"hb:shaman:ability:totem-joy",
+						"hb:shaman:ability:totem-mystic",
+						"hb:shaman:ability:totem-swamp",
+						"hb:shaman:ability:totem-wilderness",
+						"hb:shaman:ability:totem-wrath",
+						"hb:shaman:ability:totem-hunt",
+						"hb:shaman:ability:totem-slime",
+						"hb:shaman:ability:totem-river",
+						"hb:shaman:ability:totem-cave",
+						"hb:shaman:ability:totem-dawn",
+						"hb:shaman:ability:totem-fey",
+						"hb:shaman:ability:totem-sun",
+						"hb:shaman:ability:totem-vine",
+						"hb:shaman:ability:totem-binding",
+						"hb:shaman:ability:totem-eclipse",
+						"hb:shaman:ability:totem-elements",
+						"hb:shaman:ability:totem-sapling",
+						"hb:shaman:ability:totem-sky"
+					],
+					"level": 18,
+					"choiceGroup": "shaman-totems",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-great-spirit",
+					"name": "Великий дух тотема",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:great-spirit-death",
+						"hb:shaman:ability:great-spirit-life",
+						"hb:shaman:ability:great-spirit-moon",
+						"hb:shaman:ability:great-spirit-sun"
+					],
+					"level": 11
+				}
+			],
+			"hitDie": "d8",
+			"primaryAbility": "wis",
+			"savingThrows": ["wis", "cha"],
+			"skillChoices": {
+				"count": 2,
+				"from": [
+					"performance",
+					"arcana",
+					"medicine",
+					"nature",
+					"insight",
+					"religion",
+					"animal handling"
+				]
+			},
+			"equipment": [
+				"Боевой посох или любое простое оружие",
+				"Короткий лук и 20 стрел или 5 метательных копий",
+				"Набор священника или набор исследователя подземелий",
+				"Кожаный доспех и один предмет-тотем"
+			],
+			"startingGold": "4d4 * 10",
+			"multiclass": {
+				"requirements": [{
+					"ability": "wis",
+					"min": 13
+				}],
+				"effects": [
+					{
+						"type": "armor_proficiency",
+						"group": "light"
+					},
+					{
+						"type": "armor_proficiency",
+						"group": "shield"
+					},
+					{
+						"type": "weapon_group_proficiency",
+						"group": "simple"
+					}
+				]
+			},
+			"subclass": {
+				"chooseAtLevel": 3,
+				"featureLevels": [
+					3,
+					6,
+					10,
+					14
+				]
+			},
+			"advancement": {
+				"3": [{ "type": "subclass" }],
+				"4": [{ "type": "asi_or_feat" }],
+				"8": [{ "type": "asi_or_feat" }],
+				"12": [{ "type": "asi_or_feat" }],
+				"16": [{ "type": "asi_or_feat" }],
+				"19": [{ "type": "asi_or_feat" }]
+			},
+			"features": [
+				{
+					"id": "hb:shaman:ability:sacred-focus",
+					"level": 1,
+					"name": "Сакральный фокус",
+					"description": "Выберите Тело, Сердце, Разум или Душу. Выбор доступен в Homebrew-блоке персонажа.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:totems",
+					"level": 1,
+					"name": "Тотемы",
+					"description": "На 1-м уровне выберите 2 тотема; дополнительные — на 4, 6, 9, 12, 15 и 18 уровнях. Если у тотема есть требование, оно должно быть выполнено. Сл тотема = 8 + БМ + модификатор Мудрости.",
+					"effects": [],
+					"resources": [],
+					"attacks": [{
+						"id": "hb:shaman:attack:totem-onslaught",
+						"name": "Наступление тотемов",
+						"ability": "wis",
+						"proficient": true,
+						"damage": [{
+							"formula": "1d8",
+							"type": "necrotic"
+						}],
+						"actionType": "action",
+						"range": "60 футов",
+						"saveAbility": "cha",
+						"saveDc": "8 + @pb + @mod.wis"
+					}]
+				},
+				{
+					"id": "hb:shaman:ability:primal-magic",
+					"level": 2,
+					"name": "Первобытная магия",
+					"description": "Заклинатель на Мудрости с собственным списком. Все ячейки имеют один уровень по таблице и по исходным правилам восстанавливаются после короткого или продолжительного отдыха. Известные ритуальные заклинания шамана можно накладывать ритуалом.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:spiritualism",
+					"level": 3,
+					"name": "Спиритизм",
+					"description": "Выберите подкласс. Умения приходят на 3, 6, 10 и 14 уровнях шамана.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:onslaught-5",
+					"level": 5,
+					"name": "Наступление тотемов: 2к8",
+					"description": "Урон «Наступления тотемов» становится 2к8.",
+					"effects": [],
+					"resources": [],
+					"attacks": [{
+						"id": "hb:shaman:attack:totem-onslaught",
+						"name": "Наступление тотемов",
+						"ability": "wis",
+						"proficient": true,
+						"damage": [{
+							"formula": "2d8",
+							"type": "necrotic"
+						}],
+						"actionType": "action",
+						"range": "60 футов",
+						"saveAbility": "cha",
+						"saveDc": "8 + @pb + @mod.wis"
+					}]
+				},
+				{
+					"id": "hb:shaman:ability:totemic-versatility",
+					"level": 5,
+					"name": "Тотемная многогранность",
+					"description": "После продолжительного отдыха можно заменить один известный тотем другим, требования которого выполнены.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:great-totem-spirit",
+					"level": 11,
+					"name": "Великий дух тотема",
+					"description": "Выберите один Великий дух. Он даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:onslaught-11",
+					"level": 11,
+					"name": "Наступление тотемов: 3к8",
+					"description": "Урон «Наступления тотемов» становится 3к8.",
+					"effects": [],
+					"resources": [],
+					"attacks": [{
+						"id": "hb:shaman:attack:totem-onslaught",
+						"name": "Наступление тотемов",
+						"ability": "wis",
+						"proficient": true,
+						"damage": [{
+							"formula": "3d8",
+							"type": "necrotic"
+						}],
+						"actionType": "action",
+						"range": "60 футов",
+						"saveAbility": "cha",
+						"saveDc": "8 + @pb + @mod.wis"
+					}]
+				},
+				{
+					"id": "hb:shaman:ability:onslaught-17",
+					"level": 17,
+					"name": "Наступление тотемов: 4к8",
+					"description": "Урон «Наступления тотемов» становится 4к8.",
+					"effects": [],
+					"resources": [],
+					"attacks": [{
+						"id": "hb:shaman:attack:totem-onslaught",
+						"name": "Наступление тотемов",
+						"ability": "wis",
+						"proficient": true,
+						"damage": [{
+							"formula": "4d8",
+							"type": "necrotic"
+						}],
+						"actionType": "action",
+						"range": "60 футов",
+						"saveAbility": "cha",
+						"saveDc": "8 + @pb + @mod.wis"
+					}]
+				},
+				{
+					"id": "hb:shaman:ability:spiritual-ascension",
+					"level": 20,
+					"name": "Духовное вознесение",
+					"description": "Вы перестаёте стареть, становитесь невосприимчивы к болезням, состоянию «отравлен» и урону ядом. После длинного отдыха можно создать тотем души ценой одного связанного тотема; после смерти дух может вернуться в выращенную копию тела до следующего рассвета.",
+					"effects": [{
+						"type": "condition_immunity",
+						"condition": "poisoned"
+					}, {
+						"type": "damage_immunity",
+						"damage": "poison"
+					}],
+					"resources": [],
+					"attacks": []
+				}
+			],
+			"spellcasting": {
+				"mode": "custom",
+				"ability": "wis",
+				"selection": "known",
+				"cantrips": [
+					0,
+					0,
+					2,
+					2,
+					3,
+					3,
+					3,
+					3,
+					3,
+					3,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4,
+					4
+				],
+				"known": [
+					0,
+					0,
+					3,
+					4,
+					5,
+					6,
+					6,
+					7,
+					7,
+					8,
+					8,
+					9,
+					9,
+					10,
+					10,
+					11,
+					11,
+					11,
+					12,
+					12,
+					12
+				],
+				"slots": {
+					"1": [],
+					"2": [2],
+					"3": [0, 2],
+					"4": [0, 2],
+					"5": [
+						0,
+						0,
+						2
+					],
+					"6": [
+						0,
+						0,
+						2
+					],
+					"7": [
+						0,
+						0,
+						0,
+						2
+					],
+					"8": [
+						0,
+						0,
+						0,
+						2
+					],
+					"9": [
+						0,
+						0,
+						0,
+						0,
+						2
+					],
+					"10": [
+						0,
+						0,
+						0,
+						0,
+						2
+					],
+					"11": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"12": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"13": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"14": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"15": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"16": [
+						0,
+						0,
+						0,
+						0,
+						3
+					],
+					"17": [
+						0,
+						0,
+						0,
+						0,
+						4
+					],
+					"18": [
+						0,
+						0,
+						0,
+						0,
+						4
+					],
+					"19": [
+						0,
+						0,
+						0,
+						0,
+						4
+					],
+					"20": [
+						0,
+						0,
+						0,
+						0,
+						4
+					]
+				},
+				"recovery": "short_or_long"
+			},
+			"spellList": [
+				"spell-doc-magic_stone",
+				"spell-doc-control_flames",
+				"spell-doc-shillelagh",
+				"spell-doc-blade_ward",
+				"shape-water",
+				"chill-touch",
+				"spell-doc-mold_earth",
+				"spell-doc-frostbite",
+				"spell-doc-thunderclap",
+				"produce-flame",
+				"spell-doc-create_bonfire",
+				"spell-doc-primal_savagery",
+				"toll-the-dead",
+				"guidance",
+				"spare-the-dying",
+				"thaumaturgy",
+				"spell-doc-gust",
+				"spell-doc-poison_spray",
+				"bless",
+				"witch-bolt",
+				"spell-doc-cause_fear",
+				"heroism",
+				"armoragathys",
+				"dissonant-whispers",
+				"spell-doc-tasha_s_caustic_brew",
+				"spell-doc-animal_friendship",
+				"protection-evil-good",
+				"spell-doc-beast_bond",
+				"curewounds",
+				"inflict-wounds",
+				"spell-doc-detect_evil_and_good",
+				"entangle",
+				"absorb",
+				"findfamiliar",
+				"spell-doc-expeditious_retreat",
+				"command",
+				"false-life",
+				"bane",
+				"hex",
+				"longstrider",
+				"fog-cloud",
+				"sanctuary",
+				"sleep",
+				"ceremony",
+				"shield-of-faith",
+				"pass",
+				"spell-doc-continual_flame",
+				"spell-doc-augury",
+				"spell-doc-flame_blade",
+				"barkskin",
+				"spell-doc-protection_from_poison",
+				"spell-doc-warding_wind",
+				"moonbeam",
+				"gentle-repose",
+				"spell-doc-gust_of_wind",
+				"aid",
+				"spell-doc-locate_animals_or_plants",
+				"spell-doc-dust_devil",
+				"heat-metal",
+				"blur",
+				"alter-self",
+				"mistystep",
+				"darkness",
+				"spell-doc-earthbind",
+				"enhanceability",
+				"spike-growth",
+				"spell-doc-wall_of_water",
+				"gaseous-form",
+				"spell-doc-thunder_step",
+				"spell-doc-daylight",
+				"spiritguardians",
+				"slow",
+				"stinking-cloud",
+				"protection-from-energy",
+				"leomunds-tiny-hut",
+				"sleet-storm",
+				"nondetection",
+				"spell-doc-life_transference",
+				"spell-doc-wall_of_sand",
+				"clairvoyance",
+				"spell-doc-tidal_wave",
+				"spell-doc-feign_death",
+				"speak-with-dead",
+				"dispel-magic",
+				"plant-growth",
+				"spell-doc-meld_into_stone",
+				"spell-doc-remove_curse",
+				"wind-wall",
+				"elemental-weapon",
+				"haste",
+				"spell-doc-sickening_radiance",
+				"spell-doc-mordenkainen_s_faithful_hound",
+				"spell-doc-control_water",
+				"spell-doc-watery_sphere",
+				"spell-doc-giant_insect",
+				"ice-storm",
+				"banishment",
+				"arcane-eye",
+				"stoneskin",
+				"fire-shield",
+				"divination",
+				"spell-doc-elemental_bane",
+				"freedom-of-movement",
+				"spell-doc-guardian_of_nature",
+				"spell-doc-grasping_vine",
+				"spell-doc-dream",
+				"spell-doc-maelstrom",
+				"spell-doc-wrath_of_nature",
+				"spell-doc-far_step",
+				"scrying",
+				"cloudkill",
+				"spell-doc-commune_with_nature",
+				"spell-doc-planar_binding",
+				"spell-doc-antilife_shell",
+				"spell-doc-awaken",
+				"spell-doc-dawn",
+				"spell-doc-dispel_evil_and_good",
+				"spell-doc-reincarnate",
+				"spell-doc-skill_empowerment",
+				"hb:shaman:spell:seance",
+				"hb:shaman:spell:otherworldly-grasp",
+				"hb:shaman:spell:ghastly-flight",
+				"hb:shaman:spell:totemic-cowl",
+				"hb:shaman:spell:dire-wail",
+				"hb:shaman:spell:spectral-passage",
+				"hb:shaman:spell:spiritual-sundering"
+			],
+			"table": {
+				"columns": [
+					"Ур.",
+					"Умения",
+					"Тотемы",
+					"Заговоры",
+					"Заклинания",
+					"Ячейки"
+				],
+				"rows": [
+					[
+						"1",
+						"Сакральный фокус; Тотемы",
+						"2",
+						"—",
+						"—",
+						"—"
+					],
+					[
+						"2",
+						"Первобытная магия",
+						"2",
+						"2",
+						"3",
+						"2 × 1 ур."
+					],
+					[
+						"3",
+						"Спиритизм",
+						"2",
+						"2",
+						"4",
+						"2 × 2 ур."
+					],
+					[
+						"4",
+						"Увеличение характеристик",
+						"3",
+						"3",
+						"5",
+						"2 × 2 ур."
+					],
+					[
+						"5",
+						"Тотемная многогранность",
+						"3",
+						"3",
+						"6",
+						"2 × 3 ур."
+					],
+					[
+						"6",
+						"Умение спиритизма",
+						"4",
+						"3",
+						"6",
+						"2 × 3 ур."
+					],
+					[
+						"7",
+						"—",
+						"4",
+						"3",
+						"7",
+						"2 × 4 ур."
+					],
+					[
+						"8",
+						"Увеличение характеристик",
+						"4",
+						"3",
+						"7",
+						"2 × 4 ур."
+					],
+					[
+						"9",
+						"—",
+						"5",
+						"3",
+						"8",
+						"2 × 5 ур."
+					],
+					[
+						"10",
+						"Умение спиритизма",
+						"5",
+						"4",
+						"8",
+						"2 × 5 ур."
+					],
+					[
+						"11",
+						"Великий дух (6-й)",
+						"5",
+						"4",
+						"9",
+						"3 × 5 ур."
+					],
+					[
+						"12",
+						"Увеличение характеристик",
+						"6",
+						"4",
+						"9",
+						"3 × 5 ур."
+					],
+					[
+						"13",
+						"Великий дух (7-й)",
+						"6",
+						"4",
+						"10",
+						"3 × 5 ур."
+					],
+					[
+						"14",
+						"Умение спиритизма",
+						"6",
+						"4",
+						"10",
+						"3 × 5 ур."
+					],
+					[
+						"15",
+						"Великий дух (8-й)",
+						"7",
+						"4",
+						"11",
+						"3 × 5 ур."
+					],
+					[
+						"16",
+						"Увеличение характеристик",
+						"7",
+						"4",
+						"11",
+						"3 × 5 ур."
+					],
+					[
+						"17",
+						"Великий дух (9-й)",
+						"7",
+						"4",
+						"11",
+						"4 × 5 ур."
+					],
+					[
+						"18",
+						"—",
+						"8",
+						"4",
+						"12",
+						"4 × 5 ур."
+					],
+					[
+						"19",
+						"Увеличение характеристик",
+						"8",
+						"4",
+						"12",
+						"4 × 5 ур."
+					],
+					[
+						"20",
+						"Духовное вознесение",
+						"8",
+						"4",
+						"12",
+						"4 × 5 ур."
+					]
+				]
+			}
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:seance",
+			"id": "hb:shaman:spell:seance",
+			"type": "spell",
+			"name": "Сеанс",
+			"description": "Небольшое духовное воздействие: безвредный сенсорный эффект, краткое проявление малого духа, зажигание или тушение небольшого огня, либо краткое указание на близкую духовную аномалию.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 0,
+			"school": "Преобразование",
+			"castingTime": "1 действие",
+			"range": "30 футов",
+			"duration": "1 действие",
+			"components": "В, С",
+			"concentration": false,
+			"ritual": false,
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:otherworldly-grasp",
+			"id": "hb:shaman:spell:otherworldly-grasp",
+			"type": "spell",
+			"name": "Потусторонняя хватка",
+			"description": "Рукопашная атака заклинанием. При попадании: 1к8 некротического урона и 1к4 временных хитов на время концентрации. На 5/11/17 уровнях обе величины становятся 2/3/4 костями.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 0,
+			"school": "Иллюзия",
+			"castingTime": "1 действие",
+			"range": "На себя",
+			"duration": "Концентрация, до 1 минуты",
+			"components": "С, М (пустая рука)",
+			"concentration": true,
+			"ritual": false,
+			"higherLevels": "5-й: 2к8 и 2к4; 11-й: 3к8 и 3к4; 17-й: 4к8 и 4к4.",
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:ghastly-flight",
+			"id": "hb:shaman:spell:ghastly-flight",
+			"type": "spell",
+			"name": "Ужасный полёт",
+			"description": "Линия 60×5 футов. Спасбросок Телосложения: при провале 2к8 некротического урона и запрет восстановления хитов до начала вашего следующего хода; при успехе половина урона без запрета лечения.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"school": "Вызов",
+			"castingTime": "1 действие",
+			"range": "На себя (линия 60 футов)",
+			"duration": "Мгновенная",
+			"components": "В, С, М (порошкообразные останки существа)",
+			"concentration": false,
+			"ritual": false,
+			"higherLevels": "+1к8 за каждый уровень ячейки выше 1-го.",
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:totemic-cowl",
+			"id": "hb:shaman:spell:totemic-cowl",
+			"type": "spell",
+			"name": "Тотемный колпак",
+			"description": "Согласная цель уменьшает каждый получаемый ею урон на 1.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 2,
+			"school": "Ограждение",
+			"castingTime": "1 действие",
+			"range": "Касание",
+			"duration": "Концентрация, до 1 часа",
+			"components": "В, С, М (лист с первого дня осени)",
+			"concentration": true,
+			"ritual": false,
+			"higherLevels": "Снижение урона +1 за каждый уровень ячейки выше 2-го.",
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:dire-wail",
+			"id": "hb:shaman:spell:dire-wail",
+			"type": "spell",
+			"name": "Жуткий вопль",
+			"description": "Выбранные существа в радиусе 30 футов делают спасбросок Телосложения. Провал: 4к10 урона звуком и глухота; повторный спасбросок в конце хода. Успех: половина урона без длительного эффекта.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"school": "Некромантия",
+			"castingTime": "1 действие",
+			"range": "На себя (радиус 30 футов)",
+			"duration": "1 минута",
+			"components": "В",
+			"concentration": false,
+			"ritual": false,
+			"higherLevels": "+1к10 за каждый уровень ячейки выше 3-го.",
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:spectral-passage",
+			"id": "hb:shaman:spell:spectral-passage",
+			"type": "spell",
+			"name": "Спектральное прохождение",
+			"description": "Согласная цель становится полубесплотной и может проходить через существ и предметы как через труднопроходимую местность. Завершение движения внутри препятствия выталкивает наружу и наносит 1к10 силового урона за каждые 5 футов вынужденного перемещения.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"school": "Преобразование",
+			"castingTime": "1 действие",
+			"range": "Касание",
+			"duration": "Концентрация, до 1 минуты",
+			"components": "В, С, М (предмет, через который прошёл дух)",
+			"concentration": true,
+			"ritual": false,
+			"higherLevels": "+1 цель за каждый уровень ячейки выше 3-го.",
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:spell:spiritual-sundering",
+			"id": "hb:shaman:spell:spiritual-sundering",
+			"type": "spell",
+			"name": "Духовное разделение",
+			"description": "Сфера радиусом 20 футов в пределах 120 футов. Спасбросок Харизмы: провал — 8к6 некротического урона и на 1 минуту −1к6 к спасброскам Интеллекта, Мудрости и Харизмы; повторный спасбросок Харизмы в конце хода. Успех — половина урона без штрафа.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"school": "Очарование",
+			"castingTime": "1 действие",
+			"range": "120 футов",
+			"duration": "Мгновенная",
+			"components": "В, С",
+			"concentration": false,
+			"ritual": false,
+			"spellClasses": ["hb:shaman:class:shaman"]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:focus-body",
+			"id": "hb:shaman:ability:focus-body",
+			"type": "ability",
+			"name": "Сакральный фокус: Тело",
+			"description": "Максимум хитов увеличивается на 1 за каждый уровень шамана.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "hp_per_level",
+				"value": 1
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:focus-heart",
+			"id": "hb:shaman:ability:focus-heart",
+			"type": "ability",
+			"name": "Сакральный фокус: Сердце",
+			"description": "Перед спасброском можно потратить одну Кость Хитов, чтобы совершить этот спасбросок с преимуществом.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:focus-mind",
+			"id": "hb:shaman:ability:focus-mind",
+			"type": "ability",
+			"name": "Сакральный фокус: Разум",
+			"description": "К проверкам характеристик и спасброскам Интеллекта или Харизмы добавляется модификатор Мудрости. Спасброски автоматизированы; общий бонус к проверкам пока требует ручного применения.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "saving_throw_bonus",
+				"ability": "int",
+				"formula": "@mod.wis"
+			}, {
+				"type": "saving_throw_bonus",
+				"ability": "cha",
+				"formula": "@mod.wis"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:focus-soul",
+			"id": "hb:shaman:ability:focus-soul",
+			"type": "ability",
+			"name": "Сакральный фокус: Душа",
+			"description": "Без доспеха и щита КД = 10 + модификатор Ловкости + модификатор Мудрости. Оставлено описанием, потому что текущая схема не умеет безопасно проверять «без доспеха и щита».",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-bear",
+			"id": "hb:shaman:ability:totem-bear",
+			"type": "ability",
+			"name": "Тотем медведя",
+			"description": "Бонусным действием вырастить магические когти: безоружные удары 1к6 + Сила рубящего урона, либо 1к8 + Сила, если обе руки свободны.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-crossroads",
+			"id": "hb:shaman:ability:totem-crossroads",
+			"type": "ability",
+			"name": "Тотем перекрёстка",
+			"description": "Требование: Сакральный фокус «Сердце».\nПока вы в сознании, действует эффект «Разговор с животными»; с 5-го уровня шамана также «Разговор с растениями».",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-heart",
+				"label": "Сакральный фокус «Сердце»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-eagle",
+			"id": "hb:shaman:ability:totem-eagle",
+			"type": "ability",
+			"name": "Тотем орла",
+			"description": "Владение Внимательностью; преимущество на проверки Внимательности, основанные на зрении.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "skill_proficiency",
+				"skill": "perception"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-earthquake",
+			"id": "hb:shaman:ability:totem-earthquake",
+			"type": "ability",
+			"name": "Тотем землетрясения",
+			"description": "Раз в ход при попадании рукопашной атакой оружием добавьте урон того же типа: 1к6; 1к8 на 6-м, 1к10 на 11-м, 1к12 на 17-м уровне шамана.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-harvest",
+			"id": "hb:shaman:ability:totem-harvest",
+			"type": "ability",
+			"name": "Тотем урожая",
+			"description": "Требование: Сакральный фокус «Душа».\nПосле короткого или продолжительного отдыха создаёт «Чудо-ягоды» без ячейки и материальных компонентов; ягоды действуют до следующего отдыха.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-soul",
+				"label": "Сакральный фокус «Душа»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-hound",
+			"id": "hb:shaman:ability:totem-hound",
+			"type": "ability",
+			"name": "Тотем гончей",
+			"description": "Владение Выживанием; преимущество на проверки Выживания в природной среде.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "skill_proficiency",
+				"skill": "survival"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-mountain",
+			"id": "hb:shaman:ability:totem-mountain",
+			"type": "ability",
+			"name": "Тотем горы",
+			"description": "Требование: Сакральный фокус «Тело».\nБез доспеха и щита КД = 13 + модификатор Телосложения (минимум 13).",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-body",
+				"label": "Сакральный фокус «Тело»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-panther",
+			"id": "hb:shaman:ability:totem-panther",
+			"type": "ability",
+			"name": "Тотем пантеры",
+			"description": "Владение Скрытностью; преимущество на Скрытность при попытке спрятаться в природной среде.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "skill_proficiency",
+				"skill": "stealth"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-pond",
+			"id": "hb:shaman:ability:totem-pond",
+			"type": "ability",
+			"name": "Тотем пруда",
+			"description": "Под водой можно задерживать дыхание на 1 час; преимущество на проверки и спасброски для сопротивления захвату.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-mire",
+			"id": "hb:shaman:ability:totem-mire",
+			"type": "ability",
+			"name": "Тотем трясины",
+			"description": "Требование: Сакральный фокус «Разум».\nЗащита разума от чтения мыслей, определения эмоций/мировоззрения и нежелательного прорицания; противники с помехой читают ваши намерения Проницательностью.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-mind",
+				"label": "Сакральный фокус «Разум»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-rains",
+			"id": "hb:shaman:ability:totem-rains",
+			"type": "ability",
+			"name": "Тотем дождей",
+			"description": "Сопротивление кислоте и яду; преимущество на спасброски против состояния «отравлен».",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "damage_resistance",
+				"damage": "acid"
+			}, {
+				"type": "damage_resistance",
+				"damage": "poison"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-twilight",
+			"id": "hb:shaman:ability:totem-twilight",
+			"type": "ability",
+			"name": "Тотем сумерек",
+			"description": "Тёмное зрение 120 футов; с 9-го уровня шамана позволяет видеть и в магической тьме.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "sense",
+				"sense": "darkvision",
+				"range": 120
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-waves",
+			"id": "hb:shaman:ability:totem-waves",
+			"type": "ability",
+			"name": "Тотем волн",
+			"description": "Реакцией превратить полученное критическое попадание в обычное. 1 раз за короткий/длинный отдых; с 12-го уровня — 2 раза.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [{
+				"id": "hb:shaman:resource:totem-waves",
+				"name": "Тотем волн",
+				"max": "1 + (@classLevel(\"hb:shaman:class:shaman\") >= 12)",
+				"restore": ["short_rest", "long_rest"],
+				"showOnSheet": true
+			}],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-whirlwind",
+			"id": "hb:shaman:ability:totem-whirlwind",
+			"type": "ability",
+			"name": "Тотем вихря",
+			"description": "При критическом попадании рукопашной атакой оружием можно реакцией совершить ещё одну атаку по той же цели.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-winds",
+			"id": "hb:shaman:ability:totem-winds",
+			"type": "ability",
+			"name": "Тотем ветров",
+			"description": "Скорость ходьбы +5 футов; +10 на 5-м, +15 на 11-м, +20 на 17-м уровне шамана.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 1,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-bloom",
+			"id": "hb:shaman:ability:totem-bloom",
+			"type": "ability",
+			"name": "Тотем цветения",
+			"description": "Требование: Сакральный фокус «Душа».\n«Рост растений» без ячейки 1 раз за короткий/длинный отдых; если способность не тратилась после прошлого длинного отдыха, длительный вариант может влиять на землю вокруг во время отдыха.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-soul",
+				"label": "Сакральный фокус «Душа»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-eruption",
+			"id": "hb:shaman:ability:totem-eruption",
+			"type": "ability",
+			"name": "Тотем извержения",
+			"description": "Раз в ход при попадании рукопашной атакой можно потратить ячейку Первобытной магии и добавить 1к8 за уровень ячейки (макс. 5к8) выбранного типа: холод, огонь, молния, магический дробящий или звук.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-growth",
+			"id": "hb:shaman:ability:totem-growth",
+			"type": "ability",
+			"name": "Тотем роста",
+			"description": "Требование: Сакральный фокус «Тело».\nБонусным действием наложить на себя увеличение из «Увеличение/уменьшение» без ячейки и концентрации; 1 раз за короткий/длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-body",
+				"label": "Сакральный фокус «Тело»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-grave",
+			"id": "hb:shaman:ability:totem-grave",
+			"type": "ability",
+			"name": "Тотем могилы",
+			"description": "Потратить ячейку Первобытной магии, чтобы сотворить «Восставший труп» без обычных материальных компонентов; затем требуется короткий/длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-light",
+			"id": "hb:shaman:ability:totem-light",
+			"type": "ability",
+			"name": "Тотем света",
+			"description": "Когда заклинанием 1-го уровня или выше восстанавливаете хиты другому существу, получаете временные хиты = модификатору Мудрости.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-joy",
+			"id": "hb:shaman:ability:totem-joy",
+			"type": "ability",
+			"name": "Тотем радости",
+			"description": "Требование: Сакральный фокус «Сердце».\nБонусным действием получить временные хиты = уровню шамана; 1 раз за длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-heart",
+				"label": "Сакральный фокус «Сердце»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-mystic",
+			"id": "hb:shaman:ability:totem-mystic",
+			"type": "ability",
+			"name": "Тотем мистика",
+			"description": "Требование: Сакральный фокус «Разум».\nДействием «Обнаружение мыслей» без ячейки и без вербальных/соматических компонентов.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman",
+			"requirements": [{
+				"type": "selected_feature",
+				"id": "hb:shaman:ability:focus-mind",
+				"label": "Сакральный фокус «Разум»"
+			}]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-swamp",
+			"id": "hb:shaman:ability:totem-swamp",
+			"type": "ability",
+			"name": "Тотем болота",
+			"description": "Действием существа в радиусе 15 футов делают спасбросок Телосложения; при провале отравлены до начала вашего следующего хода, при успехе иммунны к этому эффекту на 24 часа.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-wilderness",
+			"id": "hb:shaman:ability:totem-wilderness",
+			"type": "ability",
+			"name": "Тотем дикой природы",
+			"description": "«Призыв духа зверя» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-wrath",
+			"id": "hb:shaman:ability:totem-wrath",
+			"type": "ability",
+			"name": "Тотем гнева",
+			"description": "При провале цели против «Наступления тотемов» добавьте модификатор Мудрости к урону.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 5,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-hunt",
+			"id": "hb:shaman:ability:totem-hunt",
+			"type": "ability",
+			"name": "Тотем охоты",
+			"description": "Раз в ход дайте себе преимущество на бросок атаки, если в 5 футах от цели находится ваш союзник.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 7,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-slime",
+			"id": "hb:shaman:ability:totem-slime",
+			"type": "ability",
+			"name": "Тотем слизи",
+			"description": "Бонусным действием стать податливым: проходить через щели шириной до 1 дюйма и освобождаться от немагических оков или захвата за 5 футов перемещения.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 7,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-river",
+			"id": "hb:shaman:ability:totem-river",
+			"type": "ability",
+			"name": "Тотем реки",
+			"description": "Дышите воздухом и водой; скорость плавания равна скорости ходьбы.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "movement_mode",
+				"mode": "swim",
+				"formula": "@speed.walk"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 7,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-cave",
+			"id": "hb:shaman:ability:totem-cave",
+			"type": "ability",
+			"name": "Тотем пещеры",
+			"description": "Виброчувствительность 30 футов, пока соприкасаетесь с землёй.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 9,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-dawn",
+			"id": "hb:shaman:ability:totem-dawn",
+			"type": "ability",
+			"name": "Тотем рассвета",
+			"description": "После длинного отдыха выбранное вами существо получает эффект «Защита от смерти» без траты ячейки.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 9,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-fey",
+			"id": "hb:shaman:ability:totem-fey",
+			"type": "ability",
+			"name": "Тотем фей",
+			"description": "«Призыв духа феи» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 9,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-sun",
+			"id": "hb:shaman:ability:totem-sun",
+			"type": "ability",
+			"name": "Тотем солнца",
+			"description": "После проваленного спасброска можно перебросить его. 1 раз за короткий/длинный отдых; с 15-го уровня — 2 раза.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [{
+				"id": "hb:shaman:resource:totem-sun",
+				"name": "Тотем солнца",
+				"max": "1 + (@classLevel(\"hb:shaman:class:shaman\") >= 15)",
+				"restore": ["short_rest", "long_rest"],
+				"showOnSheet": true
+			}],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 9,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-vine",
+			"id": "hb:shaman:ability:totem-vine",
+			"type": "ability",
+			"name": "Тотем лозы",
+			"description": "Можно накладывать «Опутывающий удар» как заклинание 1-го уровня без траты ячейки.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 9,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-binding",
+			"id": "hb:shaman:ability:totem-binding",
+			"type": "ability",
+			"name": "Тотем связывания",
+			"description": "Действием восстановить одну потраченную ячейку Первобытной магии; 1 раз за длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 15,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-eclipse",
+			"id": "hb:shaman:ability:totem-eclipse",
+			"type": "ability",
+			"name": "Тотем затмения",
+			"description": "Сопротивление урону от заклинаний.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 15,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-elements",
+			"id": "hb:shaman:ability:totem-elements",
+			"type": "ability",
+			"name": "Тотем стихий",
+			"description": "«Призыв духа элементаля» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 15,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-sapling",
+			"id": "hb:shaman:ability:totem-sapling",
+			"type": "ability",
+			"name": "Тотем саженца",
+			"description": "В начале хода, если у вас больше 0 хитов и не больше половины максимума, восстановите хиты = модификатору Мудрости.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 15,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:totem-sky",
+			"id": "hb:shaman:ability:totem-sky",
+			"type": "ability",
+			"name": "Тотем неба",
+			"description": "Скорость полёта равна скорости ходьбы; урон от падения уменьшается на уровень шамана.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "movement_mode",
+				"mode": "fly",
+				"formula": "@speed.walk"
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 15,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:great-spirit-death",
+			"id": "hb:shaman:ability:great-spirit-death",
+			"type": "ability",
+			"name": "Великий дух смерти",
+			"description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Окаменение.\n13-й уровень шамана — Перст смерти.\n15-й уровень шамана — Ужасное увядание Аби-Далзима.\n17-й уровень шамана — Слово силы: смерть.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 11,
+			"parentClassId": "hb:shaman:class:shaman",
+			"references": [
+				"official:spell:spell-doc-flesh_to_stone",
+				"official:spell:finger-of-death",
+				"official:spell:spell-doc-abi_dalzim_s_horrid_wilting",
+				"official:spell:power-word-kill"
+			],
+			"spellGrants": [
+				{
+					"spellId": "spell-doc-flesh_to_stone",
+					"level": 11,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "finger-of-death",
+					"level": 13,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "spell-doc-abi_dalzim_s_horrid_wilting",
+					"level": 15,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "power-word-kill",
+					"level": 17,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:great-spirit-life",
+			"id": "hb:shaman:ability:great-spirit-life",
+			"type": "ability",
+			"name": "Великий дух жизни",
+			"description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Полное исцеление.\n13-й уровень шамана — Регенерация.\n15-й уровень шамана — Аура святости.\n17-й уровень шамана — Слово силы: исцеление.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 11,
+			"parentClassId": "hb:shaman:class:shaman",
+			"references": [
+				"official:spell:heal",
+				"official:spell:spell-doc-regenerate",
+				"official:spell:holy-aura",
+				"official:spell:spell-doc-power_word_heal"
+			],
+			"spellGrants": [
+				{
+					"spellId": "heal",
+					"level": 11,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "spell-doc-regenerate",
+					"level": 13,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "holy-aura",
+					"level": 15,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "spell-doc-power_word_heal",
+					"level": 17,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:great-spirit-moon",
+			"id": "hb:shaman:ability:great-spirit-moon",
+			"type": "ability",
+			"name": "Великий дух луны",
+			"description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Первородный страж.\n13-й уровень шамана — Изменение тяготения.\n15-й уровень шамана — Преграда магии.\n17-й уровень шамана — Проекция в астрал.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 11,
+			"parentClassId": "hb:shaman:class:shaman",
+			"references": [
+				"official:spell:spell-doc-primordial_ward",
+				"official:spell:spell-doc-reverse_gravity",
+				"official:spell:antimagic-field",
+				"official:spell:spell-doc-astral_projection"
+			],
+			"spellGrants": [
+				{
+					"spellId": "spell-doc-primordial_ward",
+					"level": 11,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "spell-doc-reverse_gravity",
+					"level": 13,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "antimagic-field",
+					"level": 15,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "spell-doc-astral_projection",
+					"level": 17,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:great-spirit-sun",
+			"id": "hb:shaman:ability:great-spirit-sun",
+			"type": "ability",
+			"name": "Великий дух солнца",
+			"description": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Солнечный луч.\n13-й уровень шамана — Воскрешение.\n15-й уровень шамана — Солнечный ожог.\n17-й уровень шамана — Истинное воскрешение.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 11,
+			"parentClassId": "hb:shaman:class:shaman",
+			"references": [
+				"official:spell:sunbeam",
+				"official:spell:resurrection",
+				"official:spell:sunburst",
+				"official:spell:trueResurrection"
+			],
+			"spellGrants": [
+				{
+					"spellId": "sunbeam",
+					"level": 11,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "resurrection",
+					"level": 13,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "sunburst",
+					"level": 15,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				},
+				{
+					"spellId": "trueResurrection",
+					"level": 17,
+					"mode": "known",
+					"countsAgainstKnown": false,
+					"uses": 1,
+					"recovery": "long"
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:subclass:curse-binder",
+			"id": "hb:shaman:subclass:curse-binder",
+			"type": "subclass",
+			"name": "Связующий проклятия",
+			"description": "Спиритизм проклятий и зловещих духов.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"parentClassId": "hb:shaman:class:shaman",
+			"features": [
+				{
+					"id": "hb:shaman:ability:curse-spells",
+					"level": 3,
+					"name": "Заклинания Связующего проклятия",
+					"description": "Всегда известны и не считаются в лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:evil-eye",
+					"level": 3,
+					"name": "Злой глаз",
+					"description": "Реакцией, когда видимое существо в 60 футах делает проверку, атаку или спасбросок, наложите помеху.",
+					"effects": [],
+					"resources": [{
+						"id": "hb:shaman:resource:evil-eye",
+						"name": "Злой глаз",
+						"max": "max(1, @mod.wis)",
+						"restore": ["long_rest"],
+						"showOnSheet": true
+					}],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:totemic-curse",
+					"level": 3,
+					"name": "Тотемическое проклятие",
+					"description": "После провала «Наступления тотемов» выберите: уменьшение скорости; запрет лечения + дополнительный некротический урон при получении урона; либо штраф Мудрости к проверкам и атакам. Цель может действием повторять спасбросок.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:sinister-spellcasting",
+					"level": 6,
+					"name": "Зловещее заклинательство",
+					"description": "Когда шаманский заговор или «Наступление тотемов» наносит урон, добавьте модификатор Мудрости (минимум +1) к одному броску урона.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:shamanic-defense",
+					"level": 10,
+					"name": "Шаманская защита",
+					"description": "После длинного отдыха выберите один тип стихийного/мистического урона и получите сопротивление ему; при получении такого урона от видимого существа можно реакцией применить к нему «Наступление тотемов». Выбор типа ведётся вручную.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:unrestrained-spellcasting",
+					"level": 14,
+					"name": "Необузданное заклинательство",
+					"description": "Действием сотворить «Создание нежити» как заклинание 6-го круга без ячейки и компонентов; 1 раз за длинный отдых.",
+					"effects": [],
+					"resources": [{
+						"id": "hb:shaman:resource:unrestrained-spellcasting",
+						"name": "Необузданное заклинательство",
+						"max": 1,
+						"restore": ["long_rest"],
+						"showOnSheet": true
+					}],
+					"attacks": []
+				}
+			],
+			"spellGrants": [
+				{
+					"spellId": "blindness-deafness",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "ray-of-enfeeblement",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "bestow-curse",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "vampiric-touch",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "blight",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-phantasmal_killer",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "contagion",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-enervation",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:subclass:spirit-warrior",
+			"id": "hb:shaman:subclass:spirit-warrior",
+			"type": "subclass",
+			"name": "Воин духа",
+			"description": "Боевой спиритизм, связывающий духов с оружием и телом.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [{
+				"id": "shaman-weapon-spirit",
+				"name": "Дух тотемного оружия",
+				"type": "ability",
+				"count": 1,
+				"from": [
+					"hb:shaman:ability:weapon-spirit-challenge",
+					"hb:shaman:ability:weapon-spirit-drain",
+					"hb:shaman:ability:weapon-spirit-might"
+				],
+				"level": 3
+			}],
+			"parentClassId": "hb:shaman:class:shaman",
+			"features": [
+				{
+					"id": "hb:shaman:ability:spirit-warrior-spells",
+					"level": 3,
+					"name": "Заклинания Воина духа",
+					"description": "Всегда известны и не считаются в лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:ancestral-knowledge",
+					"level": 3,
+					"name": "Знания предков",
+					"description": "Владение средними доспехами и воинским оружием.",
+					"effects": [{
+						"type": "armor_proficiency",
+						"group": "medium"
+					}, {
+						"type": "weapon_group_proficiency",
+						"group": "martial"
+					}],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:totem-weapon",
+					"level": 3,
+					"name": "Тотемное оружие",
+					"description": "После длинного отдыха привяжите дух к рукопашному оружию. Для атак и урона можно использовать Мудрость вместо Силы; атаки считаются магическими. Конкретный дух выбирается ниже.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:extra-attack-spirit-warrior",
+					"level": 6,
+					"name": "Дополнительная атака",
+					"description": "Действием Атака совершаете две атаки. Одну можно заменить шаманским заговором или «Наступлением тотемов».",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:grave-warrior",
+					"level": 10,
+					"name": "Воин могилы",
+					"description": "Когда хиты падают до 0 без мгновенной смерти, можно потратить одну Кость Хитов и вместо этого остаться с 1 хитом.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:spirit-champion",
+					"level": 14,
+					"name": "Духовный чемпион",
+					"description": "Бонусным действием на 1 минуту: Рывок бонусным действием; сопротивление дробящему/колющему/рубящему урону от непосеребрённого оружия; раз в ход попадание тотемным оружием может применить «Наступление тотемов» как при провале. 1 раз за короткий/длинный отдых.",
+					"effects": [],
+					"resources": [{
+						"id": "hb:shaman:resource:spirit-champion",
+						"name": "Духовный чемпион",
+						"max": 1,
+						"restore": ["short_rest", "long_rest"],
+						"showOnSheet": true
+					}],
+					"attacks": []
+				}
+			],
+			"spellGrants": [
+				{
+					"spellId": "magic-weapon",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spiritual-weapon",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "clairvoyance",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-spirit_shroud",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "guardian-of-faith",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-staggering_smite",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-contact_other_plane",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "steelwind",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:subclass:medicine-man",
+			"id": "hb:shaman:subclass:medicine-man",
+			"type": "subclass",
+			"name": "Знахарь",
+			"description": "Исцеляющий спиритизм, передающий силу тотемов союзникам.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"parentClassId": "hb:shaman:class:shaman",
+			"features": [
+				{
+					"id": "hb:shaman:ability:medicine-spells",
+					"level": 3,
+					"name": "Заклинания Знахаря",
+					"description": "Всегда известны и не считаются в лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:lifegiver",
+					"level": 3,
+					"name": "Жизнедатель",
+					"description": "Действием коснитесь существа (не нежить/конструкт): оно восстанавливает 1к8 + модификатор Мудрости хитов. Использований = уровень шамана.",
+					"effects": [],
+					"resources": [{
+						"id": "hb:shaman:resource:lifegiver",
+						"name": "Жизнедатель",
+						"max": "@classLevel(\"hb:shaman:class:shaman\")",
+						"restore": ["long_rest"],
+						"showOnSheet": true
+					}],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:totemic-blessing",
+					"level": 3,
+					"name": "Тотемное благословление",
+					"description": "«Наступление тотемов» наносит излучение вместо некротического урона. После длинного отдыха можно передать союзнику один из связанных тотемов, временно теряя его эффект; число переданных тотемов растёт с уровнем.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:mystic-focus",
+					"level": 6,
+					"name": "Мистический фокус",
+					"description": "В ход, когда действием накладываете заклинание Знахаря или восстанавливаете хиты существу, можно бонусным действием использовать «Наступление тотемов».",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:empowered-blessing",
+					"level": 10,
+					"name": "Усиленное благословение",
+					"description": "Союзник с переданным тотемом может действием применить «Наступление тотемов» с вашей Сл и получает связанные с наступлением свойства этого тотема.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:selfless-ward",
+					"level": 10,
+					"name": "Бескорыстный подопечный",
+					"description": "Получаете +1 ко всем спасброскам, включая спасброски от смерти, за каждый переданный другому существу тотем. Число переданных тотемов ведётся вручную.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:spiritual-awakening",
+					"level": 14,
+					"name": "Духовное пробуждение",
+					"description": "Реакцией при спасброске от смерти видимого существа можете переместиться к нему, коснуться и восстановить уровень шамана + модификатор Мудрости хитов; на себе — без реакции. 1 раз за короткий/длинный отдых, затем можно повторить за ячейку.",
+					"effects": [],
+					"resources": [{
+						"id": "hb:shaman:resource:spiritual-awakening",
+						"name": "Духовное пробуждение",
+						"max": 1,
+						"restore": ["short_rest", "long_rest"],
+						"showOnSheet": true
+					}],
+					"attacks": []
+				}
+			],
+			"spellGrants": [
+				{
+					"spellId": "lesser-restoration",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "warding-bond",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "beacon-of-hope",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "revivify",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-aura_of_life",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "death-ward",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-creation",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "greaterrestoration",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:subclass:wild-heart",
+			"id": "hb:shaman:subclass:wild-heart",
+			"type": "subclass",
+			"name": "Дикое сердце",
+			"description": "Спиритизм превращения в Великого зверя.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [
+				{
+					"id": "shaman-adaptation-3",
+					"name": "Звериная адаптация (3-й уровень)",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:adaptation-flexible",
+						"hb:shaman:ability:adaptation-mountain",
+						"hb:shaman:ability:adaptation-aquatic"
+					],
+					"level": 3,
+					"choiceGroup": "shaman-adaptations",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-adaptation-6",
+					"name": "Звериная адаптация (6-й уровень)",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:adaptation-flexible",
+						"hb:shaman:ability:adaptation-mountain",
+						"hb:shaman:ability:adaptation-aquatic"
+					],
+					"level": 6,
+					"choiceGroup": "shaman-adaptations",
+					"uniqueAcrossGroup": true
+				},
+				{
+					"id": "shaman-adaptation-10",
+					"name": "Звериная адаптация (10-й уровень)",
+					"type": "ability",
+					"count": 1,
+					"from": [
+						"hb:shaman:ability:adaptation-flexible",
+						"hb:shaman:ability:adaptation-mountain",
+						"hb:shaman:ability:adaptation-aquatic"
+					],
+					"level": 10,
+					"choiceGroup": "shaman-adaptations",
+					"uniqueAcrossGroup": true
+				}
+			],
+			"parentClassId": "hb:shaman:class:shaman",
+			"features": [
+				{
+					"id": "hb:shaman:ability:wild-heart-spells",
+					"level": 3,
+					"name": "Заклинания Дикого сердца",
+					"description": "Всегда известны и не считаются в лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:beast-adaptation",
+					"level": 3,
+					"name": "Звериная адаптация",
+					"description": "Выберите одну адаптацию на 3-м уровне и ещё по одной на 6-м и 10-м.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:totemic-wild-shape",
+					"level": 3,
+					"name": "Тотемная дикая форма",
+					"description": "Бонусным действием потратьте ячейку Первобытной магии и на срок до 1 часа превратитесь в Великого зверя. Форма использует физические характеристики и отдельные хиты зверя, сохраняет ваши ментальные характеристики, навыки и спасброски; число звериных черт = уровень потраченной ячейки.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:great-beast-statblock",
+					"level": 3,
+					"name": "Великий зверь — блок статистики",
+					"description": "КД 13 + БМ. Хиты: (10 + уровень шамана) × 6. Сила 18, Ловкость 14, Телосложение 16; ментальные характеристики ваши. Тёмное зрение 60 футов. Укус: +4+БМ, 1к6+4 колющего. Растерзание: +4+БМ, 2к6+4 рубящего. Черты: Агрессивный, Амфибия, Рывок, Обострённые чувства, Большой, Лёгкий шаг, Тактика стаи, Мощное телосложение, Свирепая хватка, Прыжок стоя, Жестокий укус.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:fierce-strikes",
+					"level": 6,
+					"name": "Свирепые удары",
+					"description": "В форме Великого зверя при действии Укус или Растерзание совершаете ещё одну такую атаку; атаки формы считаются магическими.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:fury-of-wild",
+					"level": 10,
+					"name": "Ярость дикой природы",
+					"description": "В форме Великого зверя бонусным действием потратьте Кость Хитов и восстановите выпавшее значение + модификатор Мудрости хитов; излишек становится временными хитами.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				},
+				{
+					"id": "hb:shaman:ability:apex-predator",
+					"level": 14,
+					"name": "Высший хищник",
+					"description": "В форме Великого зверя Сила, Ловкость и Телосложение +2 (макс. 20), +1 к атакам и урону, а Укус и Растерзание наносят дополнительно 1к6 урона.",
+					"effects": [],
+					"resources": [],
+					"attacks": []
+				}
+			],
+			"spellGrants": [
+				{
+					"spellId": "spell-doc-animal_messenger",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-beast_sense",
+					"level": 3,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "conjure-animals",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "fear",
+					"level": 5,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "dominate-beast",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-locate_creature",
+					"level": 7,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "hold-monster",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				},
+				{
+					"spellId": "spell-doc-tree_stride",
+					"level": 9,
+					"mode": "known",
+					"countsAgainstKnown": false
+				}
+			]
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:weapon-spirit-challenge",
+			"id": "hb:shaman:ability:weapon-spirit-challenge",
+			"type": "ability",
+			"name": "Дух вызова",
+			"description": "Попадание тотемным оружием даёт цели помеху на атаки по целям, кроме вас, до начала вашего следующего хода.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:weapon-spirit-drain",
+			"id": "hb:shaman:ability:weapon-spirit-drain",
+			"type": "ability",
+			"name": "Дух истощения",
+			"description": "Раз в ход попадание тотемным оружием можно сделать некротическим и получить временные хиты = модификатору Мудрости.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:weapon-spirit-might",
+			"id": "hb:shaman:ability:weapon-spirit-might",
+			"type": "ability",
+			"name": "Дух могущества",
+			"description": "С тотемным оружием добавляйте модификатор Мудрости к проверкам и спасброскам Силы; атаки им по схваченным вами целям совершаются с преимуществом.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:adaptation-flexible",
+			"id": "hb:shaman:ability:adaptation-flexible",
+			"type": "ability",
+			"name": "Звериная адаптация: Гибкая",
+			"description": "Скорость ходьбы и дальность прыжков +10 футов; игнорируете труднопроходимую местность.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [{
+				"type": "speed_bonus",
+				"mode": "walk",
+				"value": 10
+			}],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:adaptation-mountain",
+			"id": "hb:shaman:ability:adaptation-mountain",
+			"type": "ability",
+			"name": "Звериная адаптация: Горная",
+			"description": "Скорость лазания равна скорости ходьбы; можно лазать по отвесным поверхностям и потолку без проверок.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:ability:adaptation-aquatic",
+			"id": "hb:shaman:ability:adaptation-aquatic",
+			"type": "ability",
+			"name": "Звериная адаптация: Водная",
+			"description": "Скорость плавания равна скорости ходьбы; под водой Рывок бонусным действием и задержка дыхания до 1 часа.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"level": 3,
+			"parentClassId": "hb:shaman:class:shaman"
+		},
+		{
+			"schemaVersion": 2,
+			"uid": "hb:shaman:note:integration-notes",
+			"id": "hb:shaman:note:integration-notes",
+			"type": "note",
+			"name": "Шаман — заметка по интеграции",
+			"description": "Пакет рассчитан на текущую схему HeroList Homebrew v2. Основная прогрессия, магия, тотемы и подклассы заведены. Часть событийных механик требует ручного отслеживания; подробности — в отдельном отчёте.",
+			"updatedAt": "2026-09-26T14:15:00.000Z",
+			"version": "5.6.1",
+			"source": {
+				"kind": "homebrew",
+				"packId": "shaman-5.6.1",
+				"author": "laserllama",
+				"url": "https://dnd.su/homebrew/class/389-shaman/"
+			},
+			"tags": [
+				"shaman",
+				"laserllama",
+				"5e-2014"
+			],
+			"effects": [],
+			"resources": [],
+			"attacks": [],
+			"actions": [],
+			"choices": [],
+			"references": ["hb:shaman:class:shaman"]
+		}
+	]
+};
 //#endregion
 //#region app/HomebrewEditor.tsx
 var official = [
@@ -48132,6 +51974,7 @@ var official = [
 var abilities = Object.keys(abilityLabels);
 var editorTabs = (type) => [
 	"Основное",
+	...type === "class" ? ["Состав"] : [],
 	...["class", "subclass"].includes(type) ? ["Особенности"] : [],
 	...[
 		"class",
@@ -48444,6 +52287,8 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 	const [draft, setDraft] = useState(null), [tab, setTab] = useState("Основное"), [query, setQuery] = useState(""), [filter, setFilter] = useState("all"), [error, setError] = useState(""), [code, setCode] = useState(""), [history, setHistory] = useState([]), [future, setFuture] = useState([]), [registry, setRegistry] = useState(false), [registryValue, setRegistryValue] = useState("");
 	const file = useRef(null);
 	const refs = [...library.elements, ...draft && !library.elements.some((e) => e.id === draft.id) ? [draft] : []];
+	const packages = homebrewPackages(library.elements);
+	const draftPackage = draft ? homebrewPackageFor(draft, refs) : void 0;
 	const officialIds = official.map((e) => e.id);
 	const update = (patch) => {
 		if (!draft) return;
@@ -48494,7 +52339,8 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		URL.revokeObjectURL(url);
 	};
 	const addExample = async () => {
-		const example = savantExample_default;
+		const pack = shamanExample_default;
+		const example = pack.entities;
 		const ids = new Set(library.elements.map((e) => e.id));
 		const next = normalizeHomebrewLibrary({ elements: [...library.elements, ...example.filter((e) => !ids.has(e.id))] });
 		const issues = validateHomebrew(next.elements, officialIds);
@@ -48504,7 +52350,8 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		}
 		try {
 			await onSave(next);
-			open(next.elements.find((e) => e.id === "hb:savant:class:savant"));
+			open(next.elements.find((e) => e.id === pack.rootId));
+			setError(`Добавлен пример «Шаман»: ${example.length} компонентов собраны в один набор.`);
 		} catch (e) {
 			setError(e.message);
 		}
@@ -48581,12 +52428,15 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		setError("Добавлена ссылка. Библиотеку можно использовать у любого числа персонажей.");
 	};
 	const remove = async (e) => {
-		const used = library.elements.filter((x) => JSON.stringify(x).includes("\"" + e.id + "\"") && x.id !== e.id);
+		const pack = homebrewPackageFor(e, library.elements);
+		const targets = new Set(pack?.root.id === e.id ? pack.members.map((member) => member.id) : [e.id]);
+		const used = library.elements.filter((x) => !targets.has(x.id) && [...targets].some((id) => JSON.stringify(x).includes("\"" + id + "\"")));
 		if (used.length) {
-			setError("Сначала замените ссылки: " + used.map((x) => x.name).join(", "));
+			setError("Сначала замените внешние ссылки: " + used.map((x) => x.name).join(", "));
 			return;
 		}
-		if (confirm("Удалить «" + e.name + "» из библиотеки? Персонажи ссылаются на библиотеку: после удаления этот контент станет недоступен.")) await onSave(normalizeHomebrewLibrary({ elements: library.elements.filter((x) => x.id !== e.id) }));
+		const label = targets.size > 1 ? `Удалить весь пакет «${e.name}» (${targets.size} внутренних компонентов)?` : `Удалить «${e.name}» из библиотеки?`;
+		if (confirm(label + " Персонажи ссылаются на библиотеку: после удаления этот контент станет недоступен.")) await onSave(normalizeHomebrewLibrary({ elements: library.elements.filter((x) => !targets.has(x.id)) }));
 	};
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-workspace",
@@ -48614,7 +52464,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 					})] }),
 					/* @__PURE__ */ jsx("button", {
 						onClick: addExample,
-						children: "Пример: Савант 5.2"
+						children: "Пример: Шаман 5.6.1"
 					}),
 					/* @__PURE__ */ jsx("button", {
 						onClick: () => file.current?.click(),
@@ -48654,7 +52504,9 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						const issues = validateHomebrew(next.elements, officialIds);
 						if (issues.length) throw Error(issues[0].message);
 						await onSave(next);
-						setError("Импортировано: " + incoming.elements.length);
+						const importedPacks = homebrewPackages(incoming.elements);
+						setError(`Импортировано: ${importedPacks.length} ${importedPacks.length === 1 ? "набор" : "набора"} · ${incoming.elements.length} внутренних компонентов`);
+						open(incoming.elements.find((e) => e.id === data.rootId) || importedPacks[0]?.root || incoming.elements[0]);
 					} catch (e) {
 						setError(e.message);
 					}
@@ -48677,49 +52529,24 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "hb-workspace-layout",
-				children: [/* @__PURE__ */ jsxs("aside", {
-					className: "hb-workspace-sidebar",
-					children: [
-						/* @__PURE__ */ jsxs("h2", { children: ["Библиотека ", /* @__PURE__ */ jsx("small", { children: library.elements.length })] }),
-						/* @__PURE__ */ jsx("p", { children: "Создайте или откройте элемент. Классы, расы, заклинания и предметы хранятся в одной библиотеке." }),
-						/* @__PURE__ */ jsx("div", {
-							className: "hb-quick-create",
-							children: [
-								"class",
-								"subclass",
-								"race",
-								"subrace",
-								"background",
-								"spell",
-								"ability",
-								"feat",
-								"item",
-								"table"
-							].map((type) => /* @__PURE__ */ jsxs("button", {
-								onClick: () => open(newHomebrew(type)),
-								children: ["+ ", homebrewTypeLabels[type]]
-							}, type))
-						}),
-						/* @__PURE__ */ jsxs("label", { children: ["Найти в библиотеке", /* @__PURE__ */ jsx("input", {
-							"aria-label": "Поиск в боковой библиотеке",
-							value: query,
-							onChange: (e) => setQuery(e.target.value),
-							placeholder: "Название или тег"
-						})] }),
-						/* @__PURE__ */ jsx("div", {
-							className: "hb-sidebar-list",
-							children: library.elements.filter((e) => (e.name + " " + e.tags?.join(" ")).toLowerCase().includes(query.toLowerCase())).slice(0, 100).map((e) => /* @__PURE__ */ jsxs("button", {
-								className: draft?.id === e.id ? "selected" : "",
-								onClick: () => open(e),
-								children: [/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[e.type] }), /* @__PURE__ */ jsx("strong", { children: e.name })]
-							}, e.id))
-						})
-					]
+				children: [/* @__PURE__ */ jsx(HomebrewSidebar, {
+					packages,
+					draft,
+					query,
+					setQuery,
+					open
 				}), /* @__PURE__ */ jsx("div", {
 					className: "hb-workspace-main",
 					children: draft ? /* @__PURE__ */ jsxs("div", {
 						className: "hb-editor",
 						children: [
+							draftPackage && draftPackage.root.id !== draft.id && /* @__PURE__ */ jsxs("div", {
+								className: "hb-package-breadcrumb",
+								children: [/* @__PURE__ */ jsxs("button", {
+									onClick: () => open(draftPackage.root),
+									children: ["← ", draftPackage.name]
+								}), /* @__PURE__ */ jsxs("span", { children: [homebrewTypeLabels[draft.type], " внутри пакета"] })]
+							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "hb-toolbar",
 								children: [
@@ -48743,10 +52570,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 										},
 										children: "Повторить"
 									}),
-									/* @__PURE__ */ jsx("button", {
+									/* @__PURE__ */ jsxs("button", {
 										disabled: !!problems.length || saveState === "saving",
 										onClick: save,
-										children: "Сохранить элемент"
+										children: ["Сохранить ", draftPackage?.root.id === draft.id && draftPackage.members.length > 1 ? "пакет" : "элемент"]
 									}),
 									/* @__PURE__ */ jsx("button", {
 										onClick: () => {
@@ -49144,6 +52971,11 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								update,
 								entities: refs
 							})),
+							tab === "Состав" && draft.type === "class" && /* @__PURE__ */ jsx(ClassPackageContents, {
+								root: draft,
+								pack: draftPackage,
+								open
+							}),
 							tab === "Особенности" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassFeatures, {
 								draft,
 								update,
@@ -50606,25 +54438,144 @@ function SpellGrantsEditor({ draft, update, entities }) {
 		}, i))
 	] });
 }
+function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
+	const needle = query.trim().toLowerCase();
+	const visible = packages.filter((pack) => !needle || pack.members.some((member) => (member.name + " " + member.id + " " + (member.tags || []).join(" ")).toLowerCase().includes(needle)));
+	const current = draft && packages.find((pack) => pack.members.some((member) => member.id === draft.id));
+	return /* @__PURE__ */ jsxs("aside", {
+		className: "hb-workspace-sidebar",
+		children: [
+			/* @__PURE__ */ jsxs("h2", { children: ["Библиотека ", /* @__PURE__ */ jsxs("small", { children: [packages.length, " наборов"] })] }),
+			/* @__PURE__ */ jsxs("p", { children: [packages.reduce((sum, pack) => sum + pack.members.length, 0), " внутренних компонентов аккуратно собраны по классам, расам и другим наборам."] }),
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-quick-create",
+				children: [[
+					"class",
+					"race",
+					"background",
+					"spell",
+					"feat",
+					"item"
+				].map((type) => /* @__PURE__ */ jsxs("button", {
+					onClick: () => open(newHomebrew(type)),
+					children: ["+ ", homebrewTypeLabels[type]]
+				}, type)), /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Другие типы" }), [
+					"subclass",
+					"subrace",
+					"ability",
+					"proficiency",
+					"resource",
+					"attack",
+					"table",
+					"note"
+				].map((type) => /* @__PURE__ */ jsxs("button", {
+					onClick: () => open(newHomebrew(type)),
+					children: ["+ ", homebrewTypeLabels[type]]
+				}, type))] })]
+			}),
+			/* @__PURE__ */ jsxs("label", { children: ["Найти в библиотеке", /* @__PURE__ */ jsx("input", {
+				"aria-label": "Поиск в боковой библиотеке",
+				value: query,
+				onChange: (e) => setQuery(e.target.value),
+				placeholder: "Набор или его содержимое"
+			})] }),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-sidebar-list",
+				children: visible.slice(0, 100).map((pack) => /* @__PURE__ */ jsxs("div", {
+					className: "hb-sidebar-package",
+					children: [/* @__PURE__ */ jsxs("button", {
+						className: draft?.id === pack.root.id ? "selected" : "",
+						onClick: () => open(pack.root),
+						children: [
+							/* @__PURE__ */ jsxs("small", { children: [
+								homebrewTypeLabels[pack.root.type],
+								" · ",
+								pack.members.length > 1 ? "набор" : "одиночный элемент"
+							] }),
+							/* @__PURE__ */ jsx("strong", { children: pack.name }),
+							/* @__PURE__ */ jsx("span", { children: homebrewPackageLabel(pack) })
+						]
+					}), current?.id === pack.id && pack.members.length > 1 && /* @__PURE__ */ jsxs("details", {
+						open: !!needle,
+						children: [/* @__PURE__ */ jsxs("summary", { children: [
+							"Состав (",
+							pack.members.length - 1,
+							")"
+						] }), /* @__PURE__ */ jsx("div", { children: pack.members.filter((member) => member.id !== pack.root.id).filter((member) => !needle || (member.name + " " + member.id).toLowerCase().includes(needle)).map((member) => /* @__PURE__ */ jsxs("button", {
+							className: draft?.id === member.id ? "selected" : "",
+							onClick: () => open(member),
+							children: [/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[member.type] }), /* @__PURE__ */ jsx("strong", { children: member.name })]
+						}, member.id)) })]
+					})]
+				}, pack.id))
+			})
+		]
+	});
+}
+function ClassPackageContents({ root, pack, open }) {
+	const [query, setQuery] = useState("");
+	const members = (pack?.members || [root]).filter((member) => member.id !== root.id);
+	const groups = [
+		"subclass",
+		"ability",
+		"spell",
+		"table",
+		"note",
+		"resource",
+		"attack",
+		"item"
+	].map((type) => ({
+		type,
+		rows: members.filter((member) => member.type === type && (member.name + " " + member.id).toLowerCase().includes(query.toLowerCase()))
+	})).filter((group) => group.rows.length);
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-package-contents",
+		children: [
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Состав класса" }), /* @__PURE__ */ jsx("p", { children: "Это один переносимый пакет. Внутренние компоненты имеют собственные ID только для связей, условий и выборов; в библиотеке они не считаются отдельными работами." })] }), /* @__PURE__ */ jsxs("strong", { children: [members.length + 1, " компонентов"] })] }),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-package-summary",
+				children: pack && Object.entries(pack.counts).filter(([type]) => type !== "class").map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
+					homebrewTypeLabels[type],
+					" ",
+					/* @__PURE__ */ jsx("b", { children: count })
+				] }, type))
+			}),
+			/* @__PURE__ */ jsx("input", {
+				"aria-label": "Поиск в составе класса",
+				placeholder: "Найти тотем, подкласс или заклинание",
+				value: query,
+				onChange: (event) => setQuery(event.target.value)
+			}),
+			groups.map((group) => /* @__PURE__ */ jsxs("details", {
+				open: group.type === "subclass" || !!query,
+				children: [/* @__PURE__ */ jsxs("summary", { children: [
+					homebrewTypeLabels[group.type],
+					" · ",
+					group.rows.length
+				] }), /* @__PURE__ */ jsx("div", {
+					className: "hb-package-member-grid",
+					children: group.rows.map((member) => /* @__PURE__ */ jsxs("button", {
+						onClick: () => open(member),
+						children: [/* @__PURE__ */ jsx("span", { children: member.name }), /* @__PURE__ */ jsx("small", { children: member.summary || member.description.slice(0, 100) || member.id })]
+					}, member.id))
+				})]
+			}, group.type)),
+			!members.length && /* @__PURE__ */ jsx("p", { children: "Пока у класса нет связанных компонентов. Обычные классовые способности добавляйте во вкладке «Особенности» — отдельные записи для них не создаются." })
+		]
+	});
+}
 function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, apply, remove, download }) {
-	const [sort, setSort] = useState("newest"), [showParts, setShowParts] = useState(false), [source, setSource] = useState("all");
-	const owned = /* @__PURE__ */ new Map();
-	for (const parent of library.elements.filter((e) => e.type === "class" || e.type === "subclass")) {
-		const owner = parent.type === "subclass" ? parent.parentClassId || parent.id : parent.id;
-		for (const rows of Object.values(parent.advancement || {})) for (const row of rows) if (row.id) owned.set(row.id, owner);
-		for (const choice of parent.choices || []) for (const id of choice.from) owned.set(id, owner);
-	}
-	for (const entry of library.elements) if (entry.parentClassId && entry.type === "ability") owned.set(entry.id, entry.parentClassId);
-	const visible = library.elements.filter((e) => {
-		return (e.name + " " + e.id + " " + e.tags?.join(" ") + " " + e.summary).toLowerCase().includes(query.toLowerCase()) && (filter === "all" || e.type === filter) && (source === "all" || source === "example" === (e.source?.kind === "example")) && (showParts || !owned.has(e.id) || !!query);
-	}).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ru") : sort === "type" ? a.type.localeCompare(b.type) || a.name.localeCompare(b.name, "ru") : b.updatedAt.localeCompare(a.updatedAt));
+	const [sort, setSort] = useState("newest"), [source, setSource] = useState("all");
+	const visible = homebrewPackages(library.elements).filter((pack) => {
+		return pack.members.some((e) => (e.name + " " + e.id + " " + e.tags?.join(" ") + " " + e.summary).toLowerCase().includes(query.toLowerCase())) && (filter === "all" || pack.members.some((e) => e.type === filter)) && (source === "all" || source === "example" === (pack.root.source?.kind === "example"));
+	}).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ru") : sort === "type" ? a.root.type.localeCompare(b.root.type) || a.name.localeCompare(b.name, "ru") : b.root.updatedAt.localeCompare(a.root.updatedAt));
 	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
 		/* @__PURE__ */ jsxs("div", {
 			className: "hb-browser-tools",
 			children: [
 				/* @__PURE__ */ jsx("input", {
 					"aria-label": "Поиск Homebrew",
-					placeholder: "Название, тег или ID",
+					placeholder: "Название набора или компонента",
 					value: query,
 					onChange: (e) => setQuery(e.target.value)
 				}),
@@ -50659,117 +54610,98 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 				})
 			]
 		}),
-		/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-			type: "checkbox",
-			checked: showParts,
-			onChange: (e) => setShowParts(e.target.checked)
-		}), " Показывать дочерние элементы отдельно"] }),
 		/* @__PURE__ */ jsxs("p", { children: [
 			visible.length,
-			" записей · ",
+			" наборов · ",
 			library.elements.length,
-			" всего. Особенности класса показаны внутри карточки класса."
+			" внутренних компонентов. Компоненты классов больше не засоряют общий список."
 		] }),
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-browser-results",
-			children: visible.map((e) => /* @__PURE__ */ jsxs("article", {
-				className: "hb-library-row",
-				children: [
-					/* @__PURE__ */ jsx(CatalogIcon, {
-						id: e.id,
-						kind: e.type === "class" ? "class" : e.type === "race" ? "race" : "background",
-						fallback: e.name,
-						image: e.icon
-					}),
-					/* @__PURE__ */ jsxs("div", { children: [
-						/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[e.type], owned.has(e.id) ? " · особенность класса" : ""] }),
-						/* @__PURE__ */ jsx("h2", { children: e.name }),
-						/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
-						(e.type === "class" || e.type === "subclass") && /* @__PURE__ */ jsxs("details", { children: [
-							/* @__PURE__ */ jsxs("summary", { children: [
-								"Способности и прогрессия (",
-								e.features?.length || 0,
-								" встроенных)"
-							] }),
-							e.features?.map((f) => /* @__PURE__ */ jsxs("p", { children: [
-								f.level,
-								" ур. · ",
-								f.name
-							] }, f.id)),
-							e.type === "class" && library.elements.filter((child) => owned.get(child.id) === e.id && !Object.values(e.advancement || {}).flat().some((r) => r.id === child.id)).map((child) => /* @__PURE__ */ jsxs("button", {
-								onClick: () => open(child),
-								children: [child.name, " · открыть"]
-							}, child.id)),
-							Object.entries(e.advancement || {}).flatMap(([level, rows]) => rows.filter((r) => r.id && owned.get(r.id) === (e.type === "subclass" ? e.parentClassId : e.id)).map((r) => {
-								const child = library.elements.find((x) => x.id === r.id);
-								return child && /* @__PURE__ */ jsxs("button", {
-									onClick: () => open(child),
-									children: [
-										level,
-										" ур. · ",
-										child.name
-									]
-								}, r.id);
-							}))
-						] })
-					] }),
-					/* @__PURE__ */ jsxs("div", {
-						className: "hb-toolbar",
-						children: [
-							/* @__PURE__ */ jsx("button", {
-								onClick: () => open(e),
-								children: "Редактировать"
-							}),
-							/* @__PURE__ */ jsx("button", {
-								onClick: () => apply(e),
-								children: e.type === "class" ? "Выбрать" : "Добавить"
-							}),
-							/* @__PURE__ */ jsx("button", {
-								onClick: () => download({
-									schemaVersion: 2,
-									type: "homebrew-pack",
-									entities: homebrewExportClosure(e, library.elements)
-								}, "HeroList-" + e.type + ".json"),
-								children: "Экспорт"
-							}),
-							/* @__PURE__ */ jsxs("details", { children: [
-								/* @__PURE__ */ jsx("summary", { children: "Ещё" }),
+			children: visible.map((pack) => {
+				const e = pack.root;
+				return /* @__PURE__ */ jsxs("article", {
+					className: "hb-library-row",
+					children: [
+						/* @__PURE__ */ jsx(CatalogIcon, {
+							id: e.id,
+							kind: e.type === "class" ? "class" : e.type === "race" ? "race" : "background",
+							fallback: e.name,
+							image: e.icon
+						}),
+						/* @__PURE__ */ jsxs("div", { children: [
+							/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[e.type], pack.members.length > 1 ? " · полный набор" : ""] }),
+							/* @__PURE__ */ jsx("h2", { children: e.name }),
+							/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
+							pack.members.length > 1 && /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsxs("summary", { children: [homebrewPackageLabel(pack), " · открыть состав"] }), /* @__PURE__ */ jsx("div", {
+								className: "hb-package-chip-list",
+								children: Object.entries(pack.counts).filter(([type]) => type !== e.type).map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
+									homebrewTypeLabels[type],
+									" · ",
+									count
+								] }, type))
+							})] })
+						] }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "hb-toolbar",
+							children: [
 								/* @__PURE__ */ jsx("button", {
-									onClick: () => {
-										const n = newHomebrew(e.type, e.name + " — копия");
-										open({
-											...e,
-											...n,
-											features: e.features?.map((f) => ({
-												...f,
-												id: newHomebrew("ability").id
-											})),
-											resources: e.resources?.map((r) => ({
-												...r,
-												id: newHomebrew("resource").id
-											})),
-											attacks: e.attacks?.map((a) => ({
-												...a,
-												id: newHomebrew("attack").id
-											})),
-											advancement: {}
-										});
-									},
-									children: "Дублировать"
+									onClick: () => open(e),
+									children: "Редактировать набор"
 								}),
 								/* @__PURE__ */ jsx("button", {
-									onClick: () => {
-										remove(e);
-									},
-									children: "Удалить"
-								})
-							] })
-						]
-					})
-				]
-			}, e.id))
+									onClick: () => apply(e),
+									children: e.type === "class" ? "Выбрать класс" : "Добавить"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => download({
+										schemaVersion: 2,
+										type: "homebrew-pack",
+										name: e.name,
+										rootId: e.id,
+										entities: homebrewExportClosure(e, library.elements)
+									}, "HeroList-" + e.type + ".json"),
+									children: "Экспорт набора"
+								}),
+								/* @__PURE__ */ jsxs("details", { children: [
+									/* @__PURE__ */ jsx("summary", { children: "Ещё" }),
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => {
+											const n = newHomebrew(e.type, e.name + " — копия");
+											open({
+												...e,
+												...n,
+												features: e.features?.map((f) => ({
+													...f,
+													id: newHomebrew("ability").id
+												})),
+												resources: e.resources?.map((r) => ({
+													...r,
+													id: newHomebrew("resource").id
+												})),
+												attacks: e.attacks?.map((a) => ({
+													...a,
+													id: newHomebrew("attack").id
+												})),
+												advancement: {}
+											});
+										},
+										children: "Дублировать основу"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => {
+											remove(e);
+										},
+										children: "Удалить набор"
+									})
+								] })
+							]
+						})
+					]
+				}, pack.id);
+			})
 		}),
-		!library.elements.length && /* @__PURE__ */ jsx("p", { children: "Создайте первый элемент или загрузите пример Саванта." })
+		!library.elements.length && /* @__PURE__ */ jsx("p", { children: "Создайте первый элемент или загрузите пример Шамана." })
 	] });
 }
 //#endregion
