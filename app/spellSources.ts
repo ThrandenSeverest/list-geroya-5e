@@ -54,6 +54,30 @@ export function classSpellGroups(character: ExportCharacter, catalog: CatalogSpe
   });
 }
 
+/** Resolve an internal source id to a user-facing name for exports. */
+export function spellSourceDisplayName(
+  sourceId: string,
+  character: ExportCharacter,
+  classCatalog: { id: string; name: string }[],
+): string {
+  const catalogName = classCatalog.find(item => item.id === sourceId)?.name;
+  if (catalogName) return catalogName;
+
+  // Homebrew classes are not part of the built-in catalog. Their id is an
+  // internal reference, while character.className is the displayed HB name
+  // in the character model. Never expose hb:* ids in the sheet.
+  if (character.className === sourceId) return character.className;
+
+  const characterClass = orderedCharacterClasses(character).find(entry => entry.classId === sourceId);
+  if (characterClass) {
+    const name = classCatalog.find(item => item.id === characterClass.classId)?.name;
+    if (name) return name;
+    if (characterClass.classId === character.className) return character.className;
+  }
+
+  return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
+}
+
 export function otherSpellSources(character: ExportCharacter, catalog: CatalogSpell[]): SourcedSpell[] {
   const casterIds = new Set(orderedCharacterClasses(character)
     .filter(entry => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map(entry => entry.classId));
