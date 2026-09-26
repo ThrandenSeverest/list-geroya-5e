@@ -1,3 +1,4 @@
+import { homebrewReferencesOnly } from "./homebrewEngine";
 import { backgrounds, classes, races, spells } from "./catalog";
 import { backgroundRule } from "./backgroundRules";
 import { helpmateClassIds, helpmateSubclassClassIds, type AbilityScores, type AdvancementChoice, type ExportCharacter } from "./exportFormats";
@@ -22,7 +23,7 @@ export type CharacterImportResult = {
 const BASE_ABILITY_EXPORT_FIX_AT = Date.parse("2026-09-15T15:09:44.000Z");
 
 export function createNativeCharacterFile(character: ExportCharacter) {
-  const normalized = migrateMulticlassCharacter(character);
+  const normalized = migrateMulticlassCharacter(homebrewReferencesOnly(character));
   return {
     format: "list-geroya-5e",
     version: 1,
@@ -474,3 +475,4 @@ export function parseCharacterFile(payload: unknown, empty: ExportCharacter): Ch
   if (Array.isArray(value.Classes) && Array.isArray(value.Parameters)) return importHelpmate(value, empty);
   throw new Error("Формат не распознан. Поддерживаются файлы «Листа Героя 5e», Long Story Short и Helpmate.");
 }
+

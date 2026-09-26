@@ -1,3 +1,4 @@
+import { classRuleFor, hbSum } from "./homebrewEngine";
 import { preparedSpellIds as resolvedPreparedSpellIds } from "./spellPreparation";
 import type { CatalogOption, CatalogSpell } from "./catalog";
 import { dndSpellUrl, helpmateSpellId } from "./exportIds";
@@ -57,6 +58,7 @@ export type SpellGrant = {
 };
 
 export type ExportCharacter = {
+  homebrew?: import("./homebrewEngine").HBCharacterData;
   abilityMethod?: "pointBuy" | "standard";
   recommendedSubclassId?: string;
   recommendedBuildVersion?: string;
@@ -180,7 +182,7 @@ export function estimatedHitPoints(character: ExportCharacter) {
   const constitution = abilityModifier(character.abilities.con);
   const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
   return Math.max(1, history.reduce((total, entry) => {
-    const hitDie = classRules[entry.classId]?.hitDie || 8;
+    const hitDie = classRuleFor(character, entry.classId)?.hitDie || 8;
     // Explicit v1 rolls use the raw die plus current CON, including retroactive
     // changes. Unversioned legacy gains remain stored totals: the old die and
     // CON at the time of the roll cannot be reconstructed.
@@ -192,7 +194,7 @@ export function estimatedHitPoints(character: ExportCharacter) {
           : Math.max(1, entry.hpGain || 1)
         : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution);
     return total + gain;
-  }, 0));
+  }, 0) + hbSum(character, "hp_bonus") + hbSum(character, "hp_per_level") * characterLevel(character));
 }
 
 function makeId() {
@@ -1019,3 +1021,4 @@ export function createLongStoryShortExport(context: ExportContext) {
     wizard: {},
   };
 }
+

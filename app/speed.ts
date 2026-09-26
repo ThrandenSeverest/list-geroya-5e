@@ -1,3 +1,4 @@
+import { activeHomebrew, hbEffects } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedEquipment } from "./equipment";
 import { getClassLevel } from "./multiclass";
@@ -77,5 +78,8 @@ export function speedBreakdown(character: ExportCharacter): SpeedBreakdown {
   if (race === "shifter" && ["swiftstride", "motm-swiftstride"].includes(variant))
     conditions.push("Смена быстронога: +10 к скорости только во время Смены");
   if (race === "tabaxi") conditions.push("Кошачья ловкость: удвоение скорости только при активации");
+  for (const entity of activeHomebrew(character)) if (entity.type === "race" || entity.type === "subrace") for (const [mode, amount] of Object.entries(entity.speed || {})) result[mode as "walk"] = amount;
+  for (const row of hbEffects(character)) if (["speed_bonus", "movement_mode"].includes(row.effect.type) && ["walk", "swim", "climb", "fly"].includes(row.effect.mode || "")) { const mode = row.effect.mode as "walk"; result[mode] = Math.max(0, row.effect.type === "movement_mode" ? row.value : (result[mode] || 0) + row.value); sources.push(`${row.source.name}: ${mode} ${row.value}`); }
   return result;
 }
+

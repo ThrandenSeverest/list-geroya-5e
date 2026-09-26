@@ -16,7 +16,7 @@ class Settings:
     character_max_count: int = int(os.getenv("CHARACTER_MAX_COUNT", "100"))
     character_raw_max_bytes: int = int(os.getenv("CHARACTER_RAW_MAX_BYTES", str(256 * 1024)))
     character_compressed_max_bytes: int = int(os.getenv("CHARACTER_COMPRESSED_MAX_BYTES", str(64 * 1024)))
-    homebrew_max_count: int = int(os.getenv("HOMEBREW_MAX_COUNT", "100"))
+    homebrew_max_count: int = int(os.getenv("HOMEBREW_MAX_COUNT", "1000"))
     homebrew_entity_max_bytes: int = int(os.getenv("HOMEBREW_ENTITY_MAX_BYTES", str(32 * 1024)))
     homebrew_total_max_bytes: int = int(os.getenv("HOMEBREW_TOTAL_MAX_BYTES", str(2 * 1024 * 1024)))
     registration_enabled: bool = _bool("REGISTRATION_ENABLED", True)
@@ -52,3 +52,4 @@ class Settings:
 
 
 settings = Settings()
+

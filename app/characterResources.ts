@@ -1,3 +1,4 @@
+import { hbResources } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedRaceVariant } from "./characterRules";
 import { characterLevel, classView, getClassLevel, orderedCharacterClasses } from "./multiclass";
@@ -189,6 +190,7 @@ export function characterResources(character: ExportCharacter) {
       if (!previous || resource.max > previous.max) merged.set(resource.key, resource);
     }
   }
+  for (const resource of hbResources(character)) merged.set(resource.key, resource);
   return [...merged.values()];
 }
 
@@ -206,3 +208,4 @@ export function spentResourcesAfterLongRest(character: ExportCharacter): Record<
   return Object.fromEntries(Object.entries(character.resourceSpent || {})
     .filter(([key]) => persistentKeys.has(key)));
 }
+

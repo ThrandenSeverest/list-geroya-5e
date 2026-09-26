@@ -1,3 +1,4 @@
+import { classRuleFor } from "./homebrewEngine";
 import type { AbilityScores, ExportCharacter, CharacterClassProgress, CharacterLevelEntry } from "./exportFormats";
 import { classRules } from "./rules";
 
@@ -178,7 +179,7 @@ export function hitDicePools(character: ExportCharacter) {
   const spent = character.hitDiceSpentByClass || {};
   const pools = new Map<number, { die: number; max: number; spent: number; sources: string[] }>();
   for (const entry of orderedCharacterClasses(character)) {
-    const die = classRules[entry.classId]?.hitDie || 8;
+    const die = classRuleFor(character, entry.classId)?.hitDie || 8;
     const pool = pools.get(die) || { die, max: 0, spent: 0, sources: [] };
     pool.max += entry.level;
     pool.spent += Math.min(entry.level, spent[entry.classId] || 0);
@@ -187,3 +188,4 @@ export function hitDicePools(character: ExportCharacter) {
   }
   return [...pools.values()].sort((a, b) => b.die - a.die);
 }
+

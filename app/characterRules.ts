@@ -1,3 +1,4 @@
+import { hbAbilities } from "./homebrewEngine";
 export * from "./characterRules.base";
 
 import * as base from "./characterRules.base";
@@ -225,9 +226,9 @@ export function finalAbilityScores(character: ExportCharacter): AbilityScores {
     result[key] = (result[key] || 0) + 1;
     return result;
   }, {});
-  return Object.fromEntries(
+  return hbAbilities(character, Object.fromEntries(
     (Object.keys(character.abilities) as AbilityKey[]).map(key => [key, Math.min(20, character.abilities[key] + bonuses[key] + (asiBonuses[key] || 0) + (featBonuses[key] || 0))]),
-  ) as AbilityScores;
+  ) as AbilityScores);
 }
 
 export function raceProficiencies(character: ExportCharacter): string[] {
@@ -284,3 +285,4 @@ export function optimalAbilityBuild(character: Pick<ExportCharacter, "race" | "r
   }
   return best || { score: 0, abilities: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 }, raceAbilityChoices: [] };
 }
+

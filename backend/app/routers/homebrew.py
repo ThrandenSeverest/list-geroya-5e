@@ -15,7 +15,7 @@ from ..services.users import ensure_chatgpt_user
 from .vault import rate_limit
 
 router = APIRouter(prefix="/api/homebrew")
-ALLOWED_TYPES = {"ability", "item", "spell", "proficiency", "note"}
+ALLOWED_TYPES = {"ability", "feat", "item", "spell", "proficiency", "race", "subrace", "class", "subclass", "background", "resource", "attack", "table", "note", "pack"}
 
 
 def signed_in(request: Request, db: Session) -> User:
@@ -31,7 +31,7 @@ def signed_in(request: Request, db: Session) -> User:
 
 
 def validate(value):
-    if not isinstance(value, dict) or value.get("version") != 1 or not isinstance(value.get("elements"), list):
+    if not isinstance(value, dict) or value.get("version") not in (1, 2) or not isinstance(value.get("elements"), list):
         raise HTTPException(400, "Некорректная библиотека хоумбрю")
     if len(value["elements"]) > settings.homebrew_max_count:
         raise HTTPException(413, f"Можно хранить не более {settings.homebrew_max_count} элементов хоумбрю")
@@ -65,11 +65,11 @@ def get_homebrew(request: Request, db: Session = Depends(get_db)):
     rows = list(db.scalars(select(HomebrewEntity).where(HomebrewEntity.owner_user_id == user.id).order_by(HomebrewEntity.sort_index)))
     if rows:
         elements = [decode_payload(row.payload_codec, row.content_blob) for row in rows]
-        return {"library": {"version": 1, "elements": elements}, "updatedAt": max(row.updated_at for row in rows)}
+        return {"library": {"version": 2, "schemaVersion": 2, "elements": elements}, "updatedAt": max(row.updated_at for row in rows)}
     legacy = db.get(HomebrewLibrary, user.id)
     if legacy and legacy.library_json not in {"", "{}"}:
         return {"library": json.loads(legacy.library_json), "updatedAt": legacy.updated_at}
-    return {"library": {"version": 1, "elements": []}, "updatedAt": legacy.updated_at if legacy else None}
+    return {"library": {"version": 2, "schemaVersion": 2, "elements": []}, "updatedAt": legacy.updated_at if legacy else None}
 
 
 @router.put("")
@@ -81,7 +81,7 @@ def put_homebrew(payload: HomebrewRequest, request: Request, db: Session = Depen
     db.execute(delete(HomebrewEntity).where(HomebrewEntity.owner_user_id == user.id))
     for sort_index, (element, raw) in enumerate(encoded):
         codec, compact = encode_payload(raw)
-        db.add(HomebrewEntity(owner_user_id=user.id, id=element["id"], kind=element["type"], name=element["name"].strip(), sort_index=sort_index, schema_version=1, payload_codec=codec, content_blob=compact, content_hash=payload_hash(raw), updated_at=element["updatedAt"] or updated))
+        db.add(HomebrewEntity(owner_user_id=user.id, id=element["id"], kind=element["type"], name=element["name"].strip(), sort_index=sort_index, schema_version=element.get("schemaVersion", 1), payload_codec=codec, content_blob=compact, content_hash=payload_hash(raw), updated_at=element["updatedAt"] or updated))
     legacy = db.get(HomebrewLibrary, user.id)
     if legacy:
         legacy.library_json = "{}"
@@ -90,3 +90,4 @@ def put_homebrew(payload: HomebrewRequest, request: Request, db: Session = Depen
         db.add(HomebrewLibrary(user_id=user.id, library_json="{}", updated_at=updated))
     db.commit()
     return {"saved": True, "updatedAt": updated}
+

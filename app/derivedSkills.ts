@@ -1,3 +1,4 @@
+import { hbSum } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { characterExpertiseSkills, characterProficiencies } from "./proficiencies";
 import { characterLevel } from "./multiclass";
@@ -13,12 +14,13 @@ export function skillBonusBreakdown(character: ExportCharacter, skill: string) {
   const proficient = characterProficiencies(character).skills.includes(skill);
   const expertise = proficient && characterExpertiseSkills(character).includes(skill);
   const training = proficient ? proficiencyBonus(characterLevel(character)) * (expertise ? 2 : 1) : 0;
-  return { value: ability + training, ability, training, proficient, expertise };
+  return { value: ability + training + hbSum(character, "skill_bonus", e => e.skill === rule.key || e.skill === skill), ability, training, proficient, expertise };
 }
 
 export function passivePerceptionBreakdown(character: ExportCharacter) {
   const skill = skillBonusBreakdown(character, "Внимательность");
   const feats = new Set([...(character.feats || []), ...(character.advancements || []).map(choice => choice.featId)]);
   const observant = feats.has("observant") ? 5 : 0;
-  return { value: 10 + skill.value + observant, skill, observant };
+  return { value: 10 + skill.value + observant + hbSum(character, "passive_bonus", e => e.skill === "perception" || e.skill === "Внимательность"), skill, observant };
 }
+

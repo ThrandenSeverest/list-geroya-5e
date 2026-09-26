@@ -1,0 +1,2768 @@
+[
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-savant",
+    "id": "hb:savant:class:savant",
+    "type": "class",
+    "name": "Савант",
+    "description": "Редактируемый пример по механическому резюме Саванта 5.2 (laserllama). Условные реакции, Метка, подмена характеристик против Метки и решения мастера применяются вручную; постоянные эффекты задаются во вкладке Механика.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [
+      {
+        "type": "armor_proficiency",
+        "group": "light"
+      },
+      {
+        "type": "weapon_group_proficiency",
+        "group": "simple"
+      },
+      {
+        "type": "weapon_proficiency",
+        "id": "Кнут"
+      },
+      {
+        "type": "weapon_proficiency",
+        "id": "Короткий меч"
+      },
+      {
+        "type": "weapon_proficiency",
+        "id": "Рапира"
+      }
+    ],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [
+      {
+        "id": "hb:savant:choice:research-1",
+        "name": "Научное исследование 1",
+        "type": "feature",
+        "count": 1,
+        "from": [
+          "hb:savant:ability:feature-16",
+          "hb:savant:ability:feature-17",
+          "hb:savant:ability:feature-18",
+          "hb:savant:ability:feature-19",
+          "hb:savant:ability:feature-20",
+          "hb:savant:ability:feature-21",
+          "hb:savant:ability:feature-22",
+          "hb:savant:ability:feature-23",
+          "hb:savant:ability:feature-24",
+          "hb:savant:ability:feature-25",
+          "hb:savant:ability:feature-26",
+          "hb:savant:ability:feature-27",
+          "hb:savant:ability:feature-28",
+          "hb:savant:ability:feature-29",
+          "hb:savant:ability:feature-30",
+          "hb:savant:ability:feature-31",
+          "hb:savant:ability:feature-32",
+          "hb:savant:ability:feature-33"
+        ],
+        "level": 1
+      },
+      {
+        "id": "hb:savant:choice:research-2",
+        "name": "Научное исследование 2",
+        "type": "feature",
+        "count": 1,
+        "from": [
+          "hb:savant:ability:feature-16",
+          "hb:savant:ability:feature-17",
+          "hb:savant:ability:feature-18",
+          "hb:savant:ability:feature-19",
+          "hb:savant:ability:feature-20",
+          "hb:savant:ability:feature-21",
+          "hb:savant:ability:feature-22",
+          "hb:savant:ability:feature-23",
+          "hb:savant:ability:feature-24",
+          "hb:savant:ability:feature-25",
+          "hb:savant:ability:feature-26",
+          "hb:savant:ability:feature-27",
+          "hb:savant:ability:feature-28",
+          "hb:savant:ability:feature-29",
+          "hb:savant:ability:feature-30",
+          "hb:savant:ability:feature-31",
+          "hb:savant:ability:feature-32",
+          "hb:savant:ability:feature-33"
+        ],
+        "level": 4
+      },
+      {
+        "id": "hb:savant:choice:research-3",
+        "name": "Научное исследование 3",
+        "type": "feature",
+        "count": 1,
+        "from": [
+          "hb:savant:ability:feature-16",
+          "hb:savant:ability:feature-17",
+          "hb:savant:ability:feature-18",
+          "hb:savant:ability:feature-19",
+          "hb:savant:ability:feature-20",
+          "hb:savant:ability:feature-21",
+          "hb:savant:ability:feature-22",
+          "hb:savant:ability:feature-23",
+          "hb:savant:ability:feature-24",
+          "hb:savant:ability:feature-25",
+          "hb:savant:ability:feature-26",
+          "hb:savant:ability:feature-27",
+          "hb:savant:ability:feature-28",
+          "hb:savant:ability:feature-29",
+          "hb:savant:ability:feature-30",
+          "hb:savant:ability:feature-31",
+          "hb:savant:ability:feature-32",
+          "hb:savant:ability:feature-33"
+        ],
+        "level": 7
+      },
+      {
+        "id": "hb:savant:choice:research-4",
+        "name": "Научное исследование 4",
+        "type": "feature",
+        "count": 1,
+        "from": [
+          "hb:savant:ability:feature-16",
+          "hb:savant:ability:feature-17",
+          "hb:savant:ability:feature-18",
+          "hb:savant:ability:feature-19",
+          "hb:savant:ability:feature-20",
+          "hb:savant:ability:feature-21",
+          "hb:savant:ability:feature-22",
+          "hb:savant:ability:feature-23",
+          "hb:savant:ability:feature-24",
+          "hb:savant:ability:feature-25",
+          "hb:savant:ability:feature-26",
+          "hb:savant:ability:feature-27",
+          "hb:savant:ability:feature-28",
+          "hb:savant:ability:feature-29",
+          "hb:savant:ability:feature-30",
+          "hb:savant:ability:feature-31",
+          "hb:savant:ability:feature-32",
+          "hb:savant:ability:feature-33"
+        ],
+        "level": 13
+      },
+      {
+        "id": "hb:savant:choice:research-5",
+        "name": "Научное исследование 5",
+        "type": "feature",
+        "count": 1,
+        "from": [
+          "hb:savant:ability:feature-16",
+          "hb:savant:ability:feature-17",
+          "hb:savant:ability:feature-18",
+          "hb:savant:ability:feature-19",
+          "hb:savant:ability:feature-20",
+          "hb:savant:ability:feature-21",
+          "hb:savant:ability:feature-22",
+          "hb:savant:ability:feature-23",
+          "hb:savant:ability:feature-24",
+          "hb:savant:ability:feature-25",
+          "hb:savant:ability:feature-26",
+          "hb:savant:ability:feature-27",
+          "hb:savant:ability:feature-28",
+          "hb:savant:ability:feature-29",
+          "hb:savant:ability:feature-30",
+          "hb:savant:ability:feature-31",
+          "hb:savant:ability:feature-32",
+          "hb:savant:ability:feature-33"
+        ],
+        "level": 18
+      }
+    ],
+    "hitDie": "d8",
+    "primaryAbility": "int",
+    "savingThrows": [
+      "int",
+      "wis"
+    ],
+    "skillChoices": {
+      "count": 2,
+      "from": [
+        "history",
+        "arcana",
+        "medicine",
+        "nature",
+        "insight",
+        "investigation",
+        "religion",
+        "persuasion"
+      ]
+    },
+    "subclass": {
+      "chooseAtLevel": 3,
+      "featureLevels": [
+        3,
+        6,
+        10,
+        15
+      ]
+    },
+    "multiclass": {
+      "requirements": [
+        {
+          "ability": "int",
+          "min": 13
+        }
+      ]
+    },
+    "spellcasting": {
+      "mode": "none",
+      "ability": "int"
+    },
+    "startingGold": "5d4 * 10",
+    "equipment": [
+      "Короткий меч",
+      "Лёгкий арбалет",
+      "20 болтов",
+      "Ремесленные инструменты на выбор",
+      "Кожаный доспех",
+      "Набор учёного"
+    ],
+    "advancement": {
+      "1": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-1"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-2"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-3"
+        }
+      ],
+      "2": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-4"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-5"
+        }
+      ],
+      "3": [
+        {
+          "type": "subclass"
+        }
+      ],
+      "4": [
+        {
+          "type": "asi_or_feat"
+        }
+      ],
+      "5": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-8"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-9"
+        }
+      ],
+      "6": [],
+      "7": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-10"
+        }
+      ],
+      "8": [
+        {
+          "type": "asi_or_feat"
+        }
+      ],
+      "9": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-11"
+        }
+      ],
+      "10": [],
+      "11": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-12"
+        }
+      ],
+      "12": [
+        {
+          "type": "asi_or_feat"
+        }
+      ],
+      "13": [],
+      "14": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-13"
+        }
+      ],
+      "15": [],
+      "16": [
+        {
+          "type": "asi_or_feat"
+        }
+      ],
+      "17": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-14"
+        }
+      ],
+      "18": [],
+      "19": [
+        {
+          "type": "asi_or_feat"
+        }
+      ],
+      "20": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-15"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-1",
+    "id": "hb:savant:ability:feature-1",
+    "type": "ability",
+    "name": "Научные исследования",
+    "description": "1-й уровень\n\nВы изучаете одно исследование из специального списка. Дополнительные исследования открываются по таблице класса: общее число известных исследований растёт до 5 к 18-му уровню. Для каждого исследования нужно соблюдать указанное требование по уровню.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 1
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-2",
+    "id": "hb:savant:ability:feature-2",
+    "type": "ability",
+    "name": "Проницательный анализ",
+    "description": "1-й уровень\n\nБонусным действием вы выбираете видимое существо в пределах 60 футов как Метку и поддерживаете концентрацию на нём по правилам концентрации. Метка действует, пока вы не потеряете концентрацию, цель не скроется от вас или вы не выберете новую цель.\n\nПосле попадания по Метке атакой либо после 1 минуты наблюдения можно узнать один параметр: наивысшее значение характеристики, наименьшее значение характеристики, КД, скорость, максимум хитов или тип существа.\n\nПротив Метки для атак и урона оружием можно использовать модификатор Интеллекта вместо Силы или Ловкости.\n\nПроверки Интеллекта и Мудрости для анализа или вспоминания сведений о Метке совершаются с преимуществом.\n\nДля удержания концентрации на Метке можно совершать спасбросок Интеллекта вместо Телосложения.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 1
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-3",
+    "id": "hb:savant:ability:feature-3",
+    "type": "ability",
+    "name": "Предсказательная защита",
+    "description": "1-й уровень\n\nПри расчёте КД разрешено использовать модификатор Интеллекта вместо модификатора Ловкости. Пока вы дееспособны, ваша Метка совершает броски атаки против вас с помехой.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 1
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-4",
+    "id": "hb:savant:ability:feature-4",
+    "type": "ability",
+    "name": "Удивительный интеллект",
+    "description": "2-й уровень\n\nВы получаете Кость Ума: к6, которая увеличивается до к8 на 5-м, к10 на 11-м и к12 на 17-м уровне. Если способность с Костью Ума требует спасброска, Сл = 8 + бонус мастерства + модификатор Интеллекта.\n\n### Благополучный расчёт\n\nКогда видимое существо атакует вас рукопашным оружием, реакцией бросьте Кость Ума и прибавьте результат к КД против этой атаки. Если из-за этого атака промахнулась, можно частью той же реакции переместиться на 10 футов без провоцирования атак.\n\n### Эффективное наблюдение\n\nКогда другое существо, способное вас слышать, атакует вашу Метку, реакцией добавьте к урону этой атаки результат Кости Ума.\n\n### Удивительная проницательность\n\nКогда другое слышащее вас существо совершает проверку навыка или инструмента, которым вы владеете, реакцией добавьте Кость Ума к проверке. Решение допускается после броска к20, но до объявления результата Мастером.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 2
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-5",
+    "id": "hb:savant:ability:feature-5",
+    "type": "ability",
+    "name": "Острый ум",
+    "description": "2-й уровень\n\nДействия Помощь и Поиск можно выполнять бонусным действием. Также бонусным действием можно выполнять проверки навыков Интеллекта, если они нужны для получения сведений о видимом существе или объекте. Помогать атаковать вашу Метку можно, находясь в пределах 5 футов от атакующего, даже если сама цель дальше 5 футов от вас.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 2
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-6",
+    "id": "hb:savant:ability:feature-6",
+    "type": "ability",
+    "name": "Академическая дисциплина",
+    "description": "3-й уровень\n\nВы выбираете один из девяти подклассов: Археолог, Врач, Натуралист, Следователь, Тактик, Кулинар, Оратор, Философ или Рунописец. Умения дисциплины даются на 3, 6, 10 и 15 уровнях.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-7",
+    "id": "hb:savant:ability:feature-7",
+    "type": "ability",
+    "name": "Увеличение характеристик",
+    "description": "4, 8, 12, 16 и 19 уровни\n\nПовышение одной характеристики на 2 или двух характеристик на 1, не выше 20. Если разрешены черты, вместо повышения можно взять черту.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-8",
+    "id": "hb:savant:ability:feature-8",
+    "type": "ability",
+    "name": "Несравненное прозрение",
+    "description": "5-й уровень\n\nКогда другое существо, способное вас слышать, совершает спасбросок, реакцией можно добавить к нему Кость Ума. Кроме того, к собственным спасброскам Интеллекта, Мудрости и Харизмы можно добавлять Кость Ума, если вы дееспособны.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 5
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-9",
+    "id": "hb:savant:ability:feature-9",
+    "type": "ability",
+    "name": "Ускоренные рефлексы",
+    "description": "5-й уровень; улучшения на 13-м и 18-м\n\nВы добавляете модификатор Интеллекта к инициативе и получаете вторую реакцию за раунд. На 13-м уровне реакций становится три, на 18-м — четыре. Один и тот же триггер может вызвать только одну вашу реакцию.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [
+      {
+        "type": "initiative_bonus",
+        "value": "@mod.int",
+        "level": 5
+      }
+    ],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 5
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-10",
+    "id": "hb:savant:ability:feature-10",
+    "type": "ability",
+    "name": "Острая осведомлённость",
+    "description": "7-й уровень\n\nПока вы дееспособны, вас нельзя застать врасплох. При броске инициативы можно реакцией применить Проницательный анализ к видимому существу в пределах 60 футов и сразу сделать его Меткой.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 7
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-11",
+    "id": "hb:savant:ability:feature-11",
+    "type": "ability",
+    "name": "Эксперт в предсказании",
+    "description": "9-й уровень\n\nПока вы дееспособны, все проверки характеристик и спасброски, которые вынуждает вас совершать ваша Метка, выполняются с преимуществом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 9
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-12",
+    "id": "hb:savant:ability:feature-12",
+    "type": "ability",
+    "name": "Непревзойдённый гений",
+    "description": "11-й уровень\n\nТри базовых применения Удивительного интеллекта усиливаются.\n\n### Благополучный расчёт\n\nЕсли реакция заставила рукопашную атаку по вам промахнуться, частью той же реакции можно совершить одну рукопашную атаку по атакующему.\n\n### Эффективное наблюдение\n\nРеакцию можно применять, когда одно слышащее вас существо атакует любое другое видимое вами существо. Если атакуют именно вашу Метку, к урону добавляются две Кости Ума вместо одной.\n\n### Удивительная проницательность\n\nПри помощи другому существу бросаются две Кости Ума, и к проверке добавляется больший результат.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 11
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-13",
+    "id": "hb:savant:ability:feature-13",
+    "type": "ability",
+    "name": "Непоколебимая воля",
+    "description": "14-й уровень\n\nВы получаете владение спасбросками Харизмы и совершаете с преимуществом спасброски против очарования и испуга.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [
+      {
+        "type": "saving_throw_proficiency",
+        "ability": "cha",
+        "level": 14
+      }
+    ],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 14
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-14",
+    "id": "hb:savant:ability:feature-14",
+    "type": "ability",
+    "name": "Совершенный анализ",
+    "description": "17-й уровень\n\nДействием вы предугадываете следующий ход Метки. До начала вашего следующего хода Метка совершает с помехой проверки характеристик, атаки и спасброски; выбранные вами существа получают преимущество на спасброски, которые Метка заставляет их совершать. После применения требуется короткий или продолжительный отдых для восстановления.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 17
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-15",
+    "id": "hb:savant:ability:feature-15",
+    "type": "ability",
+    "name": "Несравненный интеллект",
+    "description": "20-й уровень\n\nИнтеллект увеличивается на 4, максимум до 24. Если бросок Кости Ума ниже вашего модификатора Интеллекта, результат можно заменить значением модификатора Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 20
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-16",
+    "id": "hb:savant:ability:feature-16",
+    "type": "ability",
+    "name": "Астрология",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Магией; к проверкам Интеллекта (Магия) добавляется Кость Ума. Во время продолжительного отдыха под видимым ночным небом бросьте к20 и запишите число. До следующего продолжительного отдыха один раз можно заранее заменить этим записанным результатом собственный бросок атаки, спасбросок или проверку характеристики.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-17",
+    "id": "hb:savant:ability:feature-17",
+    "type": "ability",
+    "name": "Бушкрафт",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Природой; к проверкам Интеллекта (Природа) добавляется Кость Ума. За 10 минут, в том числе во время отдыха, из природных материалов с кинжалом или ручным топором можно сделать дубинку, 1к4 дротиков, метательное копьё, сеть, 10 футов верёвки либо бушкрафтовый силок. Силок ставится действием в соседнюю свободную клетку 5 футов; первое существо Большого размера или меньше, вошедшее туда, делает спасбросок Ловкости против Сл Удивительного интеллекта или становится опутанным. Действием оно может повторить спасбросок Силы против той же Сл и освободиться при успехе.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-18",
+    "id": "hb:savant:ability:feature-18",
+    "type": "ability",
+    "name": "Быстрое обучение",
+    "description": "Без требования по уровню\n\nПолучите владение одним навыком, инструментом или оружием либо один разговорный язык. За 1 час, который можно включить в отдых, это владение/язык можно заменить другим, если есть образец для обучения: учитель, книга на нужном языке, руководство по инструменту и т. п.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": []
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-19",
+    "id": "hb:savant:ability:feature-19",
+    "type": "ability",
+    "name": "Эрудит",
+    "description": "Без требования по уровню\n\nПолучите владение одним навыком из стартового списка Саванта, одним набором инструментов и одним языком: говорить, читать и писать.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": []
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-20",
+    "id": "hb:savant:ability:feature-20",
+    "type": "ability",
+    "name": "Загадки",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Обманом; к проверкам Харизмы (Обман) добавляется Кость Ума. Вы можете вкладывать скрытые сообщения в обычную речь. За 1 час можно обучить другое существо понимать ваши загадки; при Интеллекте 11+ оно способно отвечать вам тем же способом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-21",
+    "id": "hb:savant:ability:feature-21",
+    "type": "ability",
+    "name": "Искусство торговли",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Проницательностью; к проверкам Мудрости (Проницательность) добавляется Кость Ума. При торге с существом, чьи Интеллект и Мудрость ниже вашего Интеллекта, покупная цена снижается на 10%, а цена продажи повышается на 10%.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-22",
+    "id": "hb:savant:ability:feature-22",
+    "type": "ability",
+    "name": "Конный спорт",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Уходом за животными; к проверкам Мудрости (Уход за животными) добавляется Кость Ума. Дрессированный скакун в бою делит с вами инициативу и действует вместе с вами. К его проверке, атаке или спасброску можно добавить Кость Ума; бонусным действием вы можете приказать ему атаковать или выполнить иное действие из его блока. За 8 часов и 50 зм материалов/корма можно обучить дружелюбное четвероногое существо как своего скакуна.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-23",
+    "id": "hb:savant:ability:feature-23",
+    "type": "ability",
+    "name": "Лингвистика",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Убеждением; к проверкам Харизмы (Убеждение) добавляется Кость Ума. Вы изучаете число дополнительных языков, равное модификатору Интеллекта, с чтением и письмом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-24",
+    "id": "hb:savant:ability:feature-24",
+    "type": "ability",
+    "name": "Мастерство стрельбы",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Ловкостью рук; к проверкам Ловкости (Ловкость рук) добавляется Кость Ума. Вы владеете всем воинским дальнобойным оружием. При дальнобойной атаке оружием можно заменить обычную кость урона оружия на вашу Кость Ума. Если в сеттинге есть огнестрельное оружие и персонаж знаком с ним, он считается владеющим простым и воинским огнестрельным оружием.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-25",
+    "id": "hb:savant:ability:feature-25",
+    "type": "ability",
+    "name": "Музыкальное мастерство",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Выступлением; к проверкам Харизмы (Выступление) добавляется Кость Ума. Если вы играете/выступаете перед существом минимум 1 минуту, на 1 час получаете преимущество на проверки для социального взаимодействия с ним. Эффект прекращается, если вы или союзники вредите существу или его союзникам.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-26",
+    "id": "hb:savant:ability:feature-26",
+    "type": "ability",
+    "name": "Наставничество",
+    "description": "Без требования по уровню\n\nВ конце продолжительного отдыха можно обучить слышащего и понимающего вас гуманоида одному вашему навыку, инструменту или разговорному языку. Владение действует до конца следующего продолжительного отдыха.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": []
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-27",
+    "id": "hb:savant:ability:feature-27",
+    "type": "ability",
+    "name": "Первая помощь",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Медициной; к проверкам Мудрости (Медицина) добавляется Кость Ума. Во время продолжительного отдыха, потратив 1 час и имея набор лекаря, создайте количество зелий лечения, равное модификатору Интеллекта (минимум 1). Неиспользованные зелья теряют силу через 24 часа.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-28",
+    "id": "hb:savant:ability:feature-28",
+    "type": "ability",
+    "name": "Секреты и шёпот",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Скрытностью; к проверкам Ловкости (Скрытность) добавляется Кость Ума. После продолжительного отдыха в городе, посёлке или деревне вы узнаёте об одном важном событии, произошедшем там за последнюю неделю.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-29",
+    "id": "hb:savant:ability:feature-29",
+    "type": "ability",
+    "name": "Соколиная охота",
+    "description": "Требование: Савант 4-го уровня\n\nПолучаете сокола-компаньона со статистикой ястреба, но Интеллектом 8; вы обмениваетесь простыми идеями жестами и звуками. В бою сокол делит вашу инициативу и ходит сразу после вас; без команды использует Уклонение, но бонусным действием вы можете приказать другое действие. Если вы недееспособны, сокол действует свободно. При 0 хитов он делает спасброски смерти. Погибшего сокола можно заменить, потратив 8 часов и 5 зм на приманку.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-30",
+    "id": "hb:savant:ability:feature-30",
+    "type": "ability",
+    "name": "Совершенное запоминание",
+    "description": "Без требования по уровню\n\nПосле минимум 1 минуты наблюдения за существом или объектом вы в дальнейшем можете без проверки Интеллекта точно воспроизводить запомненные детали: карту, страницу, произведение искусства, внешность и т. п.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": []
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-31",
+    "id": "hb:savant:ability:feature-31",
+    "type": "ability",
+    "name": "Теология",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Религией; к проверкам Интеллекта (Религия) добавляется Кость Ума. Вы изучаете Небесный язык. Также знаете заклинание «Церемония»: для вас ритуальное наложение занимает 10 минут, и раз за продолжительный отдых его можно сотворить без материальных компонентов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-32",
+    "id": "hb:savant:ability:feature-32",
+    "type": "ability",
+    "name": "Традиции",
+    "description": "Требование: Савант 4-го уровня\n\nВладение Историей; к проверкам Интеллекта (История) добавляется Кость Ума. Если при общении с местным правителем или другой важной фигурой вы уместно используете местный обычай/традицию, соответствующая проверка совершается с преимуществом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-33",
+    "id": "hb:savant:ability:feature-33",
+    "type": "ability",
+    "name": "Физическая развитость",
+    "description": "Требование: Савант 4-го уровня\n\nВыберите Атлетику или Акробатику: получаете владение и добавляете Кость Ума к проверкам выбранного навыка. Скорость лазания и плавания становится равной скорости ходьбы. При прыжке с разбега к дистанции прыжка добавляется модификатор Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "level": 4
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-1",
+    "id": "hb:savant:subclass:discipline-1",
+    "type": "subclass",
+    "name": "Археолог",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-35"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-36"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-37"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-38"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-39"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-35",
+    "id": "hb:savant:ability:feature-35",
+    "type": "ability",
+    "name": "Студент истории",
+    "description": "3-й уровень\n\nВладение Историей и Расследованием; к проверкам этих навыков добавляется Кость Ума. Если одно из владений уже есть, вместо него выбирается навык из списка Саванта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-36",
+    "id": "hb:savant:ability:feature-36",
+    "type": "ability",
+    "name": "Авантюрный академик",
+    "description": "3-й уровень\n\nВы приспособлены к опасным экспедициям и древним артефактам.\n\nСкорость лазания равна скорости ходьбы.\n\nК спасброскам, связанным с ловушками, добавляется Кость Ума.\n\nИгнорируются требования класса, расы и мировоззрения для настройки/использования магических предметов, свитков и зелий; для заклинаний таких предметов используется Интеллект.\n\nЗаклинания из магических предметов, свитков и зелий можно накладывать и поддерживать концентрацию на них одновременно с Проницательным анализом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-37",
+    "id": "hb:savant:ability:feature-37",
+    "type": "ability",
+    "name": "Дерзкая решимость",
+    "description": "6-й уровень\n\nК любому спасброску Ловкости и к проверке характеристики, связанной с ловушкой, добавляется Кость Ума. Если действием применён магический предмет, зелье или свиток, в тот же ход бонусным действием можно совершить одну атаку оружием.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-38",
+    "id": "hb:savant:ability:feature-38",
+    "type": "ability",
+    "name": "Мастер знаний",
+    "description": "10-й уровень\n\nПосле минимум 1 часа наблюдения за человеком, местом или предметом вы можете сверхъестественно вспомнить сведения о нём по принципу эффекта «Знание легенд»; объект не обязан быть легендарным, но если сведений не существует, ничего не узнаете. Когда вы используете магический предмет, его Сл спасброска повышается до вашей Сл Удивительного интеллекта, если исходная Сл не выше.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-39",
+    "id": "hb:savant:ability:feature-39",
+    "type": "ability",
+    "name": "Магистр археологии",
+    "description": "15-й уровень\n\nВы получаете сопротивление урону от заклинаний. После каждого короткого отдыха один настроенный на вас магический предмет может восстановить число потраченных зарядов, равное вашему модификатору Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-2",
+    "id": "hb:savant:subclass:discipline-2",
+    "type": "subclass",
+    "name": "Врач",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-41"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-42"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-43"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-44"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-45"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-41",
+    "id": "hb:savant:ability:feature-41",
+    "type": "ability",
+    "name": "Изучающий медицину",
+    "description": "3-й уровень\n\nВладение Медициной и Ловкостью рук; к обеим проверкам добавляется Кость Ума. Если владение уже было, замените его навыком из списка Саванта.\n\nПроверку Мудрости (Медицина) можно заменить проверкой Интеллекта (Медицина).\n\nПосле 1 минуты осмотра существа вы определяете действующие на него болезни, яды и проклятия.\n\nРаз за ход после попадания по Метке оружием можно до начала следующего хода уменьшить её скорость на 5 × модификатор Интеллекта футов, минимум на 5 футов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-42",
+    "id": "hb:savant:ability:feature-42",
+    "type": "ability",
+    "name": "Боевой медик",
+    "description": "3-й уровень\n\nПосле короткого или продолжительного отдыха один комплект целителя, которого вы касаетесь, восстанавливает число использований, равное модификатору Интеллекта (минимум 1). Каждая из следующих медицинских процедур требует действия. При её применении можно потратить 1 использование комплекта целителя и вместо броска Кости Ума считать её результат максимальным.\n\n### Выброс адреналина\n\nКоснитесь существа: оно немедленно повторяет спасбросок против ослепления, очарования, оглушения, испуга, отравления либо одной болезни и добавляет к новому спасброску Кость Ума.\n\n### Перевязка ран\n\nКоснувшееся вами существо получает временные хиты в размере Кости Ума; эти временные хиты не могут превышать максимум его хитов.\n\n### Исцеляющий всплеск\n\nСущество может немедленно потратить одну Кость Хитов и восстановить Кость Хитов + модификатор Телосложения + Кость Ума хитов. Живое существо с 0 хитов стабилизируется даже без траты Кости Хитов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-43",
+    "id": "hb:savant:ability:feature-43",
+    "type": "ability",
+    "name": "Полевой врач",
+    "description": "6-й уровень\n\nБонусным действием каждый ход можно совершать Рывок или Отход. После применения Боевого медика действием в тот же ход можно бонусным действием совершить одну атаку оружием.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-44",
+    "id": "hb:savant:ability:feature-44",
+    "type": "ability",
+    "name": "Эксперт медицины",
+    "description": "10-й уровень\n\nУмения Боевого медика получают усиленные варианты. Для каждого отдельного существа первое усиленное применение между его продолжительными отдыхами проходит без побочного эффекта; каждое последующее усиленное применение до его следующего продолжительного отдыха даёт ему 1 уровень истощения.\n\n### Восстанавливающий толчок\n\nУсиленный Выброс адреналина автоматически снимает одно из следующего: испуг, оглушение, окаменение, ослепление, ошеломление, очарование, паралич, отравление, снижение одной характеристики или уменьшение максимума хитов.\n\n### Сшивание ран\n\nЕсли Перевязка ран проводится непрерывно 10 минут на живом существе, можно прикрепить отрубленные конечности/пальцы. Существо получает временные хиты, равные разнице между его текущими и максимальными хитами.\n\n### Реанимирующий всплеск\n\nУсиленный Исцеляющий всплеск возвращает к жизни существо, умершее не более минуты назад, если оно тратит одну Кость Хитов. Не действует при смерти от старости и не восстанавливает отсутствующие части тела. Временные хиты от этой способности исчезают, когда существо снова достигает максимума хитов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-45",
+    "id": "hb:savant:ability:feature-45",
+    "type": "ability",
+    "name": "Магистр медицины",
+    "description": "15-й уровень\n\nКаждому отдельному существу между продолжительными отдыхами можно применить уже два усиленных умения Боевого медика без истощения. При любом броске Кости Ума в рамках Боевого медика к результату дополнительно прибавляется модификатор Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-3",
+    "id": "hb:savant:subclass:discipline-3",
+    "type": "subclass",
+    "name": "Натуралист",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-47"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-48"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-49"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-50"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-51"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-52"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-53"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-47",
+    "id": "hb:savant:ability:feature-47",
+    "type": "ability",
+    "name": "Изучающий природу",
+    "description": "3-й уровень\n\nВладение Природой и Выживанием; к проверкам этих навыков добавляется Кость Ума. При наличии владения вместо него выбирается другой навык Саванта. Проверку Мудрости (Уход за животными) можно заменить проверкой Интеллекта (Уход за животными).",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-48",
+    "id": "hb:savant:ability:feature-48",
+    "type": "ability",
+    "name": "Дневник натуралиста",
+    "description": "3-й уровень\n\nЗа 1 час во время короткого или продолжительного отдыха можно добавить запись о текущей среде либо об особом звере, растении или монстре, который был вашей Меткой за последние 24 часа. Утерянный дневник восстанавливается по памяти по 1 часу на каждую старую запись. Вы имеете преимущество на проверки Интеллекта по местной флоре, фауне, погоде и экосистемам, описанным в дневнике. Раз за ход к атаке против записанного существа добавляется Кость Ума.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-49",
+    "id": "hb:savant:ability:feature-49",
+    "type": "ability",
+    "name": "Выживальщик",
+    "description": "6-й уровень\n\nПроницательный анализ может назначить Меткой существо по следам и другим признакам его присутствия, даже без прямой видимости; скрывшееся существо не перестаёт быть Меткой. Вы бесплатно изучаете исследование «Физическая развитость»; если оно уже известно, вместо него берётся «Соколиная охота» или «Совершенное запоминание».",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-50",
+    "id": "hb:savant:ability:feature-50",
+    "type": "ability",
+    "name": "Инструктор по выживанию",
+    "description": "6-й уровень\n\nВ среде, описанной в дневнике, вы и до 10 путешествующих с вами существ игнорируете немагическую труднопроходимую местность, не можете заблудиться немагическим способом и можете двигаться скрытно в обычном темпе.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-51",
+    "id": "hb:savant:ability:feature-51",
+    "type": "ability",
+    "name": "Углублённые исследования",
+    "description": "10-й уровень\n\nВ дневник можно добавлять конкретные виды драконов, великанов, слизей и нежити. Конкретное записанное существо считается вашей Меткой для связанных способностей, даже если сейчас не назначено Меткой. Для описанной среды вы и до 10 спутников игнорируете магическую труднопроходимую местность и получаете преимущество на спасброски против враждебных эффектов этой среды.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-52",
+    "id": "hb:savant:ability:feature-52",
+    "type": "ability",
+    "name": "Зов дикой природы",
+    "description": "10-й уровень\n\nДействием выберите слышащее вас существо типа зверь, растение или монстр в пределах 30 футов. Оно делает спасбросок Мудрости против Сл Удивительного интеллекта; при провале очаровывается вами на 1 час. Если его Интеллект не меньше половины вашего уровня Саванта, оно автоматически преуспевает. Пока очаровано, дружественно вам и союзникам; бонусным действием вы отдаёте словесную команду на его следующий ход, после выполнения оно защищается до новой команды. При получении урона оно повторяет спасбросок; если успешно, вы можете реакцией вычесть из него Кость Ума. Успешно освободившееся существо иммунно к этому умению 24 часа. Одновременно очаровано не более одного существа. После применения требуется короткий или продолжительный отдых.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-53",
+    "id": "hb:savant:ability:feature-53",
+    "type": "ability",
+    "name": "Магистр натуралист",
+    "description": "15-й уровень\n\nВ дневник можно добавлять любое существо, кроме конструкта и гуманоида. Зов дикой природы длится до 8 часов; записанные в дневнике существа совершают спасброски против этого очарования с помехой. Ваши атаки против любых существ, описанных в дневнике, совершаются с преимуществом.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-4",
+    "id": "hb:savant:subclass:discipline-4",
+    "type": "subclass",
+    "name": "Следователь",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-55"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-56"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-57"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-58"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-59"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-60"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-55",
+    "id": "hb:savant:ability:feature-55",
+    "type": "ability",
+    "name": "Студент правды",
+    "description": "3-й уровень\n\nВладение Проницательностью и Расследованием с удвоением бонуса мастерства к проверкам этих навыков. Если владение уже есть, получите другой навык из списка Саванта. Проверку Мудрости (Проницательность) можно заменить Интеллектом. Действие Поиск даёт объём информации, который обычно потребовал бы 1 минуты поиска.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-56",
+    "id": "hb:savant:ability:feature-56",
+    "type": "ability",
+    "name": "Грубость и неуклюжесть",
+    "description": "3-й уровень\n\nВы знаете воровской жаргон. Безоружный удар наносит дробящий урон Кость Ума + модификатор Силы. Когда в свой ход попадаете по Метке рукопашной атакой, можно заставить её сделать спасбросок Ловкости против Сл Удивительного интеллекта. При провале до начала вашего следующего хода выберите: цель ослеплена, оглохла или не может говорить; либо, если она Большого размера или меньше, падает ничком.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-57",
+    "id": "hb:savant:ability:feature-57",
+    "type": "ability",
+    "name": "Искусная оборона",
+    "description": "6-й уровень\n\nЕсли Благополучный расчёт заставляет атаку по вам промахнуться, вместо бесплатного перемещения можно заставить атакующего совершить спасбросок Ловкости против Сл Удивительного интеллекта и при провале применить к нему один эффект Грубости и неуклюжести.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-58",
+    "id": "hb:savant:ability:feature-58",
+    "type": "ability",
+    "name": "Ухо к земле",
+    "description": "6-й уровень\n\nПроверки Харизмы при общении на воровском жаргоне совершаются с преимуществом. Вы бесплатно изучаете исследование «Секреты и шёпот»; если оно уже известно, вместо него берётся «Совершенное запоминание» или «Традиции».",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-59",
+    "id": "hb:savant:ability:feature-59",
+    "type": "ability",
+    "name": "Мастерский знаток",
+    "description": "10-й уровень\n\nВы мгновенно распознаёте присутствие иллюзии или оборотня и сразу понимаете, когда ваша Метка лжёт. Если Метка провалила спасбросок против Грубости и неуклюжести, вместо обычного эффекта её можно ошеломить.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-60",
+    "id": "hb:savant:ability:feature-60",
+    "type": "ability",
+    "name": "Магистр следования",
+    "description": "15-й уровень\n\nВы получаете истинное зрение 30 футов. Когда вы попадаете атакой по Метке или применяете против неё Благополучный расчёт, можно превратить соответствующую атаку в критическое попадание. После этого требуется короткий или продолжительный отдых.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-5",
+    "id": "hb:savant:subclass:discipline-5",
+    "type": "subclass",
+    "name": "Тактик",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-62"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-63"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-64"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-65"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-66"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-62",
+    "id": "hb:savant:ability:feature-62",
+    "type": "ability",
+    "name": "Ученик войны",
+    "description": "3-й уровень\n\nВладение Историей и Убеждением с удвоением бонуса мастерства; если владение уже есть, замените его навыком из списка Саванта.\n\nВладение щитами, средними доспехами и всем воинским оружием без свойства «тяжёлое».\n\nВладение двумя игровыми наборами; к проверкам с ними добавляется Кость Ума.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-63",
+    "id": "hb:savant:ability:feature-63",
+    "type": "ability",
+    "name": "Тактический командир",
+    "description": "3-й уровень\n\nПри совершении действия Атака одну из своих атак можно заменить Приказом, направленным на другое существо в пределах 30 футов, которое видит или слышит вас.\n\n### Приказ об атаке\n\nДо начала вашего следующего хода, когда цель Приказа в следующий раз совершит действие Атака, она может в рамках этого действия сделать одну дополнительную атаку оружием.\n\n### Приказ об обороне\n\nЦель получает преимущества действия Уклонение до начала своего следующего хода.\n\n### Приказ о маневрировании\n\nЦель может немедленно реакцией переместиться на расстояние до своей скорости, не провоцируя атак.\n\n### Приказ о поддержке\n\nЦель немедленно выполняет одно из действий: Помощь, Засада, Поиск, Изучение или Использовать предмет.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-64",
+    "id": "hb:savant:ability:feature-64",
+    "type": "ability",
+    "name": "Стратегическое превосходство",
+    "description": "6-й уровень\n\nКогда в свой ход совершаете действие Атака, можно сделать две атаки вместо одной. Одну из этих атак разрешено заменить действием Рывок, Отход или Помощь.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-65",
+    "id": "hb:savant:ability:feature-65",
+    "type": "ability",
+    "name": "Тактический гений",
+    "description": "10-й уровень\n\nКогда бросаете инициативу, до действий остальных существ можно отдать один Приказ. Кроме того, когда слышащее вас существо атакует вашу Метку, Эффективное наблюдение можно потратить на добавление Кости Ума к броску атаки вместо урона; решение принимается после броска, но до объявления попадания.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-66",
+    "id": "hb:savant:ability:feature-66",
+    "type": "ability",
+    "name": "Мастер тактики",
+    "description": "15-й уровень\n\nКаждый раз, когда вы отдаёте Приказ существу, оно может получить временные хиты в размере вашего модификатора Интеллекта, минимум 1.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-6",
+    "id": "hb:savant:subclass:discipline-6",
+    "type": "subclass",
+    "name": "Кулинар",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-68"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-69"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-73"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-74"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-70"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-71"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-72"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-68",
+    "id": "hb:savant:ability:feature-68",
+    "type": "ability",
+    "name": "Студент вкуса",
+    "description": "3-й уровень\n\nВладение Природой и инструментами повара; бонус мастерства к этим проверкам удваивается. Если Природа уже известна, выберите другой навык Саванта. Во время короткого отдыха союзники, которые восстанавливают хиты Костями Хитов при наличии ваших инструментов и ингредиентов, дополнительно восстанавливают Кость Ума хитов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-69",
+    "id": "hb:savant:ability:feature-69",
+    "type": "ability",
+    "name": "Поваренная книга авантюриста",
+    "description": "3-й уровень\n\nВы начинаете с двух рецептов. Действием можно взять образец у существа, умершего не более 1 минуты назад; за 1 час во время отдыха с инструментами повара этот образец превращается в новый рецепт, если тип существа соответствует списку. В конце короткого или продолжительного отдыха готовится число Закусок, равное модификатору Интеллекта, минимум 1; каждая получает свойства одного известного рецепта, и для готовки больше не нужен новый образец. Закуски теряют силу в конце следующего короткого или продолжительного отдыха. Действием существо ест Закуску или кормит ею находящегося в сознании добровольца в пределах досягаемости. Одновременно действует только одна Закуска; новая отменяет старую. Потерянную книгу нужно восстанавливать свежими образцами; копия книги создаётся по 1 часу на рецепт.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-70",
+    "id": "hb:savant:ability:feature-70",
+    "type": "ability",
+    "name": "На голову выше",
+    "description": "6-й уровень\n\nДействием можно превратить уже приготовленную Закуску в Закуску другого известного рецепта. В ход, когда вы сами съели Закуску или накормили ею другое существо, можно бонусным действием совершить одну атаку оружием.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-71",
+    "id": "hb:savant:ability:feature-71",
+    "type": "ability",
+    "name": "Улучшенные рецепты",
+    "description": "10-й уровень\n\nКаждая съеденная Закуска, помимо своего обычного эффекта, даёт временные хиты в размере вашего уровня Саванта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-72",
+    "id": "hb:savant:ability:feature-72",
+    "type": "ability",
+    "name": "Мастер кулинарии",
+    "description": "15-й уровень\n\nВо время продолжительного отдыха можно приготовить пир для себя и количества существ, равного вашему уровню Саванта. До конца их следующего продолжительного отдыха участники пира: мгновенно избавляются от ядов и болезней и получают иммунитет к отравлению и испугу; их максимум хитов увеличивается на Кость Ума + модификатор Интеллекта; ко всем спасброскам Мудрости они добавляют модификатор Интеллекта (минимум +1).",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-73",
+    "id": "hb:savant:ability:feature-73",
+    "type": "ability",
+    "name": "Создание собственных рецептов",
+    "description": "Особое правило дисциплины\n\nРазрешается совместно с Мастером придумывать рецепты для отсутствующих в списке типов существ. Рекомендация источника: эффект должен длиться 1 час и быть сопоставим по силе с рецептами того же доступного уровня.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant"
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-74",
+    "id": "hb:savant:ability:feature-74",
+    "type": "ability",
+    "name": "Рецепты из существ",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant"
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-7",
+    "id": "hb:savant:subclass:discipline-7",
+    "type": "subclass",
+    "name": "Оратор",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [
+      {
+        "id": "hb:savant:resource:rhetoric",
+        "name": "Риторические приёмы",
+        "max": "max(1,@mod.int)",
+        "restore": [
+          "short_rest",
+          "long_rest"
+        ],
+        "level": 3
+      }
+    ],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-76"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-77"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-78"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-79"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-80"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-76",
+    "id": "hb:savant:ability:feature-76",
+    "type": "ability",
+    "name": "Студент логики",
+    "description": "3-й уровень\n\nВладение Обманом и Убеждением с удвоением бонуса мастерства; при наличии владения замените его навыком Саванта. Проверки Харизмы (Обман/Убеждение) можно выполнять Интеллектом вместо Харизмы. Бесплатно изучается одно исследование из: Лингвистика, Загадки, Традиции; оно не занимает лимит известных исследований.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-77",
+    "id": "hb:savant:ability:feature-77",
+    "type": "ability",
+    "name": "Риторика",
+    "description": "3-й уровень\n\nСл риторики = 8 + бонус мастерства + модификатор Интеллекта. Суммарное число применений риторических приёмов = модификатор Интеллекта (минимум 1); все применения восстанавливаются после короткого или продолжительного отдыха.\n\n### Убедительный диалог\n\nПосле минимум 1 минуты разговора с невраждебным существом вы очаровываете его до 1 часа. Эффект заканчивается, если вы или союзники причиняете ему вред.\n\n### Отвлекающая реплика\n\nРеакцией, когда слышащее вас существо в пределах 30 футов совершает атаку, заставьте его сделать спасбросок Мудрости. При провале из броска атаки вычитается Кость Ума.\n\n### Вдохновляющее слово\n\nДействием дайте слышащему вас существу в пределах 30 футов временные хиты = Кость Ума.\n\n### Успокаивающая речь\n\nДействием цель в пределах 30 футов совершает спасбросок Харизмы; при провале на 1 минуту становится безразличной к выбранным вами существам, к которым была враждебна. Вред от вас или союзника прекращает эффект.\n\n### Воодушевляющее замечание\n\nРеакцией добавьте Кость Ума к спасброску Интеллекта, Мудрости или Харизмы слышащего вас существа в пределах 30 футов.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-78",
+    "id": "hb:savant:ability:feature-78",
+    "type": "ability",
+    "name": "Логический ум",
+    "description": "6-й уровень\n\nСпасброски против заклинаний школы Очарования совершаются с преимуществом; вы иммунны к состоянию очарования. Когда риторический приём используется действием, в тот же ход можно бонусным действием совершить одну атаку оружием.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-79",
+    "id": "hb:savant:ability:feature-79",
+    "type": "ability",
+    "name": "Бесподобная риторика",
+    "description": "10-й уровень\n\nОткрываются два мощных приёма. Каждый из них можно применить один раз, затем требуется короткий или продолжительный отдых для восстановления именно этого приёма.\n\n### Мотивационное выступление\n\nЗа 1 минуту обратитесь к числу слышащих и понимающих вас существ до вашего уровня Саванта. Они получают временные хиты = уровень Саванта. Пока эти хиты сохраняются, они имеют преимущество против заклинаний Очарования и иммунитет к испугу.\n\n### Окончательный аргумент\n\nДействием обратитесь к числу слышащих и понимающих вас существ до уровня Саванта. Каждое делает спасбросок Мудрости; при провале очаровано вами на 24 часа по принципу «Множественного внушения». Если вы вредите существу, его эффект прекращается. Существо, с которым вы перед этим говорили не менее 1 минуты и которое не было враждебно, делает спасбросок с помехой.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-80",
+    "id": "hb:savant:ability:feature-80",
+    "type": "ability",
+    "name": "Мастер-оратор",
+    "description": "15-й уровень\n\nКогда существо сопротивляется вашей риторической способности спасброском, оно совершает его с помехой, если и его Интеллект, и его Мудрость ниже вашего Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-8",
+    "id": "hb:savant:subclass:discipline-8",
+    "type": "subclass",
+    "name": "Философ",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-82"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-83"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-84"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-85"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-86"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-82",
+    "id": "hb:savant:ability:feature-82",
+    "type": "ability",
+    "name": "Студент мысли",
+    "description": "3-й уровень\n\nВладение Магией и Религией с удвоением бонуса мастерства; при наличии владения выберите другой навык Саванта. К проверкам для общения с существом другого плана или вспоминания сведений о нём добавляется Кость Ума. Проницательный анализ может дополнительно раскрывать: мировоззрение, базовую заклинательную характеристику (если есть), максимальный доступный уровень заклинаний или родной план.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-83",
+    "id": "hb:savant:ability:feature-83",
+    "type": "ability",
+    "name": "Слова силы",
+    "description": "3-й уровень\n\nДействием произнесите Слово Силы, направленное на слышащее вас существо в пределах 30 футов. Сл = 8 + бонус мастерства + модификатор Интеллекта. Суммарное число произнесений всех этих слов = модификатор Интеллекта (минимум 1); применения восстанавливаются после короткого или продолжительного отдыха.\n\n### Ступор\n\nСпасбросок Интеллекта. При провале 1 минуту цель вычитает ваш модификатор Интеллекта из первого броска атаки каждого своего хода. В конце каждого хода повторяет спасбросок.\n\n### Дезориентация\n\nСпасбросок Мудрости. При провале цель вычитает ваш модификатор Интеллекта из следующего спасброска, который ей придётся совершить.\n\n### Страх\n\nСпасбросок Мудрости. При провале 1 минуту цель испугана выбранным вами видимым ею существом; в конце каждого хода повторяет спасбросок.\n\n### Замри\n\nСпасбросок Силы. При провале скорость становится 0 на 1 минуту; в конце каждого хода повторяет спасбросок.\n\n### Замена\n\nВыберите двух существ: оба делают спасбросок Харизмы. Если оба провалили, мгновенно меняются местами. Любая цель может добровольно провалить этот спасбросок.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-84",
+    "id": "hb:savant:ability:feature-84",
+    "type": "ability",
+    "name": "Непоколебимая собранность",
+    "description": "6-й уровень\n\nЕсли вы провалили спасбросок против очарования, испуга или ошеломления, его можно считать успешным. После этого требуется короткий или продолжительный отдых.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-85",
+    "id": "hb:savant:ability:feature-85",
+    "type": "ability",
+    "name": "Высшее понимание",
+    "description": "10-й уровень\n\nВы изучаете два великих Слова Силы. Для их эффектов требуется концентрация как на заклинании. Каждое великое слово имеет отдельное одно использование, восстанавливающееся после короткого или продолжительного отдыха.\n\n### Изгнание\n\nЦель делает спасбросок Харизмы. При провале изгоняется до 1 минуты: с текущего родного плана — в безопасный демиплан, с чужого плана — на родной. В конце каждого хода повторяет спасбросок и при успехе возвращается в ближайшую свободную точку к месту изгнания.\n\n### Слабость\n\nЦель делает спасбросок Интеллекта. При провале ошеломлена на 1 минуту. Повторяет спасбросок в начале каждого хода и каждый раз при получении урона; при успехе эффект прекращается.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-86",
+    "id": "hb:savant:ability:feature-86",
+    "type": "ability",
+    "name": "Мастер-философ",
+    "description": "15-й уровень\n\nВы постоянно находитесь под эффектом по типу «Защиты от зла и добра». Когда аберрация, небожитель, элементаль, фея, исчадие или нежить заставляет вас совершить спасбросок, к нему добавляется Кость Ума.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-discipline-9",
+    "id": "hb:savant:subclass:discipline-9",
+    "type": "subclass",
+    "name": "Рунописец",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "advancement": {
+      "3": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-88"
+        },
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-89"
+        }
+      ],
+      "13": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-90"
+        }
+      ],
+      "6": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-91"
+        }
+      ],
+      "10": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-92"
+        }
+      ],
+      "15": [
+        {
+          "type": "feature",
+          "id": "hb:savant:ability:feature-93"
+        }
+      ]
+    }
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-88",
+    "id": "hb:savant:ability:feature-88",
+    "type": "ability",
+    "name": "Ученик рун",
+    "description": "3-й уровень\n\nВладение Историей и инструментами каллиграфа с удвоением бонуса мастерства. Если История уже известна, возьмите другой навык Саванта. Вы изучаете два рунических языка из списка: Великаний, Дварфийский, Драконий, Друидический, Первичный.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-89",
+    "id": "hb:savant:ability:feature-89",
+    "type": "ability",
+    "name": "Руны силы",
+    "description": "3-й уровень\n\nИзначально известны две руны. Дополнительная руна изучается на 6, 10, 13 и 17 уровнях; при получении уровня одну известную руну можно заменить. Во время продолжительного отдыха за 1 час инструментами каллиграфа известная руна наносится на немагический предмет на одном из известных рунических языков. Одна и та же известная руна может быть активна только на одном предмете. Носитель предмета получает пассивный эффект руны. Он может действием воззвать к руне, если говорит на языке надписи; после воззвания та же руна не может быть призвана снова до вашего следующего продолжительного отдыха. Сл рун = 8 + бонус мастерства + модификатор Интеллекта; модификатор рунической атаки = бонус мастерства + модификатор Интеллекта.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 3
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-90",
+    "id": "hb:savant:ability:feature-90",
+    "type": "ability",
+    "name": "Список рун",
+    "description": "### Руна воплощения\n\nПредмет: рукопашное оружие\n\nПри нанесении выберите кислоту, холод, огонь, яд или электричество. Попадание руническим оружием наносит дополнительно Кость Ума выбранного урона. Воззвание: при атаке или заклинании с этим типом урона можно вместо бросков урона применить максимальный результат.\n\n### Руна вызова\n\nТребование: Рунописец 6-го уровня. Предмет: пояс, кольцо или щит\n\nПассивно носитель действием может потратить любое количество оставшейся скорости и телепортироваться на не большее расстояние в видимую свободную точку без провоцирования атак. Воззвание: призвать на 1 минуту ранее виденное существо с ПО не выше половины вашего бонуса мастерства. Оно действует сразу после носителя на той же инициативе; бонусным действием носитель командует его движением и действием. Требуется концентрация; эффект заканчивается также при 0 хитов призванного существа.\n\n### Руна иллюзии\n\nПредмет: плащ, халат или доспех\n\nПассивно носитель действием меняет внешний вид, включая рост/вес, но не размер; может копировать виденную ранее расу/форму, при этом одежда и снаряжение не меняются. Обман обнаруживается проверкой Интеллекта (Расследование) против Сл рун. Воззвание: невидимость до 10 минут, прекращающаяся при атаке или когда носитель заставляет существо совершить спасбросок.\n\n### Руна некромантии\n\nПредмет: пояс, кольцо или доспех\n\nПассивно бонусным действием носитель получает временные хиты = модификатор Интеллекта, минимум 1. Воззвание: если его хиты падают до 0 без мгновенной смерти, вместо этого они становятся 1.\n\n### Руна ограждения\n\nТребование: Рунописец 6-го уровня. Предмет: щит, мантия или доспех\n\nРаз за ход носитель уменьшает урон от заклинания или иного магического эффекта на модификатор Интеллекта, минимум 1. Воззвание: сотворить «Контрзаклинание» реакцией или «Рассеивание магии» на уровне, равном вашему бонусу мастерства, используя ваш Интеллект.\n\n### Руна очарования\n\nПредмет: браслет, диадема, кольцо или ожерелье\n\nПассивно другие существа относятся к носителю на одну ступень дружелюбнее; эффект на конкретное существо прекращается, если носитель атакует его. Воззвание: наложить «Умиротворение», «Очарование личности» или «Приказ» на суммарное число целей до вашего бонуса мастерства.\n\n### Руна предсказания\n\nТребование: Рунописец 13-го уровня. Предмет: палочка, посох, мантия или магическая фокусировка\n\nПассивно носитель может ритуально сотворять «Опознание» и «Обнаружение магии» и получает к Проницательности бонус = модификатор Интеллекта, минимум +1. При нанесении руны вы бросаете к20 и записываете результат. Воззвание реакцией: когда существо в 30 футах от носителя делает атаку, проверку или спасбросок, заменить его к20 на записанный результат после броска, но до объявления успеха.\n\n### Руна преобразования\n\nТребование: Рунописец 13-го уровня. Предмет: браслет, диадема, кольцо или ожерелье\n\nПассивно носитель выбирает одно: скорость плавания 30 футов, лазания 30 футов или +10 футов к ходьбе; бонусным действием можно переключать режим. Воззвание: превратиться на 1 час в зверя с ПО не выше вашего уровня Саванта. Используются физические параметры и хиты зверя, сохраняются ментальные характеристики, мировоззрение и личность; снаряжение сливается с формой. При возвращении восстанавливаются прежние хиты, а избыточный урон при падении формы до 0 переносится на обычную форму.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 13
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-91",
+    "id": "hb:savant:ability:feature-91",
+    "type": "ability",
+    "name": "Древняя магия",
+    "description": "6-й уровень\n\nПредмет с вашей активной руной считается магическим. Во время короткого отдыха можно провести 10-минутный ритуал и восстановить возможность одного уже использованного сегодня воззвания к руне, позволяя применить её ещё раз до следующего продолжительного отдыха.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 6
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-92",
+    "id": "hb:savant:ability:feature-92",
+    "type": "ability",
+    "name": "Рунический оберег",
+    "description": "10-й уровень\n\nЛюбое существо, несущее предмет с вашей руной, получает бонус ко всем спасброскам = модификатор Интеллекта, минимум +1. После продолжительного отдыха одну известную руну можно заменить другой.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 10
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-feature-93",
+    "id": "hb:savant:ability:feature-93",
+    "type": "ability",
+    "name": "Мастер рунического письма",
+    "description": "15-й уровень\n\nКогда ваши хиты падают до 0 без мгновенной смерти, можно мгновенно рассеять одну из написанных вами активных рун вместе с её эффектами и вместо 0 хитов остаться на 1.",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "parentClassId": "hb:savant:class:savant",
+    "level": 15
+  },
+  {
+    "schemaVersion": 2,
+    "uid": "savant-5.2-savant-5-2",
+    "id": "hb:savant:pack:savant-5-2",
+    "type": "pack",
+    "name": "Савант 5.2 — пример",
+    "description": "",
+    "updatedAt": "2026-09-25T00:00:00Z",
+    "version": "5.2.0",
+    "source": {
+      "kind": "example",
+      "author": "laserllama; механическое резюме пользователя",
+      "url": "https://dnd.su/homebrew/class/401-savant/"
+    },
+    "effects": [],
+    "resources": [],
+    "attacks": [],
+    "actions": [],
+    "choices": [],
+    "entities": [
+      "hb:savant:class:savant",
+      "hb:savant:ability:feature-1",
+      "hb:savant:ability:feature-2",
+      "hb:savant:ability:feature-3",
+      "hb:savant:ability:feature-4",
+      "hb:savant:ability:feature-5",
+      "hb:savant:ability:feature-6",
+      "hb:savant:ability:feature-7",
+      "hb:savant:ability:feature-8",
+      "hb:savant:ability:feature-9",
+      "hb:savant:ability:feature-10",
+      "hb:savant:ability:feature-11",
+      "hb:savant:ability:feature-12",
+      "hb:savant:ability:feature-13",
+      "hb:savant:ability:feature-14",
+      "hb:savant:ability:feature-15",
+      "hb:savant:ability:feature-16",
+      "hb:savant:ability:feature-17",
+      "hb:savant:ability:feature-18",
+      "hb:savant:ability:feature-19",
+      "hb:savant:ability:feature-20",
+      "hb:savant:ability:feature-21",
+      "hb:savant:ability:feature-22",
+      "hb:savant:ability:feature-23",
+      "hb:savant:ability:feature-24",
+      "hb:savant:ability:feature-25",
+      "hb:savant:ability:feature-26",
+      "hb:savant:ability:feature-27",
+      "hb:savant:ability:feature-28",
+      "hb:savant:ability:feature-29",
+      "hb:savant:ability:feature-30",
+      "hb:savant:ability:feature-31",
+      "hb:savant:ability:feature-32",
+      "hb:savant:ability:feature-33",
+      "hb:savant:subclass:discipline-1",
+      "hb:savant:ability:feature-35",
+      "hb:savant:ability:feature-36",
+      "hb:savant:ability:feature-37",
+      "hb:savant:ability:feature-38",
+      "hb:savant:ability:feature-39",
+      "hb:savant:subclass:discipline-2",
+      "hb:savant:ability:feature-41",
+      "hb:savant:ability:feature-42",
+      "hb:savant:ability:feature-43",
+      "hb:savant:ability:feature-44",
+      "hb:savant:ability:feature-45",
+      "hb:savant:subclass:discipline-3",
+      "hb:savant:ability:feature-47",
+      "hb:savant:ability:feature-48",
+      "hb:savant:ability:feature-49",
+      "hb:savant:ability:feature-50",
+      "hb:savant:ability:feature-51",
+      "hb:savant:ability:feature-52",
+      "hb:savant:ability:feature-53",
+      "hb:savant:subclass:discipline-4",
+      "hb:savant:ability:feature-55",
+      "hb:savant:ability:feature-56",
+      "hb:savant:ability:feature-57",
+      "hb:savant:ability:feature-58",
+      "hb:savant:ability:feature-59",
+      "hb:savant:ability:feature-60",
+      "hb:savant:subclass:discipline-5",
+      "hb:savant:ability:feature-62",
+      "hb:savant:ability:feature-63",
+      "hb:savant:ability:feature-64",
+      "hb:savant:ability:feature-65",
+      "hb:savant:ability:feature-66",
+      "hb:savant:subclass:discipline-6",
+      "hb:savant:ability:feature-68",
+      "hb:savant:ability:feature-69",
+      "hb:savant:ability:feature-70",
+      "hb:savant:ability:feature-71",
+      "hb:savant:ability:feature-72",
+      "hb:savant:ability:feature-73",
+      "hb:savant:ability:feature-74",
+      "hb:savant:subclass:discipline-7",
+      "hb:savant:ability:feature-76",
+      "hb:savant:ability:feature-77",
+      "hb:savant:ability:feature-78",
+      "hb:savant:ability:feature-79",
+      "hb:savant:ability:feature-80",
+      "hb:savant:subclass:discipline-8",
+      "hb:savant:ability:feature-82",
+      "hb:savant:ability:feature-83",
+      "hb:savant:ability:feature-84",
+      "hb:savant:ability:feature-85",
+      "hb:savant:ability:feature-86",
+      "hb:savant:subclass:discipline-9",
+      "hb:savant:ability:feature-88",
+      "hb:savant:ability:feature-89",
+      "hb:savant:ability:feature-90",
+      "hb:savant:ability:feature-91",
+      "hb:savant:ability:feature-92",
+      "hb:savant:ability:feature-93"
+    ]
+  }
+]

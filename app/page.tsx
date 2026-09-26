@@ -1,4 +1,5 @@
 "use client";
+import { homebrewTableFeatures } from "./homebrewTemplates";
 
 import { assetUrl } from "./assetUrl";
 
@@ -73,6 +74,8 @@ import { shortRestHitDieHealing } from "./restRules";
 import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeValue, subclassRuntimeControls, subclassRuntimeValue } from "./subclassRuntime";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots } from "./multiclass";
+import { HomebrewEditor, HomebrewOnSheet } from "./HomebrewEditor";
+import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor } from "./homebrewEngine";
 import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
 import { noMagicTutorialStep, tutorialReflection, tutorialSteps, type TutorialTerm } from "./tutorial";
 import { sheetOptionalFeatures } from "./generatedSheetRules";
@@ -784,13 +787,18 @@ function Builder() {
   const tutorialSeenStepsRef = useRef<Set<number>>(new Set());
   const tutorialConditionalSeenRef = useRef<Set<string>>(new Set());
 
+  function readLocalHomebrew(): HomebrewLibrary {
+    try { return normalizeHomebrewLibrary(JSON.parse(localStorage.getItem("herolist-homebrew-local-v2") || "null")); }
+    catch { return emptyHomebrewLibrary; }
+  }
+
   async function connectAccount(localVault: CharacterVault) {
     try {
       const accountResponse = await fetch("/api/account", { cache: "no-store" });
       const accountValue = await accountResponse.json() as AccountState;
       if (!accountValue.authenticated) {
         setAccount({ authenticated: false });
-        setHomebrew(emptyHomebrewLibrary);
+        setHomebrew(readLocalHomebrew());
         return;
       }
       const [vaultResponse, homebrewResponse] = await Promise.all([
@@ -812,7 +820,7 @@ function Builder() {
       setAccount(accountValue);
     } catch {
       setAccount({ authenticated: false });
-      setHomebrew(emptyHomebrewLibrary);
+      setHomebrew(readLocalHomebrew());
       setCloudState("error");
     }
   }
@@ -901,7 +909,7 @@ function Builder() {
   const advancements = advancementSlots.map(slot => character.advancements?.find(choice => choice.key === slot.key) || { ...slot, featId: "", asiChoices: [] });
   const advancementFields = deriveLegacyAdvancementFields(advancements);
   const rulesCharacter = {
-    ...character,
+    ...bindHomebrewLibrary(character, homebrew),
     ...advancementFields,
     advancements,
     useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
@@ -986,7 +994,7 @@ function Builder() {
   const expertise = characterExpertiseSkills(exportCharacter);
   const knownLanguages = proficiencies.languages;
   const resources = characterResources(exportCharacter);
-  const attachedHomebrew = account?.authenticated ? homebrew.elements.filter(element => element.characterId === vault.activeId) : [];
+  const attachedHomebrew = [...new Map([...activeHomebrew(exportCharacter), ...homebrew.elements.filter(element => element.characterId === vault.activeId)].map(e => [e.id, e])).values()];
   const customFeatures = attachedHomebrew.filter(element => element.type === "ability").map(element => ({ name: element.name, description: element.description }));
   const customEquipment = attachedHomebrew.filter(element => element.type === "item").map(element => element.name);
   const customProficiencies = attachedHomebrew.filter(element => element.type === "proficiency").map(element => element.name);
@@ -2044,6 +2052,8 @@ function Builder() {
   }
 
   function exportHelpmate() {
+    const warning = homebrewExportWarning(exportCharacter);
+    if (warning && !confirm(warning)) return;
     const regularCasterCount = multiclassEntries.filter(entry => entry.classId !== "warlock" && spellSelectionRule({ ...exportCharacter, className: entry.classId, level: entry.level }).caster).length;
     if (regularCasterCount > 1) {
       setInteractionError("Helpmate пока не имеет подтверждённого формата для общего пула ячеек двух обычных заклинательских классов. Экспорт заблокирован, чтобы не создать неверный лист.");
@@ -2063,6 +2073,8 @@ function Builder() {
   }
 
   function exportLongStoryShort() {
+    const warning = homebrewExportWarning(exportCharacter);
+    if (warning && !confirm(warning)) return;
     download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
   }
 
@@ -2079,15 +2091,18 @@ function Builder() {
   }
 
   async function persistHomebrew(next: HomebrewLibrary) {
-    if (!account?.authenticated) return;
     const normalized = normalizeHomebrewLibrary(next);
-    setHomebrew(normalized);
     setHomebrewState("saving");
     try {
-      const response = await fetch("/api/homebrew", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ library: normalized }) });
-      setHomebrewState(response.ok ? "saved" : "error");
-    } catch {
+      if (account?.authenticated) {
+        const response = await fetch("/api/homebrew", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ library: normalized }) });
+        if (!response.ok) throw new Error("Не удалось сохранить библиотеку в аккаунте");
+      } else localStorage.setItem("herolist-homebrew-local-v2", JSON.stringify(normalized));
+      setHomebrew(normalized);
+      setHomebrewState("saved");
+    } catch (error) {
       setHomebrewState("error");
+      throw error;
     }
   }
 
@@ -2197,11 +2212,13 @@ function Builder() {
 
   function exportCharacterByFormat(slot: CharacterSlot, format: LibraryExportFormat) {
     const name = safeName(slot.character.name);
+    const warning = homebrewExportWarning(bindHomebrewLibrary(slot.character, homebrew));
+    if (format !== "herolist" && warning && !confirm(warning)) return;
     if (format === "herolist") {
       download(createNativeCharacterFile(slot.character), `${name} — Лист Героя 5e.json`);
       return;
     }
-    const context = savedCharacterExportContext(slot.character);
+    const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew));
     if (format === "helpmate") {
       const regularCasterCount = orderedCharacterClasses(context.character)
         .filter(entry => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length;
@@ -2335,6 +2352,8 @@ function Builder() {
     const folder = vault.folders.find(item => item.id === id);
     const slots = vault.slots.filter(slot => id === "unfiled" ? !slot.folderId : slot.folderId === id);
     if (!slots.length) return;
+    const warnings = slots.map(slot => homebrewExportWarning(bindHomebrewLibrary(slot.character, homebrew))).filter(Boolean);
+    if (format !== "herolist" && warnings.length && !confirm(warnings.join("\n\n"))) return;
     const folderName = folder?.name || "Без папки";
     const files: Record<string, Uint8Array> = {
       "manifest.json": strToU8(JSON.stringify({ format: "list-geroya-5e-folder", version: 2, exportFormat: format, folderName, exportedAt: new Date().toISOString(), count: slots.length }, null, 2)),
@@ -2346,7 +2365,7 @@ function Builder() {
         payload = createNativeCharacterFile(slot.character);
         suffix = "HeroList";
       } else {
-        const context = savedCharacterExportContext(slot.character);
+        const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew));
         if (format === "helpmate") {
           const regularCasterCount = orderedCharacterClasses(context.character)
             .filter(entry => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length;
@@ -2457,24 +2476,7 @@ function Builder() {
         <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
         <button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button>
       </header>
-      <section className="homebrew-library">
-        <header className="library-head"><div><p className="eyebrow">Только в вашем аккаунте</p><h1>Моё хоумбрю</h1><p>Собственные способности, предметы, заклинания, владения и заметки. Они не добавляются в общий каталог HeroList.</p></div>{account?.authenticated && <div className="library-actions"><button disabled={!homebrew.elements.length} onClick={exportHomebrew}>Экспортировать JSON</button><span className={`homebrew-save-state state-${homebrewState}`}>{homebrewState === "saving" ? "Сохраняется…" : homebrewState === "error" ? "Ошибка сохранения" : "Сохранено в аккаунте"}</span></div>}</header>
-        {!account?.authenticated ? <div className="homebrew-auth-required"><h2>Нужен вход в аккаунт</h2><p>Хоумбрю хранится отдельно от локальных персонажей и доступно только владельцу аккаунта. Войдите в HeroList, затем вернитесь в этот раздел.</p><button className="primary-action" onClick={() => setView("builder")}>Перейти к входу</button></div> : <>
-          <section className="homebrew-editor">
-            <label>Тип<select value={homebrewDraft.type} onChange={event => setHomebrewDraft({ ...homebrewDraft, type: event.target.value as HomebrewType })}>{(Object.keys(homebrewTypeLabels) as HomebrewType[]).map(type => <option key={type} value={type}>{homebrewTypeLabels[type]}</option>)}</select></label>
-            <label>Название<input value={homebrewDraft.name} onChange={event => setHomebrewDraft({ ...homebrewDraft, name: event.target.value })} placeholder="Например, Клинок зимнего короля" /></label>
-            <label className="homebrew-description">Описание<textarea value={homebrewDraft.description} onChange={event => setHomebrewDraft({ ...homebrewDraft, description: event.target.value })} placeholder="Полный игровой текст и механика" /></label>
-            {homebrewDraft.type === "spell" && <div className="homebrew-spell-fields"><label>Круг<input type="number" min="0" max="9" value={homebrewDraft.level} onChange={event => setHomebrewDraft({ ...homebrewDraft, level: Math.max(0, Math.min(9, Number(event.target.value) || 0)) })} /></label><label>Школа<input value={homebrewDraft.school} onChange={event => setHomebrewDraft({ ...homebrewDraft, school: event.target.value })} /></label><label>Время<input value={homebrewDraft.castingTime} onChange={event => setHomebrewDraft({ ...homebrewDraft, castingTime: event.target.value })} /></label><label><input type="checkbox" checked={homebrewDraft.concentration} onChange={event => setHomebrewDraft({ ...homebrewDraft, concentration: event.target.checked })} /> Концентрация</label><label><input type="checkbox" checked={homebrewDraft.ritual} onChange={event => setHomebrewDraft({ ...homebrewDraft, ritual: event.target.checked })} /> Ритуал</label></div>}
-            <label className="homebrew-attach"><input type="checkbox" checked={homebrewDraft.attach} onChange={event => setHomebrewDraft({ ...homebrewDraft, attach: event.target.checked })} /> Добавить к текущему персонажу «{character.name || "Безымянный герой"}»</label>
-            <button className="primary-action" disabled={!homebrewDraft.name.trim() || homebrewState === "saving"} onClick={addHomebrewElement}>Добавить</button>
-          </section>
-          <div className="homebrew-grid">{homebrew.elements.map(element => {
-            const linkedSlot = element.characterId ? vault.slots.find(slot => slot.id === element.characterId) : undefined;
-            return <article key={element.id}><small>{homebrewTypeLabels[element.type]}{element.type === "spell" ? ` · ${levelLabel(element.level || 0)}${element.school ? ` · ${element.school}` : ""}` : ""}</small><h2>{element.name}</h2><p>{element.description || "Без описания"}</p>{linkedSlot && <em>Добавлено к: {linkedSlot.character.name || "Безымянный герой"}</em>}<div><button onClick={() => toggleHomebrewAttachment(element)}>{element.characterId === vault.activeId ? "Убрать у текущего" : "Добавить текущему"}</button><button onClick={() => deleteHomebrewElement(element.id)}>Удалить</button></div></article>;
-          })}</div>
-          {!homebrew.elements.length && <div className="empty-folder"><strong>Личная библиотека пока пуста.</strong><span>Создайте первый пользовательский элемент выше.</span></div>}
-        </>}
-      </section>
+      <HomebrewEditor library={homebrew} onSave={persistHomebrew} character={bindHomebrewLibrary(character, homebrew)} onCharacter={next => setCharacter(homebrewReferencesOnly(next))} saveState={homebrewState} onClose={() => setView("builder")} />
       <UpdateHistory />
     </main>
   );
@@ -2709,7 +2711,7 @@ function Builder() {
         <div className="top-actions">
           <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
           <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
-          {account?.authenticated && <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>}
+          <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
           <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
           <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
           <input ref={banFileRef} hidden type="file" accept=".json,application/json" onChange={importBan} />
@@ -2723,7 +2725,7 @@ function Builder() {
             <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
             <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
             <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
-            {account?.authenticated && <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>}
+            <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
             <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
             <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
             {account?.authenticated ? <a href="/account">Аккаунт · {account.displayName}</a> : <a href="/account">Войти и сохранить</a>}
@@ -3473,6 +3475,7 @@ function Builder() {
                 <button className={`mobile-sheet-toggle${mobileSheet ? " active" : ""}`} onClick={() => setMobileSheet(value => !value)}>Мобильный лист <small>ЭКСПЕРИМЕНТАЛЬНО</small></button>
               </div>
               {!mobileSheet && <div className="desktop-hp-roll-editor"><HitPointRollEditor character={character} onChange={updateHitPointRoll} /></div>}
+              <HomebrewOnSheet character={exportCharacter} onChange={next => setCharacter(homebrewReferencesOnly({ ...next, abilities: character.abilities }))} />
               {mobileSheet && <section className="mobile-character-sheet">
                 <header>
                   <div><small>{selectedRace?.name} · {selectedClass?.name} {character.level}</small><h2>{character.name || "Безымянный герой"}</h2></div>
@@ -3657,7 +3660,7 @@ function Builder() {
                 classId={character.className}
                 abilities={finalAbilities}
                 proficiency={proficiency}
-                savingThrows={classRules[character.startingClassId || character.className]?.saves || []}
+                savingThrows={classRuleFor(rulesCharacter, character.startingClassId || character.className)?.saves || []}
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
                 acNotes={ac.conditions}
@@ -3665,7 +3668,7 @@ function Builder() {
                 initiativeNotes={initiative.notes}
                 speed={speedBreakdown(exportCharacter).walk}
                 hitPoints={hitPoints}
-                hitDie={classRules[character.className]?.hitDie || 8}
+                hitDie={classRuleFor(rulesCharacter, character.className)?.hitDie || 8}
                 hitDiceLabel={hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ")}
                 currentHitPoints={character.currentHitPoints}
                 temporaryHitPoints={character.temporaryHitPoints}
@@ -3675,7 +3678,7 @@ function Builder() {
                 resources={[
                   ...resources.map(resource => ({ name: resource.name, current: resourceCurrent(exportCharacter, resource), max: resource.max, die: resource.die, unit: resource.unit, isShortRest: resource.isShortRest, isLongRest: resource.isLongRest })),
                 ]}
-                classFeatures={[...selectedClassFeatures, ...runtimeFeatures, ...customFeatures, ...customNotes.map(note => ({ name: note.name, description: note.description }))]}
+                classFeatures={[...selectedClassFeatures, ...runtimeFeatures, ...customFeatures, ...homebrewTableFeatures(attachedHomebrew), ...customNotes.map(note => ({ name: note.name, description: note.description }))]}
                 raceFeatures={selectedRaceFeatures}
                 featFeatures={selectedFeatFeatures}
                 backgroundFeature={selectedBackgroundRule.feature}
@@ -3765,3 +3768,4 @@ function Builder() {
     </main>
   );
 }
+

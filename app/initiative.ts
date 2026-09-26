@@ -1,3 +1,4 @@
+import { hbEffects } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { characterLevel, getClassProgress } from "./multiclass";
 
@@ -36,5 +37,8 @@ export function initiativeBreakdown(character: ExportCharacter) {
     notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
   if (getClassProgress(character, "cleric")?.subclassId === "twilight")
     notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
+  for (const row of hbEffects(character, "initiative_bonus")) add(row.value, row.source.name);
+  if (hbEffects(character, "initiative_advantage").length) notes.push("Homebrew: преимущество на инициативу");
   return { value, sources, notes };
 }
+

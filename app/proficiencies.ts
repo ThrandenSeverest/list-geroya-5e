@@ -1,3 +1,4 @@
+import { hbEffects, hbSkillName, classRuleFor } from "./homebrewEngine";
 import { backgroundRule } from "./backgroundRules";
 import { selectedRaceVariant } from "./characterRules";
 import { getStartingClassId, orderedCharacterClasses } from "./multiclass";
@@ -218,8 +219,8 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     ...character.backgroundSkills,
     ...classes.flatMap(entry => entry.classSkills?.length ? entry.classSkills : (entry.classId === startingClassId ? character.classSkills : [])),
   ].filter(skill => skillNames.includes(skill));
-  const armor = [classRules[startingClassId]?.armor || ""];
-  const weapons = [classRules[startingClassId]?.weapons || ""];
+  const armor = [classRuleFor(character, startingClassId)?.armor || ""];
+  const weapons = [classRuleFor(character, startingClassId)?.weapons || ""];
   const tools = [...(fixedClassTools[startingClassId] || [])];
   const multiclassTraining: Record<string, { armor?: string[]; weapons?: string[]; tools?: string[] }> = {
     barbarian: { armor: ["Щиты"], weapons: ["Простое оружие", "Воинское оружие"] },
@@ -287,18 +288,26 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     if (advancement.featId === "artificer-initiate") tools.push(...(advancement.featChoices?.tool || []));
   }
 
+  for (const { effect } of hbEffects(character)) {
+    if (["skill_proficiency", "skill_expertise"].includes(effect.type) && effect.skill) skills.push(hbSkillName(effect.skill));
+    if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
+    if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
+    if (effect.type === "armor_proficiency" && effect.group) armor.push(({light:"Лёгкие доспехи",medium:"Средние доспехи",heavy:"Тяжёлые доспехи",shield:"Щиты"})[effect.group as "light"] || effect.group);
+    if (effect.type === "tool_proficiency" && effect.id) tools.push(effect.id);
+  }
   return {
     skills: unique(skills),
     armor: unique(armor),
     weapons: unique(weapons),
     tools: unique(tools),
-    languages: characterLanguages(character),
+    languages: unique([...characterLanguages(character), ...hbEffects(character, "language").map(x => x.effect.id || "")]),
   };
 }
 
 export function characterExpertiseSkills(character: ExportCharacter) {
   const classes = orderedCharacterClasses(character);
   const values = [
+    ...hbEffects(character, "skill_expertise").map(x => hbSkillName(x.effect.skill || "")),
     ...(character.expertiseSkills || []),
     ...(character.classChoices?.expertise || []).map(value => value.replace(/^skill-/, "")),
     ...classes.flatMap(entry => (entry.choiceValues?.expertise || []).map(value => value.replace(/^skill-/, ""))),
@@ -314,3 +323,4 @@ export function characterExpertiseSkills(character: ExportCharacter) {
   const proficient = new Set(characterProficiencies(character).skills);
   return unique(values).filter(skill => proficient.has(skill));
 }
+
