@@ -15,6 +15,7 @@ export function hbEnabled(c:ExportCharacter,row:{level?:number;when?:string},sou
 export function activeHomebrew(c:ExportCharacter):HomebrewElement[]{
  const all=c.homebrew?.entities||[],byId=new Map(all.map(e=>[e.id,e])),seen=new Set<string>(),result:HomebrewElement[]=[];
  const visit=(id:string,depth=0)=>{if(seen.has(id)||depth>24||result.length>500)return;const e=byId.get(id);if(!e)return;seen.add(id);result.push(e);
+  if(e.type==='class'||e.type==='subclass')for(const feature of e.features||[])if(feature.level<=classLevel(c,e.type==='class'?e.id:e.parentClassId||''))result.push({schemaVersion:2,id:feature.id,type:'ability',name:feature.name,description:feature.description,updatedAt:e.updatedAt,parentClassId:e.type==='class'?e.id:e.parentClassId,effects:feature.effects||[],resources:feature.resources||[],attacks:feature.attacks||[]});
   if(e.type==='class'||e.type==='subclass'){const l=classLevel(c,e.type==='class'?e.id:e.parentClassId||'');for(const [k,rows]of Object.entries(e.advancement||{}))if(Number(k)<=l)for(const row of rows)if(row.id&&row.type!=='choice')visit(row.id,depth+1);}
   for(const x of e.effects||[])if(['grant_feature','grant_spell','grant_attack','grant_resource'].includes(x.type)&&x.id&&hbEnabled(c,x,e))visit(x.id,depth+1);
   for(const choice of e.choices||[])if(hbEnabled(c,choice,e))for(const id of (c.homebrew?.choices?.[choice.id]||[]).filter(id=>choice.from.includes(id)).slice(0,choice.count))visit(id,depth+1);

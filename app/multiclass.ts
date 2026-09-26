@@ -143,6 +143,10 @@ const fullCasterSlots = [[], [2], [3], [4, 2], [4, 3], [4, 3, 2], [4, 3, 3], [4,
 
 export function spellcastingContribution(character: ExportCharacter, entry: CharacterClassProgress) {
   const level = entry.level;
+  const custom = character.homebrew?.entities.find(e=>e.id===entry.classId&&e.type==='class')?.spellcasting;
+  if (custom?.mode==='full') return level;
+  if (custom?.mode==='half') return Math.floor(level/2);
+  if (custom?.mode==='third') return Math.floor(level/3);
   if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(entry.classId)) return level;
   if (["paladin", "ranger"].includes(entry.classId)) return Math.floor(level / 2);
   if (entry.classId === "artificer") return Math.ceil(level / 2);
@@ -156,11 +160,18 @@ export function multiclassCasterLevel(character: ExportCharacter) {
 }
 
 export function resolveSpellSlots(character: ExportCharacter) {
-  const regularCasters = orderedCharacterClasses(character).filter(entry => spellcastingContribution(character, entry) > 0);
+  const entries=orderedCharacterClasses(character);
+  if(entries.length===1){const own=character.homebrew?.entities.find(e=>e.id===entries[0].classId&&e.type==='class')?.spellcasting;if(own?.mode==='custom')return own.slots?.[String(entries[0].level)]||[];}
+  const regularCasters = entries.filter(entry => spellcastingContribution(character, entry) > 0);
   if (!regularCasters.length) return [];
   if (regularCasters.length === 1) {
     const entry = regularCasters[0];
     const level = entry.level;
+    const custom = character.homebrew?.entities.find(e=>e.id===entry.classId&&e.type==='class')?.spellcasting;
+    if (custom?.mode==='custom') return custom.slots?.[String(level)]||[];
+    if (custom?.mode==='full') return fullCasterSlots[level]||[];
+    if (custom?.mode==='half') return fullCasterSlots[Math.ceil(level/2)]||[];
+    if (custom?.mode==='third') return fullCasterSlots[Math.ceil(level/3)]||[];
     if (["bard", "cleric", "druid", "sorcerer", "wizard"].includes(entry.classId)) return fullCasterSlots[level] || [];
     if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots[Math.ceil(level / 2)] || [];
     if (entry.classId === "artificer") return fullCasterSlots[Math.ceil(level / 2)] || [];
@@ -188,4 +199,3 @@ export function hitDicePools(character: ExportCharacter) {
   }
   return [...pools.values()].sort((a, b) => b.die - a.die);
 }
-

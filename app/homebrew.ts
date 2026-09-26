@@ -6,16 +6,18 @@ export type HBAttack = { id:string; name:string; ability:HBAbility; proficient:b
 export type HBChoice = { id:string; name:string; type:string; count:number; from:string[]; level?:number };
 export type HBAction = { id:string; name:string; actionType:string; cost?:{resource:string;amount:number}; description?:string };
 export type HBProgression = { type:'feature'|'resource'|'attack'|'spell'|'subclass'|'asi_or_feat'|'choice'; id?:string };
+export type HBClassFeature = { id:string; level:number; name:string; description:string; effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[] };
 export type HomebrewElement = {
  id:string; uid?:string; schemaVersion?:2; type:HomebrewType; name:string; description:string; updatedAt:string; characterId?:string;
- summary?:string; tags?:string[]; version?:string; source?:{kind:string;packId?:string;author?:string;url?:string};
+ summary?:string; tags?:string[]; version?:string; source?:{kind:string;packId?:string;author?:string;url?:string}; icon?:string;
+ features?:HBClassFeature[]; spellList?:string[];
  effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[]; actions?:HBAction[]; choices?:HBChoice[]; references?:string[];
  requirements?:HBEffect[]; level?:number; school?:string; castingTime?:string; concentration?:boolean; ritual?:boolean;
  range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[];
  hitDie?:string; primaryAbility?:HBAbility; savingThrows?:HBAbility[]; skillChoices?:{count:number;from:string[]};
  equipment?:string[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];effects?:HBEffect[]};
  subclass?:{chooseAtLevel:number;featureLevels?:number[]}; advancement?:Record<string,HBProgression[]>; parentClassId?:string; parentRaceId?:string;
- spellcasting?:{mode:'none'|'full'|'half'|'third'|'pact'|'custom';ability:HBAbility;preparedFormula?:string;slots?:Record<string,number[]>};
+ spellcasting?:{mode:'none'|'full'|'half'|'third'|'pact'|'custom';ability:HBAbility;selection?:'known'|'prepared'|'spellbook';cantrips?:number[];known?:number[];preparedFormula?:string;slots?:Record<string,number[]>};
  size?:string; speed?:Partial<Record<'walk'|'fly'|'swim'|'climb',number>>; itemType?:string; rarity?:string; weight?:number; price?:number; attunement?:boolean;
  table?:{columns:string[];rows:string[][]};
  rows?:{range:string;text:string}[]; die?:string; entities?:string[];

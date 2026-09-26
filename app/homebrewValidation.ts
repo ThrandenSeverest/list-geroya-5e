@@ -15,6 +15,12 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   if(ids.has(e.id))add(e.id,'Повторяющийся ID');ids.add(e.id);
   if(!(e.type in homebrewTypeLabels)||typeof e.name!=='string'||!e.name.trim()||typeof e.description!=='string')add(e.id,'Нужны допустимый тип, название и описание');
   if(new TextEncoder().encode(JSON.stringify(e)).length>32768)add(e.id,'Элемент превышает 32 КиБ; разделите способности на отдельные элементы');
+  if(e.icon!==undefined&&(!['class','race','background'].includes(e.type)||typeof e.icon!=='string'||!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(e.icon)||e.icon.length>18000))add(e.id,'Иконка: нужен небольшой PNG для класса, расы или предыстории');
+  if(e.features!==undefined){
+   if(!['class','subclass'].includes(e.type)||!Array.isArray(e.features)||e.features.length>40)add(e.id,'Особенности допустимы только внутри класса или подкласса (до 40)');
+   else {const used=new Set<string>();for(const f of e.features){if(!f||typeof f.id!=='string'||!/^hb:[a-z0-9_-]+:ability:[a-z0-9_-]+$/.test(f.id)||used.has(f.id)||!Number.isInteger(f.level)||f.level<1||f.level>20||typeof f.name!=='string'||!f.name.trim()||typeof f.description!=='string')add(e.id,'Особенность: название, текст, уникальный ID и уровень 1–20 обязательны');if(f?.id)used.add(f.id);for(const effect of f?.effects||[]){if(!effectTypes[effect.type])add(e.id,'Неизвестный эффект особенности');formula(e.id,effect.value);formula(e.id,effect.when);}}}
+  }
+  if(e.spellList?.some(id=>!all.has(id)&&!all.has('official:spell:'+id)))add(e.id,'В списке заклинаний класса есть неизвестный ID');
   for(const key of ['effects','resources','attacks','actions','choices','references'] as const)if(e[key]!==undefined&&!Array.isArray(e[key]))add(e.id,key+': требуется массив');
   for(const key of ['effects','resources','attacks','actions','choices'] as const)if(Array.isArray(e[key])&&e[key]!.some(row=>!row||typeof row!=='object'))add(e.id,key+': некорректная запись');
   if(problems.some(p=>p.id===e.id))continue;

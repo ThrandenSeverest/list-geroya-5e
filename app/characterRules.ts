@@ -5,6 +5,25 @@ import * as base from "./characterRules.base";
 import type { AbilityScores, ExportCharacter } from "./exportFormats";
 import { featAbilityBonuses } from "./featChoices";
 import { classRules, type Feature } from "./rules";
+import { evaluateFormula } from "./homebrewFormula";
+
+export function spellSelectionRuleForClass(character: ExportCharacter, classId: string, classLevel = character.level): base.SpellSelectionRule {
+  const custom = character.homebrew?.entities.find(e => e.id === classId && e.type === 'class');
+  const casting = custom?.spellcasting;
+  if (!casting || casting.mode === 'none') return base.spellSelectionRuleForClass(character, classId, classLevel);
+  const level = Math.max(1, Math.min(20, classLevel));
+  const progression = casting.mode === 'full' ? level : casting.mode === 'half' ? Math.ceil(level / 2) : casting.mode === 'third' ? Math.ceil(level / 3) : 0;
+  const slots = casting.mode === 'custom' ? casting.slots?.[String(level)] || [] : casting.mode === 'pact' ? [] : base.fullCasterSlots[progression] || [];
+  const maxLevel = casting.mode === 'pact' ? Math.min(5, Math.ceil(level / 2)) : slots.length;
+  let prepared=1;try{prepared=Math.max(1,Math.floor(evaluateFormula(casting.preparedFormula || '@level + @mod.' + casting.ability,{values:{'@level':level,['@mod.'+casting.ability]:Math.floor((character.abilities[casting.ability]-10)/2)}})));}catch{/* Validation blocks an invalid formula at save time. */}
+  const mode = casting.selection || 'known';
+  const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
+  const leveled = mode === 'prepared' ? prepared : casting.known?.[level] ?? Math.max(2,level+1);
+  return {caster:maxLevel>0||cantrips>0,mode,title:mode==='spellbook'?'Заклинания в книге':mode==='prepared'?'Подготовленные заклинания':'Известные заклинания',cantrips,leveled,prepared:mode==='prepared'||mode==='spellbook'?prepared:undefined,maxLevel,slots,pact:casting.mode==='pact'?{slots:level===1?1:level<11?2:level<17?3:4,level:maxLevel}:undefined};
+}
+export function spellSelectionRule(character: ExportCharacter): base.SpellSelectionRule {
+  return spellSelectionRuleForClass(character,character.className,character.level);
+}
 
 export type RaceVariant = base.RaceVariant;
 export type AbilityKey = base.AbilityKey;
@@ -285,4 +304,3 @@ export function optimalAbilityBuild(character: Pick<ExportCharacter, "race" | "r
   }
   return best || { score: 0, abilities: { str: 15, dex: 14, con: 13, int: 12, wis: 10, cha: 8 }, raceAbilityChoices: [] };
 }
-

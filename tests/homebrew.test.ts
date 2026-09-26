@@ -44,3 +44,19 @@ test('subclass templates follow 2014 parent class and PDF tables repeat headers'
  assert.ok(validateHomebrew([{...table,table:{columns:['a'],rows:[['a','b']]}}]).length);
  assert.ok(validateHomebrew([null] as unknown as HomebrewElement[]).length);
 });
+
+test('inline class features belong to one reusable class and unlock at their class level',async()=>{
+ const {homebrewOptions,homebrewSpells,homebrewSpellAvailable}=await import('../app/homebrewCatalog');
+ const {spellSelectionRuleForClass}=await import('../app/characterRules');
+ const own:HomebrewElement={id:'hb:test:class:artisan',type:'class',name:'Артизан',description:'Ремесленный класс',updatedAt:'2026-09-26',hitDie:'d8',features:[{id:'hb:test:ability:craft',name:'Ремесло',description:'Добавляет инициативу',level:2,effects:[{type:'initiative_bonus',value:2}]}],spellcasting:{mode:'full',ability:'int',selection:'known',cantrips:[0,2,2],known:[0,2,3]},spellList:['magic-missile']};
+ const customSpell:HomebrewElement={id:'hb:test:spell:spark',type:'spell',name:'Искра',description:'Свет',updatedAt:'2026-09-26',level:0,school:'Воплощение',spellClasses:[own.id]};
+ assert.deepEqual(validateHomebrew([own,customSpell],['official:spell:magic-missile']),[]);
+ assert.equal(homebrewOptions([own],'class')[0].source,'Homebrew');
+ assert.ok(homebrewSpellAvailable(own.id,homebrewSpells([customSpell])[0],[own,customSpell]));
+ assert.ok(!homebrewSpellAvailable('wizard',homebrewSpells([customSpell])[0],[own,customSpell]));
+ const hero=bindHomebrewLibrary({...base,className:own.id,level:2,classes:[{classId:own.id,level:2,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[]}}, {elements:[own,customSpell]});
+ assert.ok(activeHomebrew(hero).some(e=>e.name==='Ремесло'));
+ assert.ok(!activeHomebrew({...hero,level:1,classes:[{classId:own.id,level:1,acquiredAtCharacterLevel:1}]}).some(e=>e.name==='Ремесло'));
+ assert.equal(spellSelectionRuleForClass(hero,own.id,2).leveled,3);
+ assert.deepEqual(createNativeCharacterFile(hero).character.homebrew?.entities,[]);
+});

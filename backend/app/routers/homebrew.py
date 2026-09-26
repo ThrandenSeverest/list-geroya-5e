@@ -1,4 +1,7 @@
 import json
+import base64
+import binascii
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -35,7 +38,23 @@ def validate(value):
         raise HTTPException(400, "Некорректная библиотека хоумбрю")
     if len(value["elements"]) > settings.homebrew_max_count:
         raise HTTPException(413, f"Можно хранить не более {settings.homebrew_max_count} элементов хоумбрю")
-    reject_embedded_binary(value)
+    # Icons are the sole binary exception. All other embedded files remain forbidden.
+    without_icons = []
+    for element in value["elements"]:
+        if not isinstance(element, dict):
+            raise HTTPException(400, "Некорректный элемент хоумбрю")
+        icon = element.get("icon")
+        if icon is not None:
+            if element.get("type") not in {"class", "race", "background"} or not isinstance(icon, str) or len(icon) > 18000 or not re.fullmatch(r"data:image/png;base64,[A-Za-z0-9+/]+={0,2}", icon):
+                raise HTTPException(400, "Иконка должна быть небольшим PNG")
+            try:
+                image = base64.b64decode(icon.partition(",")[2], validate=True)
+            except (ValueError, binascii.Error):
+                raise HTTPException(400, "Некорректный PNG")
+            if not image.startswith(b"\x89PNG\r\n\x1a\n") or len(image) > 12000:
+                raise HTTPException(413, "Иконка PNG превышает лимит 12 КиБ")
+        without_icons.append({**element, "icon": None})
+    reject_embedded_binary({**value, "elements": without_icons})
     encoded = []
     total = 0
     ids = set()
@@ -90,4 +109,3 @@ def put_homebrew(payload: HomebrewRequest, request: Request, db: Session = Depen
         db.add(HomebrewLibrary(user_id=user.id, library_json="{}", updated_at=updated))
     db.commit()
     return {"saved": True, "updatedAt": updated}
-

@@ -1,5 +1,6 @@
 "use client";
 import { homebrewTableFeatures } from "./homebrewTemplates";
+import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
 
 import { assetUrl } from "./assetUrl";
 
@@ -23,7 +24,7 @@ import {
   type SpellGrant,
   proficiencyBonus,
 } from "./exportFormats";
-import { abilityLabels, classRules, personalityOptions } from "./rules";
+import { abilityLabels, classRules, personalityOptions, skillKeys } from "./rules";
 import { resolvedRaceFeatures as raceFeatures } from "./racialTraits";
 import {
   alwaysPreparedSpellEntries,
@@ -651,9 +652,9 @@ function savedCharacterExportContext(value: ExportCharacter) {
   const classFeatureList = orderedCharacterClasses(exportCharacter).flatMap(entry => {
     const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
     const scoped = { ...exportCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
-    const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+    const className = classes.find(option => option.id === entry.classId)?.name || exportCharacter.homebrew?.entities.find(e=>e.id===entry.classId)?.name || entry.classId;
     return detailedFeatures(resolvedClassChoiceFeatures(scoped,
-      documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
+      documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || exportCharacter.homebrew?.entities.find(e=>e.id===entry.classId)?.features?.map(f=>({name:f.name,description:f.description,level:f.level})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
     )).map(feature => markFeature({ ...feature, name: `${className} · ${feature.name}` }, "class", entry.classId));
   });
@@ -740,7 +741,7 @@ function Builder() {
   const [search, setSearch] = useState("");
   // Spell sources start expanded; the same control can collapse the view back
   // to PHB for a compact picker.
-  const [selectedSources, setSelectedSources] = useState<string[]>(() => catalogSources(spells));
+  const [selectedSources, setSelectedSources] = useState<string[]>(() => [...catalogSources(spells),"Homebrew"]);
   const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
   const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
   const [siteTheme, setSiteTheme] = useState<SiteTheme>("classic");
@@ -890,19 +891,16 @@ function Builder() {
     localStorage.setItem("list-geroya-site-theme", next);
   }
 
-  const availableRaces = useMemo(() => races.filter(option => allowed(activeBan, "races", option.id)), [activeBan]);
-  const availableClasses = useMemo(() => classes.filter(option => allowed(activeBan, "classes", option.id)), [activeBan]);
-  const availableBackgrounds = useMemo(
-    () => backgrounds.filter(option => allowed(activeBan, "backgrounds", option.id)),
-    [activeBan],
-  );
+  const availableRaces = [...races.filter(option => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements,"race")];
+  const availableClasses = [...classes.filter(option => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements,"class")];
+  const availableBackgrounds = [...backgrounds.filter(option => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements,"background")];
   const homebrewOption = (id: string) => { const entity = homebrew.elements.find(e => e.id === id); return entity ? { id, name: entity.name, description: entity.description, source: "Homebrew", tags: entity.tags } : undefined; };
   const selectedRace = races.find(option => option.id === character.race) || homebrewOption(character.race);
   const selectedClass = classes.find(option => option.id === character.className) || homebrewOption(character.className);
   const multiclassEntries = orderedCharacterClasses(character);
   const selectedBackground = backgrounds.find(option => option.id === character.background) || homebrewOption(character.background);
   const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
-  const classRule = classSkillRules[character.className] || { count: 0, skills: [] };
+  const classRule = classSkillRules[character.className] || (()=>{const own=homebrew.elements.find(e=>e.id===character.className&&e.type==="class")?.skillChoices;return {count:own?.count||0,skills:own?.from.map(id=>Object.entries(skillKeys).find(([,v])=>v.key===id)?.[0]||id)||[]};})();
   const fixedBackgroundSkills = character.backgroundSkills;
   const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap(rule => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
   const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
@@ -928,7 +926,7 @@ function Builder() {
     ? { ...rulesCharacter, className: activeSpellClass.entry.classId, subclass: activeSpellClass.entry.subclassId || "", level: activeSpellClass.entry.level, abilities: finalAbilities }
     : { ...rulesCharacter, abilities: finalAbilities };
   const spellRule = activeSpellClass?.rule || spellSelectionRule(spellCharacter);
-  const sourceAvailableSpells = sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked);
+  const sourceAvailableSpells = [...sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked),...homebrewSpells(homebrew.elements)];
   const availableSpellCatalog = sourceAvailableSpells.filter(spell => allowed(activeBan, "spells", spell.id) && (!rulesCharacter.tceFullBanned || spell.source !== "TCE"));
   const alwaysPreparedEntries = alwaysPreparedSpellEntries(spellCharacter, availableSpellCatalog);
   const alwaysPrepared = alwaysPreparedEntries.map(entry => entry.id);
@@ -942,7 +940,7 @@ function Builder() {
   }, availableSpellCatalog).map(entry => entry.id)))];
   const sources = catalogSources(step === 7 ? sourceAvailableSpells : currentOptions);
   const filtered = currentOptions.filter(option => matchesSources(option.source, selectedSources) && `${option.name} ${option.description}`.toLowerCase().includes(search.toLowerCase()));
-  const selectableSpells = availableSpellCatalog.filter(spell => spellAvailableToCharacter(spellCharacter, spell) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
+  const selectableSpells = availableSpellCatalog.filter(spell => (spellAvailableToCharacter(spellCharacter, spell)||homebrewSpellAvailable(spellCharacter.className,spell,homebrew.elements)) && spell.level <= spellRule.maxLevel && !alwaysPreparedSet.has(spell.id));
   const spellSchools = [...new Set(selectableSpells.map(spell => spell.school).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ru"));
   const castingTimes = [...new Set(selectableSpells.map(spell => spell.castingTime).filter((value): value is string => !!value))].sort((a, b) => a.localeCompare(b, "ru"));
   const filteredSpells = selectableSpells.filter(spell => {
@@ -962,13 +960,15 @@ function Builder() {
   const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key as Category].filter(option => !allowed(activeBan, key as Category, option.id)).length, 0) : 0;
   const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
   const selectedRaceFeatures = raceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags).map(feature => markFeature(feature, "race", character.race));
-  const chosenSubclass = selectedSubclass(character.className, character.subclass || "");
+  const subclassData=(id:string)=>{const base=subclassRule(id);const custom=homebrewSubclassOptions(id,homebrew.elements);return custom.length?{level:homebrew.elements.find(e=>e.type==='class'&&e.id===id)?.subclass?.chooseAtLevel||base?.level||3,options:[...base?.options||[],...custom]}:base;};
+  const subclassFor=(id:string,sub:string)=>subclassData(id)?.options.find(e=>e.id===sub);
+  const chosenSubclass = subclassFor(character.className, character.subclass || "");
   const selectedClassFeatureSections = multiclassEntries.map(entry => {
-    const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
+    const subclass = subclassFor(entry.classId, entry.subclassId || "");
     const scoped = { ...rulesCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
-    const className = classes.find(option => option.id === entry.classId)?.name || entry.classId;
+    const className = availableClasses.find(option => option.id === entry.classId)?.name || entry.classId;
     const features = detailedFeatures(resolvedClassChoiceFeatures(scoped,
-      documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
+      documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find(e=>e.id===entry.classId)?.features?.map(f=>({name:f.name,description:f.description,level:f.level})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
     )).map(feature => markFeature({ ...feature, name: `${className} · ${feature.name}` }, "class", entry.classId));
     return { key: `${entry.classId}:${entry.subclassId || "base"}`, title: `${className}${subclass ? ` · ${subclass.name}` : ""}`, features };
@@ -985,6 +985,10 @@ function Builder() {
   const sharedSpellSlots = resolveSpellSlots(exportCharacter);
   const pactMagicSlots = resolvePactMagic(exportCharacter);
   const classEquipment = equipmentRule(character.className);
+  const authoredEquipment = [
+    ...homebrew.elements.find(e => e.id === character.className && e.type === "class")?.equipment || [],
+    ...homebrew.elements.find(e => e.id === character.background && e.type === "background")?.equipment || [],
+  ];
   const equipmentItems = selectedEquipment(exportCharacter);
   const displayedInventory = character.inventoryOverride === undefined
     ? equipmentItems
@@ -996,7 +1000,8 @@ function Builder() {
   const knownLanguages = proficiencies.languages;
   const resources = characterResources(exportCharacter);
   const attachedHomebrew = [...new Map([...activeHomebrew(exportCharacter), ...homebrew.elements.filter(element => element.characterId === vault.activeId)].map(e => [e.id, e])).values()];
-  const customFeatures = attachedHomebrew.filter(element => element.type === "ability").map(element => ({ name: element.name, description: element.description }));
+  const ownedFeatureIds = new Set(homebrew.elements.filter(e=>e.type==='class'||e.type==='subclass').flatMap(e=>[...e.features?.map(f=>f.id)||[],...Object.values(e.advancement||{}).flatMap(rows=>rows.filter(row=>row.type==='feature').map(row=>row.id||''))]));
+  const customFeatures = attachedHomebrew.filter(element => element.type === "ability"&&!ownedFeatureIds.has(element.id)).map(element => ({ name: element.name, description: element.description }));
   const customEquipment = attachedHomebrew.filter(element => element.type === "item").map(element => element.name);
   const customProficiencies = attachedHomebrew.filter(element => element.type === "proficiency").map(element => element.name);
   const customNotes = attachedHomebrew.filter(element => element.type === "note");
@@ -1020,7 +1025,7 @@ function Builder() {
   });
   const resourceMarkCount = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
   const resourceDensity = resources.length >= 6 || resourceMarkCount >= 32 ? "micro" : resources.length >= 4 || resourceMarkCount >= 22 ? "dense" : resources.length >= 3 || resourceMarkCount >= 14 ? "compact" : "normal";
-  const spellAbilityKey = classRules[activeSpellClassId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+  const spellAbilityKey = classRuleFor(rulesCharacter,activeSpellClassId)?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
   const spellcastingModifier = spellAbilityKey ? abilityModifier(finalAbilities[spellAbilityKey]) : 0;
   const spellSaveDc = spellAbilityKey ? 8 + proficiency + spellcastingModifier : 0;
   const spellAttackBonus = spellAbilityKey ? proficiency + spellcastingModifier : 0;
@@ -1036,7 +1041,7 @@ function Builder() {
   const variantBonus = raceAbilityBonuses(character);
   const racialProficiencies = raceProficiencies(character);
   const subclassRequirements = multiclassEntries.flatMap(entry => {
-    const data = subclassRule(entry.classId);
+    const data = subclassData(entry.classId);
     return data && entry.level >= data.level ? [{ entry, data }] : [];
   });
   const currentSpellGrants = character.spellGrants?.length
@@ -1044,11 +1049,11 @@ function Builder() {
     : character.spells.map(spellId => ({ spellId, sourceType: "class" as const, sourceId: character.className, classId: character.className, mode: "known" as const }));
   const activeSpellIds = currentSpellGrants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
   const ordinarySpellIds = activeSpellIds.filter(id => !alwaysPreparedSet.has(id));
-  const selectedCantrips = ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === 0);
-  const selectedLeveled = ordinarySpellIds.filter(id => (spells.find(item => item.id === id)?.level || 0) > 0);
+  const selectedCantrips = ordinarySpellIds.filter(id => availableSpellCatalog.find(item => item.id === id)?.level === 0);
+  const selectedLeveled = ordinarySpellIds.filter(id => (availableSpellCatalog.find(item => item.id === id)?.level || 0) > 0);
   const selectedPrepared = classPreparedSpellIds(character, activeSpellClassId).filter(id => selectedLeveled.includes(id));
   const mobilePreparedIds = selectedPrepared;
-  const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter(id => spells.find(item => item.id === id)?.level === level).length);
+  const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter(id => availableSpellCatalog.find(item => item.id === id)?.level === level).length);
   const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
   const featSlots = advancementSlots.length;
   const completedAdvancements = advancements.filter(choice => advancementChoiceComplete(choice, spells, character.level, character));
@@ -1061,7 +1066,7 @@ function Builder() {
   const mobileSpellPool = [...new Map((spellRule.mode === "prepared"
     ? [
         ...selectedCantrips.map(id => spells.find(spell => spell.id === id)),
-        ...availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(spellCharacter, spell)),
+        ...availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(spellCharacter, spell)||homebrewSpellAvailable(spellCharacter.className,spell,homebrew.elements))),
         ...alwaysPrepared.map(id => spells.find(spell => spell.id === id)),
         ...grantedFeatSpells.map(id => spells.find(spell => spell.id === id)),
         ...customSpells,
@@ -1128,7 +1133,7 @@ function Builder() {
     setSearch("");
     // The spell catalogue should be complete on entry. Other catalogue steps
     // retain their compact PHB-first default.
-    setSelectedSources(nextStep === 7 ? catalogSources(sourceAvailableSpells) : ["PHB"]);
+    setSelectedSources(nextStep === 7 ? catalogSources(sourceAvailableSpells) : ["PHB","Homebrew"]);
     setDetailsId("");
     setSpellLevel("all");
     setRitualFilter("all");
@@ -1195,7 +1200,7 @@ function Builder() {
       return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], preparedSpellsByClass: {}, lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
     });
     if (step === 3) {
-      const option = backgrounds.find(item => item.id === id);
+      const option = availableBackgrounds.find(item => item.id === id);
       const backgroundSkills = backgroundFixedSkills(id);
       const startingGold = backgroundStartingGold(id, option);
       setCharacter(current => {
@@ -1321,8 +1326,8 @@ function Builder() {
       const rule = spellSelectionRuleForClass(scoped, classId, candidate.entry.level);
       const automatic = new Set(alwaysPreparedSpellEntries(scoped, availableSpellCatalog).map(entry => entry.id));
       const ids = currentSpellGrants.filter(grant => grant.classId === classId && !automatic.has(grant.spellId)).map(grant => grant.spellId);
-      const cantrips = ids.filter(id => spells.find(spell => spell.id === id)?.level === 0);
-      const leveled = ids.filter(id => (spells.find(spell => spell.id === id)?.level || 0) > 0);
+      const cantrips = ids.filter(id => availableSpellCatalog.find(spell => spell.id === id)?.level === 0);
+      const leveled = ids.filter(id => (availableSpellCatalog.find(spell => spell.id === id)?.level || 0) > 0);
       const className = classes.find(option => option.id === classId)?.name || classId;
       if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
       if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
@@ -1434,7 +1439,7 @@ function Builder() {
   }
 
   function toggleSpell(id: string) {
-    const level = spells.find(spell => spell.id === id)?.level || 0;
+    const level = availableSpellCatalog.find(spell => spell.id === id)?.level || 0;
     setCharacter(current => {
       if (alwaysPreparedSet.has(id)) return current;
       const grants = current.spellGrants?.length
@@ -1450,12 +1455,12 @@ function Builder() {
           spells: remainsSelected ? current.spells : current.spells.filter(spell => spell !== id),
         };
       }
-      const sameKind = selectedForClass.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
+      const sameKind = selectedForClass.filter(spellId => (availableSpellCatalog.find(item => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
       const cap = level === 0 ? spellRule.cantrips : spellRule.leveled;
       if (sameKind.length >= cap) return current;
       if (level > 0 && spellRule.levelLimits) {
         const breaksCumulativeLimit = spellRule.levelLimits.some((limit, circle) =>
-          circle > 0 && circle <= level && selectedForClass.filter(spellId => (spells.find(item => item.id === spellId)?.level || 0) >= circle).length >= limit,
+          circle > 0 && circle <= level && selectedForClass.filter(spellId => (availableSpellCatalog.find(item => item.id === spellId)?.level || 0) >= circle).length >= limit,
         );
         if (breaksCumulativeLimit) return current;
       }
@@ -1469,7 +1474,7 @@ function Builder() {
 
   function togglePreparedSpell(id: string) {
     setCharacter(current => {
-      if (!current.spells.includes(id) || (spells.find(spell => spell.id === id)?.level || 0) === 0) return current;
+      if (!current.spells.includes(id) || (availableSpellCatalog.find(spell => spell.id === id)?.level || 0) === 0) return current;
       const selected = classPreparedSpellIds(current, activeSpellClassId);
       if (selected.includes(id)) return setClassPreparedSpells(current, activeSpellClassId, selected.filter(spell => spell !== id));
       if (selected.length >= (spellRule.prepared || 0)) return current;
@@ -1485,8 +1490,8 @@ function Builder() {
       const classSpellIds = grants.filter(grant => grant.classId === activeSpellClassId).map(grant => grant.spellId);
       const scoped = { ...current, className: activeSpellClassId, subclass: activeSpellClass?.entry.subclassId || "", level: activeSpellClass?.entry.level || current.level };
       const available = spellRule.mode === "prepared"
-        ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && spellAvailableToCharacter(scoped, spell) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
-        : classSpellIds.filter(spellId => (spells.find(spell => spell.id === spellId)?.level || 0) > 0);
+        ? availableSpellCatalog.filter(spell => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(scoped, spell)||homebrewSpellAvailable(scoped.className,spell,homebrew.elements)) && !alwaysPreparedSet.has(spell.id)).map(spell => spell.id)
+        : classSpellIds.filter(spellId => (availableSpellCatalog.find(spell => spell.id === spellId)?.level || 0) > 0);
       const initialPrepared = classPreparedSpellIds(current, activeSpellClassId).filter(spellId => available.includes(spellId));
       if (!available.includes(id)) return current;
       const next = initialPrepared.includes(id)
@@ -1494,7 +1499,7 @@ function Builder() {
         : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
       const otherClassIds = new Set(grants.filter(grant => grant.classId !== activeSpellClassId).map(grant => grant.spellId));
       const nextSpells = spellRule.mode === "prepared"
-        ? [...new Set([...current.spells.filter(spellId => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (spells.find(spell => spell.id === spellId)?.level || 0) === 0), ...next])]
+        ? [...new Set([...current.spells.filter(spellId => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (availableSpellCatalog.find(spell => spell.id === spellId)?.level || 0) === 0), ...next])]
         : current.spells;
       const nextGrants: SpellGrant[] = spellRule.mode === "prepared" ? [
         ...grants.filter(grant => grant.classId !== activeSpellClassId || (spells.find(spell => spell.id === grant.spellId)?.level || 0) === 0),
@@ -2537,11 +2542,11 @@ function Builder() {
           </div>
           <div className="character-grid">
             {visibleSlots.map(slot => {
-              const itemClass = classes.find(item => item.id === slot.character.className);
-              const itemRace = races.find(item => item.id === slot.character.race);
+              const itemClass = classes.find(item => item.id === slot.character.className) || homebrewOption(slot.character.className);
+              const itemRace = races.find(item => item.id === slot.character.race) || homebrewOption(slot.character.race);
               return <article key={slot.id} className={slot.id === vault.activeId ? "active" : ""}>
                 <label className="character-select"><input type="checkbox" checked={selectedSlotIds.includes(slot.id)} onChange={() => toggleSlotSelection(slot.id)} /><span>Выбрать</span></label>
-                <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} />
+                <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===(itemClass?.id||itemRace?.id))?.icon} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2><p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
                 <div className="character-card-actions">
                   <button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Открыть" : "Открыть"}</button>
@@ -2826,7 +2831,7 @@ function Builder() {
           )}
           {interactionError && <div className="import-result warning"><div><strong>Выбор не применён</strong><p>{interactionError}</p></div><button type="button" onClick={() => setInteractionError(null)}>Скрыть</button></div>}
           <header className="content-head">
-            <p className="eyebrow">Шаг {step + 1} · официальный каталог</p>
+            <p className="eyebrow">Шаг {step + 1} · каталог персонажа</p>
             <h1>{headings[step]}</h1>
             <p>{stepDescription}</p>
           </header>
@@ -2853,18 +2858,18 @@ function Builder() {
                   {sources.map(value => <button key={value} className={selectedSources.includes(value) ? "active" : ""} onClick={() => toggleSource(value)}>{value}</button>)}
                 </div>
               </div>
-              <div className="catalog-meta">{filtered.length} вариантов · только официальные источники</div>
+              <div className="catalog-meta">{filtered.length} вариантов · официальные источники и Homebrew</div>
               <div className="card-grid">
                 {filtered.map(option => {
                   const selected = (step === 0 ? character.race : step === 1 ? character.className : character.background) === option.id;
                   const detailFeatures = step === 0
                     ? raceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags)
                     : step === 1
-                      ? documentedClassFeatures(option.id, undefined, false, classRules[option.id]?.features || [], [], [])
+                      ? documentedClassFeatures(option.id, undefined, false, classRules[option.id]?.features || homebrew.elements.find(e=>e.id===option.id)?.features?.map(f=>({name:f.name,description:f.description,level:f.level})) || [], [], [])
                       : [{ ...backgroundRule(option.id, option).feature }];
                   return (
                     <article key={option.id} className={`choice-card ${selected ? "selected" : ""}`}>
-                      <CatalogIcon id={option.id} kind={step === 0 ? "race" : step === 1 ? "class" : "background"} fallback={option.name} experimental={usesOrnateIcons} />
+                      <CatalogIcon id={option.id} kind={step === 0 ? "race" : step === 1 ? "class" : "background"} fallback={option.name} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===option.id)?.icon} />
                       <div>
                         <div className="card-title"><h2>{option.name}</h2><em>{option.source}</em></div>
                         <p>{option.description}</p>
@@ -3068,7 +3073,7 @@ function Builder() {
                   </div>
                 </section>;
               })}
-              <section className="equipment-fixed"><h3>Также получаете автоматически</h3><p>{[...classEquipment.fixed, ...backgroundEquipmentWithoutStartingGold(selectedBackgroundRule.equipment)].join(" · ") || "Нет фиксированного снаряжения."}</p>{classEquipment.fixed.includes("Кольчуга") && finalAbilities.str < 13 && <small>Кольчуга предусмотрена стартовым набором класса, но при Силе ниже 13 снижает скорость на 10 футов. Она не считается оптимальной рекомендацией.</small>}</section>
+              <section className="equipment-fixed"><h3>Также получаете автоматически</h3><p>{[...classEquipment.fixed, ...authoredEquipment, ...backgroundEquipmentWithoutStartingGold(selectedBackgroundRule.equipment)].join(" · ") || "Нет фиксированного снаряжения."}</p>{classEquipment.fixed.includes("Кольчуга") && finalAbilities.str < 13 && <small>Кольчуга предусмотрена стартовым набором класса, но при Силе ниже 13 снижает скорость на 10 футов. Она не считается оптимальной рекомендацией.</small>}</section>
               <section className="currency-editor" aria-label="Монеты персонажа">
                 <div><small>Учёт на основном листе</small><h3>Кошелёк</h3><p>Эти значения сохраняются вместе с персонажем и показываются на первой странице листа.</p></div>
                 <div className="currency-inputs">
@@ -3341,7 +3346,7 @@ function Builder() {
                     <div className="always-prepared">
                       <div><small>Класс и подкласс</small><h2>Автоматические заклинания</h2><p>Выданы классом или подклассом сверх обычного лимита. Под каждым заклинанием указан режим.</p></div>
                       <div>{alwaysPreparedEntries.map(entry => {
-                        const spell = spells.find(item => item.id === entry.id);
+                        const spell = availableSpellCatalog.find(item => item.id === entry.id);
                         return spell ? <span className="always-prepared-spell" key={spell.id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer">{spell.name} · {levelLabel(spell.level)} ↗</a><small>{entry.source} · {entry.mode === "known" ? "автоматически известно" : "всегда подготовлено"}</small></span> : null;
                       })}</div>
                     </div>
@@ -3353,7 +3358,7 @@ function Builder() {
                     </div>
                     <p>Это полный выбранный список. Кнопка «Выбрать оптимальный» сначала очищает прежний список и заново заполняет и книгу, и подготовку.</p>
                     <div>{ordinarySpellIds.map(id => {
-                      const spell = spells.find(item => item.id === id);
+                      const spell = availableSpellCatalog.find(item => item.id === id);
                       return spell ? <button key={id} onClick={() => toggleSpell(id)}><span>×</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button> : null;
                     })}</div>
                   </div>
@@ -3363,7 +3368,7 @@ function Builder() {
                       <p>Заговоры не подготавливаются. Выберите заклинания из книги; автоматически подготовленные заклинания находятся выше и не расходуют этот лимит.</p>
                       <div>
                         {selectedLeveled.map(id => {
-                          const spell = spells.find(item => item.id === id);
+                          const spell = availableSpellCatalog.find(item => item.id === id);
                           return spell ? <button key={id} className={selectedPrepared.includes(id) ? "selected" : ""} onClick={() => togglePreparedSpell(id)}><span>{selectedPrepared.includes(id) ? "✓" : "+"}</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button> : null;
                         })}
                       </div>
@@ -3745,6 +3750,7 @@ function Builder() {
             fallback={selectedClass?.name || selectedRace?.name || "Новый герой"}
             className="portrait"
             experimental={usesOrnateIcons}
+            image={homebrew.elements.find(e=>e.id===(selectedClass?.id||selectedRace?.id))?.icon}
           />
           <h2>{character.name || selectedRace?.name || "Новый герой"}</h2>
           <p className="summary-line">{selectedRace?.name || "Раса не выбрана"} · {selectedClass?.name || "Класс не выбран"}</p>
@@ -3769,4 +3775,3 @@ function Builder() {
     </main>
   );
 }
-

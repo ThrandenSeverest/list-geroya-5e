@@ -104,3 +104,14 @@ def test_homebrew_v2_reusable_classes_races_subclasses_and_tables():
     library={"version":2,"schemaVersion":2,"elements":elements}
     assert client.put("/api/homebrew",json={"library":library}).status_code==200
     assert client.get("/api/homebrew").json()["library"]==library
+
+def test_homebrew_png_icon_is_scoped_and_binary_elsewhere_rejected():
+    import base64
+    client.post("/api/auth/login",json={"email":"a@example.test","password":"very-long-pass"})
+    icon="data:image/png;base64,"+base64.b64encode(b"\x89PNG\r\n\x1a\n"+b"tiny-example").decode()
+    item={"id":"hb:icon:class:test","schemaVersion":2,"type":"class","name":"Иконка","description":"","updatedAt":"2026-09-26T00:00:00Z","hitDie":"d8","icon":icon,"features":[{"id":"hb:icon:ability:first","name":"Первое","description":"Текст","level":1}]}
+    library={"version":2,"schemaVersion":2,"elements":[item]}
+    assert client.put("/api/homebrew",json={"library":library}).status_code==200
+    assert client.get("/api/homebrew").json()["library"]==library
+    assert client.put("/api/homebrew",json={"library":{**library,"elements":[{**item,"icon":"data:text/html;base64,AAAA"}]}}).status_code==400
+    assert client.put("/api/homebrew",json={"library":{**library,"elements":[{**item,"description":"data:text/html;base64,AAAA"}]}}).status_code==413

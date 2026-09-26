@@ -189,6 +189,7 @@ type CatalogIconProps = {
   fallback?: string;
   className?: string;
   experimental?: boolean;
+  image?: string;
 };
 
 type ExperimentalIcon = { sheet: string; cell: number };
@@ -205,7 +206,8 @@ addRaceSheet("races-leonin", ["leonin", "owlin", "kender", "grung", "hexblood", 
 addRaceSheet("races-tortle", ["tortle", "triton", "yuanpure", "vedalken", "simichybrid", "loxodon", "warforged", "kalashtar", "verdan"]);
 addRaceSheet("races-spelljammer", ["autognome", "astralelf", "giff", "plasmoid", "thrikreen"]);
 
-export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false }: CatalogIconProps) {
+export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false, image }: CatalogIconProps) {
+  if(image?.startsWith('data:image/png;base64,'))return <span className={`${className} catalog-icon homebrew-catalog-icon`} aria-hidden="true" title={fallback}><img src={image} alt="" /></span>;
   if (kind === "race" && id === "locathah") {
     return <span className={`${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`} aria-hidden="true" title={fallback} style={{ "--experimental-sheet": `url("${assetUrl("experimental/locathah.png")}")` } as CSSProperties} />;
   }
@@ -213,7 +215,7 @@ export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil"
   if (experimentalIcon) {
     return <span className={`${className} catalog-icon experimental-catalog-icon`} aria-hidden="true" title={fallback} data-sheet={experimentalIcon.sheet} style={{ "--experimental-sheet": `url("${assetUrl(`experimental/cells/${experimentalIcon.sheet}-${experimentalIcon.cell}.png`)}")` } as CSSProperties} />;
   }
-  const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || ScrollText;
+  const Icon = (kind === "race" ? raceIcons : kind === "class" ? classIcons : backgroundIcons)[id] || (id.startsWith('hb:') ? kind==='class'?Swords:kind==='race'?UserRound:BookOpen : ScrollText);
   const Secondary = kind === "race" ? raceSecondaryIcons[id] : kind === "class" ? classSecondaryIcons[id] : undefined;
   return (
     <span className={`${className} catalog-icon`} aria-hidden="true" title={fallback}>
