@@ -10,6 +10,8 @@ import { homebrewExportClosure, homebrewReferencesOnly, activeHomebrew, homebrew
 import { evaluateFormula } from './homebrewFormula';
 import type { ExportCharacter } from './exportFormats';
 import { subclassTemplate } from './homebrewTemplates';
+import { homebrewSpells } from './homebrewCatalog';
+import { PdfSpellCard, type PdfSpell } from './PdfCharacterSheet';
 import savantData from './savantExample.json';
 const official=[...classes.map(x=>({...x,id:'official:class:'+x.id})),...races.map(x=>({...x,id:'official:race:'+x.id})),...backgrounds.map(x=>({...x,id:'official:background:'+x.id})),...spells.map(x=>({...x,id:'official:spell:'+x.id})),...feats.map(x=>({...x,id:'official:feat:'+x.id}))];
 const abilities=Object.keys(abilityLabels) as HBAbility[];
@@ -65,7 +67,7 @@ export function HomebrewEditor({library,onSave,character,onCharacter,saveState,o
  {draft.type==='spell'&&<><Field label="Круг"><input aria-label="Круг заклинания" type="number" min={0} max={9} value={draft.level||0} onChange={e=>update({level:Number(e.target.value)})}/></Field>{(['school','castingTime','range','duration','components','materials','higherLevels'] as const).map((key,i)=><Field key={key} label={['Школа','Время накладывания','Дистанция','Длительность','Компоненты В/С/М','Материалы','На больших уровнях'][i]}><input value={draft[key]||''} onChange={e=>update({[key]:e.target.value})}/></Field>)}<Field label="Доступно классам" help="Если ничего не выбрано, заклинание доступно всем заклинателям. ID класса назначается кнопкой."><div className="hb-toolbar">{[...classes,...refs.filter(e=>e.type==='class').map(e=>({id:e.id,name:e.name}))].map(c=><button key={c.id} aria-pressed={draft.spellClasses?.includes(c.id)||false} onClick={()=>update({spellClasses:draft.spellClasses?.includes(c.id)?draft.spellClasses.filter(id=>id!==c.id):[...draft.spellClasses||[],c.id]})}>{c.name}</button>)}</div></Field>{(['concentration','ritual'] as const).map(key=><label key={key}><input type="checkbox" checked={draft[key]||false} onChange={e=>update({[key]:e.target.checked})}/>{key==='ritual'?'Ритуал':'Концентрация'}</label>)}</>}
  {draft.type==='ability'&&<Field label="Условия выбора" help="Способность можно выбрать только после указанной особенности. Ограничение уровня задаётся полем уровня в прогрессии."><div className="hb-toolbar">{(draft.requirements||[]).map((r,i)=><button key={i} onClick={()=>update({requirements:draft.requirements?.filter((_,n)=>n!==i)})}>× {refs.find(e=>e.id===r.id)?.name||r.id}</button>)}</div><RefPicker label="Требуется способность" value="" entities={refs.filter(e=>e.type==='ability')} onChange={id=>update({requirements:[...draft.requirements||[],{type:'selected_feature',id}]})}/></Field>}
  {draft.type==='item'&&<>{(['itemType','rarity','weight','price'] as const).map(key=><Field key={key} label={key}><input value={draft[key]||''} onChange={e=>update({[key]:['weight','price'].includes(key)?Number(e.target.value):e.target.value})}/></Field>)}<label><input type="checkbox" checked={draft.attunement||false} onChange={e=>update({attunement:e.target.checked})}/>Требует настройки</label></>}
- </div>}
+ </div>}{tab==='Основное'&&draft.type==='spell'&&<SpellCardPreview draft={draft}/>}
  {tab==='Механика'&&(draft.type==='spell'?<SpellMechanicsEditor draft={draft} update={update}/>:<Mechanics draft={draft} update={update} entities={refs}/>)}
  {tab==='Особенности'&&['class','subclass'].includes(draft.type)&&<ClassFeatures draft={draft} update={update} entities={refs}/>}
  {tab==='Заклинания'&&['class','subclass','ability'].includes(draft.type)&&<>{draft.type==='class'&&<ClassSpellcasting draft={draft} update={update}/>}<SpellGrantsEditor draft={draft} update={update} entities={refs}/></>}
@@ -77,6 +79,13 @@ export function HomebrewEditor({library,onSave,character,onCharacter,saveState,o
  {!!problems.length&&tab!=='Проверка'&&<p role="alert">{problems.length} ошибок. {problems[0].message}</p>}
  </div>:<HomebrewBrowser library={library} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} open={open} apply={apply} remove={remove} download={download} />}
  </div></div></section>;
+}
+function SpellCardPreview({draft}:{draft:HomebrewElement}){
+ const catalog=homebrewSpells([draft])[0];
+ if(!catalog)return null;
+ const classNames=(draft.spellClasses||[]).map(id=>classes.find(entry=>entry.id===id)?.name||id).join(', ')||'Все классы';
+ const spell={...catalog,name:catalog.name||'Новое заклинание',prepared:true,alwaysPrepared:false,classSource:classNames} as PdfSpell;
+ return <section className="hb-spell-preview" aria-label="Предпросмотр карточки заклинания"><div><small>Итоговый лист</small><h3>Предпросмотр карточки</h3><p>Карточка обновляется сразу. Механический урон и усиление добавляются в её описание автоматически.</p></div><PdfSpellCard spell={spell}/></section>;
 }
 function DamageParts({value,onChange}:{value:HBDamagePart[];onChange:(value:HBDamagePart[])=>void}){
  return <div className="hb-damage-parts">{value.map((part,index)=><div className="hb-row" key={index}><Formula label="Бросок урона" value={part.formula} onChange={formula=>onChange(value.map((row,i)=>i===index?{...row,formula}:row))}/><Select label="Тип урона" value={part.type} onChange={type=>onChange(value.map((row,i)=>i===index?{...row,type}:row))} options={Object.fromEntries(damageTypes.map(type=>[type,tagNames[type]||type]))}/><button type="button" onClick={()=>onChange(value.filter((_,i)=>i!==index))}>Удалить</button></div>)}<button type="button" onClick={()=>onChange([...value,{formula:'1d6',type:'fire'}])}>+ Бросок урона</button></div>;

@@ -11,7 +11,7 @@ import { abilityLabels, skillKeys, type Feature } from "./rules";
 import { spellComponentLabel } from "./spellComponents";
 
 type PdfResource = { name: string; current: number; max: number; die?: string; unit?: number; isShortRest: boolean; isLongRest: boolean };
-type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boolean; classSource: string; grantSource?: string };
+export type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boolean; classSource: string; grantSource?: string };
 
 export type PdfCharacterSheetProps = {
   identity: {
@@ -239,6 +239,19 @@ function spellCardDensity(spell: PdfSpell) {
   if (length > 680) return "dense";
   if (length > 430) return "compact";
   return "normal";
+}
+
+export function PdfSpellCard({spell}:{spell:PdfSpell}) {
+  return <article className={`pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`}>
+    <header><div><small>{spell.level === 0 ? "Заговор" : `${spell.level} круг`} · {spell.school}</small><h3>{spell.name}{spell.ritual ? " Р" : ""}</h3><small>{spell.classSource}{spell.grantSource ? ` · ${spell.grantSource}` : ""}</small></div><b>{spell.source}</b></header>
+    <dl>
+      <div><dt>Накладывание</dt><dd>{spell.castingTime || "—"}</dd></div>
+      <div><dt>Дистанция</dt><dd>{spell.range || "—"}</dd></div>
+      <div><dt>Компоненты</dt><dd>{spell.components || spellComponentLabel(spell) || "—"}</dd></div>
+      <div><dt>Длительность</dt><dd>{spell.duration || "—"}</dd></div>
+    </dl>
+    <p>{spell.description || "Описание заклинания появится здесь."}</p>
+  </article>;
 }
 
 function paginateResources(resources: PdfResource[]) {
@@ -484,16 +497,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       return <section className="pdf-page pdf-spell-card-page" key={`spell-card-page-${cardPageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`} title="Карточки заклинаний" page={pageNumber} />
         <div className="pdf-spell-card-grid">
-          {pageSpells.map(spell => <article className={`pdf-spell-card pdf-spell-card--${spellCardDensity(spell)}`} key={`${spell.classSource}-${spell.id}`}>
-            <header><div><small>{spell.level === 0 ? "Заговор" : `${spell.level} круг`} · {spell.school}</small><h3>{spell.name}{spell.ritual ? " Р" : ""}</h3><small>{spell.classSource}{spell.grantSource ? ` · ${spell.grantSource}` : ""}</small></div><b>{spell.source}</b></header>
-            <dl>
-              <div><dt>Накладывание</dt><dd>{spell.castingTime || "—"}</dd></div>
-              <div><dt>Дистанция</dt><dd>{spell.range || "—"}</dd></div>
-              <div><dt>Компоненты</dt><dd>{spell.components || spellComponentLabel(spell) || "—"}</dd></div>
-              <div><dt>Длительность</dt><dd>{spell.duration || "—"}</dd></div>
-            </dl>
-            <p>{spell.description}</p>
-          </article>)}
+          {pageSpells.map(spell => <PdfSpellCard spell={spell} key={`${spell.classSource}-${spell.id}`} />)}
         </div>
         <footer>Лист Героя 5e · Карточки заклинаний{cardPageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>
       </section>;
