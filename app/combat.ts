@@ -298,7 +298,25 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       : [makeAttack(definition.dice, false)];
   });
 
-  const featureAttacks = [...hbAttacks(character), ...naturalAttacks(character), ...subclassAttacks(character, prof)];
+  const racialAttacks = naturalAttacks(character);
+  const monkLevel = orderedCharacterClasses(character).find(entry => entry.classId === "monk")?.level || 0;
+  const monkUnarmedAttacks: CharacterAttack[] = monkLevel && !racialAttacks.some(attack => attack.id.endsWith("-martial-arts")) ? (() => {
+    const ability: AbilityKey = character.abilities.dex > character.abilities.str ? "dex" : "str";
+    const modifier = abilityModifier(character.abilities[ability]);
+    return [{
+      id: "class-monk-unarmed",
+      name: "Безоружный удар",
+      kind: "feature",
+      ability,
+      proficient: true,
+      attackBonus: prof + modifier,
+      attackBonusExtra: 0,
+      damageFormula: `${monkMartialDie(monkLevel)}+[${ability.toUpperCase()}]`,
+      damageDisplay: `${monkMartialDie(monkLevel)}${signed(modifier)}`,
+      note: "Боевые искусства монаха: Сила или Ловкость. Кость растёт с уровнем монаха; бонусная атака доступна при выполнении условий способности.",
+    }];
+  })() : [];
+  const featureAttacks = [...hbAttacks(character), ...racialAttacks, ...monkUnarmedAttacks, ...subclassAttacks(character, prof)];
   const spellAbility = (classRuleFor(character,character.className)?.spellAbility
     || orderedCharacterClasses(character).map(entry => classRuleFor(character,entry.classId)?.spellAbility).find(Boolean)) as AbilityKey | undefined;
   const diceCount = cantripDiceCount(totalLevel);

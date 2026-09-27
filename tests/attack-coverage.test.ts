@@ -62,6 +62,17 @@ test("subclass attacks unlock and scale by their own class levels", () => {
   assert.equal(characterAttacks(c,[])[0].damageDisplay,"2d8");
   assert.equal(characterAttacks(hero("artificer",9,"artillerist"),[])[0].damageDisplay,"3d8");
 });
+test("monk unarmed strike appears and scales by monk level", () => {
+  const low=characterAttacks(hero("monk",4),[]).find(attack=>attack.id==="class-monk-unarmed")!;
+  assert.equal(low.damageDisplay,"1d4+3");
+  const high={...hero("fighter",14),classes:[
+    {classId:"fighter",level:3,acquiredAtCharacterLevel:1},
+    {classId:"monk",level:11,acquiredAtCharacterLevel:4},
+  ]} as ExportCharacter;
+  const unarmed=characterAttacks(high,[]).find(attack=>attack.id==="class-monk-unarmed")!;
+  assert.equal(unarmed.damageDisplay,"1d8+3");
+  assert.equal(unarmed.attackBonus,8);
+});
 test("drake attack uses its Strength +3 and character PB, not ranger Wisdom", () => {
   const c=hero("ranger",7,"drakewarden");
   const a=characterAttacks({...c,abilities:{...c.abilities,wis:8}},[])[0];

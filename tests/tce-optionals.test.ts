@@ -77,6 +77,13 @@ const blessed = resolvedClassChoiceFeatures({ ...cleric, classChoices: { "tce-bl
 assert(!blessed.some(feature => feature.name === "Божественный удар"));
 assert.equal(blessed.filter(feature => feature.name.startsWith("Благословлённые удары")).length, 1);
 
+const metamagic = resolvedClassChoiceFeatures(hero("sorcerer", 3, {
+  classes: [{ classId: "sorcerer", level: 3, acquiredAtCharacterLevel: 1 }],
+  classChoices: { metamagic: ["quickened", "heightened"] },
+}), []);
+assert.match(metamagic.find(feature => feature.name.includes("Ускоренное"))?.description || "", /2 очка чародейства/);
+assert.match(metamagic.find(feature => feature.name.includes("Неодолимое"))?.description || "", /3 очка чародейства/);
+
 const tceManeuvers = new Set(["ambush", "bait-switch", "brace", "commanding-presence", "grappling-strike", "quick-toss", "tactical-assessment"]);
 const maneuverIds = new Set(classChoiceGroups(hero("fighter", 3, { subclass: "battlemaster" })).find(group => group.key === "maneuvers")!.options.map(option => option.id));
 for (const id of tceManeuvers) assert(maneuverIds.has(id), id);
