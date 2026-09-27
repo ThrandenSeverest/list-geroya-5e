@@ -119,6 +119,7 @@ const table = {
           .locator(".hb-workspace-sidebar")
           .evaluate((e) => e.scrollWidth <= e.clientWidth + 1),
       );
+      page.once("dialog", (dialog) => dialog.accept());
       await page.getByRole("button", { name: "Закрыть", exact: true }).click();
       await page
         .locator(".hb-toolbar summary")
