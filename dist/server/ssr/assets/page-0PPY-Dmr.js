@@ -25580,9 +25580,28 @@ function characterAttacks(character, spells) {
 		};
 		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
 	});
+	const racialAttacks = naturalAttacks(character);
+	const monkLevel = orderedCharacterClasses(character).find((entry) => entry.classId === "monk")?.level || 0;
+	const monkUnarmedAttacks = monkLevel && !racialAttacks.some((attack) => attack.id.endsWith("-martial-arts")) ? (() => {
+		const ability = character.abilities.dex > character.abilities.str ? "dex" : "str";
+		const modifier = abilityModifier$2(character.abilities[ability]);
+		return [{
+			id: "class-monk-unarmed",
+			name: "Безоружный удар",
+			kind: "feature",
+			ability,
+			proficient: true,
+			attackBonus: prof + modifier,
+			attackBonusExtra: 0,
+			damageFormula: `${monkMartialDie(monkLevel)}+[${ability.toUpperCase()}]`,
+			damageDisplay: `${monkMartialDie(monkLevel)}${signed$1(modifier)}`,
+			note: "Боевые искусства монаха: Сила или Ловкость. Кость растёт с уровнем монаха; бонусная атака доступна при выполнении условий способности."
+		}];
+	})() : [];
 	const featureAttacks = [
 		...hbAttacks(character),
-		...naturalAttacks(character),
+		...racialAttacks,
+		...monkUnarmedAttacks,
 		...subclassAttacks(character, prof)
 	];
 	const spellAbility = classRuleFor(character, character.className)?.spellAbility || orderedCharacterClasses(character).map((entry) => classRuleFor(character, entry.classId)?.spellAbility).find(Boolean);
@@ -38983,16 +39002,16 @@ var fightingStyles = [
 	})
 ];
 var metamagic = [
-	O$1("careful", "Аккуратное заклинание", "PHB", "Защищает выбранных существ от худшего результата спасброска вашего заклинания."),
-	O$1("distant", "Далёкое заклинание", "PHB", "Удваивает дистанцию заклинания или превращает касание в дистанцию 30 футов."),
-	O$1("empowered", "Усиленное заклинание", "PHB", "Позволяет перебросить часть костей урона."),
-	O$1("extended", "Продлённое заклинание", "PHB", "Удваивает длительность заклинания, максимум до 24 часов."),
-	O$1("heightened", "Неодолимое заклинание", "PHB", "Даёт одной цели помеху на первый спасбросок от заклинания."),
-	O$1("quickened", "Ускоренное заклинание", "PHB", "Меняет время накладывания с действия на бонусное действие."),
-	O$1("subtle", "Неуловимое заклинание", "PHB", "Позволяет обойти словесные и соматические компоненты."),
-	O$1("twinned", "Удвоенное заклинание", "PHB", "Добавляет вторую цель заклинанию, которое обычно нацеливается только на одно существо."),
-	O$1("seeking", "Ищущее заклинание", "TCE", "Позволяет перебросить промах броска атаки заклинанием.", { tasha: true }),
-	O$1("transmuted", "Преобразованное заклинание", "TCE", "Меняет один стихийный тип урона заклинания на другой.", { tasha: true })
+	O$1("careful", "Аккуратное заклинание", "PHB", "Стоимость: 1 очко чародейства. Защищает выбранных существ от худшего результата спасброска вашего заклинания."),
+	O$1("distant", "Далёкое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает дистанцию заклинания или превращает касание в дистанцию 30 футов."),
+	O$1("empowered", "Усиленное заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет перебросить часть костей урона."),
+	O$1("extended", "Продлённое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает длительность заклинания, максимум до 24 часов."),
+	O$1("heightened", "Неодолимое заклинание", "PHB", "Стоимость: 3 очка чародейства. Даёт одной цели помеху на первый спасбросок от заклинания."),
+	O$1("quickened", "Ускоренное заклинание", "PHB", "Стоимость: 2 очка чародейства. Меняет время накладывания с действия на бонусное действие."),
+	O$1("subtle", "Неуловимое заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет обойти словесные и соматические компоненты."),
+	O$1("twinned", "Удвоенное заклинание", "PHB", "Стоимость: число очков чародейства, равное кругу заклинания (минимум 1). Добавляет вторую цель заклинанию, которое обычно нацеливается только на одно существо."),
+	O$1("seeking", "Ищущее заклинание", "TCE", "Стоимость: 2 очка чародейства. Позволяет перебросить промах броска атаки заклинанием.", { tasha: true }),
+	O$1("transmuted", "Преобразованное заклинание", "TCE", "Стоимость: 1 очко чародейства. Меняет один стихийный тип урона заклинания на другой.", { tasha: true })
 ];
 var maneuvers = [
 	O$1("ambush", "Засада", "TCE", "Добавляет кость превосходства к Скрытности или инициативе.", { tasha: true }),
@@ -52351,6 +52370,8 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 	const packages = homebrewPackages(library.elements);
 	const draftPackage = draft ? homebrewPackageFor(draft, refs) : void 0;
 	const officialIds = official.map((e) => e.id);
+	const savedDraft = draft ? library.elements.find((element) => element.id === draft.id) : void 0;
+	const hasUnsavedChanges = !!draft && JSON.stringify(draft) !== JSON.stringify(savedDraft || null);
 	const update = (patch) => {
 		if (!draft) return;
 		setHistory((h) => [...h.slice(-49), draft]);
@@ -52361,6 +52382,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		});
 	};
 	const open = (e) => {
+		if (draft && draft.id !== e.id && hasUnsavedChanges && !confirm("Открыть другой набор? Несохранённые изменения текущего черновика будут потеряны.")) return;
 		setDraft(JSON.parse(JSON.stringify(e)));
 		setHistory([]);
 		setFuture([]);
@@ -52380,16 +52402,25 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 	const save = async () => {
 		if (!draft || problems.length) return;
 		try {
-			await onSave(normalizeHomebrewLibrary({ elements: [...library.elements.filter((e) => e.id !== draft.id), {
+			const saved = {
 				...draft,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-			}] }));
+			};
+			await onSave(normalizeHomebrewLibrary({ elements: [...library.elements.filter((e) => e.id !== draft.id), saved] }));
 			localStorage.removeItem("herolist-homebrew-draft-v2");
-			setDraft(null);
-			setError("");
+			setDraft(saved);
+			setHistory([]);
+			setFuture([]);
+			setError(`Сохранено: «${saved.name}». Редактор остаётся открытым.`);
 		} catch (e) {
 			setError(e.message);
 		}
+	};
+	const closeDraft = () => {
+		if (hasUnsavedChanges && !confirm("Закрыть редактор и убрать несохранённый черновик?")) return;
+		setDraft(null);
+		localStorage.removeItem("herolist-homebrew-draft-v2");
+		setError("");
 	};
 	const download = (data, name) => {
 		const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -52488,17 +52519,26 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		onCharacter(homebrewReferencesOnly(c));
 		setError("Добавлена ссылка. Библиотеку можно использовать у любого числа персонажей.");
 	};
-	const remove = async (e) => {
-		const pack = homebrewPackageFor(e, library.elements);
-		const targets = new Set(pack?.root.id === e.id ? pack.members.map((member) => member.id) : [e.id]);
+	const removeMany = async (entries) => {
+		const targets = new Set(entries.flatMap((e) => {
+			const pack = homebrewPackageFor(e, library.elements);
+			return pack?.root.id === e.id ? pack.members.map((member) => member.id) : [e.id];
+		}));
 		const used = library.elements.filter((x) => !targets.has(x.id) && [...targets].some((id) => JSON.stringify(x).includes("\"" + id + "\"")));
 		if (used.length) {
 			setError("Сначала замените внешние ссылки: " + used.map((x) => x.name).join(", "));
 			return;
 		}
-		const label = targets.size > 1 ? `Удалить весь пакет «${e.name}» (${targets.size} внутренних компонентов)?` : `Удалить «${e.name}» из библиотеки?`;
-		if (confirm(label + " Персонажи ссылаются на библиотеку: после удаления этот контент станет недоступен.")) await onSave(normalizeHomebrewLibrary({ elements: library.elements.filter((x) => !targets.has(x.id)) }));
+		const label = entries.length === 1 ? `Удалить «${entries[0].name}» и все его внутренние компоненты?` : `Удалить выбранные наборы (${entries.length}) и их внутренние компоненты?`;
+		if (!confirm(label + " Персонажи, которые используют их, потеряют доступ к этому Homebrew.")) return;
+		await onSave(normalizeHomebrewLibrary({ elements: library.elements.filter((x) => !targets.has(x.id)) }));
+		if (draft && targets.has(draft.id)) {
+			setDraft(null);
+			localStorage.removeItem("herolist-homebrew-draft-v2");
+		}
+		setError(`Удалено наборов: ${entries.length}.`);
 	};
+	const remove = (e) => removeMany([e]);
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-workspace",
 		children: [
@@ -52609,41 +52649,44 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								}), /* @__PURE__ */ jsxs("span", { children: [homebrewTypeLabels[draft.type], " внутри пакета"] })]
 							}),
 							/* @__PURE__ */ jsxs("div", {
-								className: "hb-toolbar",
-								children: [
-									/* @__PURE__ */ jsx("h2", { children: draft.name || "Новый элемент" }),
-									/* @__PURE__ */ jsx("button", {
-										disabled: !history.length,
-										onClick: () => {
-											const last = history.at(-1);
-											setFuture((f) => [draft, ...f]);
-											setDraft(last);
-											setHistory((h) => h.slice(0, -1));
-										},
-										children: "Отменить"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										disabled: !future.length,
-										onClick: () => {
-											setHistory((h) => [...h, draft]);
-											setDraft(future[0]);
-											setFuture((f) => f.slice(1));
-										},
-										children: "Повторить"
-									}),
-									/* @__PURE__ */ jsxs("button", {
-										disabled: !!problems.length || saveState === "saving",
-										onClick: save,
-										children: ["Сохранить ", draftPackage?.root.id === draft.id && draftPackage.members.length > 1 ? "пакет" : "элемент"]
-									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => {
-											setDraft(null);
-											localStorage.removeItem("herolist-homebrew-draft-v2");
-										},
-										children: "Закрыть черновик"
-									})
-								]
+								className: "hb-editor-actions",
+								children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h2", { children: draft.name || "Новый элемент" }), /* @__PURE__ */ jsx("small", {
+									className: hasUnsavedChanges ? "is-dirty" : "is-saved",
+									children: hasUnsavedChanges ? "● Есть несохранённые изменения" : "✓ Все изменения сохранены"
+								})] }), /* @__PURE__ */ jsxs("div", {
+									className: "hb-toolbar",
+									children: [
+										/* @__PURE__ */ jsx("button", {
+											disabled: !history.length,
+											onClick: () => {
+												const last = history.at(-1);
+												setFuture((f) => [draft, ...f]);
+												setDraft(last);
+												setHistory((h) => h.slice(0, -1));
+											},
+											children: "Отменить"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											disabled: !future.length,
+											onClick: () => {
+												setHistory((h) => [...h, draft]);
+												setDraft(future[0]);
+												setFuture((f) => f.slice(1));
+											},
+											children: "Повторить"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											className: "hb-save-primary",
+											disabled: !!problems.length || saveState === "saving" || !hasUnsavedChanges,
+											onClick: save,
+											children: saveState === "saving" ? "Сохраняется…" : hasUnsavedChanges ? "Сохранить изменения" : "Сохранено"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: closeDraft,
+											children: "Закрыть"
+										})
+									]
+								})]
 							}),
 							/* @__PURE__ */ jsx("nav", {
 								className: "hb-tabs",
@@ -53205,6 +53248,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						open,
 						apply,
 						remove,
+						removeMany,
 						download
 					})
 				})]
@@ -54681,11 +54725,20 @@ function ClassPackageContents({ root, pack, open }) {
 		]
 	});
 }
-function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, apply, remove, download }) {
-	const [sort, setSort] = useState("newest"), [source, setSource] = useState("all");
-	const visible = homebrewPackages(library.elements).filter((pack) => {
+function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, apply, remove, removeMany, download }) {
+	const [sort, setSort] = useState("newest"), [source, setSource] = useState("all"), [selected, setSelected] = useState([]);
+	const packs = homebrewPackages(library.elements);
+	const visible = packs.filter((pack) => {
 		return pack.members.some((e) => (e.name + " " + e.id + " " + e.tags?.join(" ") + " " + e.summary).toLowerCase().includes(query.toLowerCase())) && (filter === "all" || pack.members.some((e) => e.type === filter)) && (source === "all" || source === "example" === (pack.root.source?.kind === "example"));
 	}).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ru") : sort === "type" ? a.root.type.localeCompare(b.root.type) || a.name.localeCompare(b.name, "ru") : b.root.updatedAt.localeCompare(a.root.updatedAt));
+	const allVisibleSelected = visible.length > 0 && visible.every((pack) => selected.includes(pack.id));
+	const toggle = (id) => setSelected((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
+	const deleteSelected = async () => {
+		const roots = packs.filter((pack) => selected.includes(pack.id)).map((pack) => pack.root);
+		if (!roots.length) return;
+		await removeMany(roots);
+		setSelected([]);
+	};
 	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
 		/* @__PURE__ */ jsxs("div", {
 			className: "hb-browser-tools",
@@ -54727,12 +54780,30 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 				})
 			]
 		}),
-		/* @__PURE__ */ jsxs("p", { children: [
-			visible.length,
-			" наборов · ",
-			library.elements.length,
-			" внутренних компонентов. Компоненты классов больше не засоряют общий список."
-		] }),
+		/* @__PURE__ */ jsxs("div", {
+			className: "hb-browser-summary",
+			children: [/* @__PURE__ */ jsxs("p", { children: [
+				visible.length,
+				" наборов · ",
+				library.elements.length,
+				" внутренних компонентов. Внутренние части классов сгруппированы и удаляются вместе с набором."
+			] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+				type: "checkbox",
+				checked: allVisibleSelected,
+				onChange: () => setSelected((current) => allVisibleSelected ? current.filter((id) => !visible.some((pack) => pack.id === id)) : [...new Set([...current, ...visible.map((pack) => pack.id)])])
+			}), " Выбрать показанные"] }), /* @__PURE__ */ jsxs("button", {
+				className: "hb-danger",
+				disabled: !selected.length,
+				onClick: () => {
+					deleteSelected();
+				},
+				children: [
+					"Удалить выбранные (",
+					selected.length,
+					")"
+				]
+			})] })]
+		}),
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-browser-results",
 			children: visible.map((pack) => {
@@ -54740,6 +54811,15 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 				return /* @__PURE__ */ jsxs("article", {
 					className: "hb-library-row",
 					children: [
+						/* @__PURE__ */ jsxs("label", {
+							className: "hb-library-select",
+							title: "Выбрать набор",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: selected.includes(pack.id),
+								onChange: () => toggle(pack.id)
+							}), /* @__PURE__ */ jsx("span", { children: "Выбрать" })]
+						}),
 						/* @__PURE__ */ jsx(CatalogIcon, {
 							id: e.id,
 							kind: e.type === "class" ? "class" : e.type === "race" ? "race" : "background",
@@ -54750,6 +54830,10 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 							/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[e.type], pack.members.length > 1 ? " · полный набор" : ""] }),
 							/* @__PURE__ */ jsx("h2", { children: e.name }),
 							/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
+							/* @__PURE__ */ jsxs("small", { children: ["Сохранено ", new Date(e.updatedAt).toLocaleString("ru-RU", {
+								dateStyle: "short",
+								timeStyle: "short"
+							})] }),
 							pack.members.length > 1 && /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsxs("summary", { children: [homebrewPackageLabel(pack), " · открыть состав"] }), /* @__PURE__ */ jsx("div", {
 								className: "hb-package-chip-list",
 								children: Object.entries(pack.counts).filter(([type]) => type !== e.type).map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
@@ -54760,15 +54844,16 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 							})] })
 						] }),
 						/* @__PURE__ */ jsxs("div", {
-							className: "hb-toolbar",
+							className: "hb-library-actions",
 							children: [
 								/* @__PURE__ */ jsx("button", {
+									className: "hb-edit-primary",
 									onClick: () => open(e),
-									children: "Редактировать набор"
+									children: "Редактировать"
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => apply(e),
-									children: e.type === "class" ? "Выбрать класс" : "Добавить"
+									children: e.type === "class" ? "Выбрать класс" : "Использовать"
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => download({
@@ -54778,47 +54863,48 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 										rootId: e.id,
 										entities: homebrewExportClosure(e, library.elements)
 									}, "HeroList-" + e.type + ".json"),
-									children: "Экспорт набора"
+									children: "Скачать JSON"
 								}),
-								/* @__PURE__ */ jsxs("details", { children: [
-									/* @__PURE__ */ jsx("summary", { children: "Ещё" }),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => {
-											const n = newHomebrew(e.type, e.name + " — копия");
-											open({
-												...e,
-												...n,
-												features: e.features?.map((f) => ({
-													...f,
-													id: newHomebrew("ability").id
-												})),
-												resources: e.resources?.map((r) => ({
-													...r,
-													id: newHomebrew("resource").id
-												})),
-												attacks: e.attacks?.map((a) => ({
-													...a,
-													id: newHomebrew("attack").id
-												})),
-												advancement: {}
-											});
-										},
-										children: "Дублировать основу"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => {
-											remove(e);
-										},
-										children: "Удалить набор"
-									})
-								] })
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => {
+										const n = newHomebrew(e.type, e.name + " — копия");
+										open({
+											...e,
+											...n,
+											features: e.features?.map((f) => ({
+												...f,
+												id: newHomebrew("ability").id
+											})),
+											resources: e.resources?.map((r) => ({
+												...r,
+												id: newHomebrew("resource").id
+											})),
+											attacks: e.attacks?.map((a) => ({
+												...a,
+												id: newHomebrew("attack").id
+											})),
+											advancement: {}
+										});
+									},
+									children: "Создать копию"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									className: "hb-danger",
+									onClick: () => {
+										remove(e);
+									},
+									children: "Удалить"
+								})
 							]
 						})
 					]
 				}, pack.id);
 			})
 		}),
-		!library.elements.length && /* @__PURE__ */ jsx("p", { children: "Создайте первый элемент или загрузите пример Шамана." })
+		!library.elements.length && /* @__PURE__ */ jsxs("div", {
+			className: "hb-empty-library",
+			children: [/* @__PURE__ */ jsx("h2", { children: "Библиотека пока пуста" }), /* @__PURE__ */ jsx("p", { children: "Создайте элемент, импортируйте JSON или загрузите пример Шамана. После сохранения набор появится здесь отдельной карточкой." })]
+		})
 	] });
 }
 //#endregion
@@ -55823,6 +55909,28 @@ function HitPointRollEditor({ character, onChange }) {
 }
 function Home() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, {}) });
+}
+function AccountAccess({ account, cloudState, compact = false }) {
+	if (!account) return /* @__PURE__ */ jsx("span", {
+		className: "account-access is-loading",
+		children: "Проверяем вход…"
+	});
+	if (!account.authenticated) return /* @__PURE__ */ jsxs("a", {
+		className: `account-access is-guest${compact ? " compact" : ""}`,
+		href: "/account",
+		children: [/* @__PURE__ */ jsx("span", {
+			className: "telegram-mark",
+			children: "↗"
+		}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "Войти через Telegram" }), !compact && /* @__PURE__ */ jsx("small", { children: "Сохранения и Homebrew на всех устройствах" })] })]
+	});
+	return /* @__PURE__ */ jsxs("a", {
+		className: `account-access is-user${compact ? " compact" : ""}`,
+		href: "/account",
+		children: [/* @__PURE__ */ jsx("span", {
+			className: "account-online",
+			children: "●"
+		}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: account.displayName || "Аккаунт HeroList" }), !compact && /* @__PURE__ */ jsx("small", { children: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : "Данные сохранены" })] })]
+	});
 }
 function Builder() {
 	const [view, setView] = useState("home");
@@ -57843,7 +57951,7 @@ function Builder() {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
 		children: [view === "home" && /* @__PURE__ */ jsxs("header", {
-			className: "topbar",
+			className: "topbar home-topbar",
 			children: [/* @__PURE__ */ jsxs("button", {
 				className: "brand",
 				onClick: () => setView("home"),
@@ -57859,97 +57967,203 @@ function Builder() {
 					"Лист Героя ",
 					/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
 				]
-			}), /* @__PURE__ */ jsx("button", {
-				className: `experimental-toggle theme-${siteTheme}`,
-				onClick: cycleSiteTheme,
-				title: `Включить ${nextThemeName} дизайн`,
-				children: "Дизайн сайта"
+			}), /* @__PURE__ */ jsxs("nav", {
+				className: "home-top-actions",
+				"aria-label": "Главная навигация",
+				children: [
+					/* @__PURE__ */ jsx("button", {
+						className: "nav-button",
+						onClick: openCharacterManager,
+						children: "Персонажи"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						className: "nav-button",
+						onClick: () => setView("homebrew"),
+						children: "Homebrew"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						className: `experimental-toggle theme-${siteTheme}`,
+						onClick: cycleSiteTheme,
+						title: `Включить ${nextThemeName} дизайн`,
+						children: "Дизайн"
+					}),
+					/* @__PURE__ */ jsx(AccountAccess, {
+						account,
+						cloudState,
+						compact: true
+					})
+				]
 			})]
 		}), view === "quiz" ? /* @__PURE__ */ jsx(HeroQuiz, {
 			onClose: () => setView("home"),
 			onCreate: createFromQuiz
 		}) : /* @__PURE__ */ jsxs("div", {
-			className: "home-layout",
-			children: [/* @__PURE__ */ jsxs("section", {
-				className: "hero-menu",
-				children: [
-					/* @__PURE__ */ jsx("p", {
-						className: "eyebrow",
-						children: "Лист Героя · D&D 5e 2014"
-					}),
-					/* @__PURE__ */ jsx("h1", { children: "Твоя история начинается здесь" }),
-					/* @__PURE__ */ jsxs("div", {
-						className: "hero-menu-options",
+			className: "home-page",
+			children: [
+				/* @__PURE__ */ jsxs("section", {
+					className: "home-hero",
+					children: [/* @__PURE__ */ jsxs("div", {
+						className: "home-hero-copy",
 						children: [
-							/* @__PURE__ */ jsxs("button", {
-								onClick: addCharacter,
-								children: [/* @__PURE__ */ jsx("strong", { children: "Создать персонажа" }), /* @__PURE__ */ jsx("span", { children: "Обычный режим без обучающих окон." })]
+							/* @__PURE__ */ jsx("p", {
+								className: "eyebrow",
+								children: "Конструктор персонажей D&D 5e · редакция 2014"
 							}),
-							/* @__PURE__ */ jsxs("button", {
-								className: "tutorial-start",
-								onClick: addTutorialCharacter,
-								children: [/* @__PURE__ */ jsx("strong", { children: "Создать с обучением" }), /* @__PURE__ */ jsx("span", { children: "Тот же конструктор, но каждый этап объясняется по мере создания." })]
+							/* @__PURE__ */ jsxs("h1", { children: [
+								"Создайте героя.",
+								/* @__PURE__ */ jsx("br", {}),
+								"Получите готовый лист."
+							] }),
+							/* @__PURE__ */ jsx("p", {
+								className: "home-lead",
+								children: "Правила, расчёты, заклинания и печатный PDF собраны в одном мастере. Можно начать с нуля или пройти создание с подсказками."
 							}),
-							/* @__PURE__ */ jsxs("button", {
-								onClick: openCharacterManager,
-								children: [/* @__PURE__ */ jsx("strong", { children: "Мои персонажи" }), /* @__PURE__ */ jsx("span", { children: "Открыть сохранённые листы и папки." })]
+							!account?.authenticated && /* @__PURE__ */ jsx(AccountAccess, {
+								account,
+								cloudState
 							}),
-							/* @__PURE__ */ jsxs("button", {
-								onClick: () => setView("quiz"),
-								children: [/* @__PURE__ */ jsx("strong", { children: "Какой из тебя герой?" }), /* @__PURE__ */ jsx("span", { children: "18–23 вопроса — и готовый персонаж для приключения." })]
+							/* @__PURE__ */ jsxs("div", {
+								className: "home-cta",
+								children: [
+									/* @__PURE__ */ jsx("button", {
+										className: "home-primary",
+										onClick: addCharacter,
+										children: "Создать персонажа"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										onClick: addTutorialCharacter,
+										children: "Создать с обучением"
+									}),
+									ready && /* @__PURE__ */ jsx("button", {
+										onClick: () => setView("builder"),
+										children: "Продолжить текущего персонажа"
+									})
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "home-quick-actions",
+								children: [
+									/* @__PURE__ */ jsxs("button", {
+										onClick: openCharacterManager,
+										children: [/* @__PURE__ */ jsx("strong", { children: "Мои персонажи" }), /* @__PURE__ */ jsxs("span", { children: [vault.slots.length, " сохранено"] })]
+									}),
+									/* @__PURE__ */ jsxs("button", {
+										onClick: () => setView("homebrew"),
+										children: [/* @__PURE__ */ jsx("strong", { children: "Мой Homebrew" }), /* @__PURE__ */ jsx("span", { children: "Классы, расы и заклинания" })]
+									}),
+									/* @__PURE__ */ jsxs("button", {
+										onClick: () => setView("quiz"),
+										children: [/* @__PURE__ */ jsx("strong", { children: "Какой из тебя герой?" }), /* @__PURE__ */ jsx("span", { children: "Подбор за 18–23 вопроса" })]
+									})
+								]
 							})
 						]
-					}),
-					/* @__PURE__ */ jsx("button", {
-						disabled: !ready,
-						onClick: () => setView("builder"),
-						children: "Продолжить текущего персонажа"
-					})
-				]
-			}), /* @__PURE__ */ jsxs("div", {
-				className: "home-side",
-				children: [/* @__PURE__ */ jsxs("section", {
-					className: "contact-card",
-					"aria-label": "Обратная связь",
+					}), /* @__PURE__ */ jsxs("div", {
+						className: "home-hero-art",
+						"aria-hidden": "true",
+						children: [/* @__PURE__ */ jsx("img", {
+							className: "home-art-day",
+							src: assetUrl("home/hero-day.webp"),
+							alt: ""
+						}), /* @__PURE__ */ jsx("img", {
+							className: "home-art-night",
+							src: assetUrl("home/hero-night.webp"),
+							alt: ""
+						})]
+					})]
+				}),
+				/* @__PURE__ */ jsxs("section", {
+					className: "home-recent",
+					"aria-labelledby": "home-recent-title",
+					children: [/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("p", {
+						className: "eyebrow",
+						children: "Быстрый доступ"
+					}), /* @__PURE__ */ jsx("h2", {
+						id: "home-recent-title",
+						children: "Последние персонажи"
+					})] }), /* @__PURE__ */ jsx("button", {
+						onClick: openCharacterManager,
+						children: "Открыть все"
+					})] }), vault.slots.length ? /* @__PURE__ */ jsx("div", {
+						className: "home-recent-grid",
+						children: [...vault.slots].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3).map((slot) => /* @__PURE__ */ jsxs("button", {
+							onClick: () => selectSlot(slot.id),
+							children: [
+								/* @__PURE__ */ jsx("span", {
+									className: "home-character-mark",
+									children: (slot.character.name || "?").slice(0, 1).toUpperCase()
+								}),
+								/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: slot.character.name || "Безымянный герой" }), /* @__PURE__ */ jsxs("small", { children: [
+									slot.character.level,
+									" уровень · ",
+									new Date(slot.updatedAt).toLocaleDateString("ru-RU")
+								] })] }),
+								/* @__PURE__ */ jsx("b", { children: "Открыть →" })
+							]
+						}, slot.id))
+					}) : /* @__PURE__ */ jsxs("div", {
+						className: "home-empty",
+						children: [/* @__PURE__ */ jsx("p", { children: "Здесь появятся последние герои — с уровнем и датой сохранения." }), /* @__PURE__ */ jsx("button", {
+							onClick: addCharacter,
+							children: "Создать первого персонажа"
+						})]
+					})]
+				}),
+				/* @__PURE__ */ jsxs("section", {
+					className: "home-benefits",
+					"aria-label": "Возможности Листа Героя",
 					children: [
-						/* @__PURE__ */ jsx("p", { children: "Если нашли ошибку или хотите предложить улучшение:" }),
-						/* @__PURE__ */ jsxs("a", {
-							href: "https://t.me/heroleaf",
-							target: "_blank",
-							rel: "noreferrer",
-							children: [/* @__PURE__ */ jsx("strong", { children: "Telegram" }), " t.me/heroleaf"]
-						}),
-						/* @__PURE__ */ jsxs("a", {
-							href: "mailto:heroleaf@mail.ru",
-							children: [/* @__PURE__ */ jsx("strong", { children: "Почта:" }), " heroleaf@mail.ru"]
-						})
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Правила 5e 2014" }), /* @__PURE__ */ jsx("span", { children: "Автоматические расчёты и проверки выборов" })] }),
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Полный Homebrew" }), /* @__PURE__ */ jsx("span", { children: "Классы, прогрессии, выборы и списки заклинаний" })] }),
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "PDF и экспорт" }), /* @__PURE__ */ jsx("span", { children: "Печатный лист, LSS, Helpmate и резервные копии" })] }),
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Telegram-синхронизация" }), /* @__PURE__ */ jsx("span", { children: "Персонажи и Homebrew доступны на разных устройствах" })] })
 					]
-				}), /* @__PURE__ */ jsxs("aside", {
-					className: "special-thanks",
-					"aria-label": "Отдельное спасибо",
-					children: [
-						/* @__PURE__ */ jsx("h2", { children: "Отдельное спасибо" }),
-						/* @__PURE__ */ jsxs("a", {
-							href: "https://t.me/WiseHomeAI_bot",
-							target: "_blank",
-							rel: "noreferrer",
-							children: [/* @__PURE__ */ jsx("img", {
-								src: assetUrl("acknowledgements/velmira.png"),
-								alt: "Вельмира"
-							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "@WiseHomeAI_bot · Вельмира" }), /* @__PURE__ */ jsx("small", { children: "За помощь в запуске сайта" })] })]
-						}),
-						/* @__PURE__ */ jsxs("a", {
-							href: "https://vk.ru/dndworlds",
-							target: "_blank",
-							rel: "noreferrer",
-							children: [/* @__PURE__ */ jsx("img", {
-								src: assetUrl("acknowledgements/krugovorot-mirov.png"),
-								alt: "Сообщество «Круговорот Миров»"
-							}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "«Круговорот Миров»" }), /* @__PURE__ */ jsx("small", { children: "За поддержку и помощь в развитии" })] })]
-						})
-					]
-				})]
-			})]
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "home-lower",
+					children: [/* @__PURE__ */ jsxs("section", {
+						className: "contact-card",
+						"aria-label": "Обратная связь",
+						children: [
+							/* @__PURE__ */ jsx("p", { children: "Если нашли ошибку или хотите предложить улучшение:" }),
+							/* @__PURE__ */ jsxs("a", {
+								href: "https://t.me/heroleaf",
+								target: "_blank",
+								rel: "noreferrer",
+								children: [/* @__PURE__ */ jsx("strong", { children: "Telegram" }), " t.me/heroleaf"]
+							}),
+							/* @__PURE__ */ jsxs("a", {
+								href: "mailto:heroleaf@mail.ru",
+								children: [/* @__PURE__ */ jsx("strong", { children: "Почта:" }), " heroleaf@mail.ru"]
+							})
+						]
+					}), /* @__PURE__ */ jsxs("aside", {
+						className: "special-thanks",
+						"aria-label": "Отдельное спасибо",
+						children: [
+							/* @__PURE__ */ jsx("h2", { children: "Отдельное спасибо" }),
+							/* @__PURE__ */ jsxs("a", {
+								href: "https://t.me/WiseHomeAI_bot",
+								target: "_blank",
+								rel: "noreferrer",
+								children: [/* @__PURE__ */ jsx("img", {
+									src: assetUrl("acknowledgements/velmira.png"),
+									alt: "Вельмира"
+								}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "@WiseHomeAI_bot · Вельмира" }), /* @__PURE__ */ jsx("small", { children: "За помощь в запуске сайта" })] })]
+							}),
+							/* @__PURE__ */ jsxs("a", {
+								href: "https://vk.ru/dndworlds",
+								target: "_blank",
+								rel: "noreferrer",
+								children: [/* @__PURE__ */ jsx("img", {
+									src: assetUrl("acknowledgements/krugovorot-mirov.png"),
+									alt: "Сообщество «Круговорот Миров»"
+								}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "«Круговорот Миров»" }), /* @__PURE__ */ jsx("small", { children: "За поддержку и помощь в развитии" })] })]
+							})
+						]
+					})]
+				})
+			]
 		})]
 	});
 	if (view === "homebrew") return /* @__PURE__ */ jsxs("main", {
@@ -57972,10 +58186,17 @@ function Builder() {
 						"Лист Героя ",
 						/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
 					]
-				}), /* @__PURE__ */ jsx("button", {
-					className: "nav-button",
-					onClick: () => setView("characters"),
-					children: "← К персонажам"
+				}), /* @__PURE__ */ jsxs("div", {
+					className: "section-top-actions",
+					children: [/* @__PURE__ */ jsx("button", {
+						className: "nav-button",
+						onClick: () => setView("characters"),
+						children: "← К персонажам"
+					}), /* @__PURE__ */ jsx(AccountAccess, {
+						account,
+						cloudState,
+						compact: true
+					})]
 				})]
 			}),
 			/* @__PURE__ */ jsx(HomebrewEditor, {
@@ -58027,20 +58248,33 @@ function Builder() {
 							onClick: () => setView("home"),
 							children: "← В главное меню"
 						}),
+						/* @__PURE__ */ jsx(AccountAccess, {
+							account,
+							cloudState,
+							compact: true
+						}),
 						/* @__PURE__ */ jsxs("details", {
 							className: "mobile-top-menu",
 							children: [/* @__PURE__ */ jsx("summary", {
 								"aria-label": "Открыть меню",
 								children: "☰"
-							}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("button", {
-								className: `experimental-toggle theme-${siteTheme}`,
-								onClick: cycleSiteTheme,
-								children: "Дизайн сайта"
-							}), /* @__PURE__ */ jsx("button", {
-								className: "nav-button",
-								onClick: () => setView("builder"),
-								children: "← К персонажу"
-							})] })]
+							}), /* @__PURE__ */ jsxs("div", { children: [
+								/* @__PURE__ */ jsx(AccountAccess, {
+									account,
+									cloudState,
+									compact: true
+								}),
+								/* @__PURE__ */ jsx("button", {
+									className: `experimental-toggle theme-${siteTheme}`,
+									onClick: cycleSiteTheme,
+									children: "Дизайн сайта"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									className: "nav-button",
+									onClick: () => setView("builder"),
+									children: "← К персонажу"
+								})
+							] })]
 						})
 					]
 				}),
@@ -58435,20 +58669,33 @@ function Builder() {
 							onClick: () => setView("home"),
 							children: "← В главное меню"
 						}),
+						/* @__PURE__ */ jsx(AccountAccess, {
+							account,
+							cloudState,
+							compact: true
+						}),
 						/* @__PURE__ */ jsxs("details", {
 							className: "mobile-top-menu",
 							children: [/* @__PURE__ */ jsx("summary", {
 								"aria-label": "Открыть меню",
 								children: "☰"
-							}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("button", {
-								className: `experimental-toggle theme-${siteTheme}`,
-								onClick: cycleSiteTheme,
-								children: "Дизайн сайта"
-							}), /* @__PURE__ */ jsx("button", {
-								className: "nav-button",
-								onClick: () => setView("builder"),
-								children: "← К мастеру"
-							})] })]
+							}), /* @__PURE__ */ jsxs("div", { children: [
+								/* @__PURE__ */ jsx(AccountAccess, {
+									account,
+									cloudState,
+									compact: true
+								}),
+								/* @__PURE__ */ jsx("button", {
+									className: `experimental-toggle theme-${siteTheme}`,
+									onClick: cycleSiteTheme,
+									children: "Дизайн сайта"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									className: "nav-button",
+									onClick: () => setView("builder"),
+									children: "← К мастеру"
+								})
+							] })]
 						})
 					]
 				}),
@@ -58720,24 +58967,10 @@ function Builder() {
 								accept: ".json,application/json",
 								onChange: importBan
 							}),
-							account?.authenticated ? /* @__PURE__ */ jsxs("span", {
-								className: "account-state",
-								children: [
-									/* @__PURE__ */ jsx("span", { children: "●" }),
-									account.displayName,
-									" · ",
-									cloudState === "saving" ? "сохраняется" : cloudState === "error" ? "ошибка синхронизации" : "сохранено",
-									/* @__PURE__ */ jsx("a", {
-										href: "/account",
-										children: "Аккаунт"
-									})
-								]
-							}) : /* @__PURE__ */ jsxs("span", {
-								className: "account-warning",
-								children: ["Без входа персонажи хранятся только в этом браузере.", /* @__PURE__ */ jsx("a", {
-									href: "/account",
-									children: "Войти и сохранить"
-								})]
+							/* @__PURE__ */ jsx(AccountAccess, {
+								account,
+								cloudState,
+								compact: true
 							})
 						]
 					}),
@@ -58784,12 +59017,10 @@ function Builder() {
 								onClick: () => banFileRef.current?.click(),
 								children: "Загрузить бан-лист"
 							}),
-							account?.authenticated ? /* @__PURE__ */ jsxs("a", {
-								href: "/account",
-								children: ["Аккаунт · ", account.displayName]
-							}) : /* @__PURE__ */ jsx("a", {
-								href: "/account",
-								children: "Войти и сохранить"
+							/* @__PURE__ */ jsx(AccountAccess, {
+								account,
+								cloudState,
+								compact: true
 							})
 						] })]
 					})

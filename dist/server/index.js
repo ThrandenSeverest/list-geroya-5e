@@ -7357,7 +7357,7 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "235d6fca-148b-4d20-a644-de0c498c7090";
+		return "032f2074-0ce9-4774-96da-d2b00d26ee24";
 	}
 };
 var RequestCookies = class {
@@ -12479,7 +12479,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "235d6fca-148b-4d20-a644-de0c498c7090") {
+function appIsrCacheKey(pathname, suffix, buildId = "032f2074-0ce9-4774-96da-d2b00d26ee24") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12808,7 +12808,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "235d6fca-148b-4d20-a644-de0c498c7090",
+		deploymentVersion: "032f2074-0ce9-4774-96da-d2b00d26ee24",
 		rootBoundaryId
 	});
 }
@@ -14644,6 +14644,8 @@ var __publicFiles = new Set([
 	"/experimental/locathah.png",
 	"/experimental/site-mark.png",
 	"/favicon.ico",
+	"/home/hero-day.webp",
+	"/home/hero-night.webp",
 	"/parchment-background.jpg"
 ]);
 var __allowedOrigins = [];
