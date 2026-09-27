@@ -199,7 +199,7 @@ const table = {
         );
         await page.getByLabel("Фильтр Homebrew").selectOption("all");
         await page.getByLabel("Поиск Homebrew").fill("");
-      }
+      } else await page.getByRole("button", { name: "Закрыть", exact: true }).click();
       await page.getByLabel("Поиск Homebrew").fill("Шаман");
       const card = page
         .locator(".hb-browser-results article")
