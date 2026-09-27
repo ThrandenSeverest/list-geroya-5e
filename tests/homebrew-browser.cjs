@@ -138,6 +138,11 @@ const table = {
         .getByRole("button", { name: "Сохранить изменения", exact: true })
         .click();
       assert.ok(await page.getByRole("button", { name: "Сохранено", exact: true }).isDisabled());
+      assert.ok(
+        await page
+          .getByRole("button", { name: "Удалить Homebrew", exact: true })
+          .isVisible(),
+      );
       if (width === 1440) {
         if (
           !(await page
@@ -188,7 +193,11 @@ const table = {
           1,
         );
         const savedCard = page.locator(".hb-browser-results article").first();
-        assert.ok(await savedCard.getByRole("button", { name: "Удалить", exact: true }).isVisible());
+        assert.ok(
+          await savedCard
+            .getByRole("button", { name: "Удалить Homebrew", exact: true })
+            .isVisible(),
+        );
         await savedCard.locator('input[type="checkbox"]').check();
         assert.ok(await page.getByRole("button", { name: "Удалить выбранные (1)", exact: true }).isEnabled());
         await savedCard.locator('input[type="checkbox"]').uncheck();

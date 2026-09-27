@@ -1579,3 +1579,34 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 
 @media(max-width:1050px){.home-top-actions>.nav-button{display:none}.home-hero{grid-template-columns:minmax(380px,1.05fr) minmax(330px,.95fr)}.home-hero-copy{padding-left:34px}.home-quick-actions{grid-template-columns:1fr}.home-benefits{grid-template-columns:repeat(2,1fr)}.home-benefits>div:nth-child(2){border-right:0}.home-benefits>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
 @media(max-width:760px){.topbar.home-topbar{height:auto;min-height:74px;padding:12px 16px;gap:10px}.home-topbar .brand small{display:none}.home-topbar .brand{font-size:22px}.home-top-actions .experimental-toggle{display:none}.account-access.compact{min-height:38px;padding:6px 8px}.account-access.compact strong{font-size:10px}.section-top-actions{margin-left:auto}.topbar>.account-access{display:none}.home-page{width:100%;padding:0 0 28px}.home-hero{display:block;min-height:0;border-width:0 0 1px}.home-hero-copy{padding:34px 20px 300px}.home-hero-copy h1{font-size:43px}.home-hero-art{position:absolute;inset:auto 0 0;height:300px}.home-hero-art img{width:100%;right:0;object-position:center}.home-hero-art::after{background:linear-gradient(180deg,#08191f 0,transparent 43%)}.modern-design .home-hero-art::after{background:linear-gradient(180deg,#fff9ed 0,transparent 43%)}.home-cta{display:grid;width:100%}.home-quick-actions{margin-top:20px}.home-recent,.home-benefits,.home-lower{margin-left:16px;margin-right:16px}.home-recent>header{align-items:center}.home-recent-grid{grid-template-columns:1fr}.home-recent-grid>button:nth-child(n+3){display:none}.home-benefits{grid-template-columns:1fr}.home-benefits>div{border-right:0;border-bottom:1px solid var(--line)!important}.home-benefits>div:last-child{border-bottom:0!important}.home-lower{grid-template-columns:1fr}.home-lower .special-thanks{grid-template-columns:1fr}.home-lower .special-thanks h2{grid-column:auto}.hb-editor-actions{position:static;align-items:flex-start;flex-direction:column}.hb-editor-actions>div{width:100%}.hb-editor-actions button{flex:1}.hb-browser-summary{align-items:flex-start;flex-direction:column}.hb-browser-results .hb-library-row{grid-template-columns:auto 45px minmax(0,1fr)}.hb-library-actions{grid-column:1/-1;width:100%}}
+
+/* The landing page is one continuous canvas: the illustration is scenery,
+   not a framed card. Keep borders only where they communicate an action. */
+.home-page{width:min(1440px,calc(100% - 64px));padding-top:18px}
+.home-hero{display:block;min-height:560px;overflow:visible;border:0;background:transparent;box-shadow:none}
+.home-hero-copy{width:56%;min-height:560px;padding:38px 0 34px 8px}
+.home-hero-copy h1{font-size:clamp(48px,5.4vw,78px)}
+.home-hero-art{position:absolute;z-index:0;inset:0 0 0 auto;width:68%;height:100%;overflow:visible}
+.home-hero-art img{right:0;width:100%;height:100%;object-fit:contain;object-position:right center;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 24%,#000 100%),linear-gradient(0deg,transparent 0,#000 13%,#000 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 24%,#000 100%),linear-gradient(0deg,transparent 0,#000 13%,#000 100%);mask-composite:intersect}
+.home-hero-art::after{display:none}
+.modern-design .home-hero{border:0;background:transparent;box-shadow:none}
+.modern-design .home-hero-art::after{display:none}
+.home-quick-actions{gap:0;margin-top:24px;border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.home-quick-actions button{padding:12px 16px;border:0;border-left:1px solid color-mix(in srgb,var(--line) 65%,transparent);border-radius:0;background:transparent!important}
+.home-quick-actions button:first-child{border-left:0;padding-left:0}
+.home-recent{margin-top:22px}
+.home-recent>header{padding-bottom:8px;border-bottom:1px solid color-mix(in srgb,var(--line) 58%,transparent)}
+.home-recent header>button{min-height:auto;padding:5px 0;border:0;color:var(--teal)}
+.home-recent-grid{gap:16px}
+.home-recent-grid>button{border-color:color-mix(in srgb,var(--line) 64%,transparent);background:transparent}
+.modern-design .home-recent-grid>button{background:rgba(255,250,239,.28)}
+.home-benefits{border:0;border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
+.home-benefits>div{padding:18px 20px;border-color:color-mix(in srgb,var(--line) 55%,transparent)}
+.home-lower{gap:32px}
+.home-lower .contact-card,.home-lower .special-thanks{border:0;border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent);background:transparent;box-shadow:none}
+.hb-library-actions .hb-library-delete{grid-column:1/-1;min-height:40px;border:1px solid #d07263;background:#7f201b;color:#fff;font-weight:800}
+.hb-delete-saved{border:1px solid #d07263!important;background:#7f201b!important;color:#fff!important;font-weight:800}
+.modern-design .hb-library-actions .hb-library-delete,.modern-design .hb-delete-saved{background:#981f26!important;border-color:#981f26!important;color:#fff!important}
+
+@media(max-width:1050px){.home-hero-copy{width:62%}.home-hero-art{width:62%}.home-quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.home-page{width:100%;padding-top:0}.home-hero{min-height:0;overflow:hidden}.home-hero-copy{width:100%;min-height:0;padding:34px 20px 285px}.home-hero-copy h1{font-size:43px}.home-hero-art{inset:auto 0 0;width:100%;height:300px}.home-hero-art img{object-fit:contain;object-position:right bottom;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 24%,#000 100%);mask-image:linear-gradient(180deg,transparent 0,#000 24%,#000 100%)}.home-quick-actions{grid-template-columns:1fr;border-bottom:0}.home-quick-actions button,.home-quick-actions button:first-child{padding:12px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 58%,transparent)}.home-benefits{border-left:0;border-right:0}.home-lower .contact-card,.home-lower .special-thanks{padding-left:0;padding-right:0}.hb-library-actions .hb-library-delete{grid-column:1/-1}}
