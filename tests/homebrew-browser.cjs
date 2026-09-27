@@ -119,7 +119,7 @@ const table = {
           .locator(".hb-workspace-sidebar")
           .evaluate((e) => e.scrollWidth <= e.clientWidth + 1),
       );
-      await page.getByRole("button", { name: "Закрыть черновик" }).click();
+      await page.getByRole("button", { name: "Закрыть", exact: true }).click();
       await page
         .locator(".hb-toolbar summary")
         .filter({ hasText: "+ Создать" })
@@ -212,7 +212,7 @@ const table = {
       await page.getByLabel("Поиск Homebrew").fill("Таблица проверки");
       await page
         .locator(".hb-browser-results article")
-        .getByRole("button", { name: "Добавить", exact: true })
+        .getByRole("button", { name: "Использовать", exact: true })
         .click();
       await page.getByRole("button", { name: "Назад", exact: true }).click();
       await page
