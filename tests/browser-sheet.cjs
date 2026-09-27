@@ -69,6 +69,7 @@ async function saved(page) {
         },{key,character});
         await page.goto(url);
         await page.getByRole('button',{name:'Лист Героя — главная',exact:true}).waitFor();
+        await page.getByRole('link',{name:/Войти через Telegram/}).first().waitFor();
         assert.ok(await page.getByRole('link',{name:/Войти через Telegram/}).first().isVisible(),'Telegram login is visible on the main menu');
         await verifyImages(page);
         await openSheet(page);
