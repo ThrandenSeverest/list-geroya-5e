@@ -36,6 +36,12 @@ async function verifyImages(page) {
 async function openSheet(page) {
   await page.getByRole('button', {name:'Продолжить текущего персонажа',exact:true}).click();
   await page.locator('.experimental-catalog-icon').first().waitFor();
+  const catalogSearch=page.getByPlaceholder('Поиск по каталогу');
+  const searchBox=await catalogSearch.locator('..').boundingBox();
+  assert.ok(searchBox&&searchBox.width>=Math.min(260,page.viewportSize().width-32));
+  await catalogSearch.fill('такого варианта точно нет');
+  assert.match(await page.locator('.catalog-meta').innerText(),/^0 вариантов/);
+  await catalogSearch.fill('');
   await verifyImages(page);
   await page.locator('nav.steps button').filter({hasText:'Итог'}).click();
   await page.locator('.pdf-hp strong').waitFor();

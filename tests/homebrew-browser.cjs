@@ -61,12 +61,6 @@ const table = {
         { shaman, table },
       );
       await page.goto(process.env.HEROLIST_URL || "http://127.0.0.1:3997");
-      const catalogSearch = page.getByPlaceholder("Поиск по каталогу");
-      const searchBox = await catalogSearch.locator("..").boundingBox();
-      assert.ok(searchBox && searchBox.width >= Math.min(260, width - 32));
-      await catalogSearch.fill("такого варианта точно нет");
-      assert.match(await page.locator(".catalog-meta").innerText(), /^0 вариантов/);
-      await catalogSearch.fill("");
       const myCharacters = page
           .getByRole("button", { name: "Мои персонажи", exact: false })
           .first(),
