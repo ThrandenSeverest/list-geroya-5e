@@ -52681,6 +52681,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											onClick: save,
 											children: saveState === "saving" ? "Сохраняется…" : hasUnsavedChanges ? "Сохранить изменения" : "Сохранено"
 										}),
+										savedDraft && /* @__PURE__ */ jsx("button", {
+											className: "hb-danger hb-delete-saved",
+											onClick: () => {
+												remove(savedDraft);
+											},
+											children: "Удалить Homebrew"
+										}),
 										/* @__PURE__ */ jsx("button", {
 											onClick: closeDraft,
 											children: "Закрыть"
@@ -54847,6 +54854,13 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 							className: "hb-library-actions",
 							children: [
 								/* @__PURE__ */ jsx("button", {
+									className: "hb-danger hb-library-delete",
+									onClick: () => {
+										remove(e);
+									},
+									children: "Удалить Homebrew"
+								}),
+								/* @__PURE__ */ jsx("button", {
 									className: "hb-edit-primary",
 									onClick: () => open(e),
 									children: "Редактировать"
@@ -54887,13 +54901,6 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 										});
 									},
 									children: "Создать копию"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									className: "hb-danger",
-									onClick: () => {
-										remove(e);
-									},
-									children: "Удалить"
 								})
 							]
 						})
