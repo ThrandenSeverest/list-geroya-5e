@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { evaluateFormula } from '../app/homebrewFormula';
 import { normalizeHomebrewLibrary, type HomebrewElement } from '../app/homebrew';
 import { validateHomebrew } from '../app/homebrewValidation';
-import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, classRuleFor } from '../app/homebrewEngine';
+import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, homebrewChoiceStatuses, homebrewChoicesComplete, classRuleFor, hbSum } from '../app/homebrewEngine';
 import { subclassTemplate, homebrewTableFeatures } from '../app/homebrewTemplates';
 import { createNativeCharacterFile } from '../app/characterFiles';
 import { resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
@@ -13,6 +13,8 @@ import { estimatedHitPoints, type ExportCharacter } from '../app/exportFormats';
 import { characterAttacks } from '../app/combat';
 import { homebrewPackages } from '../app/homebrewPackages';
 import savant from '../app/savantExample.json';
+import shamanPack from '../app/shamanExample.json';
+import { speedBreakdown } from '../app/speed';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
 test('bounded formulas and rejection of code injection',()=>{
@@ -82,6 +84,19 @@ test('inline class features belong to one reusable class and unlock at their cla
  assert.deepEqual(createNativeCharacterFile(hero).character.homebrew?.entities,[]);
 });
 
+test('Homebrew class can inherit complete official spell lists without copying every spell ID',async()=>{
+ const {homebrewSpellAvailable}=await import('../app/homebrewCatalog');
+ const cls:HomebrewElement={id:'hb:test:class:theurge',type:'class',name:'Теург',description:'',updatedAt:'',hitDie:'d8',spellListSources:['druid','cleric'],spellList:['magic-missile']};
+ const druidSpell=spells.find(spell=>spell.classes.includes('druid')&&!spell.classes.includes('cleric'))!;
+ const clericSpell=spells.find(spell=>spell.classes.includes('cleric')&&!spell.classes.includes('druid'))!;
+ const wizardOnly=spells.find(spell=>spell.classes.length===1&&spell.classes[0]==='wizard'&&spell.id!=='magic-missile')!;
+ assert.ok(homebrewSpellAvailable(cls.id,druidSpell,[cls]));
+ assert.ok(homebrewSpellAvailable(cls.id,clericSpell,[cls]));
+ assert.ok(homebrewSpellAvailable(cls.id,spells.find(spell=>spell.id==='magic-missile')!,[cls]));
+ assert.equal(homebrewSpellAvailable(cls.id,wizardOnly,[cls]),false);
+ assert.deepEqual(validateHomebrew([cls],['official:class:druid','official:class:cleric','official:spell:magic-missile']),[]);
+});
+
 test('Shaman style choices respect class level, focus and uniqueness across tiers',()=>{
  const focus:HomebrewElement={id:'hb:test:ability:focus',type:'ability',name:'Фокус Душа',description:'',updatedAt:''};
  const totem:HomebrewElement={id:'hb:test:ability:totem',type:'ability',name:'Тотем',description:'',updatedAt:'',level:5,requirements:[{type:'selected_feature',id:focus.id}]};
@@ -97,6 +112,20 @@ test('Shaman style choices respect class level, focus and uniqueness across tier
  assert.deepEqual(shortRestSpellSlots({...hero,homebrew:{...hero.homebrew!,entities:[{...cls,spellcasting:{...cls.spellcasting!,recovery:'long'}},focus,totem]}}),[0,1]);
  const hpFocus={...focus,effects:[{type:'hp_per_level',value:1}]};const withHp=bindHomebrewLibrary({...hero,classes:[{classId:cls.id,level:3,acquiredAtCharacterLevel:1},{classId:'fighter',level:12,acquiredAtCharacterLevel:4}]},{elements:[cls,hpFocus,totem]});
  assert.equal(estimatedHitPoints(withHp)-estimatedHitPoints({...withHp,homebrew:{...withHp.homebrew!,choices:{}}}),3);
+});
+
+test('real Shaman choices activate HP, saves, speed and attacks instead of manual-only cards',()=>{
+ const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
+ const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-bear','hb:shaman:ability:totem-winds'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
+ assert.equal(homebrewChoicesComplete(hero),true);
+ assert.equal(homebrewChoiceStatuses({...hero,homebrew:{...hero.homebrew!,choices:{}}}).find(status=>status.choice.id==='shaman-sacred-focus')?.missing,1);
+ assert.equal(estimatedHitPoints(hero)-estimatedHitPoints({...hero,homebrew:{...hero.homebrew!,choices:{...hero.homebrew!.choices,'shaman-sacred-focus':[]}}}),5);
+ assert.equal(speedBreakdown(hero).walk,40);
+ assert.ok(characterAttacks(hero,spells).some(attack=>attack.id==='hb:shaman:attack:bear-claw-one-hand'));
+ const mind={...hero,homebrew:{...hero.homebrew!,choices:{...hero.homebrew!.choices,'shaman-sacred-focus':['hb:shaman:ability:focus-mind']}}};
+ assert.equal(hbSum(mind,'saving_throw_bonus',effect=>effect.ability==='int'),2);
+ assert.equal(hbSum(mind,'saving_throw_bonus',effect=>effect.ability==='cha'),2);
 });
 
 test('Homebrew class proficiency IDs render like official Russian sheet labels',()=>{

@@ -13,7 +13,10 @@ export function homebrewSpells(entities:HomebrewElement[]):CatalogSpell[] {
  ].filter(Boolean).join(' '):'';return {id:e.id,name:e.name,source:'Homebrew',description:[e.description,rules,e.higherLevels].filter(Boolean).join('\n\n'),level:e.level||0,school:e.school||'Авторская',classes:e.spellClasses?.length?e.spellClasses:[],ritual:e.ritual,castingTime:e.castingTime,range:e.range,duration:e.concentration?`Концентрация · ${e.duration||''}`:e.duration,components:e.components,mechanics};});
 }
 export function homebrewSpellAvailable(classId:string,spell:CatalogSpell,entities:HomebrewElement[]):boolean {
- if(!spell.id.startsWith('hb:') && !entities.some(e=>e.type==='spell'&&e.id===spell.id))return !!entities.find(e=>e.type==='class'&&e.id===classId)?.spellList?.includes(spell.id);
+ if(!spell.id.startsWith('hb:') && !entities.some(e=>e.type==='spell'&&e.id===spell.id)){
+  const owner=entities.find(e=>e.type==='class'&&e.id===classId);
+  return !!owner && (!!owner.spellList?.includes(spell.id)||!!owner.spellListSources?.some(source=>spell.classes.includes(source.replace('official:class:',''))));
+ }
  const entity=entities.find(e=>e.id===spell.id&&e.type==='spell');
  return !!entity && (!entity.spellClasses?.length || entity.spellClasses.includes(classId));
 }

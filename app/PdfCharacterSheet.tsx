@@ -30,6 +30,7 @@ export type PdfCharacterSheetProps = {
   abilities: AbilityScores;
   proficiency: number;
   savingThrows: string[];
+  savingThrowBonuses?: Partial<Record<keyof AbilityScores, number>>;
   proficiencies: { skills: string[]; expertise: string[]; armor: string[]; weapons: string[]; tools: string[]; languages: string[] };
   ac: number;
   acNotes?: string[];
@@ -410,7 +411,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
             return <p key={skill.key}><i>{expertise ? "◆" : proficient ? "●" : "○"}</i><b>{signed(bonus)}</b>{skill.name} <small>({abilityLabels[skill.stat as keyof AbilityScores].slice(0, 3)})</small></p>;
           })}
           <h3 className="pdf-saves-title">Спасброски</h3>
-          <div className="pdf-save-row">{(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <span key={key}><i>{props.savingThrows.includes(key) ? "●" : "○"}</i><b>{abilityLabels[key].slice(0, 3)}</b><strong>{signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0))}</strong></span>)}</div>
+          <div className="pdf-save-row">{(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <span key={key}><i>{props.savingThrows.includes(key) ? "●" : "○"}</i><b>{abilityLabels[key].slice(0, 3)}</b><strong>{signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0))}</strong></span>)}</div>
           <div className="pdf-proficiencies"><h3>Владения</h3>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}</div>
         </section>
         <section className="pdf-core-column">

@@ -19,7 +19,7 @@ export type HBClassFeature = { id:string; level:number; name:string; description
 export type HomebrewElement = {
  id:string; uid?:string; schemaVersion?:2; type:HomebrewType; name:string; description:string; updatedAt:string; characterId?:string;
  summary?:string; tags?:string[]; version?:string; source?:{kind:string;packId?:string;author?:string;url?:string}; icon?:string;
- features?:HBClassFeature[]; spellList?:string[]; spellGrants?:HBSpellGrant[];
+ features?:HBClassFeature[]; spellList?:string[]; spellListSources?:string[]; spellGrants?:HBSpellGrant[];
  effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[]; actions?:HBAction[]; choices?:HBChoice[]; references?:string[];
  requirements?:HBRequirement[]; level?:number; school?:string; castingTime?:string; concentration?:boolean; ritual?:boolean;
  range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[]; spellMechanics?:HBSpellMechanics;

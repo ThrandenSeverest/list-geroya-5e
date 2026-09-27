@@ -16,6 +16,18 @@ export function homebrewChoiceReason(c:ExportCharacter,owner:HomebrewElement,cho
  if(choice.uniqueAcrossGroup&&choice.choiceGroup&&owner.choices?.slice(0,owner.choices.findIndex(other=>other.id===choice.id)).some(other=>other.choiceGroup===choice.choiceGroup&&(c.homebrew?.choices?.[other.id]||[]).includes(target.id)))return 'Уже выбран в этой группе';
  return '';
 }
+export type HomebrewChoiceStatus={owner:HomebrewElement;choice:import('./homebrew').HBChoice;selected:string[];missing:number};
+export function homebrewChoiceStatuses(c:ExportCharacter):HomebrewChoiceStatus[] {
+ const all=c.homebrew?.entities||[];
+ return activeHomebrew(c).flatMap(owner=>(owner.choices||[]).filter(choice=>hbEnabled(c,choice,owner)).map(choice=>{
+  const selected=[...new Set(c.homebrew?.choices?.[choice.id]||[])].filter(id=>{
+   const target=all.find(entity=>entity.id===id);
+   return !!target&&choice.from.includes(id)&&!homebrewChoiceReason(c,owner,choice,target,all);
+  }).slice(0,choice.count);
+  return {owner,choice,selected,missing:Math.max(0,choice.count-selected.length)};
+ }));
+}
+export function homebrewChoicesComplete(c:ExportCharacter){return homebrewChoiceStatuses(c).every(status=>status.missing===0);}
 export function hbContext(c:ExportCharacter,source?:string):FormulaContext {
  const values:Record<string,number>={'@level':level(c),'@pb':2+Math.floor((level(c)-1)/4),'@currentHp':c.currentHitPoints||0,'@tempHp':c.temporaryHitPoints||0};
  for(const [k,v] of Object.entries(c.abilities)){values['@ability.'+k]=v;values['@mod.'+k]=Math.floor((v-10)/2);}
@@ -41,7 +53,7 @@ export function hbSkillName(id:string){const normalized=id.replace(/^skill:/,'')
 const weaponProficiencyNames:Record<string,string>={club:'Дубинка',dagger:'Кинжал',greatclub:'Палица',handaxe:'Ручной топор',javelin:'Метательное копьё','light-hammer':'Лёгкий молот',mace:'Булава',quarterstaff:'Боевой посох',sickle:'Серп',spear:'Копьё','light-crossbow':'Лёгкий арбалет',dart:'Дротик',shortbow:'Короткий лук',sling:'Праща',battleaxe:'Боевой топор',flail:'Цеп',glaive:'Глефа',greataxe:'Секира',greatsword:'Двуручный меч',halberd:'Алебарда',lance:'Длинное копьё',longsword:'Длинный меч',maul:'Молот',morningstar:'Моргенштерн',pike:'Пика',rapier:'Рапира',scimitar:'Скимитар',shortsword:'Короткий меч',trident:'Трезубец','war-pick':'Боевая кирка',warhammer:'Боевой молот',whip:'Кнут','hand-crossbow':'Ручной арбалет','heavy-crossbow':'Тяжёлый арбалет',longbow:'Длинный лук',blowgun:'Духовая трубка',net:'Сеть'};
 export function classRuleFor(c:ExportCharacter,id:string):ClassRuleDetail|undefined{
  const e=c.homebrew?.entities.find(e=>e.id===id&&e.type==='class');if(!e)return classRules[id];
- return {hitDie:Number((e.hitDie||'d8').slice(1)),saves:e.savingThrows||[],armor:(e.effects||[]).filter(e=>e.type==='armor_proficiency').map(e=>({light:'Лёгкие доспехи',medium:'Средние доспехи',heavy:'Тяжёлые доспехи',shield:'Щиты'})[e.group as 'light']||e.group).join(', '),weapons:(e.effects||[]).filter(e=>e.type==='weapon_proficiency'||e.type==='weapon_group_proficiency').map(e=>e.group==='simple'?'Простое оружие':e.group==='martial'?'Воинское оружие':weaponProficiencyNames[e.id||'']||e.id||'').join(', '),spellAbility:e.spellcasting?.mode&&e.spellcasting.mode!=='none'?e.spellcasting.ability:undefined,features:activeHomebrew(c).filter(x=>x.type==='ability').map(x=>({name:x.name,description:x.description,effectHandling:'manual'}))};
+ return {hitDie:Number((e.hitDie||'d8').slice(1)),saves:e.savingThrows||[],armor:(e.effects||[]).filter(e=>e.type==='armor_proficiency').map(e=>({light:'Лёгкие доспехи',medium:'Средние доспехи',heavy:'Тяжёлые доспехи',shield:'Щиты'})[e.group as 'light']||e.group).join(', '),weapons:(e.effects||[]).filter(e=>e.type==='weapon_proficiency'||e.type==='weapon_group_proficiency').map(e=>e.group==='simple'?'Простое оружие':e.group==='martial'?'Воинское оружие':weaponProficiencyNames[e.id||'']||e.id||'').join(', '),spellAbility:e.spellcasting?.mode&&e.spellcasting.mode!=='none'?e.spellcasting.ability:undefined,features:activeHomebrew(c).filter(x=>x.type==='ability').map(x=>({name:x.name,description:x.description,effectHandling:(x.effects?.some(effect=>effect.when)?'conditional':x.effects?.length||x.resources?.length||x.attacks?.length?'automatic':'manual') as 'automatic'|'conditional'|'manual'}))};
 }
 export function hbResources(c:ExportCharacter){const map=new Map<string,{key:string;name:string;max:number;isShortRest:boolean;isLongRest:boolean}>();for(const e of activeHomebrew(c))for(const r of e.resources||[])if(hbEnabled(c,r,e)&&r.showOnSheet!==false)map.set(r.id,{key:r.id,name:r.name,max:Math.max(0,Math.floor(hbValue(c,r.max,e.id))),isShortRest:r.restore.includes('short_rest'),isLongRest:r.restore.includes('long_rest')});for(const source of activeHomebrew(c))if(source.type==='class'||source.parentClassId)for(const grant of source.spellGrants||[])if(grant.uses&&grant.level<=classLevel(c,source.type==='class'?source.id:source.parentClassId||'')){const key=source.id+':spell:'+grant.spellId;map.set(key,{key,name:source.name+' · '+(spells.find(e=>e.id===grant.spellId)?.name||c.homebrew?.entities.find(e=>e.id===grant.spellId)?.name||grant.spellId),max:grant.uses,isShortRest:grant.recovery==='short_or_long',isLongRest:true});}return [...map.values()];}
 export function hbAttacks(c:ExportCharacter){const map=new Map<string,import('./combat').CharacterAttack>();for(const e of activeHomebrew(c))for(const a of e.attacks||[])if(hbEnabled(c,a,e)){

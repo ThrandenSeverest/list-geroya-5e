@@ -1570,7 +1570,36 @@
       ],
       "effects": [],
       "resources": [],
-      "attacks": [],
+      "attacks": [
+        {
+          "id": "hb:shaman:attack:bear-claw-one-hand",
+          "name": "Когти медведя",
+          "ability": "str",
+          "proficient": true,
+          "damage": [
+            {
+              "formula": "1d6 + @mod.str",
+              "type": "slashing"
+            }
+          ],
+          "actionType": "action",
+          "range": "рукопашная"
+        },
+        {
+          "id": "hb:shaman:attack:bear-claw-two-hands",
+          "name": "Когти медведя — обе руки свободны",
+          "ability": "str",
+          "proficient": true,
+          "damage": [
+            {
+              "formula": "1d8 + @mod.str",
+              "type": "slashing"
+            }
+          ],
+          "actionType": "action",
+          "range": "рукопашная"
+        }
+      ],
       "actions": [],
       "choices": [],
       "level": 1,
@@ -2029,7 +2058,13 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "speed_bonus",
+          "mode": "walk",
+          "formula": "5 + 5 * (@classLevel(\"hb:shaman:class:shaman\") >= 5) + 5 * (@classLevel(\"hb:shaman:class:shaman\") >= 11) + 5 * (@classLevel(\"hb:shaman:class:shaman\") >= 17)"
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],
@@ -2455,7 +2490,13 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "sense",
+          "sense": "tremorsense",
+          "range": 30
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],
@@ -3809,7 +3850,13 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "movement_mode",
+          "mode": "climb",
+          "formula": "@speed.walk"
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],
@@ -3837,7 +3884,13 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "movement_mode",
+          "mode": "swim",
+          "formula": "@speed.walk"
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],

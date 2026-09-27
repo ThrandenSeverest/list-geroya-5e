@@ -76,7 +76,7 @@ import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeVa
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from "./multiclass";
 import { HomebrewEditor, HomebrewOnSheet } from "./HomebrewEditor";
-import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor } from "./homebrewEngine";
+import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor, homebrewChoiceStatuses, homebrewChoicesComplete, hbEffects, hbSum } from "./homebrewEngine";
 import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
 import { noMagicTutorialStep, tutorialReflection, tutorialSteps, type TutorialTerm } from "./tutorial";
 import { sheetOptionalFeatures } from "./generatedSheetRules";
@@ -982,6 +982,9 @@ function Builder() {
   const personalityLists = personalityOptions(character.background);
   const proficiency = proficiencyBonus(character.level);
   const exportCharacter = { ...rulesCharacter, abilities: finalAbilities };
+  const homebrewChoiceState = homebrewChoiceStatuses(exportCharacter);
+  const homebrewSavingThrows=[...new Set([...(classRuleFor(rulesCharacter, character.startingClassId || character.className)?.saves || []),...hbEffects(exportCharacter,'saving_throw_proficiency').map(entry=>entry.effect.ability||'').filter(Boolean)])];
+  const homebrewSavingThrowBonuses=Object.fromEntries((Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key=>[key,hbSum(exportCharacter,'saving_throw_bonus',effect=>effect.ability===key)]));
   const sharedSpellSlots = resolveSpellSlots(exportCharacter);
   const pactMagicSlots = resolvePactMagic(exportCharacter);
   const classEquipment = equipmentRule(character.className);
@@ -1001,7 +1004,7 @@ function Builder() {
   const resources = characterResources(exportCharacter);
   const attachedHomebrew = [...new Map([...activeHomebrew(exportCharacter), ...homebrew.elements.filter(element => element.characterId === vault.activeId)].map(e => [e.id, e])).values()];
   const ownedFeatureIds = new Set(homebrew.elements.filter(e=>e.type==='class'||e.type==='subclass').flatMap(e=>[...e.features?.map(f=>f.id)||[],...Object.values(e.advancement||{}).flatMap(rows=>rows.filter(row=>row.type==='feature').map(row=>row.id||''))]));
-  const customFeatures = attachedHomebrew.filter(element => element.type === "ability"&&!ownedFeatureIds.has(element.id)).map(element => ({ name: element.name, description: element.description }));
+  const customFeatures = attachedHomebrew.filter(element => element.type === "ability"&&!ownedFeatureIds.has(element.id)).map(element => ({ name: element.name, description: element.description, effectHandling:(element.effects?.some(effect=>effect.when)?'conditional':element.effects?.length||element.resources?.length||element.attacks?.length?'automatic':'manual') as "automatic"|"conditional"|"manual" }));
   const customEquipment = attachedHomebrew.filter(element => element.type === "item").map(element => element.name);
   const customProficiencies = attachedHomebrew.filter(element => element.type === "proficiency").map(element => element.name);
   const customNotes = attachedHomebrew.filter(element => element.type === "note");
@@ -1246,7 +1249,7 @@ function Builder() {
     if (step === 6) {
       const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
       const allComplete = advancements.every(choice => advancementChoiceComplete(choice, spells, character.level, character));
-      return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells);
+      return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells) && homebrewChoicesComplete(exportCharacter);
     }
     if (step === 7 && spellRule.caster) {
       const legalLevels = !spellRule.levelLimits || spellRule.levelLimits.every((limit, level) => level === 0 || selectedAtOrAbove[level] <= limit);
@@ -1281,6 +1284,8 @@ function Builder() {
       const unfinished = advancements.find(choice => !advancementChoiceComplete(choice, spells, character.level, character));
       if (unfinished) return `Завершите выбор ${unfinished.origin ? "черты происхождения" : `на ${unfinished.level}-м уровне`}: черту, повышение характеристик и все дополнительные решения.`;
       if (!classChoicesComplete(rulesCharacter, spells)) return "Заполните все обязательные выборы способностей класса.";
+      const missingHomebrew=homebrewChoiceState.find(status=>status.missing>0);
+      if (missingHomebrew) return `Завершите Homebrew-выбор «${missingHomebrew.choice.name}»: осталось ${missingHomebrew.missing}.`;
     }
     if (step === 7 && spellRule.caster) {
       if (selectedCantrips.length !== spellRule.cantrips) return `Выберите заговоры: ${selectedCantrips.length} из ${spellRule.cantrips}.`;
@@ -1320,6 +1325,7 @@ function Builder() {
       if (!advancementChoiceComplete(choice, spells, character.level, character)) add(6, `Не завершён выбор развития на ${choice.level}-м уровне.`);
     });
     if (!classChoicesComplete(rulesCharacter, spells)) add(6, "Не завершены обязательные выборы способностей класса.");
+    homebrewChoiceState.filter(status=>status.missing>0).forEach(status=>add(6,`Не завершён Homebrew-выбор «${status.choice.name}»: ${status.selected.length} из ${status.choice.count}.`));
     spellClassCandidates.forEach(candidate => {
       const classId = candidate.entry.classId;
       const scoped = { ...rulesCharacter, className: classId, subclass: candidate.entry.subclassId || "", level: candidate.entry.level, abilities: finalAbilities };
@@ -3668,7 +3674,8 @@ function Builder() {
                 classId={character.className}
                 abilities={finalAbilities}
                 proficiency={proficiency}
-                savingThrows={classRuleFor(rulesCharacter, character.startingClassId || character.className)?.saves || []}
+                savingThrows={homebrewSavingThrows}
+                savingThrowBonuses={homebrewSavingThrowBonuses}
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 ac={ac.value}
                 acNotes={ac.conditions}
