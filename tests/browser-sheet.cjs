@@ -69,8 +69,12 @@ async function saved(page) {
         },{key,character});
         await page.goto(url);
         await page.getByRole('button',{name:'Лист Героя — главная',exact:true}).waitFor();
+        assert.ok(await page.getByRole('link',{name:/Войти через Telegram/}).first().isVisible(),'Telegram login is visible on the main menu');
         await verifyImages(page);
         await openSheet(page);
+        if(width<=760) await page.getByRole('button',{name:'Открыть меню'}).click();
+        assert.ok(await page.getByRole('link',{name:/Войти через Telegram/}).first().isVisible(),'Telegram login remains visible in the builder');
+        if(width<=760) await page.getByRole('button',{name:'Открыть меню'}).click();
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'30');
         const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');
         await editor.locator('summary').click();

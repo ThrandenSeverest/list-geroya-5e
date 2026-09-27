@@ -90,7 +90,7 @@ type CharacterSlot = { id: string; character: ExportCharacter; updatedAt: string
 type CharacterVault = { version: 1; capacity: number; activeId: string; slots: CharacterSlot[]; folders: CharacterFolder[] };
 type FolderImportItem = { key: string; name: string; character: ExportCharacter; selected: boolean };
 type FolderImportDraft = { archiveName: string; folderName: string; items: FolderImportItem[] };
-type AccountState = { authenticated: true; email: string; displayName: string; authProvider?: "email" | "chatgpt"; emailVerified?: boolean } | { authenticated: false };
+type AccountState = { authenticated: true; email: string; displayName: string; authProvider?: "email" | "chatgpt" | "telegram" | string; emailVerified?: boolean } | { authenticated: false };
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
 type SiteTheme = "classic" | "parchment" | "legacy";
 type CharacterCheck = { step: number; message: string; severity: "error" | "warning" };
@@ -726,6 +726,12 @@ export default function Home() {
       <Builder />
     </BuilderErrorBoundary>
   );
+}
+
+function AccountAccess({account,cloudState,compact=false}:{account:AccountState|null;cloudState:"local"|"saving"|"saved"|"error";compact?:boolean}) {
+  if(!account)return <span className="account-access is-loading">Проверяем вход…</span>;
+  if(!account.authenticated)return <a className={`account-access is-guest${compact?' compact':''}`} href="/account"><span className="telegram-mark">↗</span><span><strong>Войти через Telegram</strong>{!compact&&<small>Сохранения и Homebrew на всех устройствах</small>}</span></a>;
+  return <a className={`account-access is-user${compact?' compact':''}`} href="/account"><span className="account-online">●</span><span><strong>{account.displayName||'Аккаунт HeroList'}</strong>{!compact&&<small>{cloudState==='saving'?'Синхронизация…':cloudState==='error'?'Ошибка синхронизации':'Данные сохранены'}</small>}</span></a>;
 }
 
 function Builder() {
@@ -2476,18 +2482,57 @@ function Builder() {
   }
 
   if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
-{view === "home" && <header className="topbar">
+{view === "home" && <header className="topbar home-topbar">
   <button className="brand" onClick={() => setView("home")} aria-label="Лист Героя — главная"><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
-  <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+  <nav className="home-top-actions" aria-label="Главная навигация">
+    <button className="nav-button" onClick={openCharacterManager}>Персонажи</button>
+    <button className="nav-button" onClick={() => setView("homebrew")}>Homebrew</button>
+    <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн</button>
+    <AccountAccess account={account} cloudState={cloudState} compact />
+  </nav>
 </header>}
-{view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-layout"><section className="hero-menu"><p className="eyebrow">Лист Героя · D&D 5e 2014</p><h1>Твоя история начинается здесь</h1><div className="hero-menu-options"><button onClick={addCharacter}><strong>Создать персонажа</strong><span>Обычный режим без обучающих окон.</span></button><button className="tutorial-start" onClick={addTutorialCharacter}><strong>Создать с обучением</strong><span>Тот же конструктор, но каждый этап объясняется по мере создания.</span></button><button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>Открыть сохранённые листы и папки.</span></button><button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>18–23 вопроса — и готовый персонаж для приключения.</span></button></div><button disabled={!ready} onClick={() => setView("builder")}>Продолжить текущего персонажа</button></section><div className="home-side"><section className="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src={assetUrl("acknowledgements/velmira.png")} alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src={assetUrl("acknowledgements/krugovorot-mirov.png")} alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div></div>}
+{view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-page">
+  <section className="home-hero">
+    <div className="home-hero-copy">
+      <p className="eyebrow">Конструктор персонажей D&amp;D 5e · редакция 2014</p>
+      <h1>Создайте героя.<br />Получите готовый лист.</h1>
+      <p className="home-lead">Правила, расчёты, заклинания и печатный PDF собраны в одном мастере. Можно начать с нуля или пройти создание с подсказками.</p>
+      {!account?.authenticated && <AccountAccess account={account} cloudState={cloudState} />}
+      <div className="home-cta">
+        <button className="home-primary" onClick={addCharacter}>Создать персонажа</button>
+        <button onClick={addTutorialCharacter}>Создать с обучением</button>
+        {ready && <button onClick={() => setView("builder")}>Продолжить текущего персонажа</button>}
+      </div>
+      <div className="home-quick-actions">
+        <button onClick={openCharacterManager}><strong>Мои персонажи</strong><span>{vault.slots.length} сохранено</span></button>
+        <button onClick={() => setView("homebrew")}><strong>Мой Homebrew</strong><span>Классы, расы и заклинания</span></button>
+        <button onClick={() => setView("quiz")}><strong>Какой из тебя герой?</strong><span>Подбор за 18–23 вопроса</span></button>
+      </div>
+    </div>
+    <div className="home-hero-art" aria-hidden="true">
+      <img className="home-art-day" src={assetUrl("home/hero-day.webp")} alt="" />
+      <img className="home-art-night" src={assetUrl("home/hero-night.webp")} alt="" />
+    </div>
+  </section>
+  <section className="home-recent" aria-labelledby="home-recent-title">
+    <header><div><p className="eyebrow">Быстрый доступ</p><h2 id="home-recent-title">Последние персонажи</h2></div><button onClick={openCharacterManager}>Открыть все</button></header>
+    {vault.slots.length ? <div className="home-recent-grid">{[...vault.slots].sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0,3).map(slot => <button key={slot.id} onClick={() => selectSlot(slot.id)}><span className="home-character-mark">{(slot.character.name || "?").slice(0,1).toUpperCase()}</span><span><strong>{slot.character.name || "Безымянный герой"}</strong><small>{slot.character.level} уровень · {new Date(slot.updatedAt).toLocaleDateString("ru-RU")}</small></span><b>Открыть →</b></button>)}</div> : <div className="home-empty"><p>Здесь появятся последние герои — с уровнем и датой сохранения.</p><button onClick={addCharacter}>Создать первого персонажа</button></div>}
+  </section>
+  <section className="home-benefits" aria-label="Возможности Листа Героя">
+    <div><strong>Правила 5e 2014</strong><span>Автоматические расчёты и проверки выборов</span></div>
+    <div><strong>Полный Homebrew</strong><span>Классы, прогрессии, выборы и списки заклинаний</span></div>
+    <div><strong>PDF и экспорт</strong><span>Печатный лист, LSS, Helpmate и резервные копии</span></div>
+    <div><strong>Telegram-синхронизация</strong><span>Персонажи и Homebrew доступны на разных устройствах</span></div>
+  </section>
+  <div className="home-lower"><section className="contact-card" aria-label="Обратная связь"><p>Если нашли ошибку или хотите предложить улучшение:</p><a href="https://t.me/heroleaf" target="_blank" rel="noreferrer"><strong>Telegram</strong> t.me/heroleaf</a><a href="mailto:heroleaf@mail.ru"><strong>Почта:</strong> heroleaf@mail.ru</a></section><aside className="special-thanks" aria-label="Отдельное спасибо"><h2>Отдельное спасибо</h2><a href="https://t.me/WiseHomeAI_bot" target="_blank" rel="noreferrer"><img src={assetUrl("acknowledgements/velmira.png")} alt="Вельмира" /><span><strong>@WiseHomeAI_bot · Вельмира</strong><small>За помощь в запуске сайта</small></span></a><a href="https://vk.ru/dndworlds" target="_blank" rel="noreferrer"><img src={assetUrl("acknowledgements/krugovorot-mirov.png")} alt="Сообщество «Круговорот Миров»" /><span><strong>«Круговорот Миров»</strong><small>За поддержку и помощь в развитии</small></span></a></aside></div>
+</div>}
   </main>;
 
   if (view === "homebrew") return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
       <header className="topbar">
         <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
-        <button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button>
+        <div className="section-top-actions"><button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button><AccountAccess account={account} cloudState={cloudState} compact /></div>
       </header>
       <HomebrewEditor library={homebrew} onSave={persistHomebrew} character={bindHomebrewLibrary(character, homebrew)} onCharacter={next => setCharacter(homebrewReferencesOnly(next))} saveState={homebrewState} onClose={() => setView("builder")} />
       <UpdateHistory />
@@ -2505,7 +2550,8 @@ function Builder() {
           <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
           <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
-          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
+          <AccountAccess account={account} cloudState={cloudState} compact />
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
         <section className="character-library">
           <header className="library-head">
@@ -2611,7 +2657,8 @@ function Builder() {
           <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
           <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
-          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
+          <AccountAccess account={account} cloudState={cloudState} compact />
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
         </header>
         <div className="ban-page">
           <p className="eyebrow">Правила кампании</p>
@@ -2728,9 +2775,7 @@ function Builder() {
           <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
           <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
           <input ref={banFileRef} hidden type="file" accept=".json,application/json" onChange={importBan} />
-          {account?.authenticated
-            ? <span className="account-state"><span>●</span>{account.displayName} · {cloudState === "saving" ? "сохраняется" : cloudState === "error" ? "ошибка синхронизации" : "сохранено"}<a href="/account">Аккаунт</a></span>
-            : <span className="account-warning">Без входа персонажи хранятся только в этом браузере.<a href="/account">Войти и сохранить</a></span>}
+          <AccountAccess account={account} cloudState={cloudState} compact />
         </div>
         <details className="mobile-top-menu">
           <summary aria-label="Открыть меню">☰</summary>
@@ -2741,7 +2786,7 @@ function Builder() {
             <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
             <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Создать бан-лист</button>
             <button className="nav-button" onClick={() => banFileRef.current?.click()}>Загрузить бан-лист</button>
-            {account?.authenticated ? <a href="/account">Аккаунт · {account.displayName}</a> : <a href="/account">Войти и сохранить</a>}
+            <AccountAccess account={account} cloudState={cloudState} compact />
           </div>
         </details>
       </header>

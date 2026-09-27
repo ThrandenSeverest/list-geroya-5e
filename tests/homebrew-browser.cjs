@@ -134,8 +134,9 @@ const table = {
       );
       await page.getByLabel("Название Homebrew").fill("Проверочный подкласс");
       await page
-        .getByRole("button", { name: "Сохранить элемент", exact: true })
+        .getByRole("button", { name: "Сохранить изменения", exact: true })
         .click();
+      assert.ok(await page.getByRole("button", { name: "Сохранено", exact: true }).isDisabled());
       if (width === 1440) {
         if (
           !(await page
@@ -177,13 +178,19 @@ const table = {
           .first()
           .click();
         await page
-          .getByRole("button", { name: "Сохранить элемент", exact: true })
+          .getByRole("button", { name: "Сохранить изменения", exact: true })
           .click();
+        await page.getByRole("button", { name: "Закрыть", exact: true }).click();
         await page.getByLabel("Поиск Homebrew").fill("Класс браузера");
         assert.equal(
           await page.locator(".hb-browser-results article").count(),
           1,
         );
+        const savedCard = page.locator(".hb-browser-results article").first();
+        assert.ok(await savedCard.getByRole("button", { name: "Удалить", exact: true }).isVisible());
+        await savedCard.locator('input[type="checkbox"]').check();
+        assert.ok(await page.getByRole("button", { name: "Удалить выбранные (1)", exact: true }).isEnabled());
+        await savedCard.locator('input[type="checkbox"]').uncheck();
         await page.getByLabel("Фильтр Homebrew").selectOption("spell");
         assert.equal(
           await page.locator(".hb-browser-results article").count(),
