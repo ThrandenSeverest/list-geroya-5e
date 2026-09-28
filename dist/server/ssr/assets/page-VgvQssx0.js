@@ -56076,8 +56076,7 @@ function Builder() {
 			if (storedBan) setActiveBan(normalizeBanList(JSON.parse(storedBan)));
 			setAdditionalSpellsUnlocked(localStorage.getItem("list-geroya-additional-spells") === "enabled");
 			setAdditionalSpellsAcknowledged(localStorage.getItem("list-geroya-additional-spells-warning") === "acknowledged");
-			const storedTheme = localStorage.getItem("list-geroya-site-theme");
-			setSiteTheme(storedTheme === "parchment" || storedTheme === "legacy" ? storedTheme : "classic");
+			setSiteTheme(localStorage.getItem("list-geroya-site-theme") === "parchment" ? "parchment" : "classic");
 		} catch {
 			const slot = createSlot(initial);
 			loadedVault = {
@@ -56126,11 +56125,11 @@ function Builder() {
 		ready,
 		vault
 	]);
-	const usesOrnateIcons = siteTheme !== "legacy";
-	const shellThemeClass = siteTheme === "parchment" ? " modern-design" : siteTheme === "legacy" ? " legacy-design" : "";
-	const nextThemeName = siteTheme === "classic" ? "пергаментный" : siteTheme === "parchment" ? "старый упрощённый" : "синий с золотом";
+	const usesOrnateIcons = true;
+	const shellThemeClass = siteTheme === "parchment" ? " modern-design" : "";
+	const nextThemeName = siteTheme === "classic" ? "пергаментный" : "синий с золотом";
 	function cycleSiteTheme() {
-		const next = siteTheme === "classic" ? "parchment" : siteTheme === "parchment" ? "legacy" : "classic";
+		const next = siteTheme === "classic" ? "parchment" : "classic";
 		setSiteTheme(next);
 		localStorage.setItem("list-geroya-site-theme", next);
 	}
@@ -57965,11 +57964,11 @@ function Builder() {
 				"aria-label": "Лист Героя — главная",
 				children: [
 					/* @__PURE__ */ jsx("span", {
-						className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
-						children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+						className: `brand-mark experimental-site-mark`,
+						children: /* @__PURE__ */ jsx("img", {
 							src: assetUrl("experimental/site-mark.png"),
 							alt: ""
-						}) : "✦"
+						})
 					}),
 					"Лист Героя ",
 					/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
@@ -58184,11 +58183,11 @@ function Builder() {
 					onClick: () => setView("home"),
 					children: [
 						/* @__PURE__ */ jsx("span", {
-							className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
-							children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+							className: `brand-mark experimental-site-mark`,
+							children: /* @__PURE__ */ jsx("img", {
 								src: assetUrl("experimental/site-mark.png"),
 								alt: ""
-							}) : "✦"
+							})
 						}),
 						"Лист Героя ",
 						/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
@@ -58234,11 +58233,11 @@ function Builder() {
 							onClick: () => setView("home"),
 							children: [
 								/* @__PURE__ */ jsx("span", {
-									className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
-									children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+									className: `brand-mark experimental-site-mark`,
+									children: /* @__PURE__ */ jsx("img", {
 										src: assetUrl("experimental/site-mark.png"),
 										alt: ""
-									}) : "✦"
+									})
 								}),
 								"Лист Героя ",
 								/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
@@ -58655,11 +58654,11 @@ function Builder() {
 							onClick: () => setView("home"),
 							children: [
 								/* @__PURE__ */ jsx("span", {
-									className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
-									children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+									className: `brand-mark experimental-site-mark`,
+									children: /* @__PURE__ */ jsx("img", {
 										src: assetUrl("experimental/site-mark.png"),
 										alt: ""
-									}) : "✦"
+									})
 								}),
 								"Лист Героя ",
 								/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
@@ -58916,11 +58915,11 @@ function Builder() {
 						onClick: () => setView("home"),
 						children: [
 							/* @__PURE__ */ jsx("span", {
-								className: `brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`,
-								children: usesOrnateIcons ? /* @__PURE__ */ jsx("img", {
+								className: `brand-mark experimental-site-mark`,
+								children: /* @__PURE__ */ jsx("img", {
 									src: assetUrl("experimental/site-mark.png"),
 									alt: ""
-								}) : "✦"
+								})
 							}),
 							"Лист Героя ",
 							/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
