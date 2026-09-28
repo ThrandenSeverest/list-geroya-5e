@@ -92,7 +92,7 @@ type FolderImportItem = { key: string; name: string; character: ExportCharacter;
 type FolderImportDraft = { archiveName: string; folderName: string; items: FolderImportItem[] };
 type AccountState = { authenticated: true; email: string; displayName: string; authProvider?: "email" | "chatgpt" | "telegram" | string; emailVerified?: boolean } | { authenticated: false };
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
-type SiteTheme = "classic" | "parchment" | "legacy";
+type SiteTheme = "classic" | "parchment";
 type CharacterCheck = { step: number; message: string; severity: "error" | "warning" };
 type LibraryExportFormat = "herolist" | "helpmate" | "lss";
 type LibraryExportTarget = { kind: "character"; id: string } | { kind: "folder"; id: string };
@@ -855,7 +855,7 @@ function Builder() {
       setAdditionalSpellsUnlocked(localStorage.getItem("list-geroya-additional-spells") === "enabled");
       setAdditionalSpellsAcknowledged(localStorage.getItem("list-geroya-additional-spells-warning") === "acknowledged");
       const storedTheme = localStorage.getItem("list-geroya-site-theme");
-      setSiteTheme(storedTheme === "parchment" || storedTheme === "legacy" ? storedTheme : "classic");
+      setSiteTheme(storedTheme === "parchment" ? "parchment" : "classic");
     } catch {
       const slot = createSlot(initial);
       loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot], folders: [] };
@@ -887,12 +887,12 @@ function Builder() {
     }
   }, [account, character, ready, vault]);
 
-  const usesOrnateIcons = siteTheme !== "legacy";
-  const shellThemeClass = siteTheme === "parchment" ? " modern-design" : siteTheme === "legacy" ? " legacy-design" : "";
-  const nextThemeName = siteTheme === "classic" ? "пергаментный" : siteTheme === "parchment" ? "старый упрощённый" : "синий с золотом";
+  const usesOrnateIcons = true;
+  const shellThemeClass = siteTheme === "parchment" ? " modern-design" : "";
+  const nextThemeName = siteTheme === "classic" ? "пергаментный" : "синий с золотом";
 
   function cycleSiteTheme() {
-    const next: SiteTheme = siteTheme === "classic" ? "parchment" : siteTheme === "parchment" ? "legacy" : "classic";
+    const next: SiteTheme = siteTheme === "classic" ? "parchment" : "classic";
     setSiteTheme(next);
     localStorage.setItem("list-geroya-site-theme", next);
   }

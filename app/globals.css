@@ -1587,8 +1587,7 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .home-hero-copy{width:56%;min-height:560px;padding:38px 0 34px 8px}
 .home-hero-copy h1{font-size:clamp(48px,5.4vw,78px)}
 .home-hero-art{position:absolute;z-index:0;inset:0 -1% 0 auto;width:61%;height:100%;overflow:visible}
-.home-hero-art img{right:0;width:100%;height:100%;object-fit:contain;object-position:right center;-webkit-mask-image:radial-gradient(ellipse 62% 68% at 58% 47%,#000 50%,rgba(0,0,0,.94) 62%,rgba(0,0,0,.38) 82%,transparent 100%);mask-image:radial-gradient(ellipse 62% 68% at 58% 47%,#000 50%,rgba(0,0,0,.94) 62%,rgba(0,0,0,.38) 82%,transparent 100%)}
-.app-shell[data-site-theme="parchment"] .home-hero-art img{-webkit-mask-image:radial-gradient(ellipse 68% 74% at 58% 47%,#000 55%,rgba(0,0,0,.82) 75%,transparent 100%);mask-image:radial-gradient(ellipse 68% 74% at 58% 47%,#000 55%,rgba(0,0,0,.82) 75%,transparent 100%)}
+.home-hero-art img{right:0;width:100%;height:100%;object-fit:contain;object-position:right center;-webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.18) 12%,#000 34%),linear-gradient(270deg,transparent 0,rgba(0,0,0,.18) 9%,#000 25%),linear-gradient(180deg,transparent 0,rgba(0,0,0,.2) 10%,#000 25%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.18) 10%,#000 24%);-webkit-mask-composite:source-in,source-in,source-in;mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.18) 12%,#000 34%),linear-gradient(270deg,transparent 0,rgba(0,0,0,.18) 9%,#000 25%),linear-gradient(180deg,transparent 0,rgba(0,0,0,.2) 10%,#000 25%),linear-gradient(0deg,transparent 0,rgba(0,0,0,.18) 10%,#000 24%);mask-composite:intersect,intersect,intersect}
 .home-hero-art::after{display:none}
 .modern-design .home-hero{border:0;background:transparent;box-shadow:none}
 .modern-design .home-hero-art::after{display:none}
