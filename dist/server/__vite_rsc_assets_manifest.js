@@ -50,7 +50,7 @@ export default {
     "app/layout.tsx": {
       "js": [],
       "css": [
-        "/assets/index-jTgO_ErC.css"
+        "/assets/index-DPZFdcPT.css"
       ]
     }
   }
