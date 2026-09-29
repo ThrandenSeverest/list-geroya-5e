@@ -13158,8 +13158,13 @@ function homebrewChoicesComplete(c) {
 	return homebrewChoiceStatuses(c).every((status) => status.missing === 0);
 }
 function hbContext(c, source) {
+	const entities = c.homebrew?.entities || [];
+	const owner = entities.find((e) => e.id === source);
+	const featureOwner = entities.find((e) => e.features?.some((feature) => feature.id === source));
+	const classId = owner?.type === "class" ? owner.id : owner?.parentClassId || featureOwner?.parentClassId || featureOwner?.id;
 	const values = {
 		"@level": level(c),
+		"@classLevel": classId ? classLevel(c, classId) : 0,
 		"@pb": 2 + Math.floor((level(c) - 1) / 4),
 		"@currentHp": c.currentHitPoints || 0,
 		"@tempHp": c.temporaryHitPoints || 0
@@ -13222,7 +13227,9 @@ function activeHomebrew(c) {
 				parentClassId: e.type === "class" ? e.id : e.parentClassId,
 				effects: feature.effects || [],
 				resources: feature.resources || [],
-				attacks: feature.attacks || []
+				attacks: feature.attacks || [],
+				actions: feature.actions || [],
+				choices: feature.choices || []
 			});
 		}
 		if (e.type === "class" || e.type === "subclass") {
@@ -13325,10 +13332,10 @@ function classRuleFor(c, id) {
 		})[e.group] || e.group).join(", "),
 		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : weaponProficiencyNames[e.id || ""] || e.id || "").join(", "),
 		spellAbility: e.spellcasting?.mode && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
-		features: activeHomebrew(c).filter((x) => x.type === "ability").map((x) => ({
+		features: activeHomebrew(c).filter((x) => x.type === "ability" && x.parentClassId === id).map((x) => ({
 			name: x.name,
 			description: x.description,
-			effectHandling: x.effects?.some((effect) => effect.when) ? "conditional" : x.effects?.length || x.resources?.length || x.attacks?.length ? "automatic" : "manual"
+			effectHandling: x.effects?.some((effect) => effect.when) ? "conditional" : x.effects?.length || x.resources?.length || x.attacks?.length || x.actions?.length || x.choices?.length ? "automatic" : "manual"
 		}))
 	};
 }
@@ -48083,6 +48090,7 @@ function validateHomebrew(entities, officialIds = []) {
 	});
 	const values = {
 		"@level": 5,
+		"@classLevel": 5,
 		"@pb": 3,
 		"@maxHp": 30,
 		"@currentHp": 20,
@@ -48150,6 +48158,20 @@ function validateHomebrew(entities, officialIds = []) {
 					formula(e.id, effect.value);
 					formula(e.id, effect.when);
 				}
+				for (const resource of f?.resources || []) {
+					formula(e.id, resource.max);
+					formula(e.id, resource.when);
+				}
+				for (const attack of f?.attacks || []) {
+					formula(e.id, attack.bonus);
+					formula(e.id, attack.when);
+					for (const damage of attack.damage || []) formula(e.id, damage.formula);
+				}
+				for (const choice of f?.choices || []) {
+					if (!choice.id || !choice.name || !Number.isInteger(choice.count) || choice.count < 1 || !Array.isArray(choice.from)) add(e.id, "Особенность: у выбора нужны название, количество и варианты");
+					for (const id of choice.from || []) ref(e.id, id);
+				}
+				for (const action of f?.actions || []) if (!action.id || !action.name) add(e.id, "Особенность: у действия нужны ID и название");
 			}
 		}
 		if (e.spellList?.some((id) => !all.has(id) && !all.has("official:spell:" + id))) add(e.id, "В списке заклинаний класса есть неизвестный ID");
@@ -52076,13 +52098,14 @@ var official = [
 var abilities = Object.keys(abilityLabels);
 var editorTabs = (type) => [
 	"Основное",
-	...type === "class" ? ["Состав"] : [],
+	...["class", "subclass"].includes(type) ? ["Развитие 1–20"] : [],
 	...["class", "subclass"].includes(type) ? ["Способности класса"] : [],
 	...[
 		"class",
 		"subclass",
 		"ability"
 	].includes(type) ? ["Заклинания"] : [],
+	...type === "class" ? ["Состав"] : [],
 	...[
 		"table",
 		"class",
@@ -52092,6 +52115,13 @@ var editorTabs = (type) => [
 	"Механика",
 	"Описание",
 	"Код",
+	"Проверка"
+];
+var primaryClassTabs = [
+	"Основное",
+	"Развитие 1–20",
+	"Способности класса",
+	"Заклинания",
 	"Проверка"
 ];
 var tagNames = {
@@ -52118,6 +52148,7 @@ var tagNames = {
 };
 var vars = [
 	"@level",
+	"@classLevel",
 	"@pb",
 	...abilities.map((a) => "@mod." + a),
 	...abilities.map((a) => "@ability." + a),
@@ -52717,17 +52748,25 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									]
 								})]
 							}),
-							/* @__PURE__ */ jsx("nav", {
+							/* @__PURE__ */ jsxs("nav", {
 								className: "hb-tabs",
 								"aria-label": "Разделы редактора",
-								children: editorTabs(draft.type).map((t) => /* @__PURE__ */ jsx("button", {
+								children: [editorTabs(draft.type).filter((t) => !["class", "subclass"].includes(draft.type) || primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
 									"aria-pressed": tab === t,
-									onClick: () => {
-										setTab(t);
-										if (t === "Код") setCode(JSON.stringify(draft, null, 2));
-									},
+									onClick: () => setTab(t),
 									children: t
-								}, t))
+								}, t)), ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsxs("details", {
+									className: "hb-advanced-tabs",
+									open: !primaryClassTabs.includes(tab),
+									children: [/* @__PURE__ */ jsx("summary", { children: "Дополнительно" }), /* @__PURE__ */ jsx("div", { children: editorTabs(draft.type).filter((t) => !primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+										"aria-pressed": tab === t,
+										onClick: () => {
+											setTab(t);
+											if (t === "Код") setCode(JSON.stringify(draft, null, 2));
+										},
+										children: t
+									}, t)) })]
+								})]
 							}),
 							tab === "Основное" && /* @__PURE__ */ jsxs("div", {
 								className: "hb-fields",
@@ -53095,6 +53134,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), "Требует настройки"] })] })
 								]
 							}),
+							tab === "Основное" && draft.type === "class" && /* @__PURE__ */ jsx(ClassTraining, {
+								draft,
+								update
+							}),
 							tab === "Основное" && draft.type === "spell" && /* @__PURE__ */ jsx(SpellCardPreview, { draft }),
 							tab === "Механика" && (draft.type === "spell" ? /* @__PURE__ */ jsx(SpellMechanicsEditor, {
 								draft,
@@ -53108,6 +53151,11 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								root: draft,
 								pack: draftPackage,
 								open
+							}),
+							tab === "Развитие 1–20" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassProgression, {
+								draft,
+								update,
+								editFeatures: () => setTab("Способности класса")
 							}),
 							tab === "Способности класса" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassFeatures, {
 								draft,
@@ -53264,7 +53312,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								children: [
 									problems.length,
 									" ошибок. ",
-									problems[0].message
+									problems[0].message,
+									" ",
+									/* @__PURE__ */ jsx("button", {
+										type: "button",
+										onClick: () => setTab("Проверка"),
+										children: "Открыть проверку"
+									})
 								]
 							})
 						]
@@ -54300,6 +54354,115 @@ function IconPicker({ draft, update }) {
 		})
 	});
 }
+function ClassTraining({ draft, update }) {
+	const training = [
+		[
+			"weapon_group_proficiency",
+			"simple",
+			"Простое оружие"
+		],
+		[
+			"weapon_group_proficiency",
+			"martial",
+			"Воинское оружие"
+		],
+		[
+			"armor_proficiency",
+			"light",
+			"Лёгкие доспехи"
+		],
+		[
+			"armor_proficiency",
+			"medium",
+			"Средние доспехи"
+		],
+		[
+			"armor_proficiency",
+			"heavy",
+			"Тяжёлые доспехи"
+		],
+		[
+			"armor_proficiency",
+			"shield",
+			"Щиты"
+		]
+	];
+	const effects = draft.effects || [];
+	const toggle = (type, group) => {
+		update({ effects: effects.some((effect) => effect.type === type && effect.group === group) ? effects.filter((effect) => effect.type !== type || effect.group !== group) : [...effects, {
+			type,
+			group
+		}] });
+	};
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-class-training",
+		children: [
+			/* @__PURE__ */ jsx("h3", { children: "Владения на первом уровне" }),
+			/* @__PURE__ */ jsx("p", { children: "Отметьте оружие и доспехи. Они попадут в расчёты и будут оформлены на листе так же, как у официального класса." }),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-toolbar",
+				children: training.map(([type, group, label]) => /* @__PURE__ */ jsx("button", {
+					type: "button",
+					"aria-pressed": effects.some((effect) => effect.type === type && effect.group === group),
+					onClick: () => toggle(type, group),
+					children: label
+				}, group))
+			}),
+			/* @__PURE__ */ jsx("p", { children: "Отдельные виды оружия и инструменты можно добавить в «Механике»; выбор навыков задаётся выше." })
+		]
+	});
+}
+function ClassProgression({ draft, update, editFeatures }) {
+	const features = draft.features || [];
+	const add = (level) => {
+		update({ features: [...features, {
+			id: newHomebrew("ability").id,
+			level,
+			name: "Новая способность",
+			description: ""
+		}] });
+		editFeatures();
+	};
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-class-progression",
+		children: [
+			/* @__PURE__ */ jsxs("h3", { children: [
+				"Развитие ",
+				draft.type === "class" ? "класса" : "подкласса",
+				" по уровням"
+			] }),
+			/* @__PURE__ */ jsx("p", { children: "Способности добавляются прямо в нужный уровень и сразу становятся частью итогового листа. Бонус мастерства считается по общему уровню персонажа." }),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-progression-scroll",
+				children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
+					/* @__PURE__ */ jsx("th", { children: "Уровень" }),
+					/* @__PURE__ */ jsx("th", { children: "Способности" }),
+					/* @__PURE__ */ jsx("th", { children: "Особые решения" })
+				] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, index) => index + 1).map((level) => /* @__PURE__ */ jsxs("tr", { children: [
+					/* @__PURE__ */ jsx("th", {
+						scope: "row",
+						children: level
+					}),
+					/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
+						className: "hb-level-features",
+						children: [features.filter((feature) => feature.level === level).map((feature) => /* @__PURE__ */ jsxs("button", {
+							type: "button",
+							onClick: editFeatures,
+							children: [feature.name || "Без названия", " →"]
+						}, feature.id)), /* @__PURE__ */ jsx("button", {
+							type: "button",
+							"aria-label": `Добавить способность на уровне ${level}`,
+							onClick: () => add(level),
+							children: "+ Способность"
+						})]
+					}) }),
+					/* @__PURE__ */ jsxs("td", { children: [draft.type === "class" && draft.subclass?.chooseAtLevel === level ? /* @__PURE__ */ jsx("span", { children: "Выбор подкласса" }) : null, (draft.advancement?.[level] || []).map((row, i) => /* @__PURE__ */ jsxs("span", { children: [row.type === "asi_or_feat" ? "Повышение характеристик / черта" : row.type === "subclass" ? "Подкласс" : row.type === "choice" ? "Выбор" : row.type === "resource" ? "Ресурс" : row.type === "attack" ? "Атака" : row.type === "spell" ? "Заклинание" : "Особенность", " · "] }, i))] })
+				] }, level)) })] })
+			}),
+			/* @__PURE__ */ jsx("p", { children: "Ячейки и известные заклинания настраиваются в разделе «Заклинания». Дополнительные связи с отдельными объектами — в «Разблокировках по уровням»." })
+		]
+	});
+}
 function ClassFeatures({ draft, update, entities }) {
 	const rows = draft.features || [];
 	const patch = (i, p) => update({ features: rows.map((f, n) => n === i ? {
@@ -54313,7 +54476,7 @@ function ClassFeatures({ draft, update, entities }) {
 			" ",
 			/* @__PURE__ */ jsx(HBHelp, { children: "Хранятся внутри этого класса и появляются на листе с указанного уровня. ID создаётся автоматически; отдельная запись в библиотеке не требуется." })
 		] }),
-		/* @__PURE__ */ jsx("p", { children: "Добавьте название, уровень и текст. Если способность меняет механику, откройте «Эффекты способности» и выберите эффект, ресурс или атаку." }),
+		/* @__PURE__ */ jsx("p", { children: "Добавьте название, уровень и текст. Эффекты, ресурсы, атаки, выборы и действия принадлежат этой способности." }),
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-feature-list",
 			children: rows.map((feature, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
@@ -54342,7 +54505,7 @@ function ClassFeatures({ draft, update, entities }) {
 						onChange: (e) => patch(i, { description: e.target.value })
 					})
 				}),
-				/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Эффекты способности" }), /* @__PURE__ */ jsx(Mechanics, {
+				/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Что делает способность: эффекты, ресурсы и выборы" }), /* @__PURE__ */ jsx(Mechanics, {
 					draft: {
 						...draft,
 						id: feature.id,
@@ -54350,13 +54513,15 @@ function ClassFeatures({ draft, update, entities }) {
 						effects: feature.effects || [],
 						resources: feature.resources || [],
 						attacks: feature.attacks || [],
-						actions: [],
-						choices: []
+						actions: feature.actions || [],
+						choices: feature.choices || []
 					},
 					update: (p) => patch(i, Object.fromEntries(Object.entries(p).filter(([key]) => [
 						"effects",
 						"resources",
-						"attacks"
+						"attacks",
+						"actions",
+						"choices"
 					].includes(key)))),
 					entities
 				})] }),
