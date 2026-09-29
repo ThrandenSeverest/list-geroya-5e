@@ -3802,7 +3802,7 @@ function Builder() {
             id={selectedClass?.id || selectedRace?.id}
             kind={selectedClass ? "class" : "race"}
             fallback={selectedClass?.name || selectedRace?.name || "Новый герой"}
-            className="portrait"
+            className="sigil summary-catalog-icon"
             experimental={usesOrnateIcons}
             image={homebrew.elements.find(e=>e.id===(selectedClass?.id||selectedRace?.id))?.icon}
           />

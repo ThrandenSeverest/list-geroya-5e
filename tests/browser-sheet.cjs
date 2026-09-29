@@ -35,7 +35,17 @@ async function verifyImages(page) {
 }
 async function openSheet(page) {
   await page.getByRole('button', {name:'Продолжить текущего персонажа',exact:true}).click();
-  await page.locator('.experimental-catalog-icon').first().waitFor();
+  const summaryIcon=page.locator('.summary .summary-catalog-icon.experimental-catalog-icon');
+  await summaryIcon.waitFor({state:'attached'});
+  const summaryIconStyle=await summaryIcon.evaluate(element=>{
+    const style=getComputedStyle(element);
+    return {mask:style.maskImage||style.webkitMaskImage,color:style.color,width:style.width,height:style.height};
+  });
+  assert.notEqual(summaryIconStyle.mask,'none','Summary uses the same catalog artwork mask');
+  assert.notEqual(summaryIconStyle.color,'rgba(0, 0, 0, 0)','Summary catalog artwork remains visible');
+  const expectedCatalogIconSize=page.viewportSize().width<=760?'80px':'118px';
+  assert.equal(summaryIconStyle.width,expectedCatalogIconSize);
+  assert.equal(summaryIconStyle.height,expectedCatalogIconSize);
   const catalogSearch=page.getByPlaceholder('Поиск по каталогу');
   const searchBox=await catalogSearch.locator('..').boundingBox();
   assert.ok(searchBox&&searchBox.width>=Math.min(260,page.viewportSize().width-32));
