@@ -1,0 +1,13 @@
+.hb-progression-scroll{overflow-x:auto;max-width:100%}
+.hb-class-progression table{min-width:530px}
+.hb-class-progression th:first-child{width:75px}
+.hb-level-features{display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.hb-level-features button{min-height:38px}
+.hb-level-features button:last-child{border-style:dashed}
+.hb-feature-list fieldset{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.hb-feature-list fieldset .hb-field,.hb-feature-list details,.hb-mechanics fieldset>div,.hb-mechanics fieldset>label{min-width:0}
+.hb-mechanics fieldset input,.hb-mechanics fieldset select{min-width:0}
+.hb-mechanics fieldset button{white-space:normal;overflow-wrap:anywhere}
+.hb-workspace .hb-tabs{top:70px;z-index:3}
+.hb-advanced-tabs{position:relative}.hb-advanced-tabs summary{cursor:pointer;padding:8px 12px;list-style:none;border:1px solid #e4bf7755;border-radius:5px}.hb-advanced-tabs[open] summary{border-color:#e4bf77}.hb-advanced-tabs>div{position:absolute;right:0;top:100%;z-index:5;min-width:220px;display:grid;gap:3px;padding:8px;border:1px solid #a78c5d;border-radius:8px;background:#24211e;box-shadow:0 12px 20px #0008}.hb-advanced-tabs button{text-align:left}
+@media(max-width:760px){.hb-workspace .hb-tabs{top:auto}}

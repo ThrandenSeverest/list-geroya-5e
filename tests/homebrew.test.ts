@@ -84,6 +84,22 @@ test('inline class features belong to one reusable class and unlock at their cla
  assert.deepEqual(createNativeCharacterFile(hero).character.homebrew?.entities,[]);
 });
 
+test('inline class feature retains its choices and actions and evaluates its class level',()=>{
+ const option:HomebrewElement={id:'hb:test:ability:stance',type:'ability',name:'Стойка',description:'Усиливает защиту',updatedAt:'',effects:[{type:'ac_bonus',value:1}]};
+ const cls:HomebrewElement={id:'hb:test:class:warden',type:'class',name:'Страж',description:'',updatedAt:'',hitDie:'d10',features:[{id:'hb:test:ability:stance-choice',level:2,name:'Боевой приём',description:'Выберите стойку',resources:[{id:'hb:test:resource:stance',name:'Приёмы',max:'@classLevel + @pb',restore:['short_rest']}],choices:[{id:'hb:test:choice:stance',name:'Стойка',type:'feature',count:1,from:[option.id]}],actions:[{id:'hb:test:action:stance',name:'Принять стойку',actionType:'bonus_action'}]}]};
+ assert.deepEqual(validateHomebrew([cls,option]),[]);
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id]}},{elements:[cls,option]});
+ const feature=activeHomebrew(hero).find(e=>e.id==='hb:test:ability:stance-choice')!;
+ assert.equal(feature.actions?.[0].name,'Принять стойку');
+ assert.deepEqual(normalizeHomebrewLibrary(JSON.parse(JSON.stringify({elements:[cls,option]}))).elements[0].features?.[0].choices,cls.features?.[0].choices);
+ assert.equal(homebrewChoiceStatuses(hero).find(status=>status.choice.id==='hb:test:choice:stance')?.missing,1);
+ assert.equal(hbResources(hero).find(resource=>resource.name==='Приёмы')?.max,8);
+ assert.equal(classRuleFor(hero,cls.id)?.features.filter(row=>row.name==='Боевой приём').length,1);
+ const low={...hero,level:1,classes:[{classId:cls.id,level:1,acquiredAtCharacterLevel:1}]};
+ assert.ok(!activeHomebrew(low).some(e=>e.id===feature.id));
+ assert.ok(!homebrewChoiceStatuses(low).some(status=>status.choice.id==='hb:test:choice:stance'));
+});
+
 test('Homebrew class can inherit complete official spell lists without copying every spell ID',async()=>{
  const {homebrewSpellAvailable}=await import('../app/homebrewCatalog');
  const cls:HomebrewElement={id:'hb:test:class:theurge',type:'class',name:'Теург',description:'',updatedAt:'',hitDie:'d8',spellListSources:['druid','cleric'],spellList:['magic-missile']};

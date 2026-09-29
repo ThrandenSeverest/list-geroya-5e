@@ -155,16 +155,20 @@ const table = {
             .click();
         await page.getByRole("button", { name: "Класс", exact: true }).click();
         await page.getByLabel("Название Homebrew").fill("Класс браузера");
+        await page.getByRole("button", { name: "Простое оружие", exact: true }).click();
+        assert.equal(await page.getByRole("button", { name: "Простое оружие", exact: true }).getAttribute("aria-pressed"), "true");
+        await page.getByRole("button", { name: "Развитие 1–20", exact: true }).click();
+        assert.equal(await page.locator(".hb-class-progression tbody tr").count(), 20);
         await page
-          .getByRole("button", { name: "Способности класса", exact: true })
-          .click();
-        await page
-          .getByRole("button", { name: "+ Способность в этом классе" })
+          .getByRole("button", { name: "Добавить способность на уровне 1", exact: true })
           .click();
         await page
           .locator(".hb-feature-list input")
           .nth(1)
           .fill("Браузерная способность");
+        await page.getByText("Что делает способность: эффекты, ресурсы и выборы").click();
+        await page.getByRole("button", { name: "+ Действие", exact: true }).click();
+        await page.getByLabel("Название действия").fill("Особое действие");
         await page
           .getByRole("button", { name: "Заклинания", exact: true })
           .click();
