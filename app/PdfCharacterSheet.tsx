@@ -14,6 +14,7 @@ type PdfResource = { name: string; current: number; max: number; die?: string; u
 export type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boolean; classSource: string; grantSource?: string };
 
 export type PdfCharacterSheetProps = {
+  sheetEdition?: "2014" | "2024";
   identity: {
     name: string;
     playerName: string;
@@ -383,10 +384,12 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     return () => { active = false; observer.disconnect(); window.removeEventListener("beforeprint", fit); window.removeEventListener("afterprint", fit); };
   }, [props, inventoryMode]);
 
-  return <div className="pdf-document" aria-hidden="true">
+  const sheetEdition = props.sheetEdition || "2014";
+
+  return <div className={`pdf-document pdf-document--${sheetEdition}`} aria-hidden="true" data-sheet-edition={sheetEdition}>
     <section className="pdf-page pdf-primary-page">
       <div className="pdf-primary-content" ref={primaryContent}>
-      <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · 2014</i></div>
+      <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · правила 2014 · лист {sheetEdition}</i></div>
       <header className="pdf-hero-header">
         <div><small>ИМЯ ПЕРСОНАЖА</small><h1>{props.identity.name || "Безымянный герой"}</h1></div>
         <dl>

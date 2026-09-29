@@ -1486,23 +1486,35 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .pdf-resource-page-grid .pdf-resource { border: .3mm solid #365b5e; padding: 3mm; }
 .pdf-page footer { margin: 0; padding: 0; border: 0; height: auto; min-height: 0; line-height: 1.2; }
 
-/* Reuse the selected catalog sigil in the hero summary without a second
-   portrait treatment. This keeps the same artwork, scale and contours as the
-   selected card in the list. */
-.summary .summary-catalog-icon {
-  --sigil-line: var(--gold);
-  --sigil-bright: #ffe4a0;
-  --sigil-glow: rgba(241,212,134,.28);
-  margin: 10px auto 20px;
-  color: var(--gold-bright);
-  background: radial-gradient(circle, rgba(241,212,134,.23) 0 22%, rgba(201,165,87,.09) 52%, transparent 72%);
-  box-shadow: inset 0 0 0 3px rgba(7,17,22,.96), inset 0 0 0 4px var(--gold-bright), inset 0 0 0 7px rgba(127,91,34,.55), 0 0 26px rgba(201,165,87,.25);
-}
-.summary .summary-catalog-icon.experimental-catalog-icon {
-  background: currentColor;
-  box-shadow: none;
-  filter: drop-shadow(0 0 7px rgba(241,212,134,.2));
-}
+/* Alternate 2024 sheet presentation. Rules remain 5e 2014; this changes only
+   the printable information architecture and visual language. */
+.pdf-document--2024 .pdf-page{background:#fff;color:#151515;font-family:Arial,sans-serif}
+.pdf-document--2024 .pdf-page::before{background:linear-gradient(135deg,#111 0 14mm,transparent 14.2mm),linear-gradient(315deg,#111 0 10mm,transparent 10.2mm);opacity:.035}
+.pdf-document--2024 .pdf-brand{color:#111;border-color:#111;letter-spacing:.16em}
+.pdf-document--2024 .pdf-brand i{color:#555}
+.pdf-document--2024 .pdf-hero-header{border-color:#111}
+.pdf-document--2024 .pdf-hero-header h1,.pdf-document--2024 .pdf-page-header h2,.pdf-document--2024 .pdf-panel>h2,.pdf-document--2024 .pdf-panel-title-row h2,.pdf-document--2024 .pdf-feature-list h3{color:#111;font-family:Arial,sans-serif;font-weight:800;text-transform:uppercase}
+.pdf-document--2024 .pdf-hero-header small,.pdf-document--2024 .pdf-page-header small,.pdf-document--2024 .pdf-panel small{color:#555}
+.pdf-document--2024 .pdf-panel,.pdf-document--2024 .pdf-ability-row>div,.pdf-document--2024 .pdf-combat-cards div,.pdf-document--2024 .pdf-currency-grid>div{border-color:#222;border-radius:0;background:#fff}
+.pdf-document--2024 .pdf-panel>h2,.pdf-document--2024 .pdf-panel-title-row{border-color:#222;background:#f1f1f1}
+.pdf-document--2024 .pdf-ability-row{gap:1.2mm}
+.pdf-document--2024 .pdf-ability-row>div{min-height:21mm}
+.pdf-document--2024 .pdf-ability-row span{border-color:#222;border-radius:2mm}
+.pdf-document--2024 .pdf-primary-grid{grid-template-columns:.95fr .82fr 1.23fr;gap:2mm}
+.pdf-document--2024 .pdf-page-header{border-color:#111}
+.pdf-document--2024 .pdf-page-header>b{color:#111}
+.pdf-document--2024 .pdf-feature-list article{border-color:#111;background:#fff}
+.pdf-document--2024 .pdf-slot-strip div,.pdf-document--2024 .pdf-spell-table{border-color:#111;background:#fff}
+.pdf-document--2024 .pdf-spell-table header{background:#111}
+.pdf-document--2024 .pdf-spell-card{border-color:#111;background:#f4f4f4;color:#111}
+.pdf-document--2024 .pdf-spell-card header{border-color:#111;background:#e5e5e5}
+.pdf-document--2024 .pdf-spell-card h3{color:#111}
+.pdf-document--2024 .pdf-notes i{border-color:#aaa}
+.pdf-document--2024 .pdf-personality .pdf-panel{min-height:46mm}
+.pdf-document--2024 .pdf-page footer{color:#444;border-top:.25mm solid #111!important;padding-top:1.5mm}
+
+/* The summary uses the exact selected icon rules from the catalog. */
+.summary-catalog-icon-wrap{display:grid;place-items:center;margin:10px auto 20px}
 
 /* Light/modern theme brand: red wordmark, gold mark on red tile. */
 .modern-design .brand { color: #8f1821; }
@@ -1586,10 +1598,11 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .home-hero-copy{width:56%;min-height:560px;padding:38px 0 34px 8px}
 .home-hero-copy h1{font-size:clamp(48px,5.4vw,78px)}
 .home-hero-art{position:absolute;z-index:0;inset:0 -1% 0 auto;width:61%;height:100%;overflow:visible}
-.home-hero-art img{right:0;width:100%;height:100%;object-fit:contain;object-position:right center;-webkit-mask-image:none;mask-image:none}
+.home-hero-art img{right:0;width:100%;height:100%;object-fit:contain;object-position:right center;-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 94%,transparent 100%),linear-gradient(180deg,transparent 0,#000 5%,#000 95%,transparent 100%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 94%,transparent 100%),linear-gradient(180deg,transparent 0,#000 5%,#000 95%,transparent 100%);mask-composite:intersect}
 .home-hero-art::after{display:none}
 .modern-design .home-hero{border:0;background:transparent;box-shadow:none}
 .modern-design .home-hero-art::after{display:none}
+.modern-design .home-hero-art img{-webkit-mask-image:none;mask-image:none}
 .home-quick-actions{gap:0;margin-top:24px;border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 65%,transparent)}
 .home-quick-actions button{padding:12px 16px;border:0;border-left:1px solid color-mix(in srgb,var(--line) 65%,transparent);border-radius:0;background:transparent!important}
 .home-quick-actions button:first-child{border-left:0;padding-left:0}

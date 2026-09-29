@@ -303,3 +303,16 @@ export function spellIdFromLssCardId(cardId: string) {
   const number = lssCardDndNumbers[cardId];
   return number ? spellIdByDndNumber[number] || null : null;
 }
+
+const lssCardIdBySpellId: Readonly<Record<string, string>> = Object.freeze(
+  Object.fromEntries(
+    Object.entries(lssCardDndNumbers)
+      .map(([cardId, number]) => [spellIdByDndNumber[number], cardId] as const)
+      .filter((entry): entry is [string, string] => Boolean(entry[0])),
+  ),
+);
+
+/** Return a private LSS card id only when the mapping was verified by fixture. */
+export function lssCardIdForSpellId(spellId: string) {
+  return lssCardIdBySpellId[spellId] || null;
+}

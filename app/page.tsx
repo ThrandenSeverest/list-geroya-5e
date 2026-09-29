@@ -94,7 +94,7 @@ type AccountState = { authenticated: true; email: string; displayName: string; a
 type MobileSheetTab = "overview" | "combat" | "spells" | "resources" | "equipment" | "notes";
 type SiteTheme = "classic" | "parchment";
 type CharacterCheck = { step: number; message: string; severity: "error" | "warning" };
-type LibraryExportFormat = "herolist" | "helpmate" | "lss";
+type LibraryExportFormat = "herolist" | "helpmate" | "lss" | "lss-2024";
 type LibraryExportTarget = { kind: "character"; id: string } | { kind: "folder"; id: string };
 
 const steps = ["Раса", "Класс", "Характеристики", "Предыстория", "Навыки", "Снаряжение", "Уровень", "Заклинания", "Языки и инструменты", "Характер", "Итог"];
@@ -773,6 +773,7 @@ function Builder() {
   const [moveFolderId, setMoveFolderId] = useState("unfiled");
   const [folderImport, setFolderImport] = useState<FolderImportDraft | null>(null);
   const [libraryExportTarget, setLibraryExportTarget] = useState<LibraryExportTarget | null>(null);
+  const [pdfSheetEdition, setPdfSheetEdition] = useState<"2014" | "2024">("2014");
   const [account, setAccount] = useState<AccountState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
@@ -1263,7 +1264,7 @@ function Builder() {
       return selectedCantrips.length === spellRule.cantrips && selectedLeveled.length === spellRule.leveled && legalLevels && preparedComplete;
     }
     if (step === 8) return (character.languages || []).length === languageRequirements.choices && proficiencyChoicesComplete(exportCharacter);
-    if (step === 9) return Object.values(character.personality).every(Boolean);
+    if (step === 9) return true;
     return true;
   }
 
@@ -1303,7 +1304,7 @@ function Builder() {
       if ((character.languages || []).length !== languageRequirements.choices) return `Выберите дополнительные языки: ${(character.languages || []).length} из ${languageRequirements.choices}.`;
       return "Заполните все обязательные владения инструментами и другие выборы.";
     }
-    if (step === 9) return "Заполните черты характера, идеал, привязанность и слабость.";
+    if (step === 9) return "Поля характера необязательны; незаполненные поля будут отмечены предупреждением на итоговом шаге.";
     return "Завершите обязательные выборы на этом шаге.";
   }
 
@@ -2091,14 +2092,19 @@ function Builder() {
     setHelpmateExportWarning(null);
   }
 
-  function exportLongStoryShort() {
+  function exportLongStoryShort(sheetEdition: "2014" | "2024" = "2014") {
     const warning = homebrewExportWarning(exportCharacter);
     if (warning && !confirm(warning)) return;
-    download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
+    download(createLongStoryShortExport(exportContext, { sheetEdition }), `${safeName(character.name)} — Long Story Short${sheetEdition === "2024" ? " 2024" : ""}.json`);
   }
 
   function exportNative() {
     download(createNativeCharacterFile(rulesCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
+  }
+
+  function printPdf(sheetEdition: "2014" | "2024") {
+    setPdfSheetEdition(sheetEdition);
+    window.setTimeout(() => window.print(), 0);
   }
 
   function persistVault(next: CharacterVault) {
@@ -2250,7 +2256,8 @@ function Builder() {
       download(createHelpmateExport(context), `${name} — Helpmate.json`);
       return;
     }
-    download(createLongStoryShortExport(context), `${name} — Long Story Short.json`);
+    const sheetEdition = format === "lss-2024" ? "2024" : "2014";
+    download(createLongStoryShortExport(context, { sheetEdition }), `${name} — Long Story Short${sheetEdition === "2024" ? " 2024" : ""}.json`);
   }
 
   function confirmLibraryExport(format: LibraryExportFormat) {
@@ -2395,8 +2402,9 @@ function Builder() {
           payload = createHelpmateExport(context);
           suffix = "Helpmate";
         } else {
-          payload = createLongStoryShortExport(context);
-          suffix = "LSS";
+          const sheetEdition = format === "lss-2024" ? "2024" : "2014";
+          payload = createLongStoryShortExport(context, { sheetEdition });
+          suffix = sheetEdition === "2024" ? "LSS 2024" : "LSS";
         }
       }
       files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
@@ -2404,7 +2412,7 @@ function Builder() {
     const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 }) as BlobPart], { type: "application/zip" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : "LSS"}.zip`;
+    anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -2621,6 +2629,7 @@ function Builder() {
             <p>{libraryExportTarget.kind === "folder" ? "Все персонажи папки будут упакованы в ZIP в выбранном формате." : "Будет скачан один JSON-файл выбранного формата."}</p>
             <div className="library-export-options">
               <button onClick={() => confirmLibraryExport("lss")}>Long Story Short JSON</button>
+              <button onClick={() => confirmLibraryExport("lss-2024")}>Long Story Short 2024 JSON</button>
               <button onClick={() => confirmLibraryExport("helpmate")}>Helpmate JSON</button>
               <button className="primary-action" onClick={() => confirmLibraryExport("herolist")}>HeroList JSON</button>
             </div>
@@ -3704,6 +3713,7 @@ function Builder() {
                 </div>
               </div>
               <PdfCharacterSheet
+                sheetEdition={pdfSheetEdition}
                 identity={{
                   name: character.name,
                   playerName: character.playerName,
@@ -3782,8 +3792,10 @@ function Builder() {
                   {resources.map(resource => <label key={resource.key}><span>{resource.name}</span><input type="number" min="0" max={resource.max} value={resourceCurrent(exportCharacter, resource)} onChange={event => setResourceCurrent(resource.key, +event.target.value, resource.max)} /><small>осталось из {resource.max}{resource.die ? ` · ${resource.die}` : ""}</small></label>)}
                 </div>}
                 <button onClick={resetCurrentCharacter}>Сбросить</button>
-                <button onClick={() => window.print()}>PDF-лист · страницы создаются автоматически</button>
-                <button onClick={exportLongStoryShort}>Long Story Short JSON</button>
+                <button onClick={() => printPdf("2014")}>PDF-лист 2014</button>
+                <button onClick={() => printPdf("2024")}>PDF-лист 2024 · альтернативный</button>
+                <button onClick={() => exportLongStoryShort("2014")}>Long Story Short JSON</button>
+                <button onClick={() => exportLongStoryShort("2024")}>Long Story Short 2024 JSON</button>
                 <button onClick={exportHelpmate}>Helpmate JSON</button>
                 <button className="primary-action" onClick={exportNative}>Наш JSON</button>
               </div>
@@ -3798,14 +3810,15 @@ function Builder() {
         <aside className="summary">
           <div className="summary-ornament">✦</div>
           <p className="eyebrow">Ваш герой</p>
-          <CatalogIcon
-            id={selectedClass?.id || selectedRace?.id}
-            kind={selectedClass ? "class" : "race"}
-            fallback={selectedClass?.name || selectedRace?.name || "Новый герой"}
-            className="sigil summary-catalog-icon"
-            experimental={usesOrnateIcons}
-            image={homebrew.elements.find(e=>e.id===(selectedClass?.id||selectedRace?.id))?.icon}
-          />
+          <div className="summary-catalog-icon-wrap selected">
+            <CatalogIcon
+              id={selectedClass?.id || selectedRace?.id}
+              kind={selectedClass ? "class" : "race"}
+              fallback={selectedClass?.name || selectedRace?.name || "Новый герой"}
+              experimental={usesOrnateIcons}
+              image={homebrew.elements.find(e=>e.id===(selectedClass?.id||selectedRace?.id))?.icon}
+            />
+          </div>
           <h2>{character.name || selectedRace?.name || "Новый герой"}</h2>
           <p className="summary-line">{selectedRace?.name || "Раса не выбрана"} · {selectedClass?.name || "Класс не выбран"}</p>
           <div className="summary-facts">

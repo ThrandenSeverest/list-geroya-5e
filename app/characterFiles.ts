@@ -357,6 +357,7 @@ function importLss(payload: Record<string, unknown>, empty: ExportCharacter): Ch
         prepared: preparedCards,
         book: bookCards,
         edition: text(outerSpells.edition) || text(payload.edition) || "2014",
+        sheetEdition: text(payload.sheetEdition) === "2024" ? "2024" : "2014",
         resolved: resolvedCards,
       } : undefined,
       spellSlotsUsed,
@@ -475,4 +476,3 @@ export function parseCharacterFile(payload: unknown, empty: ExportCharacter): Ch
   if (Array.isArray(value.Classes) && Array.isArray(value.Parameters)) return importHelpmate(value, empty);
   throw new Error("Формат не распознан. Поддерживаются файлы «Листа Героя 5e», Long Story Short и Helpmate.");
 }
-

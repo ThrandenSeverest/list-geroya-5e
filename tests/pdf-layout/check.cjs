@@ -47,8 +47,8 @@ function waitForServer(url, server, timeout=30000) {
    const page=await browser.newPage({viewport:{width:1100,height:1400}});
    const pageErrors=[];
    page.on('pageerror',error=>pageErrors.push(error.message));
-   for(const count of [0,1,2,3,5,6,12,24]) {
-    await page.goto('http://127.0.0.1:5174/tests/pdf-layout/index.html?resources='+count);
+   for(const edition of ['2014','2024']) for(const count of [0,1,2,3,5,6,12,24]) {
+    await page.goto('http://127.0.0.1:5174/tests/pdf-layout/index.html?resources='+count+'&edition='+edition);
     await page.locator('.pdf-primary-grid').waitFor();
     await page.evaluate(()=>document.fonts.ready);
     for(const media of ['screen','print']){
@@ -59,13 +59,13 @@ function waitForServer(url, server, timeout=30000) {
       const grid=document.querySelector('.pdf-primary-grid'),resources=document.querySelector('.pdf-resources'),inventory=document.querySelector('.pdf-inventory'),footer=document.querySelector('.pdf-primary-page footer');
       return {grid:rect(grid),resources:rect(resources),inventory:rect(inventory),footer:rect(footer),zoom:document.querySelector('.pdf-primary-content').style.zoom,pages:document.querySelectorAll('.pdf-page').length,count:document.querySelectorAll('.pdf-resource').length,overflow:[...document.querySelectorAll('.pdf-resource-page-grid')].map(element=>rect(element).bottom>rect(element.parentElement.querySelector('footer')).top)};
      });
-     if(result.resources.bottom>result.inventory.top+.5 || result.grid.bottom>result.footer.top-2 || result.overflow.some(Boolean) || result.count!==count)throw Error(JSON.stringify({count,media,result}));
+     if(result.resources.bottom>result.inventory.top+.5 || result.grid.bottom>result.footer.top-2 || result.overflow.some(Boolean) || result.count!==count)throw Error(JSON.stringify({edition,count,media,result}));
      if(pageErrors.length)throw Error('PDF runtime errors: '+pageErrors.join('; '));
      if(media==='print'){
       const pdf=await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
       if(pdf.subarray(0,5).toString()!=='%PDF-' || pdf.length<1000)throw Error('Chromium did not produce a valid PDF');
      }
-     console.log(JSON.stringify({count,media,zoom:result.zoom,pages:result.pages}));
+     console.log(JSON.stringify({edition,count,media,zoom:result.zoom,pages:result.pages}));
     }
    }
   } finally {

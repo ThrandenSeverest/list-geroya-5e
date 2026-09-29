@@ -1,0 +1,22 @@
+{
+  "fixtureSource": "Sanitized from the user-supplied real LSS 2024 export; personal, biography, equipment and note fields removed.",
+  "tags": [],
+  "disabledBlocks": {},
+  "edition": "2014",
+  "spells": {
+    "mode": "cards",
+    "prepared": [
+      "65d3c173f3d820fa1add4912", "65d3c169f3d820fa1add42ac", "65d3c172f3d820fa1add4871", "65d3c175f3d820fa1add49b3", "65d3c16ff3d820fa1add46a3", "65d3c16ef3d820fa1add466b", "65d3c16cf3d820fa1add44ce", "65d3c175f3d820fa1add49d6", "65d3c169f3d820fa1add42e4", "65d3c168f3d820fa1add41ef", "65d3c16df3d820fa1add45bc", "65d3c174f3d820fa1add495f", "6930002dc0e9951297c50d2e", "65d3c16bf3d820fa1add440a", "65d3c173f3d820fa1add4919", "65d3c16ff3d820fa1add471a", "6985fd4feaf236d289248a4f", "65d3c176f3d820fa1add4a1c", "65d3c171f3d820fa1add4824", "65d3c171f3d820fa1add4839", "65d3c173f3d820fa1add48fd", "65d3c172f3d820fa1add48be", "65d3c16df3d820fa1add45d1"
+    ],
+    "book": [],
+    "edition": "2014"
+  },
+  "data": "{\"jsonType\":\"character\",\"template\":\"default\",\"name\":{\"value\":\"Обезличенный fixture\"},\"info\":{\"charClass\":{\"name\":\"charClass\",\"value\":\"жрец\"},\"level\":{\"name\":\"level\",\"value\":8},\"background\":{\"name\":\"background\",\"value\":\"Прислужник\"},\"playerName\":{\"name\":\"playerName\",\"value\":\"\"},\"race\":{\"name\":\"race\",\"value\":\"Человек\"},\"alignment\":{\"name\":\"alignment\",\"value\":\"\"}},\"text\":{\"spells-level-0\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Злая насмешка\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Защита от оружия\"}]}]}}},\"spells-level-1\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"Очарование личности\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/145-cure_wounds/\"}}],\"text\":\"Лечащее слово\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/3946-silvery_barbs/\"}}],\"text\":\"Искусная острота\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/195-detect_magic/\"}}],\"text\":\"Обнаружение магии\"}]}]}}},\"spells-level-2\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/218-mirror_image/\"}}],\"text\":\"Отражения\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/134-crown_of_madness/\"}}],\"text\":\"Корона безумия\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/236-aid/\"}}],\"text\":\"Подмога\"}]},{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"marks\":[{\"type\":\"link\",\"attrs\":{\"href\":\"https://dnd.su/spells/355-enlarge_reduce/\"}}],\"text\":\"Увеличение/уменьшение\"}]}]}}},\"personality\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":null}}},\"ideals\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":null}}},\"bonds\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":null}}},\"flaws\":{\"value\":{\"data\":{\"type\":\"doc\",\"content\":null}}}},\"spells\":{},\"stats\":{},\"skills\":{},\"vitality\":{},\"hiddenName\":\"Обезличенный fixture\"}",
+  "lastWriterSessionId": "sanitized-real-lss-2024-fixture",
+  "linkAccess": "none",
+  "rooms": [],
+  "sheetEdition": "2024",
+  "jsonType": "character",
+  "version": "2",
+  "wizard": {}
+}

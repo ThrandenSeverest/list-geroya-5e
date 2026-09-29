@@ -31,7 +31,12 @@ function registerHomebrewClasses(character: ExportCharacter) {
     if (!entry.classId.startsWith("hb:")) continue;
     if (classes.some(item => item.id === entry.classId)) continue;
     const definition = character.homebrew?.entities?.find(item => item.id === entry.classId && item.type === "class");
-    if (definition?.name) classes.push({ id: entry.classId, name: definition.name });
+    if (definition?.name) classes.push({
+      id: entry.classId,
+      name: definition.name,
+      source: "Homebrew",
+      description: definition.description || "Пользовательский класс",
+    });
   }
 }
 

@@ -1,7 +1,7 @@
 import { classRuleFor, hbEffects, hbSum } from "./homebrewEngine";
 import { preparedSpellIds as resolvedPreparedSpellIds } from "./spellPreparation";
 import type { CatalogOption, CatalogSpell } from "./catalog";
-import { dndSpellUrl, helpmateSpellId } from "./exportIds";
+import { dndSpellUrl, helpmateSpellId, lssCardIdForSpellId } from "./exportIds";
 import { abilityLabels, classRules, skillKeys, type Feature } from "./rules";
 import { spellSelectionRule, spellSelectionRuleForClass } from "./characterRules";
 import { characterResources, resourceCurrent } from "./characterResources";
@@ -96,6 +96,7 @@ export type ExportCharacter = {
     prepared: string[];
     book: string[];
     edition?: string;
+    sheetEdition?: "2014" | "2024";
     /** LSS ObjectId -> our catalog id. Unknown cards stay in the arrays above. */
     resolved?: Record<string, string>;
   };
@@ -799,7 +800,9 @@ function lssSkills(selectedSkills: Set<string>, expertiseSkills: Set<string>) {
   );
 }
 
-export function createLongStoryShortExport(context: ExportContext) {
+export type LssSheetEdition = "2014" | "2024";
+
+export function createLongStoryShortExport(context: ExportContext, options: { sheetEdition?: LssSheetEdition } = {}) {
   const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
   const proficiencies = characterProficiencies(character);
   const selectedSkills = new Set(proficiencies.skills);
@@ -815,7 +818,25 @@ export function createLongStoryShortExport(context: ExportContext) {
   const retainedCardIds = (values: string[] | undefined) => (values || []).filter(value => /^[0-9a-f]{24}$/i.test(value));
   const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
   const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
-  const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
+  const preparedSpellIds = new Set([
+    ...resolvedPreparedSpellIds(character),
+    ...(context.alwaysPreparedSpellIds || []),
+    ...chosenSpells.filter(spell => spell.level === 0).map(spell => spell.id),
+  ]);
+  const retainedCardSet = new Set([...retainedPreparedCards, ...retainedBookCards]);
+  const confirmedPreparedCards = chosenIds
+    .filter(id => preparedSpellIds.has(id))
+    .map(lssCardIdForSpellId)
+    .filter((id): id is string => id !== null && !retainedCardSet.has(id));
+  const confirmedBookCards = chosenIds
+    .filter(id => !preparedSpellIds.has(id))
+    .map(lssCardIdForSpellId)
+    .filter((id): id is string => id !== null && !retainedCardSet.has(id));
+  const preparedCards = [...new Set([...retainedPreparedCards, ...confirmedPreparedCards])];
+  const preparedCardSet = new Set(preparedCards);
+  const bookCards = [...new Set([...retainedBookCards, ...confirmedBookCards])]
+    .filter(id => retainedBookCards.includes(id) || !preparedCardSet.has(id));
+  const hasCards = preparedCards.length > 0 || bookCards.length > 0;
   const preparedSpellNames = [...new Set([
     ...resolvedPreparedSpellIds(character),
     ...(context.alwaysPreparedSpellIds || []),
@@ -1001,21 +1022,21 @@ export function createLongStoryShortExport(context: ExportContext) {
       "notes-right": [],
       _id: "6966767ee00af79ebacfb426",
     },
+    // Rules edition and visual sheet edition are independent in LSS.
     edition: "2014",
     spells: {
-      mode: hasRetainedCards ? "cards" : "text",
-      // LSS accepts only its own private ObjectIds in card lists. Preserve ids
-      // imported from LSS verbatim; locally selected spells remain available
-      // in the portable data.text.spells-level-* blocks below.
-      prepared: retainedPreparedCards,
-      book: retainedBookCards,
-      edition: character.lssSpellCards?.edition || "2014",
+      mode: hasCards ? "cards" : "text",
+      // Existing private ids are kept losslessly. New ids are emitted only for
+      // verified mappings; every spell also remains in data.text by level.
+      prepared: preparedCards,
+      book: bookCards,
+      edition: "2014",
     },
     data: JSON.stringify(inner),
     lastWriterSessionId: `${Date.now()}-list-geroya5e`,
     linkAccess: "none",
     rooms: [],
-    sheetEdition: "2014",
+    sheetEdition: options.sheetEdition || character.lssSpellCards?.sheetEdition || "2014",
     jsonType: "character",
     version: "2",
     wizard: {},
