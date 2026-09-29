@@ -23917,6 +23917,11 @@ function spellIdFromLssCardId(cardId) {
 	const number = lssCardDndNumbers[cardId];
 	return number ? spellIdByDndNumber[number] || null : null;
 }
+var lssCardIdBySpellId = Object.freeze(Object.fromEntries(Object.entries(lssCardDndNumbers).map(([cardId, number]) => [spellIdByDndNumber[number], cardId]).filter((entry) => Boolean(entry[0]))));
+/** Return a private LSS card id only when the mapping was verified by fixture. */
+function lssCardIdForSpellId(spellId) {
+	return lssCardIdBySpellId[spellId] || null;
+}
 //#endregion
 //#region app/characterResources.ts
 function resourceRestLabel(resource) {
@@ -26757,7 +26762,7 @@ function lssSkills(selectedSkills, expertiseSkills) {
 		isProf: expertiseEnglish.has(key) ? 2 : selectedEnglish.has(key) ? 1 : 0
 	}]));
 }
-function createLongStoryShortExport(context) {
+function createLongStoryShortExport(context, options = {}) {
 	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
 	const proficiencies = characterProficiencies(character);
 	const selectedSkills = new Set(proficiencies.skills);
@@ -26768,15 +26773,27 @@ function createLongStoryShortExport(context) {
 	const prof = proficiencyBonus(character.level);
 	const sharedSpellSlots = resolveSpellSlots(character);
 	const pactMagic = resolvePactMagic(character);
-	const chosenSpells = [...new Set([
+	const chosenIds = [...new Set([
 		...character.spells,
 		...context.featSpellIds || [],
 		...context.alwaysPreparedSpellIds || []
-	])].map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
+	])];
+	const chosenSpells = chosenIds.map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
 	const retainedCardIds = (values) => (values || []).filter((value) => /^[0-9a-f]{24}$/i.test(value));
 	const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
 	const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
-	const hasRetainedCards = retainedPreparedCards.length > 0 || retainedBookCards.length > 0;
+	const preparedSpellIds$1 = new Set([
+		...preparedSpellIds(character),
+		...context.alwaysPreparedSpellIds || [],
+		...chosenSpells.filter((spell) => spell.level === 0).map((spell) => spell.id)
+	]);
+	const retainedCardSet = new Set([...retainedPreparedCards, ...retainedBookCards]);
+	const confirmedPreparedCards = chosenIds.filter((id) => preparedSpellIds$1.has(id)).map(lssCardIdForSpellId).filter((id) => id !== null && !retainedCardSet.has(id));
+	const confirmedBookCards = chosenIds.filter((id) => !preparedSpellIds$1.has(id)).map(lssCardIdForSpellId).filter((id) => id !== null && !retainedCardSet.has(id));
+	const preparedCards = [...new Set([...retainedPreparedCards, ...confirmedPreparedCards])];
+	const preparedCardSet = new Set(preparedCards);
+	const bookCards = [...new Set([...retainedBookCards, ...confirmedBookCards])].filter((id) => retainedBookCards.includes(id) || !preparedCardSet.has(id));
+	const hasCards = preparedCards.length > 0 || bookCards.length > 0;
 	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
 	const alwaysPreparedNames = (context.alwaysPreparedSpellIds || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
 	const profLines = [
@@ -27030,16 +27047,16 @@ function createLongStoryShortExport(context) {
 		},
 		edition: "2014",
 		spells: {
-			mode: hasRetainedCards ? "cards" : "text",
-			prepared: retainedPreparedCards,
-			book: retainedBookCards,
-			edition: character.lssSpellCards?.edition || "2014"
+			mode: hasCards ? "cards" : "text",
+			prepared: preparedCards,
+			book: bookCards,
+			edition: "2014"
 		},
 		data: JSON.stringify(inner),
 		lastWriterSessionId: `${Date.now()}-list-geroya5e`,
 		linkAccess: "none",
 		rooms: [],
-		sheetEdition: "2014",
+		sheetEdition: options.sheetEdition || character.lssSpellCards?.sheetEdition || "2014",
 		jsonType: "character",
 		version: "2",
 		wizard: {}
@@ -42260,7 +42277,9 @@ function registerHomebrewClasses(character) {
 		const definition = character.homebrew?.entities?.find((item) => item.id === entry.classId && item.type === "class");
 		if (definition?.name) classes.push({
 			id: entry.classId,
-			name: definition.name
+			name: definition.name,
+			source: "Homebrew",
+			description: definition.description || "Пользовательский класс"
 		});
 	}
 }
@@ -42347,8 +42366,8 @@ var knownLimitations = [
 	},
 	{
 		area: "Long Story Short",
-		status: "Совместимо с обоими режимами",
-		text: "Новые заклинания экспортируются переносимым текстовым списком со ссылками dnd.su. При импорте ссылка автоматически определяет заклинание нашего каталога, а исходные карточки LSS дополнительно сохраняются по внутренним ID для обратного переноса."
+		status: "Lossless для существующих карточек",
+		text: "Существующие LSS-карточки сохраняются без потерь при импорте и обратном экспорте. Новые карточки создаются только для заклинаний с подтверждённым LSS ID; параллельный текстовый список по кругам сохраняет все остальные заклинания."
 	}
 ];
 //#endregion
@@ -42713,6 +42732,7 @@ function importLss(payload, empty) {
 				prepared: preparedCards,
 				book: bookCards,
 				edition: text(outerSpells.edition) || text(payload.edition) || "2014",
+				sheetEdition: text(payload.sheetEdition) === "2024" ? "2024" : "2014",
 				resolved: resolvedCards
 			} : void 0,
 			spellSlotsUsed,
@@ -46579,9 +46599,11 @@ function PdfCharacterSheet(props) {
 			window.removeEventListener("afterprint", fit);
 		};
 	}, [props, inventoryMode]);
+	const sheetEdition = props.sheetEdition || "2014";
 	return /* @__PURE__ */ jsxs("div", {
-		className: "pdf-document",
+		className: `pdf-document pdf-document--${sheetEdition}`,
 		"aria-hidden": "true",
+		"data-sheet-edition": sheetEdition,
 		children: [
 			/* @__PURE__ */ jsxs("section", {
 				className: "pdf-page pdf-primary-page",
@@ -46591,7 +46613,7 @@ function PdfCharacterSheet(props) {
 					children: [
 						/* @__PURE__ */ jsxs("div", {
 							className: "pdf-brand",
-							children: ["ЛИСТ ГЕРОЯ ", /* @__PURE__ */ jsx("i", { children: "5e · 2014" })]
+							children: ["ЛИСТ ГЕРОЯ ", /* @__PURE__ */ jsxs("i", { children: ["5e · правила 2014 · лист ", sheetEdition] })]
 						}),
 						/* @__PURE__ */ jsxs("header", {
 							className: "pdf-hero-header",
@@ -55982,6 +56004,7 @@ function Builder() {
 	const [moveFolderId, setMoveFolderId] = useState("unfiled");
 	const [folderImport, setFolderImport] = useState(null);
 	const [libraryExportTarget, setLibraryExportTarget] = useState(null);
+	const [pdfSheetEdition, setPdfSheetEdition] = useState("2014");
 	const [account, setAccount] = useState(null);
 	const [cloudState, setCloudState] = useState("local");
 	const [importMessage, setImportMessage] = useState(null);
@@ -56577,7 +56600,7 @@ function Builder() {
 			return selectedCantrips.length === spellRule.cantrips && selectedLeveled.length === spellRule.leveled && legalLevels && preparedComplete;
 		}
 		if (step === 8) return (character.languages || []).length === languageRequirements.choices && proficiencyChoicesComplete(exportCharacter);
-		if (step === 9) return Object.values(character.personality).every(Boolean);
+		if (step === 9) return true;
 		return true;
 	}
 	function continueBlockReason() {
@@ -56616,7 +56639,7 @@ function Builder() {
 			if ((character.languages || []).length !== languageRequirements.choices) return `Выберите дополнительные языки: ${(character.languages || []).length} из ${languageRequirements.choices}.`;
 			return "Заполните все обязательные владения инструментами и другие выборы.";
 		}
-		if (step === 9) return "Заполните черты характера, идеал, привязанность и слабость.";
+		if (step === 9) return "Поля характера необязательны; незаполненные поля будут отмечены предупреждением на итоговом шаге.";
 		return "Завершите обязательные выборы на этом шаге.";
 	}
 	function collectCharacterChecks() {
@@ -57535,13 +57558,17 @@ function Builder() {
 		download(createHelpmateExport(exportContext), `${safeName(character.name)} — Helpmate.json`);
 		setHelpmateExportWarning(null);
 	}
-	function exportLongStoryShort() {
+	function exportLongStoryShort(sheetEdition = "2014") {
 		const warning = homebrewExportWarning(exportCharacter);
 		if (warning && !confirm(warning)) return;
-		download(createLongStoryShortExport(exportContext), `${safeName(character.name)} — Long Story Short.json`);
+		download(createLongStoryShortExport(exportContext, { sheetEdition }), `${safeName(character.name)} — Long Story Short${sheetEdition === "2024" ? " 2024" : ""}.json`);
 	}
 	function exportNative() {
 		download(createNativeCharacterFile(rulesCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
+	}
+	function printPdf(sheetEdition) {
+		setPdfSheetEdition(sheetEdition);
+		window.setTimeout(() => window.print(), 0);
 	}
 	function persistVault(next) {
 		const normalized = normalizeVault(next);
@@ -57666,7 +57693,8 @@ function Builder() {
 			download(createHelpmateExport(context), `${name} — Helpmate.json`);
 			return;
 		}
-		download(createLongStoryShortExport(context), `${name} — Long Story Short.json`);
+		const sheetEdition = format === "lss-2024" ? "2024" : "2014";
+		download(createLongStoryShortExport(context, { sheetEdition }), `${name} — Long Story Short${sheetEdition === "2024" ? " 2024" : ""}.json`);
 	}
 	function confirmLibraryExport(format) {
 		const target = libraryExportTarget;
@@ -57833,8 +57861,9 @@ function Builder() {
 					payload = createHelpmateExport(context);
 					suffix = "Helpmate";
 				} else {
-					payload = createLongStoryShortExport(context);
-					suffix = "LSS";
+					const sheetEdition = format === "lss-2024" ? "2024" : "2014";
+					payload = createLongStoryShortExport(context, { sheetEdition });
+					suffix = sheetEdition === "2024" ? "LSS 2024" : "LSS";
 				}
 			}
 			files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
@@ -57842,7 +57871,7 @@ function Builder() {
 		const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 })], { type: "application/zip" }));
 		const anchor = document.createElement("a");
 		anchor.href = url;
-		anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : "LSS"}.zip`;
+		anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`;
 		anchor.click();
 		URL.revokeObjectURL(url);
 	}
@@ -58551,6 +58580,10 @@ function Builder() {
 									/* @__PURE__ */ jsx("button", {
 										onClick: () => confirmLibraryExport("lss"),
 										children: "Long Story Short JSON"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => confirmLibraryExport("lss-2024"),
+										children: "Long Story Short 2024 JSON"
 									}),
 									/* @__PURE__ */ jsx("button", {
 										onClick: () => confirmLibraryExport("helpmate"),
@@ -61826,6 +61859,7 @@ function Builder() {
 										})]
 									}),
 									/* @__PURE__ */ jsx(PdfCharacterSheet, {
+										sheetEdition: pdfSheetEdition,
 										identity: {
 											name: character.name,
 											playerName: character.playerName,
@@ -62017,12 +62051,20 @@ function Builder() {
 												children: "Сбросить"
 											}),
 											/* @__PURE__ */ jsx("button", {
-												onClick: () => window.print(),
-												children: "PDF-лист · страницы создаются автоматически"
+												onClick: () => printPdf("2014"),
+												children: "PDF-лист 2014"
 											}),
 											/* @__PURE__ */ jsx("button", {
-												onClick: exportLongStoryShort,
+												onClick: () => printPdf("2024"),
+												children: "PDF-лист 2024 · альтернативный"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => exportLongStoryShort("2014"),
 												children: "Long Story Short JSON"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => exportLongStoryShort("2024"),
+												children: "Long Story Short 2024 JSON"
 											}),
 											/* @__PURE__ */ jsx("button", {
 												onClick: exportHelpmate,
@@ -62062,13 +62104,16 @@ function Builder() {
 								className: "eyebrow",
 								children: "Ваш герой"
 							}),
-							/* @__PURE__ */ jsx(CatalogIcon, {
-								id: selectedClass?.id || selectedRace?.id,
-								kind: selectedClass ? "class" : "race",
-								fallback: selectedClass?.name || selectedRace?.name || "Новый герой",
-								className: "sigil summary-catalog-icon",
-								experimental: usesOrnateIcons,
-								image: homebrew.elements.find((e) => e.id === (selectedClass?.id || selectedRace?.id))?.icon
+							/* @__PURE__ */ jsx("div", {
+								className: "summary-catalog-icon-wrap selected",
+								children: /* @__PURE__ */ jsx(CatalogIcon, {
+									id: selectedClass?.id || selectedRace?.id,
+									kind: selectedClass ? "class" : "race",
+									fallback: selectedClass?.name || selectedRace?.name || "Новый герой",
+									className: "sigil summary-catalog-icon",
+									experimental: usesOrnateIcons,
+									image: homebrew.elements.find((e) => e.id === (selectedClass?.id || selectedRace?.id))?.icon
+								})
 							}),
 							/* @__PURE__ */ jsx("h2", { children: character.name || selectedRace?.name || "Новый герой" }),
 							/* @__PURE__ */ jsxs("p", {
