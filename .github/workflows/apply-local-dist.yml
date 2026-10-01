@@ -1,0 +1,93 @@
+name: Apply locally compiled dist
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .dist-upload/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Restore and verify locally compiled dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .dist-upload/part-* | base64 -d > /tmp/herolist-dist-text.tar.br
+
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          meta = json.loads(Path(".dist-upload/meta.json").read_text(encoding="utf-8"))
+          actual = hashlib.sha256(Path("/tmp/herolist-dist-text.tar.br").read_bytes()).hexdigest()
+          if actual != meta["archive_sha256"]:
+              raise SystemExit(f"archive sha256 mismatch: {actual} != {meta['archive_sha256']}")
+          PY
+
+          node - <<'NODE'
+          const fs = require("fs");
+          const z = require("zlib");
+          fs.writeFileSync(
+            "/tmp/herolist-dist-text.tar",
+            z.brotliDecompressSync(fs.readFileSync("/tmp/herolist-dist-text.tar.br"))
+          );
+          NODE
+
+          find dist -type f ! -iname '*.png' ! -iname '*.jpg' ! -iname '*.jpeg' ! -iname '*.webp' ! -iname '*.ico' -delete
+          find dist -type d -empty -delete || true
+          tar -xf /tmp/herolist-dist-text.tar
+
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          meta = json.loads(Path(".dist-upload/meta.json").read_text(encoding="utf-8"))
+          info = json.loads(Path("dist/BUILD_INFO.json").read_text(encoding="utf-8"))
+          if info.get("sourceCommit") != meta["source"]:
+              raise SystemExit("BUILD_INFO sourceCommit mismatch")
+
+          expected = meta["files"]
+          actual_paths = {
+              str(p.relative_to("dist")).replace("\\", "/")
+              for p in Path("dist").rglob("*") if p.is_file()
+          }
+          if actual_paths != set(expected):
+              missing = sorted(set(expected) - actual_paths)
+              extra = sorted(actual_paths - set(expected))
+              raise SystemExit(f"dist file set mismatch; missing={missing}, extra={extra}")
+
+          for rel, wanted in expected.items():
+              got = hashlib.sha256((Path("dist") / rel).read_bytes()).hexdigest()
+              if got != wanted:
+                  raise SystemExit(f"sha256 mismatch for {rel}: {got} != {wanted}")
+          print(f"Verified {len(expected)} locally compiled dist files.")
+          PY
+
+          node - <<'NODE'
+          const p = require("./package.json");
+          if (!p.dependencies?.vinext) throw new Error("vinext must be in dependencies");
+          if (!p.devDependencies?.vite && !p.dependencies?.vite) throw new Error("vite must be declared in package.json");
+          console.log("vinext", p.dependencies.vinext, "vite", p.dependencies?.vite || p.devDependencies.vite);
+          NODE
+
+      - name: Commit ready-to-host dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .dist-upload
+          git rm .github/workflows/apply-local-dist.yml
+          git config user.name "Herolist Local Build Bridge"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A dist .dist-upload .github/workflows/apply-local-dist.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "build: publish locally compiled dist"
+          git push origin HEAD:main
