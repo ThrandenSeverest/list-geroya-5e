@@ -36,9 +36,26 @@ export type HomebrewElement = {
 export type HomebrewLibrary = { version:1|2; schemaVersion?:2; elements:HomebrewElement[] };
 export const emptyHomebrewLibrary:HomebrewLibrary = {version:2,schemaVersion:2,elements:[]};
 export const homebrewTypeLabels:Record<HomebrewType,string> = {ability:'Способность',feat:'Черта',item:'Предмет',spell:'Заклинание',proficiency:'Владение',race:'Раса',subrace:'Подраса',class:'Класс',subclass:'Подкласс',background:'Предыстория',resource:'Ресурс',attack:'Атака',table:'Таблица',note:'Заметка',pack:'Пак'};
+const shamanOrganizationalFeatureIds=new Set([
+ 'hb:shaman:ability:sacred-focus','hb:shaman:ability:totems','hb:shaman:ability:spiritualism','hb:shaman:ability:great-totem-spirit',
+ 'hb:shaman:ability:curse-spells','hb:shaman:ability:spirit-warrior-spells','hb:shaman:ability:medicine-spells','hb:shaman:ability:wild-heart-spells','hb:shaman:ability:beast-adaptation',
+]);
+const shamanSpellFeatureIds=new Set(['hb:shaman:ability:curse-spells','hb:shaman:ability:spirit-warrior-spells','hb:shaman:ability:medicine-spells','hb:shaman:ability:wild-heart-spells']);
+function upgradeKnownHomebrew(element:HomebrewElement):HomebrewElement {
+ if(!element.id.startsWith('hb:shaman:'))return element;
+ const features=element.features?.map(feature=>({
+  ...feature,
+  ...(shamanOrganizationalFeatureIds.has(feature.id)?{showOnSheet:false}:{}),
+  description:shamanSpellFeatureIds.has(feature.id)?feature.description.replace('Всегда известны и не считаются в лимит:','Всегда подготовлены и не занимают лимит:'):feature.description,
+ }));
+ const spellGrants=element.type==='subclass'&&element.parentClassId==='hb:shaman:class:shaman'
+  ?(element.spellGrants||[]).map(grant=>({...grant,mode:'always-prepared' as const,countsAgainstKnown:false}))
+  :element.spellGrants;
+ return {...element,features,spellGrants};
+}
 export function normalizeHomebrewLibrary(value:Partial<HomebrewLibrary>|null|undefined):HomebrewLibrary {
  const types=new Set(Object.keys(homebrewTypeLabels));
- const normalized=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
+ const normalized=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>upgradeKnownHomebrew({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
  const elements=[...new Map(normalized.map(element=>[element.id,element])).values()];
  return {version:2,schemaVersion:2,elements};
 }
