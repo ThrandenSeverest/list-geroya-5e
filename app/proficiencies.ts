@@ -237,6 +237,17 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
   };
   for (const entry of classes) {
     if (entry.classId === starting?.classId) continue;
+    const custom = character.homebrew?.entities.find(entity => entity.id === entry.classId && entity.type === "class");
+    if (custom) {
+      for (const effect of custom.multiclass?.effects || []) {
+        if (effect.type === "skill_proficiency" && effect.skill) skills.push(hbSkillName(effect.skill));
+        if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
+        if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
+        if (effect.type === "armor_proficiency" && effect.group) armor.push(({light:"Лёгкие доспехи",medium:"Средние доспехи",heavy:"Тяжёлые доспехи",shield:"Щиты"})[effect.group as "light"] || effect.group);
+        if (effect.type === "tool_proficiency" && effect.id) tools.push(effect.id);
+      }
+      continue;
+    }
     const training = multiclassTraining[entry.classId];
     armor.push(...(training?.armor || []));
     weapons.push(...(training?.weapons || []));
@@ -288,7 +299,9 @@ export function characterProficiencies(character: ExportCharacter): CharacterPro
     if (advancement.featId === "artificer-initiate") tools.push(...(advancement.featChoices?.tool || []));
   }
 
-  for (const { effect } of hbEffects(character)) {
+  const startingOnlyTraining = new Set(["weapon_proficiency", "weapon_group_proficiency", "armor_proficiency", "tool_proficiency"]);
+  for (const { source, effect } of hbEffects(character)) {
+    if (source.type === "class" && source.id !== startingClassId && startingOnlyTraining.has(effect.type)) continue;
     if (["skill_proficiency", "skill_expertise"].includes(effect.type) && effect.skill) skills.push(hbSkillName(effect.skill));
     if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
     if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
