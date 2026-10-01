@@ -1821,7 +1821,7 @@
           "countsAgainstKnown": false
         },
         {
-          "spellId": "speak-with-plants",
+          "spellId": "spell-doc-speak_with_plants",
           "level": 5,
           "mode": "known",
           "countsAgainstKnown": false
