@@ -228,3 +228,12 @@ test('Shaman subclass spells are always prepared and marked outside the known-sp
  assert.equal(group.spells.find(entry=>entry.spell.id==='magic-weapon')?.alwaysPrepared,true);
  assert.equal(group.spells.find(entry=>entry.spell.id==='spiritual-weapon')?.alwaysPrepared,true);
 });
+
+
+test('legacy imported Shaman packs upgrade spell grants and organizational features on load',()=>{
+ const legacySubclass:HomebrewElement={id:'hb:shaman:subclass:spirit-warrior',type:'subclass',name:'Воин духа',description:'',updatedAt:'',parentClassId:'hb:shaman:class:shaman',features:[{id:'hb:shaman:ability:spirit-warrior-spells',level:3,name:'Заклинания Воина духа',description:'Всегда известны и не считаются в лимит: тест.'}],spellGrants:[{spellId:'magic-weapon',level:3,mode:'known',countsAgainstKnown:false}]};
+ const upgraded=normalizeHomebrewLibrary({elements:[legacySubclass]}).elements[0];
+ assert.equal(upgraded.features?.[0].showOnSheet,false);
+ assert.match(upgraded.features?.[0].description||'',/Всегда подготовлены/);
+ assert.equal(upgraded.spellGrants?.[0].mode,'always-prepared');
+});
