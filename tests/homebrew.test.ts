@@ -176,7 +176,7 @@ test('Homebrew class chassis applies ASI levels, multiclass rules and pact magic
  };
  assert.deepEqual(validateHomebrew([cls]),[]);
  assert.deepEqual(homebrewAsiLevels([cls],cls.id),[4,8]);
- const hero=bindHomebrewLibrary({...base,className:'fighter',startingClassId:'fighter',level:6,abilities:{...base.abilities,str:8,dex:14,cha:16},classes:[{classId:'fighter',level:1,acquiredAtCharacterLevel:1},{classId:cls.id,level:5,acquiredAtCharacterLevel:2,classSkills:['Атлетика']}]},{elements:[cls]});
+ const hero=bindHomebrewLibrary({...base,className:'fighter',startingClassId:'fighter',level:6,backgroundSkills:[],abilities:{...base.abilities,str:8,dex:14,cha:16},classes:[{classId:'fighter',level:1,acquiredAtCharacterLevel:1},{classId:cls.id,level:5,acquiredAtCharacterLevel:2,classSkills:['Атлетика']}]},{elements:[cls]});
  assert.equal(multiclassRequirement(hero,cls.id).passed,true);
  assert.equal(multiclassRequirement({...hero,abilities:{...hero.abilities,dex:12}},cls.id).passed,false);
  assert.deepEqual(resolvePactMagic(hero),{slots:2,level:3});
