@@ -1003,7 +1003,6 @@ function Builder() {
   const pactMagicSlots = resolvePactMagic(exportCharacter);
   const classEquipment = equipmentRule(character.className, homebrew.elements);
   const authoredEquipment = [
-    ...homebrew.elements.find(e => e.id === character.className && e.type === "class")?.equipment || [],
     ...homebrew.elements.find(e => e.id === character.background && e.type === "background")?.equipment || [],
   ];
   const equipmentItems = selectedEquipment(exportCharacter);
@@ -3135,7 +3134,7 @@ function Builder() {
                 const recommended = optimalEquipmentSelections(character.className, finalAbilities, {
                   classChoices: character.classChoices,
                   subclass: character.subclass,
-                })[group.key] || [];
+                }, homebrew.elements)[group.key] || [];
                 return <section className="equipment-group" key={group.key} data-incomplete={selected.length !== group.count}>
                   <header><div><small>Обязательный выбор</small><h3>{group.label}</h3></div><strong className={selected.length === group.count ? "complete" : ""}>{selected.length} / {group.count}</strong></header>
                   <div className="equipment-options">
