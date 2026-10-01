@@ -136,7 +136,7 @@ test('Shaman style choices respect class level, focus and uniqueness across tier
 test('real Shaman choices activate HP, saves, speed and attacks instead of manual-only cards',()=>{
  const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
  const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
- const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-bear','hb:shaman:ability:totem-winds'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,backgroundSkills:[],classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-bear','hb:shaman:ability:totem-winds'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
  assert.equal(homebrewChoicesComplete(hero),true);
  assert.equal(homebrewChoiceStatuses({...hero,homebrew:{...hero.homebrew!,choices:{}}}).find(status=>status.choice.id==='shaman-sacred-focus')?.missing,1);
  assert.equal(estimatedHitPoints(hero)-estimatedHitPoints({...hero,homebrew:{...hero.homebrew!,choices:{...hero.homebrew!.choices,'shaman-sacred-focus':[]}}}),5);
