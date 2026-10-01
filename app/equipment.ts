@@ -274,7 +274,6 @@ export function selectedEquipment(character: Pick<ExportCharacter, "className" |
   const rule = equipmentRule(character.className, character.homebrew?.entities || []);
   const chosen = rule.groups.flatMap(group => (character.equipmentSelections?.[group.key] || []).flatMap(id => group.options.find(option => option.id === id)?.items || []));
   const custom = character.homebrew?.entities || [];
-  const classKit = custom.find(entity => entity.id === character.className && entity.type === "class")?.equipment || [];
   const backgroundKit = custom.find(entity => entity.id === character.background && entity.type === "background")?.equipment || [];
-  return [...rule.fixed, ...classKit, ...chosen, ...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment), ...backgroundKit];
+  return [...rule.fixed, ...chosen, ...backgroundEquipmentWithoutStartingGold(backgroundRule(character.background).equipment), ...backgroundKit];
 }
