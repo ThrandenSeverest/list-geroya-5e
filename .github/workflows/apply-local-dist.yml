@@ -1,0 +1,44 @@
+name: Apply local dist patch
+on:
+  push:
+    branches:
+      - work/manual-local-dist-20261001
+    paths:
+      - .dist-upload/READY
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Reassemble locally compiled dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .dist-upload/part-* | base64 -d > /tmp/herolist-dist-patch.tar.gz
+          tar -xzf /tmp/herolist-dist-patch.tar.gz
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          meta=json.loads(Path('dist-upload-meta.json').read_text())
+          for raw in meta['delete']:
+              path=Path(raw)
+              if path.exists():
+                  path.unlink()
+          info=json.loads(Path('dist/BUILD_INFO.json').read_text())
+          if info.get('sourceCommit') != meta['source']:
+              raise SystemExit('BUILD_INFO sourceCommit mismatch')
+          Path('dist-upload-meta.json').unlink()
+          PY
+          rm -rf .dist-upload
+          git rm .github/workflows/apply-local-dist.yml
+          git config user.name "Herolist Local Build Bridge"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A dist .dist-upload .github/workflows/apply-local-dist.yml
+          git commit -m "build: commit locally compiled dist"
+          git push origin HEAD:work/manual-local-dist-20261001
