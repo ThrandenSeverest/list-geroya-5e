@@ -64,7 +64,7 @@ test("a multiclass fixture agrees across sheet, PDF, LSS, Helpmate and native JS
   assert.match(pdf, /Договор · 1 круг/);
   assert.match(pdf, /detectmagic|Обнаружение магии/);
   assert.match(pdf, /Кинжал/);
-  assert.match(pdf, /Применяется вручную/);
+  assert.doesNotMatch(pdf, /Применяется вручную|Учтено автоматически/);
 });
 
 test("Helpmate preserves unsupported shared multiclass slots in notes with an explicit warning", () => {

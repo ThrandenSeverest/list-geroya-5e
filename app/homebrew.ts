@@ -11,6 +11,8 @@ export type HBSpellMechanics = {
  slotScaling?:{ every:number; damage:HBDamagePart[]; effect?:string };
 };
 export type HBChoice = { id:string; name:string; type:string; count:number; from:string[]; level?:number; choiceGroup?:string; uniqueAcrossGroup?:boolean };
+export type HBEquipmentOption = { id:string; label:string; items:string[]; recommended?:boolean };
+export type HBEquipmentGroup = { key:string; label:string; count:number; options:HBEquipmentOption[] };
 export type HBRequirement = { type:'selected_feature'; id:string; label?:string };
 export type HBSpellGrant = { spellId:string; level:number; mode?:'known'|'always-prepared'; countsAgainstKnown?:boolean; uses?:number; recovery?:'short_or_long'|'long' };
 export type HBAction = { id:string; name:string; actionType:string; cost?:{resource:string;amount:number}; description?:string };
@@ -24,7 +26,7 @@ export type HomebrewElement = {
  requirements?:HBRequirement[]; level?:number; school?:string; castingTime?:string; concentration?:boolean; ritual?:boolean;
  range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[]; spellMechanics?:HBSpellMechanics;
  hitDie?:string; primaryAbility?:HBAbility; savingThrows?:HBAbility[]; skillChoices?:{count:number;from:string[]};
- equipment?:string[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];requirementMode?:'all'|'any';effects?:HBEffect[];skillChoices?:{count:number;from:string[]}};
+ equipment?:string[]; equipmentGroups?:HBEquipmentGroup[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];requirementMode?:'all'|'any';effects?:HBEffect[];skillChoices?:{count:number;from:string[]}};
  subclass?:{chooseAtLevel:number;featureLevels?:number[]}; advancement?:Record<string,HBProgression[]>; parentClassId?:string; parentRaceId?:string;
  spellcasting?:{mode:'none'|'full'|'half'|'third'|'pact'|'custom';ability:HBAbility;selection?:'known'|'prepared'|'spellbook';recovery?:'long'|'short_or_long';cantrips?:number[];known?:number[];preparedFormula?:string;slots?:Record<string,number[]>};
  size?:string; speed?:Partial<Record<'walk'|'fly'|'swim'|'climb',number>>; itemType?:string; rarity?:string; weight?:number; price?:number; attunement?:boolean;
@@ -36,7 +38,8 @@ export const emptyHomebrewLibrary:HomebrewLibrary = {version:2,schemaVersion:2,e
 export const homebrewTypeLabels:Record<HomebrewType,string> = {ability:'Способность',feat:'Черта',item:'Предмет',spell:'Заклинание',proficiency:'Владение',race:'Раса',subrace:'Подраса',class:'Класс',subclass:'Подкласс',background:'Предыстория',resource:'Ресурс',attack:'Атака',table:'Таблица',note:'Заметка',pack:'Пак'};
 export function normalizeHomebrewLibrary(value:Partial<HomebrewLibrary>|null|undefined):HomebrewLibrary {
  const types=new Set(Object.keys(homebrewTypeLabels));
- const elements=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
+ const normalized=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
+ const elements=[...new Map(normalized.map(element=>[element.id,element])).values()];
  return {version:2,schemaVersion:2,elements};
 }
 export function newHomebrew(type:HomebrewType,name=''):HomebrewElement {

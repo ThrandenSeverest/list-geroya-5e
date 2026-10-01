@@ -43,6 +43,10 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   if(e.table&&(!Array.isArray(e.table.columns)||!Array.isArray(e.table.rows)||e.table.columns.length<1||e.table.columns.length>6||e.table.rows.length>200||e.table.columns.some(c=>typeof c!=='string'||c.length>80)||e.table.rows.some(r=>!Array.isArray(r)||r.length!==e.table!.columns.length||r.some(c=>typeof c!=='string'||c.length>160))))add(e.id,'Таблица: 1–6 колонок, до 200 строк, до 160 символов в ячейке');
   if((e.effects?.length||0)>100||(e.attacks?.length||0)>50||(e.resources?.length||0)>50)add(e.id,'Слишком много механик в одной сущности');
   if(e.type==='class'&&!['d6','d8','d10','d12'].includes(e.hitDie||''))add(e.id,'Выберите кость хитов');
+  if(e.equipmentGroups!==undefined){
+   if(e.type!=='class'||!Array.isArray(e.equipmentGroups))add(e.id,'Снаряжение: группы выбора допустимы только для класса');
+   else{const groupKeys=new Set<string>();for(const group of e.equipmentGroups){if(!group||typeof group.key!=='string'||!group.key.trim()||groupKeys.has(group.key)||typeof group.label!=='string'||!group.label.trim()||!Number.isInteger(group.count)||group.count<1||!Array.isArray(group.options)||group.options.length<1||group.count>group.options.length){add(e.id,'Снаряжение: у каждой группы нужны уникальный ключ, название, допустимое количество и варианты');continue;}groupKeys.add(group.key);const optionIds=new Set<string>();for(const option of group.options){if(!option||typeof option.id!=='string'||!option.id.trim()||optionIds.has(option.id)||typeof option.label!=='string'||!option.label.trim()||!Array.isArray(option.items)||!option.items.length||option.items.some(item=>typeof item!=='string'||!item.trim()))add(e.id,'Снаряжение: у каждого варианта нужны уникальный ID, название и хотя бы один предмет');else optionIds.add(option.id);}}}
+  }
   if(e.multiclass!==undefined){
    if(e.type!=='class'||!Array.isArray(e.multiclass.requirements))add(e.id,'Мультикласс: настройки допустимы только для класса');
    else{

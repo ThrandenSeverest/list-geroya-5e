@@ -4,7 +4,7 @@ import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubcla
 
 import { assetUrl } from "./assetUrl";
 
-import { markFeature, effectHandlingLabel } from "./featureHandling";
+import { markFeature } from "./featureHandling";
 import { setHitPointRoll } from "./hpProgress";
 import { classPreparedSpellIds, migrateSpellPreparation, setClassPreparedSpells } from "./spellPreparation";
 import { HeroQuiz } from "./HeroQuiz";
@@ -1001,9 +1001,8 @@ function Builder() {
   const homebrewSavingThrowBonuses=Object.fromEntries((Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key=>[key,hbSum(exportCharacter,'saving_throw_bonus',effect=>effect.ability===key)]));
   const sharedSpellSlots = resolveSpellSlots(exportCharacter);
   const pactMagicSlots = resolvePactMagic(exportCharacter);
-  const classEquipment = equipmentRule(character.className);
+  const classEquipment = equipmentRule(character.className, homebrew.elements);
   const authoredEquipment = [
-    ...homebrew.elements.find(e => e.id === character.className && e.type === "class")?.equipment || [],
     ...homebrew.elements.find(e => e.id === character.background && e.type === "background")?.equipment || [],
   ];
   const equipmentItems = selectedEquipment(exportCharacter);
@@ -1214,7 +1213,7 @@ function Builder() {
     if (step === 1) setCharacter(current => {
       const safe = normalizeCharacter(current);
       const keptBonuses = (safe.advancements || []).filter(choice => choice.bonus);
-      return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], preparedSpellsByClass: {}, lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
+      return migrateMulticlassCharacter(syncAdvancements({ ...safe, className: id, subclass: "", classSkills: [], classes: [{ classId: id, level: 1, acquiredAtCharacterLevel: 1, classSkills: [] }], startingClassId: id, level: 1, levelHistory: [{ characterLevel: 1, classId: id, classLevelAfter: 1 }], spells: [], preparedSpells: [], preparedSpellsByClass: {}, lssSpellCards: undefined, classChoices: {}, proficiencyChoices: {}, equipmentSelections: defaultEquipmentSelections(id, homebrew.elements), spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} }, keptBonuses));
     });
     if (step === 3) {
       const option = availableBackgrounds.find(item => item.id === id);
@@ -1450,11 +1449,11 @@ function Builder() {
   function chooseOptimalEquipment() {
     setCharacter(current => ({
       ...current,
-      equipmentSelections: optimalEquipmentSelections(current.className, finalAbilityScores(current), {
+      equipmentSelections: optimalEquipmentSelections(current.className, finalAbilityScores(bindHomebrewLibrary(current,homebrew)), {
         classChoices: current.classChoices,
         subclass: current.subclass,
         feats: deriveLegacyAdvancementFields(current.advancements || []).feats,
-      }),
+      }, homebrew.elements),
     }));
   }
 
@@ -1554,8 +1553,16 @@ function Builder() {
 
   function chooseOptimalAbilities() {
     setCharacter(current => {
-      if (current.abilityMethod === "standard") return { ...current, abilities: standardAbilityBuild(current.className, current.subclass) };
-      const build = optimalAbilityBuild(current);
+      const bound=bindHomebrewLibrary(current,homebrew);
+      const custom=homebrew.elements.find(element=>element.id===current.className&&element.type==='class');
+      if (current.abilityMethod === "standard") {
+        if(!custom)return { ...current, abilities: standardAbilityBuild(current.className, current.subclass) };
+        const primary=custom.spellcasting?.ability||custom.primaryAbility||'con';
+        const order=[primary,'con','dex','wis','cha','int','str'].filter((key,index,all)=>all.indexOf(key)===index) as (keyof ExportCharacter["abilities"])[];
+        const abilities={...current.abilities};standardArray.forEach((score,index)=>{if(order[index])abilities[order[index]]=score;});
+        return {...current,abilities};
+      }
+      const build = optimalAbilityBuild(bound);
       return { ...current, abilities: build.abilities, raceAbilityChoices: build.raceAbilityChoices };
     });
   }
@@ -3127,7 +3134,7 @@ function Builder() {
                 const recommended = optimalEquipmentSelections(character.className, finalAbilities, {
                   classChoices: character.classChoices,
                   subclass: character.subclass,
-                })[group.key] || [];
+                }, homebrew.elements)[group.key] || [];
                 return <section className="equipment-group" key={group.key} data-incomplete={selected.length !== group.count}>
                   <header><div><small>Обязательный выбор</small><h3>{group.label}</h3></div><strong className={selected.length === group.count ? "complete" : ""}>{selected.length} / {group.count}</strong></header>
                   <div className="equipment-options">
@@ -3567,7 +3574,7 @@ function Builder() {
                   <div className="mobile-stat-grid">
                     {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{finalAbilities[key]}</strong><span>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</span></div>)}
                   </div>
-                  <div className="mobile-quick-grid"><div title={[ac.base, ...ac.bonuses, ...ac.conditions].join("; ")}><small>КД</small><strong>{ac.value}</strong></div><div title={[...initiative.sources, ...initiative.notes].join("; ")}><small>Инициатива</small><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong></div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
+                  <div className="mobile-quick-grid"><div title={[ac.base, ...ac.bonuses, ...ac.conditions].join("; ")}><small>КД</small><strong>{ac.value}</strong></div><div title={[...initiative.sources, ...initiative.notes].join("; ")}><small>Инициатива</small><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong></div><div><small>Скорость</small><strong>{speedBreakdown(exportCharacter).walk}</strong>{(() => { const movement=speedBreakdown(exportCharacter); const extra=[movement.swim?`Плав. ${movement.swim}`:"",movement.climb?`Лаз. ${movement.climb}`:"",movement.fly?`Полёт ${movement.fly}`:""].filter(Boolean); return extra.length?<span>{extra.join(" · ")}</span>:null; })()}</div><div><small>Бонус мастерства</small><strong>+{proficiency}</strong></div></div>
                   {ac.conditions.length > 0 && <small>Условная КД: {ac.conditions.join(" ")}</small>}
                   {initiative.notes.length > 0 && <p><b>Инициатива:</b> {initiative.notes.join("; ")}</p>}
                   <p><b>Раса:</b> {selectedRace?.name} · <b>Класс:</b> {selectedClass?.name} · <b>Предыстория:</b> {selectedBackground?.name}</p>
@@ -3625,7 +3632,7 @@ function Builder() {
                 </div>}
 
                 {mobileSheetTab === "equipment" && <div className="mobile-sheet-panel mobile-equipment-editor"><h3>Снаряжение</h3><label>Инвентарь<textarea value={character.inventoryOverride ?? equipmentItems.join("\n")} onChange={event => setCharacter(current => ({ ...current, inventoryOverride: event.target.value }))} aria-label="Инвентарь персонажа" placeholder="По одному предмету на строку" /></label>{customEquipment.length > 0 && <p><b>Хоумбрю:</b> {customEquipment.join(" · ")}</p>}<small>Можно переписать список полностью. Изменения сохраняются вместе с персонажем.</small><h3>Монеты</h3><div className="mobile-coin-grid">{(["gp", "sp", "cp", "pp"] as const).map(key => { const labels = { gp: "ЗМ", sp: "СМ", cp: "ММ", pp: "ПМ" } as const; return <label key={key}><span>{labels[key]}</span><input type="number" min="0" value={character.currency?.[key] || 0} onChange={event => setCharacter(current => ({ ...current, currency: { ...initial.currency, ...current.currency, [key]: Math.max(0, Number(event.target.value) || 0) } }))} aria-label={`${labels[key]}: количество`} /></label>; })}</div></div>}
-                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}<h3>Особенности</h3>{[...selectedRaceFeatures, ...selectedClassFeatures, ...selectedFeatFeatures].map((feature, index) => <article key={`${feature.name}-${index}`}><strong>{feature.name}</strong>{feature.effectHandling && <small> · {effectHandlingLabel(feature.effectHandling)}</small>}<p>{feature.description}</p></article>)}{customNotes.map(note => <article className="homebrew-note" key={note.id}><strong>{note.name}</strong><p>{note.description}</p></article>)}</div>}
+                {mobileSheetTab === "notes" && <div className="mobile-sheet-panel mobile-notes"><h3>Характер и заметки</h3>{(Object.keys(personalityNames) as PersonalityKey[]).map(key => <label key={key}>{personalityNames[key]}<textarea value={character.personality[key]} onChange={event => setCharacter(current => ({ ...current, personality: { ...current.personality, [key]: event.target.value } }))} /></label>)}<h3>Особенности</h3>{[...selectedRaceFeatures, ...selectedClassFeatures, ...selectedFeatFeatures].map((feature, index) => <article key={`${feature.name}-${index}`}><strong>{feature.name}</strong><p>{feature.description}</p></article>)}{customNotes.map(note => <article className="homebrew-note" key={note.id}><strong>{note.name}</strong><p>{note.description}</p></article>)}</div>}
               </section>}
               <div className="sheet-page">
                 <header className="sheet-header">
@@ -3651,7 +3658,7 @@ function Builder() {
                     <div className="combat-row">
                       <div className="shield" title={[ac.base, ...ac.bonuses, ...ac.conditions].join("; ")}><strong>{ac.value}</strong><span>КД</span></div>
                       <div className="combat-tile" title={[...initiative.sources, ...initiative.notes].join("; ")}><strong>{initiative.value >= 0 ? "+" : ""}{initiative.value}</strong><span>ИНИЦИАТИВА</span></div>
-                      <div className="combat-tile" title={[...speedBreakdown(exportCharacter).sources, ...speedBreakdown(exportCharacter).conditions].join("; ")}><strong>{speedBreakdown(exportCharacter).walk}</strong><span>СКОРОСТЬ</span></div>
+                      <div className="combat-tile" title={[...speedBreakdown(exportCharacter).sources, ...speedBreakdown(exportCharacter).conditions].join("; ")}><strong>{speedBreakdown(exportCharacter).walk}</strong><span>СКОРОСТЬ</span>{(() => { const movement=speedBreakdown(exportCharacter); const extra=[movement.swim?`пл ${movement.swim}`:"",movement.climb?`лаз ${movement.climb}`:"",movement.fly?`пол ${movement.fly}`:""].filter(Boolean); return extra.length?<small>{extra.join(" · ")}</small>:null; })()}</div>
                     </div>
                     {initiative.notes.length > 0 && <small>{initiative.notes.join("; ")}</small>}
                     <div className="sheet-box hp"><strong>{hitPoints}</strong><span>МАКСИМУМ ХИТОВ</span></div>
@@ -3703,13 +3710,13 @@ function Builder() {
                       <h3>УМЕНИЯ И СПОСОБНОСТИ</h3>
                       <h4>{selectedRace?.name}: расовые особенности</h4>
                       {chosenRaceVariant && <p><b>{chosenRaceVariant.name}.</b> {chosenRaceVariant.description}</p>}
-                      {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}
+                      {selectedRaceFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}
                       {selectedClassFeatureSections.map(section => <div key={section.key}>
                         <h4>{section.title}: классовые особенности</h4>
-                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}
+                        {section.features.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
                       </div>)}
                       {runtimeFeatures.map(feature => <p key={`${feature.level}-${feature.name}`}><b>{feature.name}.</b> {feature.description}</p>)}
-                      {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.effectHandling && <small> {effectHandlingLabel(feature.effectHandling)}. </small>}{feature.description}</p>)}</>}
+                      {selectedFeatFeatures.length > 0 && <><h4>Черты</h4>{selectedFeatFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       {customFeatures.length > 0 && <><h4>Пользовательские способности</h4>{customFeatures.map(feature => <p key={feature.name}><b>{feature.name}.</b> {feature.description}</p>)}</>}
                       <h4>{selectedBackground?.name}: предыстория</h4>
                       <p>{selectedBackground?.description}</p>
@@ -3744,6 +3751,7 @@ function Builder() {
                 initiative={initiative.value}
                 initiativeNotes={initiative.notes}
                 speed={speedBreakdown(exportCharacter).walk}
+                movement={speedBreakdown(exportCharacter)}
                 hitPoints={hitPoints}
                 hitDie={classRuleFor(rulesCharacter, character.className)?.hitDie || 8}
                 hitDiceLabel={hitDicePoolsForCharacter.map(pool => `${pool.max - pool.spent}к${pool.die}`).join(" + ")}

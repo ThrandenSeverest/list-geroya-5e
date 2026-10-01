@@ -236,6 +236,14 @@ const table = {
       await page.getByRole("button", { name: "Назад", exact: true }).click();
       await page
         .locator("nav.steps button")
+        .filter({ hasText: "Снаряжение" })
+        .click();
+      assert.equal(await page.locator(".equipment-group").count(), 3);
+      assert.match(await page.locator(".equipment-builder").innerText(), /Основное оружие/);
+      assert.match(await page.locator(".equipment-builder").innerText(), /Дальнобойное снаряжение/);
+      assert.match(await page.locator(".equipment-builder").innerText(), /Набор/);
+      await page
+        .locator("nav.steps button")
         .filter({ hasText: "Итог" })
         .click();
       await page.locator(".pdf-document").waitFor({ state: "attached" });

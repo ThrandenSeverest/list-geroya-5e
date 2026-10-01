@@ -1,11 +1,11 @@
 export default {
-  "bootstrapScriptContent": "import(\"/assets/index-CwvafNBB.js\")",
+  "bootstrapScriptContent": "import(\"/assets/index-CuLqVjYU.js\")",
   "clientReferenceDeps": {
     "724dcbd470a5": {
       "js": [
-        "/assets/page-CYvHwIBo.js",
+        "/assets/page-Dv0QAdzs.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/index-CwvafNBB.js",
+        "/assets/index-CuLqVjYU.js",
         "/assets/framework-CXnKph_e.js",
         "/assets/query-D8Wk3mvj.js"
       ],
@@ -13,18 +13,18 @@ export default {
     },
     "6efdf509a785": {
       "js": [
-        "/assets/page-Dv5EwjDh.js",
+        "/assets/page-BIcRtpeV.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js",
-        "/assets/index-CwvafNBB.js"
+        "/assets/index-CuLqVjYU.js"
       ],
       "css": [
-        "/assets/page-UUmDROGQ.css"
+        "/assets/page-DyNZvL66.css"
       ]
     },
     "593f344dc510": {
       "js": [
-        "/assets/index-CwvafNBB.js",
+        "/assets/index-CuLqVjYU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js"
       ],
@@ -32,16 +32,16 @@ export default {
     },
     "15c18cfaeeff": {
       "js": [
-        "/assets/layout-segment-context-C1MDqFmG.js",
+        "/assets/layout-segment-context-Cq0h5Plt.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/index-CwvafNBB.js",
+        "/assets/index-CuLqVjYU.js",
         "/assets/framework-CXnKph_e.js"
       ],
       "css": []
     },
     "8c0f216c4604": {
       "js": [
-        "/assets/index-CwvafNBB.js",
+        "/assets/index-CuLqVjYU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CXnKph_e.js"
       ],

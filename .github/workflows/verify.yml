@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 # Only the newest verification for a branch may publish dist. This prevents
 # older runs from racing a newer main commit and failing with a non-fast-forward push.
@@ -19,6 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Package source snapshot for external/local builds
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude=dist -czf /tmp/herolist-source.tgz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: herolist-source-${{ github.sha }}
+          path: /tmp/herolist-source.tgz
+          retention-days: 1
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -40,6 +48,15 @@ jobs:
           cat /tmp/herolist-frontend.log
           exit 1
       - run: npm ci
+      - name: Package exact build dependencies for local compiler
+        if: github.event_name == 'pull_request'
+        run: tar -czf /tmp/herolist-node-modules.tgz node_modules
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'pull_request'
+        with:
+          name: herolist-build-deps-${{ github.sha }}
+          path: /tmp/herolist-node-modules.tgz
+          retention-days: 1
       - run: npm run build
       - name: Finalize production build metadata and runtime placeholders
         run: |
@@ -79,30 +96,7 @@ jobs:
       - run: pip install -r backend/requirements.txt
       - run: python -m pytest
         working-directory: backend
-      - name: Sync precompiled dist on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          if git diff --quiet -- dist; then
-            echo "Committed dist already matches the source build."
-            exit 0
-          fi
-
-          # A newer commit may have landed while this build was running.
-          # Never publish dist compiled from an older source tree onto newer main.
-          git fetch origin main
-          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
-            echo "main advanced during this run; the newer workflow will publish its own dist."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist
-          git commit -m "build: sync precompiled dist"
-          git push origin HEAD:main
-      - name: Verify committed dist matches source on pull requests
-        if: github.event_name == 'pull_request'
+      - name: Verify committed dist matches source
         run: |
           python3 scripts/normalize-dist-for-compare.py /tmp/herolist-committed-dist dist
           diff -qr /tmp/herolist-committed-dist dist
-

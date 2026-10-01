@@ -16,6 +16,8 @@ import savant from '../app/savantExample.json';
 import shamanPack from '../app/shamanExample.json';
 import { speedBreakdown } from '../app/speed';
 import { characterProficiencies } from '../app/proficiencies';
+import { armorClassBreakdown } from '../app/armor';
+import { equipmentRule, selectedEquipment } from '../app/equipment';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
 test('bounded formulas and rejection of code injection',()=>{
@@ -89,7 +91,7 @@ test('inline class feature retains its choices and actions and evaluates its cla
  const option:HomebrewElement={id:'hb:test:ability:stance',type:'ability',name:'Стойка',description:'Усиливает защиту',updatedAt:'',effects:[{type:'ac_bonus',value:1}]};
  const cls:HomebrewElement={id:'hb:test:class:warden',type:'class',name:'Страж',description:'',updatedAt:'',hitDie:'d10',features:[{id:'hb:test:ability:stance-choice',level:2,name:'Боевой приём',description:'Выберите стойку',resources:[{id:'hb:test:resource:stance',name:'Приёмы',max:'@classLevel + @pb',restore:['short_rest']}],choices:[{id:'hb:test:choice:stance',name:'Стойка',type:'feature',count:1,from:[option.id]}],actions:[{id:'hb:test:action:stance',name:'Принять стойку',actionType:'bonus_action'}]}]};
  assert.deepEqual(validateHomebrew([cls,option]),[]);
- const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id]}},{elements:[cls,option]});
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,backgroundSkills:[],classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id]}},{elements:[cls,option]});
  const feature=activeHomebrew(hero).find(e=>e.id==='hb:test:ability:stance-choice')!;
  assert.equal(feature.actions?.[0].name,'Принять стойку');
  assert.deepEqual(normalizeHomebrewLibrary(JSON.parse(JSON.stringify({elements:[cls,option]}))).elements[0].features?.[0].choices,cls.features?.[0].choices);
@@ -134,15 +136,41 @@ test('Shaman style choices respect class level, focus and uniqueness across tier
 test('real Shaman choices activate HP, saves, speed and attacks instead of manual-only cards',()=>{
  const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
  const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
- const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-bear','hb:shaman:ability:totem-winds'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,backgroundSkills:[],classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-bear','hb:shaman:ability:totem-winds'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
  assert.equal(homebrewChoicesComplete(hero),true);
  assert.equal(homebrewChoiceStatuses({...hero,homebrew:{...hero.homebrew!,choices:{}}}).find(status=>status.choice.id==='shaman-sacred-focus')?.missing,1);
  assert.equal(estimatedHitPoints(hero)-estimatedHitPoints({...hero,homebrew:{...hero.homebrew!,choices:{...hero.homebrew!.choices,'shaman-sacred-focus':[]}}}),5);
  assert.equal(speedBreakdown(hero).walk,40);
  assert.ok(characterAttacks(hero,spells).some(attack=>attack.id==='hb:shaman:attack:bear-claw-one-hand'));
+ assert.ok(characterProficiencies(hero).skills.includes('Внимательность'));
+ const equipment=equipmentRule(cls.id,entities);assert.equal(equipment.groups.length,3);
+ const equipped={...hero,equipmentSelections:{'shaman-weapon':['quarterstaff'],'shaman-ranged':['shortbow-arrows'],'shaman-pack':['priest-pack']}};
+ assert.ok(selectedEquipment(equipped).includes('Кожаный доспех (КД 11 + Лов.)'));
+ assert.ok(selectedEquipment(equipped).includes('Боевой посох'));
  const mind={...hero,homebrew:{...hero.homebrew!,choices:{...hero.homebrew!.choices,'shaman-sacred-focus':['hb:shaman:ability:focus-mind']}}};
  assert.equal(hbSum(mind,'saving_throw_bonus',effect=>effect.ability==='int'),2);
  assert.equal(hbSum(mind,'saving_throw_bonus',effect=>effect.ability==='cha'),2);
+});
+
+
+test('Shaman defensive totems and movement modes are mechanical',()=>{
+ const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
+ const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
+ const soul=bindHomebrewLibrary({...base,className:cls.id,level:20,inventoryOverride:'',abilities:{...base.abilities,dex:14,wis:16},classes:[{classId:cls.id,level:20,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-soul'],'shaman-totems-1':['hb:shaman:ability:totem-eagle','hb:shaman:ability:totem-hound'],'shaman-totems-9':['hb:shaman:ability:totem-river'],'shaman-totems-15':['hb:shaman:ability:totem-sky']}}},{elements:entities});
+ assert.equal(armorClassBreakdown(soul).value,15);
+ assert.equal(speedBreakdown(soul).swim,speedBreakdown(soul).walk);
+ assert.equal(speedBreakdown(soul).fly,speedBreakdown(soul).walk);
+ const mountain=bindHomebrewLibrary({...soul,abilities:{...soul.abilities,con:16},homebrew:{...soul.homebrew!,choices:{...soul.homebrew!.choices,'shaman-sacred-focus':['hb:shaman:ability:focus-body'],'shaman-totems-1':['hb:shaman:ability:totem-mountain','hb:shaman:ability:totem-eagle']}}},{elements:entities});
+ assert.equal(armorClassBreakdown(mountain).value,16);
+});
+
+test('Homebrew libraries dedupe stable IDs and always-prepared grants remain automatic',()=>{
+ const duplicate:HomebrewElement={id:'hb:test:ability:same',type:'ability',name:'Старое',description:'',updatedAt:''};
+ const newer={...duplicate,name:'Новое'};
+ assert.deepEqual(normalizeHomebrewLibrary({elements:[duplicate,newer]}).elements.map(element=>element.name),['Новое']);
+ const cls:HomebrewElement={id:'hb:test:class:prepared',type:'class',name:'Жрец',description:'',updatedAt:'',hitDie:'d8',spellcasting:{mode:'full',ability:'wis',selection:'prepared'},spellGrants:[{spellId:'bless',level:1,mode:'always-prepared'}]};
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:3,classes:[{classId:cls.id,level:3,acquiredAtCharacterLevel:1}]},{elements:[cls]});
+ assert.equal(alwaysPreparedSpellEntries(hero,spells).find(entry=>entry.id==='bless')?.mode,'always-prepared');
 });
 
 test('Homebrew class proficiency IDs render like official Russian sheet labels',()=>{

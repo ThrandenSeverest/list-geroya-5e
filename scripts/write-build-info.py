@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 import json
+import os
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
-try:
-    source_commit = subprocess.check_output(
-        ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL, timeout=5
-    ).strip()
-except (OSError, subprocess.SubprocessError):
-    source_commit = None
+source_commit = os.environ.get("HEROLIST_SOURCE_COMMIT")
+if not source_commit:
+    try:
+        source_commit = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], text=True, stderr=subprocess.DEVNULL, timeout=5
+        ).strip()
+    except (OSError, subprocess.SubprocessError):
+        source_commit = None
 
 package = json.loads(Path("package.json").read_text(encoding="utf-8"))
 Path("dist/BUILD_INFO.json").write_text(

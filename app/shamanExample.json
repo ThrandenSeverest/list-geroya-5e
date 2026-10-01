@@ -445,10 +445,8 @@
         ]
       },
       "equipment": [
-        "Боевой посох или любое простое оружие",
-        "Короткий лук и 20 стрел или 5 метательных копий",
-        "Набор священника или набор исследователя подземелий",
-        "Кожаный доспех и один предмет-тотем"
+        "Кожаный доспех (КД 11 + Лов.)",
+        "Шаманский тотем"
       ],
       "startingGold": "4d4 * 10",
       "multiclass": {
@@ -471,7 +469,19 @@
             "type": "weapon_group_proficiency",
             "group": "simple"
           }
-        ]
+        ],
+        "skillChoices": {
+          "count": 1,
+          "from": [
+            "performance",
+            "arcana",
+            "medicine",
+            "nature",
+            "insight",
+            "religion",
+            "animal handling"
+          ]
+        }
       },
       "subclass": {
         "chooseAtLevel": 3,
@@ -519,7 +529,7 @@
           "id": "hb:shaman:ability:sacred-focus",
           "level": 1,
           "name": "Сакральный фокус",
-          "description": "Выберите Тело, Сердце, Разум или Душу. Выбор доступен в Homebrew-блоке персонажа.",
+          "description": "Ваш выбранный сакральный фокус определяет постоянные особенности шамана и применяется автоматически после выбора.",
           "effects": [],
           "resources": [],
           "attacks": []
@@ -528,7 +538,7 @@
           "id": "hb:shaman:ability:totems",
           "level": 1,
           "name": "Тотемы",
-          "description": "На 1-м уровне выберите 2 тотема; дополнительные — на 4, 6, 9, 12, 15 и 18 уровнях. Если у тотема есть требование, оно должно быть выполнено. Сл тотема = 8 + БМ + модификатор Мудрости.",
+          "description": "Выбранные тотемы дают свои эффекты, владения, скорости, ресурсы и заклинания. Сл тотема = 8 + БМ + модификатор Мудрости.",
           "effects": [],
           "resources": [],
           "attacks": [
@@ -563,7 +573,7 @@
           "id": "hb:shaman:ability:spiritualism",
           "level": 3,
           "name": "Спиритизм",
-          "description": "Выберите подкласс. Умения приходят на 3, 6, 10 и 14 уровнях шамана.",
+          "description": "Подкласс шамана даёт способности на 3, 6, 10 и 14 уровнях.",
           "effects": [],
           "resources": [],
           "attacks": []
@@ -607,7 +617,7 @@
           "id": "hb:shaman:ability:great-totem-spirit",
           "level": 11,
           "name": "Великий дух тотема",
-          "description": "Выберите один Великий дух. Он даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
+          "description": "Великий дух тотема даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
           "effects": [],
           "resources": [],
           "attacks": []
@@ -1154,7 +1164,160 @@
             "4 × 5 ур."
           ]
         ]
-      }
+      },
+      "equipmentGroups": [
+        {
+          "key": "shaman-weapon",
+          "label": "Основное оружие",
+          "count": 1,
+          "options": [
+            {
+              "id": "club",
+              "label": "Дубинка",
+              "items": [
+                "Дубинка"
+              ]
+            },
+            {
+              "id": "dagger",
+              "label": "Кинжал",
+              "items": [
+                "Кинжал"
+              ]
+            },
+            {
+              "id": "greatclub",
+              "label": "Палица",
+              "items": [
+                "Палица"
+              ]
+            },
+            {
+              "id": "handaxe",
+              "label": "Ручной топор",
+              "items": [
+                "Ручной топор"
+              ]
+            },
+            {
+              "id": "javelin",
+              "label": "Метательное копьё",
+              "items": [
+                "Метательное копьё"
+              ]
+            },
+            {
+              "id": "light-hammer",
+              "label": "Лёгкий молот",
+              "items": [
+                "Лёгкий молот"
+              ]
+            },
+            {
+              "id": "mace",
+              "label": "Булава",
+              "items": [
+                "Булава"
+              ]
+            },
+            {
+              "id": "quarterstaff",
+              "label": "Боевой посох",
+              "items": [
+                "Боевой посох"
+              ],
+              "recommended": true
+            },
+            {
+              "id": "sickle",
+              "label": "Серп",
+              "items": [
+                "Серп"
+              ]
+            },
+            {
+              "id": "spear",
+              "label": "Копьё",
+              "items": [
+                "Копьё"
+              ]
+            },
+            {
+              "id": "light-crossbow",
+              "label": "Лёгкий арбалет",
+              "items": [
+                "Лёгкий арбалет"
+              ]
+            },
+            {
+              "id": "dart",
+              "label": "Дротик",
+              "items": [
+                "Дротик"
+              ]
+            },
+            {
+              "id": "shortbow",
+              "label": "Короткий лук",
+              "items": [
+                "Короткий лук"
+              ]
+            },
+            {
+              "id": "sling",
+              "label": "Праща",
+              "items": [
+                "Праща"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "shaman-ranged",
+          "label": "Дальнобойное снаряжение",
+          "count": 1,
+          "options": [
+            {
+              "id": "shortbow-arrows",
+              "label": "Короткий лук и 20 стрел",
+              "items": [
+                "Короткий лук",
+                "20 стрел"
+              ],
+              "recommended": true
+            },
+            {
+              "id": "five-javelins",
+              "label": "5 метательных копий",
+              "items": [
+                "5 метательных копий"
+              ]
+            }
+          ]
+        },
+        {
+          "key": "shaman-pack",
+          "label": "Набор",
+          "count": 1,
+          "options": [
+            {
+              "id": "priest-pack",
+              "label": "Набор священника",
+              "items": [
+                "Набор священника"
+              ],
+              "recommended": true
+            },
+            {
+              "id": "dungeoneer-pack",
+              "label": "Набор исследователя подземелий",
+              "items": [
+                "Набор исследователя подземелий"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "schemaVersion": 2,
@@ -1451,7 +1614,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Максимум хитов увеличивается на 1 за каждый уровень шамана."
     },
     {
       "schemaVersion": 2,
@@ -1479,7 +1643,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Перед спасброском можно потратить одну Кость Хитов, чтобы совершить этот спасбросок с преимуществом."
     },
     {
       "schemaVersion": 2,
@@ -1518,7 +1683,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "К проверкам характеристик и спасброскам Интеллекта или Харизмы добавляется модификатор Мудрости. Спасброски автоматизированы; общий бонус к проверкам пока требует ручного применения."
     },
     {
       "schemaVersion": 2,
@@ -1526,7 +1692,7 @@
       "id": "hb:shaman:ability:focus-soul",
       "type": "ability",
       "name": "Сакральный фокус: Душа",
-      "description": "Без доспеха и щита КД = 10 + модификатор Ловкости + модификатор Мудрости. Оставлено описанием, потому что текущая схема не умеет безопасно проверять «без доспеха и щита».",
+      "description": "Без доспеха и щита КД = 10 + модификатор Ловкости + модификатор Мудрости.",
       "updatedAt": "2026-09-26T14:15:00.000Z",
       "version": "5.6.1",
       "source": {
@@ -1540,13 +1706,20 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "ac_formula",
+          "formula": "10 + @mod.dex + @mod.wis",
+          "when": "!hasArmor(\"armor\") && !hasArmor(\"shield\")"
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Без доспеха и щита КД = 10 + модификатор Ловкости + модификатор Мудрости."
     },
     {
       "schemaVersion": 2,
@@ -1603,7 +1776,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Бонусным действием вырастить магические когти: безоружные удары 1к6 + Сила рубящего урона, либо 1к8 + Сила, если обе руки свободны."
     },
     {
       "schemaVersion": 2,
@@ -1638,7 +1812,22 @@
           "id": "hb:shaman:ability:focus-heart",
           "label": "Сакральный фокус «Сердце»"
         }
-      ]
+      ],
+      "spellGrants": [
+        {
+          "spellId": "speak-with-animals",
+          "level": 1,
+          "mode": "known",
+          "countsAgainstKnown": false
+        },
+        {
+          "spellId": "spell-doc-speak_with_plants",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ],
+      "summary": "Пока вы в сознании, действует эффект «Разговор с животными»; с 5-го уровня шамана также «Разговор с растениями»."
     },
     {
       "schemaVersion": 2,
@@ -1671,7 +1860,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Владение Внимательностью; преимущество на проверки Внимательности, основанные на зрении."
     },
     {
       "schemaVersion": 2,
@@ -1699,7 +1889,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Раз в ход при попадании рукопашной атакой оружием добавьте урон того же типа: 1к6; 1к8 на 6-м, 1к10 на 11-м, 1к12 на 17-м уровне шамана."
     },
     {
       "schemaVersion": 2,
@@ -1734,7 +1925,18 @@
           "id": "hb:shaman:ability:focus-soul",
           "label": "Сакральный фокус «Душа»"
         }
-      ]
+      ],
+      "spellGrants": [
+        {
+          "spellId": "goodberry",
+          "level": 1,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "short_or_long"
+        }
+      ],
+      "summary": "После короткого или продолжительного отдыха создаёт «Чудо-ягоды» без ячейки и материальных компонентов; ягоды действуют до следующего отдыха."
     },
     {
       "schemaVersion": 2,
@@ -1767,7 +1969,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Владение Выживанием; преимущество на проверки Выживания в природной среде."
     },
     {
       "schemaVersion": 2,
@@ -1789,7 +1992,13 @@
         "laserllama",
         "5e-2014"
       ],
-      "effects": [],
+      "effects": [
+        {
+          "type": "ac_formula",
+          "formula": "max(13, 13 + @mod.con)",
+          "when": "!hasArmor(\"armor\") && !hasArmor(\"shield\")"
+        }
+      ],
       "resources": [],
       "attacks": [],
       "actions": [],
@@ -1802,7 +2011,8 @@
           "id": "hb:shaman:ability:focus-body",
           "label": "Сакральный фокус «Тело»"
         }
-      ]
+      ],
+      "summary": "Без доспеха и щита КД = 13 + модификатор Телосложения (минимум 13)."
     },
     {
       "schemaVersion": 2,
@@ -1835,7 +2045,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Владение Скрытностью; преимущество на Скрытность при попытке спрятаться в природной среде."
     },
     {
       "schemaVersion": 2,
@@ -1863,7 +2074,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Под водой можно задерживать дыхание на 1 час; преимущество на проверки и спасброски для сопротивления захвату."
     },
     {
       "schemaVersion": 2,
@@ -1898,7 +2110,8 @@
           "id": "hb:shaman:ability:focus-mind",
           "label": "Сакральный фокус «Разум»"
         }
-      ]
+      ],
+      "summary": "Защита разума от чтения мыслей, определения эмоций/мировоззрения и нежелательного прорицания; противники с помехой читают ваши намерения Проницательностью."
     },
     {
       "schemaVersion": 2,
@@ -1935,7 +2148,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Сопротивление кислоте и яду; преимущество на спасброски против состояния «отравлен»."
     },
     {
       "schemaVersion": 2,
@@ -1969,7 +2183,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Тёмное зрение 120 футов; с 9-го уровня шамана позволяет видеть и в магической тьме."
     },
     {
       "schemaVersion": 2,
@@ -2008,7 +2223,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Реакцией превратить полученное критическое попадание в обычное. 1 раз за короткий/длинный отдых; с 12-го уровня — 2 раза."
     },
     {
       "schemaVersion": 2,
@@ -2036,7 +2252,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "При критическом попадании рукопашной атакой оружием можно реакцией совершить ещё одну атаку по той же цели."
     },
     {
       "schemaVersion": 2,
@@ -2070,7 +2287,8 @@
       "actions": [],
       "choices": [],
       "level": 1,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Скорость ходьбы +5 футов; +10 на 5-м, +15 на 11-м, +20 на 17-м уровне шамана."
     },
     {
       "schemaVersion": 2,
@@ -2105,7 +2323,18 @@
           "id": "hb:shaman:ability:focus-soul",
           "label": "Сакральный фокус «Душа»"
         }
-      ]
+      ],
+      "spellGrants": [
+        {
+          "spellId": "plant-growth",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "short_or_long"
+        }
+      ],
+      "summary": "«Рост растений» без ячейки 1 раз за короткий/длинный отдых; если способность не тратилась после прошлого длинного отдыха, длительный вариант может влиять на землю вокруг во время отдыха."
     },
     {
       "schemaVersion": 2,
@@ -2133,7 +2362,8 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Раз в ход при попадании рукопашной атакой можно потратить ячейку Первобытной магии и добавить 1к8 за уровень ячейки (макс. 5к8) выбранного типа: холод, огонь, молния, магический дробящий или звук."
     },
     {
       "schemaVersion": 2,
@@ -2168,7 +2398,18 @@
           "id": "hb:shaman:ability:focus-body",
           "label": "Сакральный фокус «Тело»"
         }
-      ]
+      ],
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-enlarge_reduce",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "short_or_long"
+        }
+      ],
+      "summary": "Бонусным действием наложить на себя увеличение из «Увеличение/уменьшение» без ячейки и концентрации; 1 раз за короткий/длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2196,7 +2437,8 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Потратить ячейку Первобытной магии, чтобы сотворить «Восставший труп» без обычных материальных компонентов; затем требуется короткий/длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2224,7 +2466,8 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Когда заклинанием 1-го уровня или выше восстанавливаете хиты другому существу, получаете временные хиты = модификатору Мудрости."
     },
     {
       "schemaVersion": 2,
@@ -2259,7 +2502,8 @@
           "id": "hb:shaman:ability:focus-heart",
           "label": "Сакральный фокус «Сердце»"
         }
-      ]
+      ],
+      "summary": "Бонусным действием получить временные хиты = уровню шамана; 1 раз за длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2294,7 +2538,16 @@
           "id": "hb:shaman:ability:focus-mind",
           "label": "Сакральный фокус «Разум»"
         }
-      ]
+      ],
+      "spellGrants": [
+        {
+          "spellId": "detect-thoughts",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ],
+      "summary": "Действием «Обнаружение мыслей» без ячейки и без вербальных/соматических компонентов."
     },
     {
       "schemaVersion": 2,
@@ -2322,7 +2575,8 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Действием существа в радиусе 15 футов делают спасбросок Телосложения; при провале отравлены до начала вашего следующего хода, при успехе иммунны к этому эффекту на 24 часа."
     },
     {
       "schemaVersion": 2,
@@ -2350,7 +2604,18 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-summon_beast",
+          "level": 5,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ],
+      "summary": "«Призыв духа зверя» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2378,7 +2643,8 @@
       "actions": [],
       "choices": [],
       "level": 5,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "При провале цели против «Наступления тотемов» добавьте модификатор Мудрости к урону."
     },
     {
       "schemaVersion": 2,
@@ -2406,7 +2672,8 @@
       "actions": [],
       "choices": [],
       "level": 7,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Раз в ход дайте себе преимущество на бросок атаки, если в 5 футах от цели находится ваш союзник."
     },
     {
       "schemaVersion": 2,
@@ -2434,7 +2701,8 @@
       "actions": [],
       "choices": [],
       "level": 7,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Бонусным действием стать податливым: проходить через щели шириной до 1 дюйма и освобождаться от немагических оков или захвата за 5 футов перемещения."
     },
     {
       "schemaVersion": 2,
@@ -2468,7 +2736,8 @@
       "actions": [],
       "choices": [],
       "level": 7,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Дышите воздухом и водой; скорость плавания равна скорости ходьбы."
     },
     {
       "schemaVersion": 2,
@@ -2502,7 +2771,8 @@
       "actions": [],
       "choices": [],
       "level": 9,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Виброчувствительность 30 футов, пока соприкасаетесь с землёй."
     },
     {
       "schemaVersion": 2,
@@ -2530,7 +2800,18 @@
       "actions": [],
       "choices": [],
       "level": 9,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "spellGrants": [
+        {
+          "spellId": "death-ward",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ],
+      "summary": "После длинного отдыха выбранное вами существо получает эффект «Защита от смерти» без траты ячейки."
     },
     {
       "schemaVersion": 2,
@@ -2558,7 +2839,18 @@
       "actions": [],
       "choices": [],
       "level": 9,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "spellGrants": [
+        {
+          "spellId": "summonfey",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ],
+      "summary": "«Призыв духа феи» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2597,7 +2889,8 @@
       "actions": [],
       "choices": [],
       "level": 9,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "После проваленного спасброска можно перебросить его. 1 раз за короткий/длинный отдых; с 15-го уровня — 2 раза."
     },
     {
       "schemaVersion": 2,
@@ -2625,7 +2918,16 @@
       "actions": [],
       "choices": [],
       "level": 9,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "spellGrants": [
+        {
+          "spellId": "ensnaring-strike",
+          "level": 9,
+          "mode": "known",
+          "countsAgainstKnown": false
+        }
+      ],
+      "summary": "Можно накладывать «Опутывающий удар» как заклинание 1-го уровня без траты ячейки."
     },
     {
       "schemaVersion": 2,
@@ -2653,7 +2955,8 @@
       "actions": [],
       "choices": [],
       "level": 15,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Действием восстановить одну потраченную ячейку Первобытной магии; 1 раз за длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2681,7 +2984,8 @@
       "actions": [],
       "choices": [],
       "level": 15,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Сопротивление урону от заклинаний."
     },
     {
       "schemaVersion": 2,
@@ -2709,7 +3013,18 @@
       "actions": [],
       "choices": [],
       "level": 15,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "spellGrants": [
+        {
+          "spellId": "spell-doc-summon_elemental",
+          "level": 15,
+          "mode": "known",
+          "countsAgainstKnown": false,
+          "uses": 1,
+          "recovery": "long"
+        }
+      ],
+      "summary": "«Призыв духа элементаля» на уровне ячейки Первобытной магии без ячейки и материального компонента; 1 раз за длинный отдых."
     },
     {
       "schemaVersion": 2,
@@ -2737,7 +3052,8 @@
       "actions": [],
       "choices": [],
       "level": 15,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "В начале хода, если у вас больше 0 хитов и не больше половины максимума, восстановите хиты = модификатору Мудрости."
     },
     {
       "schemaVersion": 2,
@@ -2771,7 +3087,8 @@
       "actions": [],
       "choices": [],
       "level": 15,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Скорость полёта равна скорости ходьбы; урон от падения уменьшается на уровень шамана."
     },
     {
       "schemaVersion": 2,
@@ -2839,7 +3156,8 @@
           "uses": 1,
           "recovery": "long"
         }
-      ]
+      ],
+      "summary": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Окаменение.\n13-й уровень шамана — Перст смерти.…"
     },
     {
       "schemaVersion": 2,
@@ -2907,7 +3225,8 @@
           "uses": 1,
           "recovery": "long"
         }
-      ]
+      ],
+      "summary": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Полное исцеление.\n13-й уровень шамана — Регенер…"
     },
     {
       "schemaVersion": 2,
@@ -2975,7 +3294,8 @@
           "uses": 1,
           "recovery": "long"
         }
-      ]
+      ],
+      "summary": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Первородный страж.\n13-й уровень шамана — Измене…"
     },
     {
       "schemaVersion": 2,
@@ -3043,7 +3363,8 @@
           "uses": 1,
           "recovery": "long"
         }
-      ]
+      ],
+      "summary": "Выбранные великие заклинания не считаются в лимит известных. Каждое доступное заклинание можно сотворить 1 раз за продолжительный отдых без ячейки:\n11-й уровень шамана — Солнечный луч.\n13-й уровень шамана — Воскрешени…"
     },
     {
       "schemaVersion": 2,
@@ -3738,7 +4059,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Попадание тотемным оружием даёт цели помеху на атаки по целям, кроме вас, до начала вашего следующего хода."
     },
     {
       "schemaVersion": 2,
@@ -3766,7 +4088,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Раз в ход попадание тотемным оружием можно сделать некротическим и получить временные хиты = модификатору Мудрости."
     },
     {
       "schemaVersion": 2,
@@ -3794,7 +4117,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "С тотемным оружием добавляйте модификатор Мудрости к проверкам и спасброскам Силы; атаки им по схваченным вами целям совершаются с преимуществом."
     },
     {
       "schemaVersion": 2,
@@ -3828,7 +4152,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Скорость ходьбы и дальность прыжков +10 футов; игнорируете труднопроходимую местность."
     },
     {
       "schemaVersion": 2,
@@ -3862,7 +4187,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Скорость лазания равна скорости ходьбы; можно лазать по отвесным поверхностям и потолку без проверок."
     },
     {
       "schemaVersion": 2,
@@ -3896,7 +4222,8 @@
       "actions": [],
       "choices": [],
       "level": 3,
-      "parentClassId": "hb:shaman:class:shaman"
+      "parentClassId": "hb:shaman:class:shaman",
+      "summary": "Скорость плавания равна скорости ходьбы; под водой Рывок бонусным действием и задержка дыхания до 1 часа."
     },
     {
       "schemaVersion": 2,

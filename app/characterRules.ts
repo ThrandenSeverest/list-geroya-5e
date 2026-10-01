@@ -1,4 +1,4 @@
-import { hbAbilities, activeHomebrew, homebrewClassLevel } from "./homebrewEngine";
+import { hbAbilities, activeHomebrew, homebrewClassLevel, classRuleFor } from "./homebrewEngine";
 export * from "./characterRules.base";
 
 import * as base from "./characterRules.base";
@@ -33,7 +33,7 @@ export function alwaysPreparedSpellEntries(character:ExportCharacter,catalog:imp
   const level=homebrewClassLevel(character,classId);
   for(const grant of source.spellGrants||[]){
    const spell=catalog.find(item=>item.id===grant.spellId);
-   if(spell&&grant.level<=level&&grant.countsAgainstKnown===false)entries.push({id:spell.id,source:source.name,mode:grant.mode||'known'});
+   if(spell&&grant.level<=level&&(grant.countsAgainstKnown===false||grant.mode==='always-prepared'))entries.push({id:spell.id,source:source.name,mode:grant.mode||'known'});
   }
  }
  return entries.filter((entry,index)=>entries.findIndex(other=>other.id===entry.id)===index);
@@ -289,16 +289,18 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
     const abilities = { str, dex, con, int, wis, cha };
     if (base.pointBuySpent(abilities) === 27) legalPointBuyBuilds.push(abilities);
   }
-export function optimalAbilityBuild(character: Pick<ExportCharacter, "race" | "raceVariant" | "className">) {
+export function optimalAbilityBuild(character: Pick<ExportCharacter, "race" | "raceVariant" | "className"> & Partial<Pick<ExportCharacter,"homebrew">>) {
   const variant = selectedRaceVariant(character.race, character.raceVariant);
   const keys = ["str", "dex", "con", "int", "wis", "cha"] as AbilityKey[];
   const flexible = variant?.chooseBonuses;
   const eligible = keys.filter(key => !flexible?.exclude?.includes(key));
   const raceChoices = flexible ? distinctAbilitySelections(flexible.count, eligible) : [[]];
   const fixed = Object.fromEntries(keys.map(key => [key, variant?.bonuses?.[key] || 0])) as AbilityScores;
-  const spellPrimary = classRules[character.className]?.spellAbility as AbilityKey | undefined;
-  const primary = spellPrimary || physicalPrimary[character.className] || "con";
-  const heavyArmor = /все доспехи|тяж[её]л/i.test(classRules[character.className]?.armor || "");
+  const custom=character.homebrew?.entities.find(entity=>entity.id===character.className&&entity.type==='class');
+  const resolvedRule=classRuleFor(character as ExportCharacter,character.className);
+  const spellPrimary = (custom?.spellcasting?.ability || resolvedRule?.spellAbility) as AbilityKey | undefined;
+  const primary = spellPrimary || custom?.primaryAbility || physicalPrimary[character.className] || "con";
+  const heavyArmor = /все доспехи|тяж[её]л/i.test(resolvedRule?.armor || "");
   const second: AbilityKey = !heavyArmor && primary !== "dex" ? "dex" : primary === "str" ? "con" : "str";
   const third: AbilityKey = primary === "con" || second === "con" ? "wis" : "con";
   let best: { score: number; abilities: AbilityScores; raceAbilityChoices: AbilityKey[] } | null = null;

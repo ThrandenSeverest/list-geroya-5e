@@ -1,4 +1,5 @@
 import type { ExportCharacter, AbilityScores } from './exportFormats';
+import { selectedEquipment } from "./equipment";
 import { classRules, skillKeys, type ClassRuleDetail } from './rules';
 import { spells } from './catalog';
 import { homebrewTypeLabels, type HomebrewElement, type HBEffect } from './homebrew';
@@ -35,7 +36,8 @@ export function hbContext(c:ExportCharacter,source?:string):FormulaContext {
  const classId=owner?.type==='class'?owner.id:owner?.parentClassId||featureOwner?.parentClassId||featureOwner?.id;
  const values:Record<string,number>={'@level':level(c),'@classLevel':classId?classLevel(c,classId):0,'@pb':2+Math.floor((level(c)-1)/4),'@currentHp':c.currentHitPoints||0,'@tempHp':c.temporaryHitPoints||0};
  for(const [k,v] of Object.entries(c.abilities)){values['@ability.'+k]=v;values['@mod.'+k]=Math.floor((v-10)/2);}
- return {values,source,classLevel:id=>classLevel(c,id),resource:(id,field)=>{const r=(c.homebrew?.entities||[]).flatMap(e=>e.resources||[]).find(r=>r.id===id);if(!r)return 0;const max=evaluateFormula(r.max,{values,classLevel:i=>classLevel(c,i)});return field==='max'?max:Math.max(0,max-(c.resourceSpent?.[id]||0));},predicate:(name,id)=>name==='equipped'?(c.homebrew?.equipped||[]).includes(id):name==='hasFeature'?(c.homebrew?.activeIds||[]).includes(id):false};
+ const equippedItems=(c.inventoryOverride===undefined?selectedEquipment(c):c.inventoryOverride.split(/\n|\s*·\s*/).map(item=>item.trim()).filter(Boolean)).map(item=>item.toLowerCase());
+ return {values,source,classLevel:id=>classLevel(c,id),resource:(id,field)=>{const r=(c.homebrew?.entities||[]).flatMap(e=>e.resources||[]).find(r=>r.id===id);if(!r)return 0;const max=evaluateFormula(r.max,{values,classLevel:i=>classLevel(c,i)});return field==='max'?max:Math.max(0,max-(c.resourceSpent?.[id]||0));},predicate:(name,id)=>name==='equipped'?(c.homebrew?.equipped||[]).includes(id):name==='hasFeature'?(c.homebrew?.activeIds||[]).includes(id):name==='hasArmor'?id==='shield'?equippedItems.some(item=>/щит/.test(item)):id==='armor'?equippedItems.some(item=>/(доспех|кольчуг|латы|кожа|брон)/.test(item)):false:false};
 }
 export function hbValue(c:ExportCharacter,value:number|string|undefined,source?:string){try{return evaluateFormula(value??0,hbContext(c,source));}catch{return 0;}}
 export function hbEnabled(c:ExportCharacter,row:{level?:number;when?:string},source:HomebrewElement){const l=source.type==='class'?classLevel(c,source.id):source.parentClassId?classLevel(c,source.parentClassId):level(c);if(row.level&&row.level>l)return false;try{return !row.when||!!evaluateFormula(row.when,hbContext(c,source.id));}catch{return false;}}
