@@ -11,6 +11,8 @@ export type HBSpellMechanics = {
  slotScaling?:{ every:number; damage:HBDamagePart[]; effect?:string };
 };
 export type HBChoice = { id:string; name:string; type:string; count:number; from:string[]; level?:number; choiceGroup?:string; uniqueAcrossGroup?:boolean };
+export type HBEquipmentOption = { id:string; label:string; items:string[]; recommended?:boolean };
+export type HBEquipmentGroup = { key:string; label:string; count:number; options:HBEquipmentOption[] };
 export type HBRequirement = { type:'selected_feature'; id:string; label?:string };
 export type HBSpellGrant = { spellId:string; level:number; mode?:'known'|'always-prepared'; countsAgainstKnown?:boolean; uses?:number; recovery?:'short_or_long'|'long' };
 export type HBAction = { id:string; name:string; actionType:string; cost?:{resource:string;amount:number}; description?:string };
@@ -24,7 +26,7 @@ export type HomebrewElement = {
  requirements?:HBRequirement[]; level?:number; school?:string; castingTime?:string; concentration?:boolean; ritual?:boolean;
  range?:string; duration?:string; components?:string; materials?:string; higherLevels?:string; spellClasses?:string[]; spellMechanics?:HBSpellMechanics;
  hitDie?:string; primaryAbility?:HBAbility; savingThrows?:HBAbility[]; skillChoices?:{count:number;from:string[]};
- equipment?:string[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];requirementMode?:'all'|'any';effects?:HBEffect[];skillChoices?:{count:number;from:string[]}};
+ equipment?:string[]; equipmentGroups?:HBEquipmentGroup[]; startingGold?:string; multiclass?:{requirements:{ability:HBAbility;min:number}[];requirementMode?:'all'|'any';effects?:HBEffect[];skillChoices?:{count:number;from:string[]}};
  subclass?:{chooseAtLevel:number;featureLevels?:number[]}; advancement?:Record<string,HBProgression[]>; parentClassId?:string; parentRaceId?:string;
  spellcasting?:{mode:'none'|'full'|'half'|'third'|'pact'|'custom';ability:HBAbility;selection?:'known'|'prepared'|'spellbook';recovery?:'long'|'short_or_long';cantrips?:number[];known?:number[];preparedFormula?:string;slots?:Record<string,number[]>};
  size?:string; speed?:Partial<Record<'walk'|'fly'|'swim'|'climb',number>>; itemType?:string; rarity?:string; weight?:number; price?:number; attunement?:boolean;
