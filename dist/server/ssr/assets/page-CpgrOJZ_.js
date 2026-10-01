@@ -13295,9 +13295,44 @@ var homebrewTypeLabels = {
 	note: "Заметка",
 	pack: "Пак"
 };
+var shamanOrganizationalFeatureIds = new Set([
+	"hb:shaman:ability:sacred-focus",
+	"hb:shaman:ability:totems",
+	"hb:shaman:ability:spiritualism",
+	"hb:shaman:ability:great-totem-spirit",
+	"hb:shaman:ability:curse-spells",
+	"hb:shaman:ability:spirit-warrior-spells",
+	"hb:shaman:ability:medicine-spells",
+	"hb:shaman:ability:wild-heart-spells",
+	"hb:shaman:ability:beast-adaptation"
+]);
+var shamanSpellFeatureIds = new Set([
+	"hb:shaman:ability:curse-spells",
+	"hb:shaman:ability:spirit-warrior-spells",
+	"hb:shaman:ability:medicine-spells",
+	"hb:shaman:ability:wild-heart-spells"
+]);
+function upgradeKnownHomebrew(element) {
+	if (!element.id.startsWith("hb:shaman:")) return element;
+	const features = element.features?.map((feature) => ({
+		...feature,
+		...shamanOrganizationalFeatureIds.has(feature.id) ? { showOnSheet: false } : {},
+		description: shamanSpellFeatureIds.has(feature.id) ? feature.description.replace("Всегда известны и не считаются в лимит:", "Всегда подготовлены и не занимают лимит:") : feature.description
+	}));
+	const spellGrants = element.type === "subclass" && element.parentClassId === "hb:shaman:class:shaman" ? (element.spellGrants || []).map((grant) => ({
+		...grant,
+		mode: "always-prepared",
+		countsAgainstKnown: false
+	})) : element.spellGrants;
+	return {
+		...element,
+		features,
+		spellGrants
+	};
+}
 function normalizeHomebrewLibrary(value) {
 	const types = new Set(Object.keys(homebrewTypeLabels));
-	const normalized = (Array.isArray(value?.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => ({
+	const normalized = (Array.isArray(value?.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => upgradeKnownHomebrew({
 		...e,
 		schemaVersion: 2,
 		uid: e.uid || e.id,
@@ -42330,29 +42365,8 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 }
 //#endregion
 //#region app/spellSources.ts
-/**
-* HB classes are real classes for the duration of the character sheet, but
-* their ids are intentionally not part of the built-in catalog. Register
-* their display names in the shared catalog view so every existing consumer
-* (mobile sheet, spellcasting summary and PDF) resolves the same name instead
-* of leaking ids such as hb:shaman:class:shaman.
-*/
-function registerHomebrewClasses(character) {
-	for (const entry of orderedCharacterClasses(character)) {
-		if (!entry.classId.startsWith("hb:")) continue;
-		if (classes.some((item) => item.id === entry.classId)) continue;
-		const definition = character.homebrew?.entities?.find((item) => item.id === entry.classId && item.type === "class");
-		if (definition?.name) classes.push({
-			id: entry.classId,
-			name: definition.name,
-			source: "Homebrew",
-			description: definition.description || "Пользовательский класс"
-		});
-	}
-}
 /** Keep class associations even when two classes grant the same catalog spell. */
 function classSpellGroups(character, catalog) {
-	registerHomebrewClasses(character);
 	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
 	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
@@ -42402,6 +42416,14 @@ function classSpellGroups(character, catalog) {
 			spells: [...spells.values()].sort((a, b) => a.spell.level - b.spell.level || a.spell.name.localeCompare(b.spell.name, "ru"))
 		}];
 	});
+}
+/** Resolve an internal source id to a user-facing name for exports. */
+function spellSourceDisplayName(sourceId, character, classCatalog) {
+	const catalogName = classCatalog.find((item) => item.id === sourceId)?.name;
+	if (catalogName) return catalogName;
+	const hbDefinition = character.homebrew?.entities?.find((item) => item.id === sourceId && item.type === "class");
+	if (hbDefinition?.name) return hbDefinition.name;
+	return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
 }
 function otherSpellSources(character, catalog) {
 	const casterIds = new Set(orderedCharacterClasses(character).filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map((entry) => entry.classId));
@@ -48911,7 +48933,8 @@ var shamanExample_default = {
 					"description": "Ваш выбранный сакральный фокус определяет постоянные особенности шамана и применяется автоматически после выбора.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:totems",
@@ -48933,7 +48956,8 @@ var shamanExample_default = {
 						"range": "60 футов",
 						"saveAbility": "cha",
 						"saveDc": "8 + @pb + @mod.wis"
-					}]
+					}],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:primal-magic",
@@ -48951,7 +48975,8 @@ var shamanExample_default = {
 					"description": "Подкласс шамана даёт способности на 3, 6, 10 и 14 уровнях.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:onslaught-5",
@@ -48991,7 +49016,8 @@ var shamanExample_default = {
 					"description": "Великий дух тотема даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:onslaught-11",
@@ -51610,10 +51636,11 @@ var shamanExample_default = {
 					"id": "hb:shaman:ability:curse-spells",
 					"level": 3,
 					"name": "Заклинания Связующего проклятия",
-					"description": "Всегда известны и не считаются в лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
+					"description": "Всегда подготовлены и не занимают лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:evil-eye",
@@ -51677,49 +51704,49 @@ var shamanExample_default = {
 				{
 					"spellId": "blindness-deafness",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "ray-of-enfeeblement",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "bestow-curse",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "vampiric-touch",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "blight",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-phantasmal_killer",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "contagion",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-enervation",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				}
 			]
@@ -51766,10 +51793,11 @@ var shamanExample_default = {
 					"id": "hb:shaman:ability:spirit-warrior-spells",
 					"level": 3,
 					"name": "Заклинания Воина духа",
-					"description": "Всегда известны и не считаются в лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
+					"description": "Всегда подготовлены и не занимают лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:ancestral-knowledge",
@@ -51833,49 +51861,49 @@ var shamanExample_default = {
 				{
 					"spellId": "magic-weapon",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spiritual-weapon",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "clairvoyance",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-spirit_shroud",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "guardian-of-faith",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-staggering_smite",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-contact_other_plane",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "steelwind",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				}
 			]
@@ -51911,10 +51939,11 @@ var shamanExample_default = {
 					"id": "hb:shaman:ability:medicine-spells",
 					"level": 3,
 					"name": "Заклинания Знахаря",
-					"description": "Всегда известны и не считаются в лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
+					"description": "Всегда подготовлены и не занимают лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:lifegiver",
@@ -51987,49 +52016,49 @@ var shamanExample_default = {
 				{
 					"spellId": "lesser-restoration",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "warding-bond",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "beacon-of-hope",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "revivify",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-aura_of_life",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "death-ward",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-creation",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "greaterrestoration",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				}
 			]
@@ -52108,10 +52137,11 @@ var shamanExample_default = {
 					"id": "hb:shaman:ability:wild-heart-spells",
 					"level": 3,
 					"name": "Заклинания Дикого сердца",
-					"description": "Всегда известны и не считаются в лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
+					"description": "Всегда подготовлены и не занимают лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:beast-adaptation",
@@ -52120,7 +52150,8 @@ var shamanExample_default = {
 					"description": "Выберите одну адаптацию на 3-м уровне и ещё по одной на 6-м и 10-м.",
 					"effects": [],
 					"resources": [],
-					"attacks": []
+					"attacks": [],
+					"showOnSheet": false
 				},
 				{
 					"id": "hb:shaman:ability:totemic-wild-shape",
@@ -52172,49 +52203,49 @@ var shamanExample_default = {
 				{
 					"spellId": "spell-doc-animal_messenger",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-beast_sense",
 					"level": 3,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "conjure-animals",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "fear",
 					"level": 5,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "dominate-beast",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-locate_creature",
 					"level": 7,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "hold-monster",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				},
 				{
 					"spellId": "spell-doc-tree_stride",
 					"level": 9,
-					"mode": "known",
+					"mode": "always-prepared",
 					"countsAgainstKnown": false
 				}
 			]
@@ -56052,6 +56083,15 @@ var alignments = [
 ];
 var siteChangelog = [
 	{
+		version: "1.5.0",
+		publishedAt: "2026-10-02T20:00:00Z",
+		changes: [
+			"Homebrew-классы и их выборы стали стабильнее: убраны дубли и лишние служебные карточки на итоговом листе.",
+			"Классовые и подклассовые заклинания корректнее отображаются на листе, включая постоянно подготовленные заклинания.",
+			"Продолжена доработка редактора Homebrew и совместимости пользовательских классов с итоговым листом."
+		]
+	},
+	{
 		version: "1.4.0",
 		publishedAt: "2026-09-15T16:00:00Z",
 		changes: [
@@ -56983,9 +57023,9 @@ function Builder() {
 		setSiteTheme(next);
 		localStorage.setItem("list-geroya-site-theme", next);
 	}
-	const availableRaces = [...races.filter((option) => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements, "race")];
-	const availableClasses = [...classes.filter((option) => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements, "class")];
-	const availableBackgrounds = [...backgrounds.filter((option) => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements, "background")];
+	const availableRaces = [...new Map([...races.filter((option) => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements, "race")].map((option) => [option.id, option])).values()];
+	const availableClasses = [...new Map([...classes.filter((option) => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements, "class")].map((option) => [option.id, option])).values()];
+	const availableBackgrounds = [...new Map([...backgrounds.filter((option) => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements, "background")].map((option) => [option.id, option])).values()];
 	const homebrewOption = (id) => {
 		const entity = homebrew.elements.find((e) => e.id === id);
 		return entity ? {
@@ -57088,7 +57128,7 @@ function Builder() {
 			level: entry.level
 		};
 		const className = availableClasses.find((option) => option.id === entry.classId)?.name || entry.classId;
-		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find((e) => e.id === entry.classId)?.features?.map((f) => ({
+		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find((e) => e.id === entry.classId)?.features?.filter((feature) => feature.showOnSheet !== false).map((f) => ({
 			name: f.name,
 			description: f.description,
 			level: f.level
@@ -62769,11 +62809,11 @@ function Builder() {
 										pactSlots: pactMagicSlots,
 										preparedMaximum: sourcedSpellGroups.find((group) => group.classId === "wizard")?.preparedMaximum,
 										spellcastingSources: sourcedSpellGroups.flatMap((group) => {
-											const ability = classRules[group.classId]?.spellAbility;
+											const ability = classRuleFor(exportCharacter, group.classId)?.spellAbility;
 											if (!ability) return [];
 											const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
 											return [{
-												name: classes.find((item) => item.id === group.classId)?.name || group.classId,
+												name: spellSourceDisplayName(group.classId, exportCharacter, classes),
 												ability: abilityLabels[ability],
 												dc: 8 + attack,
 												attack
@@ -62783,7 +62823,7 @@ function Builder() {
 											...entry.spell,
 											prepared: entry.prepared,
 											alwaysPrepared: entry.alwaysPrepared,
-											classSource: classes.find((item) => item.id === entry.classId)?.name || entry.classId,
+											classSource: spellSourceDisplayName(entry.classId, exportCharacter, classes),
 											grantSource: entry.source === entry.classId ? "" : entry.source
 										})).concat(otherGrantedSpells.map((entry) => ({
 											...entry.spell,
