@@ -115,5 +115,6 @@
     "server/vinext-externals.json": "00130e0879c4df4a8984eb6a0aa253bf54bb2f1913ff911fed9abda48e1e9051",
     "server/vinext-server.json": "fd67badf837aead6445d560a25fe39355fdc9b81fd4ea228a44756d721b397e1"
   },
-  "sourceCommit": "fbbb126436543b91def660920fcbe25a45701ba5"
+  "sourceCommit": "fbbb126436543b91def660920fcbe25a45701ba5",
+  "proofVersion": 2
 }
