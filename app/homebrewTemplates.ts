@@ -6,6 +6,11 @@ export function subclassTemplate(parentId:string,entities:HomebrewElement[]):Rec
  const levels=subclassFeatureLevels[parentId.replace('official:class:','')]||parent?.subclass?.featureLevels||[parent?.subclass?.chooseAtLevel||3];
  return Object.fromEntries(levels.map(level=>[String(level),[{type:'feature' as const}]]));
 }
+export function homebrewAsiLevels(entities:HomebrewElement[],classId:string):number[]|undefined {
+ const owner=entities.find(e=>e.id===classId&&e.type==='class');
+ if(!owner)return undefined;
+ return Object.entries(owner.advancement||{}).filter(([,rows])=>rows.some(row=>row.type==='asi_or_feat')).map(([level])=>Number(level)).filter(level=>Number.isInteger(level)&&level>=1&&level<=20).sort((a,b)=>a-b);
+}
 export function homebrewTableFeatures(entities:HomebrewElement[]) {
  return entities.filter(e=>e.table?.columns.length).flatMap(e=>{
   const table=e.table!;const clean=(s:string)=>s.replace(/\|/g,'／').replace(/[\r\n]+/g,' ');
