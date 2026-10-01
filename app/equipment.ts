@@ -157,17 +157,19 @@ const classEquipment: Record<string, ClassEquipment> = {
   },
 };
 
-export function equipmentRule(classId: string): ClassEquipment {
+export function equipmentRule(classId: string, homebrew: HomebrewElement[] = []): ClassEquipment {
+  const custom=homebrew.find(element=>element.id===classId&&element.type==='class');
+  if(custom)return {groups:custom.equipmentGroups||[],fixed:custom.equipment||[]};
   return classEquipment[classId] || { groups: [], fixed: [] };
 }
 
-export function defaultEquipmentSelections(classId: string): Record<string, string[]> {
-  const focus = equipmentRule(classId).groups.find(group => group.key === "focus");
-  return focus?.options.some(option => option.id === "arcane") ? { focus: ["arcane"] } : {};
+export function defaultEquipmentSelections(classId: string, homebrew: HomebrewElement[] = []): Record<string, string[]> {
+  const rule=equipmentRule(classId,homebrew);
+  return Object.fromEntries(rule.groups.map(group=>{const recommended=group.options.filter(option=>option.recommended).slice(0,group.count).map(option=>option.id);return [group.key,recommended.length===group.count?recommended:[]];}));
 }
 
-export function equipmentComplete(character: Pick<ExportCharacter, "className" | "equipmentSelections">) {
-  return equipmentRule(character.className).groups.every(group => (character.equipmentSelections?.[group.key] || []).length === group.count);
+export function equipmentComplete(character: Pick<ExportCharacter, "className" | "equipmentSelections"> & Partial<Pick<ExportCharacter,"homebrew">>) {
+  return equipmentRule(character.className,character.homebrew?.entities||[]).groups.every(group => (character.equipmentSelections?.[group.key] || []).length === group.count);
 }
 
 const finesseWeapons = new Set(["dagger", "rapier", "scimitar", "shortsword", "whip"]);
@@ -248,8 +250,8 @@ function recommendedForGroup(classId: string, group: EquipmentGroup, abilities: 
   return [shield, oneHanded || ranked.find(option => option.id !== "shield")!].filter(Boolean);
 }
 
-export function optimalEquipmentSelections(classId: string, abilities: AbilityScores, context: RecommendationContext = {}) {
-  return Object.fromEntries(equipmentRule(classId).groups.map(group => [
+export function optimalEquipmentSelections(classId: string, abilities: AbilityScores, context: RecommendationContext = {}, homebrew: HomebrewElement[] = []) {
+  return Object.fromEntries(equipmentRule(classId,homebrew).groups.map(group => [
     group.key,
     recommendedForGroup(classId, group, abilities, context).map(option => option.id),
   ]));
