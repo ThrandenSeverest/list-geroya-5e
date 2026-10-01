@@ -1,0 +1,43 @@
+name: Apply local v1.5 dist
+on:
+  push:
+    branches:
+      - release/1.5.0
+    paths:
+      - .github/workflows/apply-local-dist.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/1.5.0
+          fetch-depth: 0
+      - name: Restore locally compiled dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .local-dist-upload.b64 > /tmp/herolist-dist.tar.br
+          node -e "const fs=require('fs'),z=require('zlib');fs.writeFileSync('/tmp/herolist-dist.tar',z.brotliDecompressSync(fs.readFileSync('/tmp/herolist-dist.tar.br')))"
+          rm -rf dist/client/assets/_vinext_fonts
+          rm -f \
+            dist/client/assets/index-CuLqVjYU.js \
+            dist/client/assets/layout-segment-context-Cq0h5Plt.js \
+            dist/client/assets/page-BIcRtpeV.js \
+            dist/client/assets/page-Dv0QAdzs.js \
+            dist/client/assets/router-VV-TGrR_.js \
+            dist/server/ssr/assets/page-DtO3vCyK.js
+          tar -xf /tmp/herolist-dist.tar
+          rm -f .local-dist-upload.b64 .github/workflows/apply-local-dist.yml
+      - name: Commit local build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist .local-dist-upload.b64 .github/workflows/apply-local-dist.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "build: publish locally compiled v1.5 dist"
+          git push origin HEAD:release/1.5.0
