@@ -1,4 +1,4 @@
-import { hbAbilities, activeHomebrew, homebrewClassLevel } from "./homebrewEngine";
+import { hbAbilities, activeHomebrew, homebrewClassLevel, classRuleFor } from "./homebrewEngine";
 export * from "./characterRules.base";
 
 import * as base from "./characterRules.base";
@@ -33,7 +33,7 @@ export function alwaysPreparedSpellEntries(character:ExportCharacter,catalog:imp
   const level=homebrewClassLevel(character,classId);
   for(const grant of source.spellGrants||[]){
    const spell=catalog.find(item=>item.id===grant.spellId);
-   if(spell&&grant.level<=level&&grant.countsAgainstKnown===false)entries.push({id:spell.id,source:source.name,mode:grant.mode||'known'});
+   if(spell&&grant.level<=level&&(grant.countsAgainstKnown===false||grant.mode==='always-prepared'))entries.push({id:spell.id,source:source.name,mode:grant.mode||'known'});
   }
  }
  return entries.filter((entry,index)=>entries.findIndex(other=>other.id===entry.id)===index);
