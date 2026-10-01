@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-subclass-catalog.mjs && npm run test:rules && vinext build",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && node scripts/check-subclass-catalog.mjs && npm run test:rules && vinext build",
     "check:subclasses": "node scripts/check-subclass-catalog.mjs",
     "test:rules": "node --import tsx --test tests/*.test.ts",
     "start": "node deployment/start-frontend.mjs"
