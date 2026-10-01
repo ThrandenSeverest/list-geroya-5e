@@ -156,7 +156,7 @@ test('real Shaman choices activate HP, saves, speed and attacks instead of manua
 test('Shaman defensive totems and movement modes are mechanical',()=>{
  const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
  const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
- const soul=bindHomebrewLibrary({...base,className:cls.id,level:5,inventoryOverride:'',abilities:{...base.abilities,dex:14,wis:16},classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-soul'],'shaman-totems-1':['hb:shaman:ability:totem-river','hb:shaman:ability:totem-sky'],'shaman-totems-4':['hb:shaman:ability:totem-eagle']}}},{elements:entities});
+ const soul=bindHomebrewLibrary({...base,className:cls.id,level:20,inventoryOverride:'',abilities:{...base.abilities,dex:14,wis:16},classes:[{classId:cls.id,level:20,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id],choices:{'shaman-sacred-focus':['hb:shaman:ability:focus-soul'],'shaman-totems-1':['hb:shaman:ability:totem-eagle','hb:shaman:ability:totem-hound'],'shaman-totems-9':['hb:shaman:ability:totem-river'],'shaman-totems-15':['hb:shaman:ability:totem-sky']}}},{elements:entities});
  assert.equal(armorClassBreakdown(soul).value,15);
  assert.equal(speedBreakdown(soul).swim,speedBreakdown(soul).walk);
  assert.equal(speedBreakdown(soul).fly,speedBreakdown(soul).walk);
