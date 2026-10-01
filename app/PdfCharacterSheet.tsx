@@ -1,7 +1,5 @@
 "use client";
 
-import { effectHandlingLabel } from "./featureHandling";
-
 import { useLayoutEffect, useRef, useState } from "react";
 import type { CatalogSpell } from "./catalog";
 import { automaticAttacksNotice, type CharacterAttack } from "./combat";
@@ -38,6 +36,7 @@ export type PdfCharacterSheetProps = {
   initiative: number;
   initiativeNotes?: string[];
   speed: number;
+  movement?: { walk: number; swim?: number; climb?: number; fly?: number };
   hitPoints: number;
   hitDie: number;
   hitDiceLabel?: string;
@@ -172,7 +171,6 @@ function FeatureList({ features }: { features: Feature[] }) {
   return <div className="pdf-feature-list">
     {features.map((feature, index) => <article key={`${feature.name}-${index}`}>
       <h3>{feature.name}</h3>
-      {<small>{effectHandlingLabel(feature.effectHandling)}</small>}
       <FeatureDescription description={feature.description} />
     </article>)}
   </div>;
@@ -194,22 +192,27 @@ function featureWeight(feature: Feature) {
   return 92 + Math.ceil(proseLength / 58) * 18 + tableWeight;
 }
 
-function paginateFeatures(features: Feature[], pageBudget = 2450) {
-  const pages: Feature[][] = [];
-  let page: Feature[] = [];
-  let used = 0;
+function paginateFeatureColumns(features: Feature[], columnBudget = 1225) {
+  const pages: [Feature[], Feature[]][] = [];
+  const used: [number, number][] = [];
   for (const feature of features) {
     const weight = featureWeight(feature);
-    if (page.length && used + weight > pageBudget) {
-      pages.push(page);
-      page = [];
-      used = 0;
+    let best: { page: number; column: 0 | 1; remaining: number } | undefined;
+    for (let page = 0; page < pages.length; page++) {
+      for (const column of [0, 1] as const) {
+        const remaining = columnBudget - used[page][column];
+        if (weight <= remaining && (!best || remaining < best.remaining)) best = { page, column, remaining };
+      }
     }
-    page.push(feature);
-    used += weight;
+    if (!best) {
+      pages.push([[feature], []]);
+      used.push([weight, 0]);
+      continue;
+    }
+    pages[best.page][best.column].push(feature);
+    used[best.page][best.column] += weight;
   }
-  if (page.length) pages.push(page);
-  return pages.length ? pages : [[]];
+  return pages.length ? pages : [[[], []] as [Feature[], Feature[]]];
 }
 
 function paginateSpells(spells: PdfSpell[], wizardPrepared: boolean) {
@@ -295,7 +298,7 @@ function RacialTraitList({ features }: { features: Feature[] }) {
   return <div className="pdf-compact-features">{features.map((feature, index) => {
     const text = compactRulesText(feature.description);
     const summary = text;
-    return <p key={`${feature.name}-${index}`}><b>{feature.name}.</b> {<small>{effectHandlingLabel(feature.effectHandling)}. </small>}{summary}</p>;
+    return <p key={`${feature.name}-${index}`}><b>{feature.name}.</b> {summary}</p>;
   })}</div>;
 }
 
@@ -341,7 +344,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     { ...props.backgroundFeature, name: `Предыстория · ${props.backgroundFeature.name}` },
     ...props.featFeatures.map(feature => ({ ...feature, name: `Черта · ${feature.name}` })),
   ];
-  const classPages = paginateFeatures([...combatTechniques, ...ordinaryClassFeatures, ...originFeatures]);
+  const classPages = paginateFeatureColumns([...combatTechniques, ...ordinaryClassFeatures, ...originFeatures]);
   const abilityOrder = ["str", "dex", "con", "int", "wis", "cha"];
   const skills = Object.entries(skillKeys)
     .map(([name, detail]) => ({ name, ...detail }))
@@ -418,7 +421,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <div className="pdf-proficiencies"><h3>Владения</h3>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}</div>
         </section>
         <section className="pdf-core-column">
-          <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span></div></div>
+          <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span>{props.movement && <small>{[props.movement.swim ? `плав. ${props.movement.swim}` : "", props.movement.climb ? `лаз. ${props.movement.climb}` : "", props.movement.fly ? `полёт ${props.movement.fly}` : ""].filter(Boolean).join(" · ")}</small>}</div></div>
           {!!props.acNotes?.length && <p className="pdf-inline-stats"><b>Условная КД:</b> {props.acNotes.join(" ")}</p>}
           {!!props.initiativeNotes?.length && <p className="pdf-inline-stats">Инициатива: {props.initiativeNotes.join("; ")}</p>}
           <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: {props.hitDiceLabel || `к${props.hitDie}`} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
@@ -441,13 +444,12 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       <footer>Лист Героя 5e · Основной лист <span>1 / {totalPages}</span></footer>
     </section>
 
-    {classPages.map((pageFeatures, pageIndex) => {
-      const split = Math.ceil(pageFeatures.length / 2);
+    {classPages.map((pageColumns, pageIndex) => {
       const pageNumber = pageIndex + 2;
       return <section className="pdf-page pdf-class-page" key={`class-page-${pageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · ${props.identity.level} уровень${pageIndex ? " · продолжение" : ""}`} title="Боевые и классовые способности" page={pageNumber} />
         {pageIndex === 0 && <p className="pdf-section-note">Особые атаки и боевые приёмы собраны в начале раздела; далее идут классовые, расовые и полученные от черт особенности. Обычные атаки оружием находятся на основном листе.</p>}
-        <div className="pdf-two-columns"><FeatureList features={pageFeatures.slice(0, split)} /><FeatureList features={pageFeatures.slice(split)} /></div>
+        <div className="pdf-two-columns"><FeatureList features={pageColumns[0]} /><FeatureList features={pageColumns[1]} /></div>
         <footer>Лист Героя 5e · Классовые способности{pageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>
       </section>;
     })}
