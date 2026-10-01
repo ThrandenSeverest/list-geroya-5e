@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spells } from "../app/catalog";
+import { classes, spells } from "../app/catalog";
 import type { ExportCharacter } from "../app/exportFormats";
 import { classSpellGroups, otherSpellSources } from "../app/spellSources";
 import { resolvePactMagic, resolveSpellSlots } from "../app/multiclass";
@@ -73,4 +73,20 @@ test("editing wizard preparation preserves defaults and always-prepared domain s
   assert.deepEqual(classPreparedSpellIds(edited, "cleric"), ["curewounds"]);
   const cleric = classSpellGroups(edited, spells).find(group => group.classId === "cleric")!;
   assert.equal(cleric.spells.find(entry => entry.spell.id === "bless")?.prepared, true);
+});
+
+
+test("Homebrew spell grouping never mutates or duplicates the built-in class catalog", () => {
+  const before = classes.map(item => item.id);
+  const classId = "hb:test:class:oracle";
+  const character = {
+    ...hero(), className: classId, level: 3, subclass: "",
+    classes: [{ classId, level: 3, acquiredAtCharacterLevel: 1 }], spells: ["bless"],
+    spellGrants: [{ spellId: "bless", sourceType: "class", sourceId: classId, classId, mode: "known" }],
+    homebrew: { entities: [{ id: classId, type: "class", name: "Оракул", description: "", updatedAt: "", hitDie: "d8", spellcasting: { mode: "full", ability: "wis", selection: "known" } }], activeIds: [classId] },
+  } as unknown as ExportCharacter;
+  classSpellGroups(character, spells);
+  classSpellGroups(character, spells);
+  assert.deepEqual(classes.map(item => item.id), before);
+  assert.equal(classes.filter(item => item.id === classId).length, 0);
 });
