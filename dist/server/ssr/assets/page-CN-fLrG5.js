@@ -89,6 +89,11 @@ function subclassTemplate(parentId, entities) {
 	const levels = subclassFeatureLevels[parentId.replace("official:class:", "")] || parent?.subclass?.featureLevels || [parent?.subclass?.chooseAtLevel || 3];
 	return Object.fromEntries(levels.map((level) => [String(level), [{ type: "feature" }]]));
 }
+function homebrewAsiLevels(entities, classId) {
+	const owner = entities.find((e) => e.id === classId && e.type === "class");
+	if (!owner) return void 0;
+	return Object.entries(owner.advancement || {}).filter(([, rows]) => rows.some((row) => row.type === "asi_or_feat")).map(([level]) => Number(level)).filter((level) => Number.isInteger(level) && level >= 1 && level <= 20).sort((a, b) => a - b);
+}
 function homebrewTableFeatures(entities) {
 	return entities.filter((e) => e.table?.columns.length).flatMap((e) => {
 		const table = e.table;
@@ -12807,6 +12812,15 @@ function newHomebrew(type, name = "") {
 			skillChoices: {
 				count: 2,
 				from: []
+			},
+			multiclass: {
+				requirements: [],
+				requirementMode: "all",
+				effects: [],
+				skillChoices: {
+					count: 0,
+					from: []
+				}
 			}
 		} : {}
 	};
@@ -18776,9 +18790,6 @@ var prerequisites = {
 	artificer: ["int"]
 };
 function multiclassRequirement(character, classId) {
-	const needs = prerequisites[classId] || [];
-	const alternatives = classId === "fighter" ? ["str", "dex"] : [];
-	const passed = alternatives.length ? alternatives.some((key) => character.abilities[key] >= 13) : needs.every((key) => character.abilities[key] >= 13);
 	const labels = {
 		str: "Сила",
 		dex: "Ловкость",
@@ -18787,6 +18798,24 @@ function multiclassRequirement(character, classId) {
 		wis: "Мудрость",
 		cha: "Харизма"
 	};
+	const custom = character.homebrew?.entities.find((entity) => entity.id === classId && entity.type === "class");
+	if (custom) {
+		const requirements = custom.multiclass?.requirements || [];
+		const mode = custom.multiclass?.requirementMode || "all";
+		const checks = requirements.map((requirement) => ({
+			...requirement,
+			passed: character.abilities[requirement.ability] >= requirement.min
+		}));
+		const passed = !checks.length || (mode === "any" ? checks.some((check) => check.passed) : checks.every((check) => check.passed));
+		return {
+			passed,
+			required: checks.map((check) => `${labels[check.ability]} ${check.min}`).join(mode === "any" ? " или " : " и "),
+			missing: passed ? [] : checks.filter((check) => !check.passed).map((check) => `${labels[check.ability]} ${character.abilities[check.ability]} / ${check.min}`)
+		};
+	}
+	const needs = prerequisites[classId] || [];
+	const alternatives = classId === "fighter" ? ["str", "dex"] : [];
+	const passed = alternatives.length ? alternatives.some((key) => character.abilities[key] >= 13) : needs.every((key) => character.abilities[key] >= 13);
 	return {
 		passed,
 		required: alternatives.length ? alternatives.map((key) => `${labels[key]} 13`).join(" или ") : needs.map((key) => `${labels[key]} 13`).join(" и "),
@@ -18993,11 +19022,12 @@ function shortRestSpellSlots(character) {
 	return (character.homebrew?.entities.find((e) => e.id === eligible[0].classId)?.spellcasting)?.recovery === "short_or_long" ? (character.spellSlotsUsed || []).map(() => 0) : character.spellSlotsUsed || [];
 }
 function resolvePactMagic(character) {
-	const level = getClassLevel(character, "warlock");
-	if (!level) return {
+	const pact = orderedCharacterClasses(character).find((entry) => entry.classId === "warlock" || character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class")?.spellcasting?.mode === "pact");
+	if (!pact) return {
 		slots: 0,
 		level: 0
 	};
+	const level = pact.level;
 	return {
 		slots: level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4,
 		level: Math.min(5, Math.ceil(level / 2))
@@ -19482,6 +19512,22 @@ function characterProficiencies(character) {
 	};
 	for (const entry of classes) {
 		if (entry.classId === starting?.classId) continue;
+		const custom = character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class");
+		if (custom) {
+			for (const effect of custom.multiclass?.effects || []) {
+				if (effect.type === "skill_proficiency" && effect.skill) skills.push(hbSkillName(effect.skill));
+				if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
+				if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
+				if (effect.type === "armor_proficiency" && effect.group) armor.push({
+					light: "Лёгкие доспехи",
+					medium: "Средние доспехи",
+					heavy: "Тяжёлые доспехи",
+					shield: "Щиты"
+				}[effect.group] || effect.group);
+				if (effect.type === "tool_proficiency" && effect.id) tools.push(effect.id);
+			}
+			continue;
+		}
 		const training = multiclassTraining[entry.classId];
 		armor.push(...training?.armor || []);
 		weapons.push(...training?.weapons || []);
@@ -19518,7 +19564,14 @@ function characterProficiencies(character) {
 		if (advancement.featId === "skilled") for (const value of advancement.featChoices?.proficiencies || []) (skillNames$1.includes(value) ? skills : tools).push(value);
 		if (advancement.featId === "artificer-initiate") tools.push(...advancement.featChoices?.tool || []);
 	}
-	for (const { effect } of hbEffects(character)) {
+	const startingOnlyTraining = new Set([
+		"weapon_proficiency",
+		"weapon_group_proficiency",
+		"armor_proficiency",
+		"tool_proficiency"
+	]);
+	for (const { source, effect } of hbEffects(character)) {
+		if (source.type === "class" && source.id !== startingClassId && startingOnlyTraining.has(effect.type)) continue;
 		if (["skill_proficiency", "skill_expertise"].includes(effect.type) && effect.skill) skills.push(hbSkillName(effect.skill));
 		if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
 		if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
@@ -48226,6 +48279,30 @@ function validateHomebrew(entities, officialIds = []) {
 			"d10",
 			"d12"
 		].includes(e.hitDie || "")) add(e.id, "Выберите кость хитов");
+		if (e.multiclass !== void 0) if (e.type !== "class" || !Array.isArray(e.multiclass.requirements)) add(e.id, "Мультикласс: настройки допустимы только для класса");
+		else {
+			if (e.multiclass.requirementMode && !["all", "any"].includes(e.multiclass.requirementMode)) add(e.id, "Мультикласс: неизвестный режим требований");
+			const requirementAbilities = /* @__PURE__ */ new Set();
+			for (const requirement of e.multiclass.requirements) if (!requirement || ![
+				"str",
+				"dex",
+				"con",
+				"int",
+				"wis",
+				"cha"
+			].includes(requirement.ability) || !Number.isInteger(requirement.min) || requirement.min < 1 || requirement.min > 30) add(e.id, "Мультикласс: характеристика и минимум 1–30 обязательны");
+			else if (requirementAbilities.has(requirement.ability)) add(e.id, "Мультикласс: одна характеристика указана дважды");
+			else requirementAbilities.add(requirement.ability);
+			const skills = e.multiclass.skillChoices;
+			if (skills && (!Number.isInteger(skills.count) || skills.count < 0 || skills.count > 18 || !Array.isArray(skills.from) || skills.from.some((id) => typeof id !== "string" || !id))) add(e.id, "Мультикласс: проверьте число и список навыков");
+			for (const effect of e.multiclass.effects || []) {
+				if (!effectTypes[effect.type]) add(e.id, "Мультикласс: неизвестное владение или эффект");
+				formula(e.id, effect.value);
+				formula(e.id, effect.formula);
+				formula(e.id, effect.when);
+				if (effect.type.startsWith("grant_")) ref(e.id, effect.id);
+			}
+		}
 		for (const ef of e.effects || []) {
 			if (!effectTypes[ef.type]) add(e.id, "Неизвестный эффект: " + ef.type);
 			formula(e.id, ef.value);
@@ -54388,12 +54465,51 @@ function ClassTraining({ draft, update }) {
 		]
 	];
 	const effects = draft.effects || [];
+	const multiclass = draft.multiclass || {
+		requirements: [],
+		requirementMode: "all",
+		effects: [],
+		skillChoices: {
+			count: 0,
+			from: []
+		}
+	};
+	const mcEffects = multiclass.effects || [], requirements = multiclass.requirements || [], mcSkills = multiclass.skillChoices || {
+		count: 0,
+		from: []
+	};
+	const patchMulticlass = (patch) => update({ multiclass: {
+		...multiclass,
+		...patch
+	} });
 	const toggle = (type, group) => {
 		update({ effects: effects.some((effect) => effect.type === type && effect.group === group) ? effects.filter((effect) => effect.type !== type || effect.group !== group) : [...effects, {
 			type,
 			group
 		}] });
 	};
+	const toggleMc = (type, group) => {
+		patchMulticlass({ effects: mcEffects.some((effect) => effect.type === type && effect.group === group) ? mcEffects.filter((effect) => effect.type !== type || effect.group !== group) : [...mcEffects, {
+			type,
+			group
+		}] });
+	};
+	const replaceNamed = (rows, type, value) => [...rows.filter((effect) => effect.type !== type), ...value.split(/[,;\n]/).map((id) => id.trim()).filter(Boolean).map((id) => ({
+		type,
+		id
+	}))];
+	const toggleRequirement = (ability) => patchMulticlass({ requirements: requirements.some((row) => row.ability === ability) ? requirements.filter((row) => row.ability !== ability) : [...requirements, {
+		ability,
+		min: 13
+	}] });
+	const setRequirement = (ability, min) => patchMulticlass({ requirements: requirements.map((row) => row.ability === ability ? {
+		...row,
+		min
+	} : row) });
+	const toggleSkill = (id) => patchMulticlass({ skillChoices: {
+		count: mcSkills.count,
+		from: mcSkills.from.includes(id) ? mcSkills.from.filter((value) => value !== id) : [...mcSkills.from, id]
+	} });
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-class-training",
 		children: [
@@ -54408,7 +54524,118 @@ function ClassTraining({ draft, update }) {
 					children: label
 				}, group))
 			}),
-			/* @__PURE__ */ jsx("p", { children: "Отдельные виды оружия и инструменты можно добавить в «Механике»; выбор навыков задаётся выше." })
+			/* @__PURE__ */ jsx(Field, {
+				label: "Отдельное оружие",
+				help: "Если класс владеет не всей группой, перечислите конкретные виды через запятую. Можно писать готовые названия для листа.",
+				children: /* @__PURE__ */ jsx("input", {
+					"aria-label": "Отдельное оружие класса",
+					value: effects.filter((effect) => effect.type === "weapon_proficiency").map((effect) => effect.id || "").filter(Boolean).join(", "),
+					onChange: (event) => update({ effects: replaceNamed(effects, "weapon_proficiency", event.target.value) })
+				})
+			}),
+			/* @__PURE__ */ jsx(Field, {
+				label: "Инструменты",
+				children: /* @__PURE__ */ jsx("input", {
+					"aria-label": "Инструменты класса",
+					value: effects.filter((effect) => effect.type === "tool_proficiency").map((effect) => effect.id || "").filter(Boolean).join(", "),
+					onChange: (event) => update({ effects: replaceNamed(effects, "tool_proficiency", event.target.value) })
+				})
+			}),
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-multiclass-training",
+				children: [
+					/* @__PURE__ */ jsx("h3", { children: "Мультикласс" }),
+					/* @__PURE__ */ jsx("p", { children: "Здесь задаются именно условия входа и владения, которые герой получает, когда берёт этот класс не первым." }),
+					/* @__PURE__ */ jsx("h4", { children: "Требования характеристик" }),
+					/* @__PURE__ */ jsx("div", {
+						className: "hb-toolbar",
+						children: abilities.map((ability) => /* @__PURE__ */ jsxs("button", {
+							type: "button",
+							"aria-label": `Мультикласс: ${abilityLabels[ability]} 13`,
+							"aria-pressed": requirements.some((row) => row.ability === ability),
+							onClick: () => toggleRequirement(ability),
+							children: [
+								abilityLabels[ability],
+								" ",
+								requirements.find((row) => row.ability === ability)?.min || 13,
+								"+"
+							]
+						}, ability))
+					}),
+					requirements.map((requirement) => /* @__PURE__ */ jsx(Field, {
+						label: `Минимум: ${abilityLabels[requirement.ability]}`,
+						children: /* @__PURE__ */ jsx("input", {
+							"aria-label": `Минимум ${abilityLabels[requirement.ability]} для мультикласса`,
+							type: "number",
+							min: 1,
+							max: 30,
+							value: requirement.min,
+							onChange: (event) => setRequirement(requirement.ability, Number(event.target.value))
+						})
+					}, requirement.ability)),
+					requirements.length > 1 && /* @__PURE__ */ jsx(Field, {
+						label: "Как проверять требования",
+						children: /* @__PURE__ */ jsx(Select, {
+							label: "Режим требований мультикласса",
+							value: multiclass.requirementMode || "all",
+							onChange: (requirementMode) => patchMulticlass({ requirementMode }),
+							options: {
+								all: "Нужны все условия",
+								any: "Достаточно одного"
+							}
+						})
+					}),
+					/* @__PURE__ */ jsx("h4", { children: "Владения при входе в класс" }),
+					/* @__PURE__ */ jsx("div", {
+						className: "hb-toolbar",
+						children: training.map(([type, group, label]) => /* @__PURE__ */ jsx("button", {
+							type: "button",
+							"aria-label": `${label} при мультиклассе`,
+							"aria-pressed": mcEffects.some((effect) => effect.type === type && effect.group === group),
+							onClick: () => toggleMc(type, group),
+							children: label
+						}, group))
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Отдельное оружие при мультиклассе",
+						children: /* @__PURE__ */ jsx("input", {
+							"aria-label": "Отдельное оружие при мультиклассе",
+							value: mcEffects.filter((effect) => effect.type === "weapon_proficiency").map((effect) => effect.id || "").filter(Boolean).join(", "),
+							onChange: (event) => patchMulticlass({ effects: replaceNamed(mcEffects, "weapon_proficiency", event.target.value) })
+						})
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Инструменты при мультиклассе",
+						children: /* @__PURE__ */ jsx("input", {
+							"aria-label": "Инструменты при мультиклассе",
+							value: mcEffects.filter((effect) => effect.type === "tool_proficiency").map((effect) => effect.id || "").filter(Boolean).join(", "),
+							onChange: (event) => patchMulticlass({ effects: replaceNamed(mcEffects, "tool_proficiency", event.target.value) })
+						})
+					}),
+					/* @__PURE__ */ jsxs(Field, {
+						label: "Навыков при входе в класс",
+						children: [/* @__PURE__ */ jsx("input", {
+							"aria-label": "Число навыков при мультиклассе",
+							type: "number",
+							min: 0,
+							max: 18,
+							value: mcSkills.count,
+							onChange: (event) => patchMulticlass({ skillChoices: {
+								...mcSkills,
+								count: Number(event.target.value)
+							} })
+						}), /* @__PURE__ */ jsx("div", {
+							className: "hb-toolbar",
+							children: Object.entries(skillKeys).map(([name, data]) => /* @__PURE__ */ jsx("button", {
+								type: "button",
+								"aria-pressed": mcSkills.from.includes(data.key),
+								onClick: () => toggleSkill(data.key),
+								children: name
+							}, data.key))
+						})]
+					})
+				]
+			})
 		]
 	});
 }
@@ -54423,6 +54650,13 @@ function ClassProgression({ draft, update, editFeatures }) {
 		}] });
 		editFeatures();
 	};
+	const toggleAsi = (level) => {
+		const rows = draft.advancement?.[level] || [], enabled = rows.some((row) => row.type === "asi_or_feat");
+		update({ advancement: {
+			...draft.advancement,
+			[level]: enabled ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]
+		} });
+	};
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-class-progression",
 		children: [
@@ -54431,33 +54665,49 @@ function ClassProgression({ draft, update, editFeatures }) {
 				draft.type === "class" ? "класса" : "подкласса",
 				" по уровням"
 			] }),
-			/* @__PURE__ */ jsx("p", { children: "Способности добавляются прямо в нужный уровень и сразу становятся частью итогового листа. Бонус мастерства считается по общему уровню персонажа." }),
+			/* @__PURE__ */ jsx("p", { children: "Способности добавляются прямо в нужный уровень и сразу становятся частью итогового листа. Для класса здесь же отмечаются уровни повышения характеристик / черт." }),
 			/* @__PURE__ */ jsx("div", {
 				className: "hb-progression-scroll",
 				children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
 					/* @__PURE__ */ jsx("th", { children: "Уровень" }),
 					/* @__PURE__ */ jsx("th", { children: "Способности" }),
 					/* @__PURE__ */ jsx("th", { children: "Особые решения" })
-				] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, index) => index + 1).map((level) => /* @__PURE__ */ jsxs("tr", { children: [
-					/* @__PURE__ */ jsx("th", {
-						scope: "row",
-						children: level
-					}),
-					/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
-						className: "hb-level-features",
-						children: [features.filter((feature) => feature.level === level).map((feature) => /* @__PURE__ */ jsxs("button", {
-							type: "button",
-							onClick: editFeatures,
-							children: [feature.name || "Без названия", " →"]
-						}, feature.id)), /* @__PURE__ */ jsx("button", {
-							type: "button",
-							"aria-label": `Добавить способность на уровне ${level}`,
-							onClick: () => add(level),
-							children: "+ Способность"
-						})]
-					}) }),
-					/* @__PURE__ */ jsxs("td", { children: [draft.type === "class" && draft.subclass?.chooseAtLevel === level ? /* @__PURE__ */ jsx("span", { children: "Выбор подкласса" }) : null, (draft.advancement?.[level] || []).map((row, i) => /* @__PURE__ */ jsxs("span", { children: [row.type === "asi_or_feat" ? "Повышение характеристик / черта" : row.type === "subclass" ? "Подкласс" : row.type === "choice" ? "Выбор" : row.type === "resource" ? "Ресурс" : row.type === "attack" ? "Атака" : row.type === "spell" ? "Заклинание" : "Особенность", " · "] }, i))] })
-				] }, level)) })] })
+				] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, index) => index + 1).map((level) => {
+					const rows = draft.advancement?.[level] || [], hasAsi = rows.some((row) => row.type === "asi_or_feat");
+					return /* @__PURE__ */ jsxs("tr", { children: [
+						/* @__PURE__ */ jsx("th", {
+							scope: "row",
+							children: level
+						}),
+						/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
+							className: "hb-level-features",
+							children: [features.filter((feature) => feature.level === level).map((feature) => /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: editFeatures,
+								children: [feature.name || "Без названия", " →"]
+							}, feature.id)), /* @__PURE__ */ jsx("button", {
+								type: "button",
+								"aria-label": `Добавить способность на уровне ${level}`,
+								onClick: () => add(level),
+								children: "+ Способность"
+							})]
+						}) }),
+						/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
+							className: "hb-level-specials",
+							children: [
+								draft.type === "class" && /* @__PURE__ */ jsx("button", {
+									type: "button",
+									"aria-label": `ASI или черта на уровне ${level}`,
+									"aria-pressed": hasAsi,
+									onClick: () => toggleAsi(level),
+									children: hasAsi ? "✓ ASI / черта" : "+ ASI / черта"
+								}),
+								draft.type === "class" && draft.subclass?.chooseAtLevel === level ? /* @__PURE__ */ jsx("span", { children: "Выбор подкласса" }) : null,
+								rows.filter((row) => row.type !== "asi_or_feat").map((row, i) => /* @__PURE__ */ jsxs("span", { children: [row.type === "subclass" ? "Подкласс" : row.type === "choice" ? "Выбор" : row.type === "resource" ? "Ресурс" : row.type === "attack" ? "Атака" : row.type === "spell" ? "Заклинание" : "Особенность", " · "] }, i))
+							]
+						}) })
+					] }, level);
+				}) })] })
 			}),
 			/* @__PURE__ */ jsx("p", { children: "Ячейки и известные заклинания настраиваются в разделе «Заклинания». Дополнительные связи с отдельными объектами — в «Разблокировках по уровням»." })
 		]
@@ -55805,7 +56055,7 @@ function levelLabel(value) {
 function hasOriginFeat(character) {
 	return character.race === "human" && character.raceVariant === "variant" || character.race === "customlineage";
 }
-function advancementSlotsFor(character) {
+function advancementSlotsFor(character, homebrewElements = character.homebrew?.entities || []) {
 	const classEntries = character.classes?.filter((entry) => entry.classId && entry.level > 0) || [{
 		classId: character.className,
 		level: character.level
@@ -55815,7 +56065,7 @@ function advancementSlotsFor(character) {
 		key: "origin-1",
 		level: 1,
 		origin: true
-	}] : [], ...classEntries.flatMap((entry) => asiLevelsForClass(entry.classId).filter((level) => level <= entry.level).map((level) => ({
+	}] : [], ...classEntries.flatMap((entry) => (homebrewAsiLevels(homebrewElements, entry.classId) ?? asiLevelsForClass(entry.classId)).filter((level) => level <= entry.level).map((level) => ({
 		key: isSingleClass ? `class-${level}` : `class:${entry.classId}:${level}`,
 		level,
 		origin: false
@@ -55837,7 +56087,17 @@ function advancementSlotsFor(character) {
 		...generatedBonus
 	];
 }
-function multiclassSkillChoiceCount(classId) {
+function homebrewClassSkillRule(elements, classId, multiclass = false) {
+	const owner = elements.find((element) => element.id === classId && element.type === "class");
+	const rule = multiclass ? owner?.multiclass?.skillChoices : owner?.skillChoices;
+	return {
+		count: rule?.count || 0,
+		skills: (rule?.from || []).map((id) => Object.entries(skillKeys).find(([, value]) => value.key === id)?.[0] || id)
+	};
+}
+function multiclassSkillChoiceCount(classId, elements = []) {
+	const custom = elements.find((element) => element.id === classId && element.type === "class");
+	if (custom) return custom.multiclass?.skillChoices?.count || 0;
 	return [
 		"bard",
 		"ranger",
@@ -56339,17 +56599,11 @@ function Builder() {
 	const multiclassEntries = orderedCharacterClasses(character);
 	const selectedBackground = backgrounds.find((option) => option.id === character.background) || homebrewOption(character.background);
 	const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
-	const classRule = classSkillRules[character.className] || (() => {
-		const own = homebrew.elements.find((e) => e.id === character.className && e.type === "class")?.skillChoices;
-		return {
-			count: own?.count || 0,
-			skills: own?.from.map((id) => Object.entries(skillKeys).find(([, v]) => v.key === id)?.[0] || id) || []
-		};
-	})();
+	const classRule = classSkillRules[character.className] || homebrewClassSkillRule(homebrew.elements, character.className);
 	const fixedBackgroundSkills = character.backgroundSkills;
 	const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap((rule) => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
 	const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
-	const advancementSlots = advancementSlotsFor(character);
+	const advancementSlots = advancementSlotsFor(character, homebrew.elements);
 	const advancements = advancementSlots.map((slot) => character.advancements?.find((choice) => choice.key === slot.key) || {
 		...slot,
 		featId: "",
@@ -57126,7 +57380,7 @@ function Builder() {
 	}
 	function chooseAdvancementFeat(slotKey, id) {
 		setCharacter((current) => {
-			const slots = advancementSlotsFor(current);
+			const slots = advancementSlotsFor(current, homebrew.elements);
 			const slot = slots.find((item) => item.key === slotKey);
 			if (!slot || "origin" in slot && slot.origin && id === "asi") return current;
 			const feat = feats.find((item) => item.id === id);
@@ -57240,7 +57494,7 @@ function Builder() {
 				pactSlotsUsed: 0,
 				resourceSpent: {}
 			});
-			const validKeys = new Set(advancementSlotsFor(nextBase).map((slot) => slot.key));
+			const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
 			return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
 		}
 		const nextLevel = entry.level + delta;
@@ -57266,13 +57520,13 @@ function Builder() {
 			pactSlotsUsed: 0,
 			resourceSpent: {}
 		});
-		const validKeys = new Set(advancementSlotsFor(nextBase).map((slot) => slot.key));
+		const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
 		return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
 	}
 	function addMulticlass(classId) {
 		setCharacter((current) => {
 			const safe = migrateMulticlassCharacter(current);
-			if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(safe, classId).passed) return safe;
+			if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(bindHomebrewLibrary(safe, homebrew), classId).passed) return safe;
 			const nextLevel = characterLevel(safe) + 1;
 			return migrateMulticlassCharacter({
 				...safe,
@@ -57339,7 +57593,7 @@ function Builder() {
 				pactSlotsUsed: 0,
 				resourceSpent: {}
 			});
-			const validKeys = new Set(advancementSlotsFor(nextBase).map((slot) => slot.key));
+			const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
 			return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
 		});
 	}
@@ -57347,13 +57601,10 @@ function Builder() {
 		setCharacter((current) => {
 			const safe = migrateMulticlassCharacter(current);
 			const entry = orderedCharacterClasses(safe).find((item) => item.classId === classId);
-			const rule = classSkillRules[classId] || {
-				count: 0,
-				skills: []
-			};
+			const rule = classSkillRules[classId] || homebrewClassSkillRule(homebrew.elements, classId, classId !== safe.startingClassId);
 			if (!entry) return safe;
 			const selected = entry.classSkills || [];
-			const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId);
+			const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId, homebrew.elements);
 			const next = selected.includes(skill) ? selected.filter((value) => value !== skill) : selected.length < limit && !classSkillUsedElsewhere(safe, classId, skill) ? [...selected, skill] : selected;
 			const classes = orderedCharacterClasses(safe).map((item) => item.classId === classId ? {
 				...item,
@@ -59100,7 +59351,7 @@ function Builder() {
 	const currentTutorialTerms = currentTutorialStep.terms.filter(tutorialTermIsRelevant);
 	const dialogTutorialStep = tutorialDialog === null ? null : tutorialDataFor(tutorialDialog);
 	const pendingMulticlass = pendingMulticlassId ? availableClasses.find((option) => option.id === pendingMulticlassId) : void 0;
-	const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(character, pendingMulticlassId) : void 0;
+	const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(rulesCharacter, pendingMulticlassId) : void 0;
 	return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
@@ -60119,13 +60370,10 @@ function Builder() {
 											/* @__PURE__ */ jsx("div", {
 												className: "multiclass-class-grid",
 												children: multiclassEntries.map((entry) => {
-													const option = classes.find((item) => item.id === entry.classId);
+													const option = availableClasses.find((item) => item.id === entry.classId);
 													const isLastLevel = character.levelHistory?.[character.levelHistory.length - 1]?.classId === entry.classId;
-													const skillRule = classSkillRules[entry.classId] || {
-														count: 0,
-														skills: []
-													};
-													const secondarySkillCount = multiclassSkillChoiceCount(entry.classId);
+													const skillRule = classSkillRules[entry.classId] || homebrewClassSkillRule(homebrew.elements, entry.classId, true);
+													const secondarySkillCount = multiclassSkillChoiceCount(entry.classId, homebrew.elements);
 													const classSkills = entry.classSkills || [];
 													return /* @__PURE__ */ jsxs("article", {
 														className: "multiclass-class-card",
@@ -60179,7 +60427,7 @@ function Builder() {
 											characterLevel(character) < 20 && /* @__PURE__ */ jsxs("div", {
 												className: "multiclass-add-grid",
 												children: [/* @__PURE__ */ jsx("h3", { children: "Добавить новый класс" }), availableClasses.filter((option) => !multiclassEntries.some((entry) => entry.classId === option.id)).map((option) => {
-													const requirement = multiclassRequirement(character, option.id);
+													const requirement = multiclassRequirement(rulesCharacter, option.id);
 													return /* @__PURE__ */ jsxs("button", {
 														disabled: !requirement.passed,
 														title: requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`,
