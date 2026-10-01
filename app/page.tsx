@@ -1,5 +1,5 @@
 "use client";
-import { homebrewTableFeatures } from "./homebrewTemplates";
+import { homebrewAsiLevels, homebrewTableFeatures } from "./homebrewTemplates";
 import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
 
 import { assetUrl } from "./assetUrl";
@@ -527,13 +527,13 @@ function hasOriginFeat(character: Pick<ExportCharacter, "race" | "raceVariant">)
   return (character.race === "human" && character.raceVariant === "variant") || character.race === "customlineage";
 }
 
-function advancementSlotsFor(character: Pick<ExportCharacter, "race" | "raceVariant" | "className" | "level"> & Partial<Pick<ExportCharacter, "classes" | "advancements" | "feats">>) {
+function advancementSlotsFor(character: Pick<ExportCharacter, "race" | "raceVariant" | "className" | "level"> & Partial<Pick<ExportCharacter, "classes" | "advancements" | "feats" | "homebrew">>, homebrewElements: HomebrewElement[] = character.homebrew?.entities || []) {
   const classEntries = character.classes?.filter(entry => entry.classId && entry.level > 0)
     || [{ classId: character.className, level: character.level }];
   const isSingleClass = classEntries.length === 1;
   const regular = [
     ...(hasOriginFeat(character) ? [{ key: "origin-1", level: 1, origin: true }] : []),
-    ...classEntries.flatMap(entry => asiLevelsForClass(entry.classId)
+    ...classEntries.flatMap(entry => (homebrewAsiLevels(homebrewElements, entry.classId) ?? asiLevelsForClass(entry.classId))
       .filter(level => level <= entry.level)
       // Preserve V1.0 save keys for existing single-class characters.
       .map(level => ({ key: isSingleClass ? `class-${level}` : `class:${entry.classId}:${level}`, level, origin: false }))),
@@ -544,7 +544,14 @@ function advancementSlotsFor(character: Pick<ExportCharacter, "race" | "raceVari
   return [...regular, ...savedBonus, ...generatedBonus];
 }
 
-function multiclassSkillChoiceCount(classId: string) {
+function homebrewClassSkillRule(elements: HomebrewElement[], classId: string, multiclass = false) {
+  const owner = elements.find(element => element.id === classId && element.type === "class");
+  const rule = multiclass ? owner?.multiclass?.skillChoices : owner?.skillChoices;
+  return { count: rule?.count || 0, skills: (rule?.from || []).map(id => Object.entries(skillKeys).find(([, value]) => value.key === id)?.[0] || id) };
+}
+function multiclassSkillChoiceCount(classId: string, elements: HomebrewElement[] = []) {
+  const custom = elements.find(element => element.id === classId && element.type === "class");
+  if (custom) return custom.multiclass?.skillChoices?.count || 0;
   // PHB multiclassing table: these are deliberately not the starting-class
   // counts from the catalogue.
   return ["bard", "ranger", "rogue"].includes(classId) ? 1 : 0;
@@ -907,11 +914,11 @@ function Builder() {
   const multiclassEntries = orderedCharacterClasses(character);
   const selectedBackground = backgrounds.find(option => option.id === character.background) || homebrewOption(character.background);
   const selectedBackgroundRule = backgroundRule(character.background, selectedBackground);
-  const classRule = classSkillRules[character.className] || (()=>{const own=homebrew.elements.find(e=>e.id===character.className&&e.type==="class")?.skillChoices;return {count:own?.count||0,skills:own?.from.map(id=>Object.entries(skillKeys).find(([,v])=>v.key===id)?.[0]||id)||[]};})();
+  const classRule = classSkillRules[character.className] || homebrewClassSkillRule(homebrew.elements, character.className);
   const fixedBackgroundSkills = character.backgroundSkills;
   const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap(rule => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
   const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
-  const advancementSlots = advancementSlotsFor(character);
+  const advancementSlots = advancementSlotsFor(character, homebrew.elements);
   const advancements = advancementSlots.map(slot => character.advancements?.find(choice => choice.key === slot.key) || { ...slot, featId: "", asiChoices: [] });
   const advancementFields = deriveLegacyAdvancementFields(advancements);
   const rulesCharacter = {
@@ -1573,7 +1580,7 @@ function Builder() {
 
   function chooseAdvancementFeat(slotKey: string, id: string) {
     setCharacter(current => {
-      const slots = advancementSlotsFor(current);
+      const slots = advancementSlotsFor(current, homebrew.elements);
       const slot = slots.find(item => item.key === slotKey);
       if (!slot || (("origin" in slot && slot.origin) && id === "asi")) return current;
       const feat = feats.find(item => item.id === id);
@@ -1678,7 +1685,7 @@ function Builder() {
         pactSlotsUsed: 0,
         resourceSpent: {},
       });
-      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+      const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map(slot => slot.key));
       return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
     }
     const nextLevel = entry.level + delta;
@@ -1687,14 +1694,14 @@ function Builder() {
       ? [...(safe.levelHistory || []), { characterLevel: characterLevel(safe) + 1, classId, classLevelAfter: nextLevel }]
       : (safe.levelHistory || []).slice(0, -1);
     const nextBase = migrateMulticlassCharacter({ ...safe, classes: nextClasses, levelHistory: nextHistory, level: characterLevel(safe) + delta, spells: [], preparedSpells: [], preparedSpellsByClass: {}, spellGrants: [], spellSlotsUsed: [], pactSlotsUsed: 0, resourceSpent: {} });
-    const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+    const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map(slot => slot.key));
     return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
   }
 
   function addMulticlass(classId: string) {
     setCharacter(current => {
       const safe = migrateMulticlassCharacter(current);
-      if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(safe, classId).passed) return safe;
+      if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(bindHomebrewLibrary(safe, homebrew), classId).passed) return safe;
       const nextLevel = characterLevel(safe) + 1;
       return migrateMulticlassCharacter({
         ...safe,
@@ -1741,7 +1748,7 @@ function Builder() {
         pactSlotsUsed: 0,
         resourceSpent: {},
       });
-      const validKeys = new Set(advancementSlotsFor(nextBase).map(slot => slot.key));
+      const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map(slot => slot.key));
       return syncAdvancements(nextBase, (safe.advancements || []).filter(choice => validKeys.has(choice.key)));
     });
   }
@@ -1750,10 +1757,10 @@ function Builder() {
     setCharacter(current => {
       const safe = migrateMulticlassCharacter(current);
       const entry = orderedCharacterClasses(safe).find(item => item.classId === classId);
-      const rule = classSkillRules[classId] || { count: 0, skills: [] };
+      const rule = classSkillRules[classId] || homebrewClassSkillRule(homebrew.elements, classId, classId !== safe.startingClassId);
       if (!entry) return safe;
       const selected = entry.classSkills || [];
-      const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId);
+      const limit = classId === safe.startingClassId ? rule.count : multiclassSkillChoiceCount(classId, homebrew.elements);
       const next = selected.includes(skill)
         ? selected.filter(value => value !== skill)
         : selected.length < limit && !classSkillUsedElsewhere(safe, classId, skill) ? [...selected, skill] : selected;
@@ -2770,7 +2777,7 @@ function Builder() {
   const currentTutorialTerms = currentTutorialStep.terms.filter(tutorialTermIsRelevant);
   const dialogTutorialStep = tutorialDialog === null ? null : tutorialDataFor(tutorialDialog);
   const pendingMulticlass = pendingMulticlassId ? availableClasses.find(option => option.id === pendingMulticlassId) : undefined;
-  const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(character, pendingMulticlassId) : undefined;
+  const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(rulesCharacter, pendingMulticlassId) : undefined;
 
   return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
@@ -3155,10 +3162,10 @@ function Builder() {
                 {multiclassEntries.length > 1 && <button className="reset-multiclass" onClick={resetMulticlass}>Сбросить мультикласс</button>}
                 <div className="multiclass-class-grid">
                   {multiclassEntries.map(entry => {
-                    const option = classes.find(item => item.id === entry.classId);
+                    const option = availableClasses.find(item => item.id === entry.classId);
                     const isLastLevel = character.levelHistory?.[character.levelHistory.length - 1]?.classId === entry.classId;
-                    const skillRule = classSkillRules[entry.classId] || { count: 0, skills: [] };
-                    const secondarySkillCount = multiclassSkillChoiceCount(entry.classId);
+                    const skillRule = classSkillRules[entry.classId] || homebrewClassSkillRule(homebrew.elements, entry.classId, true);
+                    const secondarySkillCount = multiclassSkillChoiceCount(entry.classId, homebrew.elements);
                     const classSkills = entry.classSkills || [];
                     return <article key={entry.classId} className="multiclass-class-card">
                       <small>{entry.classId === character.startingClassId ? "Стартовый класс" : `Получен на ${entry.acquiredAtCharacterLevel}-м общем уровне`}</small>
@@ -3173,7 +3180,7 @@ function Builder() {
                   })}
                 </div>
                 {characterLevel(character) < 20 && <div className="multiclass-add-grid"><h3>Добавить новый класс</h3>{availableClasses.filter(option => !multiclassEntries.some(entry => entry.classId === option.id)).map(option => {
-                  const requirement = multiclassRequirement(character, option.id);
+                  const requirement = multiclassRequirement(rulesCharacter, option.id);
                   return <button key={option.id} disabled={!requirement.passed} title={requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`} onClick={() => requestMulticlass(option.id)}><strong>{option.name}</strong><small>{requirement.passed ? `Требование выполнено: ${requirement.required || "нет"}` : `Требуется ${requirement.required}; сейчас: ${requirement.missing.join(", ")}`}</small></button>;
                 })}</div>}
               </section>

@@ -4,9 +4,9 @@ import { evaluateFormula } from '../app/homebrewFormula';
 import { normalizeHomebrewLibrary, type HomebrewElement } from '../app/homebrew';
 import { validateHomebrew } from '../app/homebrewValidation';
 import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, homebrewChoiceStatuses, homebrewChoicesComplete, classRuleFor, hbSum } from '../app/homebrewEngine';
-import { subclassTemplate, homebrewTableFeatures } from '../app/homebrewTemplates';
+import { subclassTemplate, homebrewAsiLevels, homebrewTableFeatures } from '../app/homebrewTemplates';
 import { createNativeCharacterFile } from '../app/characterFiles';
-import { resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
+import { multiclassRequirement, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
 import { spells } from '../app/catalog';
 import { alwaysPreparedSpellEntries, optimalSpellIds } from '../app/characterRules';
 import { estimatedHitPoints, type ExportCharacter } from '../app/exportFormats';
@@ -15,6 +15,7 @@ import { homebrewPackages } from '../app/homebrewPackages';
 import savant from '../app/savantExample.json';
 import shamanPack from '../app/shamanExample.json';
 import { speedBreakdown } from '../app/speed';
+import { characterProficiencies } from '../app/proficiencies';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
 test('bounded formulas and rejection of code injection',()=>{
@@ -162,4 +163,25 @@ test('Homebrew spell damage supports cantrip tiers and slot upcasting',async()=>
  const blastAttack=attacks.find(attack=>attack.id===`homebrew-spell-${blast.id}`)!;
  assert.equal(spark.saveDc,14);assert.equal(spark.damageDisplay,'1d8 огнём + 1d8 огнём + 1d8 огнём');assert.match(spark.note||'',/Цель светится/);
  assert.equal(blastAttack.attackBonus,6);assert.equal(blastAttack.damageFormula,'8d6');assert.match(blastAttack.note||'',/\+1d6 огнём/);
+});
+
+
+test('Homebrew class chassis applies ASI levels, multiclass rules and pact magic like an official class',()=>{
+ const cls:HomebrewElement={
+  id:'hb:test:class:bladepact',type:'class',name:'Клинок договора',description:'',updatedAt:'',hitDie:'d8',
+  effects:[{type:'armor_proficiency',group:'heavy'}],
+  advancement:{'4':[{type:'asi_or_feat'}],'8':[{type:'asi_or_feat'}]},
+  multiclass:{requirements:[{ability:'str',min:13},{ability:'dex',min:13}],requirementMode:'any',skillChoices:{count:1,from:['athletics','perception']},effects:[{type:'armor_proficiency',group:'light'},{type:'weapon_group_proficiency',group:'martial'}]},
+  spellcasting:{mode:'pact',ability:'cha',selection:'known',cantrips:[0,2,2,2,3,3],known:[0,2,3,4,5,6]},
+ };
+ assert.deepEqual(validateHomebrew([cls]),[]);
+ assert.deepEqual(homebrewAsiLevels([cls],cls.id),[4,8]);
+ const hero=bindHomebrewLibrary({...base,className:'fighter',startingClassId:'fighter',level:6,backgroundSkills:[],abilities:{...base.abilities,str:8,dex:14,cha:16},classes:[{classId:'fighter',level:1,acquiredAtCharacterLevel:1},{classId:cls.id,level:5,acquiredAtCharacterLevel:2,classSkills:['Атлетика']}]},{elements:[cls]});
+ assert.equal(multiclassRequirement(hero,cls.id).passed,true);
+ assert.equal(multiclassRequirement({...hero,abilities:{...hero.abilities,dex:12}},cls.id).passed,false);
+ assert.deepEqual(resolvePactMagic(hero),{slots:2,level:3});
+ const proficiencies=characterProficiencies(hero);
+ assert.ok(proficiencies.armor.includes('Лёгкие доспехи'));
+ assert.ok(!proficiencies.armor.includes('Тяжёлые доспехи'));
+ assert.ok(proficiencies.weapons.includes('Воинское оружие'));
 });

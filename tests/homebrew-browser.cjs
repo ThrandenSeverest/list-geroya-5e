@@ -157,7 +157,12 @@ const table = {
         await page.getByLabel("Название Homebrew").fill("Класс браузера");
         await page.getByRole("button", { name: "Простое оружие", exact: true }).click();
         assert.equal(await page.getByRole("button", { name: "Простое оружие", exact: true }).getAttribute("aria-pressed"), "true");
+        await page.getByRole("button", { name: "Мультикласс: Сила 13", exact: true }).click();
+        await page.getByRole("button", { name: "Лёгкие доспехи при мультиклассе", exact: true }).click();
+        assert.equal(await page.getByRole("button", { name: "Лёгкие доспехи при мультиклассе", exact: true }).getAttribute("aria-pressed"), "true");
         await page.getByRole("button", { name: "Развитие 1–20", exact: true }).click();
+        await page.getByRole("button", { name: "ASI или черта на уровне 4", exact: true }).click();
+        assert.equal(await page.getByRole("button", { name: "ASI или черта на уровне 4", exact: true }).getAttribute("aria-pressed"), "true");
         assert.equal(await page.locator(".hb-class-progression tbody tr").count(), 20);
         await page
           .getByRole("button", { name: "Добавить способность на уровне 1", exact: true })
