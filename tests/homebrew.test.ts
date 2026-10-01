@@ -91,7 +91,7 @@ test('inline class feature retains its choices and actions and evaluates its cla
  const option:HomebrewElement={id:'hb:test:ability:stance',type:'ability',name:'Стойка',description:'Усиливает защиту',updatedAt:'',effects:[{type:'ac_bonus',value:1}]};
  const cls:HomebrewElement={id:'hb:test:class:warden',type:'class',name:'Страж',description:'',updatedAt:'',hitDie:'d10',features:[{id:'hb:test:ability:stance-choice',level:2,name:'Боевой приём',description:'Выберите стойку',resources:[{id:'hb:test:resource:stance',name:'Приёмы',max:'@classLevel + @pb',restore:['short_rest']}],choices:[{id:'hb:test:choice:stance',name:'Стойка',type:'feature',count:1,from:[option.id]}],actions:[{id:'hb:test:action:stance',name:'Принять стойку',actionType:'bonus_action'}]}]};
  assert.deepEqual(validateHomebrew([cls,option]),[]);
- const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id]}},{elements:[cls,option]});
+ const hero=bindHomebrewLibrary({...base,className:cls.id,level:5,backgroundSkills:[],classes:[{classId:cls.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id]}},{elements:[cls,option]});
  const feature=activeHomebrew(hero).find(e=>e.id==='hb:test:ability:stance-choice')!;
  assert.equal(feature.actions?.[0].name,'Принять стойку');
  assert.deepEqual(normalizeHomebrewLibrary(JSON.parse(JSON.stringify({elements:[cls,option]}))).elements[0].features?.[0].choices,cls.features?.[0].choices);
