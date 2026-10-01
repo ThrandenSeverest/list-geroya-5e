@@ -43,6 +43,16 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   if(e.table&&(!Array.isArray(e.table.columns)||!Array.isArray(e.table.rows)||e.table.columns.length<1||e.table.columns.length>6||e.table.rows.length>200||e.table.columns.some(c=>typeof c!=='string'||c.length>80)||e.table.rows.some(r=>!Array.isArray(r)||r.length!==e.table!.columns.length||r.some(c=>typeof c!=='string'||c.length>160))))add(e.id,'Таблица: 1–6 колонок, до 200 строк, до 160 символов в ячейке');
   if((e.effects?.length||0)>100||(e.attacks?.length||0)>50||(e.resources?.length||0)>50)add(e.id,'Слишком много механик в одной сущности');
   if(e.type==='class'&&!['d6','d8','d10','d12'].includes(e.hitDie||''))add(e.id,'Выберите кость хитов');
+  if(e.multiclass!==undefined){
+   if(e.type!=='class'||!Array.isArray(e.multiclass.requirements))add(e.id,'Мультикласс: настройки допустимы только для класса');
+   else{
+    if(e.multiclass.requirementMode&&!['all','any'].includes(e.multiclass.requirementMode))add(e.id,'Мультикласс: неизвестный режим требований');
+    const requirementAbilities=new Set<string>();
+    for(const requirement of e.multiclass.requirements){if(!requirement||!['str','dex','con','int','wis','cha'].includes(requirement.ability)||!Number.isInteger(requirement.min)||requirement.min<1||requirement.min>30)add(e.id,'Мультикласс: характеристика и минимум 1–30 обязательны');else if(requirementAbilities.has(requirement.ability))add(e.id,'Мультикласс: одна характеристика указана дважды');else requirementAbilities.add(requirement.ability);}
+    const skills=e.multiclass.skillChoices;if(skills&&(!Number.isInteger(skills.count)||skills.count<0||skills.count>18||!Array.isArray(skills.from)||skills.from.some(id=>typeof id!=='string'||!id)))add(e.id,'Мультикласс: проверьте число и список навыков');
+    for(const effect of e.multiclass.effects||[]){if(!effectTypes[effect.type])add(e.id,'Мультикласс: неизвестное владение или эффект');formula(e.id,effect.value);formula(e.id,effect.formula);formula(e.id,effect.when);if(effect.type.startsWith('grant_'))ref(e.id,effect.id);}
+   }
+  }
   for(const ef of e.effects||[]){if(!effectTypes[ef.type])add(e.id,'Неизвестный эффект: '+ef.type);formula(e.id,ef.value);formula(e.id,ef.formula);formula(e.id,ef.when);if(ef.type.startsWith('grant_'))ref(e.id,ef.id);}
   const localIds=new Set<string>();
   for(const row of [...e.resources||[],...e.attacks||[],...e.actions||[],...e.choices||[]]){if(!row.id||localIds.has(row.id))add(e.id,'Повторяющийся или пустой вложенный ID');localIds.add(row.id);}
