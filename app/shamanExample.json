@@ -532,7 +532,8 @@
           "description": "Ваш выбранный сакральный фокус определяет постоянные особенности шамана и применяется автоматически после выбора.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:totems",
@@ -558,7 +559,8 @@
               "saveAbility": "cha",
               "saveDc": "8 + @pb + @mod.wis"
             }
-          ]
+          ],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:primal-magic",
@@ -576,7 +578,8 @@
           "description": "Подкласс шамана даёт способности на 3, 6, 10 и 14 уровнях.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:onslaught-5",
@@ -620,7 +623,8 @@
           "description": "Великий дух тотема даёт отдельные заклинания 6/7/8/9 круга на 11/13/15/17 уровнях; каждое — 1 раз за продолжительный отдых без ячейки и не считается в лимит известных.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:onslaught-11",
@@ -3397,10 +3401,11 @@
           "id": "hb:shaman:ability:curse-spells",
           "level": 3,
           "name": "Заклинания Связующего проклятия",
-          "description": "Всегда известны и не считаются в лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
+          "description": "Всегда подготовлены и не занимают лимит: 3-й — Глухота/слепота, Луч слабости; 5-й — Проклятие, Прикосновение вампира; 7-й — Усыхание, Воображаемый убийца; 9-й — Заражение, Обессиливание.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:evil-eye",
@@ -3472,49 +3477,49 @@
         {
           "spellId": "blindness-deafness",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "ray-of-enfeeblement",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "bestow-curse",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "vampiric-touch",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "blight",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-phantasmal_killer",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "contagion",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-enervation",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         }
       ]
@@ -3563,10 +3568,11 @@
           "id": "hb:shaman:ability:spirit-warrior-spells",
           "level": 3,
           "name": "Заклинания Воина духа",
-          "description": "Всегда известны и не считаются в лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
+          "description": "Всегда подготовлены и не занимают лимит: 3-й — Магическое оружие, Божественное оружие; 5-й — Подсматривание, Покров духа; 7-й — Страж веры, Оглушающая кара; 9-й — Связь с иным миром, Удар стального ветра.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:ancestral-knowledge",
@@ -3638,49 +3644,49 @@
         {
           "spellId": "magic-weapon",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spiritual-weapon",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "clairvoyance",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-spirit_shroud",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "guardian-of-faith",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-staggering_smite",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-contact_other_plane",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "steelwind",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         }
       ]
@@ -3716,10 +3722,11 @@
           "id": "hb:shaman:ability:medicine-spells",
           "level": 3,
           "name": "Заклинания Знахаря",
-          "description": "Всегда известны и не считаются в лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
+          "description": "Всегда подготовлены и не занимают лимит: 3-й — Малое восстановление, Охраняющая связь; 5-й — Маяк надежды, Возрождение; 7-й — Аура жизни, Защита от смерти; 9-й — Сотворение, Высшее восстановление.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:lifegiver",
@@ -3801,49 +3808,49 @@
         {
           "spellId": "lesser-restoration",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "warding-bond",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "beacon-of-hope",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "revivify",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-aura_of_life",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "death-ward",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-creation",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "greaterrestoration",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         }
       ]
@@ -3922,10 +3929,11 @@
           "id": "hb:shaman:ability:wild-heart-spells",
           "level": 3,
           "name": "Заклинания Дикого сердца",
-          "description": "Всегда известны и не считаются в лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
+          "description": "Всегда подготовлены и не занимают лимит: 3-й — Почтовое животное, Животные чувства; 5-й — Вызов животных, Ужас; 7-й — Подчинение зверя, Поиск существа; 9-й — Удержание чудовища, Древесный путь.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:beast-adaptation",
@@ -3934,7 +3942,8 @@
           "description": "Выберите одну адаптацию на 3-м уровне и ещё по одной на 6-м и 10-м.",
           "effects": [],
           "resources": [],
-          "attacks": []
+          "attacks": [],
+          "showOnSheet": false
         },
         {
           "id": "hb:shaman:ability:totemic-wild-shape",
@@ -3986,49 +3995,49 @@
         {
           "spellId": "spell-doc-animal_messenger",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-beast_sense",
           "level": 3,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "conjure-animals",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "fear",
           "level": 5,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "dominate-beast",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-locate_creature",
           "level": 7,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "hold-monster",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         },
         {
           "spellId": "spell-doc-tree_stride",
           "level": 9,
-          "mode": "known",
+          "mode": "always-prepared",
           "countsAgainstKnown": false
         }
       ]
