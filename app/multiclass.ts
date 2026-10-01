@@ -131,10 +131,22 @@ const prerequisites: Record<string, Array<keyof AbilityScores>> = {
 };
 
 export function multiclassRequirement(character: ExportCharacter, classId: string) {
+  const labels: Record<keyof AbilityScores, string> = { str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" };
+  const custom = character.homebrew?.entities.find(entity => entity.id === classId && entity.type === "class");
+  if (custom) {
+    const requirements = custom.multiclass?.requirements || [];
+    const mode = custom.multiclass?.requirementMode || "all";
+    const checks = requirements.map(requirement => ({ ...requirement, passed: character.abilities[requirement.ability] >= requirement.min }));
+    const passed = !checks.length || (mode === "any" ? checks.some(check => check.passed) : checks.every(check => check.passed));
+    return {
+      passed,
+      required: checks.map(check => `${labels[check.ability]} ${check.min}`).join(mode === "any" ? " или " : " и "),
+      missing: passed ? [] : checks.filter(check => !check.passed).map(check => `${labels[check.ability]} ${character.abilities[check.ability]} / ${check.min}`),
+    };
+  }
   const needs = prerequisites[classId] || [];
   const alternatives = classId === "fighter" ? ["str", "dex"] as Array<keyof AbilityScores> : [];
   const passed = alternatives.length ? alternatives.some(key => character.abilities[key] >= 13) : needs.every(key => character.abilities[key] >= 13);
-  const labels: Record<keyof AbilityScores, string> = { str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" };
   const required = alternatives.length ? alternatives.map(key => `${labels[key]} 13`).join(" или ") : needs.map(key => `${labels[key]} 13`).join(" и ");
   return { passed, required, missing: alternatives.length ? (passed ? [] : alternatives.map(key => `${labels[key]} ${character.abilities[key]}`)) : needs.filter(key => character.abilities[key] < 13).map(key => `${labels[key]} ${character.abilities[key]}`) };
 }
@@ -190,8 +202,9 @@ export function shortRestSpellSlots(character: ExportCharacter) {
 }
 
 export function resolvePactMagic(character: ExportCharacter) {
-  const level = getClassLevel(character, "warlock");
-  if (!level) return { slots: 0, level: 0 };
+  const pact = orderedCharacterClasses(character).find(entry => entry.classId === "warlock" || character.homebrew?.entities.find(entity => entity.id === entry.classId && entity.type === "class")?.spellcasting?.mode === "pact");
+  if (!pact) return { slots: 0, level: 0 };
+  const level = pact.level;
   return { slots: level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4, level: Math.min(5, Math.ceil(level / 2)) };
 }
 
