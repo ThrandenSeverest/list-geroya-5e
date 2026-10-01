@@ -50,7 +50,7 @@ import {
   variantsFor,
 } from "./characterRules";
 import { CatalogIcon } from "./catalogIcons";
-import { classSpellGroups, otherSpellSources } from "./spellSources";
+import { classSpellGroups, otherSpellSources, spellSourceDisplayName } from "./spellSources";
 import { classChoiceGroups, classChoicesComplete, clearTashaOptionalState, resolvedClassChoiceFeatures, selectedClassChoiceIds } from "./classChoices";
 import { knownLanguageOptions, languageRule } from "./languages";
 import { characterResources, resourceCurrent, resourceRestLabel, spentResourcesAfterLongRest } from "./characterResources";
@@ -163,6 +163,14 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.5.0",
+  publishedAt: "2026-10-02T20:00:00Z",
+  changes: [
+    "Homebrew-классы и их выборы стали стабильнее: убраны дубли и лишние служебные карточки на итоговом листе.",
+    "Классовые и подклассовые заклинания корректнее отображаются на листе, включая постоянно подготовленные заклинания.",
+    "Продолжена доработка редактора Homebrew и совместимости пользовательских классов с итоговым листом.",
+  ],
+}, {
   version: "1.4.0",
   publishedAt: "2026-09-15T16:00:00Z",
   changes: [
@@ -905,9 +913,9 @@ function Builder() {
     localStorage.setItem("list-geroya-site-theme", next);
   }
 
-  const availableRaces = [...races.filter(option => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements,"race")];
-  const availableClasses = [...classes.filter(option => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements,"class")];
-  const availableBackgrounds = [...backgrounds.filter(option => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements,"background")];
+  const availableRaces = [...new Map([...races.filter(option => allowed(activeBan, "races", option.id)), ...homebrewOptions(homebrew.elements,"race")].map(option => [option.id, option])).values()];
+  const availableClasses = [...new Map([...classes.filter(option => allowed(activeBan, "classes", option.id)), ...homebrewOptions(homebrew.elements,"class")].map(option => [option.id, option])).values()];
+  const availableBackgrounds = [...new Map([...backgrounds.filter(option => allowed(activeBan, "backgrounds", option.id)), ...homebrewOptions(homebrew.elements,"background")].map(option => [option.id, option])).values()];
   const homebrewOption = (id: string) => { const entity = homebrew.elements.find(e => e.id === id); return entity ? { id, name: entity.name, description: entity.description, source: "Homebrew", tags: entity.tags } : undefined; };
   const selectedRace = races.find(option => option.id === character.race) || homebrewOption(character.race);
   const selectedClass = classes.find(option => option.id === character.className) || homebrewOption(character.className);
@@ -982,7 +990,7 @@ function Builder() {
     const scoped = { ...rulesCharacter, className: entry.classId, subclass: entry.subclassId || "", level: entry.level };
     const className = availableClasses.find(option => option.id === entry.classId)?.name || entry.classId;
     const features = detailedFeatures(resolvedClassChoiceFeatures(scoped,
-      documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find(e=>e.id===entry.classId)?.features?.map(f=>({name:f.name,description:f.description,level:f.level})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
+      documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find(e=>e.id===entry.classId)?.features?.filter(feature=>feature.showOnSheet!==false).map(f=>({name:f.name,description:f.description,level:f.level})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [])
         .filter(feature => (feature.level || 1) <= entry.level), spells,
     )).map(feature => markFeature({ ...feature, name: `${className} · ${feature.name}` }, "class", entry.classId));
     return { key: `${entry.classId}:${entry.subclassId || "base"}`, title: `${className}${subclass ? ` · ${subclass.name}` : ""}`, features };
@@ -3777,13 +3785,13 @@ function Builder() {
                 pactSlots={pactMagicSlots}
                 preparedMaximum={sourcedSpellGroups.find(group => group.classId === "wizard")?.preparedMaximum}
                 spellcastingSources={sourcedSpellGroups.flatMap(group => {
-                  const ability = classRules[group.classId]?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
+                  const ability = classRuleFor(exportCharacter, group.classId)?.spellAbility as keyof ExportCharacter["abilities"] | undefined;
                   if (!ability) return [];
                   const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier(finalAbilities[ability]);
-                  return [{ name: classes.find(item => item.id === group.classId)?.name || group.classId, ability: abilityLabels[ability], dc: 8 + attack, attack }];
+                  return [{ name: spellSourceDisplayName(group.classId, exportCharacter, classes), ability: abilityLabels[ability], dc: 8 + attack, attack }];
                 })}
                 spells={sourcedSpells.map(entry => ({ ...entry.spell, prepared: entry.prepared, alwaysPrepared: entry.alwaysPrepared,
-                  classSource: classes.find(item => item.id === entry.classId)?.name || entry.classId,
+                  classSource: spellSourceDisplayName(entry.classId, exportCharacter, classes),
                   grantSource: entry.source === entry.classId ? "" : entry.source,
                 })).concat(otherGrantedSpells.map(entry => ({ ...entry.spell, prepared: true, alwaysPrepared: entry.alwaysPrepared, classSource: "Другой источник", grantSource: entry.source })), grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Черта", grantSource: "" })), customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Хоумбрю", grantSource: "" })))}
               />
