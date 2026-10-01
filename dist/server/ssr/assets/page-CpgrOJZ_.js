@@ -13295,9 +13295,44 @@ var homebrewTypeLabels = {
 	note: "Заметка",
 	pack: "Пак"
 };
+var shamanOrganizationalFeatureIds = new Set([
+	"hb:shaman:ability:sacred-focus",
+	"hb:shaman:ability:totems",
+	"hb:shaman:ability:spiritualism",
+	"hb:shaman:ability:great-totem-spirit",
+	"hb:shaman:ability:curse-spells",
+	"hb:shaman:ability:spirit-warrior-spells",
+	"hb:shaman:ability:medicine-spells",
+	"hb:shaman:ability:wild-heart-spells",
+	"hb:shaman:ability:beast-adaptation"
+]);
+var shamanSpellFeatureIds = new Set([
+	"hb:shaman:ability:curse-spells",
+	"hb:shaman:ability:spirit-warrior-spells",
+	"hb:shaman:ability:medicine-spells",
+	"hb:shaman:ability:wild-heart-spells"
+]);
+function upgradeKnownHomebrew(element) {
+	if (!element.id.startsWith("hb:shaman:")) return element;
+	const features = element.features?.map((feature) => ({
+		...feature,
+		...shamanOrganizationalFeatureIds.has(feature.id) ? { showOnSheet: false } : {},
+		description: shamanSpellFeatureIds.has(feature.id) ? feature.description.replace("Всегда известны и не считаются в лимит:", "Всегда подготовлены и не занимают лимит:") : feature.description
+	}));
+	const spellGrants = element.type === "subclass" && element.parentClassId === "hb:shaman:class:shaman" ? (element.spellGrants || []).map((grant) => ({
+		...grant,
+		mode: "always-prepared",
+		countsAgainstKnown: false
+	})) : element.spellGrants;
+	return {
+		...element,
+		features,
+		spellGrants
+	};
+}
 function normalizeHomebrewLibrary(value) {
 	const types = new Set(Object.keys(homebrewTypeLabels));
-	const normalized = (Array.isArray(value?.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => ({
+	const normalized = (Array.isArray(value?.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => upgradeKnownHomebrew({
 		...e,
 		schemaVersion: 2,
 		uid: e.uid || e.id,
