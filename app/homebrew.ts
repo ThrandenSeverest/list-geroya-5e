@@ -38,7 +38,8 @@ export const emptyHomebrewLibrary:HomebrewLibrary = {version:2,schemaVersion:2,e
 export const homebrewTypeLabels:Record<HomebrewType,string> = {ability:'Способность',feat:'Черта',item:'Предмет',spell:'Заклинание',proficiency:'Владение',race:'Раса',subrace:'Подраса',class:'Класс',subclass:'Подкласс',background:'Предыстория',resource:'Ресурс',attack:'Атака',table:'Таблица',note:'Заметка',pack:'Пак'};
 export function normalizeHomebrewLibrary(value:Partial<HomebrewLibrary>|null|undefined):HomebrewLibrary {
  const types=new Set(Object.keys(homebrewTypeLabels));
- const elements=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
+ const normalized=(Array.isArray(value?.elements)?value.elements:[]).filter(e=>e&&typeof e.id==='string'&&types.has(e.type)&&typeof e.name==='string'&&typeof e.description==='string').map(e=>({...e,schemaVersion:2 as const,uid:e.uid||e.id,updatedAt:e.updatedAt||new Date(0).toISOString(),effects:e.effects||[],resources:e.resources||[],attacks:e.attacks||[],actions:e.actions||[],choices:e.choices||[]}));
+ const elements=[...new Map(normalized.map(element=>[element.id,element])).values()];
  return {version:2,schemaVersion:2,elements};
 }
 export function newHomebrew(type:HomebrewType,name=''):HomebrewElement {
