@@ -1,0 +1,37 @@
+name: Apply local v1.5 dist
+on:
+  push:
+    branches:
+      - release/1.5.0
+    paths:
+      - .github/workflows/apply-local-dist.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/1.5.0
+          fetch-depth: 0
+      - name: Restore locally compiled dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .local-dist-upload.b64 > /tmp/herolist-dist.tar.br
+          node -e "const fs=require('fs'),z=require('zlib');fs.writeFileSync('/tmp/herolist-dist.tar',z.brotliDecompressSync(fs.readFileSync('/tmp/herolist-dist.tar.br')))"
+          find dist -type f ! -iname '*.png' ! -iname '*.jpg' ! -iname '*.jpeg' ! -iname '*.webp' ! -iname '*.ico' -delete
+          find dist -type d -empty -delete || true
+          tar -xf /tmp/herolist-dist.tar
+          rm -f .local-dist-upload.b64 .github/workflows/apply-local-dist.yml
+      - name: Commit local build
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist .local-dist-upload.b64 .github/workflows/apply-local-dist.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "build: publish deterministic local v1.5 dist"
+          git push origin HEAD:release/1.5.0
