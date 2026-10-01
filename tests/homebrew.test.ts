@@ -18,6 +18,7 @@ import { speedBreakdown } from '../app/speed';
 import { characterProficiencies } from '../app/proficiencies';
 import { armorClassBreakdown } from '../app/armor';
 import { equipmentRule, selectedEquipment } from '../app/equipment';
+import { classSpellGroups } from '../app/spellSources';
 const library=normalizeHomebrewLibrary({elements:savant as HomebrewElement[]});
 const base={className:'hb:savant:class:savant',level:5,abilities:{str:10,dex:12,con:12,int:16,wis:14,cha:10},race:'human',raceVariant:'standard',background:'',classSkills:[],spells:[],feats:[],advancements:[],homebrew:{entities:[],activeIds:['hb:savant:class:savant']}} as unknown as ExportCharacter;
 test('bounded formulas and rejection of code injection',()=>{
@@ -212,4 +213,18 @@ test('Homebrew class chassis applies ASI levels, multiclass rules and pact magic
  assert.ok(proficiencies.armor.includes('Лёгкие доспехи'));
  assert.ok(!proficiencies.armor.includes('Тяжёлые доспехи'));
  assert.ok(proficiencies.weapons.includes('Воинское оружие'));
+});
+
+
+test('Shaman subclass spells are always prepared and marked outside the known-spell limit',()=>{
+ const entities=(shamanPack as {entities:HomebrewElement[]}).entities;
+ const cls=entities.find(entity=>entity.id==='hb:shaman:class:shaman')!;
+ const subclass=entities.find(entity=>entity.id==='hb:shaman:subclass:spirit-warrior')!;
+ const hero=bindHomebrewLibrary({...base,className:cls.id,subclass:subclass.id,level:5,classes:[{classId:cls.id,subclassId:subclass.id,level:5,acquiredAtCharacterLevel:1}],homebrew:{entities:[],activeIds:[cls.id,subclass.id],choices:{}}},{elements:entities});
+ const automatic=alwaysPreparedSpellEntries(hero,spells);
+ assert.equal(automatic.find(entry=>entry.id==='magic-weapon')?.mode,'always-prepared');
+ assert.equal(automatic.find(entry=>entry.id==='spiritual-weapon')?.mode,'always-prepared');
+ const group=classSpellGroups(hero,spells).find(row=>row.classId===cls.id)!;
+ assert.equal(group.spells.find(entry=>entry.spell.id==='magic-weapon')?.alwaysPrepared,true);
+ assert.equal(group.spells.find(entry=>entry.spell.id==='spiritual-weapon')?.alwaysPrepared,true);
 });
