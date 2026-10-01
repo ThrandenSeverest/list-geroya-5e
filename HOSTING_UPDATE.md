@@ -33,6 +33,10 @@ npm start
 `npm start` запускает `deployment/start-frontend.mjs`, который использует
 готовый `dist/`.
 
+Для обычного обновления production-хоста достаточно подтянуть актуальный `main`.
+Пересобирать frontend на хосте не нужно: папка `dist/` уже готова к запуску.
+Если изменился `package-lock.json`, достаточно повторить `npm ci --omit=dev --ignore-scripts`.
+
 Если нужен только GitHub Pages production, он публикуется workflow
 `Publish GitHub Pages` после успешной проверки `main`.
 
