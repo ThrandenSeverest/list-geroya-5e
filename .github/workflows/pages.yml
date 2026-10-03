@@ -48,6 +48,7 @@ jobs:
           for attempt in {1..20}; do
             if curl --fail --silent http://127.0.0.1:3997/list-geroya-5e/ >/dev/null; then
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/browser-sheet.cjs
+              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-browser.cjs
               exit 0
             fi
             sleep 1

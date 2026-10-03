@@ -34,6 +34,7 @@ const table = {
     }
   const browser = await chromium.launch({
     headless: true,
+    executablePath: process.env.HB_TEST_CHROMIUM,
     args: ["--no-sandbox", "--disable-dev-shm-usage"],
   });
   try {
@@ -42,6 +43,8 @@ const table = {
         viewport: { width, height: 1000 },
       });
       const page = await context.newPage();
+      page.setDefaultTimeout(10000);
+      page.setDefaultNavigationTimeout(15000);
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.route("**/api/account", (r) =>
@@ -143,7 +146,7 @@ const table = {
           .getByRole("button", { name: "Удалить Homebrew", exact: true })
           .isVisible(),
       );
-      if (width === 1440) {
+      {
         if (
           !(await page
             .getByRole("button", { name: "Класс", exact: true })
@@ -155,25 +158,41 @@ const table = {
             .click();
         await page.getByRole("button", { name: "Класс", exact: true }).click();
         await page.getByLabel("Название Homebrew").fill("Класс браузера");
+        await page.getByText("Владения и мультикласс", {exact:true}).click();
         await page.getByRole("button", { name: "Простое оружие", exact: true }).click();
         assert.equal(await page.getByRole("button", { name: "Простое оружие", exact: true }).getAttribute("aria-pressed"), "true");
         await page.getByRole("button", { name: "Мультикласс: Сила 13", exact: true }).click();
         await page.getByRole("button", { name: "Лёгкие доспехи при мультиклассе", exact: true }).click();
         assert.equal(await page.getByRole("button", { name: "Лёгкие доспехи при мультиклассе", exact: true }).getAttribute("aria-pressed"), "true");
-        await page.getByRole("button", { name: "Развитие 1–20", exact: true }).click();
-        await page.getByRole("button", { name: "ASI или черта на уровне 4", exact: true }).click();
-        assert.equal(await page.getByRole("button", { name: "ASI или черта на уровне 4", exact: true }).getAttribute("aria-pressed"), "true");
-        assert.equal(await page.locator(".hb-class-progression tbody tr").count(), 20);
+        await page.getByRole("button", { name: "Развитие и способности", exact: true }).click();
+        await page.getByRole("button", { name: "Уровень 4: 0 записей", exact: true }).click();
+        await page.getByRole("button", { name: "+ Повышение характеристик / черта", exact: true }).click();
+        assert.equal(await page.getByRole("button", { name: "✓ Повышение характеристик / черта", exact: true }).getAttribute("aria-pressed"), "true");
+        assert.equal(await page.locator(".hb-level-picker button").count(), 20);
         await page
-          .getByRole("button", { name: "Добавить способность на уровне 1", exact: true })
+          .getByRole("button", { name: "+ Способность в этом классе", exact: true })
           .click();
         await page
           .locator(".hb-feature-list input")
           .nth(1)
           .fill("Браузерная способность");
+        const featureDescription = page.getByLabel("Описание способности");
+        await featureDescription.fill("Урон: @dam");
+        assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности" }).isVisible());
+        await page.keyboard.press("Enter");
+        assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
         await page.getByText("Что делает способность: эффекты, ресурсы и выборы").click();
+        await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
+        await featureDescription.fill("Урон: @dam");
+        await page.keyboard.press("Escape");
+        await featureDescription.locator("..").getByRole("button", { name: "@ Команды и примеры", exact: true }).click();
+        await page.getByLabel("Группа команд: Описание способности").selectOption("Кнопки в описании");
+        await page.getByLabel("Поиск команд: Описание способности").fill("лечение");
+        await featureDescription.locator("..").locator(".hb-command-browser button").click();
+        assert.match(await featureDescription.inputValue(), /\[\[heal formula=/);
+        assert.ok(await page.locator(".hb-development").evaluate(e => e.scrollWidth <= e.clientWidth + 1));
         await page
           .getByRole("button", { name: "Заклинания", exact: true })
           .click();
@@ -195,6 +214,16 @@ const table = {
         await page
           .getByRole("button", { name: "Сохранить изменения", exact: true })
           .click();
+        const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("herolist-homebrew-local-v2")));
+        const savedClass = saved.elements.find(e => e.name === "Класс браузера");
+        assert.equal(savedClass.schemaVersion, 2);
+        assert.equal(savedClass.features[0].level, 4);
+        assert.equal(savedClass.features[0].name, "Браузерная способность");
+        assert.match(savedClass.features[0].description, /\[\[heal formula=/);
+        assert.equal(savedClass.features[0].actions[0].name, "Особое действие");
+        assert.deepEqual(savedClass.advancement[4], [{ type: "asi_or_feat" }]);
+        assert.equal(savedClass.spellcasting.mode, "full");
+        assert.ok(savedClass.effects.some(e => e.type === "weapon_group_proficiency" && e.group === "simple"));
         await page.getByRole("button", { name: "Закрыть", exact: true }).click();
         await page.getByLabel("Поиск Homebrew").fill("Класс браузера");
         assert.equal(
@@ -217,7 +246,7 @@ const table = {
         );
         await page.getByLabel("Фильтр Homebrew").selectOption("all");
         await page.getByLabel("Поиск Homebrew").fill("");
-      } else await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+      }
       await page.getByLabel("Поиск Homebrew").fill("Шаман");
       const card = page
         .locator(".hb-browser-results article")

@@ -22,3 +22,26 @@
 .hb-choice-options button.locked{opacity:.72;border-style:dashed}
 .hb-choice-options button.locked small:first-of-type{font-weight:700}
 @media(max-width:720px){.hb-equipment-option-editor{grid-template-columns:1fr}.hb-equipment-option-editor textarea{min-height:4.5rem}}
+
+.hb-level-picker{display:grid;grid-template-columns:repeat(auto-fit,minmax(65px,1fr));gap:.4rem;margin:1rem 0}
+.hb-level-picker button{display:grid;gap:.2rem;min-height:56px;padding:.45rem}
+.hb-level-picker small{font-size:.65rem;opacity:.8}
+.hb-level-picker button[aria-pressed=true]{outline:2px solid #c4a464;outline-offset:1px}
+.hb-feature-card,.hb-basic-details{margin:.7rem 0;border:1px solid #a78c5d55;border-radius:8px;padding:.65rem;min-width:0}
+.hb-feature-card>summary,.hb-basic-details>summary{cursor:pointer;font-weight:600;padding:.25rem}
+.hb-linked-row{display:grid;gap:.5rem;padding:.6rem;border-bottom:1px solid #a78c5d44}
+.hb-command-input{position:relative;min-width:0;width:100%}
+.hb-command-input>input,.hb-command-input>textarea{width:100%;box-sizing:border-box}
+.hb-command-toggle{font-size:.8rem;margin-top:.25rem;min-height:32px}
+.hb-command-menu,.hb-command-browser{display:grid;gap:4px;max-height:310px;overflow:auto;border:1px solid #a78c5d;border-radius:8px;padding:.4rem;background:var(--panel,#24211e);color:var(--ivory,#f3ead7)}
+.hb-command-menu{position:absolute;z-index:8;top:100%;left:0;right:0;box-shadow:0 10px 22px #0006}
+.hb-command-menu button,.hb-command-browser button{display:grid;text-align:left;gap:.15rem;padding:.5rem;min-width:0;white-space:normal;overflow-wrap:anywhere}
+.hb-command-menu button[aria-selected=true]{outline:2px solid #c4a464;outline-offset:-2px}
+.hb-command-menu code,.hb-command-browser code{font-weight:700}
+.hb-command-menu span,.hb-command-browser span{font-size:.8rem}
+.hb-command-browser small{font-size:.7rem;opacity:.7;white-space:pre-wrap}
+.hb-command-browser{margin-top:.4rem;background:transparent;color:inherit}
+.hb-command-menu>small{position:sticky;bottom:0;padding:.35rem;background:inherit}
+@media(max-width:480px){.hb-level-picker{grid-template-columns:repeat(5,minmax(0,1fr))}.hb-command-menu{max-height:240px}.hb-command-browser button{max-width:100%}}
+
+.hb-mechanics>details{padding:.65rem;border:1px solid #a78c5d55;border-radius:8px;margin:.5rem 0}.hb-mechanics>details>summary{cursor:pointer;font-weight:600}
