@@ -189,7 +189,7 @@ const table = {
         await page.keyboard.press("Escape");
         await featureDescription.locator("..").getByRole("button", { name: "@ Команды и примеры", exact: true }).click();
         await page.getByLabel("Группа команд: Описание способности").selectOption("Кнопки в описании");
-        await page.getByLabel("Поиск команд: Описание способности").fill("лечение");
+        await page.getByLabel("Поиск команд: Описание способности").fill("лечен");
         await featureDescription.locator("..").locator(".hb-command-browser button").click();
         assert.match(await featureDescription.inputValue(), /\[\[heal formula=/);
         assert.ok(await page.locator(".hb-development").evaluate(e => e.scrollWidth <= e.clientWidth + 1));
