@@ -1,4 +1,4 @@
-import { Component, createElement, forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Component, createElement, forwardRef, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
 //#region app/homebrewTemplates.ts
@@ -48431,6 +48431,315 @@ function validateHomebrew(entities, officialIds = []) {
 	if (!problems.length) for (const e of entities) visit(e.id);
 	return problems;
 }
+//#endregion
+//#region app/homebrewCommands.ts
+var formulaCommands = [
+	["@level", "Общий уровень персонажа"],
+	["@classLevel", "Уровень этого класса; учитывает мультикласс"],
+	["@pb", "Бонус мастерства персонажа"],
+	["@currentHp", "Текущие хиты"],
+	["@tempHp", "Временные хиты"]
+].map(([command, description]) => ({
+	command,
+	insert: command,
+	description,
+	group: "Персонаж"
+}));
+for (const [id, name] of Object.entries(abilityLabels)) formulaCommands.push({
+	command: "@mod." + id,
+	insert: "@mod." + id,
+	description: "Модификатор: " + name,
+	group: "Характеристики"
+}, {
+	command: "@ability." + id,
+	insert: "@ability." + id,
+	description: "Значение: " + name,
+	group: "Характеристики"
+});
+formulaCommands.push(...[
+	[
+		"@min",
+		"min(@pb, 3)",
+		"Меньшее из значений"
+	],
+	[
+		"@max",
+		"max(1, @mod.wis)",
+		"Большее из значений; например минимум 1 применение"
+	],
+	[
+		"@floor",
+		"floor(@classLevel / 2)",
+		"Округлить вниз"
+	],
+	[
+		"@ceil",
+		"ceil(@classLevel / 2)",
+		"Округлить вверх"
+	],
+	[
+		"@round",
+		"round(@classLevel / 2)",
+		"Округлить до ближайшего целого"
+	],
+	[
+		"@abs",
+		"abs(@mod.str)",
+		"Модуль числа"
+	],
+	[
+		"@clamp",
+		"clamp(@classLevel, 1, 5)",
+		"Ограничить значение нижней и верхней границей"
+	],
+	[
+		"@classLevelById",
+		"@classLevel(\"ID\")",
+		"Уровень конкретного класса: замените ID"
+	],
+	[
+		"@resource.current",
+		"@resource(\"ID\").current",
+		"Оставшиеся применения ресурса: замените ID"
+	],
+	[
+		"@resource.max",
+		"@resource(\"ID\").max",
+		"Максимум ресурса: замените ID"
+	],
+	[
+		"@equipped",
+		"equipped(@source)",
+		"Условие: этот предмет экипирован"
+	],
+	[
+		"@hasFeature",
+		"hasFeature(\"ID\")",
+		"Условие: отдельный объект активен у персонажа; замените ID"
+	],
+	[
+		"@hasArmor",
+		"hasArmor(\"armor\")",
+		"Условие: надеты доспехи; для щита используйте shield"
+	]
+].map(([command, insert, description]) => ({
+	command,
+	insert,
+	description,
+	group: "Функции и условия"
+})));
+var descriptionCommands = [
+	[
+		"@roll",
+		"[[roll formula=\"1d20 + @pb\" label=\"Бросок\"]]",
+		"Кнопка броска кости с бонусом мастерства"
+	],
+	[
+		"@damage",
+		"[[damage formula=\"1d8 + @mod.str\" label=\"Урон\"]]",
+		"Кнопка броска урона"
+	],
+	[
+		"@heal",
+		"[[heal formula=\"1d8 + @mod.wis\" label=\"Лечение\"]]",
+		"Кнопка броска лечения"
+	],
+	[
+		"@dc",
+		"[[dc formula=\"8 + @pb + @mod.int\" label=\"Сложность\"]]",
+		"Показать сложность без броска"
+	],
+	[
+		"@value",
+		"[[value formula=\"@classLevel\" label=\"Значение\"]]",
+		"Показать рассчитанное значение без броска"
+	],
+	[
+		"@resource",
+		"[[value formula=\"@resource('ID').current\" label=\"Осталось применений\"]]",
+		"Показать остаток ресурса; замените ID на его идентификатор"
+	],
+	[
+		"@consume",
+		"[[consume resource=\"ID\" amount=\"1\" label=\"Потратить применение\"]]",
+		"Потратить применение на игровом листе; замените ID ресурса"
+	],
+	[
+		"@restore",
+		"[[restore resource=\"ID\" amount=\"1\" label=\"Восстановить применение\"]]",
+		"Восстановить применение на игровом листе; замените ID ресурса"
+	]
+].map(([command, insert, description]) => ({
+	command,
+	insert,
+	description,
+	group: "Кнопки в описании"
+}));
+function commandQuery(value, caret) {
+	const match = /@([\p{L}\p{N}_.]*)$/u.exec(value.slice(0, caret));
+	return match ? {
+		start: caret - match[0].length,
+		end: caret,
+		query: match[1].toLowerCase()
+	} : null;
+}
+function filterCommands(commands, query) {
+	const needle = query.toLowerCase();
+	return commands.filter((row) => (row.command + " " + row.description + " " + row.group).toLowerCase().includes(needle));
+}
+function insertCommand(value, start, end, command) {
+	return {
+		value: value.slice(0, start) + command.insert + value.slice(end),
+		caret: start + command.insert.length
+	};
+}
+//#endregion
+//#region app/HomebrewCommandInput.tsx
+function HomebrewCommandInput({ value, onChange, label, multiline = false, rows = 5, inputRef, onKeyDown }) {
+	const ownRef = useRef(null);
+	const ref = inputRef || ownRef;
+	const id = useId();
+	const [range, setRange] = useState(null);
+	const [selected, setSelected] = useState(0);
+	const [browse, setBrowse] = useState(false);
+	const [search, setSearch] = useState("");
+	const [group, setGroup] = useState("");
+	const commands = multiline ? [...descriptionCommands, ...formulaCommands] : formulaCommands;
+	const options = range ? filterCommands(commands, range.query) : [];
+	useEffect(() => {
+		if (range) document.getElementById(`${id}-${selected}`)?.scrollIntoView({ block: "nearest" });
+	}, [
+		id,
+		selected,
+		range
+	]);
+	const insert = (command) => {
+		const node = ref.current;
+		const start = range?.start ?? node?.selectionStart ?? value.length;
+		const result = insertCommand(value, start, range?.end ?? node?.selectionEnd ?? start, command);
+		onChange(result.value);
+		setRange(null);
+		requestAnimationFrame(() => {
+			node?.focus();
+			node?.setSelectionRange(result.caret, result.caret);
+		});
+	};
+	const props = {
+		"aria-label": label,
+		value,
+		"aria-controls": range ? id : void 0,
+		"aria-expanded": !!range,
+		"aria-autocomplete": "list",
+		"aria-activedescendant": range && options[selected] ? `${id}-${selected}` : void 0,
+		onChange: (event) => {
+			onChange(event.target.value);
+			setRange(commandQuery(event.target.value, event.target.selectionStart ?? event.target.value.length));
+			setSelected(0);
+		},
+		onClick: () => {
+			const node = ref.current;
+			setRange(commandQuery(value, node?.selectionStart ?? value.length));
+			setSelected(0);
+		},
+		onBlur: () => setRange(null),
+		onKeyDown: (event) => {
+			if (range && event.key === "Escape") {
+				event.preventDefault();
+				setRange(null);
+				return;
+			}
+			if (range && options.length && [
+				"ArrowDown",
+				"ArrowUp",
+				"Enter"
+			].includes(event.key)) {
+				event.preventDefault();
+				if (event.key === "Enter") insert(options[selected] || options[0]);
+				else setSelected((index) => (index + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+				return;
+			}
+			if ([
+				"ArrowLeft",
+				"ArrowRight",
+				"Home",
+				"End"
+			].includes(event.key)) setRange(null);
+			onKeyDown?.(event);
+		}
+	};
+	return /* @__PURE__ */ jsxs("div", {
+		className: "hb-command-input",
+		children: [
+			multiline ? /* @__PURE__ */ jsx("textarea", {
+				...props,
+				rows,
+				ref
+			}) : /* @__PURE__ */ jsx("input", {
+				...props,
+				ref: ownRef
+			}),
+			range && /* @__PURE__ */ jsxs("div", {
+				id,
+				role: "listbox",
+				"aria-label": `Команды: ${label}`,
+				className: "hb-command-menu",
+				children: [
+					options.map((command, index) => /* @__PURE__ */ jsxs("button", {
+						type: "button",
+						role: "option",
+						id: `${id}-${index}`,
+						"aria-selected": index === selected,
+						onMouseDown: (event) => event.preventDefault(),
+						onClick: () => insert(command),
+						children: [/* @__PURE__ */ jsx("code", { children: command.command }), /* @__PURE__ */ jsx("span", { children: command.description })]
+					}, command.command)),
+					!options.length && /* @__PURE__ */ jsx("p", { children: "Команда не найдена. Попробуйте «уровень», «урон» или «ресурс»." }),
+					/* @__PURE__ */ jsx("small", { children: "↑ ↓ выбрать · Enter вставить · Esc закрыть" })
+				]
+			}),
+			/* @__PURE__ */ jsx("button", {
+				type: "button",
+				className: "hb-command-toggle",
+				"aria-expanded": browse,
+				onClick: () => setBrowse(!browse),
+				children: "@ Команды и примеры"
+			}),
+			browse && /* @__PURE__ */ jsxs("div", {
+				className: "hb-command-browser",
+				children: [
+					/* @__PURE__ */ jsx("input", {
+						"aria-label": `Поиск команд: ${label}`,
+						placeholder: "Название или назначение команды",
+						value: search,
+						onChange: (event) => setSearch(event.target.value)
+					}),
+					/* @__PURE__ */ jsxs("select", {
+						"aria-label": `Группа команд: ${label}`,
+						value: group,
+						onChange: (event) => setGroup(event.target.value),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "",
+							children: "Все команды"
+						}), [...new Set(commands.map((command) => command.group))].map((name) => /* @__PURE__ */ jsx("option", {
+							value: name,
+							children: name
+						}, name))]
+					}),
+					filterCommands(commands, search).filter((command) => !group || command.group === group).map((command) => /* @__PURE__ */ jsxs("button", {
+						type: "button",
+						onMouseDown: (event) => event.preventDefault(),
+						onClick: () => insert(command),
+						children: [
+							/* @__PURE__ */ jsx("code", { children: command.command }),
+							/* @__PURE__ */ jsx("span", { children: command.description }),
+							/* @__PURE__ */ jsx("small", { children: command.insert })
+						]
+					}, command.command))
+				]
+			})
+		]
+	});
+}
 var shamanExample_default = {
 	schemaVersion: 2,
 	type: "homebrew-pack",
@@ -52492,20 +52801,17 @@ var official = [
 var abilities = Object.keys(abilityLabels);
 var editorTabs = (type) => [
 	"Основное",
-	...["class", "subclass"].includes(type) ? ["Развитие 1–20"] : [],
-	...["class", "subclass"].includes(type) ? ["Способности класса"] : [],
+	...["class", "subclass"].includes(type) ? ["Развитие и способности"] : [],
 	...[
 		"class",
 		"subclass",
 		"ability"
 	].includes(type) ? ["Заклинания"] : [],
-	...type === "class" ? ["Состав"] : [],
 	...[
 		"table",
 		"class",
 		"subclass"
 	].includes(type) ? ["Таблицы"] : [],
-	...["class", "subclass"].includes(type) ? ["Разблокировки по уровням"] : [],
 	"Механика",
 	"Описание",
 	"Код",
@@ -52513,9 +52819,9 @@ var editorTabs = (type) => [
 ];
 var primaryClassTabs = [
 	"Основное",
-	"Развитие 1–20",
-	"Способности класса",
+	"Развитие и способности",
 	"Заклинания",
+	"Описание",
 	"Проверка"
 ];
 var tagNames = {
@@ -52540,15 +52846,6 @@ var tagNames = {
 	utility: "Прочее",
 	concentration: "Концентрация"
 };
-var vars = [
-	"@level",
-	"@classLevel",
-	"@pb",
-	...abilities.map((a) => "@mod." + a),
-	...abilities.map((a) => "@ability." + a),
-	"@currentHp",
-	"@tempHp"
-];
 function HBHelp({ children }) {
 	return /* @__PURE__ */ jsxs("details", {
 		className: "hb-help",
@@ -52568,6 +52865,15 @@ function Field({ label, help, children }) {
 		] }), children]
 	});
 }
+function HBDisclosure({ summary, initialOpen = false, children, className }) {
+	const [open, setOpen] = useState(initialOpen);
+	return /* @__PURE__ */ jsxs("details", {
+		className,
+		open,
+		onToggle: (event) => setOpen(event.currentTarget.open),
+		children: [/* @__PURE__ */ jsx("summary", { children: summary }), children]
+	});
+}
 function Select({ value, onChange, options, label }) {
 	return /* @__PURE__ */ jsx("select", {
 		"aria-label": label,
@@ -52580,21 +52886,14 @@ function Select({ value, onChange, options, label }) {
 	});
 }
 function Formula({ value, onChange, label = "Формула" }) {
-	return /* @__PURE__ */ jsxs(Field, {
+	return /* @__PURE__ */ jsx(Field, {
 		label,
-		help: "Переменные берутся из персонажа. Разрешены арифметика, сравнения, min/max/floor/ceil/clamp. Кости записываются как 1d8; предпросмотр показывает среднее.",
-		children: [/* @__PURE__ */ jsx("input", {
-			"aria-label": label,
-			value,
-			onChange: (e) => onChange(e.target.value)
-		}), /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Вставить переменную" }), /* @__PURE__ */ jsx("div", {
-			className: "hb-toolbar",
-			children: vars.map((v) => /* @__PURE__ */ jsx("button", {
-				type: "button",
-				onClick: () => onChange(String(value) + v),
-				children: v
-			}, v))
-		})] })]
+		help: "Введите @ для поиска переменных и функций. Поддерживаются арифметика, сравнения и кости (1d8). Предпросмотр показывает среднее.",
+		children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+			label,
+			value: String(value),
+			onChange
+		})
 	});
 }
 function RefPicker({ value, onChange, entities, label = "Ссылка" }) {
@@ -52731,12 +53030,13 @@ function Description({ draft, update, entities, character }) {
 				children: title
 			}, title))
 		}),
-		/* @__PURE__ */ jsx("textarea", {
-			ref: area,
-			"aria-label": "Полное описание",
+		/* @__PURE__ */ jsx(HomebrewCommandInput, {
+			inputRef: area,
+			label: "Полное описание",
+			multiline: true,
 			rows: 12,
 			value: draft.description,
-			onChange: (e) => update({ description: e.target.value }),
+			onChange: (description) => update({ description }),
 			onKeyDown: (e) => {
 				if ((e.ctrlKey || e.metaKey) && ["b", "i"].includes(e.key)) {
 					e.preventDefault();
@@ -52813,10 +53113,10 @@ function Description({ draft, update, entities, character }) {
 function HomebrewEditor({ library, onSave, character, onCharacter, saveState, onClose }) {
 	const [draft, setDraft] = useState(null), [tab, setTab] = useState("Основное"), [query, setQuery] = useState(""), [filter, setFilter] = useState("all"), [error, setError] = useState(""), [code, setCode] = useState(""), [history, setHistory] = useState([]), [future, setFuture] = useState([]), [registry, setRegistry] = useState(false), [registryValue, setRegistryValue] = useState("");
 	const file = useRef(null);
-	const refs = [...library.elements, ...draft && !library.elements.some((e) => e.id === draft.id) ? [draft] : []];
-	const packages = homebrewPackages(library.elements);
-	const draftPackage = draft ? homebrewPackageFor(draft, refs) : void 0;
-	const officialIds = official.map((e) => e.id);
+	const refs = useMemo(() => draft ? [...library.elements.filter((e) => e.id !== draft.id), draft] : library.elements, [library.elements, draft]);
+	const packages = useMemo(() => homebrewPackages(library.elements), [library.elements]);
+	const draftPackage = useMemo(() => draft ? homebrewPackageFor(draft, refs) : void 0, [draft, refs]);
+	const officialIds = useMemo(() => official.map((e) => e.id), []);
 	const savedDraft = draft ? library.elements.find((element) => element.id === draft.id) : void 0;
 	const hasUnsavedChanges = !!draft && JSON.stringify(draft) !== JSON.stringify(savedDraft || null);
 	const update = (patch) => {
@@ -52845,7 +53145,11 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 	useEffect(() => {
 		if (draft) localStorage.setItem("herolist-homebrew-draft-v2", JSON.stringify(draft));
 	}, [draft]);
-	const problems = draft ? validateHomebrew([...library.elements.filter((e) => e.id !== draft.id), draft], officialIds) : [];
+	const problems = useMemo(() => draft ? validateHomebrew(refs, officialIds) : [], [
+		draft,
+		refs,
+		officialIds
+	]);
 	const save = async () => {
 		if (!draft || problems.length) return;
 		try {
@@ -53147,7 +53451,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								"aria-label": "Разделы редактора",
 								children: [editorTabs(draft.type).filter((t) => !["class", "subclass"].includes(draft.type) || primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
 									"aria-pressed": tab === t,
-									onClick: () => setTab(t),
+									onClick: () => {
+										setTab(t);
+										if (t === "Код") setCode(JSON.stringify(draft, null, 2));
+									},
 									children: t
 								}, t)), ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsxs("details", {
 									className: "hb-advanced-tabs",
@@ -53216,7 +53523,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											Object.keys(subclassTemplate(draft.parentClassId, refs)).join(", "),
 											"."
 										] }), /* @__PURE__ */ jsx("button", {
-											onClick: () => setTab("Разблокировки по уровням"),
+											onClick: () => setTab("Развитие и способности"),
 											children: "Заполнить способности подкласса"
 										})] })]
 									}),
@@ -53254,26 +53561,29 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											onChange: (e) => update({ summary: e.target.value })
 										})
 									}),
-									/* @__PURE__ */ jsx(Field, {
-										label: "Теги",
-										help: "Выбор добавляет машинный тег; повторное нажатие убирает его.",
-										children: /* @__PURE__ */ jsx("div", {
-											className: "hb-toolbar",
-											children: [
-												...damageTypes,
-												"action",
-												"bonus_action",
-												"reaction",
-												"passive",
-												"healing",
-												"utility",
-												"concentration"
-											].map((tag) => /* @__PURE__ */ jsx("button", {
-												"aria-pressed": draft.tags?.includes(tag) || false,
-												onClick: () => update({ tags: draft.tags?.includes(tag) ? draft.tags.filter((t) => t !== tag) : [...draft.tags || [], tag] }),
-												children: tagNames[tag] || tag
-											}, tag))
-										})
+									/* @__PURE__ */ jsxs("details", {
+										className: "hb-basic-details",
+										children: [/* @__PURE__ */ jsx("summary", { children: "Теги и категории" }), /* @__PURE__ */ jsx(Field, {
+											label: "Теги",
+											help: "Выбор добавляет машинный тег; повторное нажатие убирает его.",
+											children: /* @__PURE__ */ jsx("div", {
+												className: "hb-toolbar",
+												children: [
+													...damageTypes,
+													"action",
+													"bonus_action",
+													"reaction",
+													"passive",
+													"healing",
+													"utility",
+													"concentration"
+												].map((tag) => /* @__PURE__ */ jsx("button", {
+													"aria-pressed": draft.tags?.includes(tag) || false,
+													onClick: () => update({ tags: draft.tags?.includes(tag) ? draft.tags.filter((t) => t !== tag) : [...draft.tags || [], tag] }),
+													children: tagNames[tag] || tag
+												}, tag))
+											})
+										})]
 									}),
 									draft.type === "class" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 										/* @__PURE__ */ jsx(Field, {
@@ -53359,35 +53669,6 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													children: level
 												}, level))
 											})
-										}),
-										/* @__PURE__ */ jsxs(Field, {
-											label: "Магия класса",
-											children: [/* @__PURE__ */ jsx(Select, {
-												label: "Прогрессия магии",
-												value: draft.spellcasting?.mode || "none",
-												onChange: (v) => update({ spellcasting: {
-													...draft.spellcasting,
-													mode: v,
-													ability: draft.spellcasting?.ability || "int"
-												} }),
-												options: {
-													none: "Нет",
-													full: "Полный заклинатель",
-													half: "Половинный",
-													third: "Треть",
-													pact: "Магия договора",
-													custom: "Своя таблица ячеек"
-												}
-											}), /* @__PURE__ */ jsx(Select, {
-												label: "Характеристика магии",
-												value: draft.spellcasting?.ability || "int",
-												onChange: (v) => update({ spellcasting: {
-													...draft.spellcasting,
-													mode: draft.spellcasting?.mode || "none",
-													ability: v
-												} }),
-												options: abilityLabels
-											})]
 										})
 									] }),
 									draft.type === "subrace" && /* @__PURE__ */ jsx(RefPicker, {
@@ -53521,12 +53802,18 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), "Требует настройки"] })] })
 								]
 							}),
-							tab === "Основное" && draft.type === "class" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(ClassEquipmentEditor, {
-								draft,
-								update
-							}), /* @__PURE__ */ jsx(ClassTraining, {
-								draft,
-								update
+							tab === "Основное" && draft.type === "class" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("details", {
+								className: "hb-basic-details",
+								children: [/* @__PURE__ */ jsx("summary", { children: "Стартовое снаряжение" }), /* @__PURE__ */ jsx(ClassEquipmentEditor, {
+									draft,
+									update
+								})]
+							}), /* @__PURE__ */ jsxs("details", {
+								className: "hb-basic-details",
+								children: [/* @__PURE__ */ jsx("summary", { children: "Владения и мультикласс" }), /* @__PURE__ */ jsx(ClassTraining, {
+									draft,
+									update
+								})]
 							})] }),
 							tab === "Основное" && draft.type === "spell" && /* @__PURE__ */ jsx(SpellCardPreview, { draft }),
 							tab === "Механика" && (draft.type === "spell" ? /* @__PURE__ */ jsx(SpellMechanicsEditor, {
@@ -53537,21 +53824,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								update,
 								entities: refs
 							})),
-							tab === "Состав" && draft.type === "class" && /* @__PURE__ */ jsx(ClassPackageContents, {
-								root: draft,
+							tab === "Развитие и способности" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassDevelopment, {
+								draft,
+								update,
+								entities: refs,
 								pack: draftPackage,
 								open
-							}),
-							tab === "Развитие 1–20" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassProgression, {
-								draft,
-								update,
-								editFeatures: () => setTab("Способности класса")
-							}),
-							tab === "Способности класса" && ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsx(ClassFeatures, {
-								draft,
-								update,
-								entities: refs
-							}),
+							}, draft.id),
 							tab === "Заклинания" && [
 								"class",
 								"subclass",
@@ -53564,75 +53843,6 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 								update,
 								entities: refs
 							})] }),
-							tab === "Разблокировки по уровням" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-								/* @__PURE__ */ jsxs("div", {
-									className: "hb-message",
-									children: [/* @__PURE__ */ jsx("b", { children: "Это не список обычных способностей." }), " Здесь уровень связывается с уже созданным отдельным объектом: ресурсом, атакой, заклинанием, выбором или подклассом. Текстовые способности с уровнем добавляются во вкладке «Способности класса»."]
-								}),
-								/* @__PURE__ */ jsx("p", { children: "Уровни класса 1–20. Ссылки выбираются кнопками. Бонус мастерства рассчитывается по общему уровню персонажа." }),
-								Array.from({ length: 20 }, (_, i) => i + 1).map((level) => /* @__PURE__ */ jsxs("details", {
-									className: "hb-level",
-									open: !!draft.advancement?.[level]?.length,
-									children: [
-										/* @__PURE__ */ jsxs("summary", { children: [
-											"Уровень ",
-											level,
-											" · БМ +",
-											2 + Math.floor((level - 1) / 4),
-											" · ",
-											draft.advancement?.[level]?.length || 0,
-											" разблокировок"
-										] }),
-										(draft.advancement?.[level] || []).map((row, i) => /* @__PURE__ */ jsxs("div", {
-											className: "hb-row",
-											children: [
-												/* @__PURE__ */ jsx(Select, {
-													label: "Тип записи уровня",
-													value: row.type,
-													options: {
-														feature: "Способность",
-														resource: "Ресурс",
-														attack: "Атака",
-														spell: "Заклинание",
-														asi_or_feat: "ASI / черта",
-														subclass: "Подкласс",
-														choice: "Выбор"
-													},
-													onChange: (v) => update({ advancement: {
-														...draft.advancement,
-														[level]: draft.advancement[level].map((r, n) => n === i ? { type: v } : r)
-													} })
-												}),
-												!["asi_or_feat", "subclass"].includes(row.type) && /* @__PURE__ */ jsx(RefPicker, {
-													value: row.id || "",
-													onChange: (id) => update({ advancement: {
-														...draft.advancement,
-														[level]: draft.advancement[level].map((r, n) => n === i ? {
-															...r,
-															id
-														} : r)
-													} }),
-													entities: refs
-												}),
-												/* @__PURE__ */ jsx("button", {
-													onClick: () => update({ advancement: {
-														...draft.advancement,
-														[level]: draft.advancement[level].filter((_, n) => i !== n)
-													} }),
-													children: "Удалить запись"
-												})
-											]
-										}, i)),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => update({ advancement: {
-												...draft.advancement,
-												[level]: [...draft.advancement?.[level] || [], { type: "feature" }]
-											} }),
-											children: "+ Запись"
-										})
-									]
-								}, level))
-							] }),
 							tab === "Таблицы" && /* @__PURE__ */ jsx(TableEditor, {
 								draft,
 								update
@@ -53988,440 +54198,472 @@ function Mechanics({ draft, update, entities }) {
 	return /* @__PURE__ */ jsxs("div", {
 		className: "hb-mechanics",
 		children: [
-			/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
-			(draft.effects || []).map((e, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
-				/* @__PURE__ */ jsx(Select, {
-					label: "Тип эффекта",
-					value: e.type,
-					onChange: (type) => setEffect(i, { type }),
-					options: effectTypes
-				}),
-				/ability|saving_throw/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-					label: "Характеристика эффекта",
-					value: e.ability || "str",
-					onChange: (ability) => setEffect(i, { ability }),
-					options: {
-						all: "Все",
-						...abilityLabels
-					}
-				}),
-				/skill|passive/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-					label: "Навык эффекта",
-					value: e.skill || "perception",
-					onChange: (skill) => setEffect(i, { skill }),
-					options: Object.fromEntries(Object.entries(skillKeys).map(([name, s]) => [s.key, name]))
-				}),
-				["speed_bonus", "movement_mode"].includes(e.type) && /* @__PURE__ */ jsx(Select, {
-					label: "Вид скорости",
-					value: e.mode || "walk",
-					onChange: (mode) => setEffect(i, { mode }),
-					options: {
-						walk: "Ходьба",
-						swim: "Плавание",
-						climb: "Лазание",
-						fly: "Полёт"
-					}
-				}),
-				e.type.startsWith("damage_") && /* @__PURE__ */ jsx(Select, {
-					label: "Тип урона эффекта",
-					value: e.damage || "fire",
-					onChange: (damage) => setEffect(i, { damage }),
-					options: Object.fromEntries(damageTypes.map((t) => [t, t]))
-				}),
-				e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
-					label: "Состояние",
-					value: e.condition || "poisoned",
-					onChange: (condition) => setEffect(i, { condition }),
-					options: Object.fromEntries(conditionIds.map((t) => [t, t]))
-				}),
-				/group_proficiency|armor_proficiency/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-					label: "Группа владения",
-					value: e.group || "simple",
-					onChange: (group) => setEffect(i, { group }),
-					options: {
-						simple: "Простое оружие",
-						martial: "Воинское оружие",
-						light: "Лёгкие доспехи",
-						medium: "Средние доспехи",
-						heavy: "Тяжёлые доспехи",
-						shield: "Щиты"
-					}
-				}),
-				(e.type.startsWith("grant_") || [
-					"weapon_proficiency",
-					"tool_proficiency",
-					"language"
-				].includes(e.type)) && /* @__PURE__ */ jsx(RefPicker, {
-					entities,
-					value: e.id || "",
-					onChange: (id) => setEffect(i, { id })
-				}),
-				e.type === "sense" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
-					label: "Чувство",
-					value: e.sense || "darkvision",
-					onChange: (sense) => setEffect(i, { sense }),
-					options: {
-						darkvision: "Тёмное зрение",
-						blindsight: "Слепое зрение",
-						tremorsense: "Чувство вибрации",
-						truesight: "Истинное зрение"
-					}
-				}), /* @__PURE__ */ jsx("input", {
-					"aria-label": "Дальность чувства",
-					type: "number",
-					value: e.range || 60,
-					onChange: (event) => setEffect(i, { range: Number(event.target.value) })
-				})] }),
-				/* @__PURE__ */ jsx(Formula, {
-					value: e.formula ?? e.value ?? 0,
-					onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
-						formula: v,
-						value: void 0
-					} : { value: v })
-				}),
-				/* @__PURE__ */ jsx(Field, {
-					label: "Условие",
-					help: "Например @level >= 5. Пустое поле — постоянный эффект. Для предмета: equipped(@source).",
-					children: /* @__PURE__ */ jsx("input", {
-						value: e.when || "",
-						onChange: (event) => setEffect(i, { when: event.target.value })
-					})
-				}),
-				/* @__PURE__ */ jsx("button", {
-					onClick: () => update({ effects: draft.effects.filter((_, n) => n !== i) }),
-					children: "Удалить эффект"
-				})
-			] }, i)),
-			/* @__PURE__ */ jsx("button", {
-				onClick: () => update({ effects: [...draft.effects || [], {
-					type: "ability_bonus",
-					ability: "dex",
-					value: 1
-				}] }),
-				children: "+ Эффект"
-			}),
-			/* @__PURE__ */ jsx("h3", { children: "Ресурсы" }),
-			(draft.resources || []).map((r, i) => {
-				const patch = (p) => update({ resources: draft.resources.map((x, n) => i === n ? {
-					...x,
-					...p
-				} : x) });
-				return /* @__PURE__ */ jsxs("fieldset", { children: [
-					/* @__PURE__ */ jsx("input", {
-						"aria-label": "Название ресурса",
-						value: r.name,
-						onChange: (e) => patch({ name: e.target.value })
-					}),
-					/* @__PURE__ */ jsx("code", { children: r.id }),
-					/* @__PURE__ */ jsx(Formula, {
-						label: "Максимум ресурса",
-						value: r.max,
-						onChange: (max) => patch({ max })
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Восстановление",
-						children: /* @__PURE__ */ jsx("div", {
-							className: "hb-toolbar",
-							children: [
-								["short_rest", "Короткий отдых"],
-								["long_rest", "Долгий отдых"],
-								["dawn", "Рассвет"],
-								["initiative", "Инициатива"],
-								["manual", "Вручную"]
-							].map(([id, name]) => /* @__PURE__ */ jsx("button", {
-								"aria-pressed": r.restore.includes(id),
-								onClick: () => patch({ restore: r.restore.includes(id) ? r.restore.filter((x) => x !== id) : [...r.restore, id] }),
-								children: name
-							}, id))
-						})
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "С уровня",
-						children: /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: 1,
-							max: 20,
-							value: r.level || 1,
-							onChange: (e) => patch({ level: Number(e.target.value) })
-						})
-					}),
-					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({ resources: draft.resources.filter((_, n) => i !== n) }),
-						children: "Удалить ресурс"
-					})
-				] }, r.id);
-			}),
-			/* @__PURE__ */ jsx("button", {
-				onClick: () => update({ resources: [...draft.resources || [], {
-					id: newHomebrew("resource").id,
-					name: "Новый ресурс",
-					max: "@pb",
-					restore: ["long_rest"],
-					showOnSheet: true
-				}] }),
-				children: "+ Ресурс"
-			}),
-			/* @__PURE__ */ jsx("h3", { children: "Атаки" }),
-			(draft.attacks || []).map((a, i) => {
-				const patch = (p) => update({ attacks: draft.attacks.map((x, n) => i === n ? {
-					...x,
-					...p
-				} : x) });
-				return /* @__PURE__ */ jsxs("fieldset", { children: [
-					/* @__PURE__ */ jsx("input", {
-						"aria-label": "Название атаки",
-						value: a.name,
-						onChange: (e) => patch({ name: e.target.value })
-					}),
-					/* @__PURE__ */ jsx("code", { children: a.id }),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Характеристика атаки",
-						value: a.ability,
-						onChange: (ability) => patch({ ability }),
-						options: abilityLabels
-					}),
-					/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-						type: "checkbox",
-						checked: a.proficient,
-						onChange: (e) => patch({ proficient: e.target.checked })
-					}), "Бонус мастерства к атаке"] }),
-					/* @__PURE__ */ jsx(Formula, {
-						label: "Дополнительный бонус атаки",
-						value: a.bonus || 0,
-						onChange: (bonus) => patch({ bonus })
-					}),
-					a.damage.map((d, j) => /* @__PURE__ */ jsxs("div", { children: [
-						/* @__PURE__ */ jsx(Formula, {
-							label: "Формула урона",
-							value: d.formula,
-							onChange: (formula) => patch({ damage: a.damage.map((x, n) => n === j ? {
-								...x,
-								formula
-							} : x) })
-						}),
+			/* @__PURE__ */ jsxs("details", {
+				open: !!draft.effects?.length,
+				children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", draft.effects?.length || 0] }),
+					/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
+					(draft.effects || []).map((e, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
 						/* @__PURE__ */ jsx(Select, {
-							label: "Тип урона",
-							value: d.type,
-							onChange: (type) => patch({ damage: a.damage.map((x, n) => n === j ? {
-								...x,
-								type
-							} : x) }),
-							options: Object.fromEntries(damageTypes.map((x) => [x, x]))
+							label: "Тип эффекта",
+							value: e.type,
+							onChange: (type) => setEffect(i, { type }),
+							options: effectTypes
+						}),
+						/ability|saving_throw/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+							label: "Характеристика эффекта",
+							value: e.ability || "str",
+							onChange: (ability) => setEffect(i, { ability }),
+							options: {
+								all: "Все",
+								...abilityLabels
+							}
+						}),
+						/skill|passive/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+							label: "Навык эффекта",
+							value: e.skill || "perception",
+							onChange: (skill) => setEffect(i, { skill }),
+							options: Object.fromEntries(Object.entries(skillKeys).map(([name, s]) => [s.key, name]))
+						}),
+						["speed_bonus", "movement_mode"].includes(e.type) && /* @__PURE__ */ jsx(Select, {
+							label: "Вид скорости",
+							value: e.mode || "walk",
+							onChange: (mode) => setEffect(i, { mode }),
+							options: {
+								walk: "Ходьба",
+								swim: "Плавание",
+								climb: "Лазание",
+								fly: "Полёт"
+							}
+						}),
+						e.type.startsWith("damage_") && /* @__PURE__ */ jsx(Select, {
+							label: "Тип урона эффекта",
+							value: e.damage || "fire",
+							onChange: (damage) => setEffect(i, { damage }),
+							options: Object.fromEntries(damageTypes.map((t) => [t, t]))
+						}),
+						e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
+							label: "Состояние",
+							value: e.condition || "poisoned",
+							onChange: (condition) => setEffect(i, { condition }),
+							options: Object.fromEntries(conditionIds.map((t) => [t, t]))
+						}),
+						/group_proficiency|armor_proficiency/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+							label: "Группа владения",
+							value: e.group || "simple",
+							onChange: (group) => setEffect(i, { group }),
+							options: {
+								simple: "Простое оружие",
+								martial: "Воинское оружие",
+								light: "Лёгкие доспехи",
+								medium: "Средние доспехи",
+								heavy: "Тяжёлые доспехи",
+								shield: "Щиты"
+							}
+						}),
+						(e.type.startsWith("grant_") || [
+							"weapon_proficiency",
+							"tool_proficiency",
+							"language"
+						].includes(e.type)) && /* @__PURE__ */ jsx(RefPicker, {
+							entities,
+							value: e.id || "",
+							onChange: (id) => setEffect(i, { id })
+						}),
+						e.type === "sense" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
+							label: "Чувство",
+							value: e.sense || "darkvision",
+							onChange: (sense) => setEffect(i, { sense }),
+							options: {
+								darkvision: "Тёмное зрение",
+								blindsight: "Слепое зрение",
+								tremorsense: "Чувство вибрации",
+								truesight: "Истинное зрение"
+							}
+						}), /* @__PURE__ */ jsx("input", {
+							"aria-label": "Дальность чувства",
+							type: "number",
+							value: e.range || 60,
+							onChange: (event) => setEffect(i, { range: Number(event.target.value) })
+						})] }),
+						/* @__PURE__ */ jsx(Formula, {
+							value: e.formula ?? e.value ?? 0,
+							onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
+								formula: v,
+								value: void 0
+							} : { value: v })
+						}),
+						/* @__PURE__ */ jsx(Field, {
+							label: "Условие",
+							help: "Например @level >= 5. Пустое поле — постоянный эффект. Для предмета: equipped(@source).",
+							children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+								label: "Условие эффекта",
+								value: e.when || "",
+								onChange: (when) => setEffect(i, { when })
+							})
 						}),
 						/* @__PURE__ */ jsx("button", {
-							onClick: () => patch({ damage: a.damage.filter((_, n) => n !== j) }),
-							children: "Убрать урон"
+							onClick: () => update({ effects: draft.effects.filter((_, n) => n !== i) }),
+							children: "Удалить эффект"
 						})
-					] }, j)),
+					] }, i)),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => patch({ damage: [...a.damage, {
-							formula: "1d6",
-							type: "fire"
+						onClick: () => update({ effects: [...draft.effects || [], {
+							type: "ability_bonus",
+							ability: "dex",
+							value: 1
 						}] }),
-						children: "+ Дополнительный урон"
-					}),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Спасбросок вместо атаки",
-						value: a.saveAbility || "",
-						onChange: (v) => patch({
-							saveAbility: v || void 0,
-							saveDc: "8 + @pb + @mod." + a.ability
-						}),
-						options: {
-							"": "Бросок атаки",
-							...abilityLabels
-						}
-					}),
-					a.saveAbility && /* @__PURE__ */ jsx(Formula, {
-						label: "Сложность спасброска",
-						value: a.saveDc || "",
-						onChange: (saveDc) => patch({ saveDc })
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Дистанция",
-						children: /* @__PURE__ */ jsx("input", {
-							value: a.range || "",
-							onChange: (e) => patch({ range: e.target.value })
-						})
-					}),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Действие атаки",
-						value: a.actionType || "action",
-						onChange: (actionType) => patch({ actionType }),
-						options: {
-							action: "Действие",
-							bonus_action: "Бонусное",
-							reaction: "Реакция",
-							free: "Свободное",
-							special: "Особое"
-						}
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Условие",
-						children: /* @__PURE__ */ jsx("input", {
-							value: a.when || "",
-							onChange: (e) => patch({ when: e.target.value })
-						})
+						children: "+ Эффект"
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("details", {
+				open: !!draft.resources?.length,
+				children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы · ", draft.resources?.length || 0] }),
+					/* @__PURE__ */ jsx("h3", { children: "Ресурсы" }),
+					(draft.resources || []).map((r, i) => {
+						const patch = (p) => update({ resources: draft.resources.map((x, n) => i === n ? {
+							...x,
+							...p
+						} : x) });
+						return /* @__PURE__ */ jsxs("fieldset", { children: [
+							/* @__PURE__ */ jsx("input", {
+								"aria-label": "Название ресурса",
+								value: r.name,
+								onChange: (e) => patch({ name: e.target.value })
+							}),
+							/* @__PURE__ */ jsx("code", { children: r.id }),
+							/* @__PURE__ */ jsx(Formula, {
+								label: "Максимум ресурса",
+								value: r.max,
+								onChange: (max) => patch({ max })
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "Восстановление",
+								children: /* @__PURE__ */ jsx("div", {
+									className: "hb-toolbar",
+									children: [
+										["short_rest", "Короткий отдых"],
+										["long_rest", "Долгий отдых"],
+										["dawn", "Рассвет"],
+										["initiative", "Инициатива"],
+										["manual", "Вручную"]
+									].map(([id, name]) => /* @__PURE__ */ jsx("button", {
+										"aria-pressed": r.restore.includes(id),
+										onClick: () => patch({ restore: r.restore.includes(id) ? r.restore.filter((x) => x !== id) : [...r.restore, id] }),
+										children: name
+									}, id))
+								})
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "С уровня",
+								children: /* @__PURE__ */ jsx("input", {
+									type: "number",
+									min: 1,
+									max: 20,
+									value: r.level || 1,
+									onChange: (e) => patch({ level: Number(e.target.value) })
+								})
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => update({ resources: draft.resources.filter((_, n) => i !== n) }),
+								children: "Удалить ресурс"
+							})
+						] }, r.id);
 					}),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({ attacks: draft.attacks.filter((_, n) => i !== n) }),
-						children: "Удалить атаку"
+						onClick: () => update({ resources: [...draft.resources || [], {
+							id: newHomebrew("resource").id,
+							name: "Новый ресурс",
+							max: "@pb",
+							restore: ["long_rest"],
+							showOnSheet: true
+						}] }),
+						children: "+ Ресурс"
 					})
-				] }, a.id);
+				]
 			}),
-			/* @__PURE__ */ jsx("button", {
-				onClick: () => update({ attacks: [...draft.attacks || [], {
-					id: newHomebrew("attack").id,
-					name: "Новая атака",
-					ability: "str",
-					proficient: true,
-					damage: [{
-						formula: "1d8 + @mod.str",
-						type: "slashing"
-					}],
-					actionType: "action",
-					range: "5 футов"
-				}] }),
-				children: "+ Атака"
-			}),
-			/* @__PURE__ */ jsx("h3", { children: "Выборы" }),
-			(draft.choices || []).map((c, i) => {
-				const patch = (p) => update({ choices: draft.choices.map((x, n) => i === n ? {
-					...x,
-					...p
-				} : x) });
-				return /* @__PURE__ */ jsxs("fieldset", { children: [
-					/* @__PURE__ */ jsx("input", {
-						"aria-label": "Название выбора",
-						value: c.name,
-						onChange: (e) => patch({ name: e.target.value })
-					}),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Тип выбора",
-						value: c.type,
-						onChange: (type) => patch({ type }),
-						options: {
-							feature: "Способность",
-							skill: "Навык",
-							expertise: "Экспертность",
-							spell: "Заклинание",
-							feat: "Черта",
-							item: "Предмет",
-							language: "Язык",
-							tool: "Инструмент",
-							option: "Вариант"
-						}
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Количество",
-						children: /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: 1,
-							max: 50,
-							value: c.count,
-							onChange: (e) => patch({ count: Number(e.target.value) })
-						})
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "С уровня",
-						children: /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: 1,
-							max: 20,
-							value: c.level || 1,
-							onChange: (e) => patch({ level: Number(e.target.value) })
-						})
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Общая группа выбора",
-						children: /* @__PURE__ */ jsx("input", {
-							"aria-label": "Группа выбора",
-							placeholder: "Например: тотемы",
-							value: c.choiceGroup || "",
-							onChange: (e) => patch({ choiceGroup: e.target.value })
-						})
-					}),
-					/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-						type: "checkbox",
-						checked: !!c.uniqueAcrossGroup,
-						onChange: (e) => patch({ uniqueAcrossGroup: e.target.checked })
-					}), " Не повторять варианты в группе"] }),
-					/* @__PURE__ */ jsx("p", { children: c.from.map((id) => entities.find((e) => e.id === id)?.name || id).join(", ") }),
-					/* @__PURE__ */ jsx(RefPicker, {
-						value: "",
-						label: "Добавить вариант",
-						entities,
-						onChange: (id) => patch({ from: [...new Set([...c.from, id])] })
+			/* @__PURE__ */ jsxs("details", {
+				open: !!draft.attacks?.length,
+				children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Атаки · ", draft.attacks?.length || 0] }),
+					/* @__PURE__ */ jsx("h3", { children: "Атаки" }),
+					(draft.attacks || []).map((a, i) => {
+						const patch = (p) => update({ attacks: draft.attacks.map((x, n) => i === n ? {
+							...x,
+							...p
+						} : x) });
+						return /* @__PURE__ */ jsxs("fieldset", { children: [
+							/* @__PURE__ */ jsx("input", {
+								"aria-label": "Название атаки",
+								value: a.name,
+								onChange: (e) => patch({ name: e.target.value })
+							}),
+							/* @__PURE__ */ jsx("code", { children: a.id }),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Характеристика атаки",
+								value: a.ability,
+								onChange: (ability) => patch({ ability }),
+								options: abilityLabels
+							}),
+							/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: a.proficient,
+								onChange: (e) => patch({ proficient: e.target.checked })
+							}), "Бонус мастерства к атаке"] }),
+							/* @__PURE__ */ jsx(Formula, {
+								label: "Дополнительный бонус атаки",
+								value: a.bonus || 0,
+								onChange: (bonus) => patch({ bonus })
+							}),
+							a.damage.map((d, j) => /* @__PURE__ */ jsxs("div", { children: [
+								/* @__PURE__ */ jsx(Formula, {
+									label: "Формула урона",
+									value: d.formula,
+									onChange: (formula) => patch({ damage: a.damage.map((x, n) => n === j ? {
+										...x,
+										formula
+									} : x) })
+								}),
+								/* @__PURE__ */ jsx(Select, {
+									label: "Тип урона",
+									value: d.type,
+									onChange: (type) => patch({ damage: a.damage.map((x, n) => n === j ? {
+										...x,
+										type
+									} : x) }),
+									options: Object.fromEntries(damageTypes.map((x) => [x, x]))
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => patch({ damage: a.damage.filter((_, n) => n !== j) }),
+									children: "Убрать урон"
+								})
+							] }, j)),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => patch({ damage: [...a.damage, {
+									formula: "1d6",
+									type: "fire"
+								}] }),
+								children: "+ Дополнительный урон"
+							}),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Спасбросок вместо атаки",
+								value: a.saveAbility || "",
+								onChange: (v) => patch({
+									saveAbility: v || void 0,
+									saveDc: "8 + @pb + @mod." + a.ability
+								}),
+								options: {
+									"": "Бросок атаки",
+									...abilityLabels
+								}
+							}),
+							a.saveAbility && /* @__PURE__ */ jsx(Formula, {
+								label: "Сложность спасброска",
+								value: a.saveDc || "",
+								onChange: (saveDc) => patch({ saveDc })
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "Дистанция",
+								children: /* @__PURE__ */ jsx("input", {
+									value: a.range || "",
+									onChange: (e) => patch({ range: e.target.value })
+								})
+							}),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Действие атаки",
+								value: a.actionType || "action",
+								onChange: (actionType) => patch({ actionType }),
+								options: {
+									action: "Действие",
+									bonus_action: "Бонусное",
+									reaction: "Реакция",
+									free: "Свободное",
+									special: "Особое"
+								}
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "Условие",
+								children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+									label: "Условие атаки",
+									value: a.when || "",
+									onChange: (when) => patch({ when })
+								})
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => update({ attacks: draft.attacks.filter((_, n) => i !== n) }),
+								children: "Удалить атаку"
+							})
+						] }, a.id);
 					}),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({ choices: draft.choices.filter((_, n) => n !== i) }),
-						children: "Удалить выбор"
+						onClick: () => update({ attacks: [...draft.attacks || [], {
+							id: newHomebrew("attack").id,
+							name: "Новая атака",
+							ability: "str",
+							proficient: true,
+							damage: [{
+								formula: "1d8 + @mod.str",
+								type: "slashing"
+							}],
+							actionType: "action",
+							range: "5 футов"
+						}] }),
+						children: "+ Атака"
 					})
-				] }, c.id);
+				]
 			}),
-			/* @__PURE__ */ jsx("button", {
-				onClick: () => update({ choices: [...draft.choices || [], {
-					id: newHomebrew("ability").id,
-					name: "Выберите способность",
-					type: "feature",
-					count: 1,
-					from: [],
-					level: 1
-				}] }),
-				children: "+ Выбор"
-			}),
-			/* @__PURE__ */ jsx("h3", { children: "Действия" }),
-			(draft.actions || []).map((a, i) => {
-				const patch = (p) => update({ actions: draft.actions.map((x, n) => i === n ? {
-					...x,
-					...p
-				} : x) });
-				return /* @__PURE__ */ jsxs("fieldset", { children: [
-					/* @__PURE__ */ jsx("input", {
-						"aria-label": "Название действия",
-						value: a.name,
-						onChange: (e) => patch({ name: e.target.value })
-					}),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Активация",
-						value: a.actionType,
-						onChange: (actionType) => patch({ actionType }),
-						options: {
-							action: "Действие",
-							bonus_action: "Бонусное",
-							reaction: "Реакция",
-							free: "Свободное"
-						}
-					}),
-					/* @__PURE__ */ jsx(Select, {
-						label: "Ресурс действия",
-						value: a.cost?.resource || "",
-						onChange: (resource) => patch({ cost: resource ? {
-							resource,
-							amount: 1
-						} : void 0 }),
-						options: {
-							"": "Без траты",
-							...Object.fromEntries((draft.resources || []).map((r) => [r.id, r.name]))
-						}
-					}),
-					/* @__PURE__ */ jsx("textarea", {
-						value: a.description || "",
-						onChange: (e) => patch({ description: e.target.value })
+			/* @__PURE__ */ jsxs("details", {
+				open: !!draft.choices?.length,
+				children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Выборы · ", draft.choices?.length || 0] }),
+					/* @__PURE__ */ jsx("h3", { children: "Выборы" }),
+					(draft.choices || []).map((c, i) => {
+						const patch = (p) => update({ choices: draft.choices.map((x, n) => i === n ? {
+							...x,
+							...p
+						} : x) });
+						return /* @__PURE__ */ jsxs("fieldset", { children: [
+							/* @__PURE__ */ jsx("input", {
+								"aria-label": "Название выбора",
+								value: c.name,
+								onChange: (e) => patch({ name: e.target.value })
+							}),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Тип выбора",
+								value: c.type,
+								onChange: (type) => patch({ type }),
+								options: {
+									feature: "Способность",
+									skill: "Навык",
+									expertise: "Экспертность",
+									spell: "Заклинание",
+									feat: "Черта",
+									item: "Предмет",
+									language: "Язык",
+									tool: "Инструмент",
+									option: "Вариант"
+								}
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "Количество",
+								children: /* @__PURE__ */ jsx("input", {
+									type: "number",
+									min: 1,
+									max: 50,
+									value: c.count,
+									onChange: (e) => patch({ count: Number(e.target.value) })
+								})
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "С уровня",
+								children: /* @__PURE__ */ jsx("input", {
+									type: "number",
+									min: 1,
+									max: 20,
+									value: c.level || 1,
+									onChange: (e) => patch({ level: Number(e.target.value) })
+								})
+							}),
+							/* @__PURE__ */ jsx(Field, {
+								label: "Общая группа выбора",
+								children: /* @__PURE__ */ jsx("input", {
+									"aria-label": "Группа выбора",
+									placeholder: "Например: тотемы",
+									value: c.choiceGroup || "",
+									onChange: (e) => patch({ choiceGroup: e.target.value })
+								})
+							}),
+							/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: !!c.uniqueAcrossGroup,
+								onChange: (e) => patch({ uniqueAcrossGroup: e.target.checked })
+							}), " Не повторять варианты в группе"] }),
+							/* @__PURE__ */ jsx("p", { children: c.from.map((id) => entities.find((e) => e.id === id)?.name || id).join(", ") }),
+							/* @__PURE__ */ jsx(RefPicker, {
+								value: "",
+								label: "Добавить вариант",
+								entities,
+								onChange: (id) => patch({ from: [...new Set([...c.from, id])] })
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => update({ choices: draft.choices.filter((_, n) => n !== i) }),
+								children: "Удалить выбор"
+							})
+						] }, c.id);
 					}),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({ actions: draft.actions.filter((_, n) => n !== i) }),
-						children: "Удалить действие"
+						onClick: () => update({ choices: [...draft.choices || [], {
+							id: newHomebrew("ability").id,
+							name: "Выберите способность",
+							type: "feature",
+							count: 1,
+							from: [],
+							level: 1
+						}] }),
+						children: "+ Выбор"
 					})
-				] }, a.id);
+				]
 			}),
-			/* @__PURE__ */ jsx("button", {
-				onClick: () => update({ actions: [...draft.actions || [], {
-					id: newHomebrew("ability").id,
-					name: "Новое действие",
-					actionType: "action"
-				}] }),
-				children: "+ Действие"
+			/* @__PURE__ */ jsxs("details", {
+				open: !!draft.actions?.length,
+				children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Действия · ", draft.actions?.length || 0] }),
+					/* @__PURE__ */ jsx("h3", { children: "Действия" }),
+					(draft.actions || []).map((a, i) => {
+						const patch = (p) => update({ actions: draft.actions.map((x, n) => i === n ? {
+							...x,
+							...p
+						} : x) });
+						return /* @__PURE__ */ jsxs("fieldset", { children: [
+							/* @__PURE__ */ jsx("input", {
+								"aria-label": "Название действия",
+								value: a.name,
+								onChange: (e) => patch({ name: e.target.value })
+							}),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Активация",
+								value: a.actionType,
+								onChange: (actionType) => patch({ actionType }),
+								options: {
+									action: "Действие",
+									bonus_action: "Бонусное",
+									reaction: "Реакция",
+									free: "Свободное"
+								}
+							}),
+							/* @__PURE__ */ jsx(Select, {
+								label: "Ресурс действия",
+								value: a.cost?.resource || "",
+								onChange: (resource) => patch({ cost: resource ? {
+									resource,
+									amount: 1
+								} : void 0 }),
+								options: {
+									"": "Без траты",
+									...Object.fromEntries((draft.resources || []).map((r) => [r.id, r.name]))
+								}
+							}),
+							/* @__PURE__ */ jsx("textarea", {
+								value: a.description || "",
+								onChange: (e) => patch({ description: e.target.value })
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => update({ actions: draft.actions.filter((_, n) => n !== i) }),
+								children: "Удалить действие"
+							})
+						] }, a.id);
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => update({ actions: [...draft.actions || [], {
+							id: newHomebrew("ability").id,
+							name: "Новое действие",
+							actionType: "action"
+						}] }),
+						children: "+ Действие"
+					})
+				]
 			}),
 			draft.type === "table" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 				/* @__PURE__ */ jsx("h3", { children: "Таблица" }),
@@ -54504,7 +54746,7 @@ function HomebrewOnSheet({ character, onChange }) {
 			].includes(e.type)).map((e) => {
 				const statuses = choiceStatuses.filter((status) => status.owner.id === e.id);
 				return /* @__PURE__ */ jsxs("details", {
-					defaultOpen: statuses.reduce((sum, status) => sum + status.missing, 0) > 0 || statuses.some((status) => status.selected.length > 0),
+					open: statuses.reduce((sum, status) => sum + status.missing, 0) > 0 || statuses.some((status) => status.selected.length > 0),
 					children: [
 						/* @__PURE__ */ jsxs("summary", { children: [
 							homebrewTypeLabels[e.type],
@@ -55072,81 +55314,114 @@ function ClassTraining({ draft, update }) {
 		]
 	});
 }
-function ClassProgression({ draft, update, editFeatures }) {
-	const features = draft.features || [];
-	const add = (level) => {
-		update({ features: [...features, {
-			id: newHomebrew("ability").id,
-			level,
-			name: "Новая способность",
-			description: ""
-		}] });
-		editFeatures();
-	};
-	const toggleAsi = (level) => {
-		const rows = draft.advancement?.[level] || [], enabled = rows.some((row) => row.type === "asi_or_feat");
-		update({ advancement: {
-			...draft.advancement,
-			[level]: enabled ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]
-		} });
-	};
+function ClassDevelopment({ draft, update, entities, pack, open }) {
+	const [level, setLevel] = useState(draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1);
+	const rows = draft.advancement?.[level] || [];
+	const patchRows = (next) => update({ advancement: {
+		...draft.advancement,
+		[level]: next
+	} });
+	const hasAsi = rows.some((row) => row.type === "asi_or_feat");
 	return /* @__PURE__ */ jsxs("section", {
-		className: "hb-class-progression",
+		className: "hb-development",
 		children: [
-			/* @__PURE__ */ jsxs("h3", { children: [
-				"Развитие ",
-				draft.type === "class" ? "класса" : "подкласса",
-				" по уровням"
-			] }),
-			/* @__PURE__ */ jsx("p", { children: "Способности добавляются прямо в нужный уровень и сразу становятся частью итогового листа. Для класса здесь же отмечаются уровни повышения характеристик / черт." }),
-			/* @__PURE__ */ jsx("div", {
-				className: "hb-progression-scroll",
-				children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
-					/* @__PURE__ */ jsx("th", { children: "Уровень" }),
-					/* @__PURE__ */ jsx("th", { children: "Способности" }),
-					/* @__PURE__ */ jsx("th", { children: "Особые решения" })
-				] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, index) => index + 1).map((level) => {
-					const rows = draft.advancement?.[level] || [], hasAsi = rows.some((row) => row.type === "asi_or_feat");
-					return /* @__PURE__ */ jsxs("tr", { children: [
-						/* @__PURE__ */ jsx("th", {
-							scope: "row",
-							children: level
-						}),
-						/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
-							className: "hb-level-features",
-							children: [features.filter((feature) => feature.level === level).map((feature) => /* @__PURE__ */ jsxs("button", {
-								type: "button",
-								onClick: editFeatures,
-								children: [feature.name || "Без названия", " →"]
-							}, feature.id)), /* @__PURE__ */ jsx("button", {
-								type: "button",
-								"aria-label": `Добавить способность на уровне ${level}`,
-								onClick: () => add(level),
-								children: "+ Способность"
-							})]
-						}) }),
-						/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsxs("div", {
-							className: "hb-level-specials",
-							children: [
-								draft.type === "class" && /* @__PURE__ */ jsx("button", {
-									type: "button",
-									"aria-label": `ASI или черта на уровне ${level}`,
-									"aria-pressed": hasAsi,
-									onClick: () => toggleAsi(level),
-									children: hasAsi ? "✓ ASI / черта" : "+ ASI / черта"
-								}),
-								draft.type === "class" && draft.subclass?.chooseAtLevel === level ? /* @__PURE__ */ jsx("span", { children: "Выбор подкласса" }) : null,
-								rows.filter((row) => row.type !== "asi_or_feat").map((row, i) => /* @__PURE__ */ jsxs("span", { children: [row.type === "subclass" ? "Подкласс" : row.type === "choice" ? "Выбор" : row.type === "resource" ? "Ресурс" : row.type === "attack" ? "Атака" : row.type === "spell" ? "Заклинание" : "Особенность", " · "] }, i))
-							]
-						}) })
-					] }, level);
-				}) })] })
+			/* @__PURE__ */ jsx("h3", { children: "Развитие и способности" }),
+			/* @__PURE__ */ jsx("p", { children: "Выберите уровень. Здесь собраны способности, повышения характеристик и связанные объекты, которые герой получает на этом уровне." }),
+			/* @__PURE__ */ jsx("nav", {
+				className: "hb-level-picker",
+				"aria-label": "Уровни класса",
+				children: Array.from({ length: 20 }, (_, i) => i + 1).map((n) => {
+					const count = (draft.features || []).filter((f) => f.level === n).length + (draft.advancement?.[n]?.length || 0);
+					return /* @__PURE__ */ jsxs("button", {
+						type: "button",
+						"aria-label": `Уровень ${n}: ${count} записей`,
+						"aria-pressed": level === n,
+						onClick: () => setLevel(n),
+						children: [/* @__PURE__ */ jsx("strong", { children: n }), /* @__PURE__ */ jsx("small", { children: count ? `${count} записей` : "Пусто" })]
+					}, n);
+				})
 			}),
-			/* @__PURE__ */ jsx("p", { children: "Ячейки и известные заклинания настраиваются в разделе «Заклинания». Дополнительные связи с отдельными объектами — в «Разблокировках по уровням»." })
+			/* @__PURE__ */ jsxs("h3", { children: ["Уровень ", level] }),
+			draft.type === "class" && /* @__PURE__ */ jsxs("div", {
+				className: "hb-toolbar",
+				children: [/* @__PURE__ */ jsx("button", {
+					type: "button",
+					"aria-pressed": hasAsi,
+					onClick: () => patchRows(hasAsi ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]),
+					children: hasAsi ? "✓ Повышение характеристик / черта" : "+ Повышение характеристик / черта"
+				}), draft.subclass?.chooseAtLevel === level && /* @__PURE__ */ jsx("span", { children: "На этом уровне выбирается подкласс" })]
+			}),
+			/* @__PURE__ */ jsx(ClassFeatures, {
+				draft,
+				update,
+				entities,
+				level
+			}),
+			/* @__PURE__ */ jsxs(HBDisclosure, {
+				className: "hb-basic-details",
+				initialOpen: rows.some((row) => row.type !== "asi_or_feat"),
+				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Выдать существующий объект · ", rows.filter((row) => row.type !== "asi_or_feat").length] }),
+				children: [
+					/* @__PURE__ */ jsx("p", { children: "Используйте для уже созданного ресурса, атаки, способности или выбора. Новую способность с текстом добавляйте кнопкой выше." }),
+					rows.map((row, i) => row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
+						className: "hb-linked-row",
+						children: [
+							/* @__PURE__ */ jsx(Select, {
+								label: "Что выдать на уровне",
+								value: row.type,
+								options: {
+									feature: "Способность",
+									resource: "Ресурс",
+									attack: "Атака",
+									spell: "Заклинание",
+									subclass: "Подкласс",
+									choice: "Выбор"
+								},
+								onChange: (type) => patchRows(rows.map((r, n) => n === i ? {
+									...r,
+									type
+								} : r))
+							}),
+							row.type !== "subclass" && /* @__PURE__ */ jsx(RefPicker, {
+								value: row.id || "",
+								onChange: (id) => patchRows(rows.map((r, n) => n === i ? {
+									...r,
+									id
+								} : r)),
+								entities
+							}),
+							row.id && entities.some((e) => e.id === row.id) && /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: () => open(entities.find((e) => e.id === row.id)),
+								children: ["Открыть ", entities.find((e) => e.id === row.id)?.name]
+							}),
+							/* @__PURE__ */ jsx("button", {
+								type: "button",
+								onClick: () => patchRows(rows.filter((_, n) => n !== i)),
+								children: "Убрать с уровня"
+							})
+						]
+					}, i)),
+					/* @__PURE__ */ jsxs("button", {
+						type: "button",
+						onClick: () => patchRows([...rows, { type: "feature" }]),
+						children: ["+ Связать объект с уровнем ", level]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("details", {
+				className: "hb-basic-details",
+				children: [/* @__PURE__ */ jsxs("summary", { children: ["Все связанные объекты набора · ", (pack?.members.length || 1) - 1] }), /* @__PURE__ */ jsx(ClassPackageContents, {
+					root: draft,
+					pack,
+					open
+				})]
+			}),
+			/* @__PURE__ */ jsx("p", { children: "Ячейки и бонусные заклинания настраиваются в разделе «Заклинания»." })
 		]
 	});
 }
-function ClassFeatures({ draft, update, entities }) {
+function ClassFeatures({ draft, update, entities, level }) {
 	const rows = draft.features || [];
 	const patch = (i, p) => update({ features: rows.map((f, n) => n === i ? {
 		...f,
@@ -55162,62 +55437,69 @@ function ClassFeatures({ draft, update, entities }) {
 		/* @__PURE__ */ jsx("p", { children: "Добавьте название, уровень и текст. Эффекты, ресурсы, атаки, выборы и действия принадлежат этой способности." }),
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-feature-list",
-			children: rows.map((feature, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
-				/* @__PURE__ */ jsx(Field, {
-					label: "Уровень",
-					children: /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: 1,
-						max: 20,
-						value: feature.level,
-						onChange: (e) => patch(i, { level: Number(e.target.value) })
+			children: rows.map((feature, i) => feature.level === level && /* @__PURE__ */ jsx(HBDisclosure, {
+				className: "hb-feature-card",
+				initialOpen: true,
+				summary: feature.name || "Новая способность",
+				children: /* @__PURE__ */ jsxs("fieldset", { children: [
+					/* @__PURE__ */ jsx(Field, {
+						label: "Уровень",
+						children: /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: 1,
+							max: 20,
+							value: feature.level,
+							onChange: (e) => patch(i, { level: Number(e.target.value) })
+						})
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Название",
+						children: /* @__PURE__ */ jsx("input", {
+							value: feature.name,
+							onChange: (e) => patch(i, { name: e.target.value })
+						})
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Описание",
+						help: "Введите @ и выберите кнопку броска, урона или значения. Формулы рассчитываются внутри интерактивных тегов [[…]].",
+						children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+							multiline: true,
+							label: "Описание способности",
+							value: feature.description,
+							onChange: (description) => patch(i, { description })
+						})
+					}),
+					/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Что делает способность: эффекты, ресурсы и выборы" }), /* @__PURE__ */ jsx(Mechanics, {
+						draft: {
+							...draft,
+							id: feature.id,
+							type: "ability",
+							effects: feature.effects || [],
+							resources: feature.resources || [],
+							attacks: feature.attacks || [],
+							actions: feature.actions || [],
+							choices: feature.choices || []
+						},
+						update: (p) => patch(i, Object.fromEntries(Object.entries(p).filter(([key]) => [
+							"effects",
+							"resources",
+							"attacks",
+							"actions",
+							"choices"
+						].includes(key)))),
+						entities
+					})] }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => update({ features: rows.filter((_, n) => n !== i) }),
+						children: "Удалить способность"
 					})
-				}),
-				/* @__PURE__ */ jsx(Field, {
-					label: "Название",
-					children: /* @__PURE__ */ jsx("input", {
-						value: feature.name,
-						onChange: (e) => patch(i, { name: e.target.value })
-					})
-				}),
-				/* @__PURE__ */ jsx(Field, {
-					label: "Описание",
-					children: /* @__PURE__ */ jsx("textarea", {
-						rows: 5,
-						value: feature.description,
-						onChange: (e) => patch(i, { description: e.target.value })
-					})
-				}),
-				/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Что делает способность: эффекты, ресурсы и выборы" }), /* @__PURE__ */ jsx(Mechanics, {
-					draft: {
-						...draft,
-						id: feature.id,
-						type: "ability",
-						effects: feature.effects || [],
-						resources: feature.resources || [],
-						attacks: feature.attacks || [],
-						actions: feature.actions || [],
-						choices: feature.choices || []
-					},
-					update: (p) => patch(i, Object.fromEntries(Object.entries(p).filter(([key]) => [
-						"effects",
-						"resources",
-						"attacks",
-						"actions",
-						"choices"
-					].includes(key)))),
-					entities
-				})] }),
-				/* @__PURE__ */ jsx("button", {
-					onClick: () => update({ features: rows.filter((_, n) => n !== i) }),
-					children: "Удалить способность"
-				})
-			] }, feature.id))
+				] })
+			}, feature.id))
 		}),
 		/* @__PURE__ */ jsxs("button", {
 			onClick: () => update({ features: [...rows, {
 				id: newHomebrew("ability").id,
-				level: draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1,
+				level,
 				name: "Новая способность",
 				description: ""
 			}] }),
@@ -55569,7 +55851,7 @@ function ClassPackageContents({ root, pack, open }) {
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-package-contents",
 		children: [
-			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Состав класса" }), /* @__PURE__ */ jsx("p", { children: "Это один переносимый пакет. Внутренние компоненты имеют собственные ID только для связей, условий и выборов; в библиотеке они не считаются отдельными работами." })] }), /* @__PURE__ */ jsxs("strong", { children: [members.length + 1, " компонентов"] })] }),
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Связанные объекты" }), /* @__PURE__ */ jsx("p", { children: "Это один переносимый пакет. Внутренние компоненты имеют собственные ID только для связей, условий и выборов; в библиотеке они не считаются отдельными работами." })] }), /* @__PURE__ */ jsxs("strong", { children: [members.length + 1, " компонентов"] })] }),
 			/* @__PURE__ */ jsx("div", {
 				className: "hb-package-summary",
 				children: pack && Object.entries(pack.counts).filter(([type]) => type !== "class").map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
@@ -55598,7 +55880,7 @@ function ClassPackageContents({ root, pack, open }) {
 					}, member.id))
 				})]
 			}, group.type)),
-			!members.length && /* @__PURE__ */ jsx("p", { children: "Пока у класса нет связанных компонентов. Обычные классовые способности добавляйте во вкладке «Способности класса» — отдельные записи для них не создаются." })
+			!members.length && /* @__PURE__ */ jsx("p", { children: "Пока у класса нет связанных компонентов. Обычные классовые способности добавляйте у нужного уровня выше — отдельные записи для них не создаются." })
 		]
 	});
 }
