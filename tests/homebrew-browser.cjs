@@ -176,7 +176,7 @@ const table = {
           .locator(".hb-feature-list input")
           .nth(1)
           .fill("Браузерная способность");
-        const featureDescription = page.getByLabel("Описание способности");
+        const featureDescription = page.getByLabel("Описание способности", { exact: true });
         await featureDescription.fill("Урон: @dam");
         assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности" }).isVisible());
         await page.keyboard.press("Enter");
