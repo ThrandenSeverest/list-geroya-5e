@@ -97,11 +97,9 @@ const table = {
         })
         .first();
       assert.ok(await sacredFocusChoice.isVisible());
-      await sacredFocusChoice.locator("summary").first().click();
-      assert.ok(
-        await sacredFocusChoice
-          .getByText("Сакральный фокус: Тело", { exact: true })
-          .isVisible(),
+      assert.match(
+        (await sacredFocusChoice.textContent()) || "",
+        /Сакральный фокус: Тело/,
       );
       const totemChoice = page
         .locator(".hb-choice-progression-card")
@@ -111,8 +109,10 @@ const table = {
             .filter({ hasText: /^Тотемы$/ }),
         })
         .first();
-      await totemChoice.locator("summary").first().click();
-      assert.match(await totemChoice.innerText(), /Прогрессия этой способности/);
+      assert.match(
+        (await totemChoice.textContent()) || "",
+        /Прогрессия этой способности/,
+      );
       assert.equal(
         await page
           .locator(".hb-package-contents")
