@@ -1,0 +1,45 @@
+name: Refresh PR dist
+
+on:
+  push:
+    branches: [fix/homebrew-unified-progression]
+    paths:
+      - "app/**"
+      - "tests/**"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/**"
+      - ".github/workflows/refresh-pr-dist.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-pr-dist
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/homebrew-unified-progression
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: |
+          python3 scripts/sanitize-committed-dist.py
+          HEROLIST_SOURCE_COMMIT="$GITHUB_SHA" python3 scripts/write-build-info.py
+      - name: Commit compiled dist
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          git diff --cached --quiet && exit 0
+          git commit -m "Update compiled dist"
+          git push origin HEAD:fix/homebrew-unified-progression
