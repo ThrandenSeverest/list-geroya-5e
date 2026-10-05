@@ -88,3 +88,9 @@
  .hb-choice-option-grid{grid-template-columns:1fr}
  .hb-level-unified{padding:.6rem}
 }
+
+.hb-choice-feature-core{display:grid;gap:.55rem;margin:.65rem 0;padding:.65rem;border:1px solid #a78c5d55;border-radius:8px;background:rgba(167,140,93,.055)}
+.hb-choice-feature-core-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem}
+.hb-choice-feature-core-head small{opacity:.76}
+.hb-choice-feature-core>details{padding:.5rem;border:1px solid #a78c5d44;border-radius:7px}
+.hb-choice-feature-core>details>summary{cursor:pointer;font-weight:600}
