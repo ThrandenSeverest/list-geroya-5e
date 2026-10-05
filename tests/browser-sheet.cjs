@@ -60,7 +60,7 @@ async function saved(page) {
   return page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
 }
 (async () => {
-  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const browser=await chromium.launch({headless:true,executablePath:process.env.HB_TEST_CHROMIUM,args:['--no-sandbox','--disable-dev-shm-usage']});
   try {
     for(const width of [1440,390]) {
       const context=await browser.newContext({viewport:{width,height:1000}});

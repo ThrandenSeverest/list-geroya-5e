@@ -4,16 +4,18 @@ import { classRules, skillKeys, type ClassRuleDetail } from './rules';
 import { spells } from './catalog';
 import { homebrewTypeLabels, type HomebrewElement, type HBEffect } from './homebrew';
 import { evaluateFormula, type FormulaContext } from './homebrewFormula';
+import { editableHomebrew } from './homebrewRelations';
 import { homebrewPackageFor } from './homebrewPackages';
 export type HBCharacterData={entities:HomebrewElement[];activeIds:string[];choices?:Record<string,string[]>;equipped?:string[]};
 const level=(c:ExportCharacter)=>c.classes?.length?c.classes.reduce((s,x)=>s+x.level,0):c.level||1;
 export const homebrewClassLevel=(c:ExportCharacter,id:string)=>c.classes?.length?c.classes.find(x=>x.classId===id.replace('official:class:',''))?.level||0:c.className===id.replace('official:class:','')?c.level:0;
 const classLevel=homebrewClassLevel;
-export function homebrewChoiceReason(c:ExportCharacter,owner:HomebrewElement,choice:import('./homebrew').HBChoice,target:HomebrewElement,all:HomebrewElement[]):string {
+export function homebrewChoiceReason(c:ExportCharacter,owner:HomebrewElement,choice:import('./homebrew').HBChoice,target:HomebrewElement,all:HomebrewElement[],available?:Set<string>):string {
  const ownerLevel=owner.type==='class'?classLevel(c,owner.id):owner.parentClassId?classLevel(c,owner.parentClassId):level(c);
  if(choice.level&&ownerLevel<choice.level)return `Требуется ${choice.level}-й уровень ${owner.type==='class'||owner.parentClassId?'класса':'персонажа'}`;
  if(target.level&&ownerLevel<target.level)return `Требуется ${target.level}-й уровень ${owner.type==='class'||owner.parentClassId?'класса':'персонажа'}`;
- for(const requirement of target.requirements||[])if(requirement.type==='selected_feature'&&!Object.values(c.homebrew?.choices||{}).some(ids=>ids.includes(requirement.id))&&!c.homebrew?.activeIds.includes(requirement.id))return `Требуется ${requirement.label||all.find(e=>e.id===requirement.id)?.name||requirement.id}`;
+ const valid=available||new Set(activeHomebrew(c).map(element=>element.id));
+ for(const requirement of target.requirements||[])if(requirement.type==='selected_feature'&&!valid.has(requirement.id))return `Требуется ${requirement.label||all.find(e=>e.id===requirement.id)?.name||requirement.id}`;
  if(choice.uniqueAcrossGroup&&choice.choiceGroup&&owner.choices?.slice(0,owner.choices.findIndex(other=>other.id===choice.id)).some(other=>other.choiceGroup===choice.choiceGroup&&(c.homebrew?.choices?.[other.id]||[]).includes(target.id)))return 'Уже выбран в этой группе';
  return '';
 }
@@ -29,27 +31,48 @@ export function homebrewChoiceStatuses(c:ExportCharacter):HomebrewChoiceStatus[]
  }));
 }
 export function homebrewChoicesComplete(c:ExportCharacter){return homebrewChoiceStatuses(c).every(status=>status.missing===0);}
-export function hbContext(c:ExportCharacter,source?:string):FormulaContext {
+export function hbContext(c:ExportCharacter,source?:string,available?:Set<string>):FormulaContext {
  const entities=c.homebrew?.entities||[];
  const owner=entities.find(e=>e.id===source);
  const featureOwner=entities.find(e=>e.features?.some(feature=>feature.id===source));
  const classId=owner?.type==='class'?owner.id:owner?.parentClassId||featureOwner?.parentClassId||featureOwner?.id;
  const values:Record<string,number>={'@level':level(c),'@classLevel':classId?classLevel(c,classId):0,'@pb':2+Math.floor((level(c)-1)/4),'@currentHp':c.currentHitPoints||0,'@tempHp':c.temporaryHitPoints||0};
  for(const [k,v] of Object.entries(c.abilities)){values['@ability.'+k]=v;values['@mod.'+k]=Math.floor((v-10)/2);}
+ const featureIds=available||new Set(activeHomebrew(c).map(element=>element.id));
  const equippedItems=(c.inventoryOverride===undefined?selectedEquipment(c):c.inventoryOverride.split(/\n|\s*·\s*/).map(item=>item.trim()).filter(Boolean)).map(item=>item.toLowerCase());
- return {values,source,classLevel:id=>classLevel(c,id),resource:(id,field)=>{const r=(c.homebrew?.entities||[]).flatMap(e=>e.resources||[]).find(r=>r.id===id);if(!r)return 0;const max=evaluateFormula(r.max,{values,classLevel:i=>classLevel(c,i)});return field==='max'?max:Math.max(0,max-(c.resourceSpent?.[id]||0));},predicate:(name,id)=>name==='equipped'?(c.homebrew?.equipped||[]).includes(id):name==='hasFeature'?(c.homebrew?.activeIds||[]).includes(id):name==='hasArmor'?id==='shield'?equippedItems.some(item=>/щит/.test(item)):id==='armor'?equippedItems.some(item=>/(доспех|кольчуг|латы|кожа|брон)/.test(item)):false:false};
+ return {values,source,classLevel:id=>classLevel(c,id),resource:(id,field)=>{const r=(c.homebrew?.entities||[]).flatMap(e=>e.resources||[]).find(r=>r.id===id);if(!r)return 0;const max=evaluateFormula(r.max,{values,classLevel:i=>classLevel(c,i)});return field==='max'?max:Math.max(0,max-(c.resourceSpent?.[id]||0));},predicate:(name,id)=>name==='equipped'?(c.homebrew?.equipped||[]).includes(id):name==='hasFeature'?featureIds.has(id):name==='hasArmor'?id==='shield'?equippedItems.some(item=>/щит/.test(item)):id==='armor'?equippedItems.some(item=>/(доспех|кольчуг|латы|кожа|брон)/.test(item)):false:false};
 }
 export function hbValue(c:ExportCharacter,value:number|string|undefined,source?:string){try{return evaluateFormula(value??0,hbContext(c,source));}catch{return 0;}}
-export function hbEnabled(c:ExportCharacter,row:{level?:number;when?:string},source:HomebrewElement){const l=source.type==='class'?classLevel(c,source.id):source.parentClassId?classLevel(c,source.parentClassId):level(c);if(row.level&&row.level>l)return false;try{return !row.when||!!evaluateFormula(row.when,hbContext(c,source.id));}catch{return false;}}
+export function hbEnabled(c:ExportCharacter,row:{level?:number;when?:string},source:HomebrewElement,available?:Set<string>){const l=source.type==='class'?classLevel(c,source.id):source.parentClassId?classLevel(c,source.parentClassId):level(c);if(row.level&&row.level>l)return false;try{return !row.when||!!evaluateFormula(row.when,hbContext(c,source.id,available));}catch{return false;}}
 export function activeHomebrew(c:ExportCharacter):HomebrewElement[]{
- const all=c.homebrew?.entities||[],byId=new Map(all.map(e=>[e.id,e])),seen=new Set<string>(),result:HomebrewElement[]=[];
- const visit=(id:string,depth=0,parentClassId?:string)=>{if(seen.has(id)||depth>24||result.length>500)return;const e=byId.get(id);if(!e)return;seen.add(id);result.push(parentClassId&&!e.parentClassId?{...e,parentClassId}:e);
-  if(e.type==='class'||e.type==='subclass')for(const feature of e.features||[])if(feature.level<=classLevel(c,e.type==='class'?e.id:e.parentClassId||''))result.push({schemaVersion:2,id:feature.id,type:'ability',name:feature.name,description:feature.description,updatedAt:e.updatedAt,parentClassId:e.type==='class'?e.id:e.parentClassId,effects:feature.effects||[],resources:feature.resources||[],attacks:feature.attacks||[],actions:feature.actions||[],choices:feature.choices||[]});
-  if(e.type==='class'||e.type==='subclass'){const l=classLevel(c,e.type==='class'?e.id:e.parentClassId||'');for(const [k,rows]of Object.entries(e.advancement||{}))if(Number(k)<=l)for(const row of rows)if(row.id&&row.type!=='choice')visit(row.id,depth+1,e.type==='class'?e.id:e.parentClassId);}
-  for(const x of e.effects||[])if(['grant_feature','grant_spell','grant_attack','grant_resource'].includes(x.type)&&x.id&&hbEnabled(c,x,e))visit(x.id,depth+1,e.type==='class'?e.id:e.parentClassId||parentClassId);
-  for(const choice of e.choices||[])if(hbEnabled(c,choice,e))for(const id of (c.homebrew?.choices?.[choice.id]||[]).filter(id=>choice.from.includes(id)&&byId.has(id)&&!homebrewChoiceReason(c,e,choice,byId.get(id)!,all)).slice(0,choice.count))visit(id,depth+1,e.type==='class'?e.id:e.parentClassId||parentClassId);
- };
- for(const id of [...(c.homebrew?.activeIds||[]),c.className,c.race,c.raceVariant,c.subclass,c.background,...(c.classes||[]).flatMap(e=>[e.classId,e.subclassId||''])])if(id)visit(id);
+ const all=c.homebrew?.entities||[],byId=new Map(editableHomebrew(all).map(e=>[e.id,e]));
+ const roots=[...(c.homebrew?.activeIds||[]),c.className,c.race,c.raceVariant,c.subclass,c.background,...(c.classes||[]).flatMap(e=>[e.classId,e.subclassId||''])].filter((id):id is string=>!!id);
+ // Only reachable, valid choices enable prerequisites. Recompute from roots on
+ // every call, so old selections in a disabled branch cannot keep it alive.
+ let available=new Set(roots.filter(id=>byId.has(id))),result:HomebrewElement[]=[];
+ for(let pass=0;pass<25;pass++){
+  const seen=new Set<string>(),next:HomebrewElement[]=[];
+  const visit=(id:string,depth=0,parentClassId?:string)=>{
+   if(seen.has(id)||depth>24||next.length>=500)return;
+   const raw=byId.get(id);if(!raw)return;
+   const e=parentClassId&&!raw.parentClassId?{...raw,parentClassId}:raw;
+   seen.add(id);next.push(e);
+   if(e.type==='class'||e.type==='subclass'){
+    const classId=e.type==='class'?e.id:e.parentClassId||'';
+    for(const feature of e.features||[])if(feature.level<=classLevel(c,classId))visit(feature.id,depth+1,classId);
+    for(const [l,rows] of Object.entries(e.advancement||{}))if(Number(l)<=classLevel(c,classId))for(const row of rows)if(row.id&&row.type!=='choice')visit(row.id,depth+1,classId);
+   }
+   for(const effect of e.effects||[])if(effect.type.startsWith('grant_')&&effect.id&&hbEnabled(c,effect,e,available))visit(effect.id,depth+1,e.type==='class'?e.id:e.parentClassId);
+   for(const choice of e.choices||[])if(hbEnabled(c,choice,e,available)){
+    const selected=[...new Set(c.homebrew?.choices?.[choice.id]||[])].filter(id=>choice.from.includes(id)&&byId.has(id)&&!homebrewChoiceReason(c,e,choice,byId.get(id)!,all,available)).slice(0,choice.count);
+    for(const id of selected)visit(id,depth+1,e.type==='class'?e.id:e.parentClassId);
+   }
+  };
+  for(const id of roots)visit(id);
+  result=next;
+  if(seen.size===available.size&&[...seen].every(id=>available.has(id)))break;
+  available=seen;
+ }
  return result;
 }
 export function hbEffects(c:ExportCharacter,type?:string){return activeHomebrew(c).flatMap(source=>(source.effects||[]).filter(e=>(!type||e.type===type)&&hbEnabled(c,e,source)).map(effect=>({source,effect,value:hbValue(c,effect.value??effect.formula,source.id)})));}

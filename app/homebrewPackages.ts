@@ -24,6 +24,15 @@ export function homebrewPackages(elements: HomebrewElement[]): HomebrewPackage[]
     if (element.source?.packId) packRoot.set(element.source.packId, element.id);
   }
 
+  // Every editable root may own choices, including feats, races and backgrounds.
+  const childIds=new Set(elements.flatMap(element=>[
+    ...(element.choices||[]).flatMap(choice=>choice.from),
+    ...(element.features||[]).flatMap(feature=>(feature.choices||[]).flatMap(choice=>choice.from)),
+    ...(element.effects||[]).filter(effect=>effect.type.startsWith('grant_')).flatMap(effect=>effect.id?[effect.id]:[]),
+    ...Object.values(element.advancement||{}).flatMap(rows=>rows.flatMap(row=>row.id?[row.id]:[])),
+  ]));
+  for(const element of elements)if(!owner.has(element.id)&&!childIds.has(element.id)&&(!element.parentClassId||!byId.has(element.parentClassId))&&(!element.parentRaceId||!byId.has(element.parentRaceId))&&!(element.references||[]).some(id=>byId.has(id))){owner.set(element.id,element.id);if(element.source?.packId&&!packRoot.has(element.source.packId))packRoot.set(element.source.packId,element.id);}
+
   // Explicit pack metadata is the strongest signal and covers imported packs.
   for (const element of elements) {
     const root = element.source?.packId && packRoot.get(element.source.packId);
@@ -38,6 +47,7 @@ export function homebrewPackages(elements: HomebrewElement[]): HomebrewPackage[]
       if (owner.has(element.id)) continue;
       const candidates = [
         element.parentClassId,
+        element.parentRaceId,
         ...(element.spellClasses || []),
         ...(element.references || []),
       ].filter((id): id is string => !!id);
@@ -49,6 +59,8 @@ export function homebrewPackages(elements: HomebrewElement[]): HomebrewPackage[]
       if (!root) continue;
       const childIds = [
         ...(parent.choices || []).flatMap(choice => choice.from),
+        ...(parent.features||[]).flatMap(feature=>(feature.choices||[]).flatMap(choice=>choice.from)),
+        ...(parent.effects||[]).filter(effect=>effect.type.startsWith('grant_')).flatMap(effect=>effect.id?[effect.id]:[]),
         ...Object.values(parent.advancement || {}).flatMap(rows => rows.map(row => row.id).filter((id): id is string => !!id)),
       ];
       for (const id of childIds) if (byId.has(id) && !owner.has(id)) { owner.set(id, root); changed = true; }

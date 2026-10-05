@@ -1,8 +1,9 @@
 import { damageTypes, effectTypes, homebrewTypeLabels, type HomebrewElement } from './homebrew';
+import { editableHomebrew } from './homebrewRelations';
 import { evaluateFormula } from './homebrewFormula';
 export type HBProblem={id:string;message:string};
 export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]=[]):HBProblem[]{
- const problems:HBProblem[]=[],ids=new Set<string>(),all=new Set([...entities.filter(e=>e&&typeof e==='object').map(e=>e.id),...officialIds]);
+ const problems:HBProblem[]=[],ids=new Set<string>(),all=new Set([...editableHomebrew(entities.filter(e=>e&&typeof e==='object')).map(e=>e.id),...officialIds]);
  const add=(id:string,message:string)=>problems.push({id,message});
  const values:Record<string,number>={'@level':5,'@classLevel':5,'@pb':3,'@maxHp':30,'@currentHp':20,'@tempHp':0,'@ac':15,'@initiative':2};
  for(const a of ['str','dex','con','int','wis','cha']){values['@mod.'+a]=2;values['@ability.'+a]=14;}
@@ -67,11 +68,13 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   ref(e.id,e.parentClassId);ref(e.id,e.parentRaceId);
   for(const id of e.references||[])ref(e.id,id);
  }
+ // Prerequisites form a separate acyclic graph; ordinary references may point back.
+ if(!problems.length){const flat=editableHomebrew(entities),byId=new Map(flat.map(e=>[e.id,e])),done=new Set<string>(),path=new Set<string>();const visit=(id:string)=>{if(path.has(id)){add(id,'Циклическое требование: варианты зависят друг от друга');return;}if(done.has(id))return;path.add(id);for(const r of byId.get(id)?.requirements||[])visit(r.id);path.delete(id);done.add(id);};for(const e of flat)visit(e.id);}
  // Only automatically expanded edges participate; descriptive references may point back.
  if(problems.length)return problems;
- const byId=new Map(entities.map(e=>[e.id,e]));const done=new Set<string>(),path=new Set<string>();
+ const byId=new Map(editableHomebrew(entities).map(e=>[e.id,e]));const done=new Set<string>(),path=new Set<string>();
  const visit=(id:string,depth=0)=>{if(path.has(id)){add(id,'Циклическая выдача особенностей');return;}if(done.has(id)||!byId.has(id))return;if(depth>24){add(id,'Глубина зависимостей больше 24');return;}path.add(id);const e=byId.get(id)!;
-  const edges=[...(e.effects||[]).filter(x=>x.type==='grant_feature').map(x=>x.id),...Object.values(e.advancement||{}).flat().map(x=>x.id)];for(const ref of edges)if(ref)visit(ref,depth+1);path.delete(id);done.add(id);};
+  const edges=[...(e.features||[]).map(feature=>feature.id),...(e.effects||[]).filter(x=>x.type==='grant_feature').map(x=>x.id),...Object.values(e.advancement||{}).flat().filter(x=>x.type!=='choice').map(x=>x.id)];for(const ref of edges)if(ref)visit(ref,depth+1);path.delete(id);done.add(id);};
  if(!problems.length)for(const e of entities)visit(e.id);
  return problems;
 }

@@ -214,23 +214,22 @@ const table = {
           .getByRole("button", { name: "+ Способность на 4 уровне", exact: true })
           .click();
         await page
-          .locator(".hb-feature-list input")
-          .nth(1)
+          .locator(".hb-feature-list input:not([type=number])")
+          .first()
           .fill("Браузерная способность");
-        const featureDescription = page.getByLabel("Описание способности", { exact: true });
+        const featureDescription = page.getByLabel("Описание способности Браузерная способность", { exact: true });
         await featureDescription.fill("Урон: @dam");
-        assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности" }).isVisible());
+        assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности Браузерная способность" }).isVisible());
         await page.keyboard.press("Enter");
         assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
-        await page.getByText("Механика способности: эффекты, ресурсы и вложенные выборы").click();
         await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
         await featureDescription.fill("Урон: @dam");
         await page.keyboard.press("Escape");
         await featureDescription.locator("..").getByRole("button", { name: "@ Команды и примеры", exact: true }).click();
-        await page.getByLabel("Группа команд: Описание способности").selectOption("Кнопки в описании");
-        await page.getByLabel("Поиск команд: Описание способности").fill("лечен");
+        await page.getByLabel("Группа команд: Описание способности Браузерная способность").selectOption("Кнопки в описании");
+        await page.getByLabel("Поиск команд: Описание способности Браузерная способность").fill("лечен");
         await featureDescription.locator("..").locator(".hb-command-browser button").click();
         assert.match(await featureDescription.inputValue(), /\[\[heal formula=/);
         assert.ok(await page.locator(".hb-development").evaluate(e => e.scrollWidth <= e.clientWidth + 1));

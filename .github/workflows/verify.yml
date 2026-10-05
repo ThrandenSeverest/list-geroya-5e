@@ -85,6 +85,7 @@ jobs:
             if curl --fail --silent http://127.0.0.1:3998/ >/dev/null && curl --fail --silent http://127.0.0.1:3998/account >/dev/null; then
               PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node "$GITHUB_WORKSPACE/tests/browser-sheet.cjs"
               HEROLIST_URL=http://127.0.0.1:3998 PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node "$GITHUB_WORKSPACE/tests/homebrew-browser.cjs"
+              HEROLIST_URL=http://127.0.0.1:3998 PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node "$GITHUB_WORKSPACE/tests/homebrew-relations-browser.cjs"
               exit 0
             fi
             sleep 1
