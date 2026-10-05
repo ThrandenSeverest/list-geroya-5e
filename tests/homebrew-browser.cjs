@@ -81,6 +81,43 @@ const table = {
       await homebrewButton.click();
       assert.ok(await page.locator(".hb-workspace-sidebar").isVisible());
       await page
+        .locator(".hb-sidebar-package > button")
+        .filter({ hasText: "Шаман" })
+        .first()
+        .click();
+      await page
+        .getByRole("button", { name: "Развитие и способности", exact: true })
+        .click();
+      assert.ok(
+        await page
+          .locator(".hb-choice-progression-card")
+          .filter({ hasText: "Сакральный фокус" })
+          .isVisible(),
+      );
+      assert.ok(
+        await page
+          .locator(".hb-choice-progression-card")
+          .filter({ hasText: "Сакральный фокус" })
+          .getByText("Сакральный фокус: Тело", { exact: true })
+          .isVisible(),
+      );
+      assert.match(
+        await page
+          .locator(".hb-choice-progression-card")
+          .filter({ hasText: "Связанные тотемы" })
+          .first()
+          .innerText(),
+        /Прогрессия выбора/,
+      );
+      assert.equal(
+        await page
+          .locator(".hb-package-contents")
+          .getByText("Способность ·", { exact: false })
+          .count(),
+        0,
+      );
+      await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+      await page
         .locator(".hb-quick-create button")
         .filter({ hasText: "Заклинание" })
         .click();
