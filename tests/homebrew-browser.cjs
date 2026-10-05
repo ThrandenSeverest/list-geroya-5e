@@ -88,27 +88,29 @@ const table = {
       await page
         .getByRole("button", { name: "Развитие и способности", exact: true })
         .click();
+      const sacredFocusChoice = page
+        .locator(".hb-choice-progression-card")
+        .filter({
+          has: page
+            .locator("summary > span")
+            .filter({ hasText: /^Выбор: Сакральный фокус$/ }),
+        })
+        .first();
+      assert.ok(await sacredFocusChoice.isVisible());
       assert.ok(
-        await page
-          .locator(".hb-choice-progression-card")
-          .filter({ hasText: "Сакральный фокус" })
-          .isVisible(),
-      );
-      assert.ok(
-        await page
-          .locator(".hb-choice-progression-card")
-          .filter({ hasText: "Сакральный фокус" })
+        await sacredFocusChoice
           .getByText("Сакральный фокус: Тело", { exact: true })
           .isVisible(),
       );
-      assert.match(
-        await page
-          .locator(".hb-choice-progression-card")
-          .filter({ hasText: "Связанные тотемы" })
-          .first()
-          .innerText(),
-        /Прогрессия выбора/,
-      );
+      const totemChoice = page
+        .locator(".hb-choice-progression-card")
+        .filter({
+          has: page
+            .locator("summary > span")
+            .filter({ hasText: /^Выбор: Связанные тотемы/ }),
+        })
+        .first();
+      assert.match(await totemChoice.innerText(), /Прогрессия выбора/);
       assert.equal(
         await page
           .locator(".hb-package-contents")
