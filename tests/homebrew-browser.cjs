@@ -211,7 +211,7 @@ const table = {
         assert.equal(await page.getByRole("button", { name: "✓ Повышение характеристик / черта", exact: true }).getAttribute("aria-pressed"), "true");
         assert.equal(await page.locator(".hb-level-picker button").count(), 20);
         await page
-          .getByRole("button", { name: "+ Способность в этом классе", exact: true })
+          .getByRole("button", { name: "+ Способность на 4 уровне", exact: true })
           .click();
         await page
           .locator(".hb-feature-list input")
