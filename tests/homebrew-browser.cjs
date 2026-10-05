@@ -93,7 +93,7 @@ const table = {
         .filter({
           has: page
             .locator("summary > span")
-            .filter({ hasText: /^Выбор: Сакральный фокус$/ }),
+            .filter({ hasText: /^Сакральный фокус$/ }),
         })
         .first();
       assert.ok(await sacredFocusChoice.isVisible());
@@ -108,11 +108,11 @@ const table = {
         .filter({
           has: page
             .locator("summary > span")
-            .filter({ hasText: /^Выбор: Связанные тотемы/ }),
+            .filter({ hasText: /^Тотемы$/ }),
         })
         .first();
       await totemChoice.locator("summary").click();
-      assert.match(await totemChoice.innerText(), /Прогрессия выбора/);
+      assert.match(await totemChoice.innerText(), /Прогрессия этой способности/);
       assert.equal(
         await page
           .locator(".hb-package-contents")
