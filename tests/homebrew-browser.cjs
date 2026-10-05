@@ -222,7 +222,7 @@ const table = {
         assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности" }).isVisible());
         await page.keyboard.press("Enter");
         assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
-        await page.getByText("Что делает способность: эффекты, ресурсы и выборы").click();
+        await page.getByText("Механика способности: эффекты, ресурсы и вложенные выборы").click();
         await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
