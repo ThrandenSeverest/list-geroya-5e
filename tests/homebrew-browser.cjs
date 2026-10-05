@@ -97,7 +97,7 @@ const table = {
         })
         .first();
       assert.ok(await sacredFocusChoice.isVisible());
-      await sacredFocusChoice.locator("summary").click();
+      await sacredFocusChoice.locator("summary").first().click();
       assert.ok(
         await sacredFocusChoice
           .getByText("Сакральный фокус: Тело", { exact: true })
@@ -111,7 +111,7 @@ const table = {
             .filter({ hasText: /^Тотемы$/ }),
         })
         .first();
-      await totemChoice.locator("summary").click();
+      await totemChoice.locator("summary").first().click();
       assert.match(await totemChoice.innerText(), /Прогрессия этой способности/);
       assert.equal(
         await page
