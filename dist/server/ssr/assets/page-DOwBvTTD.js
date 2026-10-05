@@ -54535,7 +54535,8 @@ function Mechanics({ draft, update, entities }) {
 								value: c.type,
 								onChange: (type) => patch({ type }),
 								options: {
-									feature: "Способность",
+									ability: "Вариант способности",
+									feature: "Встроенная способность",
 									skill: "Навык",
 									expertise: "Экспертность",
 									spell: "Заклинание",
@@ -55314,6 +55315,14 @@ function ClassTraining({ draft, update }) {
 		]
 	});
 }
+function choiceMatchesClassFeature(feature, choice) {
+	const clean = (value) => value.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").replace(/\b(выбор|выбора|связанные|связанный|на|уровне|уровень)\b/g, " ").replace(/\s+/g, " ").trim();
+	const featureName = clean(feature.name), choiceName = clean(choice.name);
+	if (featureName && choiceName && (choiceName.startsWith(featureName) || featureName.startsWith(choiceName))) return true;
+	const featureKey = feature.id.split(":").pop()?.toLowerCase() || "";
+	const choiceKey = (choice.choiceGroup || choice.id).toLowerCase();
+	return featureKey.length >= 4 && choiceKey.includes(featureKey);
+}
 function ClassDevelopment({ draft, update, entities, pack, open }) {
 	const [level, setLevel] = useState(draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1);
 	const rows = draft.advancement?.[level] || [];
@@ -55322,16 +55331,20 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 		[level]: next
 	} });
 	const hasAsi = rows.some((row) => row.type === "asi_or_feat");
+	const featureCount = (draft.features || []).filter((feature) => feature.level === level).length;
+	const choiceCount = (draft.choices || []).filter((choice) => (choice.level || 1) === level).length;
+	const linkedCount = rows.filter((row) => row.type !== "asi_or_feat").length;
+	const levelCount = (n) => (draft.features || []).filter((feature) => feature.level === n).length + (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.advancement?.[n]?.length || 0);
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-development",
 		children: [
-			/* @__PURE__ */ jsx("h3", { children: "Развитие и способности" }),
-			/* @__PURE__ */ jsx("p", { children: "Выберите уровень. Здесь собраны способности, повышения характеристик и связанные объекты, которые герой получает на этом уровне." }),
+			/* @__PURE__ */ jsx("h3", { children: "Развитие класса" }),
+			/* @__PURE__ */ jsx("p", { children: "Уровень теперь является главным экраном: способность, её выборы, варианты и дальнейшие ступени находятся рядом. Отдельные ability-объекты остаются в JSON для совместимости, но больше не показываются как самостоятельная куча записей." }),
 			/* @__PURE__ */ jsx("nav", {
 				className: "hb-level-picker",
 				"aria-label": "Уровни класса",
 				children: Array.from({ length: 20 }, (_, i) => i + 1).map((n) => {
-					const count = (draft.features || []).filter((f) => f.level === n).length + (draft.advancement?.[n]?.length || 0);
+					const count = levelCount(n);
 					return /* @__PURE__ */ jsxs("button", {
 						type: "button",
 						"aria-label": `Уровень ${n}: ${count} записей`,
@@ -55341,28 +55354,57 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 					}, n);
 				})
 			}),
-			/* @__PURE__ */ jsxs("h3", { children: ["Уровень ", level] }),
-			draft.type === "class" && /* @__PURE__ */ jsxs("div", {
-				className: "hb-toolbar",
-				children: [/* @__PURE__ */ jsx("button", {
-					type: "button",
-					"aria-pressed": hasAsi,
-					onClick: () => patchRows(hasAsi ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]),
-					children: hasAsi ? "✓ Повышение характеристик / черта" : "+ Повышение характеристик / черта"
-				}), draft.subclass?.chooseAtLevel === level && /* @__PURE__ */ jsx("span", { children: "На этом уровне выбирается подкласс" })]
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-level-heading",
+				children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Прогрессия класса" }), /* @__PURE__ */ jsxs("h3", { children: ["Уровень ", level] })] }), /* @__PURE__ */ jsxs("div", {
+					className: "hb-level-summary",
+					children: [
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: featureCount }), " способн."] }),
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: choiceCount }), " выбор."] }),
+						linkedCount > 0 && /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: linkedCount }), " связей"] }),
+						hasAsi && /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("b", { children: "ASI" }) })
+					]
+				})]
 			}),
-			/* @__PURE__ */ jsx(ClassFeatures, {
-				draft,
-				update,
-				entities,
-				level
+			draft.type === "class" && /* @__PURE__ */ jsxs("div", {
+				className: "hb-toolbar hb-level-specials",
+				children: [
+					/* @__PURE__ */ jsx("button", {
+						type: "button",
+						"aria-pressed": hasAsi,
+						onClick: () => patchRows(hasAsi ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]),
+						children: hasAsi ? "✓ Повышение характеристик / черта" : "+ Повышение характеристик / черта"
+					}),
+					draft.subclass?.chooseAtLevel === level && /* @__PURE__ */ jsx("span", { children: "На этом уровне выбирается подкласс" }),
+					level === 1 && draft.skillChoices && /* @__PURE__ */ jsxs("span", { children: ["Навыки: выбрать ", draft.skillChoices.count] })
+				]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "hb-level-unified",
+				children: [
+					/* @__PURE__ */ jsx("header", { children: /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Способности и выборы уровня" }), /* @__PURE__ */ jsx("p", { children: "Сначала описывается сама способность, затем прямо здесь — её варианты, ограничения и повторные выборы на следующих уровнях." })] }) }),
+					/* @__PURE__ */ jsx(ClassFeatures, {
+						draft,
+						update,
+						entities,
+						level
+					}),
+					/* @__PURE__ */ jsx(ClassChoicesForLevel, {
+						draft,
+						update,
+						entities,
+						level,
+						open,
+						onLevelChange: setLevel
+					})
+				]
 			}),
 			/* @__PURE__ */ jsxs(HBDisclosure, {
 				className: "hb-basic-details",
 				initialOpen: rows.some((row) => row.type !== "asi_or_feat"),
-				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Выдать существующий объект · ", rows.filter((row) => row.type !== "asi_or_feat").length] }),
+				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Выдать существующий объект · ", linkedCount] }),
 				children: [
-					/* @__PURE__ */ jsx("p", { children: "Используйте для уже созданного ресурса, атаки, способности или выбора. Новую способность с текстом добавляйте кнопкой выше." }),
+					/* @__PURE__ */ jsx("p", { children: "Редкий технический случай: привяжите уже существующий ресурс, атаку, заклинание или другую сущность. Обычные способности и их варианты создаются выше." }),
 					rows.map((row, i) => row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
 						className: "hb-linked-row",
 						children: [
@@ -55409,9 +55451,9 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 					})
 				]
 			}),
-			/* @__PURE__ */ jsxs("details", {
+			draft.type === "class" && /* @__PURE__ */ jsxs("details", {
 				className: "hb-basic-details",
-				children: [/* @__PURE__ */ jsxs("summary", { children: ["Все связанные объекты набора · ", (pack?.members.length || 1) - 1] }), /* @__PURE__ */ jsx(ClassPackageContents, {
+				children: [/* @__PURE__ */ jsx("summary", { children: "Подклассы, заклинания и таблицы набора" }), /* @__PURE__ */ jsx(ClassPackageContents, {
 					root: draft,
 					pack,
 					open
@@ -55423,89 +55465,357 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 }
 function ClassFeatures({ draft, update, entities, level }) {
 	const rows = draft.features || [];
+	const levelRows = rows.map((feature, index) => ({
+		feature,
+		index
+	})).filter(({ feature }) => feature.level === level && !(draft.choices || []).some((choice) => choiceMatchesClassFeature(feature, choice)));
 	const patch = (i, p) => update({ features: rows.map((f, n) => n === i ? {
 		...f,
 		...p
 	} : f) });
-	return /* @__PURE__ */ jsxs("section", { children: [
-		/* @__PURE__ */ jsxs("h3", { children: [
-			"Способности ",
-			draft.type === "subclass" ? "подкласса" : "класса",
-			" ",
-			/* @__PURE__ */ jsx(HBHelp, { children: "Хранятся внутри этого класса и появляются на листе с указанного уровня. ID создаётся автоматически; отдельная запись в библиотеке не требуется." })
-		] }),
-		/* @__PURE__ */ jsx("p", { children: "Добавьте название, уровень и текст. Эффекты, ресурсы, атаки, выборы и действия принадлежат этой способности." }),
-		/* @__PURE__ */ jsx("div", {
-			className: "hb-feature-list",
-			children: rows.map((feature, i) => feature.level === level && /* @__PURE__ */ jsx(HBDisclosure, {
-				className: "hb-feature-card",
-				initialOpen: true,
-				summary: feature.name || "Новая способность",
-				children: /* @__PURE__ */ jsxs("fieldset", { children: [
-					/* @__PURE__ */ jsx(Field, {
-						label: "Уровень",
-						children: /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: 1,
-							max: 20,
-							value: feature.level,
-							onChange: (e) => patch(i, { level: Number(e.target.value) })
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-level-feature-block",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-level-block-title",
+				children: [/* @__PURE__ */ jsx("h4", { children: "Способности" }), /* @__PURE__ */ jsx("small", { children: levelRows.length })]
+			}),
+			!levelRows.length && /* @__PURE__ */ jsx("p", {
+				className: "hb-level-empty",
+				children: "На этом уровне новой способности пока нет."
+			}),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-feature-list",
+				children: levelRows.map(({ feature, index }) => /* @__PURE__ */ jsx(HBDisclosure, {
+					className: "hb-feature-card",
+					initialOpen: true,
+					summary: feature.name || "Новая способность",
+					children: /* @__PURE__ */ jsxs("fieldset", { children: [
+						/* @__PURE__ */ jsx(Field, {
+							label: "Уровень",
+							children: /* @__PURE__ */ jsx("input", {
+								type: "number",
+								min: 1,
+								max: 20,
+								value: feature.level,
+								onChange: (e) => patch(index, { level: Number(e.target.value) })
+							})
+						}),
+						/* @__PURE__ */ jsx(Field, {
+							label: "Название",
+							children: /* @__PURE__ */ jsx("input", {
+								value: feature.name,
+								onChange: (e) => patch(index, { name: e.target.value })
+							})
+						}),
+						/* @__PURE__ */ jsx(Field, {
+							label: "Описание",
+							help: "Введите @ и выберите кнопку броска, урона или значения. Формулы рассчитываются внутри интерактивных тегов [[…]].",
+							children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+								multiline: true,
+								label: "Описание способности",
+								value: feature.description,
+								onChange: (description) => patch(index, { description })
+							})
+						}),
+						/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Механика способности: эффекты, ресурсы и вложенные выборы" }), /* @__PURE__ */ jsx(Mechanics, {
+							draft: {
+								...draft,
+								id: feature.id,
+								type: "ability",
+								effects: feature.effects || [],
+								resources: feature.resources || [],
+								attacks: feature.attacks || [],
+								actions: feature.actions || [],
+								choices: feature.choices || []
+							},
+							update: (p) => patch(index, Object.fromEntries(Object.entries(p).filter(([key]) => [
+								"effects",
+								"resources",
+								"attacks",
+								"actions",
+								"choices"
+							].includes(key)))),
+							entities
+						})] }),
+						/* @__PURE__ */ jsx("button", {
+							onClick: () => update({ features: rows.filter((_, n) => n !== index) }),
+							children: "Удалить способность"
 						})
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Название",
-						children: /* @__PURE__ */ jsx("input", {
-							value: feature.name,
-							onChange: (e) => patch(i, { name: e.target.value })
-						})
-					}),
-					/* @__PURE__ */ jsx(Field, {
-						label: "Описание",
-						help: "Введите @ и выберите кнопку броска, урона или значения. Формулы рассчитываются внутри интерактивных тегов [[…]].",
-						children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
-							multiline: true,
-							label: "Описание способности",
-							value: feature.description,
-							onChange: (description) => patch(i, { description })
-						})
-					}),
-					/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Что делает способность: эффекты, ресурсы и выборы" }), /* @__PURE__ */ jsx(Mechanics, {
-						draft: {
-							...draft,
-							id: feature.id,
-							type: "ability",
-							effects: feature.effects || [],
-							resources: feature.resources || [],
-							attacks: feature.attacks || [],
-							actions: feature.actions || [],
-							choices: feature.choices || []
-						},
-						update: (p) => patch(i, Object.fromEntries(Object.entries(p).filter(([key]) => [
-							"effects",
-							"resources",
-							"attacks",
-							"actions",
-							"choices"
-						].includes(key)))),
-						entities
-					})] }),
-					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({ features: rows.filter((_, n) => n !== i) }),
-						children: "Удалить способность"
-					})
-				] })
-			}, feature.id))
-		}),
-		/* @__PURE__ */ jsxs("button", {
-			onClick: () => update({ features: [...rows, {
-				id: newHomebrew("ability").id,
-				level,
-				name: "Новая способность",
-				description: ""
-			}] }),
-			children: ["+ Способность в этом ", draft.type === "subclass" ? "подклассе" : "классе"]
-		})
-	] });
+					] })
+				}, feature.id))
+			}),
+			/* @__PURE__ */ jsxs("button", {
+				type: "button",
+				onClick: () => update({ features: [...rows, {
+					id: newHomebrew("ability").id,
+					level,
+					name: "Новая способность",
+					description: ""
+				}] }),
+				children: [
+					"+ Способность на ",
+					level,
+					" уровне"
+				]
+			})
+		]
+	});
+}
+function ClassChoicesForLevel({ draft, update, entities, level, open, onLevelChange }) {
+	const choices = draft.choices || [];
+	const features = draft.features || [];
+	const levelRows = choices.map((choice, index) => ({
+		choice,
+		index
+	})).filter(({ choice }) => (choice.level || 1) === level);
+	const byId = new Map(entities.map((entity) => [entity.id, entity]));
+	const patch = (index, value) => update({ choices: choices.map((choice, i) => i === index ? {
+		...choice,
+		...value
+	} : choice) });
+	const patchFeature = (id, value) => update({ features: features.map((feature) => feature.id === id ? {
+		...feature,
+		...value
+	} : feature) });
+	const choiceTypeOptions = {
+		ability: "Вариант способности",
+		feature: "Встроенная способность",
+		skill: "Навык",
+		expertise: "Экспертность",
+		spell: "Заклинание",
+		feat: "Черта",
+		item: "Предмет",
+		language: "Язык",
+		tool: "Инструмент",
+		option: "Вариант"
+	};
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-level-choice-block",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-level-block-title",
+				children: [/* @__PURE__ */ jsx("h4", { children: "Выборы и ветки" }), /* @__PURE__ */ jsx("small", { children: levelRows.length })]
+			}),
+			!levelRows.length && /* @__PURE__ */ jsx("p", {
+				className: "hb-level-empty",
+				children: "На этом уровне нет отдельного выбора вариантов."
+			}),
+			/* @__PURE__ */ jsx("div", {
+				className: "hb-choice-progression-list",
+				children: levelRows.map(({ choice, index }) => {
+					const groupKey = choice.choiceGroup || choice.id;
+					const milestones = choices.filter((row) => (row.choiceGroup || row.id) === groupKey).sort((a, b) => (a.level || 1) - (b.level || 1));
+					const options = choice.from.map((id) => byId.get(id)).filter((entity) => !!entity);
+					const unresolved = choice.from.filter((id) => !byId.has(id));
+					const optionLevels = [...new Set(options.map((option) => option.level || choice.level || 1))].sort((a, b) => a - b);
+					const feature = features.find((row) => choiceMatchesClassFeature(row, choice));
+					return /* @__PURE__ */ jsxs(HBDisclosure, {
+						className: "hb-choice-progression-card",
+						summary: /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("span", { children: feature?.name || choice.name }), /* @__PURE__ */ jsxs("small", { children: [
+							choice.count,
+							" из ",
+							choice.from.length,
+							milestones.length > 1 ? ` · ${milestones.length} ступеней` : ""
+						] })] }),
+						children: [
+							feature && /* @__PURE__ */ jsxs("div", {
+								className: "hb-choice-feature-core",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "hb-choice-feature-core-head",
+										children: [/* @__PURE__ */ jsxs("strong", { children: [
+											"Способность · с ",
+											feature.level,
+											" уровня"
+										] }), feature.level !== level && /* @__PURE__ */ jsxs("small", { children: [
+											"На ",
+											level,
+											" уровне развивается эта же способность"
+										] })]
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "Название способности",
+										children: /* @__PURE__ */ jsx("input", {
+											value: feature.name,
+											onChange: (event) => patchFeature(feature.id, { name: event.target.value })
+										})
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "Описание способности",
+										children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+											multiline: true,
+											label: `Описание способности ${feature.name}`,
+											value: feature.description,
+											onChange: (description) => patchFeature(feature.id, { description })
+										})
+									}),
+									/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Механика способности" }), /* @__PURE__ */ jsx(Mechanics, {
+										draft: {
+											...draft,
+											id: feature.id,
+											type: "ability",
+											effects: feature.effects || [],
+											resources: feature.resources || [],
+											attacks: feature.attacks || [],
+											actions: feature.actions || [],
+											choices: feature.choices || []
+										},
+										update: (value) => patchFeature(feature.id, Object.fromEntries(Object.entries(value).filter(([key]) => [
+											"effects",
+											"resources",
+											"attacks",
+											"actions",
+											"choices"
+										].includes(key)))),
+										entities
+									})] })
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "hb-choice-milestones",
+								children: [/* @__PURE__ */ jsx("strong", { children: "Прогрессия этой способности" }), milestones.map((step) => /* @__PURE__ */ jsxs("button", {
+									type: "button",
+									"aria-pressed": (step.level || 1) === level,
+									onClick: () => onLevelChange(step.level || 1),
+									children: [
+										step.level || 1,
+										" ур. · ",
+										step.count > 1 ? `+${step.count}` : "+1"
+									]
+								}, step.id))]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "hb-choice-settings",
+								children: [
+									/* @__PURE__ */ jsx(Field, {
+										label: "Название",
+										children: /* @__PURE__ */ jsx("input", {
+											value: choice.name,
+											onChange: (event) => patch(index, { name: event.target.value })
+										})
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "С уровня",
+										children: /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: 1,
+											max: 20,
+											value: choice.level || 1,
+											onChange: (event) => patch(index, { level: Number(event.target.value) })
+										})
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "Сколько выбрать",
+										children: /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: 1,
+											max: 50,
+											value: choice.count,
+											onChange: (event) => patch(index, { count: Number(event.target.value) })
+										})
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "Тип",
+										children: /* @__PURE__ */ jsx(Select, {
+											label: "Тип выбора",
+											value: choice.type,
+											onChange: (type) => patch(index, { type }),
+											options: choiceTypeOptions
+										})
+									}),
+									/* @__PURE__ */ jsx(Field, {
+										label: "Общая ветка",
+										help: "Одинаковая группа связывает повторные выборы этой же способности на следующих уровнях.",
+										children: /* @__PURE__ */ jsx("input", {
+											"aria-label": "Группа выбора в прогрессии",
+											placeholder: "Например: тотемы",
+											value: choice.choiceGroup || "",
+											onChange: (event) => patch(index, { choiceGroup: event.target.value || void 0 })
+										})
+									}),
+									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: !!choice.uniqueAcrossGroup,
+										onChange: (event) => patch(index, { uniqueAcrossGroup: event.target.checked })
+									}), " Не выбирать один вариант повторно в этой ветке"] })
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "hb-choice-option-levels",
+								children: optionLevels.map((optionLevel) => {
+									const rows = options.filter((option) => (option.level || choice.level || 1) === optionLevel);
+									return /* @__PURE__ */ jsxs("section", {
+										className: optionLevel > level ? "hb-choice-option-level is-future" : "hb-choice-option-level",
+										children: [/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h5", { children: optionLevel > level ? `Откроются с ${optionLevel} уровня` : `Доступны с ${optionLevel} уровня` }), /* @__PURE__ */ jsxs("small", { children: [rows.length, " вариантов"] })] }), /* @__PURE__ */ jsx("div", {
+											className: "hb-choice-option-grid",
+											children: rows.map((option) => {
+												const requirements = (option.requirements || []).map((requirement) => requirement.label || byId.get(requirement.id)?.name || requirement.id);
+												return /* @__PURE__ */ jsxs("article", {
+													className: "hb-choice-option-editor",
+													children: [/* @__PURE__ */ jsxs("div", { children: [
+														/* @__PURE__ */ jsx("strong", { children: option.name }),
+														requirements.length > 0 && /* @__PURE__ */ jsxs("small", {
+															className: "hb-choice-requirements",
+															children: ["Требуется: ", requirements.join(", ")]
+														}),
+														/* @__PURE__ */ jsx("p", { children: option.summary || option.description.slice(0, 180) || "Без описания" })
+													] }), /* @__PURE__ */ jsxs("div", {
+														className: "hb-choice-option-actions",
+														children: [/* @__PURE__ */ jsx("button", {
+															type: "button",
+															onClick: () => open(option),
+															children: "Открыть детали"
+														}), /* @__PURE__ */ jsx("button", {
+															type: "button",
+															onClick: () => patch(index, { from: choice.from.filter((id) => id !== option.id) }),
+															children: "Убрать из выбора"
+														})]
+													})]
+												}, option.id);
+											})
+										})]
+									}, optionLevel);
+								})
+							}),
+							unresolved.length > 0 && /* @__PURE__ */ jsxs("p", {
+								className: "hb-choice-warning",
+								children: ["Не найдены объекты: ", unresolved.join(", ")]
+							}),
+							/* @__PURE__ */ jsx(RefPicker, {
+								value: "",
+								label: "Добавить вариант в этот выбор",
+								entities: entities.filter((entity) => choice.type === "ability" || choice.type === "feature" ? entity.type === "ability" : true),
+								onChange: (id) => patch(index, { from: [...new Set([...choice.from, id])] })
+							}),
+							/* @__PURE__ */ jsx("button", {
+								type: "button",
+								className: "hb-danger",
+								onClick: () => update({ choices: choices.filter((_, i) => i !== index) }),
+								children: "Удалить этот этап выбора"
+							})
+						]
+					}, choice.id);
+				})
+			}),
+			/* @__PURE__ */ jsxs("button", {
+				type: "button",
+				onClick: () => update({ choices: [...choices, {
+					id: newHomebrew("ability").id,
+					name: "Новый выбор",
+					type: "ability",
+					count: 1,
+					from: [],
+					level
+				}] }),
+				children: [
+					"+ Выбор / ветка на ",
+					level,
+					" уровне"
+				]
+			})
+		]
+	});
 }
 function ClassSpellcasting({ draft, update }) {
 	const casting = draft.spellcasting || {
@@ -55801,33 +56111,45 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 			})] }),
 			/* @__PURE__ */ jsx("div", {
 				className: "hb-sidebar-list",
-				children: visible.slice(0, 100).map((pack) => /* @__PURE__ */ jsxs("div", {
-					className: "hb-sidebar-package",
-					children: [/* @__PURE__ */ jsxs("button", {
-						className: draft?.id === pack.root.id ? "selected" : "",
-						onClick: () => open(pack.root),
-						children: [
-							/* @__PURE__ */ jsxs("small", { children: [
-								homebrewTypeLabels[pack.root.type],
-								" · ",
-								pack.members.length > 1 ? "набор" : "одиночный элемент"
-							] }),
-							/* @__PURE__ */ jsx("strong", { children: pack.name }),
-							/* @__PURE__ */ jsx("span", { children: homebrewPackageLabel(pack) })
-						]
-					}), current?.id === pack.id && pack.members.length > 1 && /* @__PURE__ */ jsxs("details", {
-						open: !!needle,
-						children: [/* @__PURE__ */ jsxs("summary", { children: [
-							"Состав (",
-							pack.members.length - 1,
-							")"
-						] }), /* @__PURE__ */ jsx("div", { children: pack.members.filter((member) => member.id !== pack.root.id).filter((member) => !needle || (member.name + " " + member.id).toLowerCase().includes(needle)).map((member) => /* @__PURE__ */ jsxs("button", {
-							className: draft?.id === member.id ? "selected" : "",
-							onClick: () => open(member),
-							children: [/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[member.type] }), /* @__PURE__ */ jsx("strong", { children: member.name })]
-						}, member.id)) })]
-					})]
-				}, pack.id))
+				children: visible.slice(0, 100).map((pack) => {
+					const abilityCount = pack.members.filter((member) => member.id !== pack.root.id && member.type === "ability").length;
+					const nested = pack.members.filter((member) => member.id !== pack.root.id).filter((member) => member.type !== "ability" || !!needle).filter((member) => !needle || (member.name + " " + member.id).toLowerCase().includes(needle));
+					return /* @__PURE__ */ jsxs("div", {
+						className: "hb-sidebar-package",
+						children: [/* @__PURE__ */ jsxs("button", {
+							className: draft?.id === pack.root.id ? "selected" : "",
+							onClick: () => open(pack.root),
+							children: [
+								/* @__PURE__ */ jsxs("small", { children: [
+									homebrewTypeLabels[pack.root.type],
+									" · ",
+									pack.members.length > 1 ? "набор" : "одиночный элемент"
+								] }),
+								/* @__PURE__ */ jsx("strong", { children: pack.name }),
+								/* @__PURE__ */ jsx("span", { children: homebrewPackageLabel(pack) })
+							]
+						}), current?.id === pack.id && pack.members.length > 1 && /* @__PURE__ */ jsxs("details", {
+							open: !!needle,
+							children: [
+								/* @__PURE__ */ jsxs("summary", { children: [
+									needle ? "Результаты внутри набора" : "Компоненты набора",
+									" (",
+									nested.length,
+									")"
+								] }),
+								abilityCount > 0 && !needle && /* @__PURE__ */ jsxs("p", {
+									className: "hb-sidebar-note",
+									children: [abilityCount, " вариантов способностей находятся внутри прогрессии класса, а не отдельным списком."]
+								}),
+								/* @__PURE__ */ jsx("div", { children: nested.map((member) => /* @__PURE__ */ jsxs("button", {
+									className: draft?.id === member.id ? "selected" : "",
+									onClick: () => open(member),
+									children: [/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[member.type] }), /* @__PURE__ */ jsx("strong", { children: member.name })]
+								}, member.id)) })
+							]
+						})]
+					}, pack.id);
+				})
 			})
 		]
 	});
@@ -55835,9 +56157,10 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 function ClassPackageContents({ root, pack, open }) {
 	const [query, setQuery] = useState("");
 	const members = (pack?.members || [root]).filter((member) => member.id !== root.id);
+	const abilityCount = members.filter((member) => member.type === "ability").length;
+	const technicalMembers = members.filter((member) => member.type !== "ability");
 	const groups = [
 		"subclass",
-		"ability",
 		"spell",
 		"table",
 		"note",
@@ -55846,26 +56169,31 @@ function ClassPackageContents({ root, pack, open }) {
 		"item"
 	].map((type) => ({
 		type,
-		rows: members.filter((member) => member.type === type && (member.name + " " + member.id).toLowerCase().includes(query.toLowerCase()))
+		rows: technicalMembers.filter((member) => member.type === type && (member.name + " " + member.id).toLowerCase().includes(query.toLowerCase()))
 	})).filter((group) => group.rows.length);
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-package-contents",
 		children: [
-			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Связанные объекты" }), /* @__PURE__ */ jsx("p", { children: "Это один переносимый пакет. Внутренние компоненты имеют собственные ID только для связей, условий и выборов; в библиотеке они не считаются отдельными работами." })] }), /* @__PURE__ */ jsxs("strong", { children: [members.length + 1, " компонентов"] })] }),
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: "Дополнительные объекты набора" }), /* @__PURE__ */ jsx("p", { children: "Здесь остаются только сущности, которые действительно живут отдельно: подклассы, заклинания, таблицы и служебные объекты. Варианты способностей редактируются в прогрессии уровня выше." })] }), /* @__PURE__ */ jsxs("strong", { children: [technicalMembers.length, " отдельно"] })] }),
+			abilityCount > 0 && /* @__PURE__ */ jsxs("div", {
+				className: "hb-package-inline-note",
+				children: [/* @__PURE__ */ jsx("strong", { children: abilityCount }), /* @__PURE__ */ jsx("span", { children: "вариантов способностей уже встроены в «Развитие класса» и не дублируются здесь." })]
+			}),
 			/* @__PURE__ */ jsx("div", {
 				className: "hb-package-summary",
-				children: pack && Object.entries(pack.counts).filter(([type]) => type !== "class").map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
+				children: pack && Object.entries(pack.counts).filter(([type]) => type !== "class" && type !== "ability").map(([type, count]) => /* @__PURE__ */ jsxs("span", { children: [
 					homebrewTypeLabels[type],
 					" ",
 					/* @__PURE__ */ jsx("b", { children: count })
 				] }, type))
 			}),
-			/* @__PURE__ */ jsx("input", {
+			technicalMembers.length > 0 && /* @__PURE__ */ jsx("input", {
 				"aria-label": "Поиск в составе класса",
-				placeholder: "Найти тотем, подкласс или заклинание",
+				placeholder: "Найти подкласс, заклинание или таблицу",
 				value: query,
 				onChange: (event) => setQuery(event.target.value)
 			}),
+			" ",
 			groups.map((group) => /* @__PURE__ */ jsxs("details", {
 				open: group.type === "subclass" || !!query,
 				children: [/* @__PURE__ */ jsxs("summary", { children: [
@@ -55880,7 +56208,7 @@ function ClassPackageContents({ root, pack, open }) {
 					}, member.id))
 				})]
 			}, group.type)),
-			!members.length && /* @__PURE__ */ jsx("p", { children: "Пока у класса нет связанных компонентов. Обычные классовые способности добавляйте у нужного уровня выше — отдельные записи для них не создаются." })
+			!technicalMembers.length && /* @__PURE__ */ jsx("p", { children: "Отдельных технических объектов нет. Все способности и варианты находятся в прогрессии класса." })
 		]
 	});
 }
