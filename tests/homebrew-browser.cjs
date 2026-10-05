@@ -81,6 +81,47 @@ const table = {
       await homebrewButton.click();
       assert.ok(await page.locator(".hb-workspace-sidebar").isVisible());
       await page
+        .locator(".hb-sidebar-package > button")
+        .filter({ hasText: "Шаман" })
+        .first()
+        .click();
+      await page
+        .getByRole("button", { name: "Развитие и способности", exact: true })
+        .click();
+      const sacredFocusChoice = page
+        .locator(".hb-choice-progression-card")
+        .filter({
+          has: page
+            .locator("summary > span")
+            .filter({ hasText: /^Сакральный фокус$/ }),
+        })
+        .first();
+      assert.ok(await sacredFocusChoice.isVisible());
+      assert.match(
+        (await sacredFocusChoice.textContent()) || "",
+        /Сакральный фокус: Тело/,
+      );
+      const totemChoice = page
+        .locator(".hb-choice-progression-card")
+        .filter({
+          has: page
+            .locator("summary > span")
+            .filter({ hasText: /^Тотемы$/ }),
+        })
+        .first();
+      assert.match(
+        (await totemChoice.textContent()) || "",
+        /Прогрессия этой способности/,
+      );
+      assert.equal(
+        await page
+          .locator(".hb-package-contents")
+          .getByText("Способность ·", { exact: false })
+          .count(),
+        0,
+      );
+      await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+      await page
         .locator(".hb-quick-create button")
         .filter({ hasText: "Заклинание" })
         .click();
@@ -170,7 +211,7 @@ const table = {
         assert.equal(await page.getByRole("button", { name: "✓ Повышение характеристик / черта", exact: true }).getAttribute("aria-pressed"), "true");
         assert.equal(await page.locator(".hb-level-picker button").count(), 20);
         await page
-          .getByRole("button", { name: "+ Способность в этом классе", exact: true })
+          .getByRole("button", { name: "+ Способность на 4 уровне", exact: true })
           .click();
         await page
           .locator(".hb-feature-list input")
@@ -181,7 +222,7 @@ const table = {
         assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности" }).isVisible());
         await page.keyboard.press("Enter");
         assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
-        await page.getByText("Что делает способность: эффекты, ресурсы и выборы").click();
+        await page.getByText("Механика способности: эффекты, ресурсы и вложенные выборы").click();
         await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
