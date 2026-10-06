@@ -5,7 +5,7 @@ import { conditionFormula, createChoiceOption, editableHomebrew, effectLabel, ho
 import type { ExportCharacter } from './exportFormats';
 import { hbEnabled, hbValue, homebrewChoiceReason } from './homebrewEngine';
 import { HomebrewCommandInput } from './HomebrewCommandInput';
-import { choiceFeatureIds } from './homebrewInference';
+import { linkedChoicesForFeature } from './homebrewInference';
 
 export type HBEditingSession={renderMagic?:(element:HomebrewElement)=>ReactNode;elements:HomebrewElement[];character:ExportCharacter;change:(patch:Partial<HomebrewElement>,related?:HomebrewElement[])=>void;patchElement:(id:string,patch:Partial<HomebrewElement>,related?:HomebrewElement[])=>void;renderMechanics:(element:HomebrewElement,patch:(p:Partial<HomebrewElement>,related?:HomebrewElement[])=>void,depth:number)=>ReactNode};
 export const HBEditingContext=createContext<HBEditingSession|null>(null);
@@ -69,7 +69,7 @@ export function ChoicesEditor({draft,update,depth=0}:{draft:HomebrewElement;upda
  const session=useSession();
  const choices=draft.choices||[];
  const parent=session.elements.find(element=>element.features?.some(feature=>feature.id===draft.id));
- const linked=parent?(parent.choices||[]).filter(choice=>choiceFeatureIds(parent,choice).includes(draft.id)&&!choices.some(row=>row.id===choice.id)):[];
+ const linked=parent?linkedChoicesForFeature(parent,draft.id).filter(choice=>!choices.some(row=>row.id===choice.id)):[];
  const addStage=(choice:HBChoice,source:HBChoice[],apply:(next:HBChoice[])=>void)=>{const group=choice.choiceGroup||choice.id;apply([...source.map(row=>row.id===choice.id?{...row,choiceGroup:group}:row),{...choice,id:newHomebrew('ability').id,choiceGroup:group,level:Math.min(20,(choice.level||1)+1)}]);};
  return <section className="hb-choice-collection"><h3>Выборы внутри «{draft.name||'элемента'}» · {choices.length+linked.length}</h3>{linked.length>0&&<p className="hb-auto-choice-note">Связанные выборы найдены автоматически по правилам способности. Их не нужно создавать или связывать вручную.</p>}
  {choices.map(choice=><details key={choice.id} className="hb-choice-progression-card" open><summary><span>{choice.name}</span><small>{choice.count} из {choice.from.length}</small></summary><ChoiceEditor owner={draft} choice={choice} depth={depth} onChange={(next,related)=>update({choices:choices.map(row=>row.id===choice.id?next:row)},related)} onAddStage={()=>addStage(choice,choices,next=>update({choices:next}))} onRemove={()=>update({choices:choices.filter(row=>row.id!==choice.id)})}/></details>)}

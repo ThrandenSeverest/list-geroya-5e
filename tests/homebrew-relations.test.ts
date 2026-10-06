@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { newHomebrew, normalizeHomebrewLibrary, type HomebrewElement } from '../app/homebrew';
 import { conditionFormula, readConditions, createChoiceOption, homebrewRelations } from '../app/homebrewRelations';
+import { choicesForFeature, linkedChoicesForFeature } from '../app/homebrewInference';
 import { activeHomebrew, hbSum, homebrewExportClosure, homebrewChoiceStatuses } from '../app/homebrewEngine';
 import { homebrewPackages } from '../app/homebrewPackages';
 import { validateHomebrew } from '../app/homebrewValidation';
@@ -79,6 +80,14 @@ test('choice-feature associations are shared by graph and editor, scoped to thei
   assert.ok(graph.edges.some(edge=>edge.from===root.features![0].id&&edge.to===node),type);
   assert.ok(!graph.edges.some(edge=>edge.from===other.features![0].id&&edge.to===node),type);
  }
+});
+
+test('feature choice projection keeps inline and legacy-linked stages in one automatic view',()=>{
+ const root=entity('class','Шаман'),body=entity('ability','Тело'),mind=entity('ability','Разум');
+ const feature={id:'hb:test:ability:focus',name:'Сакральный фокус',level:1,description:'',choices:[{id:'hb:test:choice:nested',name:'Углубление фокуса',type:'ability',count:1,from:[mind.id],level:5}]};
+ root.features=[feature];root.choices=[{id:'hb:test:choice:root',name:'Сакральный фокус',type:'ability',count:1,from:[body.id],level:1}];
+ assert.deepEqual(linkedChoicesForFeature(root,feature.id).map(choice=>choice.id),['hb:test:choice:root']);
+ assert.deepEqual(choicesForFeature(root,feature).map(choice=>choice.id),['hb:test:choice:nested','hb:test:choice:root']);
 });
 test('conditions, resource costs, progression choices and explicit references expose actual dependencies',()=>{
  const root=entity('feat','Черта'),focus=entity('ability','Фокус'),dependent=entity('ability','Усиление'),resource='hb:test:resource:charges',attack='hb:test:attack:beam';

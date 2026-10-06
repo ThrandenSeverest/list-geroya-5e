@@ -14040,6 +14040,12 @@ function choiceFeatureIds(root, choice) {
 	const exact = matches.filter((feature) => choiceTitle(feature.name) === choiceTitle(choice.name));
 	return (exact.length === 1 ? exact : matches.length === 1 ? matches : []).map((feature) => feature.id);
 }
+function linkedChoicesForFeature(root, featureId) {
+	return (root.choices || []).filter((choice) => choiceFeatureIds(root, choice).includes(featureId));
+}
+function choicesForFeature(root, feature) {
+	return [...new Map([...feature.choices || [], ...linkedChoicesForFeature(root, feature.id)].map((choice) => [choice.id, choice])).values()];
+}
 function inferredMagicFeatureIds(root) {
 	return (root.features || []).filter((feature) => {
 		if (root.references?.includes(feature.id)) return true;
@@ -49636,7 +49642,22 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 	});
 }
 function ChoicesEditor({ draft, update, depth = 0 }) {
+	const session = useSession();
 	const choices = draft.choices || [];
+	const parent = session.elements.find((element) => element.features?.some((feature) => feature.id === draft.id));
+	const linked = parent ? linkedChoicesForFeature(parent, draft.id).filter((choice) => !choices.some((row) => row.id === choice.id)) : [];
+	const addStage = (choice, source, apply) => {
+		const group = choice.choiceGroup || choice.id;
+		apply([...source.map((row) => row.id === choice.id ? {
+			...row,
+			choiceGroup: group
+		} : row), {
+			...choice,
+			id: newHomebrew("ability").id,
+			choiceGroup: group,
+			level: Math.min(20, (choice.level || 1) + 1)
+		}]);
+	};
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-choice-collection",
 		children: [
@@ -49644,8 +49665,12 @@ function ChoicesEditor({ draft, update, depth = 0 }) {
 				"Выборы внутри «",
 				draft.name || "элемента",
 				"» · ",
-				choices.length
+				choices.length + linked.length
 			] }),
+			linked.length > 0 && /* @__PURE__ */ jsx("p", {
+				className: "hb-auto-choice-note",
+				children: "Связанные выборы найдены автоматически по правилам способности. Их не нужно создавать или связывать вручную."
+			}),
 			choices.map((choice) => /* @__PURE__ */ jsxs("details", {
 				className: "hb-choice-progression-card",
 				open: true,
@@ -49658,21 +49683,30 @@ function ChoicesEditor({ draft, update, depth = 0 }) {
 					choice,
 					depth,
 					onChange: (next, related) => update({ choices: choices.map((row) => row.id === choice.id ? next : row) }, related),
-					onAddStage: () => {
-						const group = choice.choiceGroup || choice.id;
-						update({ choices: [...choices.map((row) => row.id === choice.id ? {
-							...row,
-							choiceGroup: group
-						} : row), {
-							...choice,
-							id: newHomebrew("ability").id,
-							choiceGroup: group,
-							level: Math.min(20, (choice.level || 1) + 1)
-						}] });
-					},
+					onAddStage: () => addStage(choice, choices, (next) => update({ choices: next })),
 					onRemove: () => update({ choices: choices.filter((row) => row.id !== choice.id) })
 				})]
 			}, choice.id)),
+			linked.map((choice) => {
+				const source = parent.choices || [];
+				return /* @__PURE__ */ jsxs("details", {
+					className: "hb-choice-progression-card",
+					open: true,
+					children: [/* @__PURE__ */ jsxs("summary", { children: [/* @__PURE__ */ jsx("span", { children: choice.name }), /* @__PURE__ */ jsxs("small", { children: [
+						"Автоматически связан · ",
+						choice.count,
+						" из ",
+						choice.from.length
+					] })] }), /* @__PURE__ */ jsx(ChoiceEditor, {
+						owner: parent,
+						choice,
+						depth,
+						onChange: (next, related) => session.patchElement(parent.id, { choices: source.map((row) => row.id === choice.id ? next : row) }, related),
+						onAddStage: () => addStage(choice, source, (next) => session.patchElement(parent.id, { choices: next })),
+						onRemove: () => session.patchElement(parent.id, { choices: source.filter((row) => row.id !== choice.id) })
+					})]
+				}, "linked:" + choice.id);
+			}),
 			/* @__PURE__ */ jsx("button", {
 				type: "button",
 				onClick: () => update({ choices: [...choices, {
@@ -49683,7 +49717,7 @@ function ChoicesEditor({ draft, update, depth = 0 }) {
 					from: [],
 					level: draft.level || 1
 				}] }),
-				children: "+ Добавить выбор внутри элемента"
+				children: linked.length ? "+ Добавить ещё один выбор способности" : "+ Добавить выбор внутри элемента"
 			})
 		]
 	});
@@ -56462,9 +56496,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 	} });
 	const hasAsi = rows.some((row) => row.type === "asi_or_feat");
 	const featureCount = (draft.features || []).filter((feature) => feature.level === level).length;
-	const choiceCount = (draft.choices || []).filter((choice) => (choice.level || 1) === level).length;
+	const choicesAtLevel = (n) => (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.features || []).flatMap((feature) => feature.choices || []).filter((choice) => (choice.level || 1) === n).length;
+	const choiceCount = choicesAtLevel(level);
 	const linkedCount = rows.filter((row) => row.type !== "asi_or_feat").length;
-	const levelCount = (n) => (draft.features || []).filter((feature) => feature.level === n).length + (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.advancement?.[n]?.length || 0);
+	const levelCount = (n) => (draft.features || []).filter((feature) => feature.level === n).length + choicesAtLevel(n) + (draft.advancement?.[n]?.length || 0);
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-development",
 		children: [
@@ -56584,9 +56619,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 }
 function ClassFeatures({ draft, update, entities, level }) {
 	const features = draft.features || [], choices = draft.choices || [];
-	const linked = (feature) => choices.filter((choice) => choiceFeatureIds(draft, choice).includes(feature.id));
-	const levelFeatures = features.filter((feature) => feature.level === level || linked(feature).some((choice) => (choice.level || 1) === level));
-	const orphanChoices = choices.filter((choice) => (choice.level || 1) === level && !features.some((feature) => choiceFeatureIds(draft, choice).includes(feature.id)));
+	const linked = (feature) => linkedChoicesForFeature(draft, feature.id);
+	const allChoices = (feature) => choicesForFeature(draft, feature);
+	const levelFeatures = features.filter((feature) => feature.level === level || allChoices(feature).some((choice) => (choice.level || feature.level || 1) === level));
+	const orphanChoices = choices.filter((choice) => (choice.level || 1) === level && !features.some((feature) => linked(feature).some((row) => row.id === choice.id)));
 	const patchFeature = (id, p, related) => update({ features: features.map((feature) => feature.id === id ? {
 		...feature,
 		...p
@@ -56597,8 +56633,7 @@ function ClassFeatures({ draft, update, entities, level }) {
 			/* @__PURE__ */ jsxs("div", {
 				className: "hb-feature-list",
 				children: [levelFeatures.map((feature) => {
-					const attached = linked(feature);
-					const currentChoices = attached.filter((choice) => (choice.level || 1) === level);
+					const linkedRoot = linked(feature), attached = allChoices(feature);
 					const virtual = {
 						...draft,
 						...feature,
@@ -56608,31 +56643,18 @@ function ClassFeatures({ draft, update, entities, level }) {
 						resources: feature.resources || [],
 						attacks: feature.attacks || [],
 						actions: feature.actions || [],
-						choices: [...feature.choices || [], ...currentChoices]
+						choices: feature.choices || []
 					};
-					const updateFeature = (p, related) => {
-						if (p.choices) {
-							const oldRootIds = new Set(attached.map((choice) => choice.id));
-							const rootChoice = (choice) => oldRootIds.has(choice.id) || !!choice.choiceGroup && attached.some((row) => (row.choiceGroup || row.id) === choice.choiceGroup);
-							const nested = p.choices.filter((choice) => !rootChoice(choice));
-							const otherRoot = choices.filter((choice) => !currentChoices.some((row) => row.id === choice.id));
-							update({
-								features: features.map((row) => row.id === feature.id ? {
-									...row,
-									choices: nested
-								} : row),
-								choices: [...otherRoot, ...p.choices.filter(rootChoice)]
-							}, related);
-						} else patchFeature(feature.id, Object.fromEntries(Object.entries(p).filter(([key]) => [
-							"name",
-							"description",
-							"level",
-							"effects",
-							"resources",
-							"attacks",
-							"actions"
-						].includes(key))), related);
-					};
+					const updateFeature = (p, related) => patchFeature(feature.id, Object.fromEntries(Object.entries(p).filter(([key]) => [
+						"name",
+						"description",
+						"level",
+						"effects",
+						"resources",
+						"attacks",
+						"actions",
+						"choices"
+					].includes(key))), related);
 					return /* @__PURE__ */ jsx(HBDisclosure, {
 						className: attached.length ? "hb-choice-progression-card" : "hb-feature-card",
 						initialOpen: true,
@@ -56674,7 +56696,7 @@ function ClassFeatures({ draft, update, entities, level }) {
 								attached.length > 0 && /* @__PURE__ */ jsxs("div", {
 									className: "hb-choice-milestones",
 									children: [/* @__PURE__ */ jsx("strong", { children: "Прогрессия этой способности" }), attached.map((choice) => /* @__PURE__ */ jsxs("span", { children: [
-										choice.level || 1,
+										choice.level || feature.level,
 										" ур. · выбрать ",
 										choice.count
 									] }, choice.id))]
@@ -56704,7 +56726,7 @@ function ClassFeatures({ draft, update, entities, level }) {
 									className: "hb-danger",
 									onClick: () => update({
 										features: features.filter((row) => row.id !== feature.id),
-										choices: choices.filter((choice) => !attached.some((row) => row.id === choice.id))
+										choices: choices.filter((choice) => !linkedRoot.some((row) => row.id === choice.id))
 									}),
 									children: "Удалить способность и её этапы выбора"
 								})
