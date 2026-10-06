@@ -1,4 +1,5 @@
 import { effectTypes, newHomebrew, type HomebrewElement, type HBChoice, type HBEffect } from './homebrew';
+import { magicFeatureIds } from './homebrewMagic';
 
 /** Editor-only projections. No graph metadata is written to the v2 document. */
 export function editableHomebrew(elements:HomebrewElement[]):HomebrewElement[] {
@@ -38,6 +39,15 @@ export function homebrewRelations(elements:HomebrewElement[]){
  const add=(from:string,to:string,label:string,condition?:string)=>edges.push({from,to,label,condition});
  for(const element of flat){
   nodes.push({id:element.id,name:element.name,kind:element.type,entityId:element.id});
+  if(element.type==='class'&&element.spellcasting&&element.spellcasting.mode!=='none'){
+   const magic=`magic:${element.id}`;
+   nodes.push({id:magic,name:'Магия класса: '+element.name,kind:'magic',entityId:element.id});
+   add(element.id,magic,'Настройки магии');
+   for(const id of magicFeatureIds(element))add(id,magic,'Связана с магией класса');
+   for(const [key,name] of [['slots','Ячейки и восстановление'],['known','Известные / подготовленные заклинания'],['cantrips','Заговоры'],['list','Список доступных заклинаний']]){
+    const id=`${magic}:${key}`;nodes.push({id,name,kind:'magic',entityId:element.id});add(magic,id,'Определяет');
+   }
+  }
   for(const feature of element.features||[])add(element.id,feature.id,'Даёт способность',`С ${feature.level} уровня`);
   for(const choice of element.choices||[]){
    const key=`choice:${element.id}:${choice.id}`;

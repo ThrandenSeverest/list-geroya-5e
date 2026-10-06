@@ -236,6 +236,7 @@ const table = {
         await page
           .getByRole("button", { name: "Заклинания", exact: true })
           .click();
+        if (!(await page.getByLabel("Прогрессия магии").isVisible())) await page.getByText("Редактировать магию, ячейки и список заклинаний", { exact: true }).click();
         await page.getByLabel("Прогрессия магии").selectOption("full");
         const druidList = page
           .locator(".hb-spell-source-grid button")

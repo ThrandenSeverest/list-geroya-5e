@@ -1,0 +1,26 @@
+const assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const entities=require('../app/shamanExample.json').entities;
+(async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});try{for(const width of [1440,390]){
+ const context=await browser.newContext({viewport:{width,height:1000}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/api/account',r=>r.fulfill({json:{authenticated:false}}));
+ await page.addInitScript(entities=>{if(!localStorage.getItem('herolist-homebrew-local-v2'))localStorage.setItem('herolist-homebrew-local-v2',JSON.stringify({version:2,schemaVersion:2,elements:entities}));},entities);
+ await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3998');
+ await page.getByRole('button',{name:/^Мой Homebrew/}).click();
+ await page.locator('.hb-sidebar-package > button').filter({hasText:'Шаман'}).first().click();
+ await page.getByRole('button',{name:'Развитие и способности',exact:true}).click();
+ await page.getByRole('button',{name:/^Уровень 2:/}).click();
+ const workspace=page.getByRole('region',{name:'Магия и заклинания способности'});
+ await workspace.waitFor();assert.match(await workspace.innerText(),/Заговоров: 2/);assert.match(await workspace.innerText(),/Известно: 3/);assert.match(await workspace.innerText(),/2 × 1-й круг/);
+ await workspace.getByLabel('Уровень предпросмотра магии').fill('5');assert.match(await workspace.innerText(),/2 × 3-й круг/);
+ await workspace.getByText('Редактировать магию, ячейки и список заклинаний',{exact:true}).click();
+ await workspace.getByLabel('Характеристика магии',{exact:true}).selectOption('cha');assert.match(await workspace.innerText(),/Харизма/);
+ await page.getByRole('button',{name:'Сохранить изменения',exact:true}).click();
+ await page.getByRole('button',{name:'Связи',exact:true}).click();
+ await page.getByRole('button',{name:/Магия класса: Шаман/}).click();
+ assert.ok(await page.getByRole('button',{name:/Ячейки и восстановление/}).isVisible());
+ await page.reload();await page.getByRole('button',{name:/^Мой Homebrew/}).click();await page.locator('.hb-sidebar-package > button').filter({hasText:'Шаман'}).first().click();await page.getByRole('button',{name:'Развитие и способности',exact:true}).click();await page.getByRole('button',{name:/^Уровень 2:/}).click();
+ assert.match(await page.getByRole('region',{name:'Магия и заклинания способности'}).innerText(),/Харизма/);
+ assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ await page.screenshot({path:`/tmp/hb-magic-${width}.png`,fullPage:true});console.log(`Magic workspace ${width}: preview, editing, graph, save/reload OK`);await context.close();
+ }}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});
