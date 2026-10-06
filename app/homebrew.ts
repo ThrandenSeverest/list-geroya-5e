@@ -1,7 +1,8 @@
 export type HomebrewType = 'ability'|'feat'|'item'|'spell'|'proficiency'|'race'|'subrace'|'class'|'subclass'|'background'|'resource'|'attack'|'table'|'note'|'pack';
 export type HBAbility = 'str'|'dex'|'con'|'int'|'wis'|'cha';
 export type HBEffect = { type: string; value?: number|string; ability?: string; skill?: string; mode?: string; id?: string; group?: string; damage?: string; condition?: string; sense?: string; range?: number; formula?: string; when?: string; level?: number };
-export type HBResource = { id:string; name:string; max:number|string; restore:string[]; showOnSheet?:boolean; level?:number; when?:string };
+export type HBResourceStep = { level:number; max?:number|string; restore?:string[] };
+export type HBResource = { progression?:HBResourceStep[]; id:string; name:string; max:number|string; restore:string[]; showOnSheet?:boolean; level?:number; when?:string };
 export type HBAttack = { id:string; name:string; ability:HBAbility; proficient:boolean; bonus?:number|string; damage:{formula:string;type:string}[]; actionType?:string; range?:string; saveAbility?:HBAbility; saveDc?:string; level?:number; when?:string; cost?:{resource:string;amount:number} };
 export type HBDamagePart = { formula:string; type:string };
 export type HBSpellScalingStep = { level:number; damage:HBDamagePart[]; effect?:string };
@@ -17,7 +18,7 @@ export type HBRequirement = { type:'selected_feature'; id:string; label?:string 
 export type HBSpellGrant = { spellId:string; level:number; mode?:'known'|'always-prepared'; countsAgainstKnown?:boolean; uses?:number; recovery?:'short_or_long'|'long' };
 export type HBAction = { id:string; name:string; actionType:string; cost?:{resource:string;amount:number}; description?:string };
 export type HBProgression = { type:'feature'|'resource'|'attack'|'spell'|'subclass'|'asi_or_feat'|'choice'; id?:string };
-export type HBClassFeature = { id:string; level:number; name:string; description:string; showOnSheet?:boolean; effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[]; actions?:HBAction[]; choices?:HBChoice[] };
+export type HBClassFeature = { id:string; level:number; name:string; description:string; showOnSheet?:boolean; spellGrants?:HBSpellGrant[]; effects?:HBEffect[]; resources?:HBResource[]; attacks?:HBAttack[]; actions?:HBAction[]; choices?:HBChoice[] };
 export type HomebrewElement = {
  id:string; uid?:string; schemaVersion?:2; type:HomebrewType; name:string; description:string; updatedAt:string; characterId?:string;
  summary?:string; tags?:string[]; version?:string; source?:{kind:string;packId?:string;author?:string;url?:string}; icon?:string;

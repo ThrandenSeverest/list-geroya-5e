@@ -26,7 +26,7 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
    await page.getByRole('button',{name:'Отменить',exact:true}).click();assert.equal(await choice.getByRole('button',{name:'Дух',exact:true}).count(),0);
    await page.getByRole('button',{name:'Повторить',exact:true}).click();await choice.getByLabel('Описание варианта',{exact:true}).fill('Новый вариант с постоянным бонусом.');
    await choice.getByText('Эффекты, ресурсы, атаки и вложенные выборы варианта',{exact:true}).click();
-   await choice.locator('.hb-mechanics > details > summary').filter({hasText:'Бонусы и эффекты'}).click();await choice.getByRole('button',{name:'+ Эффект',exact:true}).click();await choice.getByLabel('Тип эффекта',{exact:true}).selectOption('ac_bonus');
+   await choice.getByRole('button',{name:/Изменить показатели/}).click();await choice.getByRole('button',{name:'+ Эффект',exact:true}).click();await choice.getByLabel('Тип эффекта',{exact:true}).selectOption('ac_bonus');
    await choice.getByText('Дополнительные игровые требования и выдача',{exact:true}).click();
    await choice.getByLabel('Смысл новой связи',{exact:true}).selectOption('dependent');
    await choice.locator('.hb-relation-add .hb-named-reference > button').click();await choice.locator('.hb-relation-add').getByRole('button',{name:'Улучшение тела',exact:true}).click();

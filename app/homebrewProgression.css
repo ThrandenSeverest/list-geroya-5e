@@ -124,3 +124,21 @@
 .hb-magic-workspace,.hb-magic-connect{padding:16px;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.hb-magic-workspace header,.hb-magic-facts,.hb-magic-preview{display:flex;flex-wrap:wrap;gap:14px}.hb-magic-workspace header{justify-content:space-between;align-items:center}.hb-magic-facts>span{display:grid;gap:5px;flex:1 1 150px}.hb-magic-preview{padding:14px;margin:12px 0;border:1px solid var(--line);border-radius:8px}.hb-magic-preview strong{width:100%}.hb-magic-workspace details{margin:12px 0}.hb-magic-table-wrap{overflow-x:auto}.hb-magic-table-wrap table{width:100%;border-collapse:collapse}.hb-magic-table-wrap th,.hb-magic-table-wrap td{padding:8px;text-align:left;border-bottom:1px solid var(--line)}.hb-magic-spell-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;max-height:350px;overflow:auto;padding:10px 0}.hb-magic-spell-list>span{display:grid;gap:3px}.hb-magic-workspace .hb-toolbar label{flex:1 1 180px;min-width:0}.hb-magic-workspace .hb-toolbar input{width:100%}
 
 .hb-auto-relation{display:grid;gap:.4rem;margin:.5rem 0;min-width:0}.hb-auto-relation>.hb-graph-node{width:100%;text-align:left}.hb-auto-options{display:flex;flex-wrap:wrap;gap:.4rem;padding-left:.5rem;min-width:0}.hb-auto-options button{white-space:normal;overflow-wrap:anywhere;text-align:left}.hb-extra-gameplay-rules{margin-top:.5rem}.hb-relationships>.hb-relation-columns>div{min-width:0}
+
+/* Authoring actions: the rule storage format is never the navigation model. */
+.hb-mechanic-launcher { padding:16px 0; }
+.hb-mechanic-launcher h4 { margin:0 0 12px; }
+.hb-mechanic-launcher > div { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
+.hb-mechanic-launcher button { display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;text-align:left;border-radius:12px;min-height:86px; }
+.hb-mechanic-launcher small { font-weight:400;opacity:.72;line-height:1.45; }
+.hb-value-builder { display:flex;flex-direction:column;gap:8px;min-width:0; }
+.hb-value-fields { display:flex;flex-wrap:wrap;gap:10px; }
+.hb-value-fields label { display:grid;gap:5px;flex:1;min-width:80px;font-size:.85rem; }
+.hb-value-fields input { width:100%; }
+.hb-sheet-visibility { display:flex;align-items:center;gap:8px;padding:10px 0; }
+.hb-sheet-visibility input { width:auto; }
+.hb-feature-card > summary,.hb-choice-progression-card > summary { padding:14px; }
+.hb-level-feature-block > button { margin:10px 8px 0 0; }
+.hb-advanced-tools > button { display:block;margin-top:8px; }
+@media(max-width:760px){.hb-mechanic-launcher > div{grid-template-columns:repeat(2,minmax(0,1fr))}.hb-value-fields{flex-direction:column}}
+@media(max-width:420px){.hb-mechanic-launcher > div{grid-template-columns:1fr}.hb-mechanic-launcher button{min-height:64px}}

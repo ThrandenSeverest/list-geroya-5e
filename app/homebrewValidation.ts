@@ -68,6 +68,24 @@ export function validateHomebrew(entities:HomebrewElement[],officialIds:string[]
   ref(e.id,e.parentClassId);ref(e.id,e.parentRaceId);
   for(const id of e.references||[])ref(e.id,id);
  }
+ // Validate gameplay fields identically for standalone and inline abilities.
+ const flatRules=editableHomebrew(entities.filter(e=>e&&typeof e==='object'));
+ const resourceIds=new Set(flatRules.flatMap(element=>(element.resources||[]).map(resource=>resource.id)));
+ for(const element of flatRules){
+  for(const grant of element.spellGrants||[])if(!Number.isInteger(grant.level)||grant.level<1||grant.level>20||(!all.has(grant.spellId)&&!all.has('official:spell:'+grant.spellId))||grant.uses!==undefined&&(!Number.isInteger(grant.uses)||grant.uses<1||grant.uses>20))add(element.id,'Заклинание способности: проверьте заклинание, уровень и число применений');
+  for(const effect of element.effects||[])formula(element.id,effect.formula);
+  for(const attack of element.attacks||[])formula(element.id,attack.saveDc);
+  for(const action of [...element.actions||[],...element.attacks||[]])if(action.cost&&(!resourceIds.has(action.cost.resource)||!Number.isInteger(action.cost.amount)||action.cost.amount<1))add(element.id,'Расход: выберите существующий ресурс и целое число применений больше нуля');
+  for(const resource of element.resources||[]){
+   if(resource.progression!==undefined&&!Array.isArray(resource.progression)){add(element.id,'Улучшения ресурса: требуется список');continue;}
+   const levels=new Set<number>();
+   for(const step of resource.progression||[]){
+    if(!step||!Number.isInteger(step.level)||step.level<1||step.level>20||levels.has(step.level)){add(element.id,'Улучшения ресурса: уникальные уровни от 1 до 20');continue;}
+    levels.add(step.level);formula(element.id,step.max);
+    if(step.restore!==undefined&&(!Array.isArray(step.restore)||step.restore.some(value=>!['short_rest','long_rest','dawn','initiative','manual'].includes(value))))add(element.id,'Улучшения ресурса: выберите способ восстановления');
+   }
+  }
+ }
  // Prerequisites form a separate acyclic graph; ordinary references may point back.
  if(!problems.length){const flat=editableHomebrew(entities),byId=new Map(flat.map(e=>[e.id,e])),done=new Set<string>(),path=new Set<string>();const visit=(id:string)=>{if(path.has(id)){add(id,'Циклическое требование: варианты зависят друг от друга');return;}if(done.has(id))return;path.add(id);for(const r of byId.get(id)?.requirements||[])visit(r.id);path.delete(id);done.add(id);};for(const e of flat)visit(e.id);}
  // Only automatically expanded edges participate; descriptive references may point back.
