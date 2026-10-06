@@ -222,7 +222,7 @@ const table = {
         assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности Браузерная способность" }).isVisible());
         await page.keyboard.press("Enter");
         assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
-        await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
+        await page.getByRole("button", { name: /Добавить действие/ }).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
         await featureDescription.fill("Урон: @dam");

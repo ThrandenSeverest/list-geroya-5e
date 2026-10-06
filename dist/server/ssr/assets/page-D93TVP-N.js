@@ -13448,6 +13448,21 @@ var conditionIds = [
 	"exhaustion"
 ];
 //#endregion
+//#region app/homebrewResources.ts
+/** Sparse milestones inherit the latest unlocked value; v2 resources stay unchanged. */
+function resourceAtLevel(resource, level) {
+	let max = resource.max, restore = resource.restore;
+	for (const step of [...resource.progression || []].sort((a, b) => a.level - b.level)) {
+		if (step.level > level) break;
+		if (step.max !== void 0) max = step.max;
+		if (step.restore !== void 0) restore = step.restore;
+	}
+	return {
+		max,
+		restore
+	};
+}
+//#endregion
 //#region app/homebrewFormula.ts
 function evaluateFormula(input, context) {
 	if (typeof input === "number") {
@@ -22775,7 +22790,8 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
 //#endregion
 //#region app/characterRules.ts
 function spellSelectionRuleForClass(character, classId, classLevel = character.level) {
-	const casting = (character.homebrew?.entities.find((e) => e.id === classId && e.type === "class"))?.spellcasting;
+	const custom = character.homebrew?.entities.find((e) => e.id === classId && e.type === "class");
+	const casting = custom?.spellcasting;
 	if (!casting || casting.mode === "none") return spellSelectionRuleForClass$1(character, classId, classLevel);
 	const level = Math.max(1, Math.min(20, classLevel));
 	const progression = casting.mode === "full" ? level : casting.mode === "half" ? Math.ceil(level / 2) : casting.mode === "third" ? Math.ceil(level / 3) : 0;
@@ -22783,10 +22799,14 @@ function spellSelectionRuleForClass(character, classId, classLevel = character.l
 	const maxLevel = casting.mode === "pact" ? Math.min(5, Math.ceil(level / 2)) : slots.length;
 	let prepared = 1;
 	try {
-		prepared = Math.max(1, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
-			"@level": level,
-			["@mod." + casting.ability]: Math.floor((character.abilities[casting.ability] - 10) / 2)
-		} })));
+		prepared = Math.max(1, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, {
+			...hbContext(character, custom.id),
+			values: {
+				...hbContext(character, custom.id).values,
+				"@level": level,
+				"@classLevel": level
+			}
+		})));
 	} catch {}
 	const mode = casting.selection || "known";
 	const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
@@ -23678,10 +23698,16 @@ function hbContext(c, source, available) {
 		source,
 		classLevel: (id) => classLevel(c, id),
 		resource: (id, field) => {
-			const r = (c.homebrew?.entities || []).flatMap((e) => e.resources || []).find((r) => r.id === id);
-			if (!r) return 0;
-			const max = evaluateFormula(r.max, {
-				values,
+			const source = editableHomebrew(entities).find((e) => e.resources?.some((r) => r.id === id));
+			const r = source?.resources?.find((r) => r.id === id);
+			if (!r || !source) return 0;
+			const ownerId = source.type === "class" ? source.id : source.parentClassId;
+			const ownerLevel = ownerId ? classLevel(c, ownerId) : level(c);
+			const max = evaluateFormula(resourceAtLevel(r, ownerLevel).max, {
+				values: {
+					...values,
+					"@classLevel": ownerLevel
+				},
 				classLevel: (i) => classLevel(c, i)
 			});
 			return field === "max" ? max : Math.max(0, max - (c.resourceSpent?.[id] || 0));
@@ -23833,13 +23859,16 @@ function classRuleFor(c, id) {
 }
 function hbResources(c) {
 	const map = /* @__PURE__ */ new Map();
-	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) map.set(r.id, {
-		key: r.id,
-		name: r.name,
-		max: Math.max(0, Math.floor(hbValue(c, r.max, e.id))),
-		isShortRest: r.restore.includes("short_rest"),
-		isLongRest: r.restore.includes("long_rest")
-	});
+	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) {
+		const unlocked = resourceAtLevel(r, e.type === "class" ? classLevel(c, e.id) : e.parentClassId ? classLevel(c, e.parentClassId) : level(c));
+		map.set(r.id, {
+			key: r.id,
+			name: r.name,
+			max: Math.max(0, Math.floor(hbValue(c, unlocked.max, e.id))),
+			isShortRest: unlocked.restore.includes("short_rest"),
+			isLongRest: unlocked.restore.includes("long_rest")
+		});
+	}
 	for (const source of activeHomebrew(c)) if (source.type === "class" || source.parentClassId) {
 		for (const grant of source.spellGrants || []) if (grant.uses && grant.level <= classLevel(c, source.type === "class" ? source.id : source.parentClassId || "")) {
 			const key = source.id + ":spell:" + grant.spellId;
@@ -40808,7 +40837,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40820,7 +40849,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40839,7 +40868,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40859,7 +40888,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40877,7 +40906,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40907,7 +40936,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/axe.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40922,7 +40951,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bird.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40956,7 +40985,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bone.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40968,7 +40997,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40983,7 +41012,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41021,7 +41050,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/brain.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41067,7 +41096,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bug.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41121,7 +41150,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cat.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41147,7 +41176,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41166,7 +41195,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/clover.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41188,7 +41217,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cog.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41254,7 +41283,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/compass.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41271,7 +41300,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/crown.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41286,7 +41315,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/drama.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41328,7 +41357,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41343,7 +41372,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41373,7 +41402,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/eye.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41390,7 +41419,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/feather.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41412,7 +41441,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41424,7 +41453,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flame.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41436,7 +41465,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41458,7 +41487,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41484,7 +41513,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/gem.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41506,7 +41535,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41528,7 +41557,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hand.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41554,7 +41583,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41584,7 +41613,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41606,7 +41635,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41621,7 +41650,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41636,7 +41665,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41654,7 +41683,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/moon.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41666,7 +41695,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41678,7 +41707,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41702,7 +41731,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/music.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41728,7 +41757,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41764,7 +41793,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41796,7 +41825,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41826,7 +41855,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rat.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41856,7 +41885,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41882,7 +41911,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41936,7 +41965,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shell.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41948,7 +41977,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41960,7 +41989,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41975,7 +42004,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42005,7 +42034,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42031,7 +42060,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sun.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42079,7 +42108,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sword.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42114,7 +42143,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/swords.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42174,7 +42203,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42214,7 +42243,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42229,7 +42258,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trees.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42255,7 +42284,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42272,7 +42301,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42294,7 +42323,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42336,7 +42365,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/waves.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42358,7 +42387,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wind.js
+//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47622,7 +47651,7 @@ function applySubclassLongRest(character) {
 	};
 }
 //#endregion
-//#region node_modules/fflate/esm/index.mjs
+//#region ../../6c860f9dd804/herolist/node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -48740,6 +48769,36 @@ function validateHomebrew(entities, officialIds = []) {
 		ref(e.id, e.parentClassId);
 		ref(e.id, e.parentRaceId);
 		for (const id of e.references || []) ref(e.id, id);
+	}
+	const flatRules = editableHomebrew(entities.filter((e) => e && typeof e === "object"));
+	const resourceIds = new Set(flatRules.flatMap((element) => (element.resources || []).map((resource) => resource.id)));
+	for (const element of flatRules) {
+		for (const grant of element.spellGrants || []) if (!Number.isInteger(grant.level) || grant.level < 1 || grant.level > 20 || !all.has(grant.spellId) && !all.has("official:spell:" + grant.spellId) || grant.uses !== void 0 && (!Number.isInteger(grant.uses) || grant.uses < 1 || grant.uses > 20)) add(element.id, "Заклинание способности: проверьте заклинание, уровень и число применений");
+		for (const effect of element.effects || []) formula(element.id, effect.formula);
+		for (const attack of element.attacks || []) formula(element.id, attack.saveDc);
+		for (const action of [...element.actions || [], ...element.attacks || []]) if (action.cost && (!resourceIds.has(action.cost.resource) || !Number.isInteger(action.cost.amount) || action.cost.amount < 1)) add(element.id, "Расход: выберите существующий ресурс и целое число применений больше нуля");
+		for (const resource of element.resources || []) {
+			if (resource.progression !== void 0 && !Array.isArray(resource.progression)) {
+				add(element.id, "Улучшения ресурса: требуется список");
+				continue;
+			}
+			const levels = /* @__PURE__ */ new Set();
+			for (const step of resource.progression || []) {
+				if (!step || !Number.isInteger(step.level) || step.level < 1 || step.level > 20 || levels.has(step.level)) {
+					add(element.id, "Улучшения ресурса: уникальные уровни от 1 до 20");
+					continue;
+				}
+				levels.add(step.level);
+				formula(element.id, step.max);
+				if (step.restore !== void 0 && (!Array.isArray(step.restore) || step.restore.some((value) => ![
+					"short_rest",
+					"long_rest",
+					"dawn",
+					"initiative",
+					"manual"
+				].includes(value)))) add(element.id, "Улучшения ресурса: выберите способ восстановления");
+			}
+		}
 	}
 	if (!problems.length) {
 		const flat = editableHomebrew(entities), byId = new Map(flat.map((e) => [e.id, e])), done = /* @__PURE__ */ new Set(), path = /* @__PURE__ */ new Set();
@@ -53834,6 +53893,128 @@ var shamanExample_default = {
 	]
 };
 //#endregion
+//#region app/HomebrewValueInput.tsx
+var sources = {
+	fixed: "Постоянное число",
+	"@pb": "Бонус мастерства",
+	"@classLevel": "Уровень этого класса",
+	"@level": "Общий уровень персонажа",
+	"floor(@classLevel / 2)": "Половина уровня класса (вниз)",
+	...Object.fromEntries(Object.entries(abilityLabels).map(([id, label]) => ["@mod." + id, "Модификатор: " + label])),
+	dice: "Бросок кости",
+	custom: "Своя формула"
+};
+function readSimpleValue(value) {
+	const text = String(value).trim();
+	if (text !== "" && Number.isFinite(Number(text))) return {
+		source: "fixed",
+		amount: Number(text),
+		bonus: 0,
+		dice: 6
+	};
+	for (const source of Object.keys(sources).filter((key) => key.startsWith("@") || key.startsWith("floor("))) {
+		if (text === source) return {
+			source,
+			amount: 1,
+			bonus: 0,
+			dice: 6
+		};
+		if (text.startsWith(source + " + ") || text.startsWith(source + " - ")) {
+			const tail = text.slice(source.length).replace(/\s/g, "");
+			if (/^[+-]\d+(\.\d+)?$/.test(tail)) return {
+				source,
+				amount: 1,
+				bonus: Number(tail),
+				dice: 6
+			};
+		}
+	}
+	const dice = /^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/.exec(text);
+	if (dice) return {
+		source: "dice",
+		amount: Number(dice[1]),
+		bonus: Number(dice[4] || 0) * (dice[3] === "-" ? -1 : 1),
+		dice: Number(dice[2])
+	};
+	return {
+		source: "custom",
+		amount: 1,
+		bonus: 0,
+		dice: 6
+	};
+}
+function simpleValueFormula(source, amount, bonus, dice) {
+	if (source === "fixed") return String(amount);
+	return (source === "dice" ? `${amount}d${dice}` : source) + (bonus ? ` ${bonus < 0 ? "-" : "+"} ${Math.abs(bonus)}` : "");
+}
+function HomebrewValueInput({ value, onChange, label }) {
+	const parsed = readSimpleValue(value), [manual, setManual] = useState(false);
+	const mode = manual ? "custom" : parsed.source;
+	const patch = (p) => {
+		const next = {
+			...parsed,
+			...p
+		};
+		onChange(simpleValueFormula(next.source, next.amount, next.bonus, next.dice));
+	};
+	return /* @__PURE__ */ jsxs("div", {
+		className: "hb-value-builder",
+		children: [/* @__PURE__ */ jsx("select", {
+			"aria-label": label + ": способ расчёта",
+			value: mode,
+			onChange: (event) => {
+				const source = event.target.value;
+				setManual(source === "custom");
+				if (source !== "custom") patch({ source });
+			},
+			children: Object.entries(sources).map(([id, name]) => /* @__PURE__ */ jsx("option", {
+				value: id,
+				children: name
+			}, id))
+		}), mode === "custom" ? /* @__PURE__ */ jsx(HomebrewCommandInput, {
+			label,
+			value: String(value),
+			onChange
+		}) : /* @__PURE__ */ jsxs("div", {
+			className: "hb-value-fields",
+			children: [
+				mode === "fixed" || mode === "dice" ? /* @__PURE__ */ jsxs("label", { children: [mode === "dice" ? "Количество костей" : "Значение", /* @__PURE__ */ jsx("input", {
+					"aria-label": label,
+					type: "number",
+					min: mode === "dice" ? 1 : void 0,
+					max: mode === "dice" ? 100 : void 0,
+					value: parsed.amount,
+					onChange: (event) => patch({ amount: Number(event.target.value) })
+				})] }) : null,
+				mode === "dice" && /* @__PURE__ */ jsxs("label", { children: ["Кость", /* @__PURE__ */ jsx("select", {
+					"aria-label": label + ": кость",
+					value: parsed.dice,
+					onChange: (event) => patch({ dice: Number(event.target.value) }),
+					children: [...new Set([
+						4,
+						6,
+						8,
+						10,
+						12,
+						20,
+						100,
+						parsed.dice
+					])].sort((a, b) => a - b).map((die) => /* @__PURE__ */ jsxs("option", {
+						value: die,
+						children: ["к", die]
+					}, die))
+				})] }),
+				mode !== "fixed" && /* @__PURE__ */ jsxs("label", { children: ["Дополнительный бонус", /* @__PURE__ */ jsx("input", {
+					"aria-label": label + ": бонус",
+					type: "number",
+					value: parsed.bonus,
+					onChange: (event) => patch({ bonus: Number(event.target.value) })
+				})] })
+			]
+		})]
+	});
+}
+//#endregion
 //#region app/HomebrewMagicWorkspace.tsx
 function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, featureId }) {
 	const [modifier, setModifier] = useState(3), [previewLevel, setPreviewLevel] = useState(level), [query, setQuery] = useState("");
@@ -54009,7 +54190,13 @@ var primaryClassTabs = [
 	"Основное",
 	"Развитие и способности",
 	"Заклинания",
-	"Связи",
+	"Описание",
+	"Проверка"
+];
+var primaryTabs = (type) => ["class", "subclass"].includes(type) ? primaryClassTabs : [
+	"Основное",
+	"Механика",
+	"Заклинания",
 	"Описание",
 	"Проверка"
 ];
@@ -54077,10 +54264,10 @@ function Select({ value, onChange, options, label }) {
 function Formula({ value, onChange, label = "Формула" }) {
 	return /* @__PURE__ */ jsx(Field, {
 		label,
-		help: "Введите @ для поиска переменных и функций. Поддерживаются арифметика, сравнения и кости (1d8). Предпросмотр показывает среднее.",
-		children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+		help: "Выберите, от чего зависит значение. Для сложных правил есть режим «Своя формула» с подсказками через @.",
+		children: /* @__PURE__ */ jsx(HomebrewValueInput, {
 			label,
-			value: String(value),
+			value,
 			onChange
 		})
 	});
@@ -54554,7 +54741,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 						children: "Homebrew 2.0"
 					}),
 					/* @__PURE__ */ jsx("h1", { children: "Мастерская правил" }),
-					/* @__PURE__ */ jsx("p", { children: "Отдельная библиотека JSON для любого числа персонажей. Экспорт элемента включает его зависимости. Для переноса персонажа на другое устройство импортируйте там и библиотеку." })
+					/* @__PURE__ */ jsx("p", { children: "Создавайте свои классы, способности и заклинания. Настройте, что получает герой, — мастерская сама соберёт правила для его листа." })
 				] }), /* @__PURE__ */ jsx("button", {
 					onClick: onClose,
 					children: "Назад"
@@ -54585,9 +54772,12 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 							}, "HeroList-homebrew.json"),
 							children: "Экспорт библиотеки"
 						}),
-						/* @__PURE__ */ jsx("button", {
-							onClick: () => setRegistry(!registry),
-							children: "Справочник ID"
+						/* @__PURE__ */ jsxs("details", {
+							className: "hb-advanced-tools",
+							children: [/* @__PURE__ */ jsx("summary", { children: "Для опытных авторов" }), /* @__PURE__ */ jsx("button", {
+								onClick: () => setRegistry(!registry),
+								children: "Справочник ID"
+							})]
 						}),
 						/* @__PURE__ */ jsx("small", { children: saveState === "saving" ? "Сохраняется…" : saveState === "error" ? "Не удалось синхронизировать" : "Сохранённая библиотека" })
 					]
@@ -54713,17 +54903,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), /* @__PURE__ */ jsxs("nav", {
 										className: "hb-tabs",
 										"aria-label": "Разделы редактора",
-										children: [editorTabs(draft.type).filter((t) => !["class", "subclass"].includes(draft.type) || primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+										children: [editorTabs(draft.type).filter((t) => primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
 											"aria-pressed": tab === t,
 											onClick: () => {
 												setTab(t);
 												if (t === "Код") setCode(JSON.stringify(draft, null, 2));
 											},
 											children: t
-										}, t)), ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsxs("details", {
+										}, t)), /* @__PURE__ */ jsxs("details", {
 											className: "hb-advanced-tabs",
-											open: !primaryClassTabs.includes(tab),
-											children: [/* @__PURE__ */ jsx("summary", { children: "Дополнительно" }), /* @__PURE__ */ jsx("div", { children: editorTabs(draft.type).filter((t) => !primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+											open: !primaryTabs(draft.type).includes(tab),
+											children: [/* @__PURE__ */ jsx("summary", { children: "Дополнительно" }), /* @__PURE__ */ jsx("div", { children: editorTabs(draft.type).filter((t) => !primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
 												"aria-pressed": tab === t,
 												onClick: () => {
 													setTab(t);
@@ -54800,15 +54990,18 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 												onChange: (e) => update({ name: e.target.value })
 											})
 										}),
-										/* @__PURE__ */ jsxs(Field, {
-											label: "ID",
-											help: "Присваивается автоматически, не меняется при переименовании. Для независимого объекта используйте Дублировать.",
-											children: [/* @__PURE__ */ jsx("input", {
-												readOnly: true,
-												value: draft.id
-											}), /* @__PURE__ */ jsx("button", {
-												onClick: () => navigator.clipboard?.writeText(draft.id),
-												children: "Копировать ID"
+										/* @__PURE__ */ jsxs("details", {
+											className: "hb-basic-details",
+											children: [/* @__PURE__ */ jsx("summary", { children: "Технический идентификатор" }), /* @__PURE__ */ jsxs(Field, {
+												label: "ID",
+												help: "Присваивается автоматически, не меняется при переименовании. Для независимого объекта используйте Дублировать.",
+												children: [/* @__PURE__ */ jsx("input", {
+													readOnly: true,
+													value: draft.id
+												}), /* @__PURE__ */ jsx("button", {
+													onClick: () => navigator.clipboard?.writeText(draft.id),
+													children: "Копировать ID"
+												})]
 											})]
 										}),
 										[
@@ -55449,6 +55642,42 @@ function SpellMechanicsEditor({ draft, update }) {
 	});
 }
 function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) {
+	const [adding, setAdding] = useState("");
+	const parent = entities.find((element) => element.features?.some((feature) => feature.id === draft.id));
+	const linkedCount = parent ? linkedChoicesForFeature(parent, draft.id).length : 0;
+	const resourceOptions = editableHomebrew(entities).flatMap((element) => (element.resources || []).map((resource) => [resource.id, resource.name + " · " + element.name]));
+	const mechanicKinds = [
+		[
+			"effects",
+			"Изменить показатели",
+			"Хиты, защита, скорость, навыки и владения"
+		],
+		[
+			"resources",
+			"Ограничить применения",
+			"Счётчик и восстановление после отдыха"
+		],
+		[
+			"attacks",
+			"Добавить атаку",
+			"Урон, попадание или спасбросок"
+		],
+		[
+			"choices",
+			"Дать выбор",
+			"Варианты и развитие способности"
+		],
+		[
+			"spells",
+			"Дать заклинания",
+			"В том числе всегда подготовленные"
+		],
+		[
+			"actions",
+			"Добавить действие",
+			"Активация и расход общего ресурса"
+		]
+	];
 	const setEffect = (i, patch) => update({ effects: draft.effects.map((e, n) => n === i ? {
 		...e,
 		...patch
@@ -55456,8 +55685,17 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 	return /* @__PURE__ */ jsxs("div", {
 		className: "hb-mechanics",
 		children: [
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.effects?.length,
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-mechanic-launcher",
+				children: [/* @__PURE__ */ jsx("h4", { children: "Что делает эта способность?" }), /* @__PURE__ */ jsx("div", { children: mechanicKinds.filter(([key]) => (!hideChoices || key !== "choices") && (key !== "spells" || ["class", "subclass"].includes(draft.type) || !!draft.parentClassId)).map(([key, title, description]) => /* @__PURE__ */ jsxs("button", {
+					type: "button",
+					"aria-pressed": adding === key,
+					onClick: () => setAdding(adding === key ? "" : key),
+					children: [/* @__PURE__ */ jsx("strong", { children: title }), /* @__PURE__ */ jsx("small", { children: description })]
+				}, key)) })]
+			}),
+			(!!draft.effects?.length || adding === "effects") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", draft.effects?.length || 0] }),
 					/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
@@ -55498,7 +55736,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							label: "Тип урона эффекта",
 							value: e.damage || "fire",
 							onChange: (damage) => setEffect(i, { damage }),
-							options: Object.fromEntries(damageTypes.map((t) => [t, t]))
+							options: Object.fromEntries(damageTypes.map((t) => [t, tagNames[t] || t]))
 						}),
 						e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
 							label: "Состояние",
@@ -55544,7 +55782,22 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							value: e.range || 60,
 							onChange: (event) => setEffect(i, { range: Number(event.target.value) })
 						})] }),
-						/* @__PURE__ */ jsx(Formula, {
+						![
+							"skill_proficiency",
+							"skill_expertise",
+							"saving_throw_proficiency",
+							"weapon_proficiency",
+							"weapon_group_proficiency",
+							"armor_proficiency",
+							"tool_proficiency",
+							"language",
+							"damage_resistance",
+							"damage_immunity",
+							"damage_vulnerability",
+							"condition_immunity",
+							"sense",
+							"initiative_advantage"
+						].includes(e.type) && !e.type.startsWith("grant_") && /* @__PURE__ */ jsx(Formula, {
 							value: e.formula ?? e.value ?? 0,
 							onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
 								formula: v,
@@ -55572,8 +55825,8 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.resources?.length,
+			(!!draft.resources?.length || adding === "resources") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы · ", draft.resources?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Ресурсы" }),
@@ -55588,7 +55841,6 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								value: r.name,
 								onChange: (e) => patch({ name: e.target.value })
 							}),
-							/* @__PURE__ */ jsx("code", { children: r.id }),
 							/* @__PURE__ */ jsx(Formula, {
 								label: "Максимум ресурса",
 								value: r.max,
@@ -55621,6 +55873,86 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 									onChange: (e) => patch({ level: Number(e.target.value) })
 								})
 							}),
+							/* @__PURE__ */ jsxs("details", {
+								className: "hb-resource-progression",
+								children: [
+									/* @__PURE__ */ jsxs("summary", { children: ["Улучшения на следующих уровнях · ", r.progression?.length || 0] }),
+									/* @__PURE__ */ jsx("p", { children: "Укажите только уровни, на которых меняется число применений или восстановление. Между ними действует последняя ступень." }),
+									(r.progression || []).map((step, index) => /* @__PURE__ */ jsxs("fieldset", { children: [
+										/* @__PURE__ */ jsx(Field, {
+											label: "С уровня класса",
+											children: /* @__PURE__ */ jsx("input", {
+												"aria-label": "Уровень улучшения ресурса",
+												type: "number",
+												min: 1,
+												max: 20,
+												value: step.level,
+												onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+													...row,
+													level: Number(event.target.value)
+												} : row) })
+											})
+										}),
+										/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: step.max !== void 0,
+											onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												max: event.target.checked ? r.max : void 0
+											} : row) })
+										}), "Изменить максимум"] }),
+										step.max !== void 0 && /* @__PURE__ */ jsx(Formula, {
+											label: "Новый максимум ресурса",
+											value: step.max,
+											onChange: (max) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												max
+											} : row) })
+										}),
+										/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: step.restore !== void 0,
+											onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												restore: event.target.checked ? [...r.restore] : void 0
+											} : row) })
+										}), "Изменить восстановление"] }),
+										step.restore && /* @__PURE__ */ jsx("div", {
+											className: "hb-toolbar",
+											children: [
+												["short_rest", "Короткий отдых"],
+												["long_rest", "Долгий отдых"],
+												["manual", "Вручную"]
+											].map(([id, name]) => /* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-pressed": step.restore.includes(id),
+												onClick: () => patch({ progression: r.progression.map((row, j) => j === index ? {
+													...row,
+													restore: step.restore.includes(id) ? step.restore.filter((value) => value !== id) : [...step.restore, id]
+												} : row) }),
+												children: name
+											}, id))
+										}),
+										/* @__PURE__ */ jsx("button", {
+											type: "button",
+											onClick: () => patch({ progression: r.progression.filter((_, j) => j !== index) }),
+											children: "Удалить улучшение"
+										})
+									] }, index)),
+									/* @__PURE__ */ jsx("button", {
+										type: "button",
+										disabled: (r.progression?.length || 0) >= 20,
+										onClick: () => {
+											const next = Array.from({ length: 20 }, (_, i) => i + 1).find((level) => level > (r.level || 1) && !r.progression?.some((row) => row.level === level));
+											if (next) patch({ progression: [...r.progression || [], {
+												level: next,
+												max: r.max
+											}] });
+										},
+										children: "+ Улучшение ресурса"
+									})
+								]
+							}),
 							/* @__PURE__ */ jsx(ConditionEditor, {
 								label: "Условие ресурса",
 								elements: entities,
@@ -55645,8 +55977,8 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.attacks?.length,
+			(!!draft.attacks?.length || adding === "attacks") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Атаки · ", draft.attacks?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Атаки" }),
@@ -55661,7 +55993,6 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								value: a.name,
 								onChange: (e) => patch({ name: e.target.value })
 							}),
-							/* @__PURE__ */ jsx("code", { children: a.id }),
 							/* @__PURE__ */ jsx(Select, {
 								label: "Характеристика атаки",
 								value: a.ability,
@@ -55694,7 +56025,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 										...x,
 										type
 									} : x) }),
-									options: Object.fromEntries(damageTypes.map((x) => [x, x]))
+									options: Object.fromEntries(damageTypes.map((x) => [x, tagNames[x] || x]))
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => patch({ damage: a.damage.filter((_, n) => n !== j) }),
@@ -55773,13 +56104,13 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			!hideChoices && /* @__PURE__ */ jsx(ChoicesEditor, {
+			!hideChoices && (!!draft.choices?.length || linkedCount > 0 || adding === "choices") && /* @__PURE__ */ jsx(ChoicesEditor, {
 				draft,
 				update,
 				depth
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.actions?.length,
+			(!!draft.actions?.length || adding === "actions") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Действия · ", draft.actions?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Действия" }),
@@ -55814,9 +56145,22 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								} : void 0 }),
 								options: {
 									"": "Без траты",
-									...Object.fromEntries((draft.resources || []).map((r) => [r.id, r.name]))
+									...Object.fromEntries([...resourceOptions, ...(draft.resources || []).map((r) => [r.id, r.name])])
 								}
 							}),
+							/* @__PURE__ */ jsx(Fragment$1, { children: a.cost && /* @__PURE__ */ jsx(Field, {
+								label: "Расход за применение",
+								children: /* @__PURE__ */ jsx("input", {
+									"aria-label": "Расход ресурса действия",
+									type: "number",
+									min: 1,
+									value: a.cost.amount,
+									onChange: (event) => patch({ cost: {
+										...a.cost,
+										amount: Math.max(1, Number(event.target.value) || 1)
+									} })
+								})
+							}) }),
 							/* @__PURE__ */ jsx("textarea", {
 								value: a.description || "",
 								onChange: (e) => patch({ description: e.target.value })
@@ -55836,6 +56180,14 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 						children: "+ Действие"
 					})
 				]
+			}),
+			(!!draft.spellGrants?.length || adding === "spells") && /* @__PURE__ */ jsxs("details", {
+				open: true,
+				children: [/* @__PURE__ */ jsxs("summary", { children: ["Заклинания способности · ", draft.spellGrants?.length || 0] }), /* @__PURE__ */ jsx(SpellGrantsEditor, {
+					draft,
+					update,
+					entities
+				})]
 			}),
 			draft.type === "table" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 				/* @__PURE__ */ jsx("h3", { children: "Таблица" }),
@@ -55874,9 +56226,9 @@ function HomebrewOnSheet({ character, onChange }) {
 	const choiceStatuses = homebrewChoiceStatuses(character);
 	const choiceMissing = choiceStatuses.reduce((sum, status) => sum + status.missing, 0);
 	const spend = (id, amount) => {
-		const resource = entities.flatMap((e) => e.resources || []).find((r) => r.id === id);
+		const resource = hbResources(character).find((r) => r.key === id);
 		if (!resource) return;
-		const max = hbValue(character, resource.max);
+		const max = resource.max;
 		const used = character.resourceSpent?.[id] || 0;
 		if (amount > max - used) return;
 		onChange({
@@ -55996,7 +56348,7 @@ function HomebrewOnSheet({ character, onChange }) {
 				onResource: spend
 			})] }, e.id)),
 			entities.flatMap((e) => (e.actions || []).map((a) => /* @__PURE__ */ jsxs("button", {
-				disabled: !!a.cost && hbValue(character, e.resources?.find((r) => r.id === a.cost.resource)?.max) - (character.resourceSpent?.[a.cost.resource] || 0) < a.cost.amount,
+				disabled: !!a.cost && (hbResources(character).find((r) => r.key === a.cost.resource)?.max || 0) - (character.resourceSpent?.[a.cost.resource] || 0) < a.cost.amount,
 				onClick: () => a.cost && spend(a.cost.resource, a.cost.amount),
 				title: a.description,
 				children: [a.name, a.cost ? " · −" + a.cost.amount : ""]
@@ -56504,7 +56856,30 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 		className: "hb-development",
 		children: [
 			/* @__PURE__ */ jsx("h3", { children: "Развитие класса" }),
-			/* @__PURE__ */ jsx("p", { children: "Уровень теперь является главным экраном: способность, её выборы, варианты и дальнейшие ступени находятся рядом. Отдельные ability-объекты остаются в JSON для совместимости, но больше не показываются как самостоятельная куча записей." }),
+			/* @__PURE__ */ jsx("p", { children: "Выберите уровень и добавьте то, что получает герой. Внутри способности можно настроить бонус, варианты выбора, заклинания или число применений." }),
+			/* @__PURE__ */ jsxs("details", {
+				className: "hb-development-overview",
+				children: [/* @__PURE__ */ jsx("summary", { children: "Всё развитие от 1 до 20 уровня" }), /* @__PURE__ */ jsx("div", {
+					className: "hb-magic-table-wrap",
+					children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("th", { children: "Уровень" }), /* @__PURE__ */ jsx("th", { children: "Что получает герой" })] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, i) => i + 1).map((n) => {
+						const names = [
+							...(draft.features || []).filter((f) => f.level === n).map((f) => f.name),
+							...(draft.choices || []).filter((c) => (c.level || 1) === n).map((c) => `${c.name}: выбрать ${c.count}`),
+							...(draft.advancement?.[n] || []).map((row) => row.type === "asi_or_feat" ? "Повышение характеристик или черта" : entities.find((e) => e.id === row.id)?.name || {
+								subclass: "Выбор подкласса",
+								choice: "Выбор"
+							}[row.type] || "Способность из библиотеки"),
+							...draft.subclass?.chooseAtLevel === n && draft.type === "class" ? ["Выбор подкласса"] : []
+						];
+						return /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => setLevel(n),
+							"aria-label": `Редактировать уровень ${n}`,
+							children: n
+						}) }), /* @__PURE__ */ jsx("td", { children: [...new Set(names)].join(" · ") || "Пока ничего не добавлено" })] }, n);
+					}) })] })
+				})]
+			}),
 			/* @__PURE__ */ jsx("nav", {
 				className: "hb-level-picker",
 				"aria-label": "Уровни класса",
@@ -56527,7 +56902,7 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: featureCount }), " способн."] }),
 						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: choiceCount }), " выбор."] }),
 						linkedCount > 0 && /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: linkedCount }), " связей"] }),
-						hasAsi && /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("b", { children: "ASI" }) })
+						hasAsi && /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("b", { children: "Характеристики / черта" }) })
 					]
 				})]
 			}),
@@ -56555,10 +56930,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 			}),
 			/* @__PURE__ */ jsxs(HBDisclosure, {
 				className: "hb-basic-details",
-				initialOpen: rows.some((row) => row.type !== "asi_or_feat"),
-				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Выдать существующий объект · ", linkedCount] }),
+				initialOpen: false,
+				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Использовать готовую способность или ресурс · ", linkedCount] }),
 				children: [
-					/* @__PURE__ */ jsx("p", { children: "Редкий технический случай: привяжите уже существующий ресурс, атаку, заклинание или другую сущность. Обычные способности и их варианты создаются выше." }),
+					/* @__PURE__ */ jsx("p", { children: "Выберите то, что уже создано в библиотеке. Герой получит это на выбранном уровне." }),
 					rows.map((row, i) => row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
 						className: "hb-linked-row",
 						children: [
@@ -56643,7 +57018,8 @@ function ClassFeatures({ draft, update, entities, level }) {
 						resources: feature.resources || [],
 						attacks: feature.attacks || [],
 						actions: feature.actions || [],
-						choices: feature.choices || []
+						choices: feature.choices || [],
+						spellGrants: feature.spellGrants || []
 					};
 					const updateFeature = (p, related) => patchFeature(feature.id, Object.fromEntries(Object.entries(p).filter(([key]) => [
 						"name",
@@ -56653,11 +57029,13 @@ function ClassFeatures({ draft, update, entities, level }) {
 						"resources",
 						"attacks",
 						"actions",
-						"choices"
+						"choices",
+						"spellGrants",
+						"showOnSheet"
 					].includes(key))), related);
 					return /* @__PURE__ */ jsx(HBDisclosure, {
 						className: attached.length ? "hb-choice-progression-card" : "hb-feature-card",
-						initialOpen: true,
+						initialOpen: levelFeatures.length === 1 || feature.name === "Новая способность",
 						summary: /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("span", { children: feature.name }), /* @__PURE__ */ jsxs("small", { children: [
 							"С ",
 							feature.level,
@@ -56716,6 +57094,14 @@ function ClassFeatures({ draft, update, entities, level }) {
 										entities
 									})] })
 								}, feature.id + level),
+								/* @__PURE__ */ jsxs("label", {
+									className: "hb-sheet-visibility",
+									children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: feature.showOnSheet !== false,
+										onChange: (event) => patchFeature(feature.id, { showOnSheet: event.target.checked })
+									}), "Показывать текст способности на листе"]
+								}),
 								/* @__PURE__ */ jsx(Mechanics, {
 									draft: virtual,
 									update: updateFeature,
@@ -56961,7 +57347,7 @@ function SpellGrantsEditor({ draft, update, entities }) {
 			children: options.map((spell) => /* @__PURE__ */ jsxs("button", {
 				onClick: () => update({ spellGrants: [...grants, {
 					spellId: spell.id,
-					level: draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1,
+					level: draft.level || (draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1),
 					mode: "known",
 					countsAgainstKnown: false
 				}] }),
@@ -57657,6 +58043,11 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.5.4",
+		publishedAt: "2026-10-06T21:00:00Z",
+		changes: ["Способности Homebrew редактируются через понятные действия. Числа, бонусы и кости можно настроить без формул; технические инструменты перенесены в дополнительные настройки.", "Добавлены улучшения ресурсов по уровням, заклинания внутри способности и расход общего ресурса разными действиями. Всё развитие класса можно посмотреть одной таблицей."]
+	},
 	{
 		version: "1.5.3",
 		publishedAt: "2026-10-06T15:20:00Z",
