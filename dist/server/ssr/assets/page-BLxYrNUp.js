@@ -56496,7 +56496,7 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 	} });
 	const hasAsi = rows.some((row) => row.type === "asi_or_feat");
 	const featureCount = (draft.features || []).filter((feature) => feature.level === level).length;
-	const choicesAtLevel = (n) => (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.features || []).flatMap((feature) => feature.choices || []).filter((choice) => (choice.level || 1) === n).length;
+	const choicesAtLevel = (n) => (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.features || []).reduce((sum, feature) => sum + (feature.choices || []).filter((choice) => (choice.level || feature.level || 1) === n).length, 0);
 	const choiceCount = choicesAtLevel(level);
 	const linkedCount = rows.filter((row) => row.type !== "asi_or_feat").length;
 	const levelCount = (n) => (draft.features || []).filter((feature) => feature.level === n).length + choicesAtLevel(n) + (draft.advancement?.[n]?.length || 0);
