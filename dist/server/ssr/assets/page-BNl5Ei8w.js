@@ -13319,10 +13319,12 @@ function upgradeKnownHomebrew(element) {
 		mode: "always-prepared",
 		countsAgainstKnown: false
 	})) : element.spellGrants;
+	const references = element.references === void 0 && element.type === "class" && features?.some((f) => f.id === "hb:shaman:ability:primal-magic") ? [...new Set([...element.references || [], "hb:shaman:ability:primal-magic"])] : element.references;
 	return {
 		...element,
 		features,
-		spellGrants
+		spellGrants,
+		references
 	};
 }
 function normalizeHomebrewLibrary(value) {
@@ -13625,6 +13627,452 @@ function evaluateFormula(input, context) {
 	return result;
 }
 //#endregion
+//#region app/multiclass.ts
+function classProgresses(character) {
+	const valid = (character.classes || []).filter((entry) => entry.classId && entry.level > 0);
+	if (valid.length) return valid;
+	if (!character.className) return [];
+	return [{
+		classId: character.className,
+		level: Math.max(1, character.level || 1),
+		subclassId: character.subclass || "",
+		acquiredAtCharacterLevel: 1,
+		classSkills: character.classSkills || [],
+		choiceValues: character.classChoices || {}
+	}];
+}
+function characterLevel(character) {
+	const classes = classProgresses(character);
+	return classes.length ? classes.reduce((sum, entry) => sum + entry.level, 0) : Math.max(1, character.level || 1);
+}
+function getClassProgress(character, classId) {
+	return classProgresses(character).find((entry) => entry.classId === classId);
+}
+function getClassLevel(character, classId) {
+	return getClassProgress(character, classId)?.level || 0;
+}
+function getStartingClassId(character) {
+	return character.startingClassId || classProgresses(character)[0]?.classId || character.className;
+}
+function orderedCharacterClasses(character) {
+	const starting = getStartingClassId(character);
+	return [...classProgresses(character)].sort((a, b) => {
+		if (a.classId === starting) return -1;
+		if (b.classId === starting) return 1;
+		return a.acquiredAtCharacterLevel - b.acquiredAtCharacterLevel;
+	});
+}
+function isMulticlass(character) {
+	return classProgresses(character).length > 1;
+}
+function normalizedLevelHistory(character) {
+	if ((character.levelHistory || []).length === characterLevel(character)) return [...character.levelHistory];
+	const history = [];
+	for (const entry of orderedCharacterClasses(character)) for (let level = 1; level <= entry.level; level += 1) history.push({
+		characterLevel: history.length + 1,
+		classId: entry.classId,
+		classLevelAfter: level
+	});
+	return history;
+}
+function migratedChoiceValues(character, classId, startingClassId, existing) {
+	const choices = { ...existing || {} };
+	const legacy = character.classChoices || {};
+	if (classId === startingClassId) for (const [key, value] of Object.entries(legacy)) {
+		if (key.includes(":")) continue;
+		if (!(key in choices)) choices[key] = [...value];
+	}
+	const prefix = `${classId}:`;
+	for (const [key, value] of Object.entries(legacy)) {
+		if (!key.startsWith(prefix)) continue;
+		const localKey = key.slice(prefix.length);
+		if (!(localKey in choices)) choices[localKey] = [...value];
+	}
+	return choices;
+}
+function migrateMulticlassCharacter(character) {
+	const rawClasses = orderedCharacterClasses(character);
+	const startingClassId = character.startingClassId || rawClasses[0]?.classId || character.className;
+	const classes = rawClasses.map((entry) => ({
+		...entry,
+		subclassId: entry.subclassId || (entry.classId === startingClassId ? character.subclass || "" : ""),
+		choiceValues: migratedChoiceValues(character, entry.classId, startingClassId, entry.choiceValues)
+	}));
+	const totalLevel = classes.reduce((sum, entry) => sum + entry.level, 0) || 1;
+	const levelHistory = (character.levelHistory || []).length === totalLevel ? character.levelHistory : normalizedLevelHistory({
+		...character,
+		classes,
+		startingClassId
+	});
+	const starting = classes.find((entry) => entry.classId === startingClassId) || classes[0];
+	return {
+		...character,
+		schemaVersion: 4,
+		rulesetId: "5e-2014",
+		startingClassId,
+		classes,
+		levelHistory,
+		className: starting?.classId || character.className,
+		subclass: starting?.subclassId || character.subclass,
+		level: totalLevel,
+		hitDiceSpentByClass: character.hitDiceSpentByClass || (starting ? { [starting.classId]: character.hitDiceSpent || 0 } : {})
+	};
+}
+function classView(character, entry) {
+	return {
+		...character,
+		className: entry.classId,
+		subclass: entry.subclassId || "",
+		level: entry.level,
+		classSkills: entry.classSkills || [],
+		classChoices: {
+			...character.classChoices || {},
+			...entry.choiceValues || {}
+		}
+	};
+}
+var prerequisites = {
+	barbarian: ["str"],
+	bard: ["cha"],
+	cleric: ["wis"],
+	druid: ["wis"],
+	fighter: [],
+	monk: ["dex", "wis"],
+	paladin: ["str", "cha"],
+	ranger: ["dex", "wis"],
+	rogue: ["dex"],
+	sorcerer: ["cha"],
+	warlock: ["cha"],
+	wizard: ["int"],
+	artificer: ["int"]
+};
+function multiclassRequirement(character, classId) {
+	const labels = {
+		str: "Сила",
+		dex: "Ловкость",
+		con: "Телосложение",
+		int: "Интеллект",
+		wis: "Мудрость",
+		cha: "Харизма"
+	};
+	const custom = character.homebrew?.entities.find((entity) => entity.id === classId && entity.type === "class");
+	if (custom) {
+		const requirements = custom.multiclass?.requirements || [];
+		const mode = custom.multiclass?.requirementMode || "all";
+		const checks = requirements.map((requirement) => ({
+			...requirement,
+			passed: character.abilities[requirement.ability] >= requirement.min
+		}));
+		const passed = !checks.length || (mode === "any" ? checks.some((check) => check.passed) : checks.every((check) => check.passed));
+		return {
+			passed,
+			required: checks.map((check) => `${labels[check.ability]} ${check.min}`).join(mode === "any" ? " или " : " и "),
+			missing: passed ? [] : checks.filter((check) => !check.passed).map((check) => `${labels[check.ability]} ${character.abilities[check.ability]} / ${check.min}`)
+		};
+	}
+	const needs = prerequisites[classId] || [];
+	const alternatives = classId === "fighter" ? ["str", "dex"] : [];
+	const passed = alternatives.length ? alternatives.some((key) => character.abilities[key] >= 13) : needs.every((key) => character.abilities[key] >= 13);
+	return {
+		passed,
+		required: alternatives.length ? alternatives.map((key) => `${labels[key]} 13`).join(" или ") : needs.map((key) => `${labels[key]} 13`).join(" и "),
+		missing: alternatives.length ? passed ? [] : alternatives.map((key) => `${labels[key]} ${character.abilities[key]}`) : needs.filter((key) => character.abilities[key] < 13).map((key) => `${labels[key]} ${character.abilities[key]}`)
+	};
+}
+var fullCasterSlots$1 = [
+	[],
+	[2],
+	[3],
+	[4, 2],
+	[4, 3],
+	[
+		4,
+		3,
+		2
+	],
+	[
+		4,
+		3,
+		3
+	],
+	[
+		4,
+		3,
+		3,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		2
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		3,
+		1,
+		1,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		3,
+		2,
+		1,
+		1,
+		1
+	],
+	[
+		4,
+		3,
+		3,
+		3,
+		3,
+		2,
+		2,
+		1,
+		1
+	]
+];
+function spellcastingContribution(character, entry) {
+	const level = entry.level;
+	const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
+	if (custom?.mode === "full") return level;
+	if (custom?.mode === "half") return Math.floor(level / 2);
+	if (custom?.mode === "third") return Math.floor(level / 3);
+	if ([
+		"bard",
+		"cleric",
+		"druid",
+		"sorcerer",
+		"wizard"
+	].includes(entry.classId)) return level;
+	if (["paladin", "ranger"].includes(entry.classId)) return Math.floor(level / 2);
+	if (entry.classId === "artificer") return Math.ceil(level / 2);
+	if (entry.classId === "fighter" && entry.subclassId === "eldritchknight") return Math.floor(level / 3);
+	if (entry.classId === "rogue" && entry.subclassId === "arcanetrickster") return Math.floor(level / 3);
+	return 0;
+}
+function multiclassCasterLevel(character) {
+	return orderedCharacterClasses(character).reduce((sum, entry) => sum + spellcastingContribution(character, entry), 0);
+}
+function resolveSpellSlots(character) {
+	const entries = orderedCharacterClasses(character);
+	const customPools = entries.map((entry) => ({
+		entry,
+		casting: character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting
+	})).filter((x) => x.casting?.mode === "custom");
+	if (customPools.length === 1 && entries.every((entry) => entry.classId === customPools[0].entry.classId || spellcastingContribution(character, entry) === 0)) return customPools[0].casting?.slots?.[String(customPools[0].entry.level)] || [];
+	const regularCasters = entries.filter((entry) => spellcastingContribution(character, entry) > 0);
+	if (!regularCasters.length) return [];
+	if (regularCasters.length === 1) {
+		const entry = regularCasters[0];
+		const level = entry.level;
+		const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
+		if (custom?.mode === "custom") return custom.slots?.[String(level)] || [];
+		if (custom?.mode === "full") return fullCasterSlots$1[level] || [];
+		if (custom?.mode === "half") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (custom?.mode === "third") return fullCasterSlots$1[Math.ceil(level / 3)] || [];
+		if ([
+			"bard",
+			"cleric",
+			"druid",
+			"sorcerer",
+			"wizard"
+		].includes(entry.classId)) return fullCasterSlots$1[level] || [];
+		if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (entry.classId === "artificer") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots$1[Math.floor(level / 3)] || [];
+	}
+	return fullCasterSlots$1[multiclassCasterLevel(character)] || [];
+}
+function shortRestSpellSlots(character) {
+	const entries = orderedCharacterClasses(character);
+	const eligible = entries.filter((entry) => character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting?.mode === "custom");
+	if (eligible.length !== 1 || entries.some((entry) => entry.classId !== eligible[0].classId && spellcastingContribution(character, entry) > 0)) return character.spellSlotsUsed || [];
+	return (character.homebrew?.entities.find((e) => e.id === eligible[0].classId)?.spellcasting)?.recovery === "short_or_long" ? (character.spellSlotsUsed || []).map(() => 0) : character.spellSlotsUsed || [];
+}
+function resolvePactMagic(character) {
+	const pact = orderedCharacterClasses(character).find((entry) => entry.classId === "warlock" || character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class")?.spellcasting?.mode === "pact");
+	if (!pact) return {
+		slots: 0,
+		level: 0
+	};
+	const level = pact.level;
+	return {
+		slots: level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4,
+		level: Math.min(5, Math.ceil(level / 2))
+	};
+}
+function hitDicePools(character) {
+	const spent = character.hitDiceSpentByClass || {};
+	const pools = /* @__PURE__ */ new Map();
+	for (const entry of orderedCharacterClasses(character)) {
+		const die = classRuleFor(character, entry.classId)?.hitDie || 8;
+		const pool = pools.get(die) || {
+			die,
+			max: 0,
+			spent: 0,
+			sources: []
+		};
+		pool.max += entry.level;
+		pool.spent += Math.min(entry.level, spent[entry.classId] || 0);
+		pool.sources.push(entry.classId);
+		pools.set(die, pool);
+	}
+	return [...pools.values()].sort((a, b) => b.die - a.die);
+}
+//#endregion
+//#region app/homebrewMagic.ts
+/** Uses existing descriptive references: no new JSON schema or copied casting data. */
+function magicFeatureIds(root) {
+	return (root.features || []).filter((feature) => root.references?.includes(feature.id)).map((feature) => feature.id);
+}
+function magicSpellList(root, entities) {
+	const explicit = new Set((root.spellList || []).map((id) => id.replace("official:spell:", "")));
+	return [...spells.filter((spell) => explicit.has(spell.id) || root.spellListSources?.some((source) => spell.classes.includes(source))), ...entities.filter((e) => e.type === "spell" && (explicit.has(e.id) || e.spellClasses?.includes(root.id)))].map((spell) => ({
+		id: spell.id,
+		name: spell.name,
+		level: spell.level || 0
+	}));
+}
+function magicLevel(root, level, modifier = 3) {
+	const casting = root.spellcasting;
+	const character = {
+		level,
+		className: root.id,
+		startingClassId: root.id,
+		classes: [{
+			classId: root.id,
+			level,
+			acquiredAtCharacterLevel: 1
+		}],
+		homebrew: {
+			entities: [root],
+			activeIds: [root.id]
+		},
+		abilities: {
+			str: 10,
+			dex: 10,
+			con: 10,
+			int: 10,
+			wis: 10,
+			cha: 10
+		}
+	};
+	const pact = resolvePactMagic(character);
+	const slots = casting?.mode === "pact" ? Array.from({ length: pact.level }, (_, i) => i === pact.level - 1 ? pact.slots : 0) : resolveSpellSlots(character);
+	const prepared = casting?.selection === "prepared" ? Math.max(0, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
+		"@level": level,
+		"@classLevel": level,
+		"@pb": 2 + Math.floor((level - 1) / 4),
+		...Object.fromEntries([
+			"str",
+			"dex",
+			"con",
+			"int",
+			"wis",
+			"cha"
+		].map((key) => ["@mod." + key, modifier]))
+	} }))) : void 0;
+	return {
+		level,
+		cantrips: casting?.cantrips?.[level] || 0,
+		known: casting?.known?.[level] || 0,
+		prepared,
+		slots
+	};
+}
+function slotSummary(slots) {
+	return slots.map((count, index) => count ? `${count} × ${index + 1}-й круг` : "").filter(Boolean).join(" · ") || "Нет ячеек";
+}
+//#endregion
 //#region app/homebrewRelations.ts
 /** Editor-only projections. No graph metadata is written to the v2 document. */
 function editableHomebrew(elements) {
@@ -13706,6 +14154,32 @@ function homebrewRelations(elements) {
 			kind: element.type,
 			entityId: element.id
 		});
+		if (element.type === "class" && element.spellcasting && element.spellcasting.mode !== "none") {
+			const magic = `magic:${element.id}`;
+			nodes.push({
+				id: magic,
+				name: "Магия класса: " + element.name,
+				kind: "magic",
+				entityId: element.id
+			});
+			add(element.id, magic, "Настройки магии");
+			for (const id of magicFeatureIds(element)) add(id, magic, "Связана с магией класса");
+			for (const [key, name] of [
+				["slots", "Ячейки и восстановление"],
+				["known", "Известные / подготовленные заклинания"],
+				["cantrips", "Заговоры"],
+				["list", "Список доступных заклинаний"]
+			]) {
+				const id = `${magic}:${key}`;
+				nodes.push({
+					id,
+					name,
+					kind: "magic",
+					entityId: element.id
+				});
+				add(magic, id, "Определяет");
+			}
+		}
 		for (const feature of element.features || []) add(element.id, feature.id, "Даёт способность", `С ${feature.level} уровня`);
 		for (const choice of element.choices || []) {
 			const key = `choice:${element.id}:${choice.id}`;
@@ -19240,388 +19714,6 @@ var generatedFeats = [
 		"repeatable": false
 	}
 ];
-//#endregion
-//#region app/multiclass.ts
-function classProgresses(character) {
-	const valid = (character.classes || []).filter((entry) => entry.classId && entry.level > 0);
-	if (valid.length) return valid;
-	if (!character.className) return [];
-	return [{
-		classId: character.className,
-		level: Math.max(1, character.level || 1),
-		subclassId: character.subclass || "",
-		acquiredAtCharacterLevel: 1,
-		classSkills: character.classSkills || [],
-		choiceValues: character.classChoices || {}
-	}];
-}
-function characterLevel(character) {
-	const classes = classProgresses(character);
-	return classes.length ? classes.reduce((sum, entry) => sum + entry.level, 0) : Math.max(1, character.level || 1);
-}
-function getClassProgress(character, classId) {
-	return classProgresses(character).find((entry) => entry.classId === classId);
-}
-function getClassLevel(character, classId) {
-	return getClassProgress(character, classId)?.level || 0;
-}
-function getStartingClassId(character) {
-	return character.startingClassId || classProgresses(character)[0]?.classId || character.className;
-}
-function orderedCharacterClasses(character) {
-	const starting = getStartingClassId(character);
-	return [...classProgresses(character)].sort((a, b) => {
-		if (a.classId === starting) return -1;
-		if (b.classId === starting) return 1;
-		return a.acquiredAtCharacterLevel - b.acquiredAtCharacterLevel;
-	});
-}
-function isMulticlass(character) {
-	return classProgresses(character).length > 1;
-}
-function normalizedLevelHistory(character) {
-	if ((character.levelHistory || []).length === characterLevel(character)) return [...character.levelHistory];
-	const history = [];
-	for (const entry of orderedCharacterClasses(character)) for (let level = 1; level <= entry.level; level += 1) history.push({
-		characterLevel: history.length + 1,
-		classId: entry.classId,
-		classLevelAfter: level
-	});
-	return history;
-}
-function migratedChoiceValues(character, classId, startingClassId, existing) {
-	const choices = { ...existing || {} };
-	const legacy = character.classChoices || {};
-	if (classId === startingClassId) for (const [key, value] of Object.entries(legacy)) {
-		if (key.includes(":")) continue;
-		if (!(key in choices)) choices[key] = [...value];
-	}
-	const prefix = `${classId}:`;
-	for (const [key, value] of Object.entries(legacy)) {
-		if (!key.startsWith(prefix)) continue;
-		const localKey = key.slice(prefix.length);
-		if (!(localKey in choices)) choices[localKey] = [...value];
-	}
-	return choices;
-}
-function migrateMulticlassCharacter(character) {
-	const rawClasses = orderedCharacterClasses(character);
-	const startingClassId = character.startingClassId || rawClasses[0]?.classId || character.className;
-	const classes = rawClasses.map((entry) => ({
-		...entry,
-		subclassId: entry.subclassId || (entry.classId === startingClassId ? character.subclass || "" : ""),
-		choiceValues: migratedChoiceValues(character, entry.classId, startingClassId, entry.choiceValues)
-	}));
-	const totalLevel = classes.reduce((sum, entry) => sum + entry.level, 0) || 1;
-	const levelHistory = (character.levelHistory || []).length === totalLevel ? character.levelHistory : normalizedLevelHistory({
-		...character,
-		classes,
-		startingClassId
-	});
-	const starting = classes.find((entry) => entry.classId === startingClassId) || classes[0];
-	return {
-		...character,
-		schemaVersion: 4,
-		rulesetId: "5e-2014",
-		startingClassId,
-		classes,
-		levelHistory,
-		className: starting?.classId || character.className,
-		subclass: starting?.subclassId || character.subclass,
-		level: totalLevel,
-		hitDiceSpentByClass: character.hitDiceSpentByClass || (starting ? { [starting.classId]: character.hitDiceSpent || 0 } : {})
-	};
-}
-function classView(character, entry) {
-	return {
-		...character,
-		className: entry.classId,
-		subclass: entry.subclassId || "",
-		level: entry.level,
-		classSkills: entry.classSkills || [],
-		classChoices: {
-			...character.classChoices || {},
-			...entry.choiceValues || {}
-		}
-	};
-}
-var prerequisites = {
-	barbarian: ["str"],
-	bard: ["cha"],
-	cleric: ["wis"],
-	druid: ["wis"],
-	fighter: [],
-	monk: ["dex", "wis"],
-	paladin: ["str", "cha"],
-	ranger: ["dex", "wis"],
-	rogue: ["dex"],
-	sorcerer: ["cha"],
-	warlock: ["cha"],
-	wizard: ["int"],
-	artificer: ["int"]
-};
-function multiclassRequirement(character, classId) {
-	const labels = {
-		str: "Сила",
-		dex: "Ловкость",
-		con: "Телосложение",
-		int: "Интеллект",
-		wis: "Мудрость",
-		cha: "Харизма"
-	};
-	const custom = character.homebrew?.entities.find((entity) => entity.id === classId && entity.type === "class");
-	if (custom) {
-		const requirements = custom.multiclass?.requirements || [];
-		const mode = custom.multiclass?.requirementMode || "all";
-		const checks = requirements.map((requirement) => ({
-			...requirement,
-			passed: character.abilities[requirement.ability] >= requirement.min
-		}));
-		const passed = !checks.length || (mode === "any" ? checks.some((check) => check.passed) : checks.every((check) => check.passed));
-		return {
-			passed,
-			required: checks.map((check) => `${labels[check.ability]} ${check.min}`).join(mode === "any" ? " или " : " и "),
-			missing: passed ? [] : checks.filter((check) => !check.passed).map((check) => `${labels[check.ability]} ${character.abilities[check.ability]} / ${check.min}`)
-		};
-	}
-	const needs = prerequisites[classId] || [];
-	const alternatives = classId === "fighter" ? ["str", "dex"] : [];
-	const passed = alternatives.length ? alternatives.some((key) => character.abilities[key] >= 13) : needs.every((key) => character.abilities[key] >= 13);
-	return {
-		passed,
-		required: alternatives.length ? alternatives.map((key) => `${labels[key]} 13`).join(" или ") : needs.map((key) => `${labels[key]} 13`).join(" и "),
-		missing: alternatives.length ? passed ? [] : alternatives.map((key) => `${labels[key]} ${character.abilities[key]}`) : needs.filter((key) => character.abilities[key] < 13).map((key) => `${labels[key]} ${character.abilities[key]}`)
-	};
-}
-var fullCasterSlots$1 = [
-	[],
-	[2],
-	[3],
-	[4, 2],
-	[4, 3],
-	[
-		4,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3
-	],
-	[
-		4,
-		3,
-		3,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		1,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		2,
-		1,
-		1,
-		1
-	],
-	[
-		4,
-		3,
-		3,
-		3,
-		3,
-		2,
-		2,
-		1,
-		1
-	]
-];
-function spellcastingContribution(character, entry) {
-	const level = entry.level;
-	const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
-	if (custom?.mode === "full") return level;
-	if (custom?.mode === "half") return Math.floor(level / 2);
-	if (custom?.mode === "third") return Math.floor(level / 3);
-	if ([
-		"bard",
-		"cleric",
-		"druid",
-		"sorcerer",
-		"wizard"
-	].includes(entry.classId)) return level;
-	if (["paladin", "ranger"].includes(entry.classId)) return Math.floor(level / 2);
-	if (entry.classId === "artificer") return Math.ceil(level / 2);
-	if (entry.classId === "fighter" && entry.subclassId === "eldritchknight") return Math.floor(level / 3);
-	if (entry.classId === "rogue" && entry.subclassId === "arcanetrickster") return Math.floor(level / 3);
-	return 0;
-}
-function multiclassCasterLevel(character) {
-	return orderedCharacterClasses(character).reduce((sum, entry) => sum + spellcastingContribution(character, entry), 0);
-}
-function resolveSpellSlots(character) {
-	const entries = orderedCharacterClasses(character);
-	const customPools = entries.map((entry) => ({
-		entry,
-		casting: character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting
-	})).filter((x) => x.casting?.mode === "custom");
-	if (customPools.length === 1 && entries.every((entry) => entry.classId === customPools[0].entry.classId || spellcastingContribution(character, entry) === 0)) return customPools[0].casting?.slots?.[String(customPools[0].entry.level)] || [];
-	const regularCasters = entries.filter((entry) => spellcastingContribution(character, entry) > 0);
-	if (!regularCasters.length) return [];
-	if (regularCasters.length === 1) {
-		const entry = regularCasters[0];
-		const level = entry.level;
-		const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
-		if (custom?.mode === "custom") return custom.slots?.[String(level)] || [];
-		if (custom?.mode === "full") return fullCasterSlots$1[level] || [];
-		if (custom?.mode === "half") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
-		if (custom?.mode === "third") return fullCasterSlots$1[Math.ceil(level / 3)] || [];
-		if ([
-			"bard",
-			"cleric",
-			"druid",
-			"sorcerer",
-			"wizard"
-		].includes(entry.classId)) return fullCasterSlots$1[level] || [];
-		if (["paladin", "ranger"].includes(entry.classId)) return fullCasterSlots$1[Math.ceil(level / 2)] || [];
-		if (entry.classId === "artificer") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
-		if (["fighter", "rogue"].includes(entry.classId)) return fullCasterSlots$1[Math.floor(level / 3)] || [];
-	}
-	return fullCasterSlots$1[multiclassCasterLevel(character)] || [];
-}
-function shortRestSpellSlots(character) {
-	const entries = orderedCharacterClasses(character);
-	const eligible = entries.filter((entry) => character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting?.mode === "custom");
-	if (eligible.length !== 1 || entries.some((entry) => entry.classId !== eligible[0].classId && spellcastingContribution(character, entry) > 0)) return character.spellSlotsUsed || [];
-	return (character.homebrew?.entities.find((e) => e.id === eligible[0].classId)?.spellcasting)?.recovery === "short_or_long" ? (character.spellSlotsUsed || []).map(() => 0) : character.spellSlotsUsed || [];
-}
-function resolvePactMagic(character) {
-	const pact = orderedCharacterClasses(character).find((entry) => entry.classId === "warlock" || character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class")?.spellcasting?.mode === "pact");
-	if (!pact) return {
-		slots: 0,
-		level: 0
-	};
-	const level = pact.level;
-	return {
-		slots: level === 1 ? 1 : level < 11 ? 2 : level < 17 ? 3 : 4,
-		level: Math.min(5, Math.ceil(level / 2))
-	};
-}
-function hitDicePools(character) {
-	const spent = character.hitDiceSpentByClass || {};
-	const pools = /* @__PURE__ */ new Map();
-	for (const entry of orderedCharacterClasses(character)) {
-		const die = classRuleFor(character, entry.classId)?.hitDie || 8;
-		const pool = pools.get(die) || {
-			die,
-			max: 0,
-			spent: 0,
-			sources: []
-		};
-		pool.max += entry.level;
-		pool.spent += Math.min(entry.level, spent[entry.classId] || 0);
-		pool.sources.push(entry.classId);
-		pools.set(die, pool);
-	}
-	return [...pools.values()].sort((a, b) => b.die - a.die);
-}
 //#endregion
 //#region app/languages.ts
 var knownLanguageOptions = [
@@ -49507,7 +49599,8 @@ function RelationsMap({ element, initialFocus }) {
 						effect: "Эффект",
 						resources: "Ресурс",
 						attacks: "Атака",
-						actions: "Действие"
+						actions: "Действие",
+						magic: "Магия"
 					}[target?.kind || ""] || "Ссылка" })]
 				})]
 			}, index);
@@ -49534,7 +49627,8 @@ function RelationsMap({ element, initialFocus }) {
 					/* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h4", { children: "На что влияет" }), list(outgoing, "to")] })
 				]
 			}),
-			subject && (session.elements.some((row) => row.id === subject.id) ? /* @__PURE__ */ jsx(RelationshipPanel, {
+			subject && current.kind === "magic" && session.renderMagic?.(subject),
+			subject && current.kind !== "magic" && (session.elements.some((row) => row.id === subject.id) ? /* @__PURE__ */ jsx(RelationshipPanel, {
 				element: subject,
 				onChange: (patch) => session.patchElement(subject.id, patch),
 				compact: true
@@ -50074,7 +50168,7 @@ var shamanExample_default = {
 					"id": "hb:shaman:ability:primal-magic",
 					"level": 2,
 					"name": "Первобытная магия",
-					"description": "Заклинатель на Мудрости с собственным списком. Все ячейки имеют один уровень по таблице и по исходным правилам восстанавливаются после короткого или продолжительного отдыха. Известные ритуальные заклинания шамана можно накладывать ритуалом.",
+					"description": "Начиная со 2-го уровня вы накладываете заклинания шамана, используя Мудрость. Сложность спасброска равна 8 + бонус мастерства + модификатор Мудрости; бонус атаки заклинанием равен бонусу мастерства + модификатору Мудрости.\n\nНа 2-м уровне вы знаете 2 заговора и 3 заклинания и имеете 2 ячейки 1-го круга. Число известных заклинаний, заговоров, ячеек и круг ячеек меняются по таблице развития магии. Все ячейки шамана имеют один круг и восстанавливаются после короткого или длинного отдыха. Для обычного наложения заклинания используется ячейка достаточного круга.\n\nЗаклинания выбираются из собственного списка шамана. Известные заклинания шамана с пометкой «ритуал» можно накладывать ритуалом. Количество доступных заклинаний в списке не является лимитом известных заклинаний.",
 					"effects": [],
 					"resources": [],
 					"attacks": []
@@ -50763,7 +50857,8 @@ var shamanExample_default = {
 						"items": ["Набор исследователя подземелий"]
 					}]
 				}
-			]
+			],
+			"references": ["hb:shaman:ability:primal-magic"]
 		},
 		{
 			"schemaVersion": 2,
@@ -53577,6 +53672,145 @@ var shamanExample_default = {
 	]
 };
 //#endregion
+//#region app/HomebrewMagicWorkspace.tsx
+function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, featureId }) {
+	const [modifier, setModifier] = useState(3), [previewLevel, setPreviewLevel] = useState(level), [query, setQuery] = useState("");
+	const [settingsOpen, setSettingsOpen] = useState(() => !root.spellcasting || root.spellcasting.mode === "none");
+	if (!(featureId ? magicFeatureIds(root).includes(featureId) : true)) return /* @__PURE__ */ jsxs("section", {
+		className: "hb-magic-connect",
+		children: [/* @__PURE__ */ jsx("p", { children: "Если эта способность описывает магию класса, подключите её настройки здесь." }), /* @__PURE__ */ jsx("button", {
+			type: "button",
+			onClick: () => onChange({ references: [...new Set([...root.references || [], featureId])] }),
+			children: "Связать с магией класса"
+		})]
+	});
+	const casting = root.spellcasting;
+	const list = magicSpellList(root, entities);
+	let error = "", rows = [];
+	try {
+		rows = Array.from({ length: 20 }, (_, i) => magicLevel(root, i + 1, modifier));
+	} catch (e) {
+		error = e.message;
+	}
+	const current = rows[previewLevel - 1];
+	const sources = magicFeatureIds(root).map((id) => root.features?.find((f) => f.id === id)?.name).filter(Boolean);
+	return /* @__PURE__ */ jsxs("section", {
+		className: "hb-magic-workspace",
+		"aria-label": "Магия и заклинания способности",
+		children: [
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h3", { children: "Магия и заклинания" }), featureId && /* @__PURE__ */ jsx("button", {
+				type: "button",
+				onClick: () => onChange({ references: root.references?.filter((id) => id !== featureId) }),
+				children: "Убрать связь с настройками"
+			})] }),
+			/* @__PURE__ */ jsxs("p", { children: [
+				"Настройки класса «",
+				root.name,
+				"»",
+				sources.length ? ` · способности: ${sources.join(", ")}` : "",
+				". Изменения здесь сразу обновляют общую магию класса. Доступность ячеек и заклинаний определяется таблицей уровней ниже."
+			] }),
+			!casting || casting.mode === "none" ? /* @__PURE__ */ jsx("p", {
+				role: "status",
+				children: "Магия ещё не настроена. Выберите прогрессию и заполните лимиты ниже."
+			}) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+				/* @__PURE__ */ jsxs("div", {
+					className: "hb-magic-facts",
+					children: [
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: "Характеристика" }), abilityLabels[casting.ability]] }),
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: "Получение заклинаний" }), {
+							known: "Известные",
+							prepared: "Подготовленные",
+							spellbook: "Книга заклинаний"
+						}[casting.selection || "known"]] }),
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: "Восстановление ячеек" }), casting.recovery === "short_or_long" || casting.mode === "pact" ? "Короткий или длинный отдых" : "Длинный отдых"] }),
+						/* @__PURE__ */ jsxs("span", { children: [
+							/* @__PURE__ */ jsx("b", { children: "Список класса" }),
+							list.length,
+							" заклинаний"
+						] })
+					]
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "hb-toolbar",
+					children: [/* @__PURE__ */ jsxs("label", { children: ["Уровень предпросмотра", /* @__PURE__ */ jsx("input", {
+						"aria-label": "Уровень предпросмотра магии",
+						type: "number",
+						min: 1,
+						max: 20,
+						value: previewLevel,
+						onChange: (e) => setPreviewLevel(Math.max(1, Math.min(20, Number(e.target.value) || 1)))
+					})] }), /* @__PURE__ */ jsxs("label", { children: ["Модификатор магии", /* @__PURE__ */ jsx("input", {
+						"aria-label": "Модификатор магии предпросмотра",
+						type: "number",
+						min: -5,
+						max: 10,
+						value: modifier,
+						onChange: (e) => setModifier(Number(e.target.value))
+					})] })]
+				}),
+				error ? /* @__PURE__ */ jsxs("p", {
+					role: "alert",
+					children: ["Проверьте формулу: ", error]
+				}) : current && /* @__PURE__ */ jsxs("output", {
+					className: "hb-magic-preview",
+					children: [
+						/* @__PURE__ */ jsxs("strong", { children: [previewLevel, " уровень"] }),
+						/* @__PURE__ */ jsxs("span", { children: ["Заговоров: ", current.cantrips] }),
+						/* @__PURE__ */ jsx("span", { children: casting.selection === "prepared" ? "Подготовлено: " + current.prepared : "Известно: " + current.known }),
+						/* @__PURE__ */ jsxs("span", { children: ["Ячейки: ", slotSummary(current.slots)] }),
+						/* @__PURE__ */ jsxs("span", { children: [
+							"СЛ спасброска: ",
+							10 + Math.floor((previewLevel - 1) / 4) + modifier,
+							" · Атака заклинанием: ",
+							2 + Math.floor((previewLevel - 1) / 4) + modifier >= 0 ? "+" : "",
+							2 + Math.floor((previewLevel - 1) / 4) + modifier
+						] })
+					]
+				}),
+				/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Развитие магии: уровни 1–20" }), /* @__PURE__ */ jsx("div", {
+					className: "hb-magic-table-wrap",
+					children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
+						/* @__PURE__ */ jsx("th", { children: "Уровень" }),
+						/* @__PURE__ */ jsx("th", { children: "Заговоры" }),
+						/* @__PURE__ */ jsx("th", { children: casting.selection === "prepared" ? "Подготовлено" : "Известно" }),
+						/* @__PURE__ */ jsx("th", { children: "Ячейки по кругам" })
+					] }) }), /* @__PURE__ */ jsx("tbody", { children: rows.map((row) => /* @__PURE__ */ jsxs("tr", { children: [
+						/* @__PURE__ */ jsx("td", { children: row.level }),
+						/* @__PURE__ */ jsx("td", { children: row.cantrips }),
+						/* @__PURE__ */ jsx("td", { children: row.prepared ?? row.known }),
+						/* @__PURE__ */ jsx("td", { children: slotSummary(row.slots) })
+					] }, row.level)) })] })
+				})] }),
+				/* @__PURE__ */ jsxs("details", { children: [
+					/* @__PURE__ */ jsxs("summary", { children: ["Доступные заклинания · ", list.length] }),
+					/* @__PURE__ */ jsx("input", {
+						"aria-label": "Поиск в списке магии способности",
+						placeholder: "Название заклинания",
+						value: query,
+						onChange: (e) => setQuery(e.target.value)
+					}),
+					!list.length && /* @__PURE__ */ jsx("p", { children: "Список пуст: подключите готовый список или добавьте заклинания в настройках ниже." }),
+					/* @__PURE__ */ jsx("div", {
+						className: "hb-magic-spell-list",
+						children: list.filter((spell) => spell.name.toLowerCase().includes(query.toLowerCase())).map((spell) => /* @__PURE__ */ jsxs("span", { children: [spell.name, /* @__PURE__ */ jsx("small", { children: spell.level ? `${spell.level}-й круг` : "Заговор" })] }, spell.id))
+					})
+				] })
+			] }),
+			/* @__PURE__ */ jsxs("details", {
+				className: "hb-magic-settings",
+				open: settingsOpen,
+				onToggle: (event) => setSettingsOpen(event.currentTarget.open),
+				children: [/* @__PURE__ */ jsx("summary", { children: "Редактировать магию, ячейки и список заклинаний" }), settings]
+			}),
+			/* @__PURE__ */ jsx("p", {
+				className: "hb-sidebar-note",
+				children: "Описание способности содержит правила, которые не выражены настройками: например, ритуалы, фокусировку и особые ограничения."
+			})
+		]
+	});
+}
+//#endregion
 //#region app/HomebrewEditor.tsx
 var official = [
 	...classes.map((x) => ({
@@ -54143,6 +54377,16 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 			character,
 			change: update,
 			patchElement,
+			renderMagic: (element) => /* @__PURE__ */ jsx(HomebrewMagicWorkspace, {
+				root: element,
+				level: 1,
+				entities: refs,
+				onChange: (patch) => patchElement(element.id, patch),
+				settings: /* @__PURE__ */ jsx(ClassSpellcasting, {
+					draft: element,
+					update: (patch) => patchElement(element.id, patch)
+				})
+			}),
 			renderMechanics: (element, patch, depth) => /* @__PURE__ */ jsx(Mechanics, {
 				draft: element,
 				update: patch,
@@ -54694,9 +54938,15 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									"class",
 									"subclass",
 									"ability"
-								].includes(draft.type) && /* @__PURE__ */ jsxs(Fragment$1, { children: [draft.type === "class" && /* @__PURE__ */ jsx(ClassSpellcasting, {
-									draft,
-									update
+								].includes(draft.type) && /* @__PURE__ */ jsxs(Fragment$1, { children: [draft.type === "class" && /* @__PURE__ */ jsx(HomebrewMagicWorkspace, {
+									root: draft,
+									level: 1,
+									entities: refs,
+									onChange: update,
+									settings: /* @__PURE__ */ jsx(ClassSpellcasting, {
+										draft,
+										update
+									})
 								}), /* @__PURE__ */ jsx(SpellGrantsEditor, {
 									draft,
 									update,
@@ -56222,7 +56472,7 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 					open
 				})]
 			}),
-			/* @__PURE__ */ jsx("p", { children: "Ячейки и бонусные заклинания настраиваются в разделе «Заклинания»." })
+			/* @__PURE__ */ jsx("p", { children: "Подключите магию к способности кнопкой «Связать с магией класса». Ячейки и список можно редактировать прямо в карточке способности." })
 		]
 	});
 }
@@ -56323,6 +56573,21 @@ function ClassFeatures({ draft, update, entities, level }) {
 										choice.count
 									] }, choice.id))]
 								}),
+								draft.type === "class" && /* @__PURE__ */ jsx(HomebrewMagicWorkspace, {
+									root: draft,
+									level,
+									featureId: feature.id,
+									entities,
+									onChange: update,
+									settings: /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(ClassSpellcasting, {
+										draft,
+										update
+									}), /* @__PURE__ */ jsx(SpellGrantsEditor, {
+										draft,
+										update,
+										entities
+									})] })
+								}, feature.id + level),
 								/* @__PURE__ */ jsx(Mechanics, {
 									draft: virtual,
 									update: updateFeature,
@@ -57264,6 +57529,11 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.5.2",
+		publishedAt: "2026-10-06T02:15:00Z",
+		changes: ["Магия Homebrew-класса теперь видна внутри связанной способности: список заклинаний, ячейки, лимиты и развитие по уровням можно проверить и изменить на месте.", "Карта связей показывает настройки магии. Пример Шамана получил подробное описание Первобытной магии."]
+	},
 	{
 		version: "1.5.1",
 		publishedAt: "2026-10-05T22:50:00Z",
