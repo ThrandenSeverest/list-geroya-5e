@@ -19,6 +19,12 @@ export function choiceFeatureIds(root:HomebrewElement,choice:HBChoice){
  const exact=matches.filter(feature=>choiceTitle(feature.name)===choiceTitle(choice.name));
  return (exact.length===1?exact:matches.length===1?matches:[]).map(feature=>feature.id);
 }
+export function linkedChoicesForFeature(root:HomebrewElement,featureId:string){
+ return (root.choices||[]).filter(choice=>choiceFeatureIds(root,choice).includes(featureId));
+}
+export function choicesForFeature(root:HomebrewElement,feature:HBClassFeature){
+ return [...new Map([...(feature.choices||[]),...linkedChoicesForFeature(root,feature.id)].map(choice=>[choice.id,choice])).values()];
+}
 export function inferredMagicFeatureIds(root:HomebrewElement){
  return (root.features||[]).filter(feature=>{
   if(root.references?.includes(feature.id))return true;
