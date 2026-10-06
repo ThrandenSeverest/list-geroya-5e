@@ -5,6 +5,7 @@ import { conditionFormula, createChoiceOption, editableHomebrew, effectLabel, ho
 import type { ExportCharacter } from './exportFormats';
 import { hbEnabled, hbValue, homebrewChoiceReason } from './homebrewEngine';
 import { HomebrewCommandInput } from './HomebrewCommandInput';
+import { choiceFeatureIds } from './homebrewInference';
 
 export type HBEditingSession={renderMagic?:(element:HomebrewElement)=>ReactNode;elements:HomebrewElement[];character:ExportCharacter;change:(patch:Partial<HomebrewElement>,related?:HomebrewElement[])=>void;patchElement:(id:string,patch:Partial<HomebrewElement>,related?:HomebrewElement[])=>void;renderMechanics:(element:HomebrewElement,patch:(p:Partial<HomebrewElement>,related?:HomebrewElement[])=>void,depth:number)=>ReactNode};
 export const HBEditingContext=createContext<HBEditingSession|null>(null);
@@ -65,8 +66,15 @@ export function ChoiceEditor({owner,choice,onChange,onRemove,onAddStage,depth=0}
  <button type="button" className="hb-danger" onClick={onRemove}>Удалить этот этап выбора</button></section>;
 }
 export function ChoicesEditor({draft,update,depth=0}:{draft:HomebrewElement;update:(p:Partial<HomebrewElement>,related?:HomebrewElement[])=>void;depth?:number}){
+ const session=useSession();
  const choices=draft.choices||[];
- return <section className="hb-choice-collection"><h3>Выборы внутри «{draft.name||'элемента'}» · {choices.length}</h3>{choices.map(choice=><details key={choice.id} className="hb-choice-progression-card" open><summary><span>{choice.name}</span><small>{choice.count} из {choice.from.length}</small></summary><ChoiceEditor owner={draft} choice={choice} depth={depth} onChange={(next,related)=>update({choices:choices.map(row=>row.id===choice.id?next:row)},related)} onAddStage={()=>{const group=choice.choiceGroup||choice.id;update({choices:[...choices.map(row=>row.id===choice.id?{...row,choiceGroup:group}:row),{...choice,id:newHomebrew('ability').id,choiceGroup:group,level:Math.min(20,(choice.level||1)+1)}]});}} onRemove={()=>update({choices:choices.filter(row=>row.id!==choice.id)})}/></details>)}<button type="button" onClick={()=>update({choices:[...choices,{id:newHomebrew('ability').id,name:'Новый выбор',type:'ability',count:1,from:[],level:draft.level||1}]})}>+ Добавить выбор внутри элемента</button></section>;
+ const parent=session.elements.find(element=>element.features?.some(feature=>feature.id===draft.id));
+ const linked=parent?(parent.choices||[]).filter(choice=>choiceFeatureIds(parent,choice).includes(draft.id)&&!choices.some(row=>row.id===choice.id)):[];
+ const addStage=(choice:HBChoice,source:HBChoice[],apply:(next:HBChoice[])=>void)=>{const group=choice.choiceGroup||choice.id;apply([...source.map(row=>row.id===choice.id?{...row,choiceGroup:group}:row),{...choice,id:newHomebrew('ability').id,choiceGroup:group,level:Math.min(20,(choice.level||1)+1)}]);};
+ return <section className="hb-choice-collection"><h3>Выборы внутри «{draft.name||'элемента'}» · {choices.length+linked.length}</h3>{linked.length>0&&<p className="hb-auto-choice-note">Связанные выборы найдены автоматически по правилам способности. Их не нужно создавать или связывать вручную.</p>}
+ {choices.map(choice=><details key={choice.id} className="hb-choice-progression-card" open><summary><span>{choice.name}</span><small>{choice.count} из {choice.from.length}</small></summary><ChoiceEditor owner={draft} choice={choice} depth={depth} onChange={(next,related)=>update({choices:choices.map(row=>row.id===choice.id?next:row)},related)} onAddStage={()=>addStage(choice,choices,next=>update({choices:next}))} onRemove={()=>update({choices:choices.filter(row=>row.id!==choice.id)})}/></details>)}
+ {linked.map(choice=>{const source=parent!.choices||[];return <details key={'linked:'+choice.id} className="hb-choice-progression-card" open><summary><span>{choice.name}</span><small>Автоматически связан · {choice.count} из {choice.from.length}</small></summary><ChoiceEditor owner={parent!} choice={choice} depth={depth} onChange={(next,related)=>session.patchElement(parent!.id,{choices:source.map(row=>row.id===choice.id?next:row)},related)} onAddStage={()=>addStage(choice,source,next=>session.patchElement(parent!.id,{choices:next}))} onRemove={()=>session.patchElement(parent!.id,{choices:source.filter(row=>row.id!==choice.id)})}/></details>;})}
+ <button type="button" onClick={()=>update({choices:[...choices,{id:newHomebrew('ability').id,name:'Новый выбор',type:'ability',count:1,from:[],level:draft.level||1}]})}>{linked.length?'+ Добавить ещё один выбор способности':'+ Добавить выбор внутри элемента'}</button></section>;
 }
 export function RelationsMap({element,initialFocus}:{element:HomebrewElement;initialFocus?:string}){
  const session=useSession(),[focus,setFocus]=useState(initialFocus||element.id);
