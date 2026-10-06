@@ -13319,12 +13319,10 @@ function upgradeKnownHomebrew(element) {
 		mode: "always-prepared",
 		countsAgainstKnown: false
 	})) : element.spellGrants;
-	const references = element.references === void 0 && element.type === "class" && features?.some((f) => f.id === "hb:shaman:ability:primal-magic") ? [...new Set([...element.references || [], "hb:shaman:ability:primal-magic"])] : element.references;
 	return {
 		...element,
 		features,
-		spellGrants,
-		references
+		spellGrants
 	};
 }
 function normalizeHomebrewLibrary(value) {
@@ -14009,10 +14007,51 @@ function hitDicePools(character) {
 	return [...pools.values()].sort((a, b) => b.die - a.die);
 }
 //#endregion
+//#region app/homebrewInference.ts
+/** Read-only associations for legacy v2 documents; never rewrite gameplay rules. */
+function words(value) {
+	return value.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+}
+function choiceTitle(value) {
+	return words(value).filter((word) => ![
+		"выбор",
+		"выбора",
+		"связанные",
+		"связанный",
+		"на",
+		"уровне",
+		"уровень",
+		"уровня",
+		"м",
+		"ом",
+		"choice",
+		"level"
+	].includes(word) && !/^\d+$/.test(word)).join(" ");
+}
+function choiceMatchesClassFeature(feature, choice) {
+	const name = choiceTitle(feature.name), title = choiceTitle(choice.name);
+	if (name && title && (title === name || title.startsWith(name + " ") || name.startsWith(title + " "))) return true;
+	const key = feature.id.split(":").pop()?.toLowerCase() || "";
+	const group = (choice.choiceGroup || choice.id).toLowerCase();
+	return key.length >= 4 && (group === key || group.endsWith(":" + key) || group.includes("-" + key + "-") || group.endsWith("-" + key));
+}
+function choiceFeatureIds(root, choice) {
+	const matches = (root.features || []).filter((feature) => choiceMatchesClassFeature(feature, choice));
+	const exact = matches.filter((feature) => choiceTitle(feature.name) === choiceTitle(choice.name));
+	return (exact.length === 1 ? exact : matches.length === 1 ? matches : []).map((feature) => feature.id);
+}
+function inferredMagicFeatureIds(root) {
+	return (root.features || []).filter((feature) => {
+		if (root.references?.includes(feature.id)) return true;
+		const title = words(feature.name).join(" ");
+		return /^(?:(?:первобытная|природная|тайная|божественная|мистическая|ритуальная|врожденная|договорная) )?магия(?: договора|пакта)?$/.test(title) || /^(?:использование|сотворение|накладывание|наложение) заклинаний$/.test(title) || /^(?:колдовство|заклинания|spellcasting|pact magic|primal magic|innate spellcasting)$/.test(title);
+	}).map((feature) => feature.id);
+}
+//#endregion
 //#region app/homebrewMagic.ts
 /** Uses existing descriptive references: no new JSON schema or copied casting data. */
 function magicFeatureIds(root) {
-	return (root.features || []).filter((feature) => root.references?.includes(feature.id)).map((feature) => feature.id);
+	return inferredMagicFeatureIds(root);
 }
 function magicSpellList(root, entities) {
 	const explicit = new Set((root.spellList || []).map((id) => id.replace("official:spell:", "")));
@@ -14071,570 +14110,6 @@ function magicLevel(root, level, modifier = 3) {
 }
 function slotSummary(slots) {
 	return slots.map((count, index) => count ? `${count} × ${index + 1}-й круг` : "").filter(Boolean).join(" · ") || "Нет ячеек";
-}
-//#endregion
-//#region app/homebrewRelations.ts
-/** Editor-only projections. No graph metadata is written to the v2 document. */
-function editableHomebrew(elements) {
-	return elements.flatMap((element) => [element, ...(element.features || []).map((feature) => ({
-		...feature,
-		type: "ability",
-		updatedAt: element.updatedAt,
-		parentClassId: element.type === "class" ? element.id : element.parentClassId
-	}))]);
-}
-function createChoiceOption(owner, choice, name) {
-	return {
-		...newHomebrew(choice.type === "feature" || choice.type === "option" ? "ability" : [
-			"ability",
-			"feat",
-			"spell",
-			"item"
-		].includes(choice.type) ? choice.type : "ability", name),
-		level: choice.level || owner.level || 1,
-		parentClassId: owner.type === "class" ? owner.id : owner.parentClassId,
-		source: owner.source,
-		references: [owner.id]
-	};
-}
-function conditionFormula(rows, mode) {
-	return rows.map((row) => row.kind === "selected" ? `hasFeature("${row.id}")` : `@${row.kind === "level" ? "level" : "classLevel"} >= ${row.level || 1}`).join(mode === "all" ? " && " : " || ");
-}
-function readConditions(formula) {
-	if (!formula.trim()) return {
-		rows: [],
-		mode: "all"
-	};
-	if (formula.includes("&&") && formula.includes("||")) return null;
-	const mode = formula.includes("||") ? "any" : "all";
-	const rows = [];
-	for (const part of formula.split(mode === "all" ? "&&" : "||")) {
-		const selected = /^hasFeature\("([^"\\]+)"\)$/.exec(part.trim());
-		const level = /^@(level|classLevel)\s*>=\s*(\d+)$/.exec(part.trim());
-		if (selected) rows.push({
-			kind: "selected",
-			id: selected[1]
-		});
-		else if (level) rows.push({
-			kind: level[1],
-			level: Number(level[2])
-		});
-		else return null;
-	}
-	return {
-		rows,
-		mode
-	};
-}
-function effectLabel(effect, elements) {
-	const target = elements.find((element) => element.id === effect.id)?.name;
-	const amount = effect.formula ?? effect.value;
-	return [
-		effectTypes[effect.type] || effect.type,
-		target || effect.id,
-		amount !== void 0 ? String(amount) : "",
-		effect.ability,
-		effect.skill,
-		effect.mode
-	].filter(Boolean).join(" · ");
-}
-function homebrewRelations(elements) {
-	const nodes = [], edges = [];
-	const flat = editableHomebrew(elements), names = new Map(flat.map((element) => [element.id, element.name]));
-	const add = (from, to, label, condition) => edges.push({
-		from,
-		to,
-		label,
-		condition
-	});
-	for (const element of flat) {
-		nodes.push({
-			id: element.id,
-			name: element.name,
-			kind: element.type,
-			entityId: element.id
-		});
-		if (element.type === "class" && element.spellcasting && element.spellcasting.mode !== "none") {
-			const magic = `magic:${element.id}`;
-			nodes.push({
-				id: magic,
-				name: "Магия класса: " + element.name,
-				kind: "magic",
-				entityId: element.id
-			});
-			add(element.id, magic, "Настройки магии");
-			for (const id of magicFeatureIds(element)) add(id, magic, "Связана с магией класса");
-			for (const [key, name] of [
-				["slots", "Ячейки и восстановление"],
-				["known", "Известные / подготовленные заклинания"],
-				["cantrips", "Заговоры"],
-				["list", "Список доступных заклинаний"]
-			]) {
-				const id = `${magic}:${key}`;
-				nodes.push({
-					id,
-					name,
-					kind: "magic",
-					entityId: element.id
-				});
-				add(magic, id, "Определяет");
-			}
-		}
-		for (const feature of element.features || []) add(element.id, feature.id, "Даёт способность", `С ${feature.level} уровня`);
-		for (const choice of element.choices || []) {
-			const key = `choice:${element.id}:${choice.id}`;
-			nodes.push({
-				id: key,
-				name: choice.name,
-				kind: "choice",
-				entityId: element.id
-			});
-			add(element.id, key, `Выбрать ${choice.count}`, `С ${choice.level || 1} уровня`);
-			for (const id of choice.from) add(key, id, "Вариант выбора");
-		}
-		for (const [index, effect] of (element.effects || []).entries()) {
-			if (effect.type.startsWith("grant_") && effect.id) add(element.id, effect.id, effectTypes[effect.type], effect.when || (effect.level ? `С ${effect.level} уровня` : void 0));
-			else {
-				const key = `effect:${element.id}:${index}`;
-				nodes.push({
-					id: key,
-					name: effectLabel(effect, flat),
-					kind: "effect",
-					entityId: element.id
-				});
-				add(element.id, key, "Даёт эффект", effect.when || (effect.level ? `С ${effect.level} уровня` : void 0));
-			}
-			for (const match of (effect.when || "").matchAll(/hasFeature\("([^"]+)"\)/g)) add(match[1], element.id, "Включает эффект", effect.when);
-		}
-		for (const requirement of element.requirements || []) add(requirement.id, element.id, "Требуется для выбора");
-		for (const [level, rows] of Object.entries(element.advancement || {})) for (const row of rows) if (row.id && row.type !== "choice") add(element.id, row.id, "Выдаёт", `С ${level} уровня`);
-		for (const grant of element.spellGrants || []) add(element.id, grant.spellId, "Даёт заклинание", `С ${grant.level} уровня`);
-		for (const key of [
-			"resources",
-			"attacks",
-			"actions"
-		]) for (const row of element[key] || []) {
-			const id = `${key}:${element.id}:${row.id}`;
-			nodes.push({
-				id,
-				name: row.name,
-				kind: key,
-				entityId: element.id
-			});
-			add(element.id, id, key === "resources" ? "Даёт ресурс" : key === "attacks" ? "Даёт атаку" : "Даёт действие");
-		}
-		if (element.parentClassId) add(element.parentClassId, element.id, "В составе класса");
-		if (element.parentRaceId) add(element.parentRaceId, element.id, "В составе расы");
-	}
-	for (const edge of edges) for (const id of [edge.from, edge.to]) if (!nodes.some((node) => node.id === id)) nodes.push({
-		id,
-		name: names.get(id) || id,
-		kind: "reference",
-		entityId: id
-	});
-	return {
-		nodes,
-		edges
-	};
-}
-//#endregion
-//#region app/homebrewPackages.ts
-/**
-* Homebrew still uses stable entities internally, but the library presents a
-* class (or another root) and all of its implementation details as one pack.
-* This keeps old v2 JSON compatible while avoiding dozens of peer-level cards.
-*/
-function homebrewPackages(elements) {
-	const byId = new Map(elements.map((element) => [element.id, element]));
-	const classes = elements.filter((element) => element.type === "class");
-	const owner = /* @__PURE__ */ new Map();
-	const packRoot = /* @__PURE__ */ new Map();
-	for (const element of classes) {
-		owner.set(element.id, element.id);
-		if (element.source?.packId) packRoot.set(element.source.packId, element.id);
-	}
-	const childIds = new Set(elements.flatMap((element) => [
-		...(element.choices || []).flatMap((choice) => choice.from),
-		...(element.features || []).flatMap((feature) => (feature.choices || []).flatMap((choice) => choice.from)),
-		...(element.effects || []).filter((effect) => effect.type.startsWith("grant_")).flatMap((effect) => effect.id ? [effect.id] : []),
-		...Object.values(element.advancement || {}).flatMap((rows) => rows.flatMap((row) => row.id ? [row.id] : []))
-	]));
-	for (const element of elements) if (!owner.has(element.id) && !childIds.has(element.id) && (!element.parentClassId || !byId.has(element.parentClassId)) && (!element.parentRaceId || !byId.has(element.parentRaceId)) && !(element.references || []).some((id) => byId.has(id))) {
-		owner.set(element.id, element.id);
-		if (element.source?.packId && !packRoot.has(element.source.packId)) packRoot.set(element.source.packId, element.id);
-	}
-	for (const element of elements) {
-		const root = element.source?.packId && packRoot.get(element.source.packId);
-		if (root) owner.set(element.id, root);
-	}
-	for (let pass = 0; pass < elements.length; pass += 1) {
-		let changed = false;
-		for (const element of elements) {
-			if (owner.has(element.id)) continue;
-			const root = [
-				element.parentClassId,
-				element.parentRaceId,
-				...element.spellClasses || [],
-				...element.references || []
-			].filter((id) => !!id).map((id) => owner.get(id) || (byId.get(id)?.type === "class" ? id : void 0)).find(Boolean);
-			if (root) {
-				owner.set(element.id, root);
-				changed = true;
-			}
-		}
-		for (const parent of elements) {
-			const root = owner.get(parent.id);
-			if (!root) continue;
-			const childIds = [
-				...(parent.choices || []).flatMap((choice) => choice.from),
-				...(parent.features || []).flatMap((feature) => (feature.choices || []).flatMap((choice) => choice.from)),
-				...(parent.effects || []).filter((effect) => effect.type.startsWith("grant_")).flatMap((effect) => effect.id ? [effect.id] : []),
-				...Object.values(parent.advancement || {}).flatMap((rows) => rows.map((row) => row.id).filter((id) => !!id))
-			];
-			for (const id of childIds) if (byId.has(id) && !owner.has(id)) {
-				owner.set(id, root);
-				changed = true;
-			}
-		}
-		if (!changed) break;
-	}
-	return elements.filter((element) => owner.get(element.id) === element.id || !owner.has(element.id)).map((root) => {
-		const rootId = owner.get(root.id) || root.id;
-		const members = elements.filter((element) => (owner.get(element.id) || element.id) === rootId);
-		const counts = {};
-		for (const member of members) counts[member.type] = (counts[member.type] || 0) + 1;
-		return {
-			id: rootId,
-			name: root.name,
-			root,
-			members,
-			counts
-		};
-	});
-}
-function homebrewPackageFor(element, elements) {
-	return homebrewPackages(elements).find((pack) => pack.members.some((member) => member.id === element.id));
-}
-function homebrewPackageLabel(pack) {
-	const parts = [];
-	const count = (type, one, many) => {
-		const value = pack.counts[type] || 0;
-		if (value) parts.push(`${value} ${value === 1 ? one : many}`);
-	};
-	count("subclass", "подкласс", "подкласса");
-	count("ability", "вариант", "вариантов");
-	count("spell", "заклинание", "заклинаний");
-	count("table", "таблица", "таблиц");
-	return parts.join(" · ") || `${pack.members.length} элемент`;
-}
-//#endregion
-//#region app/homebrewEngine.ts
-var level = (c) => c.classes?.length ? c.classes.reduce((s, x) => s + x.level, 0) : c.level || 1;
-var homebrewClassLevel = (c, id) => c.classes?.length ? c.classes.find((x) => x.classId === id.replace("official:class:", ""))?.level || 0 : c.className === id.replace("official:class:", "") ? c.level : 0;
-var classLevel = homebrewClassLevel;
-function homebrewChoiceReason(c, owner, choice, target, all, available) {
-	const ownerLevel = owner.type === "class" ? classLevel(c, owner.id) : owner.parentClassId ? classLevel(c, owner.parentClassId) : level(c);
-	if (choice.level && ownerLevel < choice.level) return `Требуется ${choice.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
-	if (target.level && ownerLevel < target.level) return `Требуется ${target.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
-	const valid = available || new Set(activeHomebrew(c).map((element) => element.id));
-	for (const requirement of target.requirements || []) if (requirement.type === "selected_feature" && !valid.has(requirement.id)) return `Требуется ${requirement.label || all.find((e) => e.id === requirement.id)?.name || requirement.id}`;
-	if (choice.uniqueAcrossGroup && choice.choiceGroup && owner.choices?.slice(0, owner.choices.findIndex((other) => other.id === choice.id)).some((other) => other.choiceGroup === choice.choiceGroup && (c.homebrew?.choices?.[other.id] || []).includes(target.id))) return "Уже выбран в этой группе";
-	return "";
-}
-function homebrewChoiceStatuses(c) {
-	const all = c.homebrew?.entities || [];
-	return activeHomebrew(c).flatMap((owner) => (owner.choices || []).filter((choice) => hbEnabled(c, choice, owner)).map((choice) => {
-		const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => {
-			const target = all.find((entity) => entity.id === id);
-			return !!target && choice.from.includes(id) && !homebrewChoiceReason(c, owner, choice, target, all);
-		}).slice(0, choice.count);
-		return {
-			owner,
-			choice,
-			selected,
-			missing: Math.max(0, choice.count - selected.length)
-		};
-	}));
-}
-function homebrewChoicesComplete(c) {
-	return homebrewChoiceStatuses(c).every((status) => status.missing === 0);
-}
-function hbContext(c, source, available) {
-	const entities = c.homebrew?.entities || [];
-	const owner = entities.find((e) => e.id === source);
-	const featureOwner = entities.find((e) => e.features?.some((feature) => feature.id === source));
-	const classId = owner?.type === "class" ? owner.id : owner?.parentClassId || featureOwner?.parentClassId || featureOwner?.id;
-	const values = {
-		"@level": level(c),
-		"@classLevel": classId ? classLevel(c, classId) : 0,
-		"@pb": 2 + Math.floor((level(c) - 1) / 4),
-		"@currentHp": c.currentHitPoints || 0,
-		"@tempHp": c.temporaryHitPoints || 0
-	};
-	for (const [k, v] of Object.entries(c.abilities)) {
-		values["@ability." + k] = v;
-		values["@mod." + k] = Math.floor((v - 10) / 2);
-	}
-	const featureIds = available || new Set(activeHomebrew(c).map((element) => element.id));
-	const equippedItems = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean)).map((item) => item.toLowerCase());
-	return {
-		values,
-		source,
-		classLevel: (id) => classLevel(c, id),
-		resource: (id, field) => {
-			const r = (c.homebrew?.entities || []).flatMap((e) => e.resources || []).find((r) => r.id === id);
-			if (!r) return 0;
-			const max = evaluateFormula(r.max, {
-				values,
-				classLevel: (i) => classLevel(c, i)
-			});
-			return field === "max" ? max : Math.max(0, max - (c.resourceSpent?.[id] || 0));
-		},
-		predicate: (name, id) => name === "equipped" ? (c.homebrew?.equipped || []).includes(id) : name === "hasFeature" ? featureIds.has(id) : name === "hasArmor" ? id === "shield" ? equippedItems.some((item) => /щит/.test(item)) : id === "armor" ? equippedItems.some((item) => /(доспех|кольчуг|латы|кожа|брон)/.test(item)) : false : false
-	};
-}
-function hbValue(c, value, source) {
-	try {
-		return evaluateFormula(value ?? 0, hbContext(c, source));
-	} catch {
-		return 0;
-	}
-}
-function hbEnabled(c, row, source, available) {
-	const l = source.type === "class" ? classLevel(c, source.id) : source.parentClassId ? classLevel(c, source.parentClassId) : level(c);
-	if (row.level && row.level > l) return false;
-	try {
-		return !row.when || !!evaluateFormula(row.when, hbContext(c, source.id, available));
-	} catch {
-		return false;
-	}
-}
-function activeHomebrew(c) {
-	const all = c.homebrew?.entities || [], byId = new Map(editableHomebrew(all).map((e) => [e.id, e]));
-	const roots = [
-		...c.homebrew?.activeIds || [],
-		c.className,
-		c.race,
-		c.raceVariant,
-		c.subclass,
-		c.background,
-		...(c.classes || []).flatMap((e) => [e.classId, e.subclassId || ""])
-	].filter((id) => !!id);
-	let available = new Set(roots.filter((id) => byId.has(id))), result = [];
-	for (let pass = 0; pass < 25; pass++) {
-		const seen = /* @__PURE__ */ new Set(), next = [];
-		const visit = (id, depth = 0, parentClassId) => {
-			if (seen.has(id) || depth > 24 || next.length >= 500) return;
-			const raw = byId.get(id);
-			if (!raw) return;
-			const e = parentClassId && !raw.parentClassId ? {
-				...raw,
-				parentClassId
-			} : raw;
-			seen.add(id);
-			next.push(e);
-			if (e.type === "class" || e.type === "subclass") {
-				const classId = e.type === "class" ? e.id : e.parentClassId || "";
-				for (const feature of e.features || []) if (feature.level <= classLevel(c, classId)) visit(feature.id, depth + 1, classId);
-				for (const [l, rows] of Object.entries(e.advancement || {})) if (Number(l) <= classLevel(c, classId)) {
-					for (const row of rows) if (row.id && row.type !== "choice") visit(row.id, depth + 1, classId);
-				}
-			}
-			for (const effect of e.effects || []) if (effect.type.startsWith("grant_") && effect.id && hbEnabled(c, effect, e, available)) visit(effect.id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
-			for (const choice of e.choices || []) if (hbEnabled(c, choice, e, available)) {
-				const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => choice.from.includes(id) && byId.has(id) && !homebrewChoiceReason(c, e, choice, byId.get(id), all, available)).slice(0, choice.count);
-				for (const id of selected) visit(id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
-			}
-		};
-		for (const id of roots) visit(id);
-		result = next;
-		if (seen.size === available.size && [...seen].every((id) => available.has(id))) break;
-		available = seen;
-	}
-	return result;
-}
-function hbEffects(c, type) {
-	return activeHomebrew(c).flatMap((source) => (source.effects || []).filter((e) => (!type || e.type === type) && hbEnabled(c, e, source)).map((effect) => ({
-		source,
-		effect,
-		value: hbValue(c, effect.value ?? effect.formula, source.id)
-	})));
-}
-function hbSum(c, type, filter = () => true) {
-	return hbEffects(c, type).filter((x) => filter(x.effect)).reduce((sum, x) => sum + x.value, 0);
-}
-function hbAbilities(c, base) {
-	const result = { ...base };
-	for (const key of Object.keys(result)) {
-		result[key] += hbSum(c, "ability_bonus", (e) => e.ability === key);
-		for (const x of hbEffects(c, "ability_minimum")) if (x.effect.ability === key) result[key] = Math.max(result[key], x.value);
-	}
-	return result;
-}
-function hbSkillName(id) {
-	const normalized = id.replace(/^skill:/, "").replace(/-/g, " ");
-	return Object.entries(skillKeys).find(([name, data]) => name === id || data.key === normalized)?.[0] || id;
-}
-var weaponProficiencyNames = {
-	club: "Дубинка",
-	dagger: "Кинжал",
-	greatclub: "Палица",
-	handaxe: "Ручной топор",
-	javelin: "Метательное копьё",
-	"light-hammer": "Лёгкий молот",
-	mace: "Булава",
-	quarterstaff: "Боевой посох",
-	sickle: "Серп",
-	spear: "Копьё",
-	"light-crossbow": "Лёгкий арбалет",
-	dart: "Дротик",
-	shortbow: "Короткий лук",
-	sling: "Праща",
-	battleaxe: "Боевой топор",
-	flail: "Цеп",
-	glaive: "Глефа",
-	greataxe: "Секира",
-	greatsword: "Двуручный меч",
-	halberd: "Алебарда",
-	lance: "Длинное копьё",
-	longsword: "Длинный меч",
-	maul: "Молот",
-	morningstar: "Моргенштерн",
-	pike: "Пика",
-	rapier: "Рапира",
-	scimitar: "Скимитар",
-	shortsword: "Короткий меч",
-	trident: "Трезубец",
-	"war-pick": "Боевая кирка",
-	warhammer: "Боевой молот",
-	whip: "Кнут",
-	"hand-crossbow": "Ручной арбалет",
-	"heavy-crossbow": "Тяжёлый арбалет",
-	longbow: "Длинный лук",
-	blowgun: "Духовая трубка",
-	net: "Сеть"
-};
-function classRuleFor(c, id) {
-	const e = c.homebrew?.entities.find((e) => e.id === id && e.type === "class");
-	if (!e) return classRules[id];
-	return {
-		hitDie: Number((e.hitDie || "d8").slice(1)),
-		saves: e.savingThrows || [],
-		armor: (e.effects || []).filter((e) => e.type === "armor_proficiency").map((e) => ({
-			light: "Лёгкие доспехи",
-			medium: "Средние доспехи",
-			heavy: "Тяжёлые доспехи",
-			shield: "Щиты"
-		})[e.group] || e.group).join(", "),
-		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : weaponProficiencyNames[e.id || ""] || e.id || "").join(", "),
-		spellAbility: e.spellcasting?.mode && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
-		features: activeHomebrew(c).filter((x) => x.type === "ability" && x.parentClassId === id).map((x) => ({
-			name: x.name,
-			description: x.description,
-			effectHandling: x.effects?.some((effect) => effect.when) ? "conditional" : x.effects?.length || x.resources?.length || x.attacks?.length || x.actions?.length || x.choices?.length ? "automatic" : "manual"
-		}))
-	};
-}
-function hbResources(c) {
-	const map = /* @__PURE__ */ new Map();
-	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) map.set(r.id, {
-		key: r.id,
-		name: r.name,
-		max: Math.max(0, Math.floor(hbValue(c, r.max, e.id))),
-		isShortRest: r.restore.includes("short_rest"),
-		isLongRest: r.restore.includes("long_rest")
-	});
-	for (const source of activeHomebrew(c)) if (source.type === "class" || source.parentClassId) {
-		for (const grant of source.spellGrants || []) if (grant.uses && grant.level <= classLevel(c, source.type === "class" ? source.id : source.parentClassId || "")) {
-			const key = source.id + ":spell:" + grant.spellId;
-			map.set(key, {
-				key,
-				name: source.name + " · " + (spells.find((e) => e.id === grant.spellId)?.name || c.homebrew?.entities.find((e) => e.id === grant.spellId)?.name || grant.spellId),
-				max: grant.uses,
-				isShortRest: grant.recovery === "short_or_long",
-				isLongRest: true
-			});
-		}
-	}
-	return [...map.values()];
-}
-function hbAttacks(c) {
-	const map = /* @__PURE__ */ new Map();
-	for (const e of activeHomebrew(c)) for (const a of e.attacks || []) if (hbEnabled(c, a, e)) {
-		const mod = Math.floor((c.abilities[a.ability] - 10) / 2), pb = 2 + Math.floor((level(c) - 1) / 4), extra = hbValue(c, a.bonus, e.id);
-		const formula = a.damage.map((d) => d.formula.replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, k) => `[${k.toUpperCase()}]`).replace(/@pb/g, String(pb))).join(" + ");
-		const display = a.damage.map((d) => d.formula.replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, k) => String(Math.floor((c.abilities[k] - 10) / 2))).replace(/@pb/g, String(pb)) + " " + d.type).join(" + ");
-		map.set(a.id, {
-			id: a.id,
-			name: a.name,
-			kind: "feature",
-			ability: a.ability,
-			proficient: a.proficient,
-			attackBonus: a.saveAbility ? void 0 : mod + (a.proficient ? pb : 0) + extra,
-			attackBonusExtra: extra,
-			saveDc: a.saveAbility ? hbValue(c, a.saveDc || "8 + @pb + @mod." + a.ability, e.id) : void 0,
-			damageFormula: formula,
-			damageDisplay: display,
-			note: [
-				e.name,
-				a.range,
-				a.actionType,
-				a.saveAbility ? "Спасбросок " + a.saveAbility : "",
-				a.cost ? "Стоимость: " + a.cost.amount + " · " + a.cost.resource : ""
-			].filter(Boolean).join(" · ")
-		});
-	}
-	return [...map.values()];
-}
-/** Definitions belong to the shared library; character saves contain references and play state. */
-function bindHomebrewLibrary(c, library) {
-	return {
-		...c,
-		homebrew: {
-			...c.homebrew,
-			entities: library.elements,
-			activeIds: c.homebrew?.activeIds || []
-		}
-	};
-}
-function homebrewReferencesOnly(c) {
-	if (!c.homebrew) return c;
-	const { entities: _definitions, ...state } = c.homebrew;
-	return {
-		...c,
-		homebrew: {
-			...state,
-			entities: []
-		}
-	};
-}
-function homebrewExportClosure(root, library) {
-	const byId = new Map(library.map((e) => [e.id, e])), seen = /* @__PURE__ */ new Set(), result = [];
-	const visit = (id) => {
-		if (seen.has(id)) return;
-		seen.add(id);
-		const entity = byId.get(id);
-		if (!entity) return;
-		result.push(entity);
-		const refs = JSON.stringify(entity).match(/hb:[a-z0-9_-]+:[a-z]+:[a-z0-9_-]+/g) || [];
-		for (const ref of refs) if (ref !== id) visit(ref);
-	};
-	const pack = homebrewPackageFor(root, library);
-	for (const member of pack?.members || [root]) visit(member.id);
-	return result;
-}
-function homebrewExportWarning(c) {
-	const entries = activeHomebrew(c).map((e) => `${homebrewTypeLabels[e.type]}: ${e.name}`);
-	const known = new Set((c.homebrew?.entities || []).map((e) => e.id));
-	for (const id of [
-		...c.homebrew?.activeIds || [],
-		c.className,
-		c.race,
-		c.subclass,
-		c.background,
-		...(c.classes || []).flatMap((x) => [x.classId, x.subclassId || ""])
-	]) if (id?.startsWith("hb:") && !known.has(id)) entries.push("Не загружен элемент: " + id);
-	return entries.length ? "Внимание, персонаж содержит Homebrew:\n" + [...new Set(entries)].join("\n") + "\n\nПолная поддержка пользовательских правил доступна в HeroList при подключённой библиотеке Homebrew. LSS и Helpmate могут перенести только часть данных; автоматизация и таблицы могут не сохраниться. Продолжить экспорт?" : "";
 }
 //#endregion
 //#region app/generatedRulesCorpus.ts
@@ -23834,6 +23309,622 @@ function optimalAbilityBuild(character) {
 		},
 		raceAbilityChoices: []
 	};
+}
+//#endregion
+//#region app/homebrewRelations.ts
+/** Editor-only projections. No graph metadata is written to the v2 document. */
+function editableHomebrew(elements) {
+	return elements.flatMap((element) => [element, ...(element.features || []).map((feature) => ({
+		...feature,
+		type: "ability",
+		updatedAt: element.updatedAt,
+		parentClassId: element.type === "class" ? element.id : element.parentClassId
+	}))]);
+}
+function createChoiceOption(owner, choice, name) {
+	return {
+		...newHomebrew(choice.type === "feature" || choice.type === "option" ? "ability" : [
+			"ability",
+			"feat",
+			"spell",
+			"item"
+		].includes(choice.type) ? choice.type : "ability", name),
+		level: choice.level || owner.level || 1,
+		parentClassId: owner.type === "class" ? owner.id : owner.parentClassId,
+		source: owner.source,
+		references: [owner.id]
+	};
+}
+function conditionFormula(rows, mode) {
+	return rows.map((row) => row.kind === "selected" ? `hasFeature("${row.id}")` : `@${row.kind === "level" ? "level" : "classLevel"} >= ${row.level || 1}`).join(mode === "all" ? " && " : " || ");
+}
+function readConditions(formula) {
+	if (!formula.trim()) return {
+		rows: [],
+		mode: "all"
+	};
+	if (formula.includes("&&") && formula.includes("||")) return null;
+	const mode = formula.includes("||") ? "any" : "all";
+	const rows = [];
+	for (const part of formula.split(mode === "all" ? "&&" : "||")) {
+		const selected = /^hasFeature\("([^"\\]+)"\)$/.exec(part.trim());
+		const level = /^@(level|classLevel)\s*>=\s*(\d+)$/.exec(part.trim());
+		if (selected) rows.push({
+			kind: "selected",
+			id: selected[1]
+		});
+		else if (level) rows.push({
+			kind: level[1],
+			level: Number(level[2])
+		});
+		else return null;
+	}
+	return {
+		rows,
+		mode
+	};
+}
+function effectLabel(effect, elements) {
+	const target = elements.find((element) => element.id === effect.id)?.name;
+	const amount = effect.formula ?? effect.value;
+	return [
+		effectTypes[effect.type] || effect.type,
+		target || effect.id,
+		amount !== void 0 ? String(amount) : "",
+		effect.ability,
+		effect.skill,
+		effect.mode
+	].filter(Boolean).join(" · ");
+}
+function homebrewRelations(elements) {
+	const flat = editableHomebrew(elements), byId = new Map(flat.map((element) => [element.id, element]));
+	const officialNames = new Map([
+		...classes.map((e) => ["official:class:" + e.id, e.name]),
+		...races.map((e) => ["official:race:" + e.id, e.name]),
+		...backgrounds.map((e) => ["official:background:" + e.id, e.name]),
+		...spells.map((e) => ["official:spell:" + e.id, e.name]),
+		...feats.map((e) => ["official:feat:" + e.id, e.name]),
+		...Object.entries(skillKeys).map(([name, row]) => [row.key, name])
+	]);
+	const nodesById = /* @__PURE__ */ new Map(), edgesByKey = /* @__PURE__ */ new Map();
+	const node = (value) => {
+		if (!nodesById.has(value.id)) nodesById.set(value.id, value);
+	};
+	const add = (from, to, label, condition) => {
+		if (!from || !to || from === to) return;
+		const edge = {
+			from,
+			to,
+			label,
+			condition
+		};
+		edgesByKey.set(JSON.stringify(edge), edge);
+	};
+	const conditions = (formula, target, label = "Условие") => {
+		if (typeof formula !== "string") return;
+		for (const match of formula.matchAll(/(hasFeature|equipped|@resource|@classLevel)\s*\(\s*["']([^"']+)["']\s*\)/g)) add(match[2], target, match[1] === "@resource" ? "Использует значение ресурса" : match[1] === "@classLevel" ? "Зависит от уровня класса" : label, formula);
+	};
+	for (const element of flat) {
+		node({
+			id: element.id,
+			name: element.name,
+			kind: element.type,
+			entityId: element.id
+		});
+		for (const key of [
+			"resources",
+			"attacks",
+			"actions"
+		]) for (const row of element[key] || []) {
+			node({
+				id: row.id,
+				name: row.name,
+				kind: key,
+				entityId: element.id
+			});
+			add(element.id, row.id, key === "resources" ? "Даёт ресурс" : key === "attacks" ? "Даёт атаку" : "Даёт действие");
+			if ("when" in row) conditions(row.when, row.id);
+			if ("max" in row) conditions(row.max, row.id);
+			if ("cost" in row && row.cost) add(row.cost.resource, row.id, `Расходует ресурс: ${row.cost.amount}`);
+			if ("damage" in row) for (const part of row.damage) conditions(part.formula, row.id);
+			if ("bonus" in row) conditions(row.bonus, row.id);
+			if ("saveDc" in row) conditions(row.saveDc, row.id);
+		}
+	}
+	for (const element of flat) {
+		if (element.spellcasting && element.spellcasting.mode !== "none") {
+			const magic = `magic:${element.id}`;
+			node({
+				id: magic,
+				name: (element.type === "class" ? "Магия класса: " : "Магия: ") + element.name,
+				kind: "magic",
+				entityId: element.id
+			});
+			add(element.id, magic, "Настройки магии");
+			for (const id of magicFeatureIds(element)) add(id, magic, "Определяет магию");
+			for (const [key, name] of [
+				["slots", "Ячейки и восстановление"],
+				["known", "Известные / подготовленные заклинания"],
+				["cantrips", "Заговоры"],
+				["list", "Список доступных заклинаний"]
+			]) {
+				const id = `${magic}:${key}`;
+				node({
+					id,
+					name,
+					kind: "magic",
+					entityId: element.id
+				});
+				add(magic, id, "Определяет");
+			}
+			conditions(element.spellcasting.preparedFormula, magic + ":known");
+			for (const spell of magicSpellList(element, elements)) {
+				const id = spell.id.startsWith("hb:") ? spell.id : "official:spell:" + spell.id;
+				node({
+					id,
+					name: spell.name,
+					kind: "spell",
+					entityId: id
+				});
+				add(magic + ":list", id, "Доступно в списке класса", spell.level ? `${spell.level}-й круг` : "Заговор");
+			}
+		}
+		for (const feature of element.features || []) add(element.id, feature.id, "Даёт способность", `С ${feature.level} уровня`);
+		for (const choice of element.choices || []) {
+			const key = `choice:${element.id}:${choice.id}`;
+			node({
+				id: key,
+				name: choice.name,
+				kind: "choice",
+				entityId: element.id,
+				choiceId: choice.id
+			});
+			add(element.id, key, `Выбрать ${choice.count}`, `С ${choice.level || element.level || 1} уровня`);
+			for (const id of choiceFeatureIds(element, choice)) add(id, key, `Выбрать ${choice.count}`, `С ${choice.level || 1} уровня`);
+			for (const id of choice.from) add(key, id, "Вариант выбора");
+		}
+		for (const [index, effect] of (element.effects || []).entries()) {
+			const condition = effect.when || (effect.level ? `С ${effect.level} уровня` : void 0);
+			if (effect.type.startsWith("grant_") && effect.id) {
+				add(element.id, effect.id, effectTypes[effect.type] || effect.type, condition);
+				conditions(effect.when, effect.id, "Условие выдачи");
+			} else {
+				const key = `effect:${element.id}:${index}`;
+				node({
+					id: key,
+					name: effectLabel(effect, flat),
+					kind: "effect",
+					entityId: element.id
+				});
+				add(element.id, key, "Даёт эффект", condition);
+				conditions(effect.when, key, "Включает эффект");
+				conditions(effect.formula ?? effect.value, key);
+			}
+			conditions(effect.when, element.id, "Включает эффект способности");
+		}
+		for (const requirement of element.requirements || []) add(requirement.id, element.id, "Требуется для выбора");
+		for (const [level, rows] of Object.entries(element.advancement || {})) for (const row of rows) if (row.id) {
+			const choice = element.choices?.find((c) => c.id === row.id);
+			add(element.id, row.type === "choice" && choice ? `choice:${element.id}:${choice.id}` : row.id, "Выдаёт", `С ${level} уровня`);
+		} else if (row.type === "subclass") for (const child of elements.filter((child) => child.type === "subclass" && child.parentClassId === element.id)) add(element.id, child.id, "Выбор подкласса", `С ${level} уровня`);
+		for (const grant of element.spellGrants || []) add(element.id, grant.spellId, grant.mode === "always-prepared" ? "Всегда подготовлено" : "Даёт заклинание", `С ${grant.level} уровня`);
+		for (const ref of element.references || []) add(element.id, ref, "Упоминает элемент");
+		for (const ref of element.entities || []) add(element.id, ref, "В составе набора");
+		for (const ref of element.spellClasses || []) add(ref, element.id, "В списке заклинаний");
+		if (element.parentClassId) add(element.parentClassId, element.id, "В составе класса");
+		if (element.parentRaceId) add(element.parentRaceId, element.id, "В составе расы");
+		for (const tag of (element.description || "").matchAll(/\[\[[^\]]+\]\]/g)) for (const ref of tag[0].matchAll(/(?:id|resource)=["']([^"']+)["']/g)) add(ref[1], element.id, "Использует в описании");
+	}
+	const edges = [...edgesByKey.values()];
+	for (const edge of edges) for (const id of [edge.from, edge.to]) if (!nodesById.has(id)) node({
+		id,
+		name: byId.get(id)?.name || officialNames.get(id) || id,
+		kind: "reference",
+		entityId: id
+	});
+	return {
+		nodes: [...nodesById.values()],
+		edges
+	};
+}
+//#endregion
+//#region app/homebrewPackages.ts
+/**
+* Homebrew still uses stable entities internally, but the library presents a
+* class (or another root) and all of its implementation details as one pack.
+* This keeps old v2 JSON compatible while avoiding dozens of peer-level cards.
+*/
+function homebrewPackages(elements) {
+	const byId = new Map(elements.map((element) => [element.id, element]));
+	const classes = elements.filter((element) => element.type === "class");
+	const owner = /* @__PURE__ */ new Map();
+	const packRoot = /* @__PURE__ */ new Map();
+	for (const element of classes) {
+		owner.set(element.id, element.id);
+		if (element.source?.packId) packRoot.set(element.source.packId, element.id);
+	}
+	const childIds = new Set(elements.flatMap((element) => [
+		...(element.choices || []).flatMap((choice) => choice.from),
+		...(element.features || []).flatMap((feature) => (feature.choices || []).flatMap((choice) => choice.from)),
+		...(element.effects || []).filter((effect) => effect.type.startsWith("grant_")).flatMap((effect) => effect.id ? [effect.id] : []),
+		...Object.values(element.advancement || {}).flatMap((rows) => rows.flatMap((row) => row.id ? [row.id] : []))
+	]));
+	for (const element of elements) if (!owner.has(element.id) && !childIds.has(element.id) && (!element.parentClassId || !byId.has(element.parentClassId)) && (!element.parentRaceId || !byId.has(element.parentRaceId)) && !(element.references || []).some((id) => byId.has(id))) {
+		owner.set(element.id, element.id);
+		if (element.source?.packId && !packRoot.has(element.source.packId)) packRoot.set(element.source.packId, element.id);
+	}
+	for (const element of elements) {
+		const root = element.source?.packId && packRoot.get(element.source.packId);
+		if (root) owner.set(element.id, root);
+	}
+	for (let pass = 0; pass < elements.length; pass += 1) {
+		let changed = false;
+		for (const element of elements) {
+			if (owner.has(element.id)) continue;
+			const root = [
+				element.parentClassId,
+				element.parentRaceId,
+				...element.spellClasses || [],
+				...element.references || []
+			].filter((id) => !!id).map((id) => owner.get(id) || (byId.get(id)?.type === "class" ? id : void 0)).find(Boolean);
+			if (root) {
+				owner.set(element.id, root);
+				changed = true;
+			}
+		}
+		for (const parent of elements) {
+			const root = owner.get(parent.id);
+			if (!root) continue;
+			const childIds = [
+				...(parent.choices || []).flatMap((choice) => choice.from),
+				...(parent.features || []).flatMap((feature) => (feature.choices || []).flatMap((choice) => choice.from)),
+				...(parent.effects || []).filter((effect) => effect.type.startsWith("grant_")).flatMap((effect) => effect.id ? [effect.id] : []),
+				...Object.values(parent.advancement || {}).flatMap((rows) => rows.map((row) => row.id).filter((id) => !!id))
+			];
+			for (const id of childIds) if (byId.has(id) && !owner.has(id)) {
+				owner.set(id, root);
+				changed = true;
+			}
+		}
+		if (!changed) break;
+	}
+	return elements.filter((element) => owner.get(element.id) === element.id || !owner.has(element.id)).map((root) => {
+		const rootId = owner.get(root.id) || root.id;
+		const members = elements.filter((element) => (owner.get(element.id) || element.id) === rootId);
+		const counts = {};
+		for (const member of members) counts[member.type] = (counts[member.type] || 0) + 1;
+		return {
+			id: rootId,
+			name: root.name,
+			root,
+			members,
+			counts
+		};
+	});
+}
+function homebrewPackageFor(element, elements) {
+	return homebrewPackages(elements).find((pack) => pack.members.some((member) => member.id === element.id));
+}
+function homebrewPackageLabel(pack) {
+	const parts = [];
+	const count = (type, one, many) => {
+		const value = pack.counts[type] || 0;
+		if (value) parts.push(`${value} ${value === 1 ? one : many}`);
+	};
+	count("subclass", "подкласс", "подкласса");
+	count("ability", "вариант", "вариантов");
+	count("spell", "заклинание", "заклинаний");
+	count("table", "таблица", "таблиц");
+	return parts.join(" · ") || `${pack.members.length} элемент`;
+}
+//#endregion
+//#region app/homebrewEngine.ts
+var level = (c) => c.classes?.length ? c.classes.reduce((s, x) => s + x.level, 0) : c.level || 1;
+var homebrewClassLevel = (c, id) => c.classes?.length ? c.classes.find((x) => x.classId === id.replace("official:class:", ""))?.level || 0 : c.className === id.replace("official:class:", "") ? c.level : 0;
+var classLevel = homebrewClassLevel;
+function homebrewChoiceReason(c, owner, choice, target, all, available) {
+	const ownerLevel = owner.type === "class" ? classLevel(c, owner.id) : owner.parentClassId ? classLevel(c, owner.parentClassId) : level(c);
+	if (choice.level && ownerLevel < choice.level) return `Требуется ${choice.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
+	if (target.level && ownerLevel < target.level) return `Требуется ${target.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
+	const valid = available || new Set(activeHomebrew(c).map((element) => element.id));
+	for (const requirement of target.requirements || []) if (requirement.type === "selected_feature" && !valid.has(requirement.id)) return `Требуется ${requirement.label || all.find((e) => e.id === requirement.id)?.name || requirement.id}`;
+	if (choice.uniqueAcrossGroup && choice.choiceGroup && owner.choices?.slice(0, owner.choices.findIndex((other) => other.id === choice.id)).some((other) => other.choiceGroup === choice.choiceGroup && (c.homebrew?.choices?.[other.id] || []).includes(target.id))) return "Уже выбран в этой группе";
+	return "";
+}
+function homebrewChoiceStatuses(c) {
+	const all = c.homebrew?.entities || [];
+	return activeHomebrew(c).flatMap((owner) => (owner.choices || []).filter((choice) => hbEnabled(c, choice, owner)).map((choice) => {
+		const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => {
+			const target = all.find((entity) => entity.id === id);
+			return !!target && choice.from.includes(id) && !homebrewChoiceReason(c, owner, choice, target, all);
+		}).slice(0, choice.count);
+		return {
+			owner,
+			choice,
+			selected,
+			missing: Math.max(0, choice.count - selected.length)
+		};
+	}));
+}
+function homebrewChoicesComplete(c) {
+	return homebrewChoiceStatuses(c).every((status) => status.missing === 0);
+}
+function hbContext(c, source, available) {
+	const entities = c.homebrew?.entities || [];
+	const owner = entities.find((e) => e.id === source);
+	const featureOwner = entities.find((e) => e.features?.some((feature) => feature.id === source));
+	const classId = owner?.type === "class" ? owner.id : owner?.parentClassId || featureOwner?.parentClassId || featureOwner?.id;
+	const values = {
+		"@level": level(c),
+		"@classLevel": classId ? classLevel(c, classId) : 0,
+		"@pb": 2 + Math.floor((level(c) - 1) / 4),
+		"@currentHp": c.currentHitPoints || 0,
+		"@tempHp": c.temporaryHitPoints || 0
+	};
+	for (const [k, v] of Object.entries(c.abilities)) {
+		values["@ability." + k] = v;
+		values["@mod." + k] = Math.floor((v - 10) / 2);
+	}
+	const featureIds = available || new Set(activeHomebrew(c).map((element) => element.id));
+	const equippedItems = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean)).map((item) => item.toLowerCase());
+	return {
+		values,
+		source,
+		classLevel: (id) => classLevel(c, id),
+		resource: (id, field) => {
+			const r = (c.homebrew?.entities || []).flatMap((e) => e.resources || []).find((r) => r.id === id);
+			if (!r) return 0;
+			const max = evaluateFormula(r.max, {
+				values,
+				classLevel: (i) => classLevel(c, i)
+			});
+			return field === "max" ? max : Math.max(0, max - (c.resourceSpent?.[id] || 0));
+		},
+		predicate: (name, id) => name === "equipped" ? (c.homebrew?.equipped || []).includes(id) : name === "hasFeature" ? featureIds.has(id) : name === "hasArmor" ? id === "shield" ? equippedItems.some((item) => /щит/.test(item)) : id === "armor" ? equippedItems.some((item) => /(доспех|кольчуг|латы|кожа|брон)/.test(item)) : false : false
+	};
+}
+function hbValue(c, value, source) {
+	try {
+		return evaluateFormula(value ?? 0, hbContext(c, source));
+	} catch {
+		return 0;
+	}
+}
+function hbEnabled(c, row, source, available) {
+	const l = source.type === "class" ? classLevel(c, source.id) : source.parentClassId ? classLevel(c, source.parentClassId) : level(c);
+	if (row.level && row.level > l) return false;
+	try {
+		return !row.when || !!evaluateFormula(row.when, hbContext(c, source.id, available));
+	} catch {
+		return false;
+	}
+}
+function activeHomebrew(c) {
+	const all = c.homebrew?.entities || [], byId = new Map(editableHomebrew(all).map((e) => [e.id, e]));
+	const roots = [
+		...c.homebrew?.activeIds || [],
+		c.className,
+		c.race,
+		c.raceVariant,
+		c.subclass,
+		c.background,
+		...(c.classes || []).flatMap((e) => [e.classId, e.subclassId || ""])
+	].filter((id) => !!id);
+	let available = new Set(roots.filter((id) => byId.has(id))), result = [];
+	for (let pass = 0; pass < 25; pass++) {
+		const seen = /* @__PURE__ */ new Set(), next = [];
+		const visit = (id, depth = 0, parentClassId) => {
+			if (seen.has(id) || depth > 24 || next.length >= 500) return;
+			const raw = byId.get(id);
+			if (!raw) return;
+			const e = parentClassId && !raw.parentClassId ? {
+				...raw,
+				parentClassId
+			} : raw;
+			seen.add(id);
+			next.push(e);
+			if (e.type === "class" || e.type === "subclass") {
+				const classId = e.type === "class" ? e.id : e.parentClassId || "";
+				for (const feature of e.features || []) if (feature.level <= classLevel(c, classId)) visit(feature.id, depth + 1, classId);
+				for (const [l, rows] of Object.entries(e.advancement || {})) if (Number(l) <= classLevel(c, classId)) {
+					for (const row of rows) if (row.id && row.type !== "choice") visit(row.id, depth + 1, classId);
+				}
+			}
+			for (const effect of e.effects || []) if (effect.type.startsWith("grant_") && effect.id && hbEnabled(c, effect, e, available)) visit(effect.id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
+			for (const choice of e.choices || []) if (hbEnabled(c, choice, e, available)) {
+				const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => choice.from.includes(id) && byId.has(id) && !homebrewChoiceReason(c, e, choice, byId.get(id), all, available)).slice(0, choice.count);
+				for (const id of selected) visit(id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
+			}
+		};
+		for (const id of roots) visit(id);
+		result = next;
+		if (seen.size === available.size && [...seen].every((id) => available.has(id))) break;
+		available = seen;
+	}
+	return result;
+}
+function hbEffects(c, type) {
+	return activeHomebrew(c).flatMap((source) => (source.effects || []).filter((e) => (!type || e.type === type) && hbEnabled(c, e, source)).map((effect) => ({
+		source,
+		effect,
+		value: hbValue(c, effect.value ?? effect.formula, source.id)
+	})));
+}
+function hbSum(c, type, filter = () => true) {
+	return hbEffects(c, type).filter((x) => filter(x.effect)).reduce((sum, x) => sum + x.value, 0);
+}
+function hbAbilities(c, base) {
+	const result = { ...base };
+	for (const key of Object.keys(result)) {
+		result[key] += hbSum(c, "ability_bonus", (e) => e.ability === key);
+		for (const x of hbEffects(c, "ability_minimum")) if (x.effect.ability === key) result[key] = Math.max(result[key], x.value);
+	}
+	return result;
+}
+function hbSkillName(id) {
+	const normalized = id.replace(/^skill:/, "").replace(/-/g, " ");
+	return Object.entries(skillKeys).find(([name, data]) => name === id || data.key === normalized)?.[0] || id;
+}
+var weaponProficiencyNames = {
+	club: "Дубинка",
+	dagger: "Кинжал",
+	greatclub: "Палица",
+	handaxe: "Ручной топор",
+	javelin: "Метательное копьё",
+	"light-hammer": "Лёгкий молот",
+	mace: "Булава",
+	quarterstaff: "Боевой посох",
+	sickle: "Серп",
+	spear: "Копьё",
+	"light-crossbow": "Лёгкий арбалет",
+	dart: "Дротик",
+	shortbow: "Короткий лук",
+	sling: "Праща",
+	battleaxe: "Боевой топор",
+	flail: "Цеп",
+	glaive: "Глефа",
+	greataxe: "Секира",
+	greatsword: "Двуручный меч",
+	halberd: "Алебарда",
+	lance: "Длинное копьё",
+	longsword: "Длинный меч",
+	maul: "Молот",
+	morningstar: "Моргенштерн",
+	pike: "Пика",
+	rapier: "Рапира",
+	scimitar: "Скимитар",
+	shortsword: "Короткий меч",
+	trident: "Трезубец",
+	"war-pick": "Боевая кирка",
+	warhammer: "Боевой молот",
+	whip: "Кнут",
+	"hand-crossbow": "Ручной арбалет",
+	"heavy-crossbow": "Тяжёлый арбалет",
+	longbow: "Длинный лук",
+	blowgun: "Духовая трубка",
+	net: "Сеть"
+};
+function classRuleFor(c, id) {
+	const e = c.homebrew?.entities.find((e) => e.id === id && e.type === "class");
+	if (!e) return classRules[id];
+	return {
+		hitDie: Number((e.hitDie || "d8").slice(1)),
+		saves: e.savingThrows || [],
+		armor: (e.effects || []).filter((e) => e.type === "armor_proficiency").map((e) => ({
+			light: "Лёгкие доспехи",
+			medium: "Средние доспехи",
+			heavy: "Тяжёлые доспехи",
+			shield: "Щиты"
+		})[e.group] || e.group).join(", "),
+		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : weaponProficiencyNames[e.id || ""] || e.id || "").join(", "),
+		spellAbility: e.spellcasting?.mode && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
+		features: activeHomebrew(c).filter((x) => x.type === "ability" && x.parentClassId === id).map((x) => ({
+			name: x.name,
+			description: x.description,
+			effectHandling: x.effects?.some((effect) => effect.when) ? "conditional" : x.effects?.length || x.resources?.length || x.attacks?.length || x.actions?.length || x.choices?.length ? "automatic" : "manual"
+		}))
+	};
+}
+function hbResources(c) {
+	const map = /* @__PURE__ */ new Map();
+	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) map.set(r.id, {
+		key: r.id,
+		name: r.name,
+		max: Math.max(0, Math.floor(hbValue(c, r.max, e.id))),
+		isShortRest: r.restore.includes("short_rest"),
+		isLongRest: r.restore.includes("long_rest")
+	});
+	for (const source of activeHomebrew(c)) if (source.type === "class" || source.parentClassId) {
+		for (const grant of source.spellGrants || []) if (grant.uses && grant.level <= classLevel(c, source.type === "class" ? source.id : source.parentClassId || "")) {
+			const key = source.id + ":spell:" + grant.spellId;
+			map.set(key, {
+				key,
+				name: source.name + " · " + (spells.find((e) => e.id === grant.spellId)?.name || c.homebrew?.entities.find((e) => e.id === grant.spellId)?.name || grant.spellId),
+				max: grant.uses,
+				isShortRest: grant.recovery === "short_or_long",
+				isLongRest: true
+			});
+		}
+	}
+	return [...map.values()];
+}
+function hbAttacks(c) {
+	const map = /* @__PURE__ */ new Map();
+	for (const e of activeHomebrew(c)) for (const a of e.attacks || []) if (hbEnabled(c, a, e)) {
+		const mod = Math.floor((c.abilities[a.ability] - 10) / 2), pb = 2 + Math.floor((level(c) - 1) / 4), extra = hbValue(c, a.bonus, e.id);
+		const formula = a.damage.map((d) => d.formula.replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, k) => `[${k.toUpperCase()}]`).replace(/@pb/g, String(pb))).join(" + ");
+		const display = a.damage.map((d) => d.formula.replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, k) => String(Math.floor((c.abilities[k] - 10) / 2))).replace(/@pb/g, String(pb)) + " " + d.type).join(" + ");
+		map.set(a.id, {
+			id: a.id,
+			name: a.name,
+			kind: "feature",
+			ability: a.ability,
+			proficient: a.proficient,
+			attackBonus: a.saveAbility ? void 0 : mod + (a.proficient ? pb : 0) + extra,
+			attackBonusExtra: extra,
+			saveDc: a.saveAbility ? hbValue(c, a.saveDc || "8 + @pb + @mod." + a.ability, e.id) : void 0,
+			damageFormula: formula,
+			damageDisplay: display,
+			note: [
+				e.name,
+				a.range,
+				a.actionType,
+				a.saveAbility ? "Спасбросок " + a.saveAbility : "",
+				a.cost ? "Стоимость: " + a.cost.amount + " · " + a.cost.resource : ""
+			].filter(Boolean).join(" · ")
+		});
+	}
+	return [...map.values()];
+}
+/** Definitions belong to the shared library; character saves contain references and play state. */
+function bindHomebrewLibrary(c, library) {
+	return {
+		...c,
+		homebrew: {
+			...c.homebrew,
+			entities: library.elements,
+			activeIds: c.homebrew?.activeIds || []
+		}
+	};
+}
+function homebrewReferencesOnly(c) {
+	if (!c.homebrew) return c;
+	const { entities: _definitions, ...state } = c.homebrew;
+	return {
+		...c,
+		homebrew: {
+			...state,
+			entities: []
+		}
+	};
+}
+function homebrewExportClosure(root, library) {
+	const byId = new Map(library.map((e) => [e.id, e])), seen = /* @__PURE__ */ new Set(), result = [];
+	const visit = (id) => {
+		if (seen.has(id)) return;
+		seen.add(id);
+		const entity = byId.get(id);
+		if (!entity) return;
+		result.push(entity);
+		const refs = JSON.stringify(entity).match(/hb:[a-z0-9_-]+:[a-z]+:[a-z0-9_-]+/g) || [];
+		for (const ref of refs) if (ref !== id) visit(ref);
+	};
+	const pack = homebrewPackageFor(root, library);
+	for (const member of pack?.members || [root]) visit(member.id);
+	return result;
+}
+function homebrewExportWarning(c) {
+	const entries = activeHomebrew(c).map((e) => `${homebrewTypeLabels[e.type]}: ${e.name}`);
+	const known = new Set((c.homebrew?.entities || []).map((e) => e.id));
+	for (const id of [
+		...c.homebrew?.activeIds || [],
+		c.className,
+		c.race,
+		c.subclass,
+		c.background,
+		...(c.classes || []).flatMap((x) => [x.classId, x.subclassId || ""])
+	]) if (id?.startsWith("hb:") && !known.has(id)) entries.push("Не загружен элемент: " + id);
+	return entries.length ? "Внимание, персонаж содержит Homebrew:\n" + [...new Set(entries)].join("\n") + "\n\nПолная поддержка пользовательских правил доступна в HeroList при подключённой библиотеке Homebrew. LSS и Helpmate могут перенести только часть данных; автоматизация и таблицы могут не сохраниться. Продолжить экспорт?" : "";
 }
 //#endregion
 //#region app/spellPreparation.ts
@@ -49150,7 +49241,9 @@ function ConditionEditor({ value, onChange, elements, label = "Когда дей
 }
 function RelationshipPanel({ element, onChange, compact = false }) {
 	const session = useSession(), flat = editableHomebrew(session.elements);
-	const [mode, setMode] = useState("requires");
+	const graph = useMemo(() => homebrewRelations(session.elements), [session.elements]);
+	const [mode, setMode] = useState("requires"), [focus, setFocus] = useState("");
+	const incoming = graph.edges.filter((edge) => edge.to === element.id), outgoing = graph.edges.filter((edge) => edge.from === element.id);
 	const dependent = flat.filter((other) => other.id !== element.id && other.requirements?.some((r) => r.id === element.id));
 	const granted = (element.effects || []).filter((effect) => effect.type.startsWith("grant_") && effect.id);
 	const connect = (id) => {
@@ -49173,19 +49266,55 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 			}] });
 		}
 	};
+	const linked = (edges, direction) => /* @__PURE__ */ jsxs("div", { children: [!edges.length && /* @__PURE__ */ jsx("p", {
+		className: "hb-level-empty",
+		children: "В правилах этого элемента нет таких зависимостей."
+	}), edges.map((edge, index) => {
+		const target = graph.nodes.find((node) => node.id === edge[direction]);
+		const options = target?.kind === "choice" ? graph.edges.filter((row) => row.from === target.id && row.label === "Вариант выбора") : [];
+		return /* @__PURE__ */ jsxs("div", {
+			className: "hb-auto-relation",
+			children: [/* @__PURE__ */ jsxs("button", {
+				type: "button",
+				className: "hb-graph-node",
+				onClick: () => setFocus(edge[direction]),
+				children: [target?.name || edge[direction], /* @__PURE__ */ jsxs("small", { children: [
+					edge.label,
+					edge.condition ? " · " + edge.condition : "",
+					options.length ? " · " + options.length + " вариантов" : ""
+				] })]
+			}), options.length > 0 && /* @__PURE__ */ jsx("div", {
+				className: "hb-auto-options",
+				children: options.map((row) => /* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => setFocus(row.to),
+					children: graph.nodes.find((node) => node.id === row.to)?.name || row.to
+				}, row.to))
+			})]
+		}, index);
+	})] });
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-relationships",
-		children: [
-			/* @__PURE__ */ jsx("h4", { children: "Условия и последствия" }),
+		"aria-label": "Автоматические связи",
+		children: [!compact && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+			/* @__PURE__ */ jsx("h4", { children: "Выборы и последствия" }),
+			/* @__PURE__ */ jsx("p", { children: "Связи собраны автоматически из правил. Нажмите вариант, чтобы увидеть его эффекты и зависимые способности." }),
 			/* @__PURE__ */ jsxs("div", {
 				className: "hb-relation-columns",
-				children: [/* @__PURE__ */ jsxs("div", { children: [
-					/* @__PURE__ */ jsx("strong", { children: "Требует выбранного элемента" }),
-					!(element.requirements || []).length && /* @__PURE__ */ jsx("p", {
-						className: "hb-level-empty",
-						children: "Без требований к выбору."
-					}),
-					(element.requirements || []).map((r, index) => /* @__PURE__ */ jsxs("div", {
+				children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "От чего зависит" }), linked(incoming, "from")] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "На что влияет" }), linked(outgoing, "to")] })]
+			}),
+			focus && /* @__PURE__ */ jsx(RelationsMap, {
+				element,
+				initialFocus: focus
+			}, focus)
+		] }), /* @__PURE__ */ jsxs("details", {
+			className: "hb-extra-gameplay-rules",
+			children: [
+				/* @__PURE__ */ jsx("summary", { children: "Дополнительные игровые требования и выдача" }),
+				/* @__PURE__ */ jsx("p", { children: "Здесь задаются новые правила доступности и получения способностей. Уже существующие выборы и зависимости отображаются выше без настройки." }),
+				/* @__PURE__ */ jsxs("div", {
+					className: "hb-relation-columns",
+					children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Требует выбранного элемента" }), (element.requirements || []).map((r, index) => /* @__PURE__ */ jsxs("div", {
 						className: "hb-relation-line",
 						children: [/* @__PURE__ */ jsx("span", { children: flat.find((row) => row.id === r.id)?.name || r.id }), /* @__PURE__ */ jsx("button", {
 							type: "button",
@@ -49193,53 +49322,45 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 							onClick: () => onChange({ requirements: element.requirements?.filter((_, i) => i !== index) }),
 							children: "Убрать"
 						})]
-					}, index)),
-					(element.requirements?.length || 0) > 1 && /* @__PURE__ */ jsx("small", { children: "Нужны все перечисленные элементы." })
-				] }), /* @__PURE__ */ jsxs("div", { children: [
-					/* @__PURE__ */ jsx("strong", { children: "Открывает выбор способностей" }),
-					!dependent.length && /* @__PURE__ */ jsx("p", {
-						className: "hb-level-empty",
-						children: "Зависимых вариантов пока нет."
-					}),
-					dependent.map((row) => /* @__PURE__ */ jsxs("div", {
+					}, index))] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Открывает выбор способностей" }), dependent.map((row) => /* @__PURE__ */ jsxs("div", {
 						className: "hb-relation-line",
-						children: [/* @__PURE__ */ jsxs("span", { children: [row.name, row.level ? ` · с ${row.level} уровня` : ""] }), /* @__PURE__ */ jsx("button", {
+						children: [/* @__PURE__ */ jsx("span", { children: row.name }), /* @__PURE__ */ jsx("button", {
 							type: "button",
 							onClick: () => session.patchElement(row.id, { requirements: row.requirements?.filter((r) => r.id !== element.id) }),
-							children: "Убрать связь"
+							children: "Убрать требование"
 						})]
-					}, row.id))
-				] })]
-			}),
-			!compact && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("strong", { children: "Выдаёт автоматически" }), granted.map((effect, index) => /* @__PURE__ */ jsxs("p", { children: [effectLabel(effect, flat), effect.when ? ` · ${effect.when}` : ""] }, index))] }),
-			/* @__PURE__ */ jsxs("div", {
-				className: "hb-relation-add",
-				children: [/* @__PURE__ */ jsxs("select", {
-					"aria-label": "Смысл новой связи",
-					value: mode,
-					onChange: (event) => setMode(event.target.value),
-					children: [
-						/* @__PURE__ */ jsx("option", {
-							value: "requires",
-							children: "Требует выбранного элемента"
-						}),
-						/* @__PURE__ */ jsx("option", {
-							value: "dependent",
-							children: "Открывает выбор другого элемента"
-						}),
-						/* @__PURE__ */ jsx("option", {
-							value: "grant",
-							children: "Выдаёт автоматически"
-						})
-					]
-				}), /* @__PURE__ */ jsx(NamedReference, {
-					label: "Добавить связь",
-					value: "",
-					options: flat.filter((row) => row.id !== element.id && (mode !== "dependent" || session.elements.some((e) => e.id === row.id) && (row.type === "ability" || row.type === "feat"))),
-					onChange: connect
-				})]
-			})
-		]
+					}, row.id))] })]
+				}),
+				granted.map((effect, index) => /* @__PURE__ */ jsxs("p", { children: [effectLabel(effect, flat), effect.when ? ` · ${effect.when}` : ""] }, index)),
+				/* @__PURE__ */ jsxs("div", {
+					className: "hb-relation-add",
+					children: [/* @__PURE__ */ jsxs("select", {
+						"aria-label": "Смысл новой связи",
+						value: mode,
+						onChange: (event) => setMode(event.target.value),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "requires",
+								children: "Требует выбранного элемента"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "dependent",
+								children: "Открывает выбор другого элемента"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "grant",
+								children: "Выдаёт автоматически"
+							})
+						]
+					}), /* @__PURE__ */ jsx(NamedReference, {
+						label: "Добавить игровое правило",
+						value: "",
+						options: flat.filter((row) => row.id !== element.id && (mode !== "dependent" || session.elements.some((e) => e.id === row.id) && (row.type === "ability" || row.type === "feat"))),
+						onChange: connect
+					})]
+				})
+			]
+		})]
 	});
 }
 function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0 }) {
@@ -49574,11 +49695,12 @@ function RelationsMap({ element, initialFocus }) {
 	if (!current) return null;
 	const incoming = graph.edges.filter((edge) => edge.to === current.id), outgoing = graph.edges.filter((edge) => edge.from === current.id);
 	const subject = editableHomebrew(session.elements).find((row) => row.id === current.entityId);
+	const choice = current.kind === "choice" ? subject?.choices?.find((row) => row.id === current.choiceId) : void 0;
 	const list = (edges, direction) => /* @__PURE__ */ jsxs("div", {
 		className: "hb-graph-lane",
 		children: [!edges.length && /* @__PURE__ */ jsx("p", {
 			className: "hb-level-empty",
-			children: "Связей пока нет"
+			children: "В правилах этого узла нет таких зависимостей"
 		}), edges.map((edge, index) => {
 			const target = graph.nodes.find((node) => node.id === edge[direction]);
 			return /* @__PURE__ */ jsxs("div", {
@@ -49615,7 +49737,7 @@ function RelationsMap({ element, initialFocus }) {
 				onClick: () => setFocus(element.id),
 				children: "К текущему элементу"
 			})] }),
-			/* @__PURE__ */ jsx("p", { children: "Нажмите узел, чтобы увидеть его связи и изменить условия." }),
+			/* @__PURE__ */ jsx("p", { children: "Связи определяются автоматически из правил. Нажмите узел, чтобы увидеть варианты, последствия и условия." }),
 			/* @__PURE__ */ jsxs("div", {
 				className: "hb-graph-grid",
 				children: [
@@ -49628,7 +49750,13 @@ function RelationsMap({ element, initialFocus }) {
 				]
 			}),
 			subject && current.kind === "magic" && session.renderMagic?.(subject),
-			subject && current.kind !== "magic" && (session.elements.some((row) => row.id === subject.id) ? /* @__PURE__ */ jsx(RelationshipPanel, {
+			subject && choice && /* @__PURE__ */ jsx(ChoiceEditor, {
+				owner: subject,
+				choice,
+				onChange: (next, related) => session.patchElement(subject.id, { choices: subject.choices?.map((row) => row.id === choice.id ? next : row) }, related),
+				onRemove: () => session.patchElement(subject.id, { choices: subject.choices?.filter((row) => row.id !== choice.id) })
+			}),
+			subject && current.kind !== "magic" && current.kind !== "choice" && (session.elements.some((row) => row.id === subject.id) ? /* @__PURE__ */ jsx(RelationshipPanel, {
 				element: subject,
 				onChange: (patch) => session.patchElement(subject.id, patch),
 				compact: true
@@ -53676,14 +53804,7 @@ var shamanExample_default = {
 function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, featureId }) {
 	const [modifier, setModifier] = useState(3), [previewLevel, setPreviewLevel] = useState(level), [query, setQuery] = useState("");
 	const [settingsOpen, setSettingsOpen] = useState(() => !root.spellcasting || root.spellcasting.mode === "none");
-	if (!(featureId ? magicFeatureIds(root).includes(featureId) : true)) return /* @__PURE__ */ jsxs("section", {
-		className: "hb-magic-connect",
-		children: [/* @__PURE__ */ jsx("p", { children: "Если эта способность описывает магию класса, подключите её настройки здесь." }), /* @__PURE__ */ jsx("button", {
-			type: "button",
-			onClick: () => onChange({ references: [...new Set([...root.references || [], featureId])] }),
-			children: "Связать с магией класса"
-		})]
-	});
+	if (!(featureId ? magicFeatureIds(root).includes(featureId) : true)) return null;
 	const casting = root.spellcasting;
 	const list = magicSpellList(root, entities);
 	let error = "", rows = [];
@@ -53698,11 +53819,7 @@ function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, fea
 		className: "hb-magic-workspace",
 		"aria-label": "Магия и заклинания способности",
 		children: [
-			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h3", { children: "Магия и заклинания" }), featureId && /* @__PURE__ */ jsx("button", {
-				type: "button",
-				onClick: () => onChange({ references: root.references?.filter((id) => id !== featureId) }),
-				children: "Убрать связь с настройками"
-			})] }),
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h3", { children: "Магия и заклинания" }), /* @__PURE__ */ jsx("small", { children: "Связь с настройками определяется автоматически" })] }),
 			/* @__PURE__ */ jsxs("p", { children: [
 				"Настройки класса «",
 				root.name,
@@ -54911,10 +55028,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									})]
 								})] }),
 								tab === "Основное" && draft.type === "spell" && /* @__PURE__ */ jsx(SpellCardPreview, { draft }),
-								tab === "Связи" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(RelationshipPanel, {
-									element: draft,
-									onChange: update
-								}), /* @__PURE__ */ jsx(RelationsMap, { element: draft }, draft.id)] }),
+								tab === "Связи" && /* @__PURE__ */ jsx(RelationsMap, { element: draft }, draft.id),
 								tab === "Механика" && (draft.type === "spell" ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(SpellMechanicsEditor, {
 									draft,
 									update
@@ -56339,14 +56453,6 @@ function ClassTraining({ draft, update }) {
 		]
 	});
 }
-function choiceMatchesClassFeature(feature, choice) {
-	const clean = (value) => value.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").replace(/\b(выбор|выбора|связанные|связанный|на|уровне|уровень)\b/g, " ").replace(/\s+/g, " ").trim();
-	const featureName = clean(feature.name), choiceName = clean(choice.name);
-	if (featureName && choiceName && (choiceName.startsWith(featureName) || featureName.startsWith(choiceName))) return true;
-	const featureKey = feature.id.split(":").pop()?.toLowerCase() || "";
-	const choiceKey = (choice.choiceGroup || choice.id).toLowerCase();
-	return featureKey.length >= 4 && choiceKey.includes(featureKey);
-}
 function ClassDevelopment({ draft, update, entities, pack, open }) {
 	const [level, setLevel] = useState(draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1);
 	const rows = draft.advancement?.[level] || [];
@@ -56472,15 +56578,15 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 					open
 				})]
 			}),
-			/* @__PURE__ */ jsx("p", { children: "Подключите магию к способности кнопкой «Связать с магией класса». Ячейки и список можно редактировать прямо в карточке способности." })
+			/* @__PURE__ */ jsx("p", { children: "Связи определяются автоматически из выборов, условий и настроек класса. Ячейки и список заклинаний редактируются прямо в способности, описывающей магию." })
 		]
 	});
 }
 function ClassFeatures({ draft, update, entities, level }) {
 	const features = draft.features || [], choices = draft.choices || [];
-	const linked = (feature) => choices.filter((choice) => choiceMatchesClassFeature(feature, choice));
+	const linked = (feature) => choices.filter((choice) => choiceFeatureIds(draft, choice).includes(feature.id));
 	const levelFeatures = features.filter((feature) => feature.level === level || linked(feature).some((choice) => (choice.level || 1) === level));
-	const orphanChoices = choices.filter((choice) => (choice.level || 1) === level && !features.some((feature) => choiceMatchesClassFeature(feature, choice)));
+	const orphanChoices = choices.filter((choice) => (choice.level || 1) === level && !features.some((feature) => choiceFeatureIds(draft, choice).includes(feature.id)));
 	const patchFeature = (id, p, related) => update({ features: features.map((feature) => feature.id === id ? {
 		...feature,
 		...p
@@ -57529,6 +57635,11 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.5.3",
+		publishedAt: "2026-10-06T15:20:00Z",
+		changes: ["Связи Homebrew определяются автоматически из правил: способности показывают свои выборы, варианты и последствия без отдельной настройки.", "Карта связей учитывает требования, условия эффектов, расход ресурсов и магию. Четыре варианта Сакрального фокуса видны прямо у способности."]
+	},
 	{
 		version: "1.5.2",
 		publishedAt: "2026-10-06T02:15:00Z",
