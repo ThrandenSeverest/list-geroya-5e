@@ -1,0 +1,1 @@
+function e(e=typeof location>`u`?``:location.hostname){return e===`github.io`||e.endsWith(`.github.io`)}function t(e){return`${`/list-geroya-5e/`.replace(/\/$/,``)}/${e.replace(/^\/+/,``)}`}export{e as n,t};
