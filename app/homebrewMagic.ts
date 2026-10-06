@@ -3,10 +3,11 @@ import type { ExportCharacter } from './exportFormats';
 import { resolveSpellSlots, resolvePactMagic } from './multiclass';
 import { evaluateFormula } from './homebrewFormula';
 import { spells } from './catalog';
+import { inferredMagicFeatureIds } from './homebrewInference';
 
 /** Uses existing descriptive references: no new JSON schema or copied casting data. */
 export function magicFeatureIds(root:HomebrewElement) {
- return (root.features||[]).filter(feature=>root.references?.includes(feature.id)).map(feature=>feature.id);
+ return inferredMagicFeatureIds(root);
 }
 export function magicSpellList(root:HomebrewElement,entities:HomebrewElement[]) {
  const explicit=new Set((root.spellList||[]).map(id=>id.replace('official:spell:','')));

@@ -27,6 +27,7 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
    await page.getByRole('button',{name:'Повторить',exact:true}).click();await choice.getByLabel('Описание варианта',{exact:true}).fill('Новый вариант с постоянным бонусом.');
    await choice.getByText('Эффекты, ресурсы, атаки и вложенные выборы варианта',{exact:true}).click();
    await choice.locator('.hb-mechanics > details > summary').filter({hasText:'Бонусы и эффекты'}).click();await choice.getByRole('button',{name:'+ Эффект',exact:true}).click();await choice.getByLabel('Тип эффекта',{exact:true}).selectOption('ac_bonus');
+   await choice.getByText('Дополнительные игровые требования и выдача',{exact:true}).click();
    await choice.getByLabel('Смысл новой связи',{exact:true}).selectOption('dependent');
    await choice.locator('.hb-relation-add .hb-named-reference > button').click();await choice.locator('.hb-relation-add').getByRole('button',{name:'Улучшение тела',exact:true}).click();
    assert.match(await choice.locator('.hb-relationships').first().innerText(),/Улучшение тела/);
@@ -35,7 +36,7 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
    assert.ok(await page.locator('.hb-editor').evaluate(element=>element.scrollWidth<=element.clientWidth+1));
    // Reload before saving: every edited/new dependency must survive with its root.
    await page.reload();await openWorkshop();await openChoices();
-   const restored=page.locator('.hb-unified-choice').first();await restored.getByRole('button',{name:'Дух',exact:true}).click();
+   const restored=page.locator('.hb-unified-choice').first();await restored.locator('.hb-option-tabs').getByRole('button',{name:'Дух',exact:true}).click();
    assert.equal(await restored.getByLabel('Описание варианта',{exact:true}).inputValue(),'Новый вариант с постоянным бонусом.');
    await page.getByRole('button',{name:'Сохранить изменения',exact:true}).click();await page.getByRole('button',{name:'Сохранено',exact:true}).waitFor();
    const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('herolist-homebrew-local-v2'))),savedRoot=saved.elements.find(row=>row.id===root.id),newOption=saved.elements.find(row=>row.name==='Дух'),savedDependent=saved.elements.find(row=>row.id===dependent.id);

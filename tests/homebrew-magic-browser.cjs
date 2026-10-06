@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const entities=require('../app/shamanExample.json').entities;
-(async()=>{const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});try{for(const width of [1440,390]){
+(async()=>{const browser=await chromium.launch({headless:true,executablePath:process.env.HB_TEST_CHROMIUM,args:['--no-sandbox','--disable-dev-shm-usage']});try{for(const width of [1440,390]){
  const context=await browser.newContext({viewport:{width,height:1000}});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/account',r=>r.fulfill({json:{authenticated:false}}));
  await page.addInitScript(entities=>{if(!localStorage.getItem('herolist-homebrew-local-v2'))localStorage.setItem('herolist-homebrew-local-v2',JSON.stringify({version:2,schemaVersion:2,elements:entities}));},entities);
@@ -17,7 +17,7 @@ const entities=require('../app/shamanExample.json').entities;
  await workspace.getByLabel('Характеристика магии',{exact:true}).selectOption('cha');assert.match(await workspace.innerText(),/Харизма/);
  await page.getByRole('button',{name:'Сохранить изменения',exact:true}).click();
  await page.getByRole('button',{name:'Связи',exact:true}).click();
- await page.getByRole('button',{name:/Магия класса: Шаман/}).click();
+ await page.locator('.hb-editor > .hb-relations-map').getByRole('button',{name:/Магия класса: Шаман/}).first().click();
  assert.ok(await page.getByRole('button',{name:/Ячейки и восстановление/}).isVisible());
  await page.reload();await page.getByRole('button',{name:/^Мой Homebrew/}).click();await page.locator('.hb-sidebar-package > button').filter({hasText:'Шаман'}).first().click();await page.getByRole('button',{name:'Развитие и способности',exact:true}).click();await page.getByRole('button',{name:/^Уровень 2:/}).click();
  assert.match(await page.getByRole('region',{name:'Магия и заклинания способности'}).innerText(),/Харизма/);

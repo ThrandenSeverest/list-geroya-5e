@@ -45,7 +45,7 @@ test('obsolete selections in closed or future branches do not satisfy prerequisi
 test('relation graph is derived and preserves IDs across rename and nested references',()=>{
  const root=entity('class','Шаман'),option=entity('ability','Тело');
  root.features=[{id:'hb:test:ability:focus',name:'Фокус',level:1,description:'',choices:[{id:'hb:test:ability:choice',name:'Фокус',type:'ability',count:1,from:[option.id]}]}];
- option.requirements=[{type:'selected_feature',id:root.features[0].id}];
+ option.requirements=[{type:'selected_feature',id:root.features![0].id}];
  assert.deepEqual(validateHomebrew([root,option]),[]);
  const graph=homebrewRelations([root,option]);
  assert.ok(graph.edges.some(edge=>edge.to===option.id&&edge.label==='Вариант выбора'));
@@ -56,4 +56,44 @@ test('condition builder round-trips supported all/any conditions and preserves c
  const rows=[{kind:'selected' as const,id:'hb:test:ability:focus'},{kind:'classLevel' as const,level:5}];
  for(const mode of ['all','any'] as const)assert.deepEqual(readConditions(conditionFormula(rows,mode)),{rows,mode});
  assert.equal(readConditions('equipped(@source) && @level > 3'),null);
+});
+
+test('legacy Shaman sacred focus automatically connects all four options and their dependent totems',async()=>{
+ const {default:example}=await import('../app/shamanExample.json');
+ const elements=example.entities as HomebrewElement[],before=JSON.stringify(elements),graph=homebrewRelations(elements);
+ const root=elements.find(row=>row.type==='class')!,feature=root.features!.find(row=>row.name==='Сакральный фокус')!,choice=root.choices!.find(row=>row.name==='Сакральный фокус')!;
+ const node=`choice:${root.id}:${choice.id}`;
+ assert.ok(graph.edges.some(edge=>edge.from===feature.id&&edge.to===node));
+ assert.deepEqual(graph.edges.filter(edge=>edge.from===node&&edge.label==='Вариант выбора').map(edge=>edge.to),choice.from);
+ assert.equal(choice.from.length,4);
+ for(const id of choice.from)assert.ok(graph.edges.some(edge=>edge.from===id&&edge.label==='Требуется для выбора'));
+ assert.equal(JSON.stringify(elements),before);
+});
+test('choice-feature associations are shared by graph and editor, scoped to their owner across every type',()=>{
+ for(const type of ['class','subclass','race','subrace','feat','background','ability','item','spell'] as const){
+  const root=entity(type,'Источник'),other=entity(type,'Другой источник'),body=entity('ability','Тело');
+  root.features=[{id:root.id+'-focus',name:'Сакральный фокус',level:1,description:''}];
+  other.features=[{id:other.id+'-focus',name:'Сакральный фокус',level:1,description:''}];
+  root.choices=[{id:'focus-stage-1',name:'Сакральный фокус — выбор на 1-м уровне',count:1,type:'ability',from:[body.id]}];
+  const graph=homebrewRelations([root,other,body]),node=`choice:${root.id}:focus-stage-1`;
+  assert.ok(graph.edges.some(edge=>edge.from===root.features![0].id&&edge.to===node),type);
+  assert.ok(!graph.edges.some(edge=>edge.from===other.features![0].id&&edge.to===node),type);
+ }
+});
+test('conditions, resource costs, progression choices and explicit references expose actual dependencies',()=>{
+ const root=entity('feat','Черта'),focus=entity('ability','Фокус'),dependent=entity('ability','Усиление'),resource='hb:test:resource:charges',attack='hb:test:attack:beam';
+ root.resources=[{id:resource,name:'Заряды',max:`1 + hasFeature('${focus.id}')`,restore:['long']}];
+ root.attacks=[{id:attack,name:'Луч',ability:'wis',proficient:true,damage:[{formula:`@resource('${resource}').current`,type:'force'}],cost:{resource,amount:2},when:`hasFeature('${focus.id}')`}];
+ root.choices=[{id:'focus',name:'Фокус',count:1,type:'ability',from:[focus.id]}];root.advancement={'3':[{type:'choice',id:'focus'}]};
+ dependent.effects=[{type:'ac_bonus',value:1,when:`hasFeature('${focus.id}')`}];
+ dependent.references=[root.id];
+ const graph=homebrewRelations([root,focus,dependent]);
+ assert.ok(graph.edges.some(edge=>edge.from===resource&&edge.to===attack&&edge.label.includes('Расходует')));
+ assert.ok(graph.edges.some(edge=>edge.from===focus.id&&edge.to===resource));
+ assert.ok(graph.edges.some(edge=>edge.from===focus.id&&edge.to===dependent.id));
+ assert.ok(graph.edges.some(edge=>edge.from===root.id&&edge.to===`choice:${root.id}:focus`&&edge.condition==='С 3 уровня'));
+ assert.equal(graph.nodes.find(node=>node.id===resource)?.name,'Заряды');
+ assert.ok(graph.edges.some(edge=>edge.from===dependent.id&&edge.to===root.id));
+ assert.equal(new Set(graph.nodes.map(node=>node.id)).size,graph.nodes.length);
+ assert.equal(new Set(graph.edges.map(edge=>JSON.stringify(edge))).size,graph.edges.length);
 });

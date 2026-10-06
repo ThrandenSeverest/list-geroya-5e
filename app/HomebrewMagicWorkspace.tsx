@@ -8,14 +8,14 @@ export function HomebrewMagicWorkspace({root,level,entities,settings,onChange,fe
  const [modifier,setModifier]=useState(3),[previewLevel,setPreviewLevel]=useState(level),[query,setQuery]=useState('');
  const [settingsOpen,setSettingsOpen]=useState(()=>!root.spellcasting||root.spellcasting.mode==='none');
  const linked=featureId?magicFeatureIds(root).includes(featureId):true;
- if(!linked)return <section className="hb-magic-connect"><p>Если эта способность описывает магию класса, подключите её настройки здесь.</p><button type="button" onClick={()=>onChange({references:[...new Set([...root.references||[],featureId!])]})}>Связать с магией класса</button></section>;
+ if(!linked)return null;
  const casting=root.spellcasting;
  const list=magicSpellList(root,entities);
  let error='',rows:ReturnType<typeof magicLevel>[]=[];
  try {rows=Array.from({length:20},(_,i)=>magicLevel(root,i+1,modifier));}catch(e){error=(e as Error).message;}
  const current=rows[previewLevel-1];
  const sources=magicFeatureIds(root).map(id=>root.features?.find(f=>f.id===id)?.name).filter(Boolean);
- return <section className="hb-magic-workspace" aria-label="Магия и заклинания способности"><header><h3>Магия и заклинания</h3>{featureId&&<button type="button" onClick={()=>onChange({references:root.references?.filter(id=>id!==featureId)})}>Убрать связь с настройками</button>}</header>
+ return <section className="hb-magic-workspace" aria-label="Магия и заклинания способности"><header><h3>Магия и заклинания</h3><small>Связь с настройками определяется автоматически</small></header>
  <p>Настройки класса «{root.name}»{sources.length?` · способности: ${sources.join(', ')}`:''}. Изменения здесь сразу обновляют общую магию класса. Доступность ячеек и заклинаний определяется таблицей уровней ниже.</p>
  {!casting||casting.mode==='none'?<p role="status">Магия ещё не настроена. Выберите прогрессию и заполните лимиты ниже.</p>:<>
  <div className="hb-magic-facts"><span><b>Характеристика</b>{abilityLabels[casting.ability]}</span><span><b>Получение заклинаний</b>{{known:'Известные',prepared:'Подготовленные',spellbook:'Книга заклинаний'}[casting.selection||'known']}</span><span><b>Восстановление ячеек</b>{casting.recovery==='short_or_long'||casting.mode==='pact'?'Короткий или длинный отдых':'Длинный отдых'}</span><span><b>Список класса</b>{list.length} заклинаний</span></div>

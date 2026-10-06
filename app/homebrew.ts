@@ -51,8 +51,7 @@ function upgradeKnownHomebrew(element:HomebrewElement):HomebrewElement {
  const spellGrants=element.type==='subclass'&&element.parentClassId==='hb:shaman:class:shaman'
   ?(element.spellGrants||[]).map(grant=>({...grant,mode:'always-prepared' as const,countsAgainstKnown:false}))
   :element.spellGrants;
- const references=element.references===undefined&&element.type==='class'&&features?.some(f=>f.id==='hb:shaman:ability:primal-magic')?[...new Set([...element.references||[],'hb:shaman:ability:primal-magic'])]:element.references;
- return {...element,features,spellGrants,references};
+ return {...element,features,spellGrants};
 }
 export function normalizeHomebrewLibrary(value:Partial<HomebrewLibrary>|null|undefined):HomebrewLibrary {
  const types=new Set(Object.keys(homebrewTypeLabels));
