@@ -1,3 +1,4 @@
+import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
 import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
@@ -174,12 +175,6 @@ function homebrewSubclassOptions(classId, entities) {
 			level: f.level
 		}))
 	}));
-}
-//#endregion
-//#region app/assetUrl.ts
-/** Public assets must share the build base on both root hosting and project Pages. */
-function assetUrl(path) {
-	return `${"/".replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
 }
 //#endregion
 //#region app/featureHandling.ts
@@ -58012,6 +58007,10 @@ function Home() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, {}) });
 }
 function AccountAccess({ account, cloudState, compact = false }) {
+	if (account && isStaticPages()) return /* @__PURE__ */ jsx("span", {
+		className: "account-access",
+		children: "Локальные сохранения"
+	});
 	if (!account) return /* @__PURE__ */ jsx("span", {
 		className: "account-access is-loading",
 		children: "Проверяем вход…"
@@ -58115,14 +58114,32 @@ function Builder() {
 		}
 	}
 	async function connectAccount(localVault) {
+		setHomebrew(readLocalHomebrew());
+		if (isStaticPages()) {
+			setAccount({ authenticated: false });
+			return;
+		}
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 8e3);
 		try {
-			const accountValue = await (await fetch("/api/account", { cache: "no-store" })).json();
+			const accountResponse = await fetch("/api/account", {
+				cache: "no-store",
+				signal: controller.signal
+			});
+			if (!accountResponse.ok) throw new Error("Account unavailable");
+			const accountValue = await accountResponse.json();
 			if (!accountValue.authenticated) {
 				setAccount({ authenticated: false });
 				setHomebrew(readLocalHomebrew());
 				return;
 			}
-			const [vaultResponse, homebrewResponse] = await Promise.all([fetch("/api/vault", { cache: "no-store" }), fetch("/api/homebrew", { cache: "no-store" })]);
+			const [vaultResponse, homebrewResponse] = await Promise.all([fetch("/api/vault", {
+				cache: "no-store",
+				signal: controller.signal
+			}), fetch("/api/homebrew", {
+				cache: "no-store",
+				signal: controller.signal
+			})]);
 			const remotePayload = vaultResponse.ok ? await vaultResponse.json() : { vault: null };
 			setHomebrew(normalizeHomebrewLibrary((homebrewResponse.ok ? await homebrewResponse.json() : { library: emptyHomebrewLibrary }).library));
 			setHomebrewState(homebrewResponse.ok ? "saved" : "error");
@@ -58134,6 +58151,7 @@ function Builder() {
 			setCloudState("saving");
 			setCloudState((await fetch("/api/vault", {
 				method: "PUT",
+				signal: controller.signal,
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({ vault: merged })
 			})).ok ? "saved" : "error");
@@ -58142,6 +58160,8 @@ function Builder() {
 			setAccount({ authenticated: false });
 			setHomebrew(readLocalHomebrew());
 			setCloudState("error");
+		} finally {
+			clearTimeout(timeout);
 		}
 	}
 	useEffect(() => {

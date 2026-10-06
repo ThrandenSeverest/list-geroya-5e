@@ -3098,13 +3098,13 @@ function createFromReadableStream(stream, options = {}) {
 //#region \0virtual:vite-rsc/client-references
 var client_references_default = {
 	"15c18cfaeeff": async () => {
-		const m = await import("./assets/layout-segment-context-ZgHIODul.js");
+		const m = await import("./assets/layout-segment-context-M5UmYJFZ.js");
 		return { get "LayoutSegmentProvider"() {
 			return m["LayoutSegmentProvider"];
 		} };
 	},
 	"593f344dc510": async () => {
-		const m = await import("./assets/error-boundary-4H_NbdpX.js");
+		const m = await import("./assets/error-boundary-LmCEBP5B.js");
 		return {
 			get "ErrorBoundary"() {
 				return m["ErrorBoundary"];
@@ -3124,13 +3124,13 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-CVIFit2c.js");
+		const m = await import("./assets/page-1wJVHxK_.js");
 		return { get "default"() {
 			return m["default"];
 		} };
 	},
 	"724dcbd470a5": async () => {
-		const m = await import("./assets/page-C6zesp1t.js");
+		const m = await import("./assets/page-CNL9_3ER.js");
 		return { get "default"() {
 			return m["default"];
 		} };

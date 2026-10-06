@@ -1,5 +1,6 @@
 import { _ as AppElementsWire, a as navigateClientSide, b as stripBasePath, f as resolveRelativeHref, g as isDangerousScheme, h as withBasePath, i as getPrefetchedUrls, l as createRscRequestHeaders, m as toSameOriginAppPath, o as prefetchRscResponse, p as toBrowserNavigationHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestUrl, v as VINEXT_MOUNTED_SLOTS_HEADER, y as hasBasePath } from "../index.js";
 import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-DGHsJKv-.js";
+import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
 import React, { createContext, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 //#region node_modules/vinext/dist/routing/utils.js
@@ -529,7 +530,7 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 			});
 			return;
 		} else try {
-			const Router = (await import("./router-BaXM_S1F.js")).default;
+			const Router = (await import("./router-PQwN1yt3.js")).default;
 			if (replace) await Router.replace(absoluteHref, void 0, { scroll });
 			else await Router.push(absoluteHref, void 0, { scroll });
 		} catch {
@@ -583,7 +584,23 @@ function AccountPage() {
 			if (params.get("verified") === "success") setMessage("Почта подтверждена.");
 			if (params.get("verified") === "invalid") setMessage("Ссылка подтверждения недействительна или устарела.");
 		});
-		fetch("/api/account", { cache: "no-store" }).then((response) => response.json()).then(setAccount).catch(() => setAccount({ authenticated: false }));
+		if (isStaticPages()) {
+			setAccount({ authenticated: false });
+			return;
+		}
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 8e3);
+		fetch("/api/account", {
+			cache: "no-store",
+			signal: controller.signal
+		}).then((response) => {
+			if (!response.ok) throw new Error("Account unavailable");
+			return response.json();
+		}).then(setAccount).catch(() => setAccount({ authenticated: false })).finally(() => clearTimeout(timeout));
+		return () => {
+			clearTimeout(timeout);
+			controller.abort();
+		};
 	}, []);
 	async function submit(event) {
 		event.preventDefault();
@@ -665,6 +682,17 @@ function AccountPage() {
 		const result = await response.json();
 		setMessage(response.ok ? "Письмо отправлено." : result.error || "Не удалось отправить письмо.");
 	}
+	if (account && isStaticPages()) return /* @__PURE__ */ jsxs("main", {
+		className: "auth-shell modern-design",
+		children: [/* @__PURE__ */ jsx("a", {
+			className: "auth-back",
+			href: assetUrl(""),
+			children: "← Вернуться к персонажам"
+		}), /* @__PURE__ */ jsxs("section", {
+			className: "auth-card",
+			children: [/* @__PURE__ */ jsx("h1", { children: "Локальные сохранения" }), /* @__PURE__ */ jsx("p", { children: "На GitHub Pages персонажи и Homebrew сохраняются в этом браузере. Вход через Telegram доступен на серверной версии сайта." })]
+		})]
+	});
 	return /* @__PURE__ */ jsxs("main", {
 		className: "auth-shell modern-design",
 		children: [/* @__PURE__ */ jsx(Link, {
