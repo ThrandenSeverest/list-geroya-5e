@@ -1,4 +1,6 @@
 "use client";
+
+import { isStaticPages } from "./accountAvailability";
 import { homebrewAsiLevels, homebrewTableFeatures } from "./homebrewTemplates";
 import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
 
@@ -761,6 +763,7 @@ export default function Home() {
 }
 
 function AccountAccess({account,cloudState,compact=false}:{account:AccountState|null;cloudState:"local"|"saving"|"saved"|"error";compact?:boolean}) {
+  if(account && isStaticPages())return <span className="account-access">Локальные сохранения</span>;
   if(!account)return <span className="account-access is-loading">Проверяем вход…</span>;
   if(!account.authenticated)return <a className={`account-access is-guest${compact?' compact':''}`} href="/account"><span className="telegram-mark">↗</span><span><strong>Войти через Telegram</strong>{!compact&&<small>Сохранения и Homebrew на всех устройствах</small>}</span></a>;
   return <a className={`account-access is-user${compact?' compact':''}`} href="/account"><span className="account-online">●</span><span><strong>{account.displayName||'Аккаунт HeroList'}</strong>{!compact&&<small>{cloudState==='saving'?'Синхронизация…':cloudState==='error'?'Ошибка синхронизации':'Данные сохранены'}</small>}</span></a>;
@@ -833,8 +836,16 @@ function Builder() {
   }
 
   async function connectAccount(localVault: CharacterVault) {
+    setHomebrew(readLocalHomebrew());
+    if (isStaticPages()) {
+      setAccount({ authenticated: false });
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     try {
-      const accountResponse = await fetch("/api/account", { cache: "no-store" });
+      const accountResponse = await fetch("/api/account", { cache: "no-store", signal: controller.signal });
+      if (!accountResponse.ok) throw new Error("Account unavailable");
       const accountValue = await accountResponse.json() as AccountState;
       if (!accountValue.authenticated) {
         setAccount({ authenticated: false });
@@ -842,8 +853,8 @@ function Builder() {
         return;
       }
       const [vaultResponse, homebrewResponse] = await Promise.all([
-        fetch("/api/vault", { cache: "no-store" }),
-        fetch("/api/homebrew", { cache: "no-store" }),
+        fetch("/api/vault", { cache: "no-store", signal: controller.signal }),
+        fetch("/api/homebrew", { cache: "no-store", signal: controller.signal }),
       ]);
       const remotePayload = vaultResponse.ok ? await vaultResponse.json() as { vault: CharacterVault | null } : { vault: null };
       const homebrewPayload = homebrewResponse.ok ? await homebrewResponse.json() as { library: HomebrewLibrary } : { library: emptyHomebrewLibrary };
@@ -855,13 +866,15 @@ function Builder() {
       if (active) setCharacter(active.character);
       localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(merged));
       setCloudState("saving");
-      const saveResponse = await fetch("/api/vault", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: merged }) });
+      const saveResponse = await fetch("/api/vault", { method: "PUT", signal: controller.signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ vault: merged }) });
       setCloudState(saveResponse.ok ? "saved" : "error");
       setAccount(accountValue);
     } catch {
       setAccount({ authenticated: false });
       setHomebrew(readLocalHomebrew());
       setCloudState("error");
+    } finally {
+      clearTimeout(timeout);
     }
   }
 

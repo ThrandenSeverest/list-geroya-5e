@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { isStaticPages } from "../accountAvailability";
+import { assetUrl } from "../assetUrl";
 
 type Account = { authenticated: boolean; legacyRecovery?: boolean; email?: string; emailVerified?: boolean; authProvider?: string; linkedProviders?: string[]; authConfig?: { emailVerificationEnabled: boolean; emailDeliveryEnabled: boolean; registrationEnabled?: boolean; loginEnabled?: boolean; legacyEmailRecoveryEnabled?: boolean } };
 
@@ -23,7 +25,11 @@ export default function AccountPage() {
       if (params.get("verified") === "success") setMessage("Почта подтверждена.");
       if (params.get("verified") === "invalid") setMessage("Ссылка подтверждения недействительна или устарела.");
     });
-    fetch("/api/account", { cache: "no-store" }).then(response => response.json()).then(setAccount).catch(() => setAccount({ authenticated: false }));
+    if (isStaticPages()) { setAccount({ authenticated: false }); return; }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    fetch("/api/account", { cache: "no-store", signal: controller.signal }).then(response => { if (!response.ok) throw new Error("Account unavailable"); return response.json(); }).then(setAccount).catch(() => setAccount({ authenticated: false })).finally(() => clearTimeout(timeout));
+    return () => { clearTimeout(timeout); controller.abort(); };
   }, []);
 
   async function submit(event: FormEvent) {
@@ -73,6 +79,8 @@ export default function AccountPage() {
     const result = await response.json() as { error?: string };
     setMessage(response.ok ? "Письмо отправлено." : result.error || "Не удалось отправить письмо.");
   }
+
+  if (account && isStaticPages()) return <main className="auth-shell modern-design"><a className="auth-back" href={assetUrl("")}>← Вернуться к персонажам</a><section className="auth-card"><h1>Локальные сохранения</h1><p>На GitHub Pages персонажи и Homebrew сохраняются в этом браузере. Вход через Telegram доступен на серверной версии сайта.</p></section></main>;
 
   return <main className="auth-shell modern-design">
     <Link className="auth-back" href="/">← Вернуться к персонажам</Link>
