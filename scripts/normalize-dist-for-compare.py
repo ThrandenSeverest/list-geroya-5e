@@ -6,6 +6,7 @@ import re
 import sys
 import hashlib
 from collections import defaultdict
+import difflib
 from pathlib import Path
 
 
@@ -74,15 +75,45 @@ def comparable_content(path: Path) -> bytes:
     return content.encode("utf-8")
 
 
-def inventory(root: Path) -> dict[str, list[str]]:
-    result: dict[str, list[str]] = defaultdict(list)
+def comparable_files(root: Path) -> dict[str, list[tuple[str, bytes]]]:
+    result: dict[str, list[tuple[str, bytes]]] = defaultdict(list)
     for path in root.rglob("*"):
         if not path.is_file():
             continue
         name = _HASHED_CHUNK.sub("-[BUILDHASH]", path.relative_to(root).as_posix())
-        digest = hashlib.sha256(comparable_content(path)).hexdigest()
-        result[name].append(digest)
-    return {key: sorted(values) for key, values in result.items()}
+        result[name].append((path.relative_to(root).as_posix(), comparable_content(path)))
+    return result
+
+
+def inventory(root: Path) -> dict[str, list[str]]:
+    result = {}
+    for key, entries in comparable_files(root).items():
+        result[key] = sorted(hashlib.sha256(content).hexdigest() for _, content in entries)
+    return result
+
+
+def diagnostic(left: Path, right: Path, key: str) -> None:
+    left_entries = comparable_files(left).get(key, [])
+    right_entries = comparable_files(right).get(key, [])
+    if len(left_entries) != 1 or len(right_entries) != 1:
+        return
+    left_name, left_bytes = left_entries[0]
+    right_name, right_bytes = right_entries[0]
+    try:
+        a = left_bytes.decode("utf-8")
+        b = right_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return
+    matcher = difflib.SequenceMatcher(None, a, b, autojunk=False)
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        start_a, end_a = max(0, i1 - 220), min(len(a), i2 + 220)
+        start_b, end_b = max(0, j1 - 220), min(len(b), j2 + 220)
+        print(f"    first difference {left_name} vs {right_name}: {tag}", file=sys.stderr)
+        print("    committed: " + repr(a[start_a:end_a]), file=sys.stderr)
+        print("    rebuilt:   " + repr(b[start_b:end_b]), file=sys.stderr)
+        break
 
 
 def compare(left: Path, right: Path) -> bool:
@@ -98,6 +129,7 @@ def compare(left: Path, right: Path) -> bool:
     for key in mismatched[:50]:
         print(f"  {key}: committed={first.get(key, [])} built={second.get(key, [])}",
               file=sys.stderr)
+        diagnostic(left, right, key)
     return False
 
 if len(sys.argv) != 3:
