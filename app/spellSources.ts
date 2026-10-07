@@ -3,6 +3,7 @@ import type { CatalogSpell } from "./catalog";
 import { alwaysPreparedSpellEntries, spellSelectionRuleForClass } from "./characterRules";
 import type { ExportCharacter, SpellGrant } from "./exportFormats";
 import { orderedCharacterClasses } from "./multiclass";
+import { resolvedRacialSpells } from "./racialSpellcasting";
 
 export type SourcedSpell = {
   spell: CatalogSpell;
@@ -73,10 +74,13 @@ export function otherSpellSources(character: ExportCharacter, catalog: CatalogSp
   const casterIds = new Set(orderedCharacterClasses(character)
     .filter(entry => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map(entry => entry.classId));
   const byId = new Map(catalog.map(spell => [spell.id, spell]));
-  return (character.spellGrants || []).flatMap(grant => {
+  const saved = (character.spellGrants || []).flatMap(grant => {
     if (grant.classId && casterIds.has(grant.classId)) return [];
     const spell = byId.get(grant.spellId);
     return spell ? [{ spell, classId: "other", source: grant.sourceId || grant.sourceType,
       prepared: true, alwaysPrepared: grant.mode === "always-prepared" }] : [];
   });
+  const racial = resolvedRacialSpells(character, catalog).map(entry => ({ spell: entry.spell, classId: "race", source: entry.source,
+    prepared: true, alwaysPrepared: false }));
+  return [...racial, ...saved.filter(entry => !racial.some(race => race.spell.id === entry.spell.id && race.source === entry.source))];
 }

@@ -73,6 +73,7 @@ import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
+import { racialSpellChoiceOptions, racialSpellDefinitions, resolvedRacialSpells } from "./racialSpellcasting";
 import { shortRestHitDieHealing } from "./restRules";
 import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeValue, subclassRuntimeControls, subclassRuntimeValue } from "./subclassRuntime";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
@@ -1128,7 +1129,10 @@ function Builder() {
   const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
   const sourcedSpellGroups = classSpellGroups(exportCharacter, availableSpellCatalog);
   const sourcedSpells = sourcedSpellGroups.flatMap(group => group.spells);
+  const racialSpells = resolvedRacialSpells(exportCharacter, availableSpellCatalog);
+  const racialChoiceGroups = racialSpellChoiceOptions(exportCharacter, availableSpellCatalog);
   const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog)
+    .filter(entry => entry.classId !== "race")
     .filter(entry => !grantedFeatSpells.includes(entry.spell.id));
   const mobileSpellPool = [...new Map((spellRule.mode === "prepared"
     ? [
@@ -3148,6 +3152,13 @@ function Builder() {
                   </div>
                 </div>
               )}
+              {racialSpellChoiceGroups.length > 0 && racialChoiceGroups.map(group => <div className="racial-choice" key={group.key} data-incomplete={!character.raceChoices?.[group.key]?.[0]}>
+                <div><small>Расовая магия</small><h2>{group.title}</h2><p>Выберите один заговор. Он появится в листе автоматически и не займёт лимит заклинаний класса.</p></div>
+                <label>Заговор<select value={character.raceChoices?.[group.key]?.[0] || ""} onChange={event => setCharacter(current => ({ ...current, raceChoices: { ...current.raceChoices, [group.key]: event.target.value ? [event.target.value] : [] } }))}><option value="">Выберите…</option>{group.options.map(spell => <option value={spell.id} key={spell.id}>{spell.name}</option>)}</select></label>
+              </div>)}
+              {racialSpells.length > 0 && racialSpellDefinitions(exportCharacter).some(definition => definition.ability === "choice") && (
+                <div className="racial-choice"><div><small>Расовая магия</small><h2>Характеристика заклинаний</h2><p>Автоматически выбрана самая высокая; при необходимости измените.</p></div><label>Характеристика<select value={character.raceChoices?.["spellcasting-ability"]?.[0] || racialSpells[0].ability} onChange={event => setCharacter(current => ({ ...current, raceChoices: { ...current.raceChoices, "spellcasting-ability": [event.target.value] } }))}>{(["int", "wis", "cha"] as const).map(key => <option key={key} value={key}>{abilityLabels[key]}</option>)}</select></label></div>
+              )}
             </div>
           )}
 
@@ -3660,12 +3671,13 @@ function Builder() {
                       </button>)}</div>
                   </section>)}
                   {grantedFeatSpells.length > 0 && <section><h3>Черты</h3><div className="mobile-spell-list">{grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => <button key={spell.id} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · Черта</small></button>)}</div></section>}
+                  {racialSpells.length > 0 && <section><h3>Расовая магия</h3><div className="mobile-spell-list">{racialSpells.map(entry => <button key={`${entry.source}-${entry.spell.id}`} type="button" className="prepared"><span>{entry.spell.level === 0 ? "∞" : "◆"}</span><strong>{entry.spell.name}</strong><small>{levelLabel(entry.spell.level)} · {entry.source} · {abilityLabels[entry.ability]} · Сл {entry.saveDc} · атака {entry.attackBonus >= 0 ? "+" : ""}{entry.attackBonus}{entry.freeUses ? ` · ${entry.remainingUses}/${entry.freeUses} бесплатно` : ""}{entry.castWithSlots ? " · можно ячейками" : ""}</small></button>)}</div></section>}
                   {otherGrantedSpells.length > 0 && <section><h3>Другие источники</h3><div className="mobile-spell-list">{otherGrantedSpells.map(({ spell, source }) => <button key={`${source}-${spell.id}`} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · {source}</small></button>)}</div></section>}
                   {customSpells.length > 0 && <section><h3>Хоумбрю</h3><div className="mobile-spell-list">{customSpells.map(spell => <button key={spell.id} type="button" className="prepared"><span>◆</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)} · Хоумбрю</small></button>)}</div></section>}
                   {spellRule.prepared !== undefined && <><p className="mobile-prepared-limit">Выбор для класса «{classes.find(item => item.id === activeSpellClassId)?.name || activeSpellClassId}»: {mobilePreparedIds.length} из {spellRule.prepared}.</p>
                     <div className="mobile-spell-list">{mobileSpellPool.filter(spell => spell.level > 0 && !sourcedSpellGroups.find(group => group.classId === activeSpellClassId)?.spells.some(entry => entry.spell.id === spell.id)).map(spell =>
                       <button key={spell.id} type="button" onClick={() => toggleMobilePreparedSpell(spell.id)}><span>○</span><strong>{spell.name}</strong><small>{levelLabel(spell.level)}</small></button>)}</div></>}
-                  {!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === undefined && <p>У персонажа нет доступных заклинаний.</p>}
+                  {!sourcedSpells.length && !racialSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === undefined && <p>У персонажа нет доступных заклинаний.</p>}
                   {sharedSpellSlots.length > 0 && <div className="mobile-slot-list mobile-spell-slots"><h3>Ячейки заклинаний</h3>{sharedSpellSlots.map((maximum, circle) => <article key={circle}><span>{circle + 1} круг</span><button onClick={() => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum)}>Потратить</button><b>{maximum - (character.spellSlotsUsed?.[circle] || 0)} / {maximum}</b><button onClick={() => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum)}>Вернуть</button></article>)}</div>}
                   {pactMagicSlots.slots > 0 && <div className="mobile-slot-list mobile-spell-slots"><h3>Ячейки договора · {pactMagicSlots.level} круг</h3><article><span>Договор</span><button onClick={() => setCharacter(current => ({ ...current, pactSlotsUsed: Math.min(pactMagicSlots.slots, (current.pactSlotsUsed || 0) + 1) }))}>Потратить</button><b>{pactMagicSlots.slots - (character.pactSlotsUsed || 0)} / {pactMagicSlots.slots}</b><button onClick={() => setCharacter(current => ({ ...current, pactSlotsUsed: Math.max(0, (current.pactSlotsUsed || 0) - 1) }))}>Вернуть</button></article></div>}
                 </div>}
@@ -3749,8 +3761,9 @@ function Builder() {
                         {group.spells.map(({ spell, source, prepared, alwaysPrepared }) =>
                           <p key={spell.id}><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noreferrer"><b>{spell.name}</b></a> — {levelLabel(spell.level)}, {spell.school}. {spell.description} ({source === group.classId ? classes.find(item => item.id === source)?.name || source : source}{alwaysPrepared ? "; всегда подготовлено, вне лимита" : prepared && spell.level > 0 ? "; подготовлено" : ""})</p>)}</div>)}
                       {grantedFeatSpells.map(id => spells.find(item => item.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => <p key={`feat-${spell.id}`}><b>{spell.name}</b> — {levelLabel(spell.level)} (черта)</p>)}
+                      {racialSpells.length > 0 && <><h4>Расовая магия</h4>{racialSpells.map(entry => <p key={`race-${entry.source}-${entry.spell.id}`}><b>{entry.spell.name}</b> — {levelLabel(entry.spell.level)} ({entry.source}; {abilityLabels[entry.ability]}; Сл {entry.saveDc}; атака {entry.attackBonus >= 0 ? "+" : ""}{entry.attackBonus}{entry.freeUses ? `; ${entry.remainingUses}/${entry.freeUses} бесплатно` : ""}{entry.castWithSlots ? "; можно накладывать ячейками" : ""}{entry.notes ? `; ${entry.notes}` : ""})</p>)}</>}
                       {otherGrantedSpells.map(({ spell, source }) => <p key={`${source}-${spell.id}`}><b>{spell.name}</b> — {levelLabel(spell.level)} (источник: {source})</p>)}
-                      {!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && <p>Заклинания не выбраны.</p>}
+                      {!sourcedSpells.length && !racialSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && <p>Заклинания не выбраны.</p>}
                     </div>
                   </section>
                   <section className="sheet-story">
@@ -3833,11 +3846,11 @@ function Builder() {
                   if (!ability) return [];
                   const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier(finalAbilities[ability]);
                   return [{ name: spellSourceDisplayName(group.classId, exportCharacter, classes), ability: abilityLabels[ability], dc: 8 + attack, attack }];
-                })}
+                }).concat([...new Map(racialSpells.map(entry => [`${entry.source}:${entry.ability}`, { name: entry.source, ability: abilityLabels[entry.ability], dc: entry.saveDc, attack: entry.attackBonus }])).values()])}
                 spells={sourcedSpells.map(entry => ({ ...entry.spell, prepared: entry.prepared, alwaysPrepared: entry.alwaysPrepared,
                   classSource: spellSourceDisplayName(entry.classId, exportCharacter, classes),
                   grantSource: entry.source === entry.classId ? "" : entry.source,
-                })).concat(otherGrantedSpells.map(entry => ({ ...entry.spell, prepared: true, alwaysPrepared: entry.alwaysPrepared, classSource: "Другой источник", grantSource: entry.source })), grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Черта", grantSource: "" })), customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Хоумбрю", grantSource: "" })))}
+                })).concat(racialSpells.map(entry => ({ ...entry.spell, prepared: true, alwaysPrepared: false, classSource: "Раса", grantSource: entry.source })), otherGrantedSpells.map(entry => ({ ...entry.spell, prepared: true, alwaysPrepared: entry.alwaysPrepared, classSource: "Другой источник", grantSource: entry.source })), grantedFeatSpells.map(id => spells.find(spell => spell.id === id)).filter((spell): spell is CatalogSpell => !!spell).map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Черта", grantSource: "" })), customSpells.map(spell => ({ ...spell, prepared: true, alwaysPrepared: true, classSource: "Хоумбрю", grantSource: "" })))}
               />
               <div ref={exportPanelRef} className="export-panel">
                 <div>

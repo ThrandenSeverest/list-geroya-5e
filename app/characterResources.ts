@@ -2,6 +2,8 @@ import { hbResources } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedRaceVariant } from "./characterRules";
 import { characterLevel, classView, getClassLevel, orderedCharacterClasses } from "./multiclass";
+import { spells } from "./catalog";
+import { resolvedRacialSpells } from "./racialSpellcasting";
 
 export type CharacterResource = {
   key: string;
@@ -66,6 +68,11 @@ function racialResources(character: ExportCharacter) {
   } else {
     pool("hobgoblin", "saving-face", "Спасение лица", 1, true);
     pool("kobold", "grovel-cower-beg", "Пресмыкаться и умолять", 1, true);
+  }
+  for (const innate of resolvedRacialSpells(character, spells)) {
+    if (!innate.resourceKey || !innate.freeUses || resources.some(resource => resource.key === innate.resourceKey)) continue;
+    resources.push({ key: innate.resourceKey, name: `${innate.spell.name} · ${innate.source}`, max: innate.freeUses,
+      isShortRest: innate.recharge === "short", isLongRest: true });
   }
   return resources;
 }
@@ -208,4 +215,3 @@ export function spentResourcesAfterLongRest(character: ExportCharacter): Record<
   return Object.fromEntries(Object.entries(character.resourceSpent || {})
     .filter(([key]) => persistentKeys.has(key)));
 }
-

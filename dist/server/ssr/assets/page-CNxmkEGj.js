@@ -13029,7 +13029,7 @@ var classSkillRules = {
 		]
 	}
 };
-var S = (id, name, source, level, school, classes, description, ritual = false) => ({
+var S$1 = (id, name, source, level, school, classes, description, ritual = false) => ({
 	id,
 	name,
 	source,
@@ -13040,49 +13040,49 @@ var S = (id, name, source, level, school, classes, description, ritual = false) 
 	ritual
 });
 var legacySpells = [
-	S("acid-splash", "Брызги кислоты", "PHB", 0, "Вызов", [
+	S$1("acid-splash", "Брызги кислоты", "PHB", 0, "Вызов", [
 		"sorcerer",
 		"wizard",
 		"artificer"
 	], "Кислота поражает одну или две близкие цели."),
-	S("firebolt", "Огненный снаряд", "PHB", 0, "Воплощение", [
+	S$1("firebolt", "Огненный снаряд", "PHB", 0, "Воплощение", [
 		"sorcerer",
 		"wizard",
 		"artificer"
 	], "Дальнобойная огненная атака, растущая с уровнем."),
-	S("guidance", "Указание", "PHB", 0, "Прорицание", [
+	S$1("guidance", "Указание", "PHB", 0, "Прорицание", [
 		"cleric",
 		"druid",
 		"artificer"
 	], "Кратко помогает союзнику в проверке."),
-	S("minorillusion", "Малая иллюзия", "PHB", 0, "Иллюзия", [
+	S$1("minorillusion", "Малая иллюзия", "PHB", 0, "Иллюзия", [
 		"bard",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Создаёт небольшой звук или неподвижный образ."),
-	S("vicious", "Злая насмешка", "PHB", 0, "Очарование", ["bard"], "Психический выпад мешает следующей атаке."),
-	S("eldritch", "Мистический заряд", "PHB", 0, "Воплощение", ["warlock"], "Луч силовой энергии, усиливающийся с уровнем."),
-	S("booming", "Громовой клинок", "TCE", 0, "Воплощение", [
+	S$1("vicious", "Злая насмешка", "PHB", 0, "Очарование", ["bard"], "Психический выпад мешает следующей атаке."),
+	S$1("eldritch", "Мистический заряд", "PHB", 0, "Воплощение", ["warlock"], "Луч силовой энергии, усиливающийся с уровнем."),
+	S$1("booming", "Громовой клинок", "TCE", 0, "Воплощение", [
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Удар оружием сдерживает цель громом."),
-	S("greenflame", "Клинок зелёного пламени", "TCE", 0, "Воплощение", [
+	S$1("greenflame", "Клинок зелёного пламени", "TCE", 0, "Воплощение", [
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Пламя с оружия переходит на соседнюю цель."),
-	S("absorb", "Поглощение стихий", "XGE", 1, "Ограждение", [
+	S$1("absorb", "Поглощение стихий", "XGE", 1, "Ограждение", [
 		"druid",
 		"ranger",
 		"sorcerer",
 		"wizard",
 		"artificer"
 	], "Реакция смягчает стихийный урон."),
-	S("armoragathys", "Доспех Агатиса", "PHB", 1, "Ограждение", ["warlock"], "Ледяная защита даёт временные хиты и карает атакующих."),
-	S("bless", "Благословение", "PHB", 1, "Очарование", ["cleric", "paladin"], "Несколько союзников точнее атакуют и лучше спасаются."),
-	S("curewounds", "Лечение ран", "PHB", 1, "Воплощение", [
+	S$1("armoragathys", "Доспех Агатиса", "PHB", 1, "Ограждение", ["warlock"], "Ледяная защита даёт временные хиты и карает атакующих."),
+	S$1("bless", "Благословение", "PHB", 1, "Очарование", ["cleric", "paladin"], "Несколько союзников точнее атакуют и лучше спасаются."),
+	S$1("curewounds", "Лечение ран", "PHB", 1, "Воплощение", [
 		"bard",
 		"cleric",
 		"druid",
@@ -13090,7 +13090,7 @@ var legacySpells = [
 		"ranger",
 		"artificer"
 	], "Контактное восстановление хитов."),
-	S("detectmagic", "Обнаружение магии", "PHB", 1, "Прорицание", [
+	S$1("detectmagic", "Обнаружение магии", "PHB", 1, "Прорицание", [
 		"bard",
 		"cleric",
 		"druid",
@@ -13100,38 +13100,38 @@ var legacySpells = [
 		"wizard",
 		"artificer"
 	], "Чувствует магию вокруг.", true),
-	S("findfamiliar", "Обретение фамильяра", "PHB", 1, "Вызов", ["wizard"], "Призывает духа в облике маленького зверя.", true),
-	S("goodberry", "Чудо-ягоды", "PHB", 1, "Преобразование", ["druid", "ranger"], "Создаёт питательные целебные ягоды."),
-	S("healingword", "Лечащее слово", "PHB", 1, "Воплощение", [
+	S$1("findfamiliar", "Обретение фамильяра", "PHB", 1, "Вызов", ["wizard"], "Призывает духа в облике маленького зверя.", true),
+	S$1("goodberry", "Чудо-ягоды", "PHB", 1, "Преобразование", ["druid", "ranger"], "Создаёт питательные целебные ягоды."),
+	S$1("healingword", "Лечащее слово", "PHB", 1, "Воплощение", [
 		"bard",
 		"cleric",
 		"druid"
 	], "Бонусным действием лечит союзника на расстоянии."),
-	S("hex", "Сглаз", "PHB", 1, "Очарование", ["warlock"], "Проклятие усиливает ваши попадания."),
-	S("shield", "Щит", "PHB", 1, "Ограждение", ["sorcerer", "wizard"], "Мгновенно повышает защиту от атаки."),
-	S("silvery", "Искусная острота", "SCC", 1, "Очарование", [
+	S$1("hex", "Сглаз", "PHB", 1, "Очарование", ["warlock"], "Проклятие усиливает ваши попадания."),
+	S$1("shield", "Щит", "PHB", 1, "Ограждение", ["sorcerer", "wizard"], "Мгновенно повышает защиту от атаки."),
+	S$1("silvery", "Искусная острота", "SCC", 1, "Очарование", [
 		"bard",
 		"sorcerer",
 		"wizard"
 	], "Меняет исход броска и передаёт преимущество."),
-	S("aid", "Подмога", "PHB", 2, "Ограждение", [
+	S$1("aid", "Подмога", "PHB", 2, "Ограждение", [
 		"cleric",
 		"paladin",
 		"artificer"
 	], "Повышает максимум и текущие хиты трёх существ."),
-	S("darkness", "Тьма", "PHB", 2, "Воплощение", [
+	S$1("darkness", "Тьма", "PHB", 2, "Воплощение", [
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Создаёт область магической тьмы."),
-	S("enhanceability", "Улучшение характеристики", "PHB", 2, "Преобразование", [
+	S$1("enhanceability", "Улучшение характеристики", "PHB", 2, "Преобразование", [
 		"bard",
 		"cleric",
 		"druid",
 		"sorcerer",
 		"artificer"
 	], "Даёт преимущество на проверки выбранной характеристики."),
-	S("holdperson", "Удержание личности", "PHB", 2, "Очарование", [
+	S$1("holdperson", "Удержание личности", "PHB", 2, "Очарование", [
 		"bard",
 		"cleric",
 		"druid",
@@ -13139,120 +13139,120 @@ var legacySpells = [
 		"warlock",
 		"wizard"
 	], "Парализует гуманоида при провале спасброска."),
-	S("levitate", "Левитация", "PHB", 2, "Преобразование", [
+	S$1("levitate", "Левитация", "PHB", 2, "Преобразование", [
 		"sorcerer",
 		"wizard",
 		"artificer"
 	], "Поднимает существо или предмет вертикально."),
-	S("mistystep", "Туманный шаг", "PHB", 2, "Вызов", [
+	S$1("mistystep", "Туманный шаг", "PHB", 2, "Вызов", [
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Короткая телепортация бонусным действием."),
-	S("pass", "Бесследное передвижение", "PHB", 2, "Ограждение", ["druid", "ranger"], "Сильно помогает группе оставаться незамеченной."),
-	S("mindwhip", "Ментальный кнут Таши", "TCE", 2, "Очарование", ["sorcerer", "wizard"], "Психический удар ограничивает действия цели."),
-	S("counterspell", "Контрзаклинание", "PHB", 3, "Ограждение", [
+	S$1("pass", "Бесследное передвижение", "PHB", 2, "Ограждение", ["druid", "ranger"], "Сильно помогает группе оставаться незамеченной."),
+	S$1("mindwhip", "Ментальный кнут Таши", "TCE", 2, "Очарование", ["sorcerer", "wizard"], "Психический удар ограничивает действия цели."),
+	S$1("counterspell", "Контрзаклинание", "PHB", 3, "Ограждение", [
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Реакцией прерывает чужое заклинание."),
-	S("fireball", "Огненный шар", "PHB", 3, "Воплощение", ["sorcerer", "wizard"], "Мощный взрыв огня в большой области."),
-	S("fly", "Полёт", "PHB", 3, "Преобразование", [
+	S$1("fireball", "Огненный шар", "PHB", 3, "Воплощение", ["sorcerer", "wizard"], "Мощный взрыв огня в большой области."),
+	S$1("fly", "Полёт", "PHB", 3, "Преобразование", [
 		"sorcerer",
 		"warlock",
 		"wizard",
 		"artificer"
 	], "Даёт существу скорость полёта."),
-	S("haste", "Ускорение", "PHB", 3, "Преобразование", ["sorcerer", "wizard"], "Ускоряет цель и даёт дополнительное действие."),
-	S("lightningbolt", "Молния", "PHB", 3, "Воплощение", ["sorcerer", "wizard"], "Линия молнии поражает всех на пути."),
-	S("revivify", "Возрождение", "PHB", 3, "Некромантия", [
+	S$1("haste", "Ускорение", "PHB", 3, "Преобразование", ["sorcerer", "wizard"], "Ускоряет цель и даёт дополнительное действие."),
+	S$1("lightningbolt", "Молния", "PHB", 3, "Воплощение", ["sorcerer", "wizard"], "Линия молнии поражает всех на пути."),
+	S$1("revivify", "Возрождение", "PHB", 3, "Некромантия", [
 		"cleric",
 		"paladin",
 		"artificer"
 	], "Возвращает недавно погибшее существо к жизни."),
-	S("spiritguardians", "Духовные стражи", "PHB", 3, "Вызов", ["cleric"], "Духи защищают область вокруг вас."),
-	S("summonfey", "Призыв духа феи", "TCE", 3, "Вызов", [
+	S$1("spiritguardians", "Духовные стражи", "PHB", 3, "Вызов", ["cleric"], "Духи защищают область вокруг вас."),
+	S$1("summonfey", "Призыв духа феи", "TCE", 3, "Вызов", [
 		"druid",
 		"ranger",
 		"warlock",
 		"wizard"
 	], "Призывает настраиваемого фейского союзника."),
-	S("banishment", "Изгнание", "PHB", 4, "Ограждение", [
+	S$1("banishment", "Изгнание", "PHB", 4, "Ограждение", [
 		"cleric",
 		"paladin",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Временно отправляет цель на иной план."),
-	S("dimensiondoor", "Переносящая дверь", "PHB", 4, "Вызов", [
+	S$1("dimensiondoor", "Переносящая дверь", "PHB", 4, "Вызов", [
 		"bard",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Телепортирует вас и союзника на большое расстояние."),
-	S("greaterinvisibility", "Высшая невидимость", "PHB", 4, "Иллюзия", [
+	S$1("greaterinvisibility", "Высшая невидимость", "PHB", 4, "Иллюзия", [
 		"bard",
 		"sorcerer",
 		"wizard"
 	], "Невидимость сохраняется при атаках и заклинаниях."),
-	S("polymorph", "Превращение", "PHB", 4, "Преобразование", [
+	S$1("polymorph", "Превращение", "PHB", 4, "Преобразование", [
 		"bard",
 		"druid",
 		"sorcerer",
 		"wizard"
 	], "Придаёт существу облик другого зверя."),
-	S("shadowmoil", "Покров тени", "XGE", 4, "Некромантия", ["warlock"], "Защитная тьма карает нападающих."),
-	S("coneofcold", "Конус холода", "PHB", 5, "Воплощение", ["sorcerer", "wizard"], "Волна смертельного холода накрывает конус."),
-	S("greaterrestoration", "Высшее восстановление", "PHB", 5, "Ограждение", [
+	S$1("shadowmoil", "Покров тени", "XGE", 4, "Некромантия", ["warlock"], "Защитная тьма карает нападающих."),
+	S$1("coneofcold", "Конус холода", "PHB", 5, "Воплощение", ["sorcerer", "wizard"], "Волна смертельного холода накрывает конус."),
+	S$1("greaterrestoration", "Высшее восстановление", "PHB", 5, "Ограждение", [
 		"bard",
 		"cleric",
 		"druid",
 		"artificer"
 	], "Снимает тяжёлые состояния и проклятия."),
-	S("steelwind", "Удар стального ветра", "XGE", 5, "Вызов", ["ranger", "wizard"], "Серия атак по нескольким целям с телепортацией."),
-	S("wallforce", "Силовая стена", "PHB", 5, "Воплощение", ["wizard"], "Создаёт почти непреодолимую невидимую преграду."),
-	S("heal", "Исцеление", "PHB", 6, "Воплощение", ["cleric", "druid"], "Восстанавливает большой объём хитов и снимает недуги."),
-	S("masssuggestion", "Массовое внушение", "PHB", 6, "Очарование", [
+	S$1("steelwind", "Удар стального ветра", "XGE", 5, "Вызов", ["ranger", "wizard"], "Серия атак по нескольким целям с телепортацией."),
+	S$1("wallforce", "Силовая стена", "PHB", 5, "Воплощение", ["wizard"], "Создаёт почти непреодолимую невидимую преграду."),
+	S$1("heal", "Исцеление", "PHB", 6, "Воплощение", ["cleric", "druid"], "Восстанавливает большой объём хитов и снимает недуги."),
+	S$1("masssuggestion", "Массовое внушение", "PHB", 6, "Очарование", [
 		"bard",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Направляет действия большой группы существ."),
-	S("disintegrate", "Распад", "PHB", 6, "Преобразование", ["sorcerer", "wizard"], "Разрушительный луч обращает цель в прах."),
-	S("forcecage", "Силовая клетка", "PHB", 7, "Воплощение", [
+	S$1("disintegrate", "Распад", "PHB", 6, "Преобразование", ["sorcerer", "wizard"], "Разрушительный луч обращает цель в прах."),
+	S$1("forcecage", "Силовая клетка", "PHB", 7, "Воплощение", [
 		"bard",
 		"warlock",
 		"wizard"
 	], "Запирает существ в невидимой магической тюрьме."),
-	S("planeShift", "Уход в иной мир", "PHB", 7, "Вызов", [
+	S$1("planeShift", "Уход в иной мир", "PHB", 7, "Вызов", [
 		"cleric",
 		"druid",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Переносит группу на другой план."),
-	S("draconic", "Драконье превращение", "FTD", 7, "Преобразование", [
+	S$1("draconic", "Драконье превращение", "FTD", 7, "Преобразование", [
 		"druid",
 		"sorcerer",
 		"wizard"
 	], "Дарует полёт, драконьи чувства и дыхание."),
-	S("demiplane", "Полуплан", "PHB", 8, "Вызов", ["warlock", "wizard"], "Открывает дверь в личное внепространственное помещение."),
-	S("maze", "Лабиринт", "PHB", 8, "Вызов", ["wizard"], "Изгоняет цель в карманный лабиринт."),
-	S("powerstun", "Слово силы: оглушение", "PHB", 8, "Очарование", [
+	S$1("demiplane", "Полуплан", "PHB", 8, "Вызов", ["warlock", "wizard"], "Открывает дверь в личное внепространственное помещение."),
+	S$1("maze", "Лабиринт", "PHB", 8, "Вызов", ["wizard"], "Изгоняет цель в карманный лабиринт."),
+	S$1("powerstun", "Слово силы: оглушение", "PHB", 8, "Очарование", [
 		"bard",
 		"sorcerer",
 		"warlock",
 		"wizard"
 	], "Оглушает существо с ограниченным запасом хитов."),
-	S("foresight", "Предвидение", "PHB", 9, "Прорицание", [
+	S$1("foresight", "Предвидение", "PHB", 9, "Прорицание", [
 		"bard",
 		"druid",
 		"warlock",
 		"wizard"
 	], "Дарует почти совершенное предчувствие опасности."),
-	S("meteor", "Метеоритный дождь", "PHB", 9, "Воплощение", ["sorcerer", "wizard"], "Четыре метеора опустошают огромные области."),
-	S("trueResurrection", "Истинное воскрешение", "PHB", 9, "Некромантия", ["cleric", "druid"], "Возвращает умершего к жизни в новом теле."),
-	S("wish", "Исполнение желаний", "PHB", 9, "Вызов", ["sorcerer", "wizard"], "Вершина смертной магии: повторяет магию или меняет реальность."),
+	S$1("meteor", "Метеоритный дождь", "PHB", 9, "Воплощение", ["sorcerer", "wizard"], "Четыре метеора опустошают огромные области."),
+	S$1("trueResurrection", "Истинное воскрешение", "PHB", 9, "Некромантия", ["cleric", "druid"], "Возвращает умершего к жизни в новом теле."),
+	S$1("wish", "Исполнение желаний", "PHB", 9, "Вызов", ["sorcerer", "wizard"], "Вершина смертной магии: повторяет магию или меняет реальность."),
 	...expandedSpells
 ];
 var legacySpellsById = new Map(legacySpells.map((spell) => [spell.id, spell]));
@@ -19928,7 +19928,7 @@ var invocations$1 = [
 	id: name,
 	name
 }));
-function choice(choice, key) {
+function choice$1(choice, key) {
 	return choice.featChoices?.[key] || [];
 }
 function classSpellOptions(spells, classId, level, ritualOnly = false) {
@@ -19997,7 +19997,7 @@ var strixhavenColleges = {
 };
 function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.level) {
 	const feat = choiceValue.featId;
-	const tradition = choice(choiceValue, "tradition")[0] || "";
+	const tradition = choice$1(choiceValue, "tradition")[0] || "";
 	const groups = [];
 	const ability = (keys) => {
 		if (groups.some((group) => group.key === "ability")) return;
@@ -20142,7 +20142,7 @@ function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.leve
 		});
 	}
 	if (feat === "strixhaven-initiate") {
-		const college = choice(choiceValue, "college")[0];
+		const college = choice$1(choiceValue, "college")[0];
 		groups.push({
 			key: "college",
 			title: "Факультет Стриксхейвена",
@@ -24795,6 +24795,375 @@ function lssCardIdForSpellId(spellId) {
 	return lssCardIdBySpellId[spellId] || null;
 }
 //#endregion
+//#region app/racialSpellcasting.ts
+var S = (spellId, unlockLevel = 1, extra = {}) => ({
+	spellId,
+	unlockLevel,
+	...extra
+});
+var once = (spellId, unlockLevel, castWithSlots, extra = {}) => S(spellId, unlockLevel, {
+	freeUses: 1,
+	recharge: "long",
+	castWithSlots,
+	...extra
+});
+var choice = (choiceKey) => ({
+	choiceKey,
+	unlockLevel: 1
+});
+/** One rules registry for every official race in the current race catalogue that grants spells. */
+var racialSpellcastingRegistry = [
+	{
+		race: "tiefling",
+		source: "Инфернальное наследие",
+		ability: "cha",
+		spells: [
+			S("thaumaturgy"),
+			once("spell-doc-hellish_rebuke", 3, false, { freeCastLevel: 2 }),
+			once("darkness", 5, false)
+		]
+	},
+	{
+		race: "elf",
+		variants: ["high"],
+		source: "Заговор высшего эльфа",
+		ability: "int",
+		spells: [choice("high-elf-cantrip")]
+	},
+	{
+		race: "elf",
+		variants: ["drow"],
+		source: "Магия дроу",
+		ability: "cha",
+		spells: [
+			S("spell-doc-dancing_lights"),
+			once("faerie-fire", 3, false),
+			once("darkness", 5, false)
+		]
+	},
+	{
+		race: "gnome",
+		variants: ["forest"],
+		source: "Природный иллюзионист",
+		ability: "int",
+		spells: [S("minorillusion")]
+	},
+	{
+		race: "aasimar",
+		variants: [
+			"protector",
+			"scourge",
+			"fallen"
+		],
+		source: "Несущий свет",
+		ability: "cha",
+		spells: [S("light")]
+	},
+	{
+		race: "aasimar",
+		variants: [
+			"multiverse",
+			"motm-111",
+			"base"
+		],
+		source: "Несущий свет",
+		ability: "choice",
+		spells: [S("light")]
+	},
+	{
+		race: "aarakocra",
+		variants: ["base", "motm-111"],
+		source: "Зов ветра",
+		ability: "choice",
+		spells: [once("spell-doc-gust_of_wind", 3, true)]
+	},
+	{
+		race: "deepgnome",
+		variants: ["base", "motm-111"],
+		source: "Дар свирфнеблина",
+		ability: "choice",
+		spells: [once("disguise-self", 3, true), once("nondetection", 5, true, { notes: "Накладывается на себя без материального компонента." })]
+	},
+	{
+		race: "duergar",
+		variants: ["base", "motm-111"],
+		source: "Дуэргарская магия",
+		ability: "choice",
+		spells: [once("spell-doc-enlarge_reduce", 3, true, { notes: "Увеличение/уменьшение — только на себя." }), once("invisibility", 5, true, { notes: "Невидимость — только на себя." })]
+	},
+	{
+		race: "duergar",
+		variants: ["legacy-scag"],
+		source: "Дуэргарская магия",
+		ability: "int",
+		spells: [once("spell-doc-enlarge_reduce", 3, false, { notes: "Только увеличение себя." }), once("invisibility", 5, false, { notes: "Только на себя." })]
+	},
+	{
+		race: "fairy",
+		source: "Фейская магия",
+		ability: "choice",
+		spells: [
+			S("spell-doc-druidcraft"),
+			once("faerie-fire", 3, true),
+			once("spell-doc-enlarge_reduce", 5, true)
+		]
+	},
+	{
+		race: "firbolg",
+		variants: ["base", "motm-111"],
+		source: "Фирболгская магия",
+		ability: "choice",
+		spells: [once("detectmagic", 1, true), once("disguise-self", 1, true, { notes: "Можно казаться на три фута ниже." })]
+	},
+	{
+		race: "firbolg",
+		variants: ["legacy-vgm"],
+		source: "Фирболгская магия",
+		ability: "wis",
+		spells: [once("detectmagic", 1, false, {
+			recharge: "short",
+			resourceGroup: "firbolg-magic"
+		}), once("disguise-self", 1, false, {
+			recharge: "short",
+			resourceGroup: "firbolg-magic",
+			notes: "Общий бесплатный заряд; можно казаться на три фута ниже."
+		})]
+	},
+	{
+		race: "genasi",
+		variants: ["air"],
+		source: "Слияние с ветром",
+		ability: "con",
+		spells: [once("levitate", 1, false)]
+	},
+	{
+		race: "genasi",
+		variants: ["earth"],
+		source: "Слияние с камнем",
+		ability: "con",
+		spells: [once("pass", 1, false)]
+	},
+	{
+		race: "genasi",
+		variants: ["fire"],
+		source: "Достичь пламени",
+		ability: "con",
+		spells: [S("produce-flame"), once("burning-hands", 3, false)]
+	},
+	{
+		race: "genasi",
+		variants: ["water"],
+		source: "Зов волны",
+		ability: "con",
+		spells: [S("shape-water"), once("spell-doc-create_or_destroy_water", 3, false)]
+	},
+	{
+		race: "genasi",
+		variants: ["motm-air"],
+		source: "Слияние с ветром",
+		ability: "choice",
+		spells: [
+			S("shocking-grasp"),
+			once("feather-fall", 3, true),
+			once("levitate", 5, true)
+		]
+	},
+	{
+		race: "genasi",
+		variants: ["motm-earth"],
+		source: "Слияние с камнем",
+		ability: "choice",
+		spells: [S("spell-doc-blade_ward"), once("pass", 5, true)]
+	},
+	{
+		race: "genasi",
+		variants: ["motm-fire"],
+		source: "Достичь пламени",
+		ability: "choice",
+		spells: [
+			S("produce-flame"),
+			once("burning-hands", 3, true),
+			once("spell-doc-flame_blade", 5, true)
+		]
+	},
+	{
+		race: "genasi",
+		variants: ["motm-water"],
+		source: "Зов волны",
+		ability: "choice",
+		spells: [
+			S("acid-splash"),
+			once("spell-doc-create_or_destroy_water", 3, true),
+			once("spell-doc-water_walk", 5, true, { notes: "Без материального компонента." })
+		]
+	},
+	{
+		race: "githyanki",
+		variants: ["base", "motm-111"],
+		source: "Псионика гитьянки",
+		ability: "choice",
+		spells: [
+			S("mage-hand"),
+			once("spell-doc-jump", 3, true),
+			once("mistystep", 5, true)
+		]
+	},
+	{
+		race: "githyanki",
+		variants: ["legacy-mtf"],
+		source: "Псионика",
+		ability: "int",
+		spells: [
+			S("mage-hand"),
+			once("spell-doc-jump", 3, false),
+			once("mistystep", 5, false)
+		]
+	},
+	{
+		race: "githzerai",
+		variants: ["base", "motm-111"],
+		source: "Псионика гитцерая",
+		ability: "choice",
+		spells: [
+			S("mage-hand"),
+			once("shield", 3, true),
+			once("detect-thoughts", 5, true)
+		]
+	},
+	{
+		race: "githzerai",
+		variants: ["legacy-mtf"],
+		source: "Псионика",
+		ability: "wis",
+		spells: [
+			S("mage-hand"),
+			once("shield", 3, false),
+			once("detect-thoughts", 5, false)
+		]
+	},
+	{
+		race: "kobold",
+		variants: ["base", "motm-111"],
+		source: "Драконий заговор",
+		ability: "choice",
+		spells: [choice("kobold-cantrip")]
+	},
+	{
+		race: "triton",
+		variants: ["base", "motm-111"],
+		source: "Управление воздухом и водой",
+		ability: "choice",
+		spells: [
+			once("fog-cloud", 1, true),
+			once("spell-doc-gust_of_wind", 3, true),
+			once("spell-doc-water_walk", 5, true)
+		]
+	},
+	{
+		race: "triton",
+		variants: ["legacy-vgm"],
+		source: "Управление воздухом и водой",
+		ability: "cha",
+		spells: [
+			once("fog-cloud", 1, false, { resourceGroup: "triton-magic" }),
+			once("spell-doc-gust_of_wind", 3, false, { resourceGroup: "triton-magic" }),
+			once("spell-doc-water_walk", 5, false, { resourceGroup: "triton-magic" })
+		]
+	},
+	{
+		race: "yuanpure",
+		variants: ["base", "motm-111"],
+		source: "Змеиное колдовство",
+		ability: "choice",
+		spells: [
+			S("spell-doc-poison_spray"),
+			S("spell-doc-animal_friendship", 1, { notes: "Неограниченно, но только на змей." }),
+			once("suggestion", 3, true)
+		]
+	},
+	{
+		race: "yuanpure",
+		variants: ["legacy-vgm"],
+		source: "Врождённое колдовство",
+		ability: "cha",
+		spells: [
+			S("spell-doc-poison_spray"),
+			S("spell-doc-animal_friendship", 1, { notes: "Неограниченно, но только на змей." }),
+			once("suggestion", 3, false)
+		]
+	},
+	{
+		race: "hexblood",
+		source: "Ведьмовская магия",
+		ability: "choice",
+		spells: [once("disguise-self", 1, true), once("hex", 1, true)]
+	},
+	{
+		race: "astralelf",
+		source: "Врождённый свет",
+		ability: "choice",
+		spells: [S("light")]
+	}
+];
+var abilityKeys$1 = [
+	"int",
+	"wis",
+	"cha"
+];
+function racialSpellAbility(character, definition) {
+	if (definition.ability !== "choice") return definition.ability;
+	const saved = character.raceChoices?.["spellcasting-ability"]?.[0];
+	if (saved && abilityKeys$1.includes(saved)) return saved;
+	return abilityKeys$1.reduce((best, key) => character.abilities[key] > character.abilities[best] ? key : best, "int");
+}
+function racialSpellDefinitions(character) {
+	const variant = character.raceVariant || "base";
+	return racialSpellcastingRegistry.filter((entry) => entry.race === character.race && (!entry.variants || entry.variants.includes(variant)));
+}
+function resolvedRacialSpells(character, catalog) {
+	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
+	const level = characterLevel(character);
+	const proficiency = 2 + Math.floor((Math.max(1, level) - 1) / 4);
+	return racialSpellDefinitions(character).flatMap((definition) => {
+		const ability = racialSpellAbility(character, definition);
+		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
+		return definition.spells.flatMap((entry) => {
+			if (entry.unlockLevel > level) return [];
+			const spellId = entry.spellId || character.raceChoices?.[entry.choiceKey || ""]?.[0];
+			const spell = spellId ? byId.get(spellId) : void 0;
+			if (!spell) return [];
+			const resourceKey = entry.freeUses ? `racial-spell:${character.race}:${entry.resourceGroup || spell.id}` : void 0;
+			const freeUses = entry.freeUses || 0;
+			return [{
+				spell,
+				source: definition.source,
+				ability,
+				saveDc: 8 + proficiency + modifier,
+				attackBonus: proficiency + modifier,
+				freeUses,
+				remainingUses: Math.max(0, freeUses - (resourceKey ? character.resourceSpent?.[resourceKey] || 0 : 0)),
+				recharge: entry.recharge,
+				castWithSlots: !!entry.castWithSlots,
+				freeCastLevel: entry.freeCastLevel,
+				resourceKey,
+				notes: entry.notes
+			}];
+		});
+	});
+}
+function racialSpellChoiceOptions(character, catalog) {
+	return racialSpellDefinitions(character).flatMap((definition) => definition.spells.flatMap((entry) => {
+		if (!entry.choiceKey) return [];
+		const classId = entry.choiceKey === "high-elf-cantrip" ? "wizard" : void 0;
+		const options = catalog.filter((spell) => spell.level === 0 && (!classId || spell.classes.includes(classId)));
+		return [{
+			key: entry.choiceKey,
+			title: entry.choiceKey === "high-elf-cantrip" ? "Заговор высшего эльфа" : "Драконий заговор",
+			options
+		}];
+	}));
+}
+//#endregion
 //#region app/characterResources.ts
 function resourceRestLabel(resource) {
 	if (resource.isShortRest && resource.isLongRest) return "короткий или продолжительный отдых";
@@ -24851,6 +25220,16 @@ function racialResources(character) {
 	} else {
 		pool("hobgoblin", "saving-face", "Спасение лица", 1, true);
 		pool("kobold", "grovel-cower-beg", "Пресмыкаться и умолять", 1, true);
+	}
+	for (const innate of resolvedRacialSpells(character, spells)) {
+		if (!innate.resourceKey || !innate.freeUses || resources.some((resource) => resource.key === innate.resourceKey)) continue;
+		resources.push({
+			key: innate.resourceKey,
+			name: `${innate.spell.name} · ${innate.source}`,
+			max: innate.freeUses,
+			isShortRest: innate.recharge === "short",
+			isLongRest: true
+		});
 	}
 	return resources;
 }
@@ -26717,10 +27096,12 @@ function helpmateNote(context) {
 }
 function summaryText(context) {
 	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
+	const racialSpells = resolvedRacialSpells(character, spells);
 	const selectedSpells = [...new Set([
 		...character.spells,
 		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
+		...context.alwaysPreparedSpellIds || [],
+		...racialSpells.map((entry) => entry.spell.id)
 	])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
 	const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
 	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
@@ -26776,7 +27157,8 @@ function summaryText(context) {
 		`Примечание к атакам: ${automaticAttacksNotice}`,
 		`Заклинания: ${selectedSpells.join(", ") || "нет"}`,
 		...preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : [],
-		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []
+		...alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : [],
+		...racialSpells.length ? [`Расовая магия: ${racialSpells.map((entry) => `${entry.spell.name} (${entry.source}${entry.freeUses ? `; ${entry.remainingUses}/${entry.freeUses} бесплатно за ${entry.recharge === "short" ? "короткий или продолжительный" : "продолжительный"} отдых` : ""}${entry.castWithSlots ? "; можно ячейками" : ""})`).join("; ")}`] : []
 	].join("\n\n");
 }
 var helpmateAbilityOrder = {
@@ -26839,7 +27221,8 @@ function helpmateSelectedSpellIds(context) {
 	return [...new Set([
 		...context.character.spells,
 		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
+		...context.alwaysPreparedSpellIds || [],
+		...resolvedRacialSpells(context.character, context.spells).map((entry) => entry.spell.id)
 	])];
 }
 function helpmateSkippedSpells(context) {
@@ -27261,7 +27644,8 @@ function createLongStoryShortExport(context, options = {}) {
 	const chosenIds = [...new Set([
 		...character.spells,
 		...context.featSpellIds || [],
-		...context.alwaysPreparedSpellIds || []
+		...context.alwaysPreparedSpellIds || [],
+		...resolvedRacialSpells(character, spells).map((entry) => entry.spell.id)
 	])];
 	const chosenSpells = chosenIds.map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
 	const retainedCardIds = (values) => (values || []).filter((value) => /^[0-9a-f]{24}$/i.test(value));
@@ -42811,7 +43195,7 @@ function spellSourceDisplayName(sourceId, character, classCatalog) {
 function otherSpellSources(character, catalog) {
 	const casterIds = new Set(orderedCharacterClasses(character).filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map((entry) => entry.classId));
 	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
-	return (character.spellGrants || []).flatMap((grant) => {
+	const saved = (character.spellGrants || []).flatMap((grant) => {
 		if (grant.classId && casterIds.has(grant.classId)) return [];
 		const spell = byId.get(grant.spellId);
 		return spell ? [{
@@ -42822,6 +43206,14 @@ function otherSpellSources(character, catalog) {
 			alwaysPrepared: grant.mode === "always-prepared"
 		}] : [];
 	});
+	const racial = resolvedRacialSpells(character, catalog).map((entry) => ({
+		spell: entry.spell,
+		classId: "race",
+		source: entry.source,
+		prepared: true,
+		alwaysPrepared: false
+	}));
+	return [...racial, ...saved.filter((entry) => !racial.some((race) => race.spell.id === entry.spell.id && race.source === entry.source))];
 }
 //#endregion
 //#region app/knownLimitations.ts
@@ -59517,7 +59909,9 @@ function Builder() {
 	const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
 	const sourcedSpellGroups = classSpellGroups(exportCharacter, availableSpellCatalog);
 	const sourcedSpells = sourcedSpellGroups.flatMap((group) => group.spells);
-	const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog).filter((entry) => !grantedFeatSpells.includes(entry.spell.id));
+	const racialSpells = resolvedRacialSpells(exportCharacter, availableSpellCatalog);
+	const racialChoiceGroups = racialSpellChoiceOptions(exportCharacter, availableSpellCatalog);
+	const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog).filter((entry) => entry.classId !== "race").filter((entry) => !grantedFeatSpells.includes(entry.spell.id));
 	const mobileSpellPool = [...new Map((spellRule.mode === "prepared" ? [
 		...selectedCantrips.map((id) => spells.find((spell) => spell.id === id)),
 		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(spellCharacter, spell) || homebrewSpellAvailable(spellCharacter.className, spell, homebrew.elements))),
@@ -62914,6 +63308,60 @@ function Builder() {
 												children: [/* @__PURE__ */ jsx("span", { children: (character.raceSkills || []).includes(skill) ? "✓" : "+" }), skill]
 											}, skill))
 										})]
+									}),
+									racialSpellChoiceGroups.length > 0 && racialChoiceGroups.map((group) => /* @__PURE__ */ jsxs("div", {
+										className: "racial-choice",
+										"data-incomplete": !character.raceChoices?.[group.key]?.[0],
+										children: [/* @__PURE__ */ jsxs("div", { children: [
+											/* @__PURE__ */ jsx("small", { children: "Расовая магия" }),
+											/* @__PURE__ */ jsx("h2", { children: group.title }),
+											/* @__PURE__ */ jsx("p", { children: "Выберите один заговор. Он появится в листе автоматически и не займёт лимит заклинаний класса." })
+										] }), /* @__PURE__ */ jsxs("label", { children: ["Заговор", /* @__PURE__ */ jsxs("select", {
+											value: character.raceChoices?.[group.key]?.[0] || "",
+											onChange: (event) => setCharacter((current) => ({
+												...current,
+												raceChoices: {
+													...current.raceChoices,
+													[group.key]: event.target.value ? [event.target.value] : []
+												}
+											})),
+											children: [/* @__PURE__ */ jsx("option", {
+												value: "",
+												children: "Выберите…"
+											}), group.options.map((spell) => /* @__PURE__ */ jsx("option", {
+												value: spell.id,
+												children: spell.name
+											}, spell.id))]
+										})] })]
+									}, group.key)),
+									racialSpells.length > 0 && racialSpells.some((entry) => [
+										"int",
+										"wis",
+										"cha"
+									].includes(entry.ability)) && racialSpells.some(() => character.raceChoices?.["spellcasting-ability"] || true) && /* @__PURE__ */ jsxs("div", {
+										className: "racial-choice",
+										children: [/* @__PURE__ */ jsxs("div", { children: [
+											/* @__PURE__ */ jsx("small", { children: "Расовая магия" }),
+											/* @__PURE__ */ jsx("h2", { children: "Характеристика заклинаний" }),
+											/* @__PURE__ */ jsx("p", { children: "Автоматически выбрана самая высокая; при необходимости измените." })
+										] }), /* @__PURE__ */ jsxs("label", { children: ["Характеристика", /* @__PURE__ */ jsx("select", {
+											value: character.raceChoices?.["spellcasting-ability"]?.[0] || racialSpells[0].ability,
+											onChange: (event) => setCharacter((current) => ({
+												...current,
+												raceChoices: {
+													...current.raceChoices,
+													"spellcasting-ability": [event.target.value]
+												}
+											})),
+											children: [
+												"int",
+												"wis",
+												"cha"
+											].map((key) => /* @__PURE__ */ jsx("option", {
+												value: key,
+												children: abilityLabels[key]
+											}, key))
+										})] })]
 									})
 								]
 							}),
@@ -64398,6 +64846,31 @@ function Builder() {
 															]
 														}, spell.id))
 													})] }),
+													racialSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Расовая магия" }), /* @__PURE__ */ jsx("div", {
+														className: "mobile-spell-list",
+														children: racialSpells.map((entry) => /* @__PURE__ */ jsxs("button", {
+															type: "button",
+															className: "prepared",
+															children: [
+																/* @__PURE__ */ jsx("span", { children: entry.spell.level === 0 ? "∞" : "◆" }),
+																/* @__PURE__ */ jsx("strong", { children: entry.spell.name }),
+																/* @__PURE__ */ jsxs("small", { children: [
+																	levelLabel(entry.spell.level),
+																	" · ",
+																	entry.source,
+																	" · ",
+																	abilityLabels[entry.ability],
+																	" · Сл ",
+																	entry.saveDc,
+																	" · атака ",
+																	entry.attackBonus >= 0 ? "+" : "",
+																	entry.attackBonus,
+																	entry.freeUses ? ` · ${entry.remainingUses}/${entry.freeUses} бесплатно` : "",
+																	entry.castWithSlots ? " · можно ячейками" : ""
+																] })
+															]
+														}, `${entry.source}-${entry.spell.id}`))
+													})] }),
 													otherGrantedSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
 														className: "mobile-spell-list",
 														children: otherGrantedSpells.map(({ spell, source }) => /* @__PURE__ */ jsxs("button", {
@@ -64449,7 +64922,7 @@ function Builder() {
 															]
 														}, spell.id))
 													})] }),
-													!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === void 0 && /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }),
+													!sourcedSpells.length && !racialSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === void 0 && /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }),
 													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
 														className: "mobile-slot-list mobile-spell-slots",
 														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
@@ -64937,6 +65410,24 @@ function Builder() {
 																	levelLabel(spell.level),
 																	" (черта)"
 																] }, `feat-${spell.id}`)),
+																racialSpells.length > 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("h4", { children: "Расовая магия" }), racialSpells.map((entry) => /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: entry.spell.name }),
+																	" — ",
+																	levelLabel(entry.spell.level),
+																	" (",
+																	entry.source,
+																	"; ",
+																	abilityLabels[entry.ability],
+																	"; Сл ",
+																	entry.saveDc,
+																	"; атака ",
+																	entry.attackBonus >= 0 ? "+" : "",
+																	entry.attackBonus,
+																	entry.freeUses ? `; ${entry.remainingUses}/${entry.freeUses} бесплатно` : "",
+																	entry.castWithSlots ? "; можно накладывать ячейками" : "",
+																	entry.notes ? `; ${entry.notes}` : "",
+																	")"
+																] }, `race-${entry.source}-${entry.spell.id}`))] }),
 																otherGrantedSpells.map(({ spell, source }) => /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: spell.name }),
 																	" — ",
@@ -64945,7 +65436,7 @@ function Builder() {
 																	source,
 																	")"
 																] }, `${source}-${spell.id}`)),
-																!sourcedSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && /* @__PURE__ */ jsx("p", { children: "Заклинания не выбраны." })
+																!sourcedSpells.length && !racialSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && /* @__PURE__ */ jsx("p", { children: "Заклинания не выбраны." })
 															]
 														})
 													]
@@ -65106,14 +65597,25 @@ function Builder() {
 												dc: 8 + attack,
 												attack
 											}];
-										}),
+										}).concat([...new Map(racialSpells.map((entry) => [`${entry.source}:${entry.ability}`, {
+											name: entry.source,
+											ability: abilityLabels[entry.ability],
+											dc: entry.saveDc,
+											attack: entry.attackBonus
+										}])).values()]),
 										spells: sourcedSpells.map((entry) => ({
 											...entry.spell,
 											prepared: entry.prepared,
 											alwaysPrepared: entry.alwaysPrepared,
 											classSource: spellSourceDisplayName(entry.classId, exportCharacter, classes),
 											grantSource: entry.source === entry.classId ? "" : entry.source
-										})).concat(otherGrantedSpells.map((entry) => ({
+										})).concat(racialSpells.map((entry) => ({
+											...entry.spell,
+											prepared: true,
+											alwaysPrepared: false,
+											classSource: "Раса",
+											grantSource: entry.source
+										})), otherGrantedSpells.map((entry) => ({
 											...entry.spell,
 											prepared: true,
 											alwaysPrepared: entry.alwaysPrepared,

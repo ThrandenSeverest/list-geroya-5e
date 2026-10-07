@@ -5,6 +5,7 @@ import { dndSpellUrl, helpmateSpellId, lssCardIdForSpellId } from "./exportIds";
 import { abilityLabels, classRules, skillKeys, type Feature } from "./rules";
 import { spellSelectionRule, spellSelectionRuleForClass } from "./characterRules";
 import { characterResources, resourceCurrent } from "./characterResources";
+import { resolvedRacialSpells } from "./racialSpellcasting";
 import { backgroundRule } from "./backgroundRules";
 import { selectedEquipment } from "./equipment";
 import { automaticAttacksNotice, characterAttacks, lssWeaponAttacks } from "./combat";
@@ -104,6 +105,8 @@ export type ExportCharacter = {
   asiChoices?: (keyof AbilityScores)[];
   advancements?: AdvancementChoice[];
   classChoices?: Record<string, string[]>;
+  /** Backwards-compatible racial selections: innate ability and chosen cantrips. */
+  raceChoices?: Record<string, string[]>;
   equipmentSelections?: Record<string, string[]>;
   /** Редактируемое содержимое рюкзака; если его нет, показывается стартовое снаряжение. */
   inventoryOverride?: string;
@@ -242,7 +245,8 @@ function helpmateNote(context: ExportContext) {
 
 function summaryText(context: ExportContext) {
   const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
-  const spellIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || [])])];
+  const racialSpells = resolvedRacialSpells(character, spells);
+  const spellIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || []), ...racialSpells.map(entry => entry.spell.id)])];
   const selectedSpells = spellIds.map(id => spells.find(spell => spell.id === id)?.name).filter(Boolean);
   const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
   const preparedSpellIds = new Set([
@@ -303,6 +307,7 @@ function summaryText(context: ExportContext) {
     `Заклинания: ${selectedSpells.join(", ") || "нет"}`,
     ...(preparedSpellNames.length ? [`Подготовлено: ${preparedSpellNames.join(", ")}`] : []),
     ...(alwaysPreparedNames.length ? [`Всегда подготовлено (не занимает лимит): ${alwaysPreparedNames.join(", ")}`] : []),
+    ...(racialSpells.length ? [`Расовая магия: ${racialSpells.map(entry => `${entry.spell.name} (${entry.source}${entry.freeUses ? `; ${entry.remainingUses}/${entry.freeUses} бесплатно за ${entry.recharge === "short" ? "короткий или продолжительный" : "продолжительный"} отдых` : ""}${entry.castWithSlots ? "; можно ячейками" : ""})`).join("; ")}`] : []),
   ].join("\n\n");
 }
 
@@ -354,6 +359,7 @@ function helpmateSelectedSpellIds(context: ExportContext) {
     ...context.character.spells,
     ...(context.featSpellIds || []),
     ...(context.alwaysPreparedSpellIds || []),
+    ...resolvedRacialSpells(context.character, context.spells).map(entry => entry.spell.id),
   ])];
 }
 
@@ -813,7 +819,7 @@ export function createLongStoryShortExport(context: ExportContext, options: { sh
   const prof = proficiencyBonus(character.level);
   const sharedSpellSlots = resolveSpellSlots(character);
   const pactMagic = resolvePactMagic(character);
-  const chosenIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || [])])];
+  const chosenIds = [...new Set([...character.spells, ...(context.featSpellIds || []), ...(context.alwaysPreparedSpellIds || []), ...resolvedRacialSpells(character, spells).map(entry => entry.spell.id)])];
   const chosenSpells = chosenIds.map(id => spells.find(spell => spell.id === id)).filter(Boolean) as CatalogSpell[];
   const retainedCardIds = (values: string[] | undefined) => (values || []).filter(value => /^[0-9a-f]{24}$/i.test(value));
   const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
