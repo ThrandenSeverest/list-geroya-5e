@@ -330,7 +330,8 @@ const table = {
           "Таблица проверки",
         ),
       );
-      assert.ok((await page.locator(".pdf-document table").count()) >= 3);
+      assert.ok((await page.locator(".pdf-document table").count()) >= 1);
+      assert.equal(await page.locator(".pdf-document table").first().locator("tbody tr").count(), 20);
       const dialog = page.waitForEvent("dialog");
       const click = page
         .getByRole("button", { name: "Long Story Short JSON", exact: true })
