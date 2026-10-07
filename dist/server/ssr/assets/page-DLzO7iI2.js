@@ -63309,7 +63309,7 @@ function Builder() {
 											}, skill))
 										})]
 									}),
-									racialSpellChoiceGroups.length > 0 && racialChoiceGroups.map((group) => /* @__PURE__ */ jsxs("div", {
+									racialChoiceGroups.length > 0 && racialChoiceGroups.map((group) => /* @__PURE__ */ jsxs("div", {
 										className: "racial-choice",
 										"data-incomplete": !character.raceChoices?.[group.key]?.[0],
 										children: [/* @__PURE__ */ jsxs("div", { children: [
