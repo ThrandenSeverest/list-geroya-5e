@@ -63334,11 +63334,7 @@ function Builder() {
 											}, spell.id))]
 										})] })]
 									}, group.key)),
-									racialSpells.length > 0 && racialSpells.some((entry) => [
-										"int",
-										"wis",
-										"cha"
-									].includes(entry.ability)) && racialSpells.some(() => character.raceChoices?.["spellcasting-ability"] || true) && /* @__PURE__ */ jsxs("div", {
+									racialSpells.length > 0 && racialSpellDefinitions(exportCharacter).some((definition) => definition.ability === "choice") && /* @__PURE__ */ jsxs("div", {
 										className: "racial-choice",
 										children: [/* @__PURE__ */ jsxs("div", { children: [
 											/* @__PURE__ */ jsx("small", { children: "Расовая магия" }),
