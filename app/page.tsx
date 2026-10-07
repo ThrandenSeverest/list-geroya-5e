@@ -78,7 +78,7 @@ import { applySubclassLongRest, rollSubclassRuntimeControl, setSubclassRuntimeVa
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { characterLevel, getClassLevel, hitDicePools, migrateMulticlassCharacter, multiclassRequirement, normalizedLevelHistory, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from "./multiclass";
 import { HomebrewEditor, HomebrewOnSheet } from "./HomebrewEditor";
-import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor, homebrewChoiceStatuses, homebrewChoicesComplete, hbEffects, hbSum } from "./homebrewEngine";
+import { activeHomebrew, homebrewExportWarning, bindHomebrewLibrary, homebrewReferencesOnly, classRuleFor, homebrewChoiceStatuses, homebrewChoicesComplete, hbEffects, homebrewDefenses, hbSum } from "./homebrewEngine";
 import { emptyHomebrewLibrary, homebrewTypeLabels, normalizeHomebrewLibrary, type HomebrewElement, type HomebrewLibrary, type HomebrewType } from "./homebrew";
 import { noMagicTutorialStep, tutorialReflection, tutorialSteps, type TutorialTerm } from "./tutorial";
 import { sheetOptionalFeatures } from "./generatedSheetRules";
@@ -1062,6 +1062,7 @@ function Builder() {
   const languageRequirements = languageRule(exportCharacter);
   const proficiencyRequirements = proficiencyChoiceRequirements(exportCharacter);
   const proficiencies = characterProficiencies(exportCharacter);
+  const defenses = homebrewDefenses(exportCharacter);
   const expertise = characterExpertiseSkills(exportCharacter);
   const knownLanguages = proficiencies.languages;
   const resources = characterResources(exportCharacter);
@@ -3702,7 +3703,7 @@ function Builder() {
                       <div className="stat-block" key={key}><small>{abilityLabels[key]}</small><strong>{abilityModifier(finalAbilities[key]) >= 0 ? "+" : ""}{abilityModifier(finalAbilities[key])}</strong><span>{finalAbilities[key]}</span></div>
                     ))}
                     <div className="sheet-box passive"><strong>{passivePerception}</strong><span>ПАССИВНАЯ МУДРОСТЬ</span></div>
-                    <div className="sheet-box prof-list"><h3>ВЛАДЕНИЯ И ЯЗЫКИ</h3><p><b>Навыки:</b> {proficiencies.skills.join(", ") || "нет"}</p><p><b>Компетентность:</b> {expertise.join(", ") || "нет"}</p><p><b>Инструменты:</b> {[...proficiencies.tools, ...customProficiencies].join(", ") || "нет"}</p><p><b>Языки:</b> {proficiencies.languages.join(", ") || "нет"}</p><p><b>Доспехи:</b> {proficiencies.armor.join(", ") || "нет"}</p><p><b>Оружие:</b> {proficiencies.weapons.join(", ") || "нет"}</p></div>
+                    <div className="sheet-box prof-list"><h3>ВЛАДЕНИЯ И ЯЗЫКИ</h3>{defenses.resistances.length>0&&<p><b>Сопротивления:</b> {defenses.resistances.join(", ")}</p>}{defenses.immunities.length>0&&<p><b>Иммунитеты к урону:</b> {defenses.immunities.join(", ")}</p>}{defenses.vulnerabilities.length>0&&<p><b>Уязвимости:</b> {defenses.vulnerabilities.join(", ")}</p>}<p><b>Навыки:</b> {proficiencies.skills.join(", ") || "нет"}</p><p><b>Компетентность:</b> {expertise.join(", ") || "нет"}</p><p><b>Инструменты:</b> {[...proficiencies.tools, ...customProficiencies].join(", ") || "нет"}</p><p><b>Языки:</b> {proficiencies.languages.join(", ") || "нет"}</p><p><b>Доспехи:</b> {proficiencies.armor.join(", ") || "нет"}</p><p><b>Оружие:</b> {proficiencies.weapons.join(", ") || "нет"}</p></div>
                   </section>
                   <section className="sheet-combat">
                     <div className="combat-row">
@@ -3796,6 +3797,7 @@ function Builder() {
                 savingThrows={homebrewSavingThrows}
                 savingThrowBonuses={homebrewSavingThrowBonuses}
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
+                defenses={defenses}
                 ac={ac.value}
                 acNotes={ac.conditions}
                 initiative={initiative.value}

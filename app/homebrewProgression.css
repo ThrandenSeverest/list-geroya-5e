@@ -198,3 +198,10 @@
 }
 .modern-design .hb-workspace .hb-tabs>button[aria-pressed=true],
 .modern-design .hb-workspace .hb-save-primary{color:#fff8e7!important}
+
+.hb-relation-modes, .hb-quick-effects .hb-toolbar { display: flex; flex-wrap: wrap; gap: .45rem; margin: .6rem 0; }
+.hb-relation-modes button[aria-pressed="true"] { background: #325f5a; color: #fff; border-color: #325f5a; }
+.hb-extra-gameplay-rules { margin-top: 1rem; padding: 1rem; border: 1px solid #a6b9b3; border-radius: 12px; background: #f6f8f3; }
+.hb-extra-gameplay-rules h4 { margin: 0; }
+.hb-effect-name { display: grid; gap: .35rem; }
+.hb-effect-condition { margin: .6rem 0; }

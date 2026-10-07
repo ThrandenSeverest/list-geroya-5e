@@ -96,20 +96,18 @@ function homebrewAsiLevels(entities, classId) {
 	return Object.entries(owner.advancement || {}).filter(([, rows]) => rows.some((row) => row.type === "asi_or_feat")).map(([level]) => Number(level)).filter((level) => Number.isInteger(level) && level >= 1 && level <= 20).sort((a, b) => a - b);
 }
 function homebrewTableFeatures(entities) {
-	return entities.filter((e) => e.table?.columns.length).flatMap((e) => {
+	return entities.filter((e) => e.table?.columns.length).map((e) => {
 		const table = e.table;
 		const clean = (s) => s.replace(/\|/g, "／").replace(/[\r\n]+/g, " ");
-		const features = [];
-		for (let i = 0; i < table.rows.length; i += 8) features.push({
-			name: e.name + (i ? " — продолжение" : ""),
+		return {
+			name: e.name,
 			description: [
-				i ? "" : e.description,
+				e.description,
 				"| " + table.columns.map(clean).join(" | ") + " |",
 				"| " + table.columns.map(() => "---").join(" | ") + " |",
-				...table.rows.slice(i, i + 8).map((row) => "| " + table.columns.map((_, j) => clean(row[j] || "")).join(" | ") + " |")
+				...table.rows.map((row) => "| " + table.columns.map((_, j) => clean(row[j] || "")).join(" | ") + " |")
 			].filter(Boolean).join("\n")
-		});
-		return features;
+		};
 	});
 }
 //#endregion
@@ -23775,6 +23773,29 @@ function activeHomebrew(c) {
 	}
 	return result;
 }
+var damageNames = {
+	acid: "кислота",
+	bludgeoning: "дробящий",
+	cold: "холод",
+	fire: "огонь",
+	force: "силовое поле",
+	lightning: "молния",
+	necrotic: "некротический",
+	piercing: "колющий",
+	poison: "яд",
+	psychic: "психический",
+	radiant: "излучение",
+	slashing: "рубящий",
+	thunder: "звук"
+};
+function homebrewDefenses(c) {
+	const names = (type) => [...new Set(hbEffects(c, type).map(({ effect }) => damageNames[effect.damage || ""] || effect.damage).filter((value) => !!value))];
+	return {
+		resistances: names("damage_resistance"),
+		immunities: names("damage_immunity"),
+		vulnerabilities: names("damage_vulnerability")
+	};
+}
 function hbEffects(c, type) {
 	return activeHomebrew(c).flatMap((source) => (source.effects || []).filter((e) => (!type || e.type === type) && hbEnabled(c, e, source)).map((effect) => ({
 		source,
@@ -47133,11 +47154,23 @@ function PdfCharacterSheet(props) {
 										}),
 										/* @__PURE__ */ jsxs("div", {
 											className: "pdf-proficiencies",
-											children: [/* @__PURE__ */ jsx("h3", { children: "Владения" }), proficiencyRows.map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
-												/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
-												" ",
-												values.join(", ") || "нет"
-											] }, label))]
+											children: [
+												/* @__PURE__ */ jsx("h3", { children: "Владения и защита" }),
+												proficiencyRows.map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
+													/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
+													" ",
+													values.join(", ") || "нет"
+												] }, label)),
+												props.defenses && [
+													["Сопротивления", props.defenses.resistances],
+													["Иммунитеты к урону", props.defenses.immunities],
+													["Уязвимости", props.defenses.vulnerabilities]
+												].filter(([, values]) => values.length).map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
+													/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
+													" ",
+													values.join(", ")
+												] }, label))
+											]
 										})
 									]
 								}),
@@ -49490,11 +49523,24 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 				element,
 				initialFocus: focus
 			}, focus)
-		] }), /* @__PURE__ */ jsxs("details", {
+		] }), /* @__PURE__ */ jsxs("div", {
 			className: "hb-extra-gameplay-rules",
 			children: [
-				/* @__PURE__ */ jsx("summary", { children: "Дополнительные игровые требования и выдача" }),
-				/* @__PURE__ */ jsx("p", { children: "Здесь задаются новые правила доступности и получения способностей. Уже существующие выборы и зависимости отображаются выше без настройки." }),
+				/* @__PURE__ */ jsx("h4", { children: "Добавить зависимость или результат" }),
+				/* @__PURE__ */ jsx("p", { children: "Выберите действие и затем элемент по названию. Связи сразу показываются ниже." }),
+				/* @__PURE__ */ jsx("div", {
+					className: "hb-relation-modes",
+					children: [
+						["requires", "Требует выбранный вариант"],
+						["dependent", "Открывает другую способность"],
+						["grant", "Выдаёт автоматически"]
+					].map(([id, label]) => /* @__PURE__ */ jsx("button", {
+						type: "button",
+						"aria-pressed": mode === id,
+						onClick: () => setMode(id),
+						children: label
+					}, id))
+				}),
 				/* @__PURE__ */ jsxs("div", {
 					className: "hb-relation-columns",
 					children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Требует выбранного элемента" }), (element.requirements || []).map((r, index) => /* @__PURE__ */ jsxs("div", {
@@ -49514,33 +49560,22 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 						})]
 					}, row.id))] })]
 				}),
-				granted.map((effect, index) => /* @__PURE__ */ jsxs("p", { children: [effectLabel(effect, flat), effect.when ? ` · ${effect.when}` : ""] }, index)),
-				/* @__PURE__ */ jsxs("div", {
+				granted.map((effect, index) => /* @__PURE__ */ jsxs("div", {
+					className: "hb-relation-line",
+					children: [/* @__PURE__ */ jsxs("span", { children: [effectLabel(effect, flat), effect.when ? ` · ${effect.when}` : ""] }), /* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => onChange({ effects: element.effects?.filter((row) => row !== effect) }),
+						children: "Убрать выдачу"
+					})]
+				}, index)),
+				/* @__PURE__ */ jsx("div", {
 					className: "hb-relation-add",
-					children: [/* @__PURE__ */ jsxs("select", {
-						"aria-label": "Смысл новой связи",
-						value: mode,
-						onChange: (event) => setMode(event.target.value),
-						children: [
-							/* @__PURE__ */ jsx("option", {
-								value: "requires",
-								children: "Требует выбранного элемента"
-							}),
-							/* @__PURE__ */ jsx("option", {
-								value: "dependent",
-								children: "Открывает выбор другого элемента"
-							}),
-							/* @__PURE__ */ jsx("option", {
-								value: "grant",
-								children: "Выдаёт автоматически"
-							})
-						]
-					}), /* @__PURE__ */ jsx(NamedReference, {
-						label: "Добавить игровое правило",
+					children: /* @__PURE__ */ jsx(NamedReference, {
+						label: mode === "requires" ? "Без какого варианта недоступен?" : mode === "dependent" ? "Что станет доступно?" : "Что выдать персонажу?",
 						value: "",
 						options: flat.filter((row) => row.id !== element.id && (mode !== "dependent" || session.elements.some((e) => e.id === row.id) && (row.type === "ability" || row.type === "feat"))),
 						onChange: connect
-					})]
+					})
 				})
 			]
 		})]
@@ -55814,6 +55849,32 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 	const parent = entities.find((element) => element.features?.some((feature) => feature.id === draft.id));
 	const linkedCount = parent ? linkedChoicesForFeature(parent, draft.id).length : 0;
 	const resourceOptions = editableHomebrew(entities).flatMap((element) => (element.resources || []).map((resource) => [resource.id, resource.name + " · " + element.name]));
+	const quickEffects = [
+		["Сопротивление урону", {
+			type: "damage_resistance",
+			damage: "fire"
+		}],
+		["Иммунитет к урону", {
+			type: "damage_immunity",
+			damage: "fire"
+		}],
+		["Владение инструментом", {
+			type: "tool_proficiency",
+			id: ""
+		}],
+		["Владение навыком", {
+			type: "skill_proficiency",
+			skill: "perception"
+		}],
+		["Владение оружием", {
+			type: "weapon_proficiency",
+			id: ""
+		}],
+		["Знание языка", {
+			type: "language",
+			id: ""
+		}]
+	];
 	const mechanicKinds = [
 		[
 			"effects",
@@ -55867,6 +55928,17 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", draft.effects?.length || 0] }),
 					/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "hb-quick-effects",
+						children: [/* @__PURE__ */ jsx("strong", { children: "Добавить готовый эффект" }), /* @__PURE__ */ jsx("div", {
+							className: "hb-toolbar",
+							children: quickEffects.map(([label, effect]) => /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								onClick: () => update({ effects: [...draft.effects || [], effect] }),
+								children: ["+ ", label]
+							}, label))
+						})]
+					}),
 					(draft.effects || []).map((e, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
 						/* @__PURE__ */ jsx(Select, {
 							label: "Тип эффекта",
@@ -55925,14 +55997,23 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								shield: "Щиты"
 							}
 						}),
-						(e.type.startsWith("grant_") || [
-							"weapon_proficiency",
-							"tool_proficiency",
-							"language"
-						].includes(e.type)) && /* @__PURE__ */ jsx(RefPicker, {
+						e.type.startsWith("grant_") && /* @__PURE__ */ jsx(RefPicker, {
 							entities,
 							value: e.id || "",
 							onChange: (id) => setEffect(i, { id })
+						}),
+						[
+							"weapon_proficiency",
+							"tool_proficiency",
+							"language"
+						].includes(e.type) && /* @__PURE__ */ jsxs("label", {
+							className: "hb-effect-name",
+							children: [e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия", /* @__PURE__ */ jsx("input", {
+								"aria-label": e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия",
+								placeholder: e.type === "tool_proficiency" ? "Например, инструменты вора" : e.type === "language" ? "Например, Эльфийский" : "Например, длинный меч",
+								value: e.id || "",
+								onChange: (event) => setEffect(i, { id: event.target.value })
+							})]
 						}),
 						e.type === "sense" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
 							label: "Чувство",
@@ -55972,11 +56053,14 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								value: void 0
 							} : { value: v })
 						}),
-						/* @__PURE__ */ jsx(ConditionEditor, {
-							label: "Условие эффекта",
-							elements: entities,
-							value: e.when || "",
-							onChange: (when) => setEffect(i, { when })
+						/* @__PURE__ */ jsxs("details", {
+							className: "hb-effect-condition",
+							children: [/* @__PURE__ */ jsx("summary", { children: e.when ? "Условие действия: настроено" : "Условие действия · необязательно" }), /* @__PURE__ */ jsx(ConditionEditor, {
+								label: "Действует, когда",
+								elements: entities,
+								value: e.when || "",
+								onChange: (when) => setEffect(i, { when })
+							})]
 						}),
 						/* @__PURE__ */ jsx("button", {
 							onClick: () => update({ effects: draft.effects.filter((_, n) => n !== i) }),
@@ -59353,6 +59437,7 @@ function Builder() {
 	const languageRequirements = languageRule(exportCharacter);
 	const proficiencyRequirements = proficiencyChoiceRequirements(exportCharacter);
 	const proficiencies = characterProficiencies(exportCharacter);
+	const defenses = homebrewDefenses(exportCharacter);
 	const expertise = characterExpertiseSkills(exportCharacter);
 	const knownLanguages = proficiencies.languages;
 	const resources = characterResources(exportCharacter);
@@ -64624,6 +64709,21 @@ function Builder() {
 															className: "sheet-box prof-list",
 															children: [
 																/* @__PURE__ */ jsx("h3", { children: "ВЛАДЕНИЯ И ЯЗЫКИ" }),
+																defenses.resistances.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: "Сопротивления:" }),
+																	" ",
+																	defenses.resistances.join(", ")
+																] }),
+																defenses.immunities.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: "Иммунитеты к урону:" }),
+																	" ",
+																	defenses.immunities.join(", ")
+																] }),
+																defenses.vulnerabilities.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
+																	/* @__PURE__ */ jsx("b", { children: "Уязвимости:" }),
+																	" ",
+																	defenses.vulnerabilities.join(", ")
+																] }),
 																/* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: "Навыки:" }),
 																	" ",
@@ -64950,6 +65050,7 @@ function Builder() {
 											tools: [...proficiencies.tools, ...customProficiencies],
 											expertise
 										},
+										defenses,
 										ac: ac.value,
 										acNotes: ac.conditions,
 										initiative: initiative.value,

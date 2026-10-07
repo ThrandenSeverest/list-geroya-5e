@@ -31,6 +31,7 @@ export type PdfCharacterSheetProps = {
   savingThrows: string[];
   savingThrowBonuses?: Partial<Record<keyof AbilityScores, number>>;
   proficiencies: { skills: string[]; expertise: string[]; armor: string[]; weapons: string[]; tools: string[]; languages: string[] };
+  defenses?: { resistances: string[]; immunities: string[]; vulnerabilities: string[] };
   ac: number;
   acNotes?: string[];
   initiative: number;
@@ -418,7 +419,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           })}
           <h3 className="pdf-saves-title">Спасброски</h3>
           <div className="pdf-save-row">{(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <span key={key}><i>{props.savingThrows.includes(key) ? "●" : "○"}</i><b>{abilityLabels[key].slice(0, 3)}</b><strong>{signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0))}</strong></span>)}</div>
-          <div className="pdf-proficiencies"><h3>Владения</h3>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}</div>
+          <div className="pdf-proficiencies"><h3>Владения и защита</h3>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}{props.defenses && ([ ["Сопротивления",props.defenses.resistances],["Иммунитеты к урону",props.defenses.immunities],["Уязвимости",props.defenses.vulnerabilities] ] as const).filter(([,values])=>values.length).map(([label,values])=><p key={label}><b>{label}:</b> {values.join(", ")}</p>)}</div>
         </section>
         <section className="pdf-core-column">
           <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span>{props.movement && <small>{[props.movement.swim ? `плав. ${props.movement.swim}` : "", props.movement.climb ? `лаз. ${props.movement.climb}` : "", props.movement.fly ? `полёт ${props.movement.fly}` : ""].filter(Boolean).join(" · ")}</small>}</div></div>
