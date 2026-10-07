@@ -76,6 +76,11 @@ export function activeHomebrew(c:ExportCharacter):HomebrewElement[]{
  }
  return result;
 }
+const damageNames:Record<string,string>={acid:'кислота',bludgeoning:'дробящий',cold:'холод',fire:'огонь',force:'силовое поле',lightning:'молния',necrotic:'некротический',piercing:'колющий',poison:'яд',psychic:'психический',radiant:'излучение',slashing:'рубящий',thunder:'звук'};
+export function homebrewDefenses(c:ExportCharacter){
+ const names=(type:string)=>[...new Set(hbEffects(c,type).map(({effect})=>damageNames[effect.damage||'']||effect.damage).filter((value):value is string=>!!value))];
+ return {resistances:names('damage_resistance'),immunities:names('damage_immunity'),vulnerabilities:names('damage_vulnerability')};
+}
 export function hbEffects(c:ExportCharacter,type?:string){return activeHomebrew(c).flatMap(source=>(source.effects||[]).filter(e=>(!type||e.type===type)&&hbEnabled(c,e,source)).map(effect=>({source,effect,value:hbValue(c,effect.value??effect.formula,source.id)})));}
 export function hbSum(c:ExportCharacter,type:string,filter:(e:HBEffect)=>boolean=()=>true){return hbEffects(c,type).filter(x=>filter(x.effect)).reduce((sum,x)=>sum+x.value,0);}
 export function hbAbilities(c:ExportCharacter,base:AbilityScores){const result={...base};for(const key of Object.keys(result) as (keyof AbilityScores)[]){result[key]+=hbSum(c,'ability_bonus',e=>e.ability===key);for(const x of hbEffects(c,'ability_minimum'))if(x.effect.ability===key)result[key]=Math.max(result[key],x.value);}return result;}

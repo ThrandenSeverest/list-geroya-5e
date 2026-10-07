@@ -12,9 +12,8 @@ export function homebrewAsiLevels(entities:HomebrewElement[],classId:string):num
  return Object.entries(owner.advancement||{}).filter(([,rows])=>rows.some(row=>row.type==='asi_or_feat')).map(([level])=>Number(level)).filter(level=>Number.isInteger(level)&&level>=1&&level<=20).sort((a,b)=>a-b);
 }
 export function homebrewTableFeatures(entities:HomebrewElement[]) {
- return entities.filter(e=>e.table?.columns.length).flatMap(e=>{
+ return entities.filter(e=>e.table?.columns.length).map(e=>{
   const table=e.table!;const clean=(s:string)=>s.replace(/\|/g,'／').replace(/[\r\n]+/g,' ');
-  const features=[];for(let i=0;i<table.rows.length;i+=8)features.push({name:e.name+(i?' — продолжение':''),description:[i?'':e.description,'| '+table.columns.map(clean).join(' | ')+' |','| '+table.columns.map(()=>'---').join(' | ')+' |',...table.rows.slice(i,i+8).map(row=>'| '+table.columns.map((_,j)=>clean(row[j]||'')).join(' | ')+' |')].filter(Boolean).join('\n')});
-  return features;
+  return {name:e.name,description:[e.description,'| '+table.columns.map(clean).join(' | ')+' |','| '+table.columns.map(()=>'---').join(' | ')+' |',...table.rows.map(row=>'| '+table.columns.map((_,j)=>clean(row[j]||'')).join(' | ')+' |')].filter(Boolean).join('\n')};
  });
 }

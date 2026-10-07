@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { evaluateFormula } from '../app/homebrewFormula';
 import { normalizeHomebrewLibrary, type HomebrewElement } from '../app/homebrew';
 import { validateHomebrew } from '../app/homebrewValidation';
-import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, homebrewChoiceStatuses, homebrewChoicesComplete, classRuleFor, hbSum } from '../app/homebrewEngine';
+import { activeHomebrew, bindHomebrewLibrary, homebrewReferencesOnly, homebrewExportClosure, homebrewExportWarning, hbResources, homebrewChoiceReason, homebrewChoiceStatuses, homebrewChoicesComplete, classRuleFor, hbSum, homebrewDefenses } from '../app/homebrewEngine';
 import { subclassTemplate, homebrewAsiLevels, homebrewTableFeatures } from '../app/homebrewTemplates';
 import { createNativeCharacterFile } from '../app/characterFiles';
 import { multiclassRequirement, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from '../app/multiclass';
@@ -57,12 +57,18 @@ test('one library supports multiple characters; play state and exports never dup
  assert.match(homebrewExportWarning(a),/Класс: Савант/);
  assert.equal(homebrewExportWarning({...base,className:'fighter',homebrew:undefined}),'');
 });
-test('subclass templates follow 2014 parent class and PDF tables repeat headers',()=>{
+test('active Homebrew resistance appears in defenses and inactive effects do not',()=>{
+ const source={id:'hb:test:ability:protection',type:'ability',name:'Защита',description:'',updatedAt:'',effects:[{type:'damage_resistance',damage:'fire'},{type:'damage_resistance',damage:'cold',when:'@level >= 10'}]} as HomebrewElement;
+ const character={...base,homebrew:{entities:[source],activeIds:[source.id]}};
+ assert.deepEqual(homebrewDefenses(character).resistances,['огонь']);
+ assert.deepEqual(homebrewDefenses({...character,homebrew:{...character.homebrew,activeIds:[]}}).resistances,[]);
+});
+test('subclass templates follow 2014 parent class and PDF tables remain one block when they fit',()=>{
  assert.deepEqual(Object.keys(subclassTemplate('official:class:fighter',[])),['3','7','10','15','18']);
  assert.deepEqual(Object.keys(subclassTemplate('official:class:wizard',[])),['2','6','10','14']);
  const table={id:'hb:test:table:progress',type:'table',name:'Развитие',description:'',updatedAt:'',table:{columns:['Уровень','Бонус'],rows:Array.from({length:20},(_,i)=>[String(i+1),'+2'])}} as HomebrewElement;
- const features=homebrewTableFeatures([table]);assert.equal(features.length,3);
- assert.ok(features.every(f=>f.description.includes('| Уровень | Бонус |')));
+ const features=homebrewTableFeatures([table]);assert.equal(features.length,1);
+ assert.ok(features[0].description.includes('| Уровень | Бонус |'));assert.ok(features[0].description.includes('| 20 | +2 |'));
  assert.ok(validateHomebrew([{...table,table:{columns:['a'],rows:[['a','b']]}}]).length);
  assert.ok(validateHomebrew([null] as unknown as HomebrewElement[]).length);
 });
