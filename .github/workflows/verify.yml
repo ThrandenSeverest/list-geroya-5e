@@ -33,6 +33,8 @@ jobs:
           cache: npm
       - name: Preserve committed production build
         run: cp -a dist /tmp/herolist-committed-dist
+      - name: Verify committed dist is sanitized before runtime starts
+        run: python3 scripts/check-sanitized-dist.py
       - name: Verify precompiled production runtime
         run: |
           npm ci --omit=dev --ignore-scripts
