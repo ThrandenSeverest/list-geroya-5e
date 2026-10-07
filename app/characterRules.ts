@@ -1,4 +1,4 @@
-import { hbAbilities, activeHomebrew, homebrewClassLevel, classRuleFor } from "./homebrewEngine";
+import { hbAbilities, hbContext, activeHomebrew, homebrewClassLevel, classRuleFor } from "./homebrewEngine";
 export * from "./characterRules.base";
 
 import * as base from "./characterRules.base";
@@ -15,7 +15,7 @@ export function spellSelectionRuleForClass(character: ExportCharacter, classId: 
   const progression = casting.mode === 'full' ? level : casting.mode === 'half' ? Math.ceil(level / 2) : casting.mode === 'third' ? Math.ceil(level / 3) : 0;
   const slots = casting.mode === 'custom' ? casting.slots?.[String(level)] || [] : casting.mode === 'pact' ? [] : base.fullCasterSlots[progression] || [];
   const maxLevel = casting.mode === 'pact' ? Math.min(5, Math.ceil(level / 2)) : slots.length;
-  let prepared=1;try{prepared=Math.max(1,Math.floor(evaluateFormula(casting.preparedFormula || '@level + @mod.' + casting.ability,{values:{'@level':level,['@mod.'+casting.ability]:Math.floor((character.abilities[casting.ability]-10)/2)}})));}catch{/* Validation blocks an invalid formula at save time. */}
+  let prepared=1;try{prepared=Math.max(1,Math.floor(evaluateFormula(casting.preparedFormula || '@level + @mod.' + casting.ability,{...hbContext(character,custom.id),values:{...hbContext(character,custom.id).values,'@level':level,'@classLevel':level}})));}catch{/* Validation blocks an invalid formula at save time. */}
   const mode = casting.selection || 'known';
   const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
   const leveled = mode === 'prepared' ? prepared : casting.known?.[level] ?? Math.max(2,level+1);

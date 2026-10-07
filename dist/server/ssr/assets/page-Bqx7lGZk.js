@@ -13448,6 +13448,21 @@ var conditionIds = [
 	"exhaustion"
 ];
 //#endregion
+//#region app/homebrewResources.ts
+/** Sparse milestones inherit the latest unlocked value; v2 resources stay unchanged. */
+function resourceAtLevel(resource, level) {
+	let max = resource.max, restore = resource.restore;
+	for (const step of [...resource.progression || []].sort((a, b) => a.level - b.level)) {
+		if (step.level > level) break;
+		if (step.max !== void 0) max = step.max;
+		if (step.restore !== void 0) restore = step.restore;
+	}
+	return {
+		max,
+		restore
+	};
+}
+//#endregion
 //#region app/homebrewFormula.ts
 function evaluateFormula(input, context) {
 	if (typeof input === "number") {
@@ -22775,7 +22790,8 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
 //#endregion
 //#region app/characterRules.ts
 function spellSelectionRuleForClass(character, classId, classLevel = character.level) {
-	const casting = (character.homebrew?.entities.find((e) => e.id === classId && e.type === "class"))?.spellcasting;
+	const custom = character.homebrew?.entities.find((e) => e.id === classId && e.type === "class");
+	const casting = custom?.spellcasting;
 	if (!casting || casting.mode === "none") return spellSelectionRuleForClass$1(character, classId, classLevel);
 	const level = Math.max(1, Math.min(20, classLevel));
 	const progression = casting.mode === "full" ? level : casting.mode === "half" ? Math.ceil(level / 2) : casting.mode === "third" ? Math.ceil(level / 3) : 0;
@@ -22783,10 +22799,14 @@ function spellSelectionRuleForClass(character, classId, classLevel = character.l
 	const maxLevel = casting.mode === "pact" ? Math.min(5, Math.ceil(level / 2)) : slots.length;
 	let prepared = 1;
 	try {
-		prepared = Math.max(1, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
-			"@level": level,
-			["@mod." + casting.ability]: Math.floor((character.abilities[casting.ability] - 10) / 2)
-		} })));
+		prepared = Math.max(1, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, {
+			...hbContext(character, custom.id),
+			values: {
+				...hbContext(character, custom.id).values,
+				"@level": level,
+				"@classLevel": level
+			}
+		})));
 	} catch {}
 	const mode = casting.selection || "known";
 	const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
@@ -23678,10 +23698,16 @@ function hbContext(c, source, available) {
 		source,
 		classLevel: (id) => classLevel(c, id),
 		resource: (id, field) => {
-			const r = (c.homebrew?.entities || []).flatMap((e) => e.resources || []).find((r) => r.id === id);
-			if (!r) return 0;
-			const max = evaluateFormula(r.max, {
-				values,
+			const source = editableHomebrew(entities).find((e) => e.resources?.some((r) => r.id === id));
+			const r = source?.resources?.find((r) => r.id === id);
+			if (!r || !source) return 0;
+			const ownerId = source.type === "class" ? source.id : source.parentClassId;
+			const ownerLevel = ownerId ? classLevel(c, ownerId) : level(c);
+			const max = evaluateFormula(resourceAtLevel(r, ownerLevel).max, {
+				values: {
+					...values,
+					"@classLevel": ownerLevel
+				},
 				classLevel: (i) => classLevel(c, i)
 			});
 			return field === "max" ? max : Math.max(0, max - (c.resourceSpent?.[id] || 0));
@@ -23833,13 +23859,16 @@ function classRuleFor(c, id) {
 }
 function hbResources(c) {
 	const map = /* @__PURE__ */ new Map();
-	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) map.set(r.id, {
-		key: r.id,
-		name: r.name,
-		max: Math.max(0, Math.floor(hbValue(c, r.max, e.id))),
-		isShortRest: r.restore.includes("short_rest"),
-		isLongRest: r.restore.includes("long_rest")
-	});
+	for (const e of activeHomebrew(c)) for (const r of e.resources || []) if (hbEnabled(c, r, e) && r.showOnSheet !== false) {
+		const unlocked = resourceAtLevel(r, e.type === "class" ? classLevel(c, e.id) : e.parentClassId ? classLevel(c, e.parentClassId) : level(c));
+		map.set(r.id, {
+			key: r.id,
+			name: r.name,
+			max: Math.max(0, Math.floor(hbValue(c, unlocked.max, e.id))),
+			isShortRest: unlocked.restore.includes("short_rest"),
+			isLongRest: unlocked.restore.includes("long_rest")
+		});
+	}
 	for (const source of activeHomebrew(c)) if (source.type === "class" || source.parentClassId) {
 		for (const grant of source.spellGrants || []) if (grant.uses && grant.level <= classLevel(c, source.type === "class" ? source.id : source.parentClassId || "")) {
 			const key = source.id + ":spell:" + grant.spellId;
@@ -48505,6 +48534,124 @@ function unzipSync(data, opts) {
 	return files;
 }
 //#endregion
+//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
+	points: "22 7 13.5 15.5 8.5 10.5 2 17",
+	key: "126l90"
+}], ["polyline", {
+	points: "16 7 22 7 22 13",
+	key: "kwv8wd"
+}]]);
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
+	["line", {
+		x1: "21",
+		x2: "14",
+		y1: "4",
+		y2: "4",
+		key: "obuewd"
+	}],
+	["line", {
+		x1: "10",
+		x2: "3",
+		y1: "4",
+		y2: "4",
+		key: "1q6298"
+	}],
+	["line", {
+		x1: "21",
+		x2: "12",
+		y1: "12",
+		y2: "12",
+		key: "1iu8h1"
+	}],
+	["line", {
+		x1: "8",
+		x2: "3",
+		y1: "12",
+		y2: "12",
+		key: "ntss68"
+	}],
+	["line", {
+		x1: "21",
+		x2: "16",
+		y1: "20",
+		y2: "20",
+		key: "14d8ph"
+	}],
+	["line", {
+		x1: "12",
+		x2: "3",
+		y1: "20",
+		y2: "20",
+		key: "m0wm8r"
+	}],
+	["line", {
+		x1: "14",
+		x2: "14",
+		y1: "2",
+		y2: "6",
+		key: "14e1ph"
+	}],
+	["line", {
+		x1: "8",
+		x2: "8",
+		y1: "10",
+		y2: "14",
+		key: "1i6ji0"
+	}],
+	["line", {
+		x1: "16",
+		x2: "16",
+		y1: "18",
+		y2: "22",
+		key: "1lctlv"
+	}]
+]);
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var FileText = createLucideIcon("FileText", [
+	["path", {
+		d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+		key: "1rqfz7"
+	}],
+	["path", {
+		d: "M14 2v4a2 2 0 0 0 2 2h4",
+		key: "tnqrlb"
+	}],
+	["path", {
+		d: "M10 9H8",
+		key: "b1mrlr"
+	}],
+	["path", {
+		d: "M16 13H8",
+		key: "t4e002"
+	}],
+	["path", {
+		d: "M16 17H8",
+		key: "z1uh3a"
+	}]
+]);
+//#endregion
 //#region app/homebrewValidation.ts
 function validateHomebrew(entities, officialIds = []) {
 	const problems = [], ids = /* @__PURE__ */ new Set(), all = new Set([...editableHomebrew(entities.filter((e) => e && typeof e === "object")).map((e) => e.id), ...officialIds]);
@@ -48740,6 +48887,36 @@ function validateHomebrew(entities, officialIds = []) {
 		ref(e.id, e.parentClassId);
 		ref(e.id, e.parentRaceId);
 		for (const id of e.references || []) ref(e.id, id);
+	}
+	const flatRules = editableHomebrew(entities.filter((e) => e && typeof e === "object"));
+	const resourceIds = new Set(flatRules.flatMap((element) => (element.resources || []).map((resource) => resource.id)));
+	for (const element of flatRules) {
+		for (const grant of element.spellGrants || []) if (!Number.isInteger(grant.level) || grant.level < 1 || grant.level > 20 || !all.has(grant.spellId) && !all.has("official:spell:" + grant.spellId) || grant.uses !== void 0 && (!Number.isInteger(grant.uses) || grant.uses < 1 || grant.uses > 20)) add(element.id, "Заклинание способности: проверьте заклинание, уровень и число применений");
+		for (const effect of element.effects || []) formula(element.id, effect.formula);
+		for (const attack of element.attacks || []) formula(element.id, attack.saveDc);
+		for (const action of [...element.actions || [], ...element.attacks || []]) if (action.cost && (!resourceIds.has(action.cost.resource) || !Number.isInteger(action.cost.amount) || action.cost.amount < 1)) add(element.id, "Расход: выберите существующий ресурс и целое число применений больше нуля");
+		for (const resource of element.resources || []) {
+			if (resource.progression !== void 0 && !Array.isArray(resource.progression)) {
+				add(element.id, "Улучшения ресурса: требуется список");
+				continue;
+			}
+			const levels = /* @__PURE__ */ new Set();
+			for (const step of resource.progression || []) {
+				if (!step || !Number.isInteger(step.level) || step.level < 1 || step.level > 20 || levels.has(step.level)) {
+					add(element.id, "Улучшения ресурса: уникальные уровни от 1 до 20");
+					continue;
+				}
+				levels.add(step.level);
+				formula(element.id, step.max);
+				if (step.restore !== void 0 && (!Array.isArray(step.restore) || step.restore.some((value) => ![
+					"short_rest",
+					"long_rest",
+					"dawn",
+					"initiative",
+					"manual"
+				].includes(value)))) add(element.id, "Улучшения ресурса: выберите способ восстановления");
+			}
+		}
 	}
 	if (!problems.length) {
 		const flat = editableHomebrew(entities), byId = new Map(flat.map((e) => [e.id, e])), done = /* @__PURE__ */ new Set(), path = /* @__PURE__ */ new Set();
@@ -53834,6 +54011,128 @@ var shamanExample_default = {
 	]
 };
 //#endregion
+//#region app/HomebrewValueInput.tsx
+var sources = {
+	fixed: "Постоянное число",
+	"@pb": "Бонус мастерства",
+	"@classLevel": "Уровень этого класса",
+	"@level": "Общий уровень персонажа",
+	"floor(@classLevel / 2)": "Половина уровня класса (вниз)",
+	...Object.fromEntries(Object.entries(abilityLabels).map(([id, label]) => ["@mod." + id, "Модификатор: " + label])),
+	dice: "Бросок кости",
+	custom: "Своя формула"
+};
+function readSimpleValue(value) {
+	const text = String(value).trim();
+	if (text !== "" && Number.isFinite(Number(text))) return {
+		source: "fixed",
+		amount: Number(text),
+		bonus: 0,
+		dice: 6
+	};
+	for (const source of Object.keys(sources).filter((key) => key.startsWith("@") || key.startsWith("floor("))) {
+		if (text === source) return {
+			source,
+			amount: 1,
+			bonus: 0,
+			dice: 6
+		};
+		if (text.startsWith(source + " + ") || text.startsWith(source + " - ")) {
+			const tail = text.slice(source.length).replace(/\s/g, "");
+			if (/^[+-]\d+(\.\d+)?$/.test(tail)) return {
+				source,
+				amount: 1,
+				bonus: Number(tail),
+				dice: 6
+			};
+		}
+	}
+	const dice = /^(\d+)d(\d+)(?:\s*([+-])\s*(\d+))?$/.exec(text);
+	if (dice) return {
+		source: "dice",
+		amount: Number(dice[1]),
+		bonus: Number(dice[4] || 0) * (dice[3] === "-" ? -1 : 1),
+		dice: Number(dice[2])
+	};
+	return {
+		source: "custom",
+		amount: 1,
+		bonus: 0,
+		dice: 6
+	};
+}
+function simpleValueFormula(source, amount, bonus, dice) {
+	if (source === "fixed") return String(amount);
+	return (source === "dice" ? `${amount}d${dice}` : source) + (bonus ? ` ${bonus < 0 ? "-" : "+"} ${Math.abs(bonus)}` : "");
+}
+function HomebrewValueInput({ value, onChange, label }) {
+	const parsed = readSimpleValue(value), [manual, setManual] = useState(false);
+	const mode = manual ? "custom" : parsed.source;
+	const patch = (p) => {
+		const next = {
+			...parsed,
+			...p
+		};
+		onChange(simpleValueFormula(next.source, next.amount, next.bonus, next.dice));
+	};
+	return /* @__PURE__ */ jsxs("div", {
+		className: "hb-value-builder",
+		children: [/* @__PURE__ */ jsx("select", {
+			"aria-label": label + ": способ расчёта",
+			value: mode,
+			onChange: (event) => {
+				const source = event.target.value;
+				setManual(source === "custom");
+				if (source !== "custom") patch({ source });
+			},
+			children: Object.entries(sources).map(([id, name]) => /* @__PURE__ */ jsx("option", {
+				value: id,
+				children: name
+			}, id))
+		}), mode === "custom" ? /* @__PURE__ */ jsx(HomebrewCommandInput, {
+			label,
+			value: String(value),
+			onChange
+		}) : /* @__PURE__ */ jsxs("div", {
+			className: "hb-value-fields",
+			children: [
+				mode === "fixed" || mode === "dice" ? /* @__PURE__ */ jsxs("label", { children: [mode === "dice" ? "Количество костей" : "Значение", /* @__PURE__ */ jsx("input", {
+					"aria-label": label,
+					type: "number",
+					min: mode === "dice" ? 1 : void 0,
+					max: mode === "dice" ? 100 : void 0,
+					value: parsed.amount,
+					onChange: (event) => patch({ amount: Number(event.target.value) })
+				})] }) : null,
+				mode === "dice" && /* @__PURE__ */ jsxs("label", { children: ["Кость", /* @__PURE__ */ jsx("select", {
+					"aria-label": label + ": кость",
+					value: parsed.dice,
+					onChange: (event) => patch({ dice: Number(event.target.value) }),
+					children: [...new Set([
+						4,
+						6,
+						8,
+						10,
+						12,
+						20,
+						100,
+						parsed.dice
+					])].sort((a, b) => a - b).map((die) => /* @__PURE__ */ jsxs("option", {
+						value: die,
+						children: ["к", die]
+					}, die))
+				})] }),
+				mode !== "fixed" && /* @__PURE__ */ jsxs("label", { children: ["Дополнительный бонус", /* @__PURE__ */ jsx("input", {
+					"aria-label": label + ": бонус",
+					type: "number",
+					value: parsed.bonus,
+					onChange: (event) => patch({ bonus: Number(event.target.value) })
+				})] })
+			]
+		})]
+	});
+}
+//#endregion
 //#region app/HomebrewMagicWorkspace.tsx
 function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, featureId }) {
 	const [modifier, setModifier] = useState(3), [previewLevel, setPreviewLevel] = useState(level), [query, setQuery] = useState("");
@@ -54009,10 +54308,48 @@ var primaryClassTabs = [
 	"Основное",
 	"Развитие и способности",
 	"Заклинания",
-	"Связи",
 	"Описание",
 	"Проверка"
 ];
+var primaryTabs = (type) => ["class", "subclass"].includes(type) ? primaryClassTabs : [
+	"Основное",
+	"Механика",
+	"Заклинания",
+	"Описание",
+	"Проверка"
+];
+var sectionGuide = {
+	"Основное": {
+		icon: BookOpen,
+		description: "Задайте образ и базовые правила. Способности и их улучшения можно добавить следующим шагом."
+	},
+	"Развитие и способности": {
+		icon: TrendingUp,
+		description: "Выберите уровень и добавьте то, что получает герой. Раскройте способность, чтобы настроить её действие, выборы и улучшения."
+	},
+	"Заклинания": {
+		icon: Sparkles,
+		description: "Настройте магию и доступные заклинания. Заклинания отдельной способности можно добавить прямо в её карточке."
+	},
+	"Механика": {
+		icon: WandSparkles,
+		description: "Выберите, что получает герой: бонус, действие, заклинание или запас применений."
+	},
+	"Описание": {
+		icon: FileText,
+		description: "Напишите текст, который игрок увидит на листе. Броски и интерактивные кнопки добавляются отдельно."
+	},
+	"Проверка": {
+		icon: ShieldCheck,
+		description: "Проверьте правила и посмотрите, как они действуют на текущего персонажа перед сохранением."
+	}
+};
+function SectionIcon({ name }) {
+	return /* @__PURE__ */ jsx(sectionGuide[name]?.icon || SlidersHorizontal, {
+		size: 18,
+		"aria-hidden": "true"
+	});
+}
 var tagNames = {
 	acid: "Кислота",
 	bludgeoning: "Дробящий",
@@ -54077,10 +54414,10 @@ function Select({ value, onChange, options, label }) {
 function Formula({ value, onChange, label = "Формула" }) {
 	return /* @__PURE__ */ jsx(Field, {
 		label,
-		help: "Введите @ для поиска переменных и функций. Поддерживаются арифметика, сравнения и кости (1d8). Предпросмотр показывает среднее.",
-		children: /* @__PURE__ */ jsx(HomebrewCommandInput, {
+		help: "Выберите, от чего зависит значение. Для сложных правил есть режим «Своя формула» с подсказками через @.",
+		children: /* @__PURE__ */ jsx(HomebrewValueInput, {
 			label,
-			value: String(value),
+			value,
 			onChange
 		})
 	});
@@ -54212,65 +54549,68 @@ function Description({ draft, update, entities, character }) {
 				}
 			}
 		}),
-		/* @__PURE__ */ jsxs("fieldset", { children: [
-			/* @__PURE__ */ jsxs("legend", { children: ["Вставить интерактивный тег ", /* @__PURE__ */ jsx(HBHelp, { children: "Выберите тип, затем формулу или объект. Кнопка соберёт тег. Он сохранится в JSON и появится кнопкой в предпросмотре и Homebrew на листе." })] }),
-			/* @__PURE__ */ jsx(Select, {
-				label: "Тип тега",
-				value: tag,
-				onChange: setTag,
-				options: {
-					roll: "Бросок",
-					damage: "Урон",
-					heal: "Лечение",
-					check: "Проверка",
-					save: "Спасбросок",
-					attack: "Атака",
-					resource: "Ресурс",
-					consume: "Потратить ресурс",
-					restore: "Восстановить ресурс",
-					spell: "Заклинание",
-					item: "Предмет",
-					feature: "Способность",
-					entity: "Ссылка",
-					condition: "Состояние",
-					dc: "Сложность",
-					value: "Значение",
-					choice: "Выбор",
-					table: "Таблица",
-					note: "Заметка"
-				}
-			}),
-			/* @__PURE__ */ jsx(Field, {
-				label: "Подпись",
-				children: /* @__PURE__ */ jsx("input", {
-					value: label,
-					onChange: (e) => setLabel(e.target.value)
+		/* @__PURE__ */ jsxs("details", {
+			className: "hb-basic-details",
+			children: [/* @__PURE__ */ jsx("summary", { children: "Добавить бросок или интерактивную кнопку" }), /* @__PURE__ */ jsxs("fieldset", { children: [
+				/* @__PURE__ */ jsxs("legend", { children: ["Вставить интерактивный тег ", /* @__PURE__ */ jsx(HBHelp, { children: "Выберите тип, затем формулу или объект. Кнопка соберёт тег. Он сохранится в JSON и появится кнопкой в предпросмотре и Homebrew на листе." })] }),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Тип тега",
+					value: tag,
+					onChange: setTag,
+					options: {
+						roll: "Бросок",
+						damage: "Урон",
+						heal: "Лечение",
+						check: "Проверка",
+						save: "Спасбросок",
+						attack: "Атака",
+						resource: "Ресурс",
+						consume: "Потратить ресурс",
+						restore: "Восстановить ресурс",
+						spell: "Заклинание",
+						item: "Предмет",
+						feature: "Способность",
+						entity: "Ссылка",
+						condition: "Состояние",
+						dc: "Сложность",
+						value: "Значение",
+						choice: "Выбор",
+						table: "Таблица",
+						note: "Заметка"
+					}
+				}),
+				/* @__PURE__ */ jsx(Field, {
+					label: "Подпись",
+					children: /* @__PURE__ */ jsx("input", {
+						value: label,
+						onChange: (e) => setLabel(e.target.value)
+					})
+				}),
+				/* @__PURE__ */ jsx(Formula, {
+					value: formula,
+					onChange: setFormula
+				}),
+				/* @__PURE__ */ jsx(RefPicker, {
+					value: ref,
+					onChange: setRef,
+					entities
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => {
+						const clean = (s) => s.replace(/["\[\]]/g, "");
+						insert(`[[${tag} ${[
+							"roll",
+							"damage",
+							"heal",
+							"value",
+							"dc"
+						].includes(tag) ? `formula="${clean(formula)}"` : ["consume", "restore"].includes(tag) ? `resource="${clean(ref)}" amount="1"` : tag === "check" ? "ability=\"int\"" : tag === "save" ? `ability="dex" dc="${clean(formula)}"` : tag === "note" ? `text="${clean(label)}"` : `id="${clean(ref)}"`} label="${clean(label)}"]]`);
+					},
+					children: "Вставить тег"
 				})
-			}),
-			/* @__PURE__ */ jsx(Formula, {
-				value: formula,
-				onChange: setFormula
-			}),
-			/* @__PURE__ */ jsx(RefPicker, {
-				value: ref,
-				onChange: setRef,
-				entities
-			}),
-			/* @__PURE__ */ jsx("button", {
-				type: "button",
-				onClick: () => {
-					const clean = (s) => s.replace(/["\[\]]/g, "");
-					insert(`[[${tag} ${[
-						"roll",
-						"damage",
-						"heal",
-						"value",
-						"dc"
-					].includes(tag) ? `formula="${clean(formula)}"` : ["consume", "restore"].includes(tag) ? `resource="${clean(ref)}" amount="1"` : tag === "check" ? "ability=\"int\"" : tag === "save" ? `ability="dex" dc="${clean(formula)}"` : tag === "note" ? `text="${clean(label)}"` : `id="${clean(ref)}"`} label="${clean(label)}"]]`);
-				},
-				children: "Вставить тег"
-			})
-		] }),
+			] })]
+		}),
 		/* @__PURE__ */ jsx("h3", { children: "Предпросмотр" }),
 		/* @__PURE__ */ jsx(HomebrewText, {
 			text: draft.description,
@@ -54551,10 +54891,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 				/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [
 					/* @__PURE__ */ jsx("p", {
 						className: "eyebrow",
-						children: "Homebrew 2.0"
+						children: "Homebrew · ваши правила"
 					}),
 					/* @__PURE__ */ jsx("h1", { children: "Мастерская правил" }),
-					/* @__PURE__ */ jsx("p", { children: "Отдельная библиотека JSON для любого числа персонажей. Экспорт элемента включает его зависимости. Для переноса персонажа на другое устройство импортируйте там и библиотеку." })
+					/* @__PURE__ */ jsx("p", { children: "Создавайте свои классы, способности и заклинания. Настройте, что получает герой, — мастерская сама соберёт правила для его листа." })
 				] }), /* @__PURE__ */ jsx("button", {
 					onClick: onClose,
 					children: "Назад"
@@ -54585,9 +54925,12 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 							}, "HeroList-homebrew.json"),
 							children: "Экспорт библиотеки"
 						}),
-						/* @__PURE__ */ jsx("button", {
-							onClick: () => setRegistry(!registry),
-							children: "Справочник ID"
+						/* @__PURE__ */ jsxs("details", {
+							className: "hb-advanced-tools",
+							children: [/* @__PURE__ */ jsx("summary", { children: "Для опытных авторов" }), /* @__PURE__ */ jsx("button", {
+								onClick: () => setRegistry(!registry),
+								children: "Справочник ID"
+							})]
 						}),
 						/* @__PURE__ */ jsx("small", { children: saveState === "saving" ? "Сохраняется…" : saveState === "error" ? "Не удалось синхронизировать" : "Сохранённая библиотека" })
 					]
@@ -54697,12 +55040,15 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													onClick: save,
 													children: saveState === "saving" ? "Сохраняется…" : hasUnsavedChanges ? "Сохранить изменения" : "Сохранено"
 												}),
-												savedDraft && /* @__PURE__ */ jsx("button", {
-													className: "hb-danger hb-delete-saved",
-													onClick: () => {
-														remove(savedDraft);
-													},
-													children: "Удалить Homebrew"
+												savedDraft && /* @__PURE__ */ jsxs("details", {
+													className: "hb-document-menu",
+													children: [/* @__PURE__ */ jsx("summary", { children: "Ещё" }), /* @__PURE__ */ jsx("button", {
+														className: "hb-danger hb-delete-saved",
+														onClick: () => {
+															remove(savedDraft);
+														},
+														children: "Удалить Homebrew"
+													})]
 												}),
 												/* @__PURE__ */ jsx("button", {
 													onClick: closeDraft,
@@ -54713,17 +55059,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), /* @__PURE__ */ jsxs("nav", {
 										className: "hb-tabs",
 										"aria-label": "Разделы редактора",
-										children: [editorTabs(draft.type).filter((t) => !["class", "subclass"].includes(draft.type) || primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+										children: [editorTabs(draft.type).filter((t) => primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsxs("button", {
 											"aria-pressed": tab === t,
 											onClick: () => {
 												setTab(t);
 												if (t === "Код") setCode(JSON.stringify(draft, null, 2));
 											},
-											children: t
-										}, t)), ["class", "subclass"].includes(draft.type) && /* @__PURE__ */ jsxs("details", {
+											children: [/* @__PURE__ */ jsx(SectionIcon, { name: t }), /* @__PURE__ */ jsx("span", { children: t })]
+										}, t)), /* @__PURE__ */ jsxs("details", {
 											className: "hb-advanced-tabs",
-											open: !primaryClassTabs.includes(tab),
-											children: [/* @__PURE__ */ jsx("summary", { children: "Дополнительно" }), /* @__PURE__ */ jsx("div", { children: editorTabs(draft.type).filter((t) => !primaryClassTabs.includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+											open: !primaryTabs(draft.type).includes(tab),
+											children: [/* @__PURE__ */ jsx("summary", { children: "Дополнительно" }), /* @__PURE__ */ jsx("div", { children: editorTabs(draft.type).filter((t) => !primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
 												"aria-pressed": tab === t,
 												onClick: () => {
 													setTab(t);
@@ -54733,6 +55079,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											}, t)) })]
 										})]
 									})]
+								}),
+								sectionGuide[tab] && /* @__PURE__ */ jsxs("div", {
+									className: "hb-section-intro",
+									children: [/* @__PURE__ */ jsx("span", {
+										className: "hb-section-icon",
+										children: /* @__PURE__ */ jsx(SectionIcon, { name: tab })
+									}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: tab }), /* @__PURE__ */ jsx("p", { children: sectionGuide[tab].description })] })]
 								}),
 								tab === "Основное" && /* @__PURE__ */ jsxs("div", {
 									className: "hb-fields",
@@ -54800,15 +55153,18 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 												onChange: (e) => update({ name: e.target.value })
 											})
 										}),
-										/* @__PURE__ */ jsxs(Field, {
-											label: "ID",
-											help: "Присваивается автоматически, не меняется при переименовании. Для независимого объекта используйте Дублировать.",
-											children: [/* @__PURE__ */ jsx("input", {
-												readOnly: true,
-												value: draft.id
-											}), /* @__PURE__ */ jsx("button", {
-												onClick: () => navigator.clipboard?.writeText(draft.id),
-												children: "Копировать ID"
+										/* @__PURE__ */ jsxs("details", {
+											className: "hb-basic-details",
+											children: [/* @__PURE__ */ jsx("summary", { children: "Технический идентификатор" }), /* @__PURE__ */ jsxs(Field, {
+												label: "ID",
+												help: "Присваивается автоматически, не меняется при переименовании. Для независимого объекта используйте Дублировать.",
+												children: [/* @__PURE__ */ jsx("input", {
+													readOnly: true,
+													value: draft.id
+												}), /* @__PURE__ */ jsx("button", {
+													onClick: () => navigator.clipboard?.writeText(draft.id),
+													children: "Копировать ID"
+												})]
 											})]
 										}),
 										[
@@ -55036,7 +55392,12 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											"weight",
 											"price"
 										].map((key) => /* @__PURE__ */ jsx(Field, {
-											label: key,
+											label: {
+												itemType: "Тип предмета",
+												rarity: "Редкость",
+												weight: "Вес",
+												price: "Стоимость"
+											}[key],
 											children: /* @__PURE__ */ jsx("input", {
 												value: draft[key] || "",
 												onChange: (e) => update({ [key]: ["weight", "price"].includes(key) ? Number(e.target.value) : e.target.value })
@@ -55449,6 +55810,42 @@ function SpellMechanicsEditor({ draft, update }) {
 	});
 }
 function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) {
+	const [adding, setAdding] = useState("");
+	const parent = entities.find((element) => element.features?.some((feature) => feature.id === draft.id));
+	const linkedCount = parent ? linkedChoicesForFeature(parent, draft.id).length : 0;
+	const resourceOptions = editableHomebrew(entities).flatMap((element) => (element.resources || []).map((resource) => [resource.id, resource.name + " · " + element.name]));
+	const mechanicKinds = [
+		[
+			"effects",
+			"Изменить показатели",
+			"Хиты, защита, скорость, навыки и владения"
+		],
+		[
+			"resources",
+			"Ограничить применения",
+			"Счётчик и восстановление после отдыха"
+		],
+		[
+			"attacks",
+			"Добавить атаку",
+			"Урон, попадание или спасбросок"
+		],
+		[
+			"choices",
+			"Дать выбор",
+			"Варианты и развитие способности"
+		],
+		[
+			"spells",
+			"Дать заклинания",
+			"В том числе всегда подготовленные"
+		],
+		[
+			"actions",
+			"Добавить действие",
+			"Активация и расход общего ресурса"
+		]
+	];
 	const setEffect = (i, patch) => update({ effects: draft.effects.map((e, n) => n === i ? {
 		...e,
 		...patch
@@ -55456,8 +55853,17 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 	return /* @__PURE__ */ jsxs("div", {
 		className: "hb-mechanics",
 		children: [
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.effects?.length,
+			/* @__PURE__ */ jsxs("div", {
+				className: "hb-mechanic-launcher",
+				children: [/* @__PURE__ */ jsx("h4", { children: "Что делает эта способность?" }), /* @__PURE__ */ jsx("div", { children: mechanicKinds.filter(([key]) => (!hideChoices || key !== "choices") && (key !== "spells" || ["class", "subclass"].includes(draft.type) || !!draft.parentClassId)).map(([key, title, description]) => /* @__PURE__ */ jsxs("button", {
+					type: "button",
+					"aria-pressed": adding === key,
+					onClick: () => setAdding(adding === key ? "" : key),
+					children: [/* @__PURE__ */ jsx("strong", { children: title }), /* @__PURE__ */ jsx("small", { children: description })]
+				}, key)) })]
+			}),
+			(!!draft.effects?.length || adding === "effects") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", draft.effects?.length || 0] }),
 					/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
@@ -55498,7 +55904,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							label: "Тип урона эффекта",
 							value: e.damage || "fire",
 							onChange: (damage) => setEffect(i, { damage }),
-							options: Object.fromEntries(damageTypes.map((t) => [t, t]))
+							options: Object.fromEntries(damageTypes.map((t) => [t, tagNames[t] || t]))
 						}),
 						e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
 							label: "Состояние",
@@ -55544,7 +55950,22 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							value: e.range || 60,
 							onChange: (event) => setEffect(i, { range: Number(event.target.value) })
 						})] }),
-						/* @__PURE__ */ jsx(Formula, {
+						![
+							"skill_proficiency",
+							"skill_expertise",
+							"saving_throw_proficiency",
+							"weapon_proficiency",
+							"weapon_group_proficiency",
+							"armor_proficiency",
+							"tool_proficiency",
+							"language",
+							"damage_resistance",
+							"damage_immunity",
+							"damage_vulnerability",
+							"condition_immunity",
+							"sense",
+							"initiative_advantage"
+						].includes(e.type) && !e.type.startsWith("grant_") && /* @__PURE__ */ jsx(Formula, {
 							value: e.formula ?? e.value ?? 0,
 							onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
 								formula: v,
@@ -55572,8 +55993,8 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.resources?.length,
+			(!!draft.resources?.length || adding === "resources") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы · ", draft.resources?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Ресурсы" }),
@@ -55588,7 +56009,6 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								value: r.name,
 								onChange: (e) => patch({ name: e.target.value })
 							}),
-							/* @__PURE__ */ jsx("code", { children: r.id }),
 							/* @__PURE__ */ jsx(Formula, {
 								label: "Максимум ресурса",
 								value: r.max,
@@ -55621,6 +56041,86 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 									onChange: (e) => patch({ level: Number(e.target.value) })
 								})
 							}),
+							/* @__PURE__ */ jsxs("details", {
+								className: "hb-resource-progression",
+								children: [
+									/* @__PURE__ */ jsxs("summary", { children: ["Улучшения на следующих уровнях · ", r.progression?.length || 0] }),
+									/* @__PURE__ */ jsx("p", { children: "Укажите только уровни, на которых меняется число применений или восстановление. Между ними действует последняя ступень." }),
+									(r.progression || []).map((step, index) => /* @__PURE__ */ jsxs("fieldset", { children: [
+										/* @__PURE__ */ jsx(Field, {
+											label: "С уровня класса",
+											children: /* @__PURE__ */ jsx("input", {
+												"aria-label": "Уровень улучшения ресурса",
+												type: "number",
+												min: 1,
+												max: 20,
+												value: step.level,
+												onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+													...row,
+													level: Number(event.target.value)
+												} : row) })
+											})
+										}),
+										/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: step.max !== void 0,
+											onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												max: event.target.checked ? r.max : void 0
+											} : row) })
+										}), "Изменить максимум"] }),
+										step.max !== void 0 && /* @__PURE__ */ jsx(Formula, {
+											label: "Новый максимум ресурса",
+											value: step.max,
+											onChange: (max) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												max
+											} : row) })
+										}),
+										/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: step.restore !== void 0,
+											onChange: (event) => patch({ progression: r.progression.map((row, j) => j === index ? {
+												...row,
+												restore: event.target.checked ? [...r.restore] : void 0
+											} : row) })
+										}), "Изменить восстановление"] }),
+										step.restore && /* @__PURE__ */ jsx("div", {
+											className: "hb-toolbar",
+											children: [
+												["short_rest", "Короткий отдых"],
+												["long_rest", "Долгий отдых"],
+												["manual", "Вручную"]
+											].map(([id, name]) => /* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-pressed": step.restore.includes(id),
+												onClick: () => patch({ progression: r.progression.map((row, j) => j === index ? {
+													...row,
+													restore: step.restore.includes(id) ? step.restore.filter((value) => value !== id) : [...step.restore, id]
+												} : row) }),
+												children: name
+											}, id))
+										}),
+										/* @__PURE__ */ jsx("button", {
+											type: "button",
+											onClick: () => patch({ progression: r.progression.filter((_, j) => j !== index) }),
+											children: "Удалить улучшение"
+										})
+									] }, index)),
+									/* @__PURE__ */ jsx("button", {
+										type: "button",
+										disabled: (r.progression?.length || 0) >= 20,
+										onClick: () => {
+											const next = Array.from({ length: 20 }, (_, i) => i + 1).find((level) => level > (r.level || 1) && !r.progression?.some((row) => row.level === level));
+											if (next) patch({ progression: [...r.progression || [], {
+												level: next,
+												max: r.max
+											}] });
+										},
+										children: "+ Улучшение ресурса"
+									})
+								]
+							}),
 							/* @__PURE__ */ jsx(ConditionEditor, {
 								label: "Условие ресурса",
 								elements: entities,
@@ -55645,8 +56145,8 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.attacks?.length,
+			(!!draft.attacks?.length || adding === "attacks") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Атаки · ", draft.attacks?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Атаки" }),
@@ -55661,7 +56161,6 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								value: a.name,
 								onChange: (e) => patch({ name: e.target.value })
 							}),
-							/* @__PURE__ */ jsx("code", { children: a.id }),
 							/* @__PURE__ */ jsx(Select, {
 								label: "Характеристика атаки",
 								value: a.ability,
@@ -55694,7 +56193,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 										...x,
 										type
 									} : x) }),
-									options: Object.fromEntries(damageTypes.map((x) => [x, x]))
+									options: Object.fromEntries(damageTypes.map((x) => [x, tagNames[x] || x]))
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => patch({ damage: a.damage.filter((_, n) => n !== j) }),
@@ -55773,13 +56272,13 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			!hideChoices && /* @__PURE__ */ jsx(ChoicesEditor, {
+			!hideChoices && (!!draft.choices?.length || linkedCount > 0 || adding === "choices") && /* @__PURE__ */ jsx(ChoicesEditor, {
 				draft,
 				update,
 				depth
 			}),
-			/* @__PURE__ */ jsxs("details", {
-				open: !!draft.actions?.length,
+			(!!draft.actions?.length || adding === "actions") && /* @__PURE__ */ jsxs("details", {
+				open: true,
 				children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Действия · ", draft.actions?.length || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Действия" }),
@@ -55814,9 +56313,22 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 								} : void 0 }),
 								options: {
 									"": "Без траты",
-									...Object.fromEntries((draft.resources || []).map((r) => [r.id, r.name]))
+									...Object.fromEntries([...resourceOptions, ...(draft.resources || []).map((r) => [r.id, r.name])])
 								}
 							}),
+							/* @__PURE__ */ jsx(Fragment$1, { children: a.cost && /* @__PURE__ */ jsx(Field, {
+								label: "Расход за применение",
+								children: /* @__PURE__ */ jsx("input", {
+									"aria-label": "Расход ресурса действия",
+									type: "number",
+									min: 1,
+									value: a.cost.amount,
+									onChange: (event) => patch({ cost: {
+										...a.cost,
+										amount: Math.max(1, Number(event.target.value) || 1)
+									} })
+								})
+							}) }),
 							/* @__PURE__ */ jsx("textarea", {
 								value: a.description || "",
 								onChange: (e) => patch({ description: e.target.value })
@@ -55836,6 +56348,14 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 						children: "+ Действие"
 					})
 				]
+			}),
+			(!!draft.spellGrants?.length || adding === "spells") && /* @__PURE__ */ jsxs("details", {
+				open: true,
+				children: [/* @__PURE__ */ jsxs("summary", { children: ["Заклинания способности · ", draft.spellGrants?.length || 0] }), /* @__PURE__ */ jsx(SpellGrantsEditor, {
+					draft,
+					update,
+					entities
+				})]
 			}),
 			draft.type === "table" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 				/* @__PURE__ */ jsx("h3", { children: "Таблица" }),
@@ -55874,9 +56394,9 @@ function HomebrewOnSheet({ character, onChange }) {
 	const choiceStatuses = homebrewChoiceStatuses(character);
 	const choiceMissing = choiceStatuses.reduce((sum, status) => sum + status.missing, 0);
 	const spend = (id, amount) => {
-		const resource = entities.flatMap((e) => e.resources || []).find((r) => r.id === id);
+		const resource = hbResources(character).find((r) => r.key === id);
 		if (!resource) return;
-		const max = hbValue(character, resource.max);
+		const max = resource.max;
 		const used = character.resourceSpent?.[id] || 0;
 		if (amount > max - used) return;
 		onChange({
@@ -55996,7 +56516,7 @@ function HomebrewOnSheet({ character, onChange }) {
 				onResource: spend
 			})] }, e.id)),
 			entities.flatMap((e) => (e.actions || []).map((a) => /* @__PURE__ */ jsxs("button", {
-				disabled: !!a.cost && hbValue(character, e.resources?.find((r) => r.id === a.cost.resource)?.max) - (character.resourceSpent?.[a.cost.resource] || 0) < a.cost.amount,
+				disabled: !!a.cost && (hbResources(character).find((r) => r.key === a.cost.resource)?.max || 0) - (character.resourceSpent?.[a.cost.resource] || 0) < a.cost.amount,
 				onClick: () => a.cost && spend(a.cost.resource, a.cost.amount),
 				title: a.description,
 				children: [a.name, a.cost ? " · −" + a.cost.amount : ""]
@@ -56504,7 +57024,30 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 		className: "hb-development",
 		children: [
 			/* @__PURE__ */ jsx("h3", { children: "Развитие класса" }),
-			/* @__PURE__ */ jsx("p", { children: "Уровень теперь является главным экраном: способность, её выборы, варианты и дальнейшие ступени находятся рядом. Отдельные ability-объекты остаются в JSON для совместимости, но больше не показываются как самостоятельная куча записей." }),
+			/* @__PURE__ */ jsx("p", { children: "Выберите уровень и добавьте то, что получает герой. Внутри способности можно настроить бонус, варианты выбора, заклинания или число применений." }),
+			/* @__PURE__ */ jsxs("details", {
+				className: "hb-development-overview",
+				children: [/* @__PURE__ */ jsx("summary", { children: "Всё развитие от 1 до 20 уровня" }), /* @__PURE__ */ jsx("div", {
+					className: "hb-magic-table-wrap",
+					children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("th", { children: "Уровень" }), /* @__PURE__ */ jsx("th", { children: "Что получает герой" })] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, i) => i + 1).map((n) => {
+						const names = [
+							...(draft.features || []).filter((f) => f.level === n).map((f) => f.name),
+							...(draft.choices || []).filter((c) => (c.level || 1) === n).map((c) => `${c.name}: выбрать ${c.count}`),
+							...(draft.advancement?.[n] || []).map((row) => row.type === "asi_or_feat" ? "Повышение характеристик или черта" : entities.find((e) => e.id === row.id)?.name || {
+								subclass: "Выбор подкласса",
+								choice: "Выбор"
+							}[row.type] || "Способность из библиотеки"),
+							...draft.subclass?.chooseAtLevel === n && draft.type === "class" ? ["Выбор подкласса"] : []
+						];
+						return /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => setLevel(n),
+							"aria-label": `Редактировать уровень ${n}`,
+							children: n
+						}) }), /* @__PURE__ */ jsx("td", { children: [...new Set(names)].join(" · ") || "Пока ничего не добавлено" })] }, n);
+					}) })] })
+				})]
+			}),
 			/* @__PURE__ */ jsx("nav", {
 				className: "hb-level-picker",
 				"aria-label": "Уровни класса",
@@ -56527,7 +57070,7 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: featureCount }), " способн."] }),
 						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: choiceCount }), " выбор."] }),
 						linkedCount > 0 && /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: linkedCount }), " связей"] }),
-						hasAsi && /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("b", { children: "ASI" }) })
+						hasAsi && /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("b", { children: "Характеристики / черта" }) })
 					]
 				})]
 			}),
@@ -56555,10 +57098,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 			}),
 			/* @__PURE__ */ jsxs(HBDisclosure, {
 				className: "hb-basic-details",
-				initialOpen: rows.some((row) => row.type !== "asi_or_feat"),
-				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Выдать существующий объект · ", linkedCount] }),
+				initialOpen: false,
+				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Использовать готовую способность или ресурс · ", linkedCount] }),
 				children: [
-					/* @__PURE__ */ jsx("p", { children: "Редкий технический случай: привяжите уже существующий ресурс, атаку, заклинание или другую сущность. Обычные способности и их варианты создаются выше." }),
+					/* @__PURE__ */ jsx("p", { children: "Выберите то, что уже создано в библиотеке. Герой получит это на выбранном уровне." }),
 					rows.map((row, i) => row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
 						className: "hb-linked-row",
 						children: [
@@ -56643,7 +57186,8 @@ function ClassFeatures({ draft, update, entities, level }) {
 						resources: feature.resources || [],
 						attacks: feature.attacks || [],
 						actions: feature.actions || [],
-						choices: feature.choices || []
+						choices: feature.choices || [],
+						spellGrants: feature.spellGrants || []
 					};
 					const updateFeature = (p, related) => patchFeature(feature.id, Object.fromEntries(Object.entries(p).filter(([key]) => [
 						"name",
@@ -56653,11 +57197,13 @@ function ClassFeatures({ draft, update, entities, level }) {
 						"resources",
 						"attacks",
 						"actions",
-						"choices"
+						"choices",
+						"spellGrants",
+						"showOnSheet"
 					].includes(key))), related);
 					return /* @__PURE__ */ jsx(HBDisclosure, {
 						className: attached.length ? "hb-choice-progression-card" : "hb-feature-card",
-						initialOpen: true,
+						initialOpen: levelFeatures.length === 1 || feature.name === "Новая способность",
 						summary: /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("span", { children: feature.name }), /* @__PURE__ */ jsxs("small", { children: [
 							"С ",
 							feature.level,
@@ -56716,6 +57262,14 @@ function ClassFeatures({ draft, update, entities, level }) {
 										entities
 									})] })
 								}, feature.id + level),
+								/* @__PURE__ */ jsxs("label", {
+									className: "hb-sheet-visibility",
+									children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: feature.showOnSheet !== false,
+										onChange: (event) => patchFeature(feature.id, { showOnSheet: event.target.checked })
+									}), "Показывать текст способности на листе"]
+								}),
 								/* @__PURE__ */ jsx(Mechanics, {
 									draft: virtual,
 									update: updateFeature,
@@ -56961,7 +57515,7 @@ function SpellGrantsEditor({ draft, update, entities }) {
 			children: options.map((spell) => /* @__PURE__ */ jsxs("button", {
 				onClick: () => update({ spellGrants: [...grants, {
 					spellId: spell.id,
-					level: draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1,
+					level: draft.level || (draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1),
 					mode: "known",
 					countsAgainstKnown: false
 				}] }),
@@ -57657,6 +58211,11 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.5.4",
+		publishedAt: "2026-10-06T21:00:00Z",
+		changes: ["Способности Homebrew редактируются через понятные действия. Числа, бонусы и кости можно настроить без формул; технические инструменты перенесены в дополнительные настройки.", "Добавлены улучшения ресурсов по уровням, заклинания внутри способности и расход общего ресурса разными действиями. Всё развитие класса можно посмотреть одной таблицей."]
+	},
 	{
 		version: "1.5.3",
 		publishedAt: "2026-10-06T15:20:00Z",

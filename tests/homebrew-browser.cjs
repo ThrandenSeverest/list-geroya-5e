@@ -182,11 +182,19 @@ const table = {
         .getByRole("button", { name: "Сохранить изменения", exact: true })
         .click();
       assert.ok(await page.getByRole("button", { name: "Сохранено", exact: true }).isDisabled());
+      await page
+        .locator(".hb-document-menu")
+        .getByText("Ещё", { exact: true })
+        .click();
       assert.ok(
         await page
           .getByRole("button", { name: "Удалить Homebrew", exact: true })
           .isVisible(),
       );
+      await page
+        .locator(".hb-document-menu")
+        .getByText("Ещё", { exact: true })
+        .click();
       {
         if (
           !(await page
@@ -222,7 +230,7 @@ const table = {
         assert.ok(await page.getByRole("listbox", { name: "Команды: Описание способности Браузерная способность" }).isVisible());
         await page.keyboard.press("Enter");
         assert.match(await featureDescription.inputValue(), /\[\[damage formula=/);
-        await page.locator(".hb-mechanics > details > summary").filter({hasText: "Действия"}).click();
+        await page.getByRole("button", { name: /Добавить действие/ }).click();
         await page.getByRole("button", { name: "+ Действие", exact: true }).click();
         await page.getByLabel("Название действия").fill("Особое действие");
         await featureDescription.fill("Урон: @dam");

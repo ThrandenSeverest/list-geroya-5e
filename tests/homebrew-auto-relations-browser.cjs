@@ -9,10 +9,10 @@ const entities=require('../app/shamanExample.json').entities;
   await page.route('**/api/account',route=>route.fulfill({json:{authenticated:false}}));
   // No manually configured references, including the old Shaman casting workaround.
   await page.addInitScript(entities=>localStorage.setItem('herolist-homebrew-local-v2',JSON.stringify({version:2,schemaVersion:2,elements:entities.map(element=>({...element,references:[]}))})),entities);
-  await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3998');
+  await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3998');await page.waitForFunction(()=>!document.body.innerText.includes('Проверяем вход'));
   await page.getByRole('button',{name:/^Мой Homebrew/}).click();
   await page.locator('.hb-sidebar-package > button').filter({hasText:'Шаман'}).first().click();
-  await page.getByRole('button',{name:'Связи',exact:true}).click();
+  await page.locator('.hb-advanced-tabs > summary').click();await page.getByRole('button',{name:'Связи',exact:true}).click();
   const graph=page.locator('.hb-editor > .hb-relations-map').first();
   await graph.locator('.hb-graph-node').filter({hasText:'Сакральный фокус'}).filter({hasText:'Способность'}).first().click();
   assert.equal(await graph.locator('.hb-graph-current strong').innerText(),'Сакральный фокус');

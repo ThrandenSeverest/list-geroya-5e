@@ -4,6 +4,8 @@
 import json
 import re
 import sys
+import hashlib
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -44,7 +46,97 @@ def normalize(root: Path) -> None:
             path.write_text(normalized, encoding="utf-8")
 
 
-if len(sys.argv) < 2:
-    raise SystemExit("Usage: normalize-dist-for-compare.py DIST [DIST...]")
-for argument in sys.argv[1:]:
-    normalize(Path(argument))
+
+
+# Build directories can be different (for example, GitHub Actions checks out the
+# repository at another absolute path). Rolldown emits source paths in //#region
+# comments; those harmless comments influence chunk hashes and all chunk imports.
+# Compare contents instead of unreliable filename hashes, without overlooking a
+# changed asset or changed runtime code.
+_HASHED_CHUNK = re.compile(r"-[A-Za-z0-9_-]{8}(?=\.(?:js|css)(?![A-Za-z0-9]))")
+_SOURCE_REGION = re.compile(r"(?m)^//#region[^\r\n]*$")
+
+
+def comparable_content(path: Path) -> bytes:
+    data = path.read_bytes()
+    if path.suffix not in {".js", ".css", ".json", ".html"}:
+        return data
+    try:
+        content = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data
+    if path.suffix == ".js":
+        content = _SOURCE_REGION.sub("//#region [source path]", content)
+    # Module names are compared independently, including multiple assets with the
+    # same prefix (for example the various page-<hash>.js chunks). References in
+    # bundles and RSC manifests are canonicalized consistently.
+    content = _HASHED_CHUNK.sub("-[BUILDHASH]", content)
+    return content.encode("utf-8")
+
+
+def comparable_files(root: Path) -> dict[str, list[tuple[str, bytes]]]:
+    result: dict[str, list[tuple[str, bytes]]] = defaultdict(list)
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        name = _HASHED_CHUNK.sub("-[BUILDHASH]", path.relative_to(root).as_posix())
+        result[name].append((path.relative_to(root).as_posix(), comparable_content(path)))
+    return result
+
+
+def inventory(root: Path) -> dict[str, list[str]]:
+    result = {}
+    for key, entries in comparable_files(root).items():
+        result[key] = sorted(hashlib.sha256(content).hexdigest() for _, content in entries)
+    return result
+
+
+def diagnostic(left: Path, right: Path, key: str) -> None:
+    left_entries = comparable_files(left).get(key, [])
+    right_entries = comparable_files(right).get(key, [])
+    if len(left_entries) != 1 or len(right_entries) != 1:
+        return
+    left_name, left_bytes = left_entries[0]
+    right_name, right_bytes = right_entries[0]
+    try:
+        a = left_bytes.decode("utf-8")
+        b = right_bytes.decode("utf-8")
+    except UnicodeDecodeError:
+        return
+    limit = min(len(a), len(b))
+    pos = 0
+    while pos < limit and a[pos] == b[pos]:
+        pos += 1
+    if pos == limit and len(a) == len(b):
+        return
+    start_at = max(0, pos - 220)
+    end_a = min(len(a), pos + 320)
+    end_b = min(len(b), pos + 320)
+    print(f"    first difference {left_name} vs {right_name} at offset {pos}", file=sys.stderr)
+    print("    committed: " + repr(a[start_at:end_a]), file=sys.stderr)
+    print("    rebuilt:   " + repr(b[start_at:end_b]), file=sys.stderr)
+
+
+def compare(left: Path, right: Path) -> bool:
+    first, second = inventory(left), inventory(right)
+    mismatched = [key for key in sorted(first.keys() | second.keys())
+                  if first.get(key) != second.get(key)]
+    if not mismatched:
+        print("Committed dist and independently rebuilt dist have identical runtime "
+              "content (ignoring build IDs, comments with build paths and "
+              "content-hashed chunk filenames).")
+        return True
+    print(f"Runtime content differs in {len(mismatched)} file groups:", file=sys.stderr)
+    for key in mismatched[:50]:
+        print(f"  {key}: committed={first.get(key, [])} built={second.get(key, [])}",
+              file=sys.stderr)
+        diagnostic(left, right, key)
+    return False
+
+if len(sys.argv) != 3:
+    raise SystemExit("Usage: normalize-dist-for-compare.py COMMITTED_DIST REBUILT_DIST")
+left, right = (Path(arg) for arg in sys.argv[1:])
+for root in (left, right):
+    normalize(root)
+if not compare(left, right):
+    raise SystemExit(1)
