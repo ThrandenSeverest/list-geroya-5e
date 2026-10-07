@@ -182,11 +182,19 @@ const table = {
         .getByRole("button", { name: "Сохранить изменения", exact: true })
         .click();
       assert.ok(await page.getByRole("button", { name: "Сохранено", exact: true }).isDisabled());
+      await page
+        .locator(".hb-document-menu")
+        .getByText("Ещё", { exact: true })
+        .click();
       assert.ok(
         await page
           .getByRole("button", { name: "Удалить Homebrew", exact: true })
           .isVisible(),
       );
+      await page
+        .locator(".hb-document-menu")
+        .getByText("Ещё", { exact: true })
+        .click();
       {
         if (
           !(await page
