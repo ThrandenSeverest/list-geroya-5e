@@ -6,7 +6,6 @@ import re
 import sys
 import hashlib
 from collections import defaultdict
-import difflib
 from pathlib import Path
 
 
@@ -104,16 +103,18 @@ def diagnostic(left: Path, right: Path, key: str) -> None:
         b = right_bytes.decode("utf-8")
     except UnicodeDecodeError:
         return
-    matcher = difflib.SequenceMatcher(None, a, b, autojunk=False)
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == "equal":
-            continue
-        start_a, end_a = max(0, i1 - 220), min(len(a), i2 + 220)
-        start_b, end_b = max(0, j1 - 220), min(len(b), j2 + 220)
-        print(f"    first difference {left_name} vs {right_name}: {tag}", file=sys.stderr)
-        print("    committed: " + repr(a[start_a:end_a]), file=sys.stderr)
-        print("    rebuilt:   " + repr(b[start_b:end_b]), file=sys.stderr)
-        break
+    limit = min(len(a), len(b))
+    pos = 0
+    while pos < limit and a[pos] == b[pos]:
+        pos += 1
+    if pos == limit and len(a) == len(b):
+        return
+    start_at = max(0, pos - 220)
+    end_a = min(len(a), pos + 320)
+    end_b = min(len(b), pos + 320)
+    print(f"    first difference {left_name} vs {right_name} at offset {pos}", file=sys.stderr)
+    print("    committed: " + repr(a[start_at:end_a]), file=sys.stderr)
+    print("    rebuilt:   " + repr(b[start_at:end_b]), file=sys.stderr)
 
 
 def compare(left: Path, right: Path) -> bool:
