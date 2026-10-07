@@ -4,6 +4,8 @@
 import json
 import re
 import sys
+import hashlib
+from collections import defaultdict
 from pathlib import Path
 
 
@@ -44,7 +46,64 @@ def normalize(root: Path) -> None:
             path.write_text(normalized, encoding="utf-8")
 
 
-if len(sys.argv) < 2:
-    raise SystemExit("Usage: normalize-dist-for-compare.py DIST [DIST...]")
-for argument in sys.argv[1:]:
-    normalize(Path(argument))
+
+
+# Build directories can be different (for example, GitHub Actions checks out the
+# repository at another absolute path). Rolldown emits source paths in //#region
+# comments; those harmless comments influence chunk hashes and all chunk imports.
+# Compare contents instead of unreliable filename hashes, without overlooking a
+# changed asset or changed runtime code.
+_HASHED_CHUNK = re.compile(r"-[A-Za-z0-9_-]{8}(?=\.(?:js|css)(?![A-Za-z0-9]))")
+_SOURCE_REGION = re.compile(r"(?m)^//#region[^\r\n]*$")
+
+
+def comparable_content(path: Path) -> bytes:
+    data = path.read_bytes()
+    if path.suffix not in {".js", ".css", ".json", ".html"}:
+        return data
+    try:
+        content = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data
+    if path.suffix == ".js":
+        content = _SOURCE_REGION.sub("//#region [source path]", content)
+    # Module names are compared independently, including multiple assets with the
+    # same prefix (for example the various page-<hash>.js chunks). References in
+    # bundles and RSC manifests are canonicalized consistently.
+    content = _HASHED_CHUNK.sub("-[BUILDHASH]", content)
+    return content.encode("utf-8")
+
+
+def inventory(root: Path) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = defaultdict(list)
+    for path in root.rglob("*"):
+        if not path.is_file():
+            continue
+        name = _HASHED_CHUNK.sub("-[BUILDHASH]", path.relative_to(root).as_posix())
+        digest = hashlib.sha256(comparable_content(path)).hexdigest()
+        result[name].append(digest)
+    return {key: sorted(values) for key, values in result.items()}
+
+
+def compare(left: Path, right: Path) -> bool:
+    first, second = inventory(left), inventory(right)
+    mismatched = [key for key in sorted(first.keys() | second.keys())
+                  if first.get(key) != second.get(key)]
+    if not mismatched:
+        print("Committed dist and independently rebuilt dist have identical runtime "
+              "content (ignoring build IDs, comments with build paths and "
+              "content-hashed chunk filenames).")
+        return True
+    print(f"Runtime content differs in {len(mismatched)} file groups:", file=sys.stderr)
+    for key in mismatched[:50]:
+        print(f"  {key}: committed={first.get(key, [])} built={second.get(key, [])}",
+              file=sys.stderr)
+    return False
+
+if len(sys.argv) != 3:
+    raise SystemExit("Usage: normalize-dist-for-compare.py COMMITTED_DIST REBUILT_DIST")
+left, right = (Path(arg) for arg in sys.argv[1:])
+for root in (left, right):
+    normalize(root)
+if not compare(left, right):
+    raise SystemExit(1)
