@@ -10,7 +10,9 @@ permissions:
   pages: write
 concurrency:
   group: herolist-pages
-  cancel-in-progress: true
+  # A skipped workflow_run (from a failed verifier) must not cancel an
+  # in-flight successful publication and leave Pages stale.
+  cancel-in-progress: false
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
