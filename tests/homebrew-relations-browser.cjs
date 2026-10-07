@@ -27,8 +27,7 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
    await page.getByRole('button',{name:'Повторить',exact:true}).click();await choice.getByLabel('Описание варианта',{exact:true}).fill('Новый вариант с постоянным бонусом.');
    await choice.getByText('Эффекты, ресурсы, атаки и вложенные выборы варианта',{exact:true}).click();
    await choice.getByRole('button',{name:/Изменить показатели/}).click();await choice.getByRole('button',{name:'+ Эффект',exact:true}).click();await choice.getByLabel('Тип эффекта',{exact:true}).selectOption('ac_bonus');
-   await choice.getByText('Дополнительные игровые требования и выдача',{exact:true}).click();
-   await choice.getByLabel('Смысл новой связи',{exact:true}).selectOption('dependent');
+   await choice.locator('.hb-relation-modes').getByRole('button',{name:'Открывает другую способность',exact:true}).click();
    await choice.locator('.hb-relation-add .hb-named-reference > button').click();await choice.locator('.hb-relation-add').getByRole('button',{name:'Улучшение тела',exact:true}).click();
    assert.match(await choice.locator('.hb-relationships').first().innerText(),/Улучшение тела/);
    await choice.getByRole('button',{name:'Карта связей выбора',exact:true}).click();assert.ok(await choice.locator('.hb-relations-map').isVisible());
