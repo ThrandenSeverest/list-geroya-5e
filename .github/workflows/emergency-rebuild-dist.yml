@@ -1,0 +1,66 @@
+name: Emergency rebuild committed dist
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - app/page.tsx
+      - tests/browser-sheet.cjs
+      - tests/racial-choice-ui.test.ts
+
+permissions:
+  contents: write
+
+concurrency:
+  group: emergency-rebuild-committed-dist
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run rules tests and compile production dist
+        run: npm run build
+      - name: Check character builder bundle for old runtime error
+        run: |
+          if grep -R -F -q 'racialSpellChoiceGroups' dist/client/assets/; then
+            echo "Obsolete undeclared racial spell variable survives in dist"
+            exit 1
+          fi
+      - name: Sanitize deployable dist and write build metadata
+        run: |
+          python3 scripts/sanitize-committed-dist.py
+          python3 scripts/write-build-info.py
+      - name: Verify compiled runtime
+        run: |
+          PORT=3998 HOST=127.0.0.1 npm start >/tmp/herolist-hotfix-runtime.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3998/ >/dev/null; then
+              echo "Compiled production frontend responds successfully"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/herolist-hotfix-runtime.log
+          exit 1
+      - name: Save verified and sanitized precompiled dist in main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dist
+          if ! git diff --cached --quiet; then
+            git commit -m "build: commit verified production dist for racial spell hotfix"
+            git push origin HEAD:main
+          fi

@@ -3152,7 +3152,7 @@ function Builder() {
                   </div>
                 </div>
               )}
-              {racialSpellChoiceGroups.length > 0 && racialChoiceGroups.map(group => <div className="racial-choice" key={group.key} data-incomplete={!character.raceChoices?.[group.key]?.[0]}>
+              {racialChoiceGroups.length > 0 && racialChoiceGroups.map(group => <div className="racial-choice" key={group.key} data-incomplete={!character.raceChoices?.[group.key]?.[0]}>
                 <div><small>Расовая магия</small><h2>{group.title}</h2><p>Выберите один заговор. Он появится в листе автоматически и не займёт лимит заклинаний класса.</p></div>
                 <label>Заговор<select value={character.raceChoices?.[group.key]?.[0] || ""} onChange={event => setCharacter(current => ({ ...current, raceChoices: { ...current.raceChoices, [group.key]: event.target.value ? [event.target.value] : [] } }))}><option value="">Выберите…</option>{group.options.map(spell => <option value={spell.id} key={spell.id}>{spell.name}</option>)}</select></label>
               </div>)}

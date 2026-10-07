@@ -53,6 +53,9 @@ async function openSheet(page) {
   assert.match(await page.locator('.catalog-meta').innerText(),/^0 вариантов/);
   await catalogSearch.fill('');
   await verifyImages(page);
+  // Regression: entering characteristics must not crash the builder while rendering racial spell choices.
+  await page.locator('nav.steps button').filter({hasText:'Характеристики'}).click();
+  await page.locator('.pointbuy-grid').waitFor({state:'visible'});
   await page.locator('nav.steps button').filter({hasText:'Итог'}).click();
   await page.locator('.pdf-hp strong').waitFor();
 }
