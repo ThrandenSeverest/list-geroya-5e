@@ -142,3 +142,59 @@
 .hb-advanced-tools > button { display:block;margin-top:8px; }
 @media(max-width:760px){.hb-mechanic-launcher > div{grid-template-columns:repeat(2,minmax(0,1fr))}.hb-value-fields{flex-direction:column}}
 @media(max-width:420px){.hb-mechanic-launcher > div{grid-template-columns:1fr}.hb-mechanic-launcher button{min-height:64px}}
+
+/* Workshop visual hierarchy, shared by dark and parchment themes. */
+.hb-workspace{--hb-accent:var(--gold,#c8a15e);line-height:1.5}
+.hb-workspace>header{padding:12px 0 20px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.hb-workspace>header h1{margin:4px 0 10px;font-size:clamp(1.8rem,3vw,2.5rem)}
+.hb-workspace>header p:not(.eyebrow){max-width:680px;margin:0;opacity:.78}
+.hb-workspace .hb-editor{background:var(--panel);border-color:var(--line);padding:22px;border-radius:18px}
+.hb-workspace .hb-workspace-sidebar{background:var(--panel);border-color:var(--line);border-radius:16px}
+.hb-workspace .hb-editor-chrome{background:var(--panel);border-bottom:1px solid var(--line);border-radius:12px 12px 0 0;padding-bottom:10px}
+.hb-workspace .hb-editor-actions{border:0;background:transparent;box-shadow:none;padding:6px 0 12px}
+.hb-workspace .hb-editor-actions>div:first-child{display:grid;gap:4px}
+.hb-workspace .hb-editor-actions h2{margin:0;font-size:1.3rem;overflow-wrap:anywhere}
+.hb-workspace .hb-editor-actions .hb-toolbar{gap:6px;margin:0}
+.hb-workspace .hb-tabs{background:transparent;color:inherit;padding:4px 0;gap:6px}
+.hb-workspace .hb-tabs>button{display:flex;align-items:center;gap:7px;color:inherit;background:transparent;border:1px solid var(--line);border-radius:10px;min-height:44px;font-size:.85rem}
+.hb-workspace .hb-tabs>button[aria-pressed=true]{background:var(--hb-accent);color:#17110a;border-color:var(--hb-accent);box-shadow:0 3px 10px #0002}
+.hb-workspace .hb-tabs svg{flex-shrink:0}
+.hb-workspace .hb-advanced-tabs summary,.hb-document-menu summary{padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;min-height:44px}
+.hb-workspace .hb-advanced-tabs>div{background:var(--panel);color:inherit;border-color:var(--line)}
+.hb-workspace .hb-advanced-tabs button{color:inherit}
+.hb-document-menu{position:relative}
+.hb-document-menu>button{position:absolute;right:0;top:calc(100% + 6px);z-index:8;min-width:180px;background:var(--panel);box-shadow:0 8px 24px #0004}
+.hb-section-intro{display:flex;align-items:flex-start;gap:14px;padding:18px 0 22px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+.hb-section-icon{display:grid;place-items:center;width:42px;height:42px;flex-shrink:0;border-radius:12px;background:color-mix(in srgb,var(--hb-accent) 15%,transparent);color:var(--hb-accent)}
+.hb-section-intro h3{margin:0 0 5px;font-size:1.1rem}
+.hb-section-intro p{margin:0;font-size:.9rem;opacity:.75;max-width:660px;line-height:1.6}
+.hb-workspace .hb-field>span{font-size:.85rem}
+.hb-workspace input,.hb-workspace select,.hb-workspace textarea{background:color-mix(in srgb,var(--panel) 80%,var(--ink));border-color:var(--line);border-radius:8px;min-height:44px}
+.hb-workspace input[type=checkbox]{min-height:auto}
+.hb-workspace :is(button,input,select,textarea,summary):focus-visible{outline:2px solid var(--hb-accent);outline-offset:3px}
+.hb-workspace .hb-feature-card{padding:0;background:var(--panel);border-color:var(--line);border-radius:12px;overflow:visible}
+.hb-workspace .hb-feature-card>summary{padding:16px;min-height:54px}
+.hb-workspace .hb-feature-card[open]{padding:0 16px 16px;border-color:var(--hb-accent)}
+.hb-workspace .hb-feature-card[open]>summary{margin:0 -16px 12px;border-bottom:1px solid var(--line)}
+.hb-workspace .hb-level-unified{padding:16px;border-radius:14px;border-color:var(--line)}
+.hb-workspace .hb-mechanic-launcher button{border:1px solid var(--line);background:color-mix(in srgb,var(--hb-accent) 5%,var(--panel));transition:border-color .15s,background .15s}
+.hb-workspace .hb-mechanic-launcher button:hover{border-color:var(--hb-accent);background:color-mix(in srgb,var(--hb-accent) 12%,var(--panel))}
+.hb-workspace .hb-basic-details{border-color:var(--line);padding:12px;border-radius:10px}
+.hb-workspace .hb-basic-details>summary{min-height:32px;align-content:center;font-size:.9rem}
+@media(max-width:760px){
+ .hb-workspace .hb-editor{padding:14px;border-radius:14px}
+ .hb-workspace .hb-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+ .hb-workspace .hb-tabs>button{white-space:normal;text-align:left;padding:10px;line-height:1.35}
+ .hb-workspace .hb-advanced-tabs summary{height:100%}
+ .hb-workspace .hb-editor-actions .hb-toolbar{display:flex;width:100%;flex-wrap:wrap}
+ .hb-workspace .hb-save-primary{order:-1;flex-basis:100%;min-height:46px}
+ .hb-workspace .hb-document-menu{flex:1}
+ .hb-workspace .hb-document-menu summary{text-align:center}
+ .hb-workspace .hb-document-menu>button{right:auto;left:0}
+ .hb-section-intro{gap:10px;padding:10px 0 18px}
+ .hb-section-intro p{font-size:.85rem}
+ .hb-workspace .hb-feature-card[open]{padding:0 10px 10px}
+ .hb-workspace .hb-feature-card[open]>summary{margin:0 -10px 10px}
+}
+.modern-design .hb-workspace .hb-tabs>button[aria-pressed=true],
+.modern-design .hb-workspace .hb-save-primary{color:#fff8e7!important}

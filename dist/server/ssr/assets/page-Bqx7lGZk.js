@@ -40837,7 +40837,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40849,7 +40849,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40868,7 +40868,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/Icon.js
+//#region node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40888,7 +40888,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40906,7 +40906,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40936,7 +40936,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/axe.js
+//#region node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40951,7 +40951,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bird.js
+//#region node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40985,7 +40985,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bone.js
+//#region node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -40997,7 +40997,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41012,7 +41012,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41050,7 +41050,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/brain.js
+//#region node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41096,7 +41096,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/bug.js
+//#region node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41150,7 +41150,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/cat.js
+//#region node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41176,7 +41176,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41195,7 +41195,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/clover.js
+//#region node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41217,7 +41217,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/cog.js
+//#region node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41283,7 +41283,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/compass.js
+//#region node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41300,7 +41300,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/crown.js
+//#region node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41315,7 +41315,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/drama.js
+//#region node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41357,7 +41357,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41372,7 +41372,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41402,7 +41402,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/eye.js
+//#region node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41419,7 +41419,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/feather.js
+//#region node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41441,7 +41441,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41453,7 +41453,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/flame.js
+//#region node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41465,7 +41465,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41487,7 +41487,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41513,7 +41513,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/gem.js
+//#region node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41535,7 +41535,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41557,7 +41557,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/hand.js
+//#region node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41583,7 +41583,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41613,7 +41613,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41635,7 +41635,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41650,7 +41650,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41665,7 +41665,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41683,7 +41683,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/moon.js
+//#region node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41695,7 +41695,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41707,7 +41707,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41731,7 +41731,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/music.js
+//#region node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41757,7 +41757,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41793,7 +41793,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41825,7 +41825,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41855,7 +41855,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/rat.js
+//#region node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41885,7 +41885,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41911,7 +41911,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41965,7 +41965,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shell.js
+//#region node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41977,7 +41977,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shield.js
+//#region node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -41989,7 +41989,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42004,7 +42004,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42034,7 +42034,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42060,7 +42060,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sun.js
+//#region node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42108,7 +42108,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/sword.js
+//#region node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42143,7 +42143,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/swords.js
+//#region node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42203,7 +42203,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42243,7 +42243,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42258,7 +42258,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/trees.js
+//#region node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42284,7 +42284,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42301,7 +42301,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42323,7 +42323,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42365,7 +42365,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/waves.js
+//#region node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -42387,7 +42387,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/lucide-react/dist/esm/icons/wind.js
+//#region node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47651,7 +47651,7 @@ function applySubclassLongRest(character) {
 	};
 }
 //#endregion
-//#region ../../6c860f9dd804/herolist/node_modules/fflate/esm/index.mjs
+//#region node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -48533,6 +48533,124 @@ function unzipSync(data, opts) {
 	}
 	return files;
 }
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
+	points: "22 7 13.5 15.5 8.5 10.5 2 17",
+	key: "126l90"
+}], ["polyline", {
+	points: "16 7 22 7 22 13",
+	key: "kwv8wd"
+}]]);
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
+	["line", {
+		x1: "21",
+		x2: "14",
+		y1: "4",
+		y2: "4",
+		key: "obuewd"
+	}],
+	["line", {
+		x1: "10",
+		x2: "3",
+		y1: "4",
+		y2: "4",
+		key: "1q6298"
+	}],
+	["line", {
+		x1: "21",
+		x2: "12",
+		y1: "12",
+		y2: "12",
+		key: "1iu8h1"
+	}],
+	["line", {
+		x1: "8",
+		x2: "3",
+		y1: "12",
+		y2: "12",
+		key: "ntss68"
+	}],
+	["line", {
+		x1: "21",
+		x2: "16",
+		y1: "20",
+		y2: "20",
+		key: "14d8ph"
+	}],
+	["line", {
+		x1: "12",
+		x2: "3",
+		y1: "20",
+		y2: "20",
+		key: "m0wm8r"
+	}],
+	["line", {
+		x1: "14",
+		x2: "14",
+		y1: "2",
+		y2: "6",
+		key: "14e1ph"
+	}],
+	["line", {
+		x1: "8",
+		x2: "8",
+		y1: "10",
+		y2: "14",
+		key: "1i6ji0"
+	}],
+	["line", {
+		x1: "16",
+		x2: "16",
+		y1: "18",
+		y2: "22",
+		key: "1lctlv"
+	}]
+]);
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var FileText = createLucideIcon("FileText", [
+	["path", {
+		d: "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+		key: "1rqfz7"
+	}],
+	["path", {
+		d: "M14 2v4a2 2 0 0 0 2 2h4",
+		key: "tnqrlb"
+	}],
+	["path", {
+		d: "M10 9H8",
+		key: "b1mrlr"
+	}],
+	["path", {
+		d: "M16 13H8",
+		key: "t4e002"
+	}],
+	["path", {
+		d: "M16 17H8",
+		key: "z1uh3a"
+	}]
+]);
 //#endregion
 //#region app/homebrewValidation.ts
 function validateHomebrew(entities, officialIds = []) {
@@ -54200,6 +54318,38 @@ var primaryTabs = (type) => ["class", "subclass"].includes(type) ? primaryClassT
 	"Описание",
 	"Проверка"
 ];
+var sectionGuide = {
+	"Основное": {
+		icon: BookOpen,
+		description: "Задайте образ и базовые правила. Способности и их улучшения можно добавить следующим шагом."
+	},
+	"Развитие и способности": {
+		icon: TrendingUp,
+		description: "Выберите уровень и добавьте то, что получает герой. Раскройте способность, чтобы настроить её действие, выборы и улучшения."
+	},
+	"Заклинания": {
+		icon: Sparkles,
+		description: "Настройте магию и доступные заклинания. Заклинания отдельной способности можно добавить прямо в её карточке."
+	},
+	"Механика": {
+		icon: WandSparkles,
+		description: "Выберите, что получает герой: бонус, действие, заклинание или запас применений."
+	},
+	"Описание": {
+		icon: FileText,
+		description: "Напишите текст, который игрок увидит на листе. Броски и интерактивные кнопки добавляются отдельно."
+	},
+	"Проверка": {
+		icon: ShieldCheck,
+		description: "Проверьте правила и посмотрите, как они действуют на текущего персонажа перед сохранением."
+	}
+};
+function SectionIcon({ name }) {
+	return /* @__PURE__ */ jsx(sectionGuide[name]?.icon || SlidersHorizontal, {
+		size: 18,
+		"aria-hidden": "true"
+	});
+}
 var tagNames = {
 	acid: "Кислота",
 	bludgeoning: "Дробящий",
@@ -54399,65 +54549,68 @@ function Description({ draft, update, entities, character }) {
 				}
 			}
 		}),
-		/* @__PURE__ */ jsxs("fieldset", { children: [
-			/* @__PURE__ */ jsxs("legend", { children: ["Вставить интерактивный тег ", /* @__PURE__ */ jsx(HBHelp, { children: "Выберите тип, затем формулу или объект. Кнопка соберёт тег. Он сохранится в JSON и появится кнопкой в предпросмотре и Homebrew на листе." })] }),
-			/* @__PURE__ */ jsx(Select, {
-				label: "Тип тега",
-				value: tag,
-				onChange: setTag,
-				options: {
-					roll: "Бросок",
-					damage: "Урон",
-					heal: "Лечение",
-					check: "Проверка",
-					save: "Спасбросок",
-					attack: "Атака",
-					resource: "Ресурс",
-					consume: "Потратить ресурс",
-					restore: "Восстановить ресурс",
-					spell: "Заклинание",
-					item: "Предмет",
-					feature: "Способность",
-					entity: "Ссылка",
-					condition: "Состояние",
-					dc: "Сложность",
-					value: "Значение",
-					choice: "Выбор",
-					table: "Таблица",
-					note: "Заметка"
-				}
-			}),
-			/* @__PURE__ */ jsx(Field, {
-				label: "Подпись",
-				children: /* @__PURE__ */ jsx("input", {
-					value: label,
-					onChange: (e) => setLabel(e.target.value)
+		/* @__PURE__ */ jsxs("details", {
+			className: "hb-basic-details",
+			children: [/* @__PURE__ */ jsx("summary", { children: "Добавить бросок или интерактивную кнопку" }), /* @__PURE__ */ jsxs("fieldset", { children: [
+				/* @__PURE__ */ jsxs("legend", { children: ["Вставить интерактивный тег ", /* @__PURE__ */ jsx(HBHelp, { children: "Выберите тип, затем формулу или объект. Кнопка соберёт тег. Он сохранится в JSON и появится кнопкой в предпросмотре и Homebrew на листе." })] }),
+				/* @__PURE__ */ jsx(Select, {
+					label: "Тип тега",
+					value: tag,
+					onChange: setTag,
+					options: {
+						roll: "Бросок",
+						damage: "Урон",
+						heal: "Лечение",
+						check: "Проверка",
+						save: "Спасбросок",
+						attack: "Атака",
+						resource: "Ресурс",
+						consume: "Потратить ресурс",
+						restore: "Восстановить ресурс",
+						spell: "Заклинание",
+						item: "Предмет",
+						feature: "Способность",
+						entity: "Ссылка",
+						condition: "Состояние",
+						dc: "Сложность",
+						value: "Значение",
+						choice: "Выбор",
+						table: "Таблица",
+						note: "Заметка"
+					}
+				}),
+				/* @__PURE__ */ jsx(Field, {
+					label: "Подпись",
+					children: /* @__PURE__ */ jsx("input", {
+						value: label,
+						onChange: (e) => setLabel(e.target.value)
+					})
+				}),
+				/* @__PURE__ */ jsx(Formula, {
+					value: formula,
+					onChange: setFormula
+				}),
+				/* @__PURE__ */ jsx(RefPicker, {
+					value: ref,
+					onChange: setRef,
+					entities
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => {
+						const clean = (s) => s.replace(/["\[\]]/g, "");
+						insert(`[[${tag} ${[
+							"roll",
+							"damage",
+							"heal",
+							"value",
+							"dc"
+						].includes(tag) ? `formula="${clean(formula)}"` : ["consume", "restore"].includes(tag) ? `resource="${clean(ref)}" amount="1"` : tag === "check" ? "ability=\"int\"" : tag === "save" ? `ability="dex" dc="${clean(formula)}"` : tag === "note" ? `text="${clean(label)}"` : `id="${clean(ref)}"`} label="${clean(label)}"]]`);
+					},
+					children: "Вставить тег"
 				})
-			}),
-			/* @__PURE__ */ jsx(Formula, {
-				value: formula,
-				onChange: setFormula
-			}),
-			/* @__PURE__ */ jsx(RefPicker, {
-				value: ref,
-				onChange: setRef,
-				entities
-			}),
-			/* @__PURE__ */ jsx("button", {
-				type: "button",
-				onClick: () => {
-					const clean = (s) => s.replace(/["\[\]]/g, "");
-					insert(`[[${tag} ${[
-						"roll",
-						"damage",
-						"heal",
-						"value",
-						"dc"
-					].includes(tag) ? `formula="${clean(formula)}"` : ["consume", "restore"].includes(tag) ? `resource="${clean(ref)}" amount="1"` : tag === "check" ? "ability=\"int\"" : tag === "save" ? `ability="dex" dc="${clean(formula)}"` : tag === "note" ? `text="${clean(label)}"` : `id="${clean(ref)}"`} label="${clean(label)}"]]`);
-				},
-				children: "Вставить тег"
-			})
-		] }),
+			] })]
+		}),
 		/* @__PURE__ */ jsx("h3", { children: "Предпросмотр" }),
 		/* @__PURE__ */ jsx(HomebrewText, {
 			text: draft.description,
@@ -54738,7 +54891,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 				/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [
 					/* @__PURE__ */ jsx("p", {
 						className: "eyebrow",
-						children: "Homebrew 2.0"
+						children: "Homebrew · ваши правила"
 					}),
 					/* @__PURE__ */ jsx("h1", { children: "Мастерская правил" }),
 					/* @__PURE__ */ jsx("p", { children: "Создавайте свои классы, способности и заклинания. Настройте, что получает герой, — мастерская сама соберёт правила для его листа." })
@@ -54887,12 +55040,15 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													onClick: save,
 													children: saveState === "saving" ? "Сохраняется…" : hasUnsavedChanges ? "Сохранить изменения" : "Сохранено"
 												}),
-												savedDraft && /* @__PURE__ */ jsx("button", {
-													className: "hb-danger hb-delete-saved",
-													onClick: () => {
-														remove(savedDraft);
-													},
-													children: "Удалить Homebrew"
+												savedDraft && /* @__PURE__ */ jsxs("details", {
+													className: "hb-document-menu",
+													children: [/* @__PURE__ */ jsx("summary", { children: "Ещё" }), /* @__PURE__ */ jsx("button", {
+														className: "hb-danger hb-delete-saved",
+														onClick: () => {
+															remove(savedDraft);
+														},
+														children: "Удалить Homebrew"
+													})]
 												}),
 												/* @__PURE__ */ jsx("button", {
 													onClick: closeDraft,
@@ -54903,13 +55059,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 									}), /* @__PURE__ */ jsxs("nav", {
 										className: "hb-tabs",
 										"aria-label": "Разделы редактора",
-										children: [editorTabs(draft.type).filter((t) => primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsx("button", {
+										children: [editorTabs(draft.type).filter((t) => primaryTabs(draft.type).includes(t)).map((t) => /* @__PURE__ */ jsxs("button", {
 											"aria-pressed": tab === t,
 											onClick: () => {
 												setTab(t);
 												if (t === "Код") setCode(JSON.stringify(draft, null, 2));
 											},
-											children: t
+											children: [/* @__PURE__ */ jsx(SectionIcon, { name: t }), /* @__PURE__ */ jsx("span", { children: t })]
 										}, t)), /* @__PURE__ */ jsxs("details", {
 											className: "hb-advanced-tabs",
 											open: !primaryTabs(draft.type).includes(tab),
@@ -54923,6 +55079,13 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											}, t)) })]
 										})]
 									})]
+								}),
+								sectionGuide[tab] && /* @__PURE__ */ jsxs("div", {
+									className: "hb-section-intro",
+									children: [/* @__PURE__ */ jsx("span", {
+										className: "hb-section-icon",
+										children: /* @__PURE__ */ jsx(SectionIcon, { name: tab })
+									}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: tab }), /* @__PURE__ */ jsx("p", { children: sectionGuide[tab].description })] })]
 								}),
 								tab === "Основное" && /* @__PURE__ */ jsxs("div", {
 									className: "hb-fields",
@@ -55229,7 +55392,12 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											"weight",
 											"price"
 										].map((key) => /* @__PURE__ */ jsx(Field, {
-											label: key,
+											label: {
+												itemType: "Тип предмета",
+												rarity: "Редкость",
+												weight: "Вес",
+												price: "Стоимость"
+											}[key],
 											children: /* @__PURE__ */ jsx("input", {
 												value: draft[key] || "",
 												onChange: (e) => update({ [key]: ["weight", "price"].includes(key) ? Number(e.target.value) : e.target.value })
