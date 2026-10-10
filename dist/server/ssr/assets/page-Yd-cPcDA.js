@@ -2,6 +2,809 @@ import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
 import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
+//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+var mergeClasses = (...classes) => classes.filter((className, index, array) => {
+	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
+}).join(" ").trim();
+//#endregion
+//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var defaultAttributes = {
+	xmlns: "http://www.w3.org/2000/svg",
+	width: 24,
+	height: 24,
+	viewBox: "0 0 24 24",
+	fill: "none",
+	stroke: "currentColor",
+	strokeWidth: 2,
+	strokeLinecap: "round",
+	strokeLinejoin: "round"
+};
+//#endregion
+//#region node_modules/lucide-react/dist/esm/Icon.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
+	return createElement("svg", {
+		ref,
+		...defaultAttributes,
+		width: size,
+		height: size,
+		stroke: color,
+		strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+		className: mergeClasses("lucide", className),
+		...rest
+	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
+});
+//#endregion
+//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var createLucideIcon = (iconName, iconNode) => {
+	const Component = forwardRef(({ className, ...props }, ref) => createElement(Icon, {
+		ref,
+		iconNode,
+		className: mergeClasses(`lucide-${toKebabCase(iconName)}`, className),
+		...props
+	}));
+	Component.displayName = `${iconName}`;
+	return Component;
+};
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/settings.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Settings = createLucideIcon("Settings", [["path", {
+	d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
+	key: "1qme2f"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
+}]]);
+//#endregion
+//#region app/themeColors.json
+var themeColors_default = [
+	"000000",
+	"02080b",
+	"040c10",
+	"040d12",
+	"040e12",
+	"040e13",
+	"050e12",
+	"050f14",
+	"061116",
+	"071116",
+	"071217",
+	"071318",
+	"071419",
+	"081116",
+	"081318",
+	"081419",
+	"08141a",
+	"08191f",
+	"09171d",
+	"0a1920",
+	"0b171d",
+	"0b1a20",
+	"0d2027",
+	"0f1d23",
+	"0f1f26",
+	"111111",
+	"111e24",
+	"12252c",
+	"131313",
+	"151515",
+	"17110a",
+	"17120e",
+	"172126",
+	"173d43",
+	"176f9d",
+	"1b2f32",
+	"202020",
+	"203036",
+	"211b12",
+	"222222",
+	"2381ae",
+	"24211e",
+	"249bd7",
+	"2b241c",
+	"333333",
+	"34464d",
+	"365b5e",
+	"3d3028",
+	"3f260f",
+	"3f3026",
+	"3f6c6c",
+	"405c63",
+	"432812",
+	"444444",
+	"447674",
+	"462a10",
+	"496b6c",
+	"4a2d12",
+	"4b5f65",
+	"4d6870",
+	"50a9d1",
+	"513416",
+	"536168",
+	"53696f",
+	"554b40",
+	"555555",
+	"55777a",
+	"566f76",
+	"58696b",
+	"596766",
+	"59696f",
+	"597578",
+	"5a3a16",
+	"5c8484",
+	"5d5144",
+	"5d7f80",
+	"5e0c12",
+	"5e5347",
+	"5e6e6d",
+	"5f503d",
+	"5f5147",
+	"647574",
+	"64d39b",
+	"657373",
+	"65a09b",
+	"667479",
+	"675946",
+	"69aaa2",
+	"6b0d14",
+	"6b6254",
+	"6b7e80",
+	"6c351f",
+	"6c7777",
+	"6e9292",
+	"6f1015",
+	"6f111b",
+	"6f4a36",
+	"6f858a",
+	"705b43",
+	"713a24",
+	"756955",
+	"758187",
+	"76501e",
+	"76aaa5",
+	"777777",
+	"7a141b",
+	"7b1119",
+	"7c6550",
+	"7d6a55",
+	"7f201b",
+	"7f5b22",
+	"7f5c2c",
+	"827768",
+	"843c30",
+	"85101e",
+	"888888",
+	"8a6b23",
+	"8b6427",
+	"8ba09e",
+	"8c7258",
+	"8ca8a8",
+	"8d1820",
+	"8f1821",
+	"9065cc",
+	"941b24",
+	"975530",
+	"981f26",
+	"998855",
+	"999999",
+	"9a5a35",
+	"9aa4a5",
+	"9aa9a6",
+	"9c5b35",
+	"a14a3f",
+	"a4633e",
+	"a4b9b7",
+	"a65b49",
+	"a7afb0",
+	"a91e29",
+	"a9c4c0",
+	"aaaaaa",
+	"aeb8b8",
+	"b47a50",
+	"b5222d",
+	"b5873d",
+	"b6aaa0",
+	"b71928",
+	"b86145",
+	"b8754b",
+	"b8c0c0",
+	"b8c2bf",
+	"b8d2ce",
+	"b96e3f",
+	"b99c72",
+	"b9c7c6",
+	"bb9944",
+	"bbbbbb",
+	"bdeaff",
+	"bfc6c2",
+	"c29b56",
+	"c46a5c",
+	"c4cbc7",
+	"c58979",
+	"c7b8a5",
+	"c7d0cf",
+	"c8a15e",
+	"c8cbc4",
+	"c8d0ce",
+	"c9a557",
+	"c9b89c",
+	"cccccc",
+	"d07263",
+	"d54e4e",
+	"d6a18e",
+	"d6d7d1",
+	"d77b75",
+	"d7d5cb",
+	"d7d7d7",
+	"d7d9d2",
+	"d87a69",
+	"d9b787",
+	"dac495",
+	"dddddd",
+	"ded4bb",
+	"e1a071",
+	"e4bf77",
+	"e4cfa1",
+	"e4d4ae",
+	"e4e4e4",
+	"e5d0a2",
+	"e5dcc4",
+	"e5e5e5",
+	"e7a076",
+	"e7b572",
+	"ead4a5",
+	"ead5a7",
+	"ead8ae",
+	"ecd9ae",
+	"eedaad",
+	"eee1cf",
+	"efdeb4",
+	"efe0b9",
+	"f0d39a",
+	"f1d486",
+	"f1e2bd",
+	"f1f1f1",
+	"f2e3bd",
+	"f3efe5",
+	"f4f4f4",
+	"f5f4f1",
+	"f6ebcb",
+	"f7eac7",
+	"f8eccc",
+	"f8efd9",
+	"fafafa",
+	"fbfaf5",
+	"ff7979",
+	"ff8d7d",
+	"ffd3cb",
+	"ffd4c9",
+	"ffdfb6",
+	"ffe4a0",
+	"fff0bc",
+	"fff4d6",
+	"fff7dc",
+	"fff7df",
+	"fff8e3",
+	"fff8e7",
+	"fff9ed",
+	"fffaef",
+	"ffffff"
+];
+//#endregion
+//#region app/interfacePreferences.ts
+var defaultPreferences = {
+	zoom: 125,
+	font: 100,
+	activePreset: "",
+	presets: []
+};
+var limit = (value, min, max, fallback) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+function normalizePreferences(value) {
+	const raw = value && typeof value === "object" ? value : {};
+	const seen = /* @__PURE__ */ new Set();
+	const presets = (Array.isArray(raw.presets) ? raw.presets : []).filter((p) => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map((p) => ({
+		id: p.id,
+		name: typeof p.name === "string" ? p.name.slice(0, 80) : "Моя тема",
+		base: p.base === "parchment" ? "parchment" : "classic",
+		roles: Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key, value]) => paletteRoles.some((role) => role.token === key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))),
+		colors: Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key, value]) => themeColors_default.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value)))
+	}));
+	return {
+		zoom: limit(raw.zoom, 75, 175, 125),
+		font: limit(raw.font, 80, 160, 100),
+		activePreset: presets.some((p) => p.id === raw.activePreset) ? raw.activePreset : "",
+		presets
+	};
+}
+var paletteRoles = [
+	{
+		label: "Фон страницы",
+		token: "ink",
+		classic: "050f14",
+		parchment: "f2e3bd",
+		aliases: []
+	},
+	{
+		label: "Основной фон",
+		token: "panel",
+		classic: "09171d",
+		parchment: "efe0b9",
+		aliases: ["f8eccc"]
+	},
+	{
+		label: "Вторичный фон",
+		token: "panel-2",
+		classic: "0d2027",
+		parchment: "e5d0a2",
+		aliases: [
+			"ead8ae",
+			"ead5a7",
+			"ead4a5"
+		]
+	},
+	{
+		label: "Фон карточек и полей",
+		token: "surface",
+		classic: "081116",
+		parchment: "f6ebcb",
+		aliases: ["fff7dc"]
+	},
+	{
+		label: "Основной текст",
+		token: "ivory",
+		classic: "eee1cf",
+		parchment: "17120e",
+		aliases: []
+	},
+	{
+		label: "Вторичный текст",
+		token: "muted",
+		classic: "9aa4a5",
+		parchment: "5e5347",
+		aliases: ["554b40"]
+	},
+	{
+		label: "Рамки",
+		token: "line",
+		classic: "34464d",
+		parchment: "17120e",
+		aliases: ["7d6a55", "8c7258"]
+	},
+	{
+		label: "Акцент выбора",
+		token: "selection",
+		classic: "e1a071",
+		parchment: "8f1821",
+		aliases: [
+			"7a141b",
+			"7b1119",
+			"941b24",
+			"b5222d",
+			"8d1820",
+			"a91e29"
+		]
+	},
+	{
+		label: "Светлый акцент",
+		token: "copper-light",
+		classic: "e1a071",
+		parchment: "b5222d",
+		aliases: []
+	},
+	{
+		label: "Тёмный акцент",
+		token: "copper",
+		classic: "b8754b",
+		parchment: "941b24",
+		aliases: ["6b0d14"]
+	},
+	{
+		label: "Текст на акценте",
+		token: "accent-text",
+		classic: "f0d39a",
+		parchment: "fff8e7",
+		aliases: ["fff7df"]
+	},
+	{
+		label: "Ссылки и подсказки",
+		token: "teal",
+		classic: "76aaa5",
+		parchment: "566f76",
+		aliases: [
+			"405c63",
+			"4b5f65",
+			"4d6870"
+		]
+	},
+	{
+		label: "Золотой акцент",
+		token: "gold",
+		classic: "c8a15e",
+		parchment: "8d1820",
+		aliases: []
+	},
+	{
+		label: "Яркий акцент",
+		token: "gold-bright",
+		classic: "f0d39a",
+		parchment: "b5222d",
+		aliases: []
+	},
+	{
+		label: "Глубокий акцент",
+		token: "gold-deep",
+		classic: "76501e",
+		parchment: "5e0c12",
+		aliases: []
+	}
+];
+function changePaletteRole(preset, index, color) {
+	const role = paletteRoles[index];
+	return {
+		...preset,
+		roles: {
+			...preset.roles,
+			[role.token]: color
+		},
+		colors: {
+			...preset.colors,
+			...Object.fromEntries([role[preset.base], ...preset.base === "parchment" ? role.aliases : []].map((key) => [key, color]))
+		}
+	};
+}
+function themeStyle(preferences, base) {
+	const preset = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const style = { "--interface-font": preferences.font / 100 };
+	if (!preset) return style;
+	for (const role of paletteRoles) style[`--${role.token}`] = preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;
+	for (const [key, value] of Object.entries(preset.colors)) {
+		style[`--theme-${key}`] = value;
+		style[`--theme-rgb-${key}`] = [
+			1,
+			3,
+			5
+		].map((i) => parseInt(value.slice(i, i + 2), 16)).join(",");
+	}
+	return style;
+}
+//#endregion
+//#region app/ThemeSettings.tsx
+var storageKey$1 = "list-geroya-interface-v1";
+function useInterfacePreferences() {
+	const [preferences, setPreferences] = useState(defaultPreferences);
+	const [loaded, setLoaded] = useState(false);
+	useEffect(() => {
+		try {
+			setPreferences(normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null")));
+		} catch {}
+		setLoaded(true);
+	}, []);
+	useEffect(() => {
+		if (!loaded) return;
+		try {
+			localStorage.setItem(storageKey$1, JSON.stringify(preferences));
+		} catch {}
+		document.documentElement.style.setProperty("--interface-zoom", String(preferences.zoom / 100));
+	}, [preferences, loaded]);
+	return {
+		preferences,
+		update: setPreferences,
+		style: themeStyle(preferences, preferences.presets.find((p) => p.id === preferences.activePreset)?.base || "classic")
+	};
+}
+function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
+	const settingsId = useId();
+	const dialog = useRef(null);
+	const { preferences, update } = appearance;
+	const active = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const [draft, setDraft] = useState(null);
+	const [notice, setNotice] = useState("");
+	function open() {
+		setDraft(active ? {
+			...active,
+			colors: { ...active.colors }
+		} : null);
+		setNotice("");
+		dialog.current?.showModal();
+	}
+	function select(id) {
+		const preset = preferences.presets.find((p) => p.id === id);
+		update({
+			...preferences,
+			activePreset: id
+		});
+		if (preset) onTheme(preset.base);
+		setDraft(preset ? {
+			...preset,
+			colors: { ...preset.colors }
+		} : null);
+		setNotice("");
+	}
+	function create() {
+		const preset = {
+			id: crypto.randomUUID(),
+			name: "Моя тема",
+			base: theme,
+			colors: {}
+		};
+		setDraft(preset);
+		update({
+			...preferences,
+			activePreset: preset.id,
+			presets: [...preferences.presets, preset]
+		});
+		setNotice("Новая тема создана. Изменения цветов сохраняются автоматически.");
+	}
+	function edit(next) {
+		setDraft(next);
+		update({
+			...preferences,
+			presets: preferences.presets.map((p) => p.id === next.id ? next : p)
+		});
+	}
+	return /* @__PURE__ */ jsxs("span", {
+		className: "theme-controls",
+		children: [
+			/* @__PURE__ */ jsx("button", {
+				className: `experimental-toggle theme-${theme}`,
+				onClick: onCycle,
+				title: `Включить ${theme === "classic" ? "пергаментный" : "синий с золотом"} дизайн`,
+				children: label
+			}),
+			/* @__PURE__ */ jsx("button", {
+				className: "experimental-toggle theme-gear",
+				onClick: open,
+				"aria-label": "Настройки интерфейса",
+				title: "Настройки интерфейса",
+				children: /* @__PURE__ */ jsx(Settings, {
+					size: 18,
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ jsxs("dialog", {
+				ref: dialog,
+				className: "interface-settings",
+				"aria-labelledby": settingsId,
+				onClick: (event) => {
+					if (event.target === dialog.current) {
+						const r = dialog.current.getBoundingClientRect();
+						if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current.close();
+					}
+				},
+				children: [
+					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
+						id: settingsId,
+						children: "Настройки интерфейса"
+					}), /* @__PURE__ */ jsx("button", {
+						onClick: () => dialog.current?.close(),
+						"aria-label": "Закрыть настройки",
+						children: "✕"
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: [
+						"Размер интерфейса на ПК: ",
+						preferences.zoom,
+						"%",
+						/* @__PURE__ */ jsx("input", {
+							"aria-label": "Размер интерфейса на ПК",
+							type: "range",
+							min: "75",
+							max: "175",
+							step: "5",
+							value: preferences.zoom,
+							onChange: (e) => update({
+								...preferences,
+								zoom: Number(e.target.value)
+							})
+						})
+					] }),
+					/* @__PURE__ */ jsxs("label", { children: [
+						"Размер шрифта: ",
+						preferences.font,
+						"%",
+						/* @__PURE__ */ jsx("input", {
+							"aria-label": "Размер шрифта",
+							type: "range",
+							min: "80",
+							max: "160",
+							step: "5",
+							value: preferences.font,
+							onChange: (e) => update({
+								...preferences,
+								font: Number(e.target.value)
+							})
+						})
+					] }),
+					/* @__PURE__ */ jsx("p", { children: "Масштаб интерфейса применяется на компьютере. Размер шрифта меняется отдельно; печатный и мобильный листы сохраняют свои размеры." }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => update({
+							...preferences,
+							zoom: 125,
+							font: 100
+						}),
+						children: "Сбросить размеры"
+					}),
+					/* @__PURE__ */ jsxs("label", { children: ["Цветовая тема", /* @__PURE__ */ jsxs("select", {
+						value: preferences.activePreset || theme,
+						onChange: (e) => {
+							const value = e.target.value;
+							if (value === "classic" || value === "parchment") {
+								update({
+									...preferences,
+									activePreset: ""
+								});
+								onTheme(value);
+								setDraft(null);
+							} else select(value);
+						},
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "classic",
+								children: "Синий с золотом"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "parchment",
+								children: "Пергамент"
+							}),
+							preferences.presets.map((p) => /* @__PURE__ */ jsx("option", {
+								value: p.id,
+								children: p.name || "Моя тема"
+							}, p.id))
+						]
+					})] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "theme-preset-actions",
+						children: [/* @__PURE__ */ jsx("button", {
+							onClick: create,
+							children: "Создать свою тему"
+						}), draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+							onClick: () => {
+								const copy = {
+									...draft,
+									id: crypto.randomUUID(),
+									name: `${draft.name} — копия`,
+									colors: { ...draft.colors }
+								};
+								update({
+									...preferences,
+									activePreset: copy.id,
+									presets: [...preferences.presets, copy]
+								});
+								setDraft(copy);
+							},
+							children: "Копировать тему"
+						}), /* @__PURE__ */ jsx("button", {
+							onClick: () => {
+								if (!confirm(`Удалить тему «${draft.name}»?`)) return;
+								update({
+									...preferences,
+									activePreset: "",
+									presets: preferences.presets.filter((p) => p.id !== draft.id)
+								});
+								setDraft(null);
+							},
+							children: "Удалить тему"
+						})] })]
+					}),
+					draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("label", { children: ["Название темы", /* @__PURE__ */ jsx("input", {
+							maxLength: 80,
+							value: draft.name,
+							onChange: (e) => edit({
+								...draft,
+								name: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Основа темы", /* @__PURE__ */ jsxs("select", {
+							value: draft.base,
+							onChange: (e) => {
+								const base = e.target.value;
+								edit({
+									...draft,
+									base,
+									colors: {},
+									roles: {}
+								});
+								onTheme(base);
+							},
+							children: [/* @__PURE__ */ jsx("option", {
+								value: "classic",
+								children: "Синий с золотом"
+							}), /* @__PURE__ */ jsx("option", {
+								value: "parchment",
+								children: "Пергамент"
+							})]
+						})] }),
+						/* @__PURE__ */ jsx("div", {
+							className: "theme-palette",
+							children: paletteRoles.map((role, index) => /* @__PURE__ */ jsxs("label", { children: [role.label, /* @__PURE__ */ jsx("input", {
+								type: "color",
+								"aria-label": role.label,
+								value: draft.roles?.[role.token] || draft.colors[role[draft.base]] || `#${role[draft.base]}`,
+								onChange: (e) => edit(changePaletteRole(draft, index, e.target.value))
+							})] }, role.token))
+						}),
+						/* @__PURE__ */ jsxs("details", { children: [
+							/* @__PURE__ */ jsx("summary", { children: "Все цвета · тонкая настройка" }),
+							/* @__PURE__ */ jsx("p", { children: "Здесь можно изменить отдельные оттенки, включая служебные цвета и эффекты. Исходный цвет указан рядом с образцом." }),
+							/* @__PURE__ */ jsx("div", {
+								className: "theme-palette",
+								children: themeColors_default.map((color) => /* @__PURE__ */ jsxs("label", { children: [
+									"#",
+									color,
+									/* @__PURE__ */ jsx("input", {
+										type: "color",
+										"aria-label": `Цвет #${color}`,
+										value: draft.colors[color] || `#${color}`,
+										onChange: (e) => edit({
+											...draft,
+											colors: {
+												...draft.colors,
+												[color]: e.target.value
+											}
+										})
+									})
+								] }, color))
+							})
+						] }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "theme-preset-actions",
+							children: [/* @__PURE__ */ jsx("button", {
+								onClick: () => edit({
+									...draft,
+									colors: {},
+									roles: {}
+								}),
+								children: "Вернуть цвета основы"
+							}), /* @__PURE__ */ jsx("button", {
+								onClick: () => {
+									setNotice("Тема сохранена в этом браузере.");
+								},
+								children: "Сохранить тему"
+							})]
+						})
+					] }),
+					/* @__PURE__ */ jsx("p", {
+						role: "status",
+						children: notice
+					})
+				]
+			})
+		]
+	});
+}
+//#endregion
 //#region app/homebrewTemplates.ts
 /** D&D 5e 2014 subclass feature progression (including cleric domain levels). */
 var subclassFeatureLevels = {
@@ -41317,75 +42120,6 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-var mergeClasses = (...classes) => classes.filter((className, index, array) => {
-	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
-}).join(" ").trim();
-//#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var defaultAttributes = {
-	xmlns: "http://www.w3.org/2000/svg",
-	width: 24,
-	height: 24,
-	viewBox: "0 0 24 24",
-	fill: "none",
-	stroke: "currentColor",
-	strokeWidth: 2,
-	strokeLinecap: "round",
-	strokeLinejoin: "round"
-};
-//#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
-	return createElement("svg", {
-		ref,
-		...defaultAttributes,
-		width: size,
-		height: size,
-		stroke: color,
-		strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
-		className: mergeClasses("lucide", className),
-		...rest
-	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
-});
-//#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var createLucideIcon = (iconName, iconNode) => {
-	const Component = forwardRef(({ className, ...props }, ref) => createElement(Icon, {
-		ref,
-		iconNode,
-		className: mergeClasses(`lucide-${toKebabCase(iconName)}`, className),
-		...props
-	}));
-	Component.displayName = `${iconName}`;
-	return Component;
-};
-//#endregion
 //#region node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
@@ -59727,6 +60461,7 @@ function Builder() {
 	const [selectedSources, setSelectedSources] = useState(() => [...catalogSources(spells), "Homebrew"]);
 	const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
 	const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
+	const appearance = useInterfacePreferences();
 	const [siteTheme, setSiteTheme] = useState("classic");
 	const [mobileSheet, setMobileSheet] = useState(false);
 	const [mobileSheetTab, setMobileSheetTab] = useState("overview");
@@ -59938,10 +60673,13 @@ function Builder() {
 		vault
 	]);
 	const usesOrnateIcons = true;
-	const shellThemeClass = siteTheme === "parchment" ? " modern-design" : "";
-	const nextThemeName = siteTheme === "classic" ? "пергаментный" : "синий с золотом";
+	const shellThemeClass = (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
 	function cycleSiteTheme() {
 		const next = siteTheme === "classic" ? "parchment" : "classic";
+		appearance.update({
+			...appearance.preferences,
+			activePreset: ""
+		});
 		setSiteTheme(next);
 		localStorage.setItem("list-geroya-site-theme", next);
 	}
@@ -61796,6 +62534,7 @@ function Builder() {
 	if (view === "home" || view === "quiz") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
+		style: appearance.style,
 		children: [view === "home" && /* @__PURE__ */ jsxs("header", {
 			className: "topbar home-topbar",
 			children: [/* @__PURE__ */ jsxs("button", {
@@ -61827,11 +62566,15 @@ function Builder() {
 						onClick: () => setView("homebrew"),
 						children: "Homebrew"
 					}),
-					/* @__PURE__ */ jsx("button", {
-						className: `experimental-toggle theme-${siteTheme}`,
-						onClick: cycleSiteTheme,
-						title: `Включить ${nextThemeName} дизайн`,
-						children: "Дизайн"
+					/* @__PURE__ */ jsx(ThemeControls, {
+						label: "Дизайн",
+						theme: siteTheme,
+						onCycle: cycleSiteTheme,
+						onTheme: (theme) => {
+							setSiteTheme(theme);
+							localStorage.setItem("list-geroya-site-theme", theme);
+						},
+						appearance
 					}),
 					/* @__PURE__ */ jsx(AccountAccess, {
 						account,
@@ -62017,6 +62760,7 @@ function Builder() {
 	if (view === "homebrew") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
+		style: appearance.style,
 		children: [
 			/* @__PURE__ */ jsxs("header", {
 				className: "topbar",
@@ -62066,6 +62810,7 @@ function Builder() {
 		return /* @__PURE__ */ jsxs("main", {
 			className: `app-shell${shellThemeClass}`,
 			"data-site-theme": siteTheme,
+			style: appearance.style,
 			children: [
 				/* @__PURE__ */ jsxs("header", {
 					className: "topbar",
@@ -62085,11 +62830,15 @@ function Builder() {
 								/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
 							]
 						}),
-						/* @__PURE__ */ jsx("button", {
-							className: `experimental-toggle theme-${siteTheme}`,
-							onClick: cycleSiteTheme,
-							title: `Включить ${nextThemeName} дизайн`,
-							children: "Дизайн сайта"
+						/* @__PURE__ */ jsx(ThemeControls, {
+							label: "Дизайн сайта",
+							theme: siteTheme,
+							onCycle: cycleSiteTheme,
+							onTheme: (theme) => {
+								setSiteTheme(theme);
+								localStorage.setItem("list-geroya-site-theme", theme);
+							},
+							appearance
 						}),
 						/* @__PURE__ */ jsx("button", {
 							className: "nav-button",
@@ -62112,10 +62861,15 @@ function Builder() {
 									cloudState,
 									compact: true
 								}),
-								/* @__PURE__ */ jsx("button", {
-									className: `experimental-toggle theme-${siteTheme}`,
-									onClick: cycleSiteTheme,
-									children: "Дизайн сайта"
+								/* @__PURE__ */ jsx(ThemeControls, {
+									label: "Дизайн сайта",
+									theme: siteTheme,
+									onCycle: cycleSiteTheme,
+									onTheme: (theme) => {
+										setSiteTheme(theme);
+										localStorage.setItem("list-geroya-site-theme", theme);
+									},
+									appearance
 								}),
 								/* @__PURE__ */ jsx("button", {
 									className: "nav-button",
@@ -62492,6 +63246,7 @@ function Builder() {
 		return /* @__PURE__ */ jsxs("main", {
 			className: `app-shell${shellThemeClass}`,
 			"data-site-theme": siteTheme,
+			style: appearance.style,
 			children: [
 				/* @__PURE__ */ jsxs("header", {
 					className: "topbar",
@@ -62511,11 +63266,15 @@ function Builder() {
 								/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
 							]
 						}),
-						/* @__PURE__ */ jsx("button", {
-							className: `experimental-toggle theme-${siteTheme}`,
-							onClick: cycleSiteTheme,
-							title: `Включить ${nextThemeName} дизайн`,
-							children: "Дизайн сайта"
+						/* @__PURE__ */ jsx(ThemeControls, {
+							label: "Дизайн сайта",
+							theme: siteTheme,
+							onCycle: cycleSiteTheme,
+							onTheme: (theme) => {
+								setSiteTheme(theme);
+								localStorage.setItem("list-geroya-site-theme", theme);
+							},
+							appearance
 						}),
 						/* @__PURE__ */ jsx("button", {
 							className: "nav-button",
@@ -62538,10 +63297,15 @@ function Builder() {
 									cloudState,
 									compact: true
 								}),
-								/* @__PURE__ */ jsx("button", {
-									className: `experimental-toggle theme-${siteTheme}`,
-									onClick: cycleSiteTheme,
-									children: "Дизайн сайта"
+								/* @__PURE__ */ jsx(ThemeControls, {
+									label: "Дизайн сайта",
+									theme: siteTheme,
+									onCycle: cycleSiteTheme,
+									onTheme: (theme) => {
+										setSiteTheme(theme);
+										localStorage.setItem("list-geroya-site-theme", theme);
+									},
+									appearance
 								}),
 								/* @__PURE__ */ jsx("button", {
 									className: "nav-button",
@@ -62871,6 +63635,7 @@ function Builder() {
 	return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
+		style: appearance.style,
 		children: [
 			/* @__PURE__ */ jsxs("header", {
 				className: "topbar",
@@ -62890,11 +63655,15 @@ function Builder() {
 							/* @__PURE__ */ jsx("small", { children: "5E · 2014" })
 						]
 					}),
-					/* @__PURE__ */ jsx("button", {
-						className: `experimental-toggle theme-${siteTheme}`,
-						onClick: cycleSiteTheme,
-						title: `Включить ${nextThemeName} дизайн`,
-						children: "Дизайн сайта"
+					/* @__PURE__ */ jsx(ThemeControls, {
+						label: "Дизайн сайта",
+						theme: siteTheme,
+						onCycle: cycleSiteTheme,
+						onTheme: (theme) => {
+							setSiteTheme(theme);
+							localStorage.setItem("list-geroya-site-theme", theme);
+						},
+						appearance
 					}),
 					/* @__PURE__ */ jsxs("div", {
 						className: "top-actions",
@@ -62951,10 +63720,15 @@ function Builder() {
 							"aria-label": "Открыть меню",
 							children: "☰"
 						}), /* @__PURE__ */ jsxs("div", { children: [
-							/* @__PURE__ */ jsx("button", {
-								className: `experimental-toggle theme-${siteTheme}`,
-								onClick: cycleSiteTheme,
-								children: "Дизайн сайта"
+							/* @__PURE__ */ jsx(ThemeControls, {
+								label: "Дизайн сайта",
+								theme: siteTheme,
+								onCycle: cycleSiteTheme,
+								onTheme: (theme) => {
+									setSiteTheme(theme);
+									localStorage.setItem("list-geroya-site-theme", theme);
+								},
+								appearance
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
