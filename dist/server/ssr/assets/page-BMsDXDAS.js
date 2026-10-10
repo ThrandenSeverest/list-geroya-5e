@@ -623,10 +623,13 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 							max: "175",
 							step: "5",
 							value: preferences.zoom,
-							onChange: (e) => update({
-								...preferences,
-								zoom: Number(e.target.value)
-							})
+							onChange: (e) => {
+								const zoom = Number(e.target.value);
+								update((current) => ({
+									...current,
+									zoom
+								}));
+							}
 						})
 					] }),
 					/* @__PURE__ */ jsxs("label", { children: [
@@ -640,10 +643,13 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 							max: "160",
 							step: "5",
 							value: preferences.font,
-							onChange: (e) => update({
-								...preferences,
-								font: Number(e.target.value)
-							})
+							onChange: (e) => {
+								const font = Number(e.target.value);
+								update((current) => ({
+									...current,
+									font
+								}));
+							}
 						})
 					] }),
 					/* @__PURE__ */ jsx("p", { children: "Масштаб интерфейса применяется на компьютере. Размер шрифта меняется отдельно; печатный и мобильный листы сохраняют свои размеры." }),
