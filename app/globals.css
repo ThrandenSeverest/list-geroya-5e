@@ -1740,3 +1740,5 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .hb-workspace :is(button,input,textarea,select) { background:#f6ebcb; color:#17120e; border-color:#17120e; box-shadow:none; }
 .modern-design .hb-workspace button[aria-pressed="true"] { background:#f6ebcb; color:#8f1821; border:2px solid #8f1821; font-weight:700; outline:0; }
 .modern-design .hb-workspace small { opacity:1; }
+.modern-design :is(.ban-status,.feature-preview>div,.feature-preview section>div,.resource-preview-grid>div,.currency-editor,.pointbuy-status,.slot-usage-editor label,.slot-row,.advancement-warning,.asi-picker,.always-prepared,.attack-table,.import-result,.import-guide,.update-history-toggle,.update-history-panel header,.hb-spell-preview,.hb-package-breadcrumb,.additional-spell-access.unlocked) { background:#f6ebcb; border-color:#17120e; box-shadow:none; backdrop-filter:none; }
+.modern-design .progress { background:#ded4bb; }
