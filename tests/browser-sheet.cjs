@@ -127,6 +127,34 @@ async function saved(page) {
         assert.equal(vault.slots[0].character.currentHitPoints,27);
         assert.equal(vault.slots[1].character.name,'Неизменяемый сосед');
         assert.equal(vault.slots[1].character.levelHistory[1].hpGain,8);
+        if(width>760) {
+          await page.getByRole('button',{name:'Главное меню',exact:true}).click();
+          await page.getByRole('button',{name:'Настройки интерфейса',exact:true}).click();
+          const settings=page.getByRole('dialog');
+          await settings.getByLabel('Размер интерфейса на ПК',{exact:true}).fill('150');
+          await settings.getByLabel('Размер шрифта',{exact:true}).fill('120');
+          await settings.getByLabel('Цветовая тема').selectOption('parchment');
+          await settings.getByRole('button',{name:'Создать свою тему',exact:true}).click();
+          await settings.getByLabel('Название темы').fill('Тестовая тема');
+          await settings.getByLabel('Фон страницы',{exact:true}).fill('#ddeeff');
+          await settings.getByLabel('Основной текст',{exact:true}).fill('#112233');
+          await settings.getByLabel('Рамки',{exact:true}).fill('#445566');
+          await page.keyboard.press('Escape');
+          await page.reload();
+          await page.getByRole('button',{name:'Настройки интерфейса',exact:true}).click();
+          assert.equal(await settings.getByLabel('Название темы').inputValue(),'Тестовая тема');
+          assert.equal(await settings.getByLabel('Размер интерфейса на ПК',{exact:true}).inputValue(),'150');
+          assert.equal(await settings.getByLabel('Размер шрифта',{exact:true}).inputValue(),'120');
+          const appearance=await page.locator('.app-shell').evaluate(e=>({background:getComputedStyle(e).backgroundColor,text:getComputedStyle(e).getPropertyValue('--ivory').trim(),line:getComputedStyle(e).getPropertyValue('--line').trim()}));
+          assert.deepEqual(appearance,{background:'rgb(221, 238, 255)',text:'#112233',line:'#445566'});
+          await settings.getByLabel('Цветовая тема').selectOption('parchment');
+          await settings.getByRole('button',{name:'Сбросить размеры',exact:true}).click();
+          await page.keyboard.press('Escape');
+          await openSheet(page);
+          await page.getByRole('button',{name:'Бан-листы',exact:true}).click();
+          await page.getByText('Источники · блокировка целой книги',{exact:true}).click();
+          assert.equal(await page.locator('.ban-source-grid section').evaluateAll(cards=>cards.some(card=>{const bounds=card.getBoundingClientRect();return [...card.querySelectorAll('button')].some(button=>{const b=button.getBoundingClientRect();return b.left<bounds.left-1 || b.right>bounds.right+1;});})),false,'Source buttons remain inside their cards at desktop zoom');
+        }
         assert.deepEqual(errors,[]);
         console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','mobile HP','reload','preserved vault']}));
       } finally { await context.close(); }

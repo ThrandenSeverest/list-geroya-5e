@@ -1,5 +1,7 @@
 "use client";
 
+import { ThemeControls, useInterfacePreferences } from "./ThemeSettings";
+
 import { isStaticPages } from "./accountAvailability";
 import { homebrewAsiLevels, homebrewTableFeatures } from "./homebrewTemplates";
 import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
@@ -779,6 +781,7 @@ function Builder() {
   const [selectedSources, setSelectedSources] = useState<string[]>(() => [...catalogSources(spells),"Homebrew"]);
   const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
   const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
+  const appearance = useInterfacePreferences();
   const [siteTheme, setSiteTheme] = useState<SiteTheme>("classic");
   const [mobileSheet, setMobileSheet] = useState(false);
   const [mobileSheetTab, setMobileSheetTab] = useState<MobileSheetTab>("overview");
@@ -942,11 +945,11 @@ function Builder() {
   }, [account, character, ready, vault]);
 
   const usesOrnateIcons = true;
-  const shellThemeClass = siteTheme === "parchment" ? " modern-design" : "";
-  const nextThemeName = siteTheme === "classic" ? "пергаментный" : "синий с золотом";
+  const shellThemeClass = (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
 
   function cycleSiteTheme() {
     const next: SiteTheme = siteTheme === "classic" ? "parchment" : "classic";
+    appearance.update({ ...appearance.preferences, activePreset: "" });
     setSiteTheme(next);
     localStorage.setItem("list-geroya-site-theme", next);
   }
@@ -2548,13 +2551,13 @@ function Builder() {
     setCharacter(generated); setView("builder"); resetFilters(10, false);
   }
 
-  if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+  if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
 {view === "home" && <header className="topbar home-topbar">
   <button className="brand" onClick={() => setView("home")} aria-label="Лист Героя — главная"><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
   <nav className="home-top-actions" aria-label="Главная навигация">
     <button className="nav-button" onClick={openCharacterManager}>Персонажи</button>
     <button className="nav-button" onClick={() => setView("homebrew")}>Homebrew</button>
-    <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн</button>
+    <ThemeControls label="Дизайн" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
     <AccountAccess account={account} cloudState={cloudState} compact />
   </nav>
 </header>}
@@ -2596,7 +2599,7 @@ function Builder() {
   </main>;
 
   if (view === "homebrew") return (
-    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
       <header className="topbar">
         <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
         <div className="section-top-actions"><button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button><AccountAccess account={account} cloudState={cloudState} compact /></div>
@@ -2612,13 +2615,13 @@ function Builder() {
     const allVisibleSelected = visibleSlots.length > 0 && visibleSlots.every(slot => selectedSlotIds.includes(slot.id));
     const selectedFolder = vault.folders.find(folder => folder.id === activeFolderId);
     return (
-      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
         <header className="topbar">
           <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
-          <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+          <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
           <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
           <AccountAccess account={account} cloudState={cloudState} compact />
-          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
         <section className="character-library">
           <header className="library-head">
@@ -2724,13 +2727,13 @@ function Builder() {
     ).sort((a, b) => a.name.localeCompare(b.name, "ru"));
     const blockedCount = Object.entries(catalogs).reduce((sum, [key, options]) => sum + options.filter(option => !allowed(banDraft, key as Category, option.id)).length, 0);
     return (
-      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+      <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
         <header className="topbar">
           <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
-          <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+          <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
           <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
           <AccountAccess account={account} cloudState={cloudState} compact />
-          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
+          <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
         </header>
         <div className="ban-page">
           <p className="eyebrow">Правила кампании</p>
@@ -2840,10 +2843,10 @@ function Builder() {
   const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(exportCharacter, pendingMulticlassId) : undefined;
 
   return (
-    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme}>
+    <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
       <header className="topbar">
         <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
-        <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme} title={`Включить ${nextThemeName} дизайн`}>Дизайн сайта</button>
+        <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
         <div className="top-actions">
           <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
           <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
@@ -2856,7 +2859,7 @@ function Builder() {
         <details className="mobile-top-menu">
           <summary aria-label="Открыть меню">☰</summary>
           <div>
-            <button className={`experimental-toggle theme-${siteTheme}`} onClick={cycleSiteTheme}>Дизайн сайта</button>
+            <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
             <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
             <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
             <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
