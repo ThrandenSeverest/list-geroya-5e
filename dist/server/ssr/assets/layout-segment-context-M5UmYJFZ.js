@@ -1,6 +1,6 @@
 import { n as getLayoutSegmentContext } from "../index.js";
 import { createElement } from "react";
-//#region ../../workspace/scratch/f7e54182db6c/herolist-audit/node_modules/vinext/dist/shims/layout-segment-context.js
+//#region node_modules/vinext/dist/shims/layout-segment-context.js
 /**
 * Layout segment context provider.
 *
