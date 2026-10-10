@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { allowed, catalogs, normalizeBanList, setBanState, setSourceBan } from '../app/banLists';
 import { optionalFeatureId, restrictedCharacter, classOptionId } from '../app/campaignRestrictions';
 import { classChoiceGroups } from '../app/classChoices';
-import { characterProficiencies } from '../app/proficiencies';
 import { characterResources } from '../app/characterResources';
 import { documentedClassFeatures } from '../app/featureDetails';
 import { isTashaAdditionalSpell } from '../app/characterRules';
@@ -59,4 +58,12 @@ test('TCE source ban controls expanded spells separately from optional feature t
   assert.equal(isTashaAdditionalSpell({...hero,tceFullBanned:true},'entangle'),false);
   assert.equal(isTashaAdditionalSpell({...hero,useTasha:false},'entangle'),true);
   assert.equal(isTashaAdditionalSpell({...hero,bannedOptionalFeatures:['ranger:дополнительные заклинания следопыта']},'entangle'),false);
+});
+
+test('legacy optional-only ban leaves expanded spell lists available',()=>{
+  const list=normalizeBanList({version:2,tceOptionalFeaturesBanned:true,mode:'deny',categories:{}});
+  assert.equal(allowed(list,'optionalFeatures',optionalFeatureId('ranger','Искусный исследователь')),false);
+  const expanded=catalogs.optionalFeatures.find(option=>option.classId==='ranger'&&option.id.includes(':дополнительные заклинания'));
+  assert.ok(expanded);
+  assert.equal(allowed(list,'optionalFeatures',expanded.id),true);
 });

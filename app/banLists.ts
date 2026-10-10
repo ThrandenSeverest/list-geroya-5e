@@ -26,7 +26,7 @@ export function normalizeBanList(value: unknown): BanList {
     categories: Object.fromEntries((Object.keys(categoryNames) as Category[]).map(category => [category, Array.isArray(input.categories?.[category]) ? [...new Set(input.categories[category].filter((id): id is string => typeof id === 'string'))] : mode === 'allow' ? catalogs[category].map(option => option.id) : []])) as Record<Category, string[]>,
     tceOptionalFeaturesBanned: false, tceFullBanned: false };
   if (input.tceFullBanned) result = setSourceBan(result, 'TCE', true);
-  else if (input.tceOptionalFeaturesBanned) result = setBanState(result, 'optionalFeatures', catalogs.optionalFeatures.map(option => option.id), true);
+  else if (input.tceOptionalFeaturesBanned) result = setBanState(result, 'optionalFeatures', catalogs.optionalFeatures.filter(option => !option.id.includes(':дополнительные заклинания')).map(option => option.id), true);
   return result;
 }
 export function allowed(list: BanList | null, category: Category, id: string) {
