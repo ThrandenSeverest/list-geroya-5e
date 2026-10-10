@@ -274,7 +274,7 @@ const table = {
         assert.equal(savedClass.spellcasting.mode, "full");
         assert.ok(savedClass.effects.some(e => e.type === "weapon_group_proficiency" && e.group === "simple"));
         await page.getByRole("button", { name: "Закрыть", exact: true }).click();
-        await page.getByLabel("Поиск Homebrew").fill("Класс браузера");
+        await page.getByLabel("Поиск в боковой библиотеке").fill("Класс браузера");
         assert.equal(
           await page.locator(".hb-browser-results article").count(),
           1,
@@ -294,9 +294,9 @@ const table = {
           0,
         );
         await page.getByLabel("Фильтр Homebrew").selectOption("all");
-        await page.getByLabel("Поиск Homebrew").fill("");
+        await page.getByLabel("Поиск в боковой библиотеке").fill("");
       }
-      await page.getByLabel("Поиск Homebrew").fill("Шаман");
+      await page.getByLabel("Поиск в боковой библиотеке").fill("Шаман");
       const card = page
         .locator(".hb-browser-results article")
         .filter({
@@ -306,7 +306,7 @@ const table = {
       await card
         .getByRole("button", { name: "Выбрать класс", exact: true })
         .click();
-      await page.getByLabel("Поиск Homebrew").fill("Таблица проверки");
+      await page.getByLabel("Поиск в боковой библиотеке").fill("Таблица проверки");
       await page
         .locator(".hb-browser-results article")
         .getByRole("button", { name: "Использовать", exact: true })
