@@ -1238,7 +1238,7 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   .mobile-character-sheet { display: none !important; }
 }
 
-/* Parchment theme: restrained black/red palette with transparent utility panels. */
+/* Parchment theme: solid neutral surfaces, with red type and borders for choices. */
 .app-shell.modern-design {
   --line: #17120e;
   --teal: #17120e;
@@ -1278,27 +1278,34 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .slot-footer button {
   color: #17120e;
   border-color: #17120e;
-  background: transparent;
+  background: #f6ebcb;
 }
 .modern-design .choice-card,
 .modern-design .summary,
-.modern-design .identity-editor label,
+.modern-design .identity-editor label {
+  color: #17120e;
+  border-color: #17120e;
+  background: #f6ebcb;
+  box-shadow: none;
+}
+.modern-design .choice-card:hover,
+.modern-design .choice-card.selected {
+  background: #f6ebcb;
+  border-color: #8f1821;
+}
 .modern-design .mobile-character-sheet {
   color: #17120e;
   border-color: rgba(23,18,14,.72);
   background: rgba(246,235,203,.42);
   box-shadow: none;
 }
-.modern-design .choice-card:hover,
-.modern-design .choice-card.selected {
-  background: rgba(246,235,203,.62);
-  border-color: #8f1821;
-}
 .modern-design .source-filter button.active {
   border-color: #8f1821;
-  background: rgba(143,24,33,.15);
+  background: #f6ebcb;
   color: #8f1821;
-  box-shadow: inset 0 0 0 1px rgba(143,24,33,.24), 0 0 9px rgba(143,24,33,.14);
+  border-width: 2px;
+  font-weight: 700;
+  box-shadow: none;
 }
 .modern-design .choice-card p,
 .modern-design .feature-preview p,
@@ -1402,7 +1409,9 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   color: #17120e;
   border-color: #17120e;
 }
-/* Selected choices must follow the neutral parchment panel rules. */
+/* Selection uses weight and a solid border, never a translucent tint or glow. */
+.modern-design .choice-card.selected,
+.modern-design .choice-card.selected .card-actions button:first-child,
 .modern-design .spell-list article.selected,
 .modern-design .known-spell-picker button,
 .modern-design .prepared-picker button.selected,
@@ -1415,7 +1424,29 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .feat-choice-options button.selected {
   color: #8f1821;
   border-color: #8f1821;
-  background: rgba(143,24,33,.08);
+  background: #f6ebcb;
+  border-width: 2px;
+  font-weight: 700;
+  box-shadow: none;
+}
+.modern-design .choice-card.selected h2,
+.modern-design .class-choice-card.selected h3,
+.modern-design .spell-list article.selected h3,
+.modern-design .known-spell-picker button strong,
+.modern-design .prepared-picker button.selected strong,
+.modern-design .equipment-options button.selected strong,
+.modern-design .proficiency-grid button.selected strong,
+.modern-design .class-choice-card.selected strong,
+.modern-design .subclass-grid button.selected strong,
+.modern-design .feat-grid button.selected strong,
+.modern-design .feat-choice-options button.selected strong {
+  color: #8f1821;
+  font-weight: 700;
+}
+.modern-design .choice-card.selected p,
+.modern-design .spell-list article.selected p,
+.modern-design .spell-list article.selected small {
+  font-weight: 400;
 }
 .modern-design .equipment-options button.selected > span {
   color: #8f1821;
