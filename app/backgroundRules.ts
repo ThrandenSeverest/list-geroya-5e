@@ -21,13 +21,13 @@ export type BackgroundRule = {
  */
 export function startingGoldFromBackgroundEquipment(equipment: string[]) {
   return equipment.reduce((total, item) => {
-    const match = item.match(/(?:кошел(?:[её]к|ь)\s+с\s+)?(\d+)\s*зм\b/i);
+    const match = item.match(/(?:кошел(?:[её]к|ь)\s+с\s+)?(\d+)\s*зм(?![\p{L}\p{N}_])/iu);
     return total + (match ? Number(match[1]) : 0);
   }, 0);
 }
 
 export function backgroundEquipmentWithoutStartingGold(equipment: string[]) {
-  return equipment.filter(item => !/(?:кошел(?:[её]к|ь)\s+с\s+)?\d+\s*зм\b/i.test(item));
+  return equipment.filter(item => !/(?:кошел(?:[её]к|ь)\s+с\s+)?\d+\s*зм(?![\p{L}\p{N}_])/iu.test(item));
 }
 
 export function backgroundStartingGold(id: string, fallback?: CatalogOption) {

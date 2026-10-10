@@ -14,6 +14,10 @@ def normalize(root: Path) -> None:
     if info.exists():
         info.unlink()
 
+    client_info = root / "client/BUILD_INFO.json"
+    if client_info.exists():
+        client_info.unlink()
+
     build_ids: list[str] = []
     for path in root.glob("server/**/BUILD_ID"):
         build_ids.append(path.read_text(encoding="utf-8").strip())

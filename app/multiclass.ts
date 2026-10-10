@@ -130,7 +130,7 @@ const prerequisites: Record<string, Array<keyof AbilityScores>> = {
   rogue: ["dex"], sorcerer: ["cha"], warlock: ["cha"], wizard: ["int"], artificer: ["int"],
 };
 
-export function multiclassRequirement(character: ExportCharacter, classId: string) {
+function singleClassRequirement(character: ExportCharacter, classId: string) {
   const labels: Record<keyof AbilityScores, string> = { str: "Сила", dex: "Ловкость", con: "Телосложение", int: "Интеллект", wis: "Мудрость", cha: "Харизма" };
   const custom = character.homebrew?.entities.find(entity => entity.id === classId && entity.type === "class");
   if (custom) {
@@ -149,6 +149,16 @@ export function multiclassRequirement(character: ExportCharacter, classId: strin
   const passed = alternatives.length ? alternatives.some(key => character.abilities[key] >= 13) : needs.every(key => character.abilities[key] >= 13);
   const required = alternatives.length ? alternatives.map(key => `${labels[key]} 13`).join(" или ") : needs.map(key => `${labels[key]} 13`).join(" и ");
   return { passed, required, missing: alternatives.length ? (passed ? [] : alternatives.map(key => `${labels[key]} ${character.abilities[key]}`)) : needs.filter(key => character.abilities[key] < 13).map(key => `${labels[key]} ${character.abilities[key]}`) };
+}
+
+/** Abilities supplied here are final scores; never apply racial/feat bonuses twice. */
+export function multiclassRequirement(character: ExportCharacter, classId: string) {
+  const target = singleClassRequirement(character, classId);
+  const existing = orderedCharacterClasses(character).filter(entry => entry.classId !== classId)
+    .map(entry => ({ id: entry.classId, result: singleClassRequirement(character, entry.classId) }))
+    .filter(entry => !entry.result.passed);
+  return { ...target, passed: target.passed && !existing.length,
+    missing: [...target.missing, ...existing.flatMap(entry => entry.result.missing.map(message => `${character.homebrew?.entities.find(entity => entity.id === entry.id)?.name || entry.id}: ${message}`))] };
 }
 
 const fullCasterSlots = [[], [2], [3], [4, 2], [4, 3], [4, 3, 2], [4, 3, 3], [4, 3, 3, 1], [4, 3, 3, 2], [4, 3, 3, 3, 1], [4, 3, 3, 3, 2], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 2, 1, 1, 1, 1], [4, 3, 3, 3, 3, 1, 1, 1, 1], [4, 3, 3, 3, 3, 2, 1, 1, 1], [4, 3, 3, 3, 3, 2, 2, 1, 1]];

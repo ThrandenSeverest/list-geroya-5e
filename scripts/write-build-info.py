@@ -28,3 +28,6 @@ Path("dist/BUILD_INFO.json").write_text(
     ) + "\n",
     encoding="utf-8",
 )
+
+# Serve the same public metadata from the frontend as from the deployment root.
+Path("dist/client/BUILD_INFO.json").write_bytes(Path("dist/BUILD_INFO.json").read_bytes())

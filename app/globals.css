@@ -1622,3 +1622,20 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 
 @media(max-width:1050px){.home-hero-copy{width:62%}.home-hero-art{width:58%}.home-quick-actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.home-page{width:100%;padding-top:0}.home-hero{min-height:0;overflow:hidden}.home-hero-copy{width:100%;min-height:0;padding:34px 20px 285px}.home-hero-copy h1{font-size:43px}.home-hero-art{inset:auto -2% 0 auto;width:100%;height:300px}.home-hero-art img{object-fit:contain;object-position:right bottom}.home-quick-actions{grid-template-columns:1fr;border-bottom:0}.home-quick-actions button,.home-quick-actions button:first-child{padding:12px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--line) 58%,transparent)}.home-benefits{border-left:0;border-right:0}.home-lower .contact-card,.home-lower .special-thanks{padding-left:0;padding-right:0}.hb-library-actions .hb-library-delete{grid-column:1/-1}}
+
+/* Desktop readability; print and touch layouts retain their own dimensions. */
+@media screen and (min-width: 1024px) and (pointer: fine) {
+  body { zoom: 1.25; }
+  .option-details, .option-details p, .option-details li,
+  .variant-picker .variant-feature-line, .feature-preview p,
+  .character-grid article p, .hb-workspace .hb-rich, .hb-workspace .hb-feature-description { font-size: 15px; line-height: 1.55; }
+  .topbar { height: auto; min-height: 74px; flex-wrap: wrap; gap: 12px; padding-top: 12px; padding-bottom: 12px; }
+}
+@media screen and (min-width: 1024px) and (max-width: 1500px) and (pointer: fine) {
+  .workspace { grid-template-columns: 210px minmax(0, 1fr); }
+  .workspace > .summary { display: none; }
+  .mobile-actions { position: sticky; bottom: 0; margin: 30px -20px -60px; padding: 12px 20px; display: flex; justify-content: flex-end; gap: 10px; background: var(--panel); border-top: 1px solid var(--line); }
+  .mobile-actions button { min-width: 140px; padding: 13px; border: 1px solid var(--copper); background: var(--panel-2); }
+  .mobile-actions button:disabled { opacity: .35; }
+  .home-hero-copy h1 { font-size: 46px; }
+}
