@@ -1290,12 +1290,12 @@ var documentBackgrounds = [
 */
 function startingGoldFromBackgroundEquipment(equipment) {
 	return equipment.reduce((total, item) => {
-		const match = item.match(/(?:кошел(?:[её]к|ь)\s+с\s+)?(\d+)\s*зм\b/i);
+		const match = item.match(/(?:кошел(?:[её]к|ь)\s+с\s+)?(\d+)\s*зм(?![\p{L}\p{N}_])/iu);
 		return total + (match ? Number(match[1]) : 0);
 	}, 0);
 }
 function backgroundEquipmentWithoutStartingGold(equipment) {
-	return equipment.filter((item) => !/(?:кошел(?:[её]к|ь)\s+с\s+)?\d+\s*зм\b/i.test(item));
+	return equipment.filter((item) => !/(?:кошел(?:[её]к|ь)\s+с\s+)?\d+\s*зм(?![\p{L}\p{N}_])/iu.test(item));
 }
 function backgroundStartingGold(id, fallback) {
 	return startingGoldFromBackgroundEquipment(backgroundRule(id, fallback).equipment);
@@ -13757,7 +13757,7 @@ var prerequisites = {
 	wizard: ["int"],
 	artificer: ["int"]
 };
-function multiclassRequirement(character, classId) {
+function singleClassRequirement(character, classId) {
 	const labels = {
 		str: "Сила",
 		dex: "Ловкость",
@@ -13788,6 +13788,19 @@ function multiclassRequirement(character, classId) {
 		passed,
 		required: alternatives.length ? alternatives.map((key) => `${labels[key]} 13`).join(" или ") : needs.map((key) => `${labels[key]} 13`).join(" и "),
 		missing: alternatives.length ? passed ? [] : alternatives.map((key) => `${labels[key]} ${character.abilities[key]}`) : needs.filter((key) => character.abilities[key] < 13).map((key) => `${labels[key]} ${character.abilities[key]}`)
+	};
+}
+/** Abilities supplied here are final scores; never apply racial/feat bonuses twice. */
+function multiclassRequirement(character, classId) {
+	const target = singleClassRequirement(character, classId);
+	const existing = orderedCharacterClasses(character).filter((entry) => entry.classId !== classId).map((entry) => ({
+		id: entry.classId,
+		result: singleClassRequirement(character, entry.classId)
+	})).filter((entry) => !entry.result.passed);
+	return {
+		...target,
+		passed: target.passed && !existing.length,
+		missing: [...target.missing, ...existing.flatMap((entry) => entry.result.missing.map((message) => `${character.homebrew?.entities.find((entity) => entity.id === entry.id)?.name || entry.id}: ${message}`))]
 	};
 }
 var fullCasterSlots$1 = [
@@ -48959,6 +48972,53 @@ function unzipSync(data, opts) {
 	return files;
 }
 //#endregion
+//#region app/levelState.ts
+/** Level edits do not constitute a rest. Prune only choices that become illegal. */
+function retainLevelState(before, after, catalog = spells) {
+	const classes = orderedCharacterClasses(after);
+	const legal = /* @__PURE__ */ new Map();
+	for (const entry of classes) {
+		const previous = orderedCharacterClasses(before).find((row) => row.classId === entry.classId);
+		const ids = before.spellGrants?.length ? before.spellGrants.filter((grant) => grant.classId === entry.classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : entry.classId === before.className ? before.spells : [];
+		if (previous && entry.level >= previous.level) {
+			legal.set(entry.classId, new Set(ids));
+			continue;
+		}
+		const rule = spellSelectionRuleForClass({
+			...after,
+			homebrew: before.homebrew
+		}, entry.classId, entry.level);
+		let cantrips = 0, leveled = 0;
+		legal.set(entry.classId, new Set(ids.filter((id) => {
+			const spell = catalog.find((row) => row.id === id);
+			if (!spell) return true;
+			if (!rule.caster || spell.level > rule.maxLevel) return false;
+			return spell.level === 0 ? cantrips++ < rule.cantrips : leveled++ < rule.leveled;
+		})));
+	}
+	const spellGrants = before.spellGrants?.filter((grant) => !grant.classId || (grant.mode === "always-prepared" ? classes.some((entry) => entry.classId === grant.classId) : legal.get(grant.classId)?.has(grant.spellId)));
+	const retained = new Set([...legal.values()].flatMap((ids) => [...ids]));
+	for (const grant of spellGrants || []) retained.add(grant.spellId);
+	const preparedSpellsByClass = Object.fromEntries(Object.entries(before.preparedSpellsByClass || {}).filter(([id]) => legal.has(id)).map(([id, values]) => {
+		const entry = classes.find((row) => row.classId === id);
+		const rule = spellSelectionRuleForClass({
+			...after,
+			homebrew: before.homebrew
+		}, id, entry.level);
+		return [id, values.filter((spell) => legal.get(id)?.has(spell)).slice(0, rule.prepared ?? values.length)];
+	}));
+	return {
+		...after,
+		spells: before.spells.filter((id) => retained.has(id)),
+		spellGrants,
+		preparedSpellsByClass: before.preparedSpellsByClass ? preparedSpellsByClass : void 0,
+		preparedSpells: before.preparedSpellsByClass ? [...new Set(Object.values(preparedSpellsByClass).flat())] : before.preparedSpells?.filter((id) => retained.has(id)),
+		spellSlotsUsed: before.spellSlotsUsed,
+		pactSlotsUsed: before.pactSlotsUsed,
+		resourceSpent: before.resourceSpent
+	};
+}
+//#endregion
 //#region node_modules/lucide-react/dist/esm/icons/trending-up.js
 /**
 * @license lucide-react v0.468.0 - ISC
@@ -50401,6 +50461,54 @@ function RelationsMap({ element, initialFocus }) {
 			}) : /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Механика способности и условия эффектов" }), session.renderMechanics(subject, (patch, related) => session.patchElement(subject.id, patch, related), 0)] }))
 		]
 	});
+}
+//#endregion
+//#region app/homebrewCopy.ts
+/** Clone the whole dependency graph, including IDs embedded in interactive text. */
+function copyHomebrew(root, library) {
+	const closure = homebrewExportClosure(root, library);
+	const ids = /* @__PURE__ */ new Map();
+	const collect = (value) => {
+		if (!value || typeof value !== "object") return;
+		if (Array.isArray(value)) {
+			value.forEach(collect);
+			return;
+		}
+		for (const [key, child] of Object.entries(value)) {
+			if ((key === "id" || key === "packId") && typeof child === "string" && (key === "packId" || child.startsWith("hb:")) && !ids.has(child)) ids.set(child, newHomebrew("ability").id);
+			collect(child);
+		}
+	};
+	for (const element of closure) {
+		collect(element);
+		ids.set(element.id, newHomebrew(element.type).id);
+	}
+	const pattern = new RegExp([...ids.keys()].sort((a, b) => b.length - a.length).map((id) => id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"), "g");
+	const remap = (value) => {
+		if (typeof value === "string") return value.replace(pattern, (id) => ids.get(id));
+		if (Array.isArray(value)) return value.map(remap);
+		if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, child]) => [key.replace(pattern, (id) => ids.get(id)), remap(child)]));
+		return value;
+	};
+	const elements = closure.map((element) => {
+		const copy = remap(element);
+		return {
+			...copy,
+			uid: copy.id,
+			updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+			...element.id === root.id ? { name: root.name + " — копия" } : {}
+		};
+	});
+	return {
+		root: elements.find((element) => element.id === ids.get(root.id)),
+		related: elements.filter((element) => element.id !== ids.get(root.id))
+	};
+}
+//#endregion
+//#region app/ruPlural.ts
+function ruPlural(count, one, few, many) {
+	const n = Math.abs(count) % 100;
+	return n >= 11 && n <= 14 ? many : n % 10 === 1 ? one : n % 10 >= 2 && n % 10 <= 4 ? few : many;
 }
 var shamanExample_default = {
 	schemaVersion: 2,
@@ -55288,6 +55396,16 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		}
 		setError(`Удалено наборов: ${entries.length}.`);
 	};
+	const copy = (e) => {
+		if (hasUnsavedChanges && !confirm("Открыть копию? Несохранённые изменения будут потеряны.")) return;
+		const cloned = copyHomebrew(e, library.elements);
+		setDraft(cloned.root);
+		setRelated(Object.fromEntries(cloned.related.map((element) => [element.id, element])));
+		setHistory([]);
+		setFuture([]);
+		setTab("Основное");
+		setError("");
+	};
 	const remove = (e) => removeMany([e]);
 	return /* @__PURE__ */ jsx(HBEditingContext.Provider, {
 		value: {
@@ -55507,7 +55625,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 										})]
 									})]
 								}),
-								sectionGuide[tab] && /* @__PURE__ */ jsxs("div", {
+								sectionGuide[tab] && tab !== "Развитие и способности" && /* @__PURE__ */ jsxs("div", {
 									className: "hb-section-intro",
 									children: [/* @__PURE__ */ jsx("span", {
 										className: "hb-section-icon",
@@ -55974,6 +56092,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 							filter,
 							setFilter,
 							open,
+							copy,
 							apply,
 							remove,
 							removeMany,
@@ -57531,10 +57650,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 					const count = levelCount(n);
 					return /* @__PURE__ */ jsxs("button", {
 						type: "button",
-						"aria-label": `Уровень ${n}: ${count} записей`,
+						"aria-label": `Уровень ${n}: ${count} ${ruPlural(count, "запись", "записи", "записей")}`,
 						"aria-pressed": level === n,
 						onClick: () => setLevel(n),
-						children: [/* @__PURE__ */ jsx("strong", { children: n }), /* @__PURE__ */ jsx("small", { children: count ? `${count} записей` : "Пусто" })]
+						children: [/* @__PURE__ */ jsx("strong", { children: n }), /* @__PURE__ */ jsx("small", { children: count ? `${count} ${ruPlural(count, "запись", "записи", "записей")}` : "Пусто" })]
 					}, n);
 				})
 			}),
@@ -57684,7 +57803,7 @@ function ClassFeatures({ draft, update, entities, level }) {
 							"С ",
 							feature.level,
 							" уровня",
-							attached.length ? ` · ${attached.length} этапов выбора` : ""
+							attached.length ? ` · ${attached.length} ${ruPlural(attached.length, "этап выбора", "этапа выбора", "этапов выбора")}` : ""
 						] })] }),
 						children: /* @__PURE__ */ jsxs("div", {
 							className: "hb-choice-feature-core",
@@ -58070,7 +58189,11 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 	return /* @__PURE__ */ jsxs("aside", {
 		className: "hb-workspace-sidebar",
 		children: [
-			/* @__PURE__ */ jsxs("h2", { children: ["Библиотека ", /* @__PURE__ */ jsxs("small", { children: [packages.length, " наборов"] })] }),
+			/* @__PURE__ */ jsxs("h2", { children: ["Библиотека ", /* @__PURE__ */ jsxs("small", { children: [
+				packages.length,
+				" ",
+				ruPlural(packages.length, "набор", "набора", "наборов")
+			] })] }),
 			/* @__PURE__ */ jsxs("p", { children: [packages.reduce((sum, pack) => sum + pack.members.length, 0), " внутренних компонентов аккуратно собраны по классам, расам и другим наборам."] }),
 			/* @__PURE__ */ jsxs("div", {
 				className: "hb-quick-create",
@@ -58207,7 +58330,7 @@ function ClassPackageContents({ root, pack, open }) {
 		]
 	});
 }
-function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, apply, remove, removeMany, download }) {
+function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, copy, apply, remove, removeMany, download }) {
 	const [sort, setSort] = useState("newest"), [source, setSource] = useState("all"), [selected, setSelected] = useState([]);
 	const packs = homebrewPackages(library.elements);
 	const visible = packs.filter((pack) => {
@@ -58225,12 +58348,6 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 		/* @__PURE__ */ jsxs("div", {
 			className: "hb-browser-tools",
 			children: [
-				/* @__PURE__ */ jsx("input", {
-					"aria-label": "Поиск Homebrew",
-					placeholder: "Название набора или компонента",
-					value: query,
-					onChange: (e) => setQuery(e.target.value)
-				}),
 				/* @__PURE__ */ jsx(Select, {
 					label: "Фильтр Homebrew",
 					value: filter,
@@ -58266,7 +58383,9 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 			className: "hb-browser-summary",
 			children: [/* @__PURE__ */ jsxs("p", { children: [
 				visible.length,
-				" наборов · ",
+				" ",
+				ruPlural(visible.length, "набор", "набора", "наборов"),
+				" · ",
 				library.elements.length,
 				" внутренних компонентов. Внутренние части классов сгруппированы и удаляются вместе с набором."
 			] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
@@ -58312,6 +58431,10 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 							/* @__PURE__ */ jsxs("small", { children: [homebrewTypeLabels[e.type], pack.members.length > 1 ? " · полный набор" : ""] }),
 							/* @__PURE__ */ jsx("h2", { children: e.name }),
 							/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
+							query && /* @__PURE__ */ jsxs("p", {
+								className: "hb-search-matches",
+								children: ["Совпадения: ", pack.members.filter((member) => (member.name + " " + member.id + " " + member.tags?.join(" ") + " " + member.summary).toLowerCase().includes(query.toLowerCase())).map((member) => member.name).join(", ")]
+							}),
 							/* @__PURE__ */ jsxs("small", { children: ["Сохранено ", new Date(e.updatedAt).toLocaleString("ru-RU", {
 								dateStyle: "short",
 								timeStyle: "short"
@@ -58356,24 +58479,7 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, ap
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => {
-										const n = newHomebrew(e.type, e.name + " — копия");
-										open({
-											...e,
-											...n,
-											features: e.features?.map((f) => ({
-												...f,
-												id: newHomebrew("ability").id
-											})),
-											resources: e.resources?.map((r) => ({
-												...r,
-												id: newHomebrew("resource").id
-											})),
-											attacks: e.attacks?.map((a) => ({
-												...a,
-												id: newHomebrew("attack").id
-											})),
-											advancement: {}
-										});
+										copy(e);
 									},
 									children: "Создать копию"
 								})
@@ -59581,7 +59687,12 @@ function Builder() {
 			const remotePayload = vaultResponse.ok ? await vaultResponse.json() : { vault: null };
 			setHomebrew(normalizeHomebrewLibrary((homebrewResponse.ok ? await homebrewResponse.json() : { library: emptyHomebrewLibrary }).library));
 			setHomebrewState(homebrewResponse.ok ? "saved" : "error");
-			const merged = mergeVaults(localVault, remotePayload.vault);
+			let latestLocal = localVault;
+			try {
+				const stored = localStorage.getItem("list-geroya-character-vault-v1");
+				if (stored) latestLocal = normalizeVault(JSON.parse(stored));
+			} catch {}
+			const merged = mergeVaults(latestLocal, remotePayload.vault);
 			setVault(merged);
 			const active = merged.slots.find((slot) => slot.id === merged.activeId);
 			if (active) setCharacter(active.character);
@@ -59613,17 +59724,17 @@ function Builder() {
 				setVault(loadedVault);
 				if (active) setCharacter(active.character);
 			} else {
-				const migrated = storedCharacter ? normalizeCharacter(JSON.parse(storedCharacter)) : initial;
-				const slot = createSlot(migrated);
+				const migrated = storedCharacter ? normalizeCharacter(JSON.parse(storedCharacter)) : null;
+				const slot = migrated ? createSlot(migrated) : null;
 				loadedVault = {
 					version: 1,
 					capacity: 5,
-					activeId: slot.id,
-					slots: [slot],
+					activeId: slot?.id || "",
+					slots: slot ? [slot] : [],
 					folders: []
 				};
 				setVault(loadedVault);
-				setCharacter(migrated);
+				if (migrated) setCharacter(migrated);
 			}
 			const storedBan = localStorage.getItem("dark-codex-banlist");
 			if (storedBan) setActiveBan(normalizeBanList(JSON.parse(storedBan)));
@@ -60076,19 +60187,22 @@ function Builder() {
 			const startingGold = backgroundStartingGold(id, option);
 			setCharacter((current) => {
 				const safe = normalizeCharacter(current);
+				if (safe.background === id) return safe;
 				return syncAdvancements({
 					...safe,
 					background: id,
 					backgroundSkills,
 					backgroundChoices: {},
-					classSkills: [],
-					languages: [],
+					classSkills: safe.classSkills.filter((skill) => !backgroundSkills.includes(skill)),
+					classes: safe.classes?.map((entry) => ({
+						...entry,
+						classSkills: entry.classSkills?.filter((skill) => !backgroundSkills.includes(skill))
+					})),
 					proficiencyChoices: {},
-					personality: initial.personality,
 					currency: {
 						...initial.currency,
 						...safe.currency,
-						gp: startingGold
+						gp: !safe.background ? (safe.currency?.gp || 0) + startingGold : safe.currency?.gp === backgroundStartingGold(safe.background, availableBackgrounds.find((item) => item.id === safe.background)) ? startingGold : safe.currency?.gp || 0
 					}
 				}, (safe.advancements || []).filter((choice) => !choice.key.startsWith("background-")));
 			});
@@ -60105,29 +60219,35 @@ function Builder() {
 			setInteractionError(error instanceof Error ? error.message : "Неизвестная ошибка выбора");
 		}
 	}
-	function canContinue() {
-		if (step === 0) return !!character.race && (!variantsFor(character.race).length || !!character.raceVariant);
-		if (step === 1) return !!character.className;
-		if (step === 2) {
+	function canContinue(targetStep = step) {
+		if (targetStep >= 10) return Array.from({ length: 9 }, (_, index) => index).every((index) => canContinue(index));
+		if (targetStep >= 2 && targetStep <= 8 && (!character.race || !character.className)) return false;
+		if (targetStep === 0) return !!character.race && (!variantsFor(character.race).length || !!character.raceVariant);
+		if (targetStep === 1) return !!character.className;
+		if (targetStep === 2) {
 			const choiceCount = chosenRaceVariant?.chooseBonuses?.count || 0;
 			const raceSkillCount = raceSkillChoiceCount(character);
 			return abilitiesComplete && (character.raceAbilityChoices || []).length === choiceCount && (character.raceSkills || []).length === raceSkillCount;
 		}
-		if (step === 3) return !!character.background && backgroundChoiceGroups(character.background, featCatalog).every((group) => (character.backgroundChoices?.[group.key] || []).length === group.count);
-		if (step === 4) return character.classSkills.length === classRule.count;
-		if (step === 5) return equipmentComplete(character);
-		if (step === 6) {
+		if (targetStep === 3) return !!character.background && backgroundChoiceGroups(character.background, featCatalog).every((group) => (character.backgroundChoices?.[group.key] || []).length === group.count);
+		if (targetStep === 4) return character.classSkills.length === classRule.count;
+		if (targetStep === 5) return equipmentComplete(character);
+		if (targetStep === 6) {
 			const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
 			const allComplete = advancements.every((choice) => advancementChoiceComplete(choice, spells, character.level, character));
 			return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells) && homebrewChoicesComplete(exportCharacter);
 		}
-		if (step === 7 && spellRule.caster) {
-			const legalLevels = !spellRule.levelLimits || spellRule.levelLimits.every((limit, level) => level === 0 || selectedAtOrAbove[level] <= limit);
-			const preparedComplete = spellRule.mode !== "spellbook" || selectedPrepared.length === spellRule.prepared;
-			return selectedCantrips.length === spellRule.cantrips && selectedLeveled.length === spellRule.leveled && legalLevels && preparedComplete;
-		}
-		if (step === 8) return (character.languages || []).length === languageRequirements.choices && proficiencyChoicesComplete(exportCharacter);
-		if (step === 9) return true;
+		if (targetStep === 7) return spellClassCandidates.every((candidate) => {
+			const rule = candidate.rule;
+			const selected = sourcedSpellGroups.find((group) => group.classId === candidate.entry.classId)?.spells.filter((entry) => !entry.alwaysPrepared) || [];
+			const cantrips = selected.filter((entry) => entry.spell.level === 0);
+			const leveled = selected.filter((entry) => entry.spell.level > 0);
+			const legalLevels = leveled.every((entry) => entry.spell.level <= rule.maxLevel) && (!rule.levelLimits || rule.levelLimits.every((limit, level) => level === 0 || leveled.filter((entry) => entry.spell.level >= level).length <= limit));
+			const preparedComplete = rule.mode !== "spellbook" || leveled.filter((entry) => entry.prepared).length === rule.prepared;
+			return cantrips.length === rule.cantrips && leveled.length === rule.leveled && legalLevels && preparedComplete;
+		});
+		if (targetStep === 8) return (character.languages || []).length === languageRequirements.choices && proficiencyChoicesComplete(exportCharacter);
+		if (targetStep === 9) return true;
 		return true;
 	}
 	function continueBlockReason() {
@@ -60614,17 +60734,10 @@ function Builder() {
 				...safe,
 				classes: classes.filter((item) => item.classId !== classId),
 				levelHistory: (safe.levelHistory || []).slice(0, -1),
-				level: characterLevel(safe) - 1,
-				spells: [],
-				preparedSpells: [],
-				preparedSpellsByClass: {},
-				spellGrants: [],
-				spellSlotsUsed: [],
-				pactSlotsUsed: 0,
-				resourceSpent: {}
+				level: characterLevel(safe) - 1
 			});
 			const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
-			return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
+			return retainLevelState(bindHomebrewLibrary(safe, homebrew), syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key))), availableSpellCatalog);
 		}
 		const nextLevel = entry.level + delta;
 		const nextClasses = classes.map((item) => item.classId === classId ? {
@@ -60640,22 +60753,18 @@ function Builder() {
 			...safe,
 			classes: nextClasses,
 			levelHistory: nextHistory,
-			level: characterLevel(safe) + delta,
-			spells: [],
-			preparedSpells: [],
-			preparedSpellsByClass: {},
-			spellGrants: [],
-			spellSlotsUsed: [],
-			pactSlotsUsed: 0,
-			resourceSpent: {}
+			level: characterLevel(safe) + delta
 		});
 		const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
-		return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
+		return retainLevelState(bindHomebrewLibrary(safe, homebrew), syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key))), availableSpellCatalog);
 	}
 	function addMulticlass(classId) {
 		setCharacter((current) => {
 			const safe = migrateMulticlassCharacter(current);
-			if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement(bindHomebrewLibrary(safe, homebrew), classId).passed) return safe;
+			if (getClassLevel(safe, classId) || characterLevel(safe) >= 20 || !multiclassRequirement({
+				...bindHomebrewLibrary(safe, homebrew),
+				abilities: finalAbilityScores(bindHomebrewLibrary(safe, homebrew))
+			}, classId).passed) return safe;
 			const nextLevel = characterLevel(safe) + 1;
 			return migrateMulticlassCharacter({
 				...safe,
@@ -60670,13 +60779,7 @@ function Builder() {
 					classId,
 					classLevelAfter: 1
 				}],
-				level: nextLevel,
-				spells: [],
-				preparedSpells: [],
-				preparedSpellsByClass: {},
-				spellSlotsUsed: [],
-				pactSlotsUsed: 0,
-				resourceSpent: {}
+				level: nextLevel
 			});
 		});
 	}
@@ -60713,17 +60816,10 @@ function Builder() {
 					classId: startingClassId,
 					classLevelAfter: index + 1
 				})),
-				level: totalLevel,
-				spells: [],
-				preparedSpells: [],
-				preparedSpellsByClass: {},
-				spellGrants: [],
-				spellSlotsUsed: [],
-				pactSlotsUsed: 0,
-				resourceSpent: {}
+				level: totalLevel
 			});
 			const validKeys = new Set(advancementSlotsFor(nextBase, homebrew.elements).map((slot) => slot.key));
-			return syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key)));
+			return retainLevelState(bindHomebrewLibrary(safe, homebrew), syncAdvancements(nextBase, (safe.advancements || []).filter((choice) => validKeys.has(choice.key))), availableSpellCatalog);
 		});
 	}
 	function toggleMulticlassClassSkill(classId, skill) {
@@ -61164,6 +61260,7 @@ function Builder() {
 		resetFilters(0, false);
 	}
 	function startCharacter(withTutorial) {
+		if (!ready) return;
 		if (vault.slots.length >= vault.capacity) {
 			alert("Все доступные места заняты. Добавьте ещё 5 слотов.");
 			return;
@@ -61607,14 +61704,16 @@ function Builder() {
 								children: [
 									/* @__PURE__ */ jsx("button", {
 										className: "home-primary",
+										disabled: !ready,
 										onClick: addCharacter,
 										children: "Создать персонажа"
 									}),
 									/* @__PURE__ */ jsx("button", {
+										disabled: !ready,
 										onClick: addTutorialCharacter,
 										children: "Создать с обучением"
 									}),
-									ready && /* @__PURE__ */ jsx("button", {
+									ready && vault.activeId && /* @__PURE__ */ jsx("button", {
 										onClick: () => setView("builder"),
 										children: "Продолжить текущего персонажа"
 									})
@@ -62461,7 +62560,7 @@ function Builder() {
 		"Опишите характер",
 		"Лист персонажа"
 	];
-	const stepDescription = step < 2 || step === 3 ? "Откройте «Подробнее», чтобы увидеть механические особенности и доступные варианты. Каталог исключает UA, Homebrew и неофициальные классы." : step === 2 ? standardMode ? "Распределите 15, 14, 13, 12, 10, 8. Расовые бонусы добавляются отдельно." : "Point Buy 2014: начните с шести восьмёрок и потратьте ровно 27 очков. Расовые бонусы показаны отдельно." : step === 4 ? "Предыстория выдаёт свои навыки, а класс позволяет выбрать только из собственного списка." : step === 5 ? "Выберите каждый вариант стартового снаряжения класса. Старт с золотом намеренно не используется." : step === 6 ? "Выберите уровень, обязательный подкласс и каждый доступный выбор черты или повышения характеристик по прогрессии класса." : step === 7 ? "Счётчики основаны на таблице выбранного класса. Заклинания подкласса показаны отдельно и не занимают лимит." : step === 8 ? "Языки и все конкретные инструменты собраны здесь по источникам. Общие формулировки вроде «ремесленный инструмент» в итоговый лист не попадут." : step === 9 ? "Каждый пункт можно написать самому, выбрать из списка предыстории или определить случайно." : "Лист повторяет структуру Long Story Short и готов к печати или экспорту.";
+	const stepDescription = step < 2 || step === 3 ? "Откройте «Подробнее», чтобы увидеть механические особенности и доступные варианты. Каталог включает официальные материалы и подключённую библиотеку Homebrew; UA и сторонние классы вне библиотеки не включены." : step === 2 ? standardMode ? "Распределите 15, 14, 13, 12, 10, 8. Расовые бонусы добавляются отдельно." : "Point Buy 2014: начните с шести восьмёрок и потратьте ровно 27 очков. Расовые бонусы показаны отдельно." : step === 4 ? "Предыстория выдаёт свои навыки, а класс позволяет выбрать только из собственного списка." : step === 5 ? "Выберите каждый вариант стартового снаряжения класса. Старт с золотом намеренно не используется." : step === 6 ? "Выберите уровень, обязательный подкласс и каждый доступный выбор черты или повышения характеристик по прогрессии класса." : step === 7 ? "Счётчики основаны на таблице выбранного класса. Заклинания подкласса показаны отдельно и не занимают лимит." : step === 8 ? "Языки и все конкретные инструменты собраны здесь по источникам. Общие формулировки вроде «ремесленный инструмент» в итоговый лист не попадут." : step === 9 ? "Каждый пункт можно написать самому, выбрать из списка предыстории или определить случайно." : "Лист повторяет структуру Long Story Short и готов к печати или экспорту.";
 	const hasTutorialMagic = spellRule.caster || character.spells.length > 0 || alwaysPrepared.length > 0 || grantedFeatSpells.length > 0 || selectedRaceFeatures.some((feature) => /заклин|заговор|магичес/i.test(`${feature.name} ${feature.description}`));
 	const expertiseAvailable = choiceGroups.some((group) => group.key === "expertise" || group.key.endsWith(":expertise")) || advancements.some((choice) => featChoiceGroups(choice, spells, character.level).some((group) => group.key === "expertise"));
 	const tutorialDataFor = (index) => index === 7 && !hasTutorialMagic ? noMagicTutorialStep : tutorialSteps[index];
@@ -62480,7 +62579,7 @@ function Builder() {
 	const currentTutorialTerms = currentTutorialStep.terms.filter(tutorialTermIsRelevant);
 	const dialogTutorialStep = tutorialDialog === null ? null : tutorialDataFor(tutorialDialog);
 	const pendingMulticlass = pendingMulticlassId ? availableClasses.find((option) => option.id === pendingMulticlassId) : void 0;
-	const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(rulesCharacter, pendingMulticlassId) : void 0;
+	const pendingMulticlassRequirement = pendingMulticlassId ? multiclassRequirement(exportCharacter, pendingMulticlassId) : void 0;
 	return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
@@ -62872,9 +62971,9 @@ function Builder() {
 								children: tutorialMode ? "Создание с обучением" : "Создание"
 							}),
 							steps.map((label, index) => /* @__PURE__ */ jsxs("button", {
-								className: `step ${index === step ? "active" : ""} ${index < step ? "done" : ""}`,
+								className: `step ${index === step ? "active" : ""} ${index !== step && canContinue(index) ? "done" : ""}`,
 								onClick: () => resetFilters(index),
-								children: [/* @__PURE__ */ jsx("span", { children: index < step ? "✓" : index + 1 }), /* @__PURE__ */ jsx("strong", { children: label })]
+								children: [/* @__PURE__ */ jsx("span", { children: index !== step && canContinue(index) ? "✓" : index + 1 }), /* @__PURE__ */ jsx("strong", { children: label })]
 							}, label)),
 							/* @__PURE__ */ jsxs("div", {
 								className: "compass",
@@ -63606,7 +63705,7 @@ function Builder() {
 											characterLevel(character) < 20 && /* @__PURE__ */ jsxs("div", {
 												className: "multiclass-add-grid",
 												children: [/* @__PURE__ */ jsx("h3", { children: "Добавить новый класс" }), availableClasses.filter((option) => !multiclassEntries.some((entry) => entry.classId === option.id)).map((option) => {
-													const requirement = multiclassRequirement(rulesCharacter, option.id);
+													const requirement = multiclassRequirement(exportCharacter, option.id);
 													return /* @__PURE__ */ jsxs("button", {
 														disabled: !requirement.passed,
 														title: requirement.passed ? "Добавить 1 уровень класса" : `Требуется: ${requirement.required}. Сейчас не выполнено: ${requirement.missing.join(", ")}`,
@@ -65421,6 +65520,7 @@ function Builder() {
 																	entry.attackBonus,
 																	entry.freeUses ? `; ${entry.remainingUses}/${entry.freeUses} бесплатно` : "",
 																	entry.castWithSlots ? "; можно накладывать ячейками" : "",
+																	entry.freeCastLevel ? `; бесплатное применение: ${entry.freeCastLevel} круг` : "",
 																	entry.notes ? `; ${entry.notes}` : "",
 																	")"
 																] }, `race-${entry.source}-${entry.spell.id}`))] }),
@@ -65610,7 +65710,7 @@ function Builder() {
 											prepared: true,
 											alwaysPrepared: false,
 											classSource: "Раса",
-											grantSource: entry.source
+											grantSource: entry.source + (entry.freeCastLevel ? ` · бесплатное применение: ${entry.freeCastLevel} круг` : "")
 										})), otherGrantedSpells.map((entry) => ({
 											...entry.spell,
 											prepared: true,

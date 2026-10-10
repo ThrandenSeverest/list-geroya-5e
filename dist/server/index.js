@@ -1,6 +1,8 @@
 import * as __viteRscAsyncHooks from "node:async_hooks";
 import { AsyncLocalStorage as AsyncLocalStorage$1 } from "node:async_hooks";
 import assetsManifest from "./__vite_rsc_assets_manifest.js";
+import path from "node:path";
+import { readFile } from "node:fs/promises";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -7357,7 +7359,7 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "ff150be9-e776-4376-af31-afd73fe7c433";
+		return "caa828d0-495d-4195-ae57-958d2850fcae";
 	}
 };
 var RequestCookies = class {
@@ -12479,7 +12481,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "ff150be9-e776-4376-af31-afd73fe7c433") {
+function appIsrCacheKey(pathname, suffix, buildId = "caa828d0-495d-4195-ae57-958d2850fcae") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12808,7 +12810,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "ff150be9-e776-4376-af31-afd73fe7c433",
+		deploymentVersion: "caa828d0-495d-4195-ae57-958d2850fcae",
 		rootBoundaryId
 	});
 }
@@ -14372,6 +14374,21 @@ var page_default = /* @__PURE__ */ registerClientReference(() => {
 	throw new Error("Unexpectedly client reference export 'default' is called on server");
 }, "724dcbd470a5", "default");
 //#endregion
+//#region app/BUILD_INFO.json/route.ts
+var route_exports = /* @__PURE__ */ __exportAll({ GET: () => GET });
+/** Public release identity; it contains no configuration or account data. */
+async function GET() {
+	try {
+		const metadata = await readFile(path.resolve(process.cwd(), "dist/BUILD_INFO.json"), "utf8");
+		return new Response(metadata, { headers: {
+			"content-type": "application/json; charset=utf-8",
+			"cache-control": "no-store"
+		} });
+	} catch {
+		return Response.json({ error: "Build metadata unavailable" }, { status: 503 });
+	}
+}
+//#endregion
 //#region \0virtual:vinext-rsc-entry
 var renderToReadableStream = createRscRenderer(renderToReadableStream$1);
 function _getSSRFontStyles() {
@@ -14394,85 +14411,126 @@ function __VINEXT_CLASS(routeIdx) { return ((routeIdx) => {
     switch (routeIdx) {
       case 0: return new Map([[0, "static"]]);
       case 1: return new Map([[0, "static"]]);
+      case 2: return new Map([[0, "static"]]);
       default: return null;
     }
   })(routeIdx); }
 function __VINEXT_CLASS_REASONS(routeIdx) {
 	return null;
 }
-var routes = [{
-	__buildTimeClassifications: __VINEXT_CLASS(0),
-	__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(0) : null,
-	ids: {
-		"route": "route:/",
-		"page": "page:/",
-		"routeHandler": null,
-		"rootBoundary": "root-boundary:/",
-		"layouts": ["layout:/"],
-		"templates": [],
-		"slots": {}
+var routes = [
+	{
+		__buildTimeClassifications: __VINEXT_CLASS(0),
+		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(0) : null,
+		ids: {
+			"route": "route:/",
+			"page": "page:/",
+			"routeHandler": null,
+			"rootBoundary": "root-boundary:/",
+			"layouts": ["layout:/"],
+			"templates": [],
+			"slots": {}
+		},
+		pattern: "/",
+		patternParts: [],
+		isDynamic: false,
+		params: [],
+		rootParamNames: [],
+		page: page_exports$1,
+		routeHandler: null,
+		layouts: [layout_exports],
+		routeSegments: [],
+		templateTreePositions: [],
+		layoutTreePositions: [0],
+		templates: [],
+		errors: [null],
+		errorPaths: [],
+		errorTreePositions: [],
+		slots: {},
+		loading: null,
+		error: null,
+		notFound: null,
+		notFounds: [null],
+		forbidden: null,
+		forbiddens: [null],
+		unauthorized: null,
+		unauthorizeds: [null]
 	},
-	pattern: "/",
-	patternParts: [],
-	isDynamic: false,
-	params: [],
-	rootParamNames: [],
-	page: page_exports$1,
-	routeHandler: null,
-	layouts: [layout_exports],
-	routeSegments: [],
-	templateTreePositions: [],
-	layoutTreePositions: [0],
-	templates: [],
-	errors: [null],
-	errorPaths: [],
-	errorTreePositions: [],
-	slots: {},
-	loading: null,
-	error: null,
-	notFound: null,
-	notFounds: [null],
-	forbidden: null,
-	forbiddens: [null],
-	unauthorized: null,
-	unauthorizeds: [null]
-}, {
-	__buildTimeClassifications: __VINEXT_CLASS(1),
-	__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(1) : null,
-	ids: {
-		"route": "route:/account",
-		"page": "page:/account",
-		"routeHandler": null,
-		"rootBoundary": "root-boundary:/",
-		"layouts": ["layout:/"],
-		"templates": [],
-		"slots": {}
+	{
+		__buildTimeClassifications: __VINEXT_CLASS(1),
+		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(1) : null,
+		ids: {
+			"route": "route:/account",
+			"page": "page:/account",
+			"routeHandler": null,
+			"rootBoundary": "root-boundary:/",
+			"layouts": ["layout:/"],
+			"templates": [],
+			"slots": {}
+		},
+		pattern: "/account",
+		patternParts: ["account"],
+		isDynamic: false,
+		params: [],
+		rootParamNames: [],
+		page: page_exports,
+		routeHandler: null,
+		layouts: [layout_exports],
+		routeSegments: ["account"],
+		templateTreePositions: [],
+		layoutTreePositions: [0],
+		templates: [],
+		errors: [null],
+		errorPaths: [],
+		errorTreePositions: [],
+		slots: {},
+		loading: null,
+		error: null,
+		notFound: null,
+		notFounds: [null],
+		forbidden: null,
+		forbiddens: [null],
+		unauthorized: null,
+		unauthorizeds: [null]
 	},
-	pattern: "/account",
-	patternParts: ["account"],
-	isDynamic: false,
-	params: [],
-	rootParamNames: [],
-	page: page_exports,
-	routeHandler: null,
-	layouts: [layout_exports],
-	routeSegments: ["account"],
-	templateTreePositions: [],
-	layoutTreePositions: [0],
-	templates: [],
-	errors: [null],
-	errorPaths: [],
-	errorTreePositions: [],
-	slots: {},
-	loading: null,
-	error: null,
-	notFound: null,
-	notFounds: [null],
-	forbidden: null,
-	forbiddens: [null],
-	unauthorized: null,
-	unauthorizeds: [null]
-}];
+	{
+		__buildTimeClassifications: __VINEXT_CLASS(2),
+		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(2) : null,
+		ids: {
+			"route": "route:/BUILD_INFO.json",
+			"page": null,
+			"routeHandler": "route-handler:/BUILD_INFO.json",
+			"rootBoundary": "root-boundary:/",
+			"layouts": ["layout:/"],
+			"templates": [],
+			"slots": {}
+		},
+		pattern: "/BUILD_INFO.json",
+		patternParts: ["BUILD_INFO.json"],
+		isDynamic: false,
+		params: [],
+		rootParamNames: [],
+		page: null,
+		routeHandler: route_exports,
+		layouts: [layout_exports],
+		routeSegments: ["BUILD_INFO.json"],
+		templateTreePositions: [],
+		layoutTreePositions: [0],
+		templates: [],
+		errors: [null],
+		errorPaths: [],
+		errorTreePositions: [],
+		slots: {},
+		loading: null,
+		error: null,
+		notFound: null,
+		notFounds: [null],
+		forbidden: null,
+		forbiddens: [null],
+		unauthorized: null,
+		unauthorizeds: [null]
+	}
+];
 var __routeMatcher = createAppRscRouteMatcher(routes);
 var metadataRoutes = [];
 var rootNotFoundModule = null;
@@ -14632,7 +14690,8 @@ var __publicFiles = new Set([
 	"/favicon.ico",
 	"/home/hero-day.webp",
 	"/home/hero-night.webp",
-	"/parchment-background.jpg"
+	"/parchment-background.jpg",
+	"/yandex_cf6a667142559c9b.html"
 ]);
 var __allowedOrigins = [];
 var __expireTime = 31536e3;
