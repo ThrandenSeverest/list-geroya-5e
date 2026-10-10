@@ -22630,7 +22630,7 @@ var tashaAdditionalSpellIds = Object.freeze({
 	]
 });
 function isTashaAdditionalSpell(character, spellId) {
-	return !character.tceFullBanned && Boolean(tashaAdditionalSpellIds[character.className]?.includes(spellId));
+	return !character.tceFullBanned && !character.bannedOptionalFeatures?.some((id) => id.startsWith(`${character.className}:дополнительные заклинания`)) && Boolean(tashaAdditionalSpellIds[character.className]?.includes(spellId));
 }
 function spellAvailableToCharacter(character, spell) {
 	if (spell.classes.includes(character.className)) return true;
@@ -24808,6 +24808,65 @@ function lssCardIdForSpellId(spellId) {
 	return lssCardIdBySpellId[spellId] || null;
 }
 //#endregion
+//#region app/campaignRestrictions.ts
+var featureAliases = {
+	"выбранное оружие": "выделенное оружие",
+	"атака, наделённая ци": "атака, подпитанная ци",
+	"фокусировка на цели": "сосредоточенное прицеливание",
+	"универсальность воина": "воинская универсальность",
+	"многогранность воина": "воинская универсальность",
+	"природная завеса": "покров природы",
+	"точное прицеливание": "верный прицел",
+	"направление божественной силы": "праведное восстановление"
+};
+var optionalFeatureId = (classId, name) => {
+	const clean = name.toLowerCase().replace(/ё/g, "е").replace(/\s*\(tco?e\)/g, "").trim();
+	return `${classId}:${Object.fromEntries(Object.entries(featureAliases).map(([key, value]) => [key.replace(/ё/g, "е"), value.replace(/ё/g, "е")]))[clean] || clean}`;
+};
+var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
+function optionalFeatureAllowed(character, classId, name) {
+	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
+}
+var choiceFeatures = {
+	"tce-primal-knowledge": "Первобытное знание",
+	"tce-dedicated-weapon": "Выделенное оружие (TCE)",
+	"tce-favored-foe": "Предпочтительный противник",
+	"tce-deft-explorer": "Искусный исследователь",
+	"tce-deft-explorer-skill": "Искусный исследователь",
+	"tce-primal-awareness": "Изначальная осведомлённость",
+	"tce-natures-veil": "Покров природы",
+	"tce-blessed-strikes": "Благословлённые удары"
+};
+function optionalChoiceAllowed(character, key) {
+	const name = choiceFeatures[key];
+	return !name || optionalFeatureAllowed(character, character.className, name);
+}
+/** A derived view: restrictions never erase a saved character's choices. */
+function restrictedCharacter(character) {
+	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return optionalChoiceAllowed({
+			...character,
+			className: classId
+		}, localKey);
+	}).map(([key, ids]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
+	}));
+	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
+		const classId = key.includes(":") ? key.split(":")[0] : character.className;
+		return Object.entries(choicesFor(classId, { [key]: ids }));
+	}));
+	return {
+		...character,
+		classChoices,
+		classes: character.classes?.map((entry) => ({
+			...entry,
+			choiceValues: choicesFor(entry.classId, entry.choiceValues)
+		}))
+	};
+}
+//#endregion
 //#region app/racialSpellcasting.ts
 var S = (spellId, unlockLevel = 1, extra = {}) => ({
 	spellId,
@@ -25309,7 +25368,7 @@ function singleClassResources(character) {
 		isShortRest: true,
 		isLongRest: true
 	});
-	add(resources, character.className === "cleric" && !!character.useTasha && level >= 2, {
+	add(resources, character.className === "cleric" && optionalFeatureAllowed(character, "cleric", "Направление божественной силы") && level >= 2, {
 		key: "harness-divine-power",
 		name: "Направление божественной силы",
 		max: level >= 18 ? 3 : level >= 6 ? 2 : 1,
@@ -25459,7 +25518,7 @@ function singleClassResources(character) {
 		isShortRest: true,
 		isLongRest: true
 	});
-	add(resources, character.className === "paladin" && !!character.useTasha && level >= 3, {
+	add(resources, character.className === "paladin" && optionalFeatureAllowed(character, "paladin", "Направление божественной силы") && level >= 3, {
 		key: "harness-divine-power",
 		name: "Направление божественной силы",
 		max: level >= 15 ? 3 : level >= 7 ? 2 : 1,
@@ -40772,7 +40831,10 @@ function singleClassChoiceGroups(character, spells = []) {
 		count: 2,
 		options: spellOptions(spells, (spell) => spell.level === 3 && spell.classes.includes("wizard"))
 	});
-	return groups;
+	return groups.filter((group) => optionalChoiceAllowed(character, group.key)).map((group) => ({
+		...group,
+		options: group.options.filter((option) => !character.bannedClassOptions?.includes(classOptionId(character.className, group.key, option.id)))
+	}));
 }
 function entryLocalChoices(character, classId) {
 	const local = { ...orderedCharacterClasses(character).find((item) => item.classId === classId)?.choiceValues || {} };
@@ -43833,7 +43895,7 @@ function subclassByFeatureOverlap(entries, fallbackSubclass) {
 	if (runnerUp && runnerUp.score === best.score) return void 0;
 	return best.features;
 }
-function documentedClassFeatures(classId, subclassName, includeOptional, fallbackClass, fallbackSubclass, fallbackOptional) {
+function documentedClassFeatures(classId, subclassName, includeOptional, fallbackClass, fallbackSubclass, fallbackOptional, bannedOptionalFeatures = []) {
 	const base = withoutSubclassSelector(classId, subclassName, sheetClassFeatures[classId]?.length ? sheetClassFeatures[classId] : classFeatureCorpus[classId]?.length ? classFeatureCorpus[classId] : fallbackClass);
 	const subclassEntries = Object.keys(sheetSubclassFeatures[classId] || {}).length ? sheetSubclassFeatures[classId] : subclassFeatureCorpus[classId] || {};
 	const documentedSubclass = subclassByName(classId, subclassName, subclassEntries) || subclassByFeatureOverlap(subclassEntries, fallbackSubclass);
@@ -43841,7 +43903,7 @@ function documentedClassFeatures(classId, subclassName, includeOptional, fallbac
 	return detailedFeatures([
 		...base,
 		...documentedSubclass?.length ? documentedSubclass : fallbackSubclass,
-		...optional
+		...optional.filter((feature) => !bannedOptionalFeatures.includes(optionalFeatureId(classId, feature.name)))
 	]).filter(usefulFinalClassFeature);
 }
 //#endregion
@@ -58656,6 +58718,105 @@ var tutorialReflection = [
 	}
 ];
 //#endregion
+//#region app/banLists.ts
+var categoryNames = {
+	races: "Расы",
+	classes: "Классы",
+	subclasses: "Подклассы",
+	backgrounds: "Предыстории",
+	feats: "Черты",
+	spells: "Заклинания",
+	optionalFeatures: "Способности Таши",
+	classOptions: "Классовые опции"
+};
+var optionalFeatureCatalog = Object.entries(sheetOptionalFeatures).flatMap(([classId, features]) => [...new Map([...optionalClassFeatureCorpus[classId] || [], ...features].map((feature) => [optionalFeatureId(classId, feature.name), feature])).values()].map((feature) => ({
+	...feature,
+	id: optionalFeatureId(classId, feature.name),
+	source: "TCE",
+	tags: [],
+	classId
+})));
+for (const classId of [
+	"bard",
+	"cleric",
+	"druid",
+	"paladin",
+	"ranger",
+	"sorcerer",
+	"warlock",
+	"wizard"
+]) if (!optionalFeatureCatalog.some((option) => option.classId === classId && option.id.includes(":дополнительные заклинания"))) optionalFeatureCatalog.push({
+	id: optionalFeatureId(classId, "Дополнительные заклинания"),
+	classId,
+	name: "Дополнительные заклинания",
+	source: "TCE",
+	tags: [],
+	level: 1,
+	description: "Расширенный список заклинаний класса из TCE. Доступен независимо от галочки опциональных способностей."
+});
+var catalogs = {
+	races,
+	classes,
+	subclasses: Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map((option) => ({
+		...option,
+		classId,
+		id: `${classId}:${option.id}`
+	}))),
+	backgrounds,
+	feats: feats.filter((feat) => feat.id !== "asi"),
+	spells,
+	optionalFeatures: optionalFeatureCatalog,
+	classOptions: []
+};
+var newBanId = () => typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `ban-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+function normalizeBanList(value) {
+	const input = value && typeof value === "object" ? value : {};
+	const mode = input.mode === "allow" ? "allow" : "deny";
+	let result = {
+		version: 3,
+		id: typeof input.id === "string" && input.id ? input.id : newBanId(),
+		name: typeof input.name === "string" ? input.name : "Правила кампании",
+		mode,
+		categories: Object.fromEntries(Object.keys(categoryNames).map((category) => [category, Array.isArray(input.categories?.[category]) ? [...new Set(input.categories[category].filter((id) => typeof id === "string"))] : mode === "allow" ? catalogs[category].map((option) => option.id) : []])),
+		tceOptionalFeaturesBanned: false,
+		tceFullBanned: false
+	};
+	if (input.tceFullBanned) result = setSourceBan(result, "TCE", true);
+	else if (input.tceOptionalFeaturesBanned) result = setBanState(result, "optionalFeatures", catalogs.optionalFeatures.filter((option) => !option.id.includes(":дополнительные заклинания")).map((option) => option.id), true);
+	return result;
+}
+function allowed(list, category, id) {
+	if (!list || !id) return true;
+	if (category === "optionalFeatures" && (list.tceOptionalFeaturesBanned || list.tceFullBanned)) return false;
+	const option = catalogs[category].find((option) => option.id === id);
+	if (list.tceFullBanned && option && sourceTokens(option.source).includes("TCE")) return false;
+	const listed = list.categories[category]?.includes(id);
+	return list.mode === "deny" ? !listed : !!listed;
+}
+function setBanState(list, category, ids, banned) {
+	const values = new Set(list.categories[category]);
+	for (const id of ids) if (list.mode === "deny" ? banned : !banned) values.add(id);
+	else values.delete(id);
+	return {
+		...list,
+		categories: {
+			...list.categories,
+			[category]: [...values]
+		}
+	};
+}
+function setSourceBan(list, source, banned) {
+	let next = {
+		...list,
+		...source === "TCE" ? {
+			tceFullBanned: false,
+			tceOptionalFeaturesBanned: false
+		} : {}
+	};
+	for (const category of Object.keys(categoryNames)) next = setBanState(next, category, catalogs[category].filter((option) => sourceTokens(option.source).includes(source)).map((option) => option.id), banned);
+	return next;
+}
+//#endregion
 //#region app/page.tsx
 var steps = [
 	"Раса",
@@ -58734,40 +58895,25 @@ var initial = {
 		flaws: ""
 	}
 };
-var subclassCatalog = Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map((option) => ({
+Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map((option) => ({
 	...option,
 	id: `${classId}:${option.id}`
 })));
 var featCatalog = feats.filter((feat) => feat.id !== "asi");
-var emptyBan = {
-	version: 2,
-	name: "Правила кампании",
-	mode: "deny",
-	categories: {
-		races: [],
-		classes: [],
-		subclasses: [],
-		backgrounds: [],
-		feats: [],
-		spells: []
-	}
-};
-var categoryNames = {
-	races: "Расы",
-	classes: "Классы",
-	subclasses: "Подклассы",
-	backgrounds: "Предыстории",
-	feats: "Черты",
-	spells: "Заклинания"
-};
-var catalogs = {
-	races,
-	classes,
-	subclasses: subclassCatalog,
-	backgrounds,
-	feats: featCatalog,
-	spells
-};
+catalogs.classOptions = [...new Map(classes.flatMap((classOption) => ["", ...subclasses[classOption.id]?.options.map((option) => option.id) || []].flatMap((subclass) => classChoiceGroups({
+	...initial,
+	className: classOption.id,
+	subclass,
+	level: 20,
+	useTasha: true
+}, []).flatMap((group) => group.options.filter((option) => !group.key.startsWith("tce-")).map((option) => ({
+	...option,
+	id: classOptionId(classOption.id, group.key, option.id),
+	classId: classOption.id,
+	group: group.title,
+	level: group.level,
+	tags: []
+}))))).map((option) => [option.id, option])).values()];
 var personalityNames = {
 	traits: "Черты характера",
 	ideals: "Идеалы",
@@ -59219,22 +59365,6 @@ function mergeVaults(local, remote) {
 		folders: [...folders.values()]
 	};
 }
-function allowed(list, category, id) {
-	if (!list) return true;
-	const hit = list.categories[category]?.includes(id);
-	return list.mode === "deny" ? !hit : !!hit;
-}
-function normalizeBanList(value) {
-	const mode = value.mode === "allow" ? "allow" : "deny";
-	return {
-		version: 2,
-		name: typeof value.name === "string" ? value.name : "Правила кампании",
-		mode,
-		categories: Object.fromEntries(Object.keys(categoryNames).map((category) => [category, Array.isArray(value.categories?.[category]) ? value.categories[category] : mode === "allow" ? catalogs[category].map((option) => option.id) : []])),
-		tceOptionalFeaturesBanned: !!value.tceOptionalFeaturesBanned,
-		tceFullBanned: !!value.tceFullBanned
-	};
-}
 function levelLabel(value) {
 	return value === 0 ? "Заговор" : `${value} круг`;
 }
@@ -59426,14 +59556,17 @@ function normalizeCharacter(value) {
 	const repaired = repairBackgroundAdvancement(normalized);
 	return migrateSpellPreparation(migrateMulticlassCharacter(syncAdvancements(repaired, repaired.advancements)));
 }
-function savedCharacterExportContext(value) {
+function savedCharacterExportContext(value, activeBan = null) {
 	const character = normalizeCharacter(value);
 	const advancementFields = deriveLegacyAdvancementFields(character.advancements || []);
-	const rulesCharacter = {
+	const rulesCharacter = restrictedCharacter({
 		...character,
 		...advancementFields,
-		useTasha: !!character.useTasha
-	};
+		useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
+		tceFullBanned: !!activeBan?.tceFullBanned,
+		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
+		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
+	});
 	const abilities = finalAbilityScores(rulesCharacter);
 	const exportCharacter = {
 		...rulesCharacter,
@@ -59456,7 +59589,7 @@ function savedCharacterExportContext(value) {
 			name: f.name,
 			description: f.description,
 			level: f.level
-		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [], exportCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
@@ -59580,12 +59713,16 @@ function Builder() {
 	const [view, setView] = useState("home");
 	const [step, setStep] = useState(0);
 	const [character, setCharacter] = useState(initial);
-	const [banDraft, setBanDraft] = useState(emptyBan);
+	const [banDraft, setBanDraft] = useState(() => normalizeBanList({}));
 	const [activeBan, setActiveBan] = useState(null);
 	const [ready, setReady] = useState(false);
 	const [banCategory, setBanCategory] = useState("races");
 	const [banSource, setBanSource] = useState("Все");
-	const [banBookSource, setBanBookSource] = useState("PHB");
+	const [banLists, setBanLists] = useState([]);
+	const [banStatus, setBanStatus] = useState("all");
+	const [banClass, setBanClass] = useState("all");
+	const [banLevel, setBanLevel] = useState("all");
+	const [banNotice, setBanNotice] = useState("");
 	const [search, setSearch] = useState("");
 	const [selectedSources, setSelectedSources] = useState(() => [...catalogSources(spells), "Homebrew"]);
 	const [additionalSpellsUnlocked, setAdditionalSpellsUnlocked] = useState(false);
@@ -59737,7 +59874,18 @@ function Builder() {
 				if (migrated) setCharacter(migrated);
 			}
 			const storedBan = localStorage.getItem("dark-codex-banlist");
-			if (storedBan) setActiveBan(normalizeBanList(JSON.parse(storedBan)));
+			const migratedBan = storedBan ? normalizeBanList(JSON.parse(storedBan)) : null;
+			if (migratedBan) {
+				setActiveBan(migratedBan);
+				localStorage.setItem("dark-codex-banlist", JSON.stringify(migratedBan));
+			}
+			const storedLists = localStorage.getItem("list-geroya-ban-lists-v1");
+			const savedLists = storedLists ? JSON.parse(storedLists) : [];
+			const lists = Array.isArray(savedLists) ? savedLists.map(normalizeBanList) : [];
+			if (migratedBan && !lists.some((list) => list.id === migratedBan.id)) lists.push(migratedBan);
+			setBanLists(lists);
+			localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(lists));
+			if (lists.length) setBanDraft(lists.find((list) => list.id === migratedBan?.id) || lists[0]);
 			setAdditionalSpellsUnlocked(localStorage.getItem("list-geroya-additional-spells") === "enabled");
 			setAdditionalSpellsAcknowledged(localStorage.getItem("list-geroya-additional-spells-warning") === "acknowledged");
 			setSiteTheme(localStorage.getItem("list-geroya-site-theme") === "parchment" ? "parchment" : "classic");
@@ -59826,13 +59974,15 @@ function Builder() {
 		asiChoices: []
 	});
 	const advancementFields = deriveLegacyAdvancementFields(advancements);
-	const rulesCharacter = {
+	const rulesCharacter = restrictedCharacter({
 		...bindHomebrewLibrary(character, homebrew),
 		...advancementFields,
 		advancements,
 		useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
-		tceFullBanned: !!activeBan?.tceFullBanned
-	};
+		tceFullBanned: !!activeBan?.tceFullBanned,
+		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
+		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
+	});
 	const finalAbilities = finalAbilityScores(rulesCharacter);
 	const choiceGroups = classChoiceGroups(rulesCharacter, spells);
 	const spellClassCandidates = multiclassEntries.map((entry) => ({
@@ -59906,7 +60056,7 @@ function Builder() {
 			name: f.name,
 			description: f.description,
 			level: f.level
-		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [], rulesCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
@@ -59920,7 +60070,7 @@ function Builder() {
 	const tashaPreviewSections = multiclassEntries.map((entry) => ({
 		key: entry.classId,
 		title: classes.find((option) => option.id === entry.classId)?.name || entry.classId,
-		features: (sheetOptionalFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level)
+		features: (sheetOptionalFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level && optionalFeatureAllowed(rulesCharacter, entry.classId, feature.name))
 	})).filter((section) => section.features.length > 0);
 	const personalityLists = personalityOptions(character.background);
 	const proficiency = proficiencyBonus(character.level);
@@ -60296,6 +60446,16 @@ function Builder() {
 			message,
 			severity
 		});
+		if (activeBan) {
+			if (character.race && !allowed(activeBan, "races", character.race)) add(0, "Выбранная раса запрещена правилами кампании.");
+			if (character.background && !allowed(activeBan, "backgrounds", character.background)) add(3, "Предыстория запрещена правилами кампании.");
+			for (const entry of multiclassEntries) {
+				if (!allowed(activeBan, "classes", entry.classId)) add(1, "Выбранный класс запрещён правилами кампании.");
+				if (entry.subclassId && !allowed(activeBan, "subclasses", `${entry.classId}:${entry.subclassId}`)) add(6, "Выбранный подкласс запрещён правилами кампании.");
+			}
+			if (character.spells.some((id) => !allowed(activeBan, "spells", id))) add(7, "В списке персонажа есть запрещённые заклинания.");
+			if ((character.advancements || []).some((choice) => choice.featId && choice.featId !== "asi" && !allowed(activeBan, "feats", choice.featId))) add(6, "У персонажа есть запрещённая черта.");
+		}
 		if (!character.race) add(0, "Не выбрана раса.");
 		else if (variantsFor(character.race).length && !character.raceVariant) add(0, "Не выбран вариант расы или подраса.");
 		if (!character.className) add(1, "Не выбран класс.");
@@ -61105,18 +61265,7 @@ function Builder() {
 		const normalizedList = normalizeBanList(list);
 		setActiveBan(normalizedList);
 		localStorage.setItem("dark-codex-banlist", JSON.stringify(normalizedList));
-		setCharacter((current) => {
-			const next = {
-				...current,
-				race: allowed(normalizedList, "races", current.race) ? current.race : "",
-				className: allowed(normalizedList, "classes", current.className) ? current.className : "",
-				subclass: allowed(normalizedList, "subclasses", `${current.className}:${current.subclass}`) ? current.subclass : "",
-				background: allowed(normalizedList, "backgrounds", current.background) ? current.background : "",
-				spells: current.spells.filter((id) => allowed(normalizedList, "spells", id)),
-				advancements: (current.advancements || []).filter((choice) => choice.featId === "asi" || allowed(normalizedList, "feats", choice.featId))
-			};
-			return syncAdvancements(next, next.advancements);
-		});
+		saveBan(normalizedList);
 		setView("builder");
 		resetFilters(0, false);
 	}
@@ -61127,8 +61276,19 @@ function Builder() {
 		reader.onload = () => {
 			try {
 				const parsed = JSON.parse(String(reader.result));
-				if (![1, 2].includes(parsed.version) || !parsed.categories || !["deny", "allow"].includes(parsed.mode)) throw new Error();
-				applyBan(normalizeBanList(parsed));
+				if (![
+					1,
+					2,
+					3
+				].includes(parsed.version) || !parsed.categories || !["deny", "allow"].includes(parsed.mode)) throw new Error();
+				const imported = normalizeBanList({
+					...parsed,
+					id: newBanId()
+				});
+				saveBan(imported);
+				setBanDraft(imported);
+				setView("banlist");
+				setBanNotice("Список импортирован. Проверьте ограничения и примените его к мастеру.");
 			} catch {
 				alert("Файл не похож на бан-лист «Листа Героя 5e».");
 			}
@@ -61136,46 +61296,55 @@ function Builder() {
 		reader.readAsText(file);
 		event.target.value = "";
 	}
-	function toggleBan(id) {
-		setBanDraft((current) => ({
-			...current,
-			categories: {
-				...current.categories,
-				[banCategory]: current.categories[banCategory].includes(id) ? current.categories[banCategory].filter((value) => value !== id) : [...current.categories[banCategory], id]
-			}
-		}));
+	function saveBan(list = banDraft) {
+		const normalized = normalizeBanList(list);
+		const next = [...banLists.filter((item) => item.id !== normalized.id), normalized];
+		setBanLists(next);
+		localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(next));
+		setBanNotice("Список сохранён.");
+		if (activeBan?.id === normalized.id) {
+			setActiveBan(normalized);
+			localStorage.setItem("dark-codex-banlist", JSON.stringify(normalized));
+		}
+	}
+	function newBan(copy = false) {
+		saveBan();
+		setBanDraft(copy ? {
+			...banDraft,
+			id: newBanId(),
+			name: `${banDraft.name} — копия`
+		} : normalizeBanList({}));
+		setBanNotice(copy ? "Копия создана. Сохраните её под своим названием." : "Новый список. Изменения сохраняются кнопкой «Сохранить».");
+	}
+	function selectBan(id) {
+		const target = banLists.find((list) => list.id === id);
+		if (!target) return;
+		saveBan();
+		setBanDraft(target);
+		setBanNotice("");
+	}
+	function deleteBan() {
+		if (!confirm(`Удалить список «${banDraft.name}»? Персонажи сохранятся.`)) return;
+		const next = banLists.filter((list) => list.id !== banDraft.id);
+		setBanLists(next);
+		localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(next));
+		if (activeBan?.id === banDraft.id) {
+			setActiveBan(null);
+			localStorage.removeItem("dark-codex-banlist");
+		}
+		setBanDraft(next[0] || normalizeBanList({}));
+		setBanNotice("Список удалён.");
 	}
 	function setVisibleBanState(ids, banned) {
 		setBanDraft((current) => {
-			const values = new Set(current.categories[banCategory]);
-			for (const id of ids) if (current.mode === "deny" ? banned : !banned) values.add(id);
-			else values.delete(id);
-			return {
+			return setBanState(current.tceOptionalFeaturesBanned && banCategory === "optionalFeatures" ? setBanState({
 				...current,
-				categories: {
-					...current.categories,
-					[banCategory]: [...values]
-				}
-			};
+				tceOptionalFeaturesBanned: false
+			}, "optionalFeatures", catalogs.optionalFeatures.map((option) => option.id), true) : current, banCategory, ids, banned);
 		});
 	}
-	function setBookBanState(sourceName, banned) {
-		setBanDraft((current) => ({
-			...current,
-			categories: Object.fromEntries(Object.keys(categoryNames).map((category) => {
-				const values = new Set(current.categories[category]);
-				for (const option of catalogs[category].filter((item) => item.source === sourceName)) if (current.mode === "deny" ? banned : !banned) values.add(option.id);
-				else values.delete(option.id);
-				return [category, [...values]];
-			}))
-		}));
-	}
-	function setTceBanState(kind, banned) {
-		setBanDraft((current) => ({
-			...current,
-			...kind === "optional" ? { tceOptionalFeaturesBanned: banned } : { tceFullBanned: banned }
-		}));
-		if (kind === "full") setBookBanState("TCE", banned);
+	function setBookBanState(source, banned) {
+		setBanDraft((current) => setSourceBan(current, source, banned));
 	}
 	function exportHelpmate() {
 		const warning = homebrewExportWarning(exportCharacter);
@@ -61324,7 +61493,7 @@ function Builder() {
 			download(createNativeCharacterFile(slot.character), `${name} — Лист Героя 5e.json`);
 			return;
 		}
-		const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew));
+		const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew), activeBan);
 		if (format === "helpmate") {
 			if (orderedCharacterClasses(context.character).filter((entry) => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length > 1) {
 				alert("Helpmate пока не имеет подтверждённого формата общего пула ячеек для двух обычных заклинательских классов.");
@@ -61494,7 +61663,7 @@ function Builder() {
 				payload = createNativeCharacterFile(slot.character);
 				suffix = "HeroList";
 			} else {
-				const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew));
+				const context = savedCharacterExportContext(bindHomebrewLibrary(slot.character, homebrew), activeBan);
 				if (format === "helpmate") {
 					if (orderedCharacterClasses(context.character).filter((entry) => entry.classId !== "warlock" && spellSelectionRuleForClass(context.character, entry.classId, entry.level).caster).length > 1) {
 						alert(`«${slot.character.name || "Безымянный герой"}» не экспортирован: Helpmate не поддерживает подтверждённый общий пул ячеек двух обычных заклинательских классов.`);
@@ -62316,9 +62485,10 @@ function Builder() {
 		});
 	}
 	if (view === "banlist") {
-		const allBookSources = [...new Set(Object.values(catalogs).flatMap((options) => options.map((option) => option.source)))].sort();
-		const banSources = ["Все", ...new Set(catalogs[banCategory].map((option) => option.source))];
-		const list = catalogs[banCategory].filter((option) => (banSource === "Все" || option.source === banSource) && `${option.name} ${option.description} ${option.source}`.toLowerCase().includes(search.toLowerCase()));
+		const allBookSources = [...new Set(Object.values(catalogs).flatMap((options) => options.flatMap((option) => sourceTokens(option.source))))].sort();
+		const banSources = ["Все", ...new Set(catalogs[banCategory].flatMap((option) => sourceTokens(option.source)))];
+		const list = catalogs[banCategory].filter((option) => (banSource === "Все" || sourceTokens(option.source).includes(banSource)) && (banClass === "all" || option.classId === banClass || banCategory === "spells" && option.classes.includes(banClass)) && (banLevel === "all" || option.level === Number(banLevel)) && (banStatus === "all" || banStatus === "banned" === !allowed(banDraft, banCategory, option.id)) && `${option.name} ${option.description} ${option.source} ${option.group || ""}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, "ru"));
+		const blockedCount = Object.entries(catalogs).reduce((sum, [key, options]) => sum + options.filter((option) => !allowed(banDraft, key, option.id)).length, 0);
 		return /* @__PURE__ */ jsxs("main", {
 			className: `app-shell${shellThemeClass}`,
 			"data-site-theme": siteTheme,
@@ -62389,82 +62559,109 @@ function Builder() {
 							className: "eyebrow",
 							children: "Правила кампании"
 						}),
-						/* @__PURE__ */ jsx("h1", { children: "Конструктор бан-листа" }),
+						/* @__PURE__ */ jsx("h1", { children: "Бан-листы" }),
 						/* @__PURE__ */ jsx("p", {
 							className: "lead",
-							children: "Создайте переносимый файл ограничений. Он работает только с официальным каталогом приложения."
+							children: "Отдельные правила для разных кампаний. Выберите источник целиком или настройте каждое исключение."
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "ban-library",
+							children: [
+								/* @__PURE__ */ jsxs("label", { children: ["Мои списки", /* @__PURE__ */ jsxs("select", {
+									"aria-label": "Мои бан-листы",
+									value: banDraft.id,
+									onChange: (event) => selectBan(event.target.value),
+									children: [!banLists.some((list) => list.id === banDraft.id) && /* @__PURE__ */ jsxs("option", {
+										value: banDraft.id,
+										children: [banDraft.name, " · новый"]
+									}), banLists.map((list) => /* @__PURE__ */ jsxs("option", {
+										value: list.id,
+										children: [list.name, activeBan?.id === list.id ? " · активен" : ""]
+									}, list.id))]
+								})] }),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => newBan(),
+									children: "Новый список"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => newBan(true),
+									children: "Создать копию"
+								}),
+								/* @__PURE__ */ jsxs("label", {
+									className: "ban-import",
+									children: ["Импорт JSON", /* @__PURE__ */ jsx("input", {
+										type: "file",
+										hidden: true,
+										accept: ".json,application/json",
+										onChange: importBan
+									})]
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: deleteBan,
+									children: "Удалить список"
+								})
+							]
 						}),
 						/* @__PURE__ */ jsxs("div", {
 							className: "ban-controls",
-							children: [
-								/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
-									value: banDraft.name,
-									onChange: (event) => setBanDraft({
+							children: [/* @__PURE__ */ jsxs("label", { children: ["Название списка", /* @__PURE__ */ jsx("input", {
+								value: banDraft.name,
+								onChange: (event) => setBanDraft({
+									...banDraft,
+									name: event.target.value
+								})
+							})] }), /* @__PURE__ */ jsxs("fieldset", { children: [
+								/* @__PURE__ */ jsx("legend", { children: "Режим ограничений" }),
+								/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+									type: "radio",
+									checked: banDraft.mode === "deny",
+									onChange: () => setBanDraft({
 										...banDraft,
-										name: event.target.value
+										mode: "deny"
 									})
-								})] }),
-								/* @__PURE__ */ jsxs("fieldset", { children: [
-									/* @__PURE__ */ jsx("legend", { children: "Режим" }),
-									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-										type: "radio",
-										checked: banDraft.mode === "deny",
-										onChange: () => setBanDraft({
-											...banDraft,
-											mode: "deny"
-										})
-									}), " Запретить выбранное"] }),
-									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-										type: "radio",
-										checked: banDraft.mode === "allow",
-										onChange: () => setBanDraft({
-											...banDraft,
-											mode: "allow"
-										})
-									}), " Разрешить только выбранное"] })
-								] }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "ban-book-control",
-									children: [
-										/* @__PURE__ */ jsxs("label", { children: ["Вся книга", /* @__PURE__ */ jsx("select", {
-											value: banBookSource,
-											onChange: (event) => setBanBookSource(event.target.value),
-											children: allBookSources.map((value) => /* @__PURE__ */ jsx("option", { children: value }, value))
-										})] }),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setBookBanState(banBookSource, true),
-											children: "Запретить книгу"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setBookBanState(banBookSource, false),
-											children: "Снять бан книги"
-										}),
-										/* @__PURE__ */ jsx("small", { children: "После массового действия можно открыть любую категорию и снять запрет с отдельных рас, классов, предысторий или заклинаний." })
-									]
-								}),
-								/* @__PURE__ */ jsxs("div", {
-									className: "ban-book-control",
-									children: [
-										/* @__PURE__ */ jsx("label", { children: "Настройки Tasha’s Cauldron of Everything" }),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setTceBanState("optional", true),
-											children: "Запретить опциональные способности TCE"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setTceBanState("optional", false),
-											children: "Разрешить опциональные способности TCE"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setTceBanState("full", true),
-											children: "Запретить всю TCE, включая новые боевые стили и заклинания"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setTceBanState("full", false),
-											children: "Разрешить всю TCE"
-										})
-									]
+								}), " Запретить выбранное"] }),
+								/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+									type: "radio",
+									checked: banDraft.mode === "allow",
+									onChange: () => setBanDraft({
+										...banDraft,
+										mode: "allow"
+									})
+								}), " Разрешить только выбранное"] })
+							] })]
+						}),
+						/* @__PURE__ */ jsxs("details", {
+							className: "ban-sources",
+							children: [
+								/* @__PURE__ */ jsx("summary", { children: "Источники · блокировка целой книги" }),
+								/* @__PURE__ */ jsx("p", { children: "Действие охватывает все категории, включая подклассы, способности и классовые опции. Затем можно разрешить отдельные элементы. Для Таши также отключаются расширенные списки заклинаний." }),
+								/* @__PURE__ */ jsx("div", {
+									className: "ban-source-grid",
+									children: allBookSources.map((source) => {
+										const options = Object.entries(catalogs).flatMap(([category, values]) => values.filter((option) => sourceTokens(option.source).includes(source)).map((option) => ({
+											category,
+											id: option.id
+										})));
+										const banned = options.filter((option) => !allowed(banDraft, option.category, option.id)).length;
+										return /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("strong", { children: source }), /* @__PURE__ */ jsxs("small", { children: [
+											"Запрещено ",
+											banned,
+											" / ",
+											options.length
+										] })] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("button", {
+											onClick: () => setBookBanState(source, true),
+											children: "Запретить"
+										}), /* @__PURE__ */ jsx("button", {
+											onClick: () => setBookBanState(source, false),
+											children: "Разрешить"
+										})] })] }, source);
+									})
 								})
 							]
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "ban-summary",
+							children: [/* @__PURE__ */ jsxs("strong", { children: ["Запрещено: ", blockedCount] }), /* @__PURE__ */ jsx("span", { children: activeBan ? `В мастере: ${activeBan.name}` : "В мастере нет активных ограничений" })]
 						}),
 						/* @__PURE__ */ jsx("div", {
 							className: "category-tabs",
@@ -62473,30 +62670,84 @@ function Builder() {
 								onClick: () => {
 									setBanCategory(key);
 									setBanSource("Все");
+									setBanClass("all");
+									setBanLevel("all");
 									setSearch("");
 								},
 								children: [
 									categoryNames[key],
 									" ",
-									/* @__PURE__ */ jsx("span", { children: banDraft.categories[key].length })
+									/* @__PURE__ */ jsx("span", { children: catalogs[key].filter((option) => !allowed(banDraft, key, option.id)).length })
 								]
 							}, key))
 						}),
 						/* @__PURE__ */ jsxs("div", {
-							className: "tools",
-							children: [/* @__PURE__ */ jsxs("label", {
-								className: "search",
-								children: ["⌕", /* @__PURE__ */ jsx("input", {
-									value: search,
-									onChange: (event) => setSearch(event.target.value),
-									placeholder: `Найти: ${categoryNames[banCategory].toLowerCase()}`
-								})]
-							}), /* @__PURE__ */ jsx("select", {
-								"aria-label": "Источник для бан-листа",
-								value: banSource,
-								onChange: (event) => setBanSource(event.target.value),
-								children: banSources.map((value) => /* @__PURE__ */ jsx("option", { children: value }, value))
-							})]
+							className: "ban-filters",
+							children: [
+								/* @__PURE__ */ jsxs("label", {
+									className: "search",
+									children: ["⌕", /* @__PURE__ */ jsx("input", {
+										"aria-label": "Поиск в бан-листе",
+										value: search,
+										onChange: (event) => setSearch(event.target.value),
+										placeholder: `Найти: ${categoryNames[banCategory].toLowerCase()}`
+									})]
+								}),
+								/* @__PURE__ */ jsxs("label", { children: ["Источник", /* @__PURE__ */ jsx("select", {
+									value: banSource,
+									onChange: (event) => setBanSource(event.target.value),
+									children: banSources.map((value) => /* @__PURE__ */ jsx("option", { children: value }, value))
+								})] }),
+								/* @__PURE__ */ jsxs("label", { children: ["Статус", /* @__PURE__ */ jsxs("select", {
+									value: banStatus,
+									onChange: (event) => setBanStatus(event.target.value),
+									children: [
+										/* @__PURE__ */ jsx("option", {
+											value: "all",
+											children: "Все элементы"
+										}),
+										/* @__PURE__ */ jsx("option", {
+											value: "banned",
+											children: "Запрещённые"
+										}),
+										/* @__PURE__ */ jsx("option", {
+											value: "allowed",
+											children: "Разрешённые"
+										})
+									]
+								})] }),
+								[
+									"subclasses",
+									"optionalFeatures",
+									"classOptions",
+									"spells"
+								].includes(banCategory) && /* @__PURE__ */ jsxs("label", { children: ["Класс", /* @__PURE__ */ jsxs("select", {
+									value: banClass,
+									onChange: (event) => setBanClass(event.target.value),
+									children: [/* @__PURE__ */ jsx("option", {
+										value: "all",
+										children: "Все классы"
+									}), classes.map((option) => /* @__PURE__ */ jsx("option", {
+										value: option.id,
+										children: option.name
+									}, option.id))]
+								})] }),
+								banCategory === "spells" && /* @__PURE__ */ jsxs("label", { children: ["Круг", /* @__PURE__ */ jsxs("select", {
+									value: banLevel,
+									onChange: (event) => setBanLevel(event.target.value),
+									children: [/* @__PURE__ */ jsx("option", {
+										value: "all",
+										children: "Все круги"
+									}), Array.from({ length: 10 }, (_, level) => /* @__PURE__ */ jsx("option", {
+										value: level,
+										children: levelLabel(level)
+									}, level))]
+								})] })
+							]
+						}),
+						banCategory === "optionalFeatures" && /* @__PURE__ */ jsx("p", {
+							className: "ban-help",
+							children: "Каждую способность Таши можно запретить отдельно. Боевые стили, воззвания и метамагия находятся в «Классовых опциях»."
 						}),
 						/* @__PURE__ */ jsxs("div", {
 							className: "ban-bulk-actions",
@@ -62512,34 +62763,71 @@ function Builder() {
 								})
 							]
 						}),
+						!list.length && /* @__PURE__ */ jsx("p", {
+							className: "ban-empty",
+							children: "Ничего не найдено. Измените фильтры или поисковый запрос."
+						}),
 						/* @__PURE__ */ jsx("div", {
 							className: "ban-grid",
-							children: list.map((option) => /* @__PURE__ */ jsxs("button", {
-								className: banDraft.categories[banCategory].includes(option.id) ? "selected" : "",
-								onClick: () => toggleBan(option.id),
-								children: [/* @__PURE__ */ jsx("span", { children: banDraft.categories[banCategory].includes(option.id) ? "✓" : "+" }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: option.name }), /* @__PURE__ */ jsxs("small", { children: [option.source, banCategory === "spells" ? ` · ${levelLabel(option.level)}` : ""] })] })]
-							}, option.id))
+							children: list.map((option) => {
+								const banned = !allowed(banDraft, banCategory, option.id);
+								return /* @__PURE__ */ jsxs("button", {
+									"aria-pressed": banned,
+									className: banned ? "selected" : "",
+									onClick: () => {
+										if (banDraft.tceFullBanned && sourceTokens(option.source).includes("TCE") || banCategory === "optionalFeatures" && banDraft.tceOptionalFeaturesBanned) {
+											setBanNotice("Сначала разрешите источник TCE, чтобы настроить отдельные исключения.");
+											return;
+										}
+										setVisibleBanState([option.id], !banned);
+									},
+									children: [
+										/* @__PURE__ */ jsx("span", { children: banned ? "−" : "✓" }),
+										/* @__PURE__ */ jsxs("div", { children: [
+											/* @__PURE__ */ jsx("strong", { children: option.name }),
+											/* @__PURE__ */ jsx("small", { children: [
+												option.source,
+												option.classId ? classes.find((item) => item.id === option.classId)?.name : "",
+												option.group,
+												banCategory === "spells" ? levelLabel(option.level || 0) : option.level ? `${option.level} ур.` : ""
+											].filter(Boolean).join(" · ") }),
+											/* @__PURE__ */ jsx("p", { children: option.description })
+										] }),
+										/* @__PURE__ */ jsx("b", { children: banned ? "Запрещено" : "Разрешено" })
+									]
+								}, option.id);
+							})
 						}),
 						/* @__PURE__ */ jsxs("div", {
 							className: "ban-actions",
 							children: [
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => setBanDraft({
-										...emptyBan,
+										...normalizeBanList({}),
+										id: banDraft.id,
 										name: banDraft.name
 									}),
-									children: "Очистить"
+									children: "Разрешить всё"
 								}),
 								/* @__PURE__ */ jsx("button", {
 									onClick: () => download(banDraft, `${banDraft.name || "ban-list"}.json`),
 									children: "Скачать JSON"
 								}),
 								/* @__PURE__ */ jsx("button", {
+									onClick: () => saveBan(),
+									children: "Сохранить"
+								}),
+								/* @__PURE__ */ jsx("button", {
 									className: "primary-action",
 									onClick: () => applyBan(banDraft),
-									children: "Применить к мастеру"
+									children: "Сохранить и применить"
 								})
 							]
+						}),
+						/* @__PURE__ */ jsx("p", {
+							role: "status",
+							className: "ban-notice",
+							children: banNotice || "Сохраняйте изменения перед выходом. Переключение между списками сохраняет текущий черновик."
 						})
 					]
 				}),
@@ -62636,7 +62924,7 @@ function Builder() {
 									setView("banlist");
 									setSearch("");
 								},
-								children: "Создать бан-лист"
+								children: "Бан-листы"
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
@@ -62693,7 +62981,7 @@ function Builder() {
 									setView("banlist");
 									setSearch("");
 								},
-								children: "Создать бан-лист"
+								children: "Бан-листы"
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
@@ -62945,20 +63233,30 @@ function Builder() {
 			/* @__PURE__ */ jsx(MissingChoiceNavigator, { signature: `${step}:${character.race}:${character.className}:${character.background}:${character.level}:${JSON.stringify(character.backgroundChoices)}:${JSON.stringify(character.advancements)}:${JSON.stringify(character.classChoices)}:${character.spells.join(",")}:${(character.preparedSpells || []).join(",")}:${(character.languages || []).join(",")}` }),
 			activeBan && /* @__PURE__ */ jsxs("div", {
 				className: "ban-status",
-				children: [/* @__PURE__ */ jsxs("span", { children: [
-					"Активен: ",
-					/* @__PURE__ */ jsx("strong", { children: activeBan.name }),
-					" · ",
-					activeBan.mode === "deny" ? "запрещены выбранные" : "разрешены только выбранные",
-					" · скрыто ",
-					hiddenCount
-				] }), /* @__PURE__ */ jsx("button", {
-					onClick: () => {
-						setActiveBan(null);
-						localStorage.removeItem("dark-codex-banlist");
-					},
-					children: "Отключить"
-				})]
+				children: [
+					/* @__PURE__ */ jsxs("span", { children: [
+						"Активен: ",
+						/* @__PURE__ */ jsx("strong", { children: activeBan.name }),
+						" · ",
+						activeBan.mode === "deny" ? "запрещены выбранные" : "разрешены только выбранные",
+						" · скрыто ",
+						hiddenCount
+					] }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => {
+							setBanDraft(activeBan);
+							setView("banlist");
+						},
+						children: "Изменить / переключить"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => {
+							setActiveBan(null);
+							localStorage.removeItem("dark-codex-banlist");
+						},
+						children: "Отключить"
+					})
+				]
 			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "workspace",
