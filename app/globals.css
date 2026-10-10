@@ -1361,20 +1361,6 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design .active .catalog-icon::before,
 .modern-design .selected .catalog-icon::after,
 .modern-design .active .catalog-icon::after { border-color: #8f1821; }
-.modern-design .choice-card.selected .card-actions button:first-child,
-.modern-design .spell-list article.selected,
-.modern-design .prepared-picker button.selected,
-.modern-design .proficiency-grid button.selected,
-.modern-design .spell-level-filter button.active,
-.modern-design .class-choice-card.selected,
-.modern-design .subclass-grid button.selected,
-.modern-design .feat-grid button.selected,
-.modern-design .feat-choice-options button.selected {
-  color: #8f1821;
-  border-color: #8f1821;
-  background: rgba(143,24,33,.08);
-}
-
 @media (max-width: 760px) {
   .spell-advanced-filters { grid-template-columns: 1fr; }
   .character-check-banner { align-items: stretch; flex-direction: column; }
@@ -1415,6 +1401,25 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   background: transparent;
   color: #17120e;
   border-color: #17120e;
+}
+/* Selected choices must follow the neutral parchment panel rules. */
+.modern-design .spell-list article.selected,
+.modern-design .known-spell-picker button,
+.modern-design .prepared-picker button.selected,
+.modern-design .equipment-options button.selected,
+.modern-design .proficiency-grid button.selected,
+.modern-design .spell-level-filter button.active,
+.modern-design .class-choice-card.selected,
+.modern-design .subclass-grid button.selected,
+.modern-design .feat-grid button.selected,
+.modern-design .feat-choice-options button.selected {
+  color: #8f1821;
+  border-color: #8f1821;
+  background: rgba(143,24,33,.08);
+}
+.modern-design .equipment-options button.selected > span {
+  color: #8f1821;
+  border-color: #8f1821;
 }
 .modern-design input,
 .modern-design select,
