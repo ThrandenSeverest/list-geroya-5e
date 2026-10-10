@@ -130,6 +130,8 @@ export type ExportCharacter = {
   useTasha?: boolean;
   /** Campaign ban-list switch: removes all TCE catalogue additions. */
   tceFullBanned?: boolean;
+  bannedOptionalFeatures?: string[];
+  bannedClassOptions?: string[];
   alignment: string;
   abilities: AbilityScores;
   personality: {

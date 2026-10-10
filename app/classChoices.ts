@@ -1,3 +1,4 @@
+import { classOptionId, optionalChoiceAllowed } from './campaignRestrictions';
 import type { CatalogSpell } from "./catalog";
 import type { ExportCharacter } from "./exportFormats";
 import type { Feature } from "./rules";
@@ -360,7 +361,7 @@ function singleClassChoiceGroups(character: ExportCharacter, spells: CatalogSpel
   if (character.className === "wizard" && level >= 18) add({ key: "spell-mastery-1", title: "Мастерство заклинателя: 1-й круг", description: "Заклинание 1-го круга из книги.", level: 18, count: 1, options: spellOptions(spells, spell => spell.level === 1 && spell.classes.includes("wizard")) });
   if (character.className === "wizard" && level >= 18) add({ key: "spell-mastery-2", title: "Мастерство заклинателя: 2-й круг", description: "Заклинание 2-го круга из книги.", level: 18, count: 1, options: spellOptions(spells, spell => spell.level === 2 && spell.classes.includes("wizard")) });
   if (character.className === "wizard" && level >= 20) add({ key: "signature-spells", title: "Фирменные заклинания", description: "Два заклинания 3-го круга из книги.", level: 20, count: 2, options: spellOptions(spells, spell => spell.level === 3 && spell.classes.includes("wizard")) });
-  return groups;
+  return groups.filter(group => optionalChoiceAllowed(character, group.key)).map(group => ({ ...group, options: group.options.filter(option => !character.bannedClassOptions?.includes(classOptionId(character.className, group.key, option.id))) }));
 }
 
 function entryLocalChoices(character: ExportCharacter, classId: string) {

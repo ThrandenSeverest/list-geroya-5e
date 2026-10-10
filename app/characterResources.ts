@@ -1,3 +1,4 @@
+import { optionalFeatureAllowed } from './campaignRestrictions';
 import { hbResources } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedRaceVariant } from "./characterRules";
@@ -100,7 +101,7 @@ function singleClassResources(character: ExportCharacter) {
 
   add(resources, character.className === "bard", { key: "bardic-inspiration", name: "Вдохновение барда", max: ability("cha"), die: level >= 15 ? "к12" : level >= 10 ? "к10" : level >= 5 ? "к8" : "к6", isShortRest: level >= 5, isLongRest: true });
   add(resources, character.className === "cleric" && level >= 2, { key: "channel-divinity", name: "Божественный канал", max: level >= 18 ? 3 : level >= 6 ? 2 : 1, isShortRest: true, isLongRest: true });
-  add(resources, character.className === "cleric" && !!character.useTasha && level >= 2, { key: "harness-divine-power", name: "Направление божественной силы", max: level >= 18 ? 3 : level >= 6 ? 2 : 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "cleric" && optionalFeatureAllowed(character, "cleric", "Направление божественной силы") && level >= 2, { key: "harness-divine-power", name: "Направление божественной силы", max: level >= 18 ? 3 : level >= 6 ? 2 : 1, isShortRest: false, isLongRest: true });
   add(resources, character.className === "cleric" && subclass === "tempest" && level >= 1, { key: "wrath-of-storm", name: "Гнев бури", max: ability("wis"), isShortRest: false, isLongRest: true });
   add(resources, character.className === "cleric" && subclass === "peace" && level >= 1, { key: "emboldening-bond", name: "Укрепляющая связь", max: pb, isShortRest: false, isLongRest: true });
   add(resources, character.className === "cleric" && subclass === "order" && level >= 6, { key: "embodiment-of-law", name: "Воплощение закона", max: ability("wis"), isShortRest: false, isLongRest: true });
@@ -125,7 +126,7 @@ function singleClassResources(character: ExportCharacter) {
 
   add(resources, character.className === "paladin", { key: "lay-on-hands", name: "Наложение рук", max: level * 5, unit: 5, isShortRest: false, isLongRest: true });
   add(resources, character.className === "paladin" && level >= 3, { key: "channel-divinity", name: "Божественный канал", max: 1, isShortRest: true, isLongRest: true });
-  add(resources, character.className === "paladin" && !!character.useTasha && level >= 3, { key: "harness-divine-power", name: "Направление божественной силы", max: level >= 15 ? 3 : level >= 7 ? 2 : 1, isShortRest: false, isLongRest: true });
+  add(resources, character.className === "paladin" && optionalFeatureAllowed(character, "paladin", "Направление божественной силы") && level >= 3, { key: "harness-divine-power", name: "Направление божественной силы", max: level >= 15 ? 3 : level >= 7 ? 2 : 1, isShortRest: false, isLongRest: true });
   add(resources, character.className === "paladin" && subclass === "glory" && level >= 15, { key: "glorious-defense", name: "Славная защита", max: ability("cha"), isShortRest: false, isLongRest: true });
 
   add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-favored-foe"] || []).includes("favored-foe"), { key: "favored-foe", name: "Предпочтительный противник", max: pb, isShortRest: false, isLongRest: true });

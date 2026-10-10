@@ -1675,3 +1675,64 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
   .mobile-actions button:disabled { opacity: .35; }
   .home-hero-copy h1 { font-size: 46px; }
 }
+
+/* Parchment controls and panels use opaque surfaces, including nested editors. */
+.modern-design { --panel: #efe0b9; --panel-2: #e5d0a2; --line: #17120e; }
+.modern-design .topbar, .modern-design .steps { background: #efe0b9; box-shadow: none; }
+.modern-design .step.active { background: #f6ebcb; font-weight: 700; }
+.modern-design .step.active span { box-shadow: none; }
+.modern-design :is(.skill-source,.ability-editor,.racial-choice,.spell-progression,.subclass-picker,.tasha-panel,.feat-picker,.class-choice-section,.spell-requirements,.equipment-group,.equipment-toolbar,.equipment-fixed,.personality-card,.personality-toolbar,.character-check-banner,.character-grid article,.feat-choice-builder,.known-spell-picker,.prepared-picker,.spell-level-quotas div,.progression-facts div,.slot-grid div,.background-mechanics,.additional-spell-access,.multiclass-panel,.multiclass-class-card,.pointbuy-grid section,.resource-preview-grid article,.library-folder-card,.library-character-card,.folder-toolbar,.library-bulk-actions,.contact-card,.special-thanks,.home-recent-grid>button,.home-quick-actions button,.home-benefits,.hb-workspace-sidebar,.hb-library-row,.hb-editor,.hb-cards article,.hb-level,.hb-on-sheet,.hb-editor-actions,.hb-browser-summary,.hb-package-contents>header,.hb-package-contents details,.hb-help>div,.feat-choice-failsafe) {
+  background: #f6ebcb; border-color: #17120e; box-shadow: none; backdrop-filter: none;
+}
+.modern-design :is(button,input,textarea,select,fieldset):not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *) {
+  background-color: #f6ebcb; background-image: none; color: #17120e; border-color: #17120e; box-shadow: none; backdrop-filter: none;
+}
+.modern-design :is(button.selected,button.active,button[aria-pressed="true"],.choice-card.selected,.spell-list article.selected):not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *) {
+  background: #f6ebcb; color: #8f1821; border: 2px solid #8f1821; font-weight: 700; box-shadow: none;
+}
+.modern-design :is(.primary-action,.home-primary,.hb-save-primary):not(.mobile-character-sheet *) { background: #8f1821; color: #fff8e7; border-color: #8f1821; font-weight: 700; }
+.modern-design :is(button,input,select):disabled:not(.mobile-character-sheet *):not(.pdf-document *) { opacity: 1; color: #6b6254; border-color: #827768; background: #e5dcc4; cursor: not-allowed; }
+.modern-design .account-access { background: #efe0b9; border-color: #17120e; box-shadow: none; }
+.modern-design .account-access.is-guest { background: #efe0b9; }
+.modern-design .account-access strong { color: #17120e; }
+.auth-card { background: #f8eccc; box-shadow: none; }
+.auth-message { background: #efe0b9; }
+
+/* Campaign editor: saved lists, readable filters and explicit allowed/banned states. */
+.ban-page { width: min(1240px, calc(100% - 40px)); padding-top: 32px; }
+.ban-page h1 { font-size: clamp(32px,4vw,48px); }
+.ban-library,.ban-summary,.ban-bulk-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:18px 0; }
+.ban-library>label:first-child { flex:1 1 260px; display:grid; gap:6px; }
+.ban-page button,.ban-import { min-height:40px; padding:9px 12px; color:var(--ivory); background:var(--panel); border:1px solid var(--line); cursor:pointer; font:inherit; }
+.ban-page input,.ban-page select { min-height:40px; width:100%; padding:8px 10px; border:1px solid var(--line); background:var(--panel); color:var(--ivory); font:inherit; }
+.ban-controls { margin:18px 0; grid-template-columns:minmax(200px,1fr) minmax(300px,2fr); }
+.ban-controls fieldset { flex-wrap:wrap; }
+.ban-controls input[type=radio] { width:auto; min-height:0; }
+.ban-sources { padding:16px; border:1px solid var(--line); background:var(--panel); }
+.ban-sources summary { font-weight:700; cursor:pointer; }
+.ban-sources>p,.ban-help,.ban-notice { color:var(--muted); line-height:1.55; font-size:13px; }
+.ban-source-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:10px; }
+.ban-source-grid section { padding:12px; border:1px solid var(--line); }
+.ban-source-grid header { display:grid; gap:5px; margin-bottom:10px; }
+.ban-source-grid section>div { display:flex; gap:6px; }
+.ban-source-grid small { color:var(--muted); }
+.ban-summary { justify-content:space-between; padding:12px 0; border-block:1px solid var(--line); }
+.ban-filters { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:18px 0; }
+.ban-filters>label { display:grid; gap:6px; color:var(--muted); font-size:12px; }
+.ban-filters .search { display:flex; align-items:center; padding:0 10px; }
+.ban-filters .search input { border:0; min-width:0; }
+.ban-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.ban-grid button { grid-template-columns:26px minmax(0,1fr) auto; align-items:start; gap:10px; }
+.ban-grid button>span { width:24px; height:24px; color:var(--ivory); border-color:var(--line); }
+.ban-grid button>div { min-width:0; }
+.ban-grid button p { margin:8px 0 0; font-size:12px; line-height:1.5; color:var(--muted); font-weight:400; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.ban-grid button>b { font-size:10px; padding-top:3px; }
+.ban-grid button.selected { border-width:2px; background:var(--panel); color:var(--copper-light); font-weight:700; }
+.ban-grid button.selected>span { color:var(--copper-light); border-color:var(--copper-light); }
+.ban-actions { position:sticky; padding:12px; bottom:0; background:var(--panel); flex-wrap:wrap; border:1px solid var(--line); margin-top:20px; }
+.ban-actions button { min-height:42px; padding:9px 14px; }
+.ban-notice { min-height:20px; }
+.modern-design :is(.ban-sources,.ban-source-grid section,.ban-actions,.ban-controls>label) { background:#f6ebcb; border-color:#17120e; }
+.modern-design .ban-page button.selected { border:2px solid #8f1821; color:#8f1821; background:#f6ebcb; font-weight:700; }
+.modern-design .ban-page .primary-action { background:#8f1821; color:#fff8e7; }
+@media(max-width:760px) { .ban-controls,.ban-filters,.ban-grid { grid-template-columns:1fr; } .ban-controls fieldset { gap:12px; } .ban-grid button { grid-template-columns:24px minmax(0,1fr); } .ban-grid button>b { grid-column:2; } .ban-actions { justify-content:stretch; } .ban-actions button { flex:1 1 140px; } }

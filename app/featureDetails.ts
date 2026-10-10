@@ -1,3 +1,4 @@
+import { optionalFeatureId } from './campaignRestrictions';
 import type { Feature } from "./rules";
 import { classFeatureCorpus, optionalClassFeatureCorpus, subclassFeatureCorpus } from "./generatedRulesCorpus";
 import { sheetClassFeatures, sheetOptionalFeatures, sheetSubclassFeatures } from "./generatedSheetRules";
@@ -116,6 +117,7 @@ export function documentedClassFeatures(
   fallbackClass: Feature[],
   fallbackSubclass: Feature[],
   fallbackOptional: Feature[],
+  bannedOptionalFeatures: string[] = [],
 ) {
   const sourceBase = sheetClassFeatures[classId]?.length
     ? sheetClassFeatures[classId]
@@ -136,6 +138,6 @@ export function documentedClassFeatures(
   return detailedFeatures([
     ...base,
     ...(documentedSubclass?.length ? documentedSubclass : fallbackSubclass),
-    ...optional,
+    ...optional.filter(feature => !bannedOptionalFeatures.includes(optionalFeatureId(classId, feature.name))),
   ]).filter(usefulFinalClassFeature);
 }
