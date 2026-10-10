@@ -1684,13 +1684,13 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(185,11
 .modern-design :is(.skill-source,.ability-editor,.racial-choice,.spell-progression,.subclass-picker,.tasha-panel,.feat-picker,.class-choice-section,.spell-requirements,.equipment-group,.equipment-toolbar,.equipment-fixed,.personality-card,.personality-toolbar,.character-check-banner,.character-grid article,.feat-choice-builder,.known-spell-picker,.prepared-picker,.spell-level-quotas div,.progression-facts div,.slot-grid div,.background-mechanics,.additional-spell-access,.multiclass-panel,.multiclass-class-card,.pointbuy-grid section,.resource-preview-grid article,.library-folder-card,.library-character-card,.folder-toolbar,.library-bulk-actions,.contact-card,.special-thanks,.home-recent-grid>button,.home-quick-actions button,.home-benefits,.hb-workspace-sidebar,.hb-library-row,.hb-editor,.hb-cards article,.hb-level,.hb-on-sheet,.hb-editor-actions,.hb-browser-summary,.hb-package-contents>header,.hb-package-contents details,.hb-help>div,.feat-choice-failsafe) {
   background: #f6ebcb; border-color: #17120e; box-shadow: none; backdrop-filter: none;
 }
-.modern-design :is(button,input,textarea,select,fieldset):where(:not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *)) {
+.modern-design :is(button,input,textarea,select,fieldset):not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *) {
   background-color: #f6ebcb; background-image: none; color: #17120e; border-color: #17120e; box-shadow: none; backdrop-filter: none;
 }
 .modern-design :is(button.selected,button.active,button[aria-pressed="true"],.choice-card.selected,.spell-list article.selected):not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *) {
   background: #f6ebcb; color: #8f1821; border: 2px solid #8f1821; font-weight: 700; box-shadow: none;
 }
-.modern-design :is(.primary-action,.home-primary,.hb-save-primary):not(.mobile-character-sheet *) { background: #8f1821; color: #fff8e7; border-color: #8f1821; font-weight: 700; }
+.modern-design :is(.primary-action,.home-primary,.hb-save-primary):not(.mobile-character-sheet *):not(.pdf-document *):not(.sheet-page *) { background: #8f1821; color: #fff8e7; border-color: #8f1821; font-weight: 700; }
 .modern-design :is(button,input,select):disabled:not(.mobile-character-sheet *):not(.pdf-document *) { opacity: 1; color: #6b6254; border-color: #827768; background: #e5dcc4; cursor: not-allowed; }
 .modern-design .account-access { background: #efe0b9; border-color: #17120e; box-shadow: none; }
 .modern-design .account-access.is-guest { background: #efe0b9; }
