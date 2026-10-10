@@ -133,6 +133,8 @@ async function saved(page) {
           const settings=page.getByRole('dialog');
           await settings.getByLabel('Размер интерфейса на ПК',{exact:true}).fill('150');
           await settings.getByLabel('Размер шрифта',{exact:true}).fill('120');
+          const bounds=await settings.evaluate(e=>{const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,right:r.right,height:innerHeight,width:innerWidth};});
+          assert.ok(bounds.top>=0 && bounds.bottom<=bounds.height && bounds.right<=bounds.width,'Settings stay inside viewport at enlarged UI scale');
           await settings.getByLabel('Цветовая тема').selectOption('parchment');
           await settings.getByRole('button',{name:'Создать свою тему',exact:true}).click();
           await settings.getByLabel('Название темы').fill('Тестовая тема');
