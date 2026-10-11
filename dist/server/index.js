@@ -7359,7 +7359,7 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "8e842c3a-ff9d-440c-96b9-db2660cd1daf";
+		return "d3241638-cdf8-4cdb-a152-3de138b92752";
 	}
 };
 var RequestCookies = class {
@@ -12481,7 +12481,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "8e842c3a-ff9d-440c-96b9-db2660cd1daf") {
+function appIsrCacheKey(pathname, suffix, buildId = "d3241638-cdf8-4cdb-a152-3de138b92752") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12810,7 +12810,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "8e842c3a-ff9d-440c-96b9-db2660cd1daf",
+		deploymentVersion: "d3241638-cdf8-4cdb-a152-3de138b92752",
 		rootBoundaryId
 	});
 }
@@ -14747,6 +14747,10 @@ var __publicFiles = new Set([
 	"/favicon.ico",
 	"/home/hero-day.webp",
 	"/home/hero-night.webp",
+	"/mode-signs/adventures.png",
+	"/mode-signs/adventures.svg",
+	"/mode-signs/tavern.png",
+	"/mode-signs/tavern.svg",
 	"/parchment-background.jpg",
 	"/yandex_cf6a667142559c9b.html"
 ]);

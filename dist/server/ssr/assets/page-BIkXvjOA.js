@@ -2,6 +2,43 @@ import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
 import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
+//#region app/ModeSigns.tsx
+function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
+	return /* @__PURE__ */ jsx("nav", {
+		className: "mode-signs",
+		"aria-label": "Таверна и приключения",
+		children: [[
+			"tavern",
+			"Таверна",
+			tavernCount
+		], [
+			"adventures",
+			"Приключения",
+			adventureCount
+		]].map(([mode, label, count]) => /* @__PURE__ */ jsxs("button", {
+			type: "button",
+			className: "mode-sign",
+			"aria-pressed": value === mode,
+			onClick: () => onChange(mode),
+			children: [
+				/* @__PURE__ */ jsx("span", {
+					className: "mode-sign-art",
+					"aria-hidden": "true",
+					style: { "--mode-sign-image": `url("${assetUrl(`mode-signs/${mode}.svg`)}")` }
+				}),
+				/* @__PURE__ */ jsx("span", {
+					className: "mode-sign-label",
+					children: label
+				}),
+				/* @__PURE__ */ jsxs("span", {
+					className: "mode-sign-count",
+					children: [count, " героев"]
+				})
+			]
+		}, mode))
+	});
+}
+//#endregion
 //#region app/documentBackgrounds.ts
 var documentBackgrounds = [
 	{
@@ -65528,282 +65565,274 @@ function Builder({ adventureRoute = false } = {}) {
 						})
 					]
 				}),
-				/* @__PURE__ */ jsxs("section", {
-					className: "character-library",
-					children: [
-						/* @__PURE__ */ jsxs("header", {
-							className: "library-head",
-							children: [/* @__PURE__ */ jsxs("div", { children: [
-								/* @__PURE__ */ jsx("p", {
-									className: "eyebrow",
-									children: "Локальная коллекция"
-								}),
-								/* @__PURE__ */ jsx("h1", { children: vaultSection === "tavern" ? "Таверна" : "Приключения" }),
-								/* @__PURE__ */ jsxs("p", { children: [
-									"До ",
-									vault.capacity,
-									" слотов на этом устройстве. Каждый лист сохраняется автоматически."
-								] })
-							] }), /* @__PURE__ */ jsxs("div", {
-								className: "library-actions",
-								children: [
-									/* @__PURE__ */ jsx("button", {
-										disabled: !ready,
-										onClick: () => setView("homebrew"),
-										children: "Моё хоумбрю"
+				/* @__PURE__ */ jsxs("div", {
+					className: "character-library-layout",
+					children: [/* @__PURE__ */ jsx(ModeSigns, {
+						value: vaultSection,
+						tavernCount: vault.slots.filter((s) => !s.character.adventure).length,
+						adventureCount: vault.slots.filter((s) => s.character.adventure).length,
+						onChange: (mode) => {
+							setVaultSection(mode);
+							setSelectedSlotIds([]);
+						}
+					}), /* @__PURE__ */ jsxs("section", {
+						className: "character-library",
+						children: [
+							/* @__PURE__ */ jsxs("header", {
+								className: "library-head",
+								children: [/* @__PURE__ */ jsxs("div", { children: [
+									/* @__PURE__ */ jsx("p", {
+										className: "eyebrow",
+										children: "Локальная коллекция"
 									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => characterFileRef.current?.click(),
-										children: "Импорт JSON"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => folderFileRef.current?.click(),
-										children: "Импорт папки ZIP"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										className: "primary-action",
-										disabled: free <= 0,
-										onClick: addCharacter,
-										children: "Новый персонаж"
-									}),
-									/* @__PURE__ */ jsx("input", {
-										ref: characterFileRef,
-										hidden: true,
-										type: "file",
-										accept: ".json,application/json",
-										onChange: importCharacterFile
-									}),
-									/* @__PURE__ */ jsx("input", {
-										ref: folderFileRef,
-										hidden: true,
-										type: "file",
-										accept: ".zip,application/zip",
-										onChange: importFolderArchive
-									})
-								]
-							})]
-						}),
-						/* @__PURE__ */ jsxs("nav", {
-							className: "folder-list",
-							"aria-label": "Таверна и приключения",
-							children: [/* @__PURE__ */ jsxs("button", {
-								className: vaultSection === "tavern" ? "active" : "",
-								onClick: () => {
-									setVaultSection("tavern");
-									setSelectedSlotIds([]);
-								},
-								children: ["Таверна · ", vault.slots.filter((s) => !s.character.adventure).length]
-							}), /* @__PURE__ */ jsxs("button", {
-								className: vaultSection === "adventures" ? "active" : "",
-								onClick: () => {
-									setVaultSection("adventures");
-									setSelectedSlotIds([]);
-								},
-								children: ["Приключения · ", vault.slots.filter((s) => s.character.adventure).length]
-							})]
-						}),
-						/* @__PURE__ */ jsx("p", { children: vaultSection === "tavern" ? "Здесь живут созданные герои. Отправьте героя в приключение, чтобы начать игру с независимой копией." : "Каждая копия хранит собственное здоровье, заклинания, предметы и журнал. Исходные герои остаются в Таверне." }),
-						/* @__PURE__ */ jsxs("div", {
-							className: "import-guide",
-							children: [
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Long Story Short" }), /* @__PURE__ */ jsx("span", { children: "Основной импорт: характеристики, личные данные, навыки, текстовые заклинания, карточки LSS и потраченные ячейки." })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Лист Героя 5e" }), /* @__PURE__ */ jsx("span", { children: "Полный перенос всех решений между устройствами и резервные копии." })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Helpmate · экспериментально" }), /* @__PURE__ */ jsx("span", { children: "Базовые параметры, класс, уровень, навыки, заклинания и ячейки; неполные поля нужно проверить." })] })
-							]
-						}),
-						/* @__PURE__ */ jsxs("div", {
-							className: "folder-toolbar",
-							children: [/* @__PURE__ */ jsxs("nav", {
-								className: "folder-list",
-								"aria-label": "Папки персонажей",
-								children: [
-									/* @__PURE__ */ jsxs("button", {
-										className: activeFolderId === "all" ? "active" : "",
-										onClick: () => {
-											setActiveFolderId("all");
-											setSelectedSlotIds([]);
-										},
-										children: ["Все ", /* @__PURE__ */ jsx("b", { children: vault.slots.length })]
-									}),
-									/* @__PURE__ */ jsxs("button", {
-										className: activeFolderId === "unfiled" ? "active" : "",
-										onClick: () => {
-											setActiveFolderId("unfiled");
-											setSelectedSlotIds([]);
-										},
-										children: ["Без папки ", /* @__PURE__ */ jsx("b", { children: vault.slots.filter((slot) => !slot.folderId).length })]
-									}),
-									vault.folders.map((folder) => /* @__PURE__ */ jsxs("button", {
-										className: activeFolderId === folder.id ? "active" : "",
-										onClick: () => {
-											setActiveFolderId(folder.id);
-											setSelectedSlotIds([]);
-										},
-										children: [
-											folder.name,
-											" ",
-											/* @__PURE__ */ jsx("b", { children: vault.slots.filter((slot) => slot.folderId === folder.id).length })
-										]
-									}, folder.id))
-								]
-							}), /* @__PURE__ */ jsxs("div", {
-								className: "folder-actions",
-								children: [
-									/* @__PURE__ */ jsx("button", {
-										onClick: createFolder,
-										children: "+ Новая папка"
-									}),
-									selectedFolder && /* @__PURE__ */ jsx("button", {
-										onClick: () => renameFolder(selectedFolder.id),
-										children: "Переименовать"
-									}),
-									selectedFolder && /* @__PURE__ */ jsx("button", {
-										onClick: () => deleteFolder(selectedFolder.id),
-										children: "Удалить папку"
-									}),
-									activeFolderId !== "all" && /* @__PURE__ */ jsx("button", {
-										onClick: () => openFolderExport(activeFolderId),
-										children: "Экспорт"
-									})
-								]
-							})]
-						}),
-						/* @__PURE__ */ jsxs("div", {
-							className: "bulk-character-actions",
-							children: [
-								/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-									type: "checkbox",
-									checked: allVisibleSelected,
-									onChange: () => setSelectedSlotIds((current) => allVisibleSelected ? current.filter((id) => !visibleSlots.some((slot) => slot.id === id)) : [...new Set([...current, ...visibleSlots.map((slot) => slot.id)])])
-								}), " Выбрать всех показанных"] }),
-								/* @__PURE__ */ jsxs("span", { children: ["Выбрано: ", selectedSlotIds.length] }),
-								/* @__PURE__ */ jsxs("select", {
-									value: moveFolderId,
-									onChange: (event) => setMoveFolderId(event.target.value),
-									"aria-label": "Папка назначения",
-									children: [/* @__PURE__ */ jsx("option", {
-										value: "unfiled",
-										children: "Без папки"
-									}), vault.folders.map((folder) => /* @__PURE__ */ jsx("option", {
-										value: folder.id,
-										children: folder.name
-									}, folder.id))]
-								}),
-								/* @__PURE__ */ jsx("button", {
-									disabled: !selectedSlotIds.length,
-									onClick: moveSelectedSlots,
-									children: "Перенести"
-								}),
-								/* @__PURE__ */ jsx("button", {
-									disabled: !selectedSlotIds.length,
-									onClick: deleteSelectedSlots,
-									children: "Удалить выбранных"
-								})
-							]
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "character-grid",
-							children: visibleSlots.map((slot) => {
-								const itemClass = classes.find((item) => item.id === slot.character.className) || homebrewOption(slot.character.className);
-								const itemRace = races.find((item) => item.id === slot.character.race) || homebrewOption(slot.character.race);
-								return /* @__PURE__ */ jsxs("article", {
-									className: slot.id === vault.activeId ? "active" : "",
+									/* @__PURE__ */ jsx("h1", { children: vaultSection === "tavern" ? "Таверна" : "Приключения" }),
+									/* @__PURE__ */ jsxs("p", { children: [
+										"До ",
+										vault.capacity,
+										" слотов на этом устройстве. Каждый лист сохраняется автоматически."
+									] })
+								] }), /* @__PURE__ */ jsxs("div", {
+									className: "library-actions",
 									children: [
-										/* @__PURE__ */ jsxs("label", {
-											className: "character-select",
-											children: [/* @__PURE__ */ jsx("input", {
-												type: "checkbox",
-												checked: selectedSlotIds.includes(slot.id),
-												onChange: () => toggleSlotSelection(slot.id)
-											}), /* @__PURE__ */ jsx("span", { children: "Выбрать" })]
+										/* @__PURE__ */ jsx("button", {
+											disabled: !ready,
+											onClick: () => setView("homebrew"),
+											children: "Моё хоумбрю"
 										}),
-										/* @__PURE__ */ jsx(CatalogIcon, {
-											id: itemClass?.id || itemRace?.id,
-											kind: itemClass ? "class" : "race",
-											fallback: itemClass?.name || itemRace?.name || "Новый герой",
-											experimental: usesOrnateIcons,
-											image: homebrew.elements.find((e) => e.id === (itemClass?.id || itemRace?.id))?.icon
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => characterFileRef.current?.click(),
+											children: "Импорт JSON"
 										}),
-										/* @__PURE__ */ jsxs("div", { children: [
-											/* @__PURE__ */ jsx("small", { children: slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}` }),
-											/* @__PURE__ */ jsx("h2", { children: slot.character.name || "Безымянный герой" }),
-											slot.character.adventure && /* @__PURE__ */ jsxs("p", { children: [
-												/* @__PURE__ */ jsx("b", { children: slot.character.adventure.name }),
-												" · ",
-												slot.character.adventure.status === "archived" ? "Завершено" : "В игре"
-											] }),
-											/* @__PURE__ */ jsxs("p", { children: [
-												itemRace?.name || "Раса не выбрана",
-												" · ",
-												itemClass?.name || "Класс не выбран",
-												" · ",
-												slot.character.level,
-												" уровень"
-											] })
-										] }),
-										/* @__PURE__ */ jsxs("div", {
-											className: "character-card-actions",
-											children: [
-												/* @__PURE__ */ jsx("button", {
-													onClick: () => selectSlot(slot.id),
-													children: slot.id === vault.activeId ? "Открыть" : "Открыть"
-												}),
-												/* @__PURE__ */ jsx("button", {
-													onClick: () => duplicateSlot(slot.id),
-													children: "Копировать"
-												}),
-												!slot.character.adventure && /* @__PURE__ */ jsx("button", {
-													className: "primary-action",
-													onClick: () => sendToAdventure(slot.id),
-													children: "Отправить в приключение"
-												}),
-												/* @__PURE__ */ jsxs("details", {
-													className: "character-move-menu",
-													children: [/* @__PURE__ */ jsx("summary", { children: "Переместить" }), /* @__PURE__ */ jsxs("select", {
-														value: slot.folderId || "unfiled",
-														onChange: (event) => moveSlot(slot.id, event.target.value),
-														children: [/* @__PURE__ */ jsx("option", {
-															value: "unfiled",
-															children: "Без папки"
-														}), vault.folders.map((folder) => /* @__PURE__ */ jsx("option", {
-															value: folder.id,
-															children: folder.name
-														}, folder.id))]
-													})]
-												}),
-												/* @__PURE__ */ jsx("button", {
-													onClick: () => openCharacterExport(slot.id),
-													children: "Экспорт"
-												}),
-												/* @__PURE__ */ jsx("button", {
-													onClick: () => deleteSlot(slot.id),
-													children: "Удалить"
-												})
-											]
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => folderFileRef.current?.click(),
+											children: "Импорт папки ZIP"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											className: "primary-action",
+											disabled: free <= 0,
+											onClick: addCharacter,
+											children: "Новый персонаж"
+										}),
+										/* @__PURE__ */ jsx("input", {
+											ref: characterFileRef,
+											hidden: true,
+											type: "file",
+											accept: ".json,application/json",
+											onChange: importCharacterFile
+										}),
+										/* @__PURE__ */ jsx("input", {
+											ref: folderFileRef,
+											hidden: true,
+											type: "file",
+											accept: ".zip,application/zip",
+											onChange: importFolderArchive
 										})
 									]
-								}, slot.id);
+								})]
+							}),
+							/* @__PURE__ */ jsx("p", { children: vaultSection === "tavern" ? "Здесь живут созданные герои. Отправьте героя в приключение, чтобы начать игру с независимой копией." : "Каждая копия хранит собственное здоровье, заклинания, предметы и журнал. Исходные герои остаются в Таверне." }),
+							/* @__PURE__ */ jsxs("div", {
+								className: "import-guide",
+								children: [
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Long Story Short" }), /* @__PURE__ */ jsx("span", { children: "Основной импорт: характеристики, личные данные, навыки, текстовые заклинания, карточки LSS и потраченные ячейки." })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Лист Героя 5e" }), /* @__PURE__ */ jsx("span", { children: "Полный перенос всех решений между устройствами и резервные копии." })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Helpmate · экспериментально" }), /* @__PURE__ */ jsx("span", { children: "Базовые параметры, класс, уровень, навыки, заклинания и ячейки; неполные поля нужно проверить." })] })
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "folder-toolbar",
+								children: [/* @__PURE__ */ jsxs("nav", {
+									className: "folder-list",
+									"aria-label": "Папки персонажей",
+									children: [
+										/* @__PURE__ */ jsxs("button", {
+											className: activeFolderId === "all" ? "active" : "",
+											onClick: () => {
+												setActiveFolderId("all");
+												setSelectedSlotIds([]);
+											},
+											children: ["Все ", /* @__PURE__ */ jsx("b", { children: vault.slots.length })]
+										}),
+										/* @__PURE__ */ jsxs("button", {
+											className: activeFolderId === "unfiled" ? "active" : "",
+											onClick: () => {
+												setActiveFolderId("unfiled");
+												setSelectedSlotIds([]);
+											},
+											children: ["Без папки ", /* @__PURE__ */ jsx("b", { children: vault.slots.filter((slot) => !slot.folderId).length })]
+										}),
+										vault.folders.map((folder) => /* @__PURE__ */ jsxs("button", {
+											className: activeFolderId === folder.id ? "active" : "",
+											onClick: () => {
+												setActiveFolderId(folder.id);
+												setSelectedSlotIds([]);
+											},
+											children: [
+												folder.name,
+												" ",
+												/* @__PURE__ */ jsx("b", { children: vault.slots.filter((slot) => slot.folderId === folder.id).length })
+											]
+										}, folder.id))
+									]
+								}), /* @__PURE__ */ jsxs("div", {
+									className: "folder-actions",
+									children: [
+										/* @__PURE__ */ jsx("button", {
+											onClick: createFolder,
+											children: "+ Новая папка"
+										}),
+										selectedFolder && /* @__PURE__ */ jsx("button", {
+											onClick: () => renameFolder(selectedFolder.id),
+											children: "Переименовать"
+										}),
+										selectedFolder && /* @__PURE__ */ jsx("button", {
+											onClick: () => deleteFolder(selectedFolder.id),
+											children: "Удалить папку"
+										}),
+										activeFolderId !== "all" && /* @__PURE__ */ jsx("button", {
+											onClick: () => openFolderExport(activeFolderId),
+											children: "Экспорт"
+										})
+									]
+								})]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "bulk-character-actions",
+								children: [
+									/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: allVisibleSelected,
+										onChange: () => setSelectedSlotIds((current) => allVisibleSelected ? current.filter((id) => !visibleSlots.some((slot) => slot.id === id)) : [...new Set([...current, ...visibleSlots.map((slot) => slot.id)])])
+									}), " Выбрать всех показанных"] }),
+									/* @__PURE__ */ jsxs("span", { children: ["Выбрано: ", selectedSlotIds.length] }),
+									/* @__PURE__ */ jsxs("select", {
+										value: moveFolderId,
+										onChange: (event) => setMoveFolderId(event.target.value),
+										"aria-label": "Папка назначения",
+										children: [/* @__PURE__ */ jsx("option", {
+											value: "unfiled",
+											children: "Без папки"
+										}), vault.folders.map((folder) => /* @__PURE__ */ jsx("option", {
+											value: folder.id,
+											children: folder.name
+										}, folder.id))]
+									}),
+									/* @__PURE__ */ jsx("button", {
+										disabled: !selectedSlotIds.length,
+										onClick: moveSelectedSlots,
+										children: "Перенести"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										disabled: !selectedSlotIds.length,
+										onClick: deleteSelectedSlots,
+										children: "Удалить выбранных"
+									})
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "character-grid",
+								children: visibleSlots.map((slot) => {
+									const itemClass = classes.find((item) => item.id === slot.character.className) || homebrewOption(slot.character.className);
+									const itemRace = races.find((item) => item.id === slot.character.race) || homebrewOption(slot.character.race);
+									return /* @__PURE__ */ jsxs("article", {
+										className: slot.id === vault.activeId ? "active" : "",
+										children: [
+											/* @__PURE__ */ jsxs("label", {
+												className: "character-select",
+												children: [/* @__PURE__ */ jsx("input", {
+													type: "checkbox",
+													checked: selectedSlotIds.includes(slot.id),
+													onChange: () => toggleSlotSelection(slot.id)
+												}), /* @__PURE__ */ jsx("span", { children: "Выбрать" })]
+											}),
+											/* @__PURE__ */ jsx(CatalogIcon, {
+												id: itemClass?.id || itemRace?.id,
+												kind: itemClass ? "class" : "race",
+												fallback: itemClass?.name || itemRace?.name || "Новый герой",
+												experimental: usesOrnateIcons,
+												image: homebrew.elements.find((e) => e.id === (itemClass?.id || itemRace?.id))?.icon
+											}),
+											/* @__PURE__ */ jsxs("div", { children: [
+												/* @__PURE__ */ jsx("small", { children: slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}` }),
+												/* @__PURE__ */ jsx("h2", { children: slot.character.name || "Безымянный герой" }),
+												slot.character.adventure && /* @__PURE__ */ jsxs("p", { children: [
+													/* @__PURE__ */ jsx("b", { children: slot.character.adventure.name }),
+													" · ",
+													slot.character.adventure.status === "archived" ? "Завершено" : "В игре"
+												] }),
+												/* @__PURE__ */ jsxs("p", { children: [
+													itemRace?.name || "Раса не выбрана",
+													" · ",
+													itemClass?.name || "Класс не выбран",
+													" · ",
+													slot.character.level,
+													" уровень"
+												] })
+											] }),
+											/* @__PURE__ */ jsxs("div", {
+												className: "character-card-actions",
+												children: [
+													/* @__PURE__ */ jsx("button", {
+														onClick: () => selectSlot(slot.id),
+														children: slot.id === vault.activeId ? "Открыть" : "Открыть"
+													}),
+													/* @__PURE__ */ jsx("button", {
+														onClick: () => duplicateSlot(slot.id),
+														children: "Копировать"
+													}),
+													!slot.character.adventure && /* @__PURE__ */ jsx("button", {
+														className: "primary-action",
+														onClick: () => sendToAdventure(slot.id),
+														children: "Отправить в приключение"
+													}),
+													/* @__PURE__ */ jsxs("details", {
+														className: "character-move-menu",
+														children: [/* @__PURE__ */ jsx("summary", { children: "Переместить" }), /* @__PURE__ */ jsxs("select", {
+															value: slot.folderId || "unfiled",
+															onChange: (event) => moveSlot(slot.id, event.target.value),
+															children: [/* @__PURE__ */ jsx("option", {
+																value: "unfiled",
+																children: "Без папки"
+															}), vault.folders.map((folder) => /* @__PURE__ */ jsx("option", {
+																value: folder.id,
+																children: folder.name
+															}, folder.id))]
+														})]
+													}),
+													/* @__PURE__ */ jsx("button", {
+														onClick: () => openCharacterExport(slot.id),
+														children: "Экспорт"
+													}),
+													/* @__PURE__ */ jsx("button", {
+														onClick: () => deleteSlot(slot.id),
+														children: "Удалить"
+													})
+												]
+											})
+										]
+									}, slot.id);
+								})
+							}),
+							!visibleSlots.length && /* @__PURE__ */ jsxs("div", {
+								className: "empty-folder",
+								children: [/* @__PURE__ */ jsx("strong", { children: "В этой папке пока пусто." }), /* @__PURE__ */ jsx("span", { children: "Выберите персонажей в разделе «Все» и перенесите их сюда." })]
+							}),
+							/* @__PURE__ */ jsxs("footer", {
+								className: "slot-footer",
+								children: [/* @__PURE__ */ jsxs("span", { children: [
+									"Занято ",
+									vault.slots.length,
+									" из ",
+									vault.capacity,
+									" · свободно ",
+									free
+								] }), /* @__PURE__ */ jsx("button", {
+									onClick: addFiveSlots,
+									children: "Добавить ещё 5 слотов"
+								})]
 							})
-						}),
-						!visibleSlots.length && /* @__PURE__ */ jsxs("div", {
-							className: "empty-folder",
-							children: [/* @__PURE__ */ jsx("strong", { children: "В этой папке пока пусто." }), /* @__PURE__ */ jsx("span", { children: "Выберите персонажей в разделе «Все» и перенесите их сюда." })]
-						}),
-						/* @__PURE__ */ jsxs("footer", {
-							className: "slot-footer",
-							children: [/* @__PURE__ */ jsxs("span", { children: [
-								"Занято ",
-								vault.slots.length,
-								" из ",
-								vault.capacity,
-								" · свободно ",
-								free
-							] }), /* @__PURE__ */ jsx("button", {
-								onClick: addFiveSlots,
-								children: "Добавить ещё 5 слотов"
-							})]
-						})
-					]
+						]
+					})]
 				}),
 				libraryExportTarget && /* @__PURE__ */ jsx("div", {
 					className: "modal-backdrop",
