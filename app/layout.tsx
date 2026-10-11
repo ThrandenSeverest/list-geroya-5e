@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./game-mode.css";
 import { storageGuardScript } from "./storageGuard";
 
 export const metadata: Metadata = {

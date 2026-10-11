@@ -100,9 +100,11 @@ export function hbAttacks(c:ExportCharacter){const map=new Map<string,import('./
 
 /** Definitions belong to the shared library; character saves contain references and play state. */
 export function bindHomebrewLibrary(c:ExportCharacter,library:{elements:HomebrewElement[]}):ExportCharacter {
+ if(c.adventure)return c;
  return {...c,homebrew:{...c.homebrew,entities:library.elements,activeIds:c.homebrew?.activeIds||[]}};
 }
 export function homebrewReferencesOnly(c:ExportCharacter):ExportCharacter {
+ if(c.adventure)return c;
  if(!c.homebrew)return c;
  const {entities: _definitions,...state}=c.homebrew;
  return {...c,homebrew:{...state,entities:[]}};

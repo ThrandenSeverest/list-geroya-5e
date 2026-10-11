@@ -110,11 +110,8 @@ async function saved(page) {
         await editor.locator('label').filter({hasText:'Уровень 2'}).getByRole('button',{name:'Использовать среднее'}).click();
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.levelHistory[1].hpMode==='average',key);
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'32');
-        await page.getByRole('button',{name:/Мобильный лист/}).click();
-        const mobile=page.locator('.mobile-character-sheet');
-        await mobile.getByRole('button',{name:'Ресурсы',exact:true}).click();
-        await mobile.locator('.hp-roll-editor summary').click();
-        await mobile.getByRole('spinbutton',{name:'Бросок хитов за уровень 3',exact:true}).fill('2');
+        assert.equal(await page.getByRole('button',{name:/Мобильный лист/}).count(),0);
+        await editor.getByRole('spinbutton',{name:'Бросок хитов за уровень 3',exact:true}).fill('2');
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots[0].character.currentHitPoints===27,key);
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'27');
         await page.reload();
@@ -157,8 +154,33 @@ async function saved(page) {
           await page.getByText('Источники · блокировка целой книги',{exact:true}).click();
           assert.equal(await page.locator('.ban-source-grid section').evaluateAll(cards=>cards.some(card=>{const bounds=card.getBoundingClientRect();return [...card.querySelectorAll('button')].some(button=>{const b=button.getBoundingClientRect();return b.left<bounds.left-1 || b.right>bounds.right+1;});})),false,'Source buttons remain inside their cards at desktop zoom');
         }
+        // The game gets an independent vault slot on both desktop and phone.
+        await page.reload();
+        await openSheet(page);
+        page.once('dialog',dialog=>dialog.accept('Проверка приключения'));
+        await page.getByRole('button',{name:'Отправить в приключение',exact:true}).click();
+        await page.locator('.play-shell').waitFor();
+        assert.equal(await page.locator(width<=700?'.play-mobile-nav':'.play-desktop-nav').isVisible(),true);
+        assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false,'Game stays within viewport');
+        await page.getByLabel('Количество',{exact:true}).fill('4');
+        await page.getByRole('button',{name:'Получить урон',exact:true}).click();
+        await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));return v.slots.find(s=>s.id===v.activeId).character.currentHitPoints===23;},key);
+        const gameVault=await saved(page);
+        assert.equal(gameVault.slots.find(s=>s.id==='hp-active').character.currentHitPoints,27,'Original stays unchanged');
+        assert.equal(gameVault.slots.length,3);
+        assert.equal(gameVault.slots.find(s=>s.id===gameVault.activeId).character.adventure.sourceId,'hp-active');
+        await page.getByRole('button',{name:'Отменить действие',exact:true}).click();
+        await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));return v.slots.find(s=>s.id===v.activeId).character.currentHitPoints===27;},key);
+        await page.reload();
+        await page.getByRole('button',{name:'Продолжить текущего персонажа',exact:true}).click();
+        await page.locator('.play-shell').waitFor();
+        await page.getByRole('button',{name:'← Таверна',exact:true}).click();
+        await page.getByRole('heading',{name:'Приключения',exact:true}).waitFor();
+        assert.equal(await page.locator('.character-grid article').count(),1);
+        await page.getByRole('button',{name:/^Таверна ·/}).click();
+        assert.equal(await page.locator('.character-grid article').count(),2);
         assert.deepEqual(errors,[]);
-        console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','mobile HP','reload','preserved vault']}));
+        console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','responsive game','independent adventure','undo','reload','preserved vault']}));
       } finally { await context.close(); }
     }
   } finally { await browser.close(); }

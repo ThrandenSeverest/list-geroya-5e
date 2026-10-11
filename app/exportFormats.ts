@@ -59,6 +59,8 @@ export type SpellGrant = {
 };
 
 export type ExportCharacter = {
+  /** Independent play copy; absent on original heroes in the Tavern. */
+  adventure?: import('./adventure').AdventureState;
   homebrew?: import("./homebrewEngine").HBCharacterData;
   abilityMethod?: "pointBuy" | "standard";
   recommendedSubclassId?: string;

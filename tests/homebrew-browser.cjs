@@ -65,7 +65,7 @@ const table = {
       );
       await page.goto(process.env.HEROLIST_URL || "http://127.0.0.1:3997");
       const myCharacters = page
-          .getByRole("button", { name: "Мои персонажи", exact: false })
+          .getByRole("button", { name: "Таверна и приключения", exact: false })
           .first(),
         homebrewButton = page.getByRole("button", {
           name: "Моё хоумбрю",
