@@ -65548,6 +65548,7 @@ function Builder({ adventureRoute = false } = {}) {
 								className: "library-actions",
 								children: [
 									/* @__PURE__ */ jsx("button", {
+										disabled: !ready,
 										onClick: () => setView("homebrew"),
 										children: "Моё хоумбрю"
 									}),
