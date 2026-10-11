@@ -28925,6 +28925,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						})
 					})] }),
 					/* @__PURE__ */ jsxs("label", { children: ["Тип предмета", /* @__PURE__ */ jsx("select", {
+						"aria-label": "Тип предмета",
 						value: draft.category || "gear",
 						onChange: (e) => setDraft({
 							...draft,
@@ -28936,6 +28937,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						}, key))
 					})] }),
 					draft.category === "weapon" && /* @__PURE__ */ jsxs("label", { children: ["Базовое оружие", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Базовое оружие",
 						value: draft.weaponBase || weaponNames.find((n) => draft.name.startsWith(n)) || "",
 						onChange: (e) => setDraft({
 							...draft,
@@ -29026,6 +29028,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 								})] }, key))
 							}),
 							/* @__PURE__ */ jsxs("label", { children: ["Магический бонус действует на", /* @__PURE__ */ jsxs("select", {
+								"aria-label": "Магический бонус действует на",
 								value: draft.bonusClassId || "",
 								onChange: (e) => setDraft({
 									...draft,
@@ -29075,6 +29078,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						})
 					})] }),
 					/* @__PURE__ */ jsxs("label", { children: ["Восстановление зарядов", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Восстановление зарядов",
 						value: draft.recharge,
 						onChange: (e) => setDraft({
 							...draft,
