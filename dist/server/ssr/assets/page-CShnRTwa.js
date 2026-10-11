@@ -63976,6 +63976,7 @@ function Builder() {
 		});
 		setCharacter(copy);
 		setVaultSection("adventures");
+		setActiveFolderId("all");
 		stopTutorial();
 		setView("game");
 	}
