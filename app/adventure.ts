@@ -7,7 +7,8 @@ import { characterResources, spentResourcesAfterLongRest } from './characterReso
 import { activeHomebrew, classRuleFor, homebrewExportClosure } from './homebrewEngine';
 import { applySubclassLongRest } from './subclassRuntime';
 
-export type PlayItem = { id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
+export type ItemCategory = 'weapon' | 'focus' | 'armor' | 'consumable' | 'ammunition' | 'gear';
+export type PlayItem = { category?: ItemCategory; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
 export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number };
 export type PlayEffect = { id: string; name: string; remaining?: number; concentration?: boolean };
 export type AdventureState = {
@@ -35,6 +36,7 @@ export function createAdventureCharacter(source: ExportCharacter, sourceId: stri
   const inventory = (c.inventoryOverride === undefined ? selectedEquipment(c) : c.inventoryOverride.split('\n')).filter(Boolean).map(line => {
     const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
     const item = newPlayItem(match?.[1] || line);
+    item.category = itemCategory(item);
     item.quantity = match ? integer(match[2], 1) : 1;
     // Preserve legacy equipment calculations on the first opening; the player can put individual items away.
     item.equipped = true;
@@ -53,10 +55,34 @@ export function playMaximum(c: ExportCharacter) { return c.adventure?.hpMaximum 
 export function inventoryText(items: PlayItem[]) { return items.filter(i => i.quantity > 0).map(i => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join('\n'); }
 export function playDerived(c: ExportCharacter): ExportCharacter {
   const items = c.adventure?.inventory;
-  return { ...c, abilities: finalAbilityScores(c), ...(items ? { inventoryOverride: inventoryText(items.filter(i => i.equipped)) } : {}) };
+  return { ...c, abilities: finalAbilityScores(c), ...(items ? { inventoryOverride: inventoryText(items.filter(i => i.equipped && i.quantity > 0).map(i => ({ ...i, name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, '') }))) } : {}) };
 }
 export function activeItem(i: PlayItem) { return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned); }
 export function itemBonus(c: ExportCharacter, key: 'acBonus' | 'attackBonus' | 'damageBonus') { return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0); }
+export const itemCategoryLabels: Record<ItemCategory, string> = { weapon: 'Оружие', focus: 'Фокусировки', armor: 'Доспехи', consumable: 'Расходники', ammunition: 'Боеприпасы', gear: 'Снаряжение' };
+export function itemCategory(i: PlayItem): ItemCategory {
+  if (i.category) return i.category;
+  if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return 'consumable';
+  if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return 'ammunition';
+  if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return 'weapon';
+  if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return 'armor';
+  return 'gear';
+}
+export function consumePlayItem(c: ExportCharacter, id: string): ExportCharacter {
+  const i = c.adventure?.inventory.find(i => i.id === id);
+  if (!i || !['consumable', 'ammunition'].includes(itemCategory(i))) throw new Error('Этот предмет не расходуется при использовании.');
+  if (i.quantity <= 0) throw new Error('Предмет закончился.');
+  return logPlay(updateInventory(c, c.adventure!.inventory.map(x => x.id === id ? { ...x, quantity: x.quantity - 1 } : x)), `Использован предмет: ${i.name}`);
+}
+export function spellItemBonus(c: ExportCharacter, key: 'spellAttackBonus' | 'spellSaveDcBonus', classId?: string) {
+  return (c.adventure?.inventory || []).filter(i => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n,i) => n + (Number(i[key]) || 0), 0);
+}
+export function weaponItemBonus(c: ExportCharacter, attackName: string, key: 'weaponAttackBonus' | 'weaponDamageBonus') {
+  const normalize = (v: string) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, '').trim();
+  const values = (c.adventure?.inventory || []).filter(i => activeItem(i) && itemCategory(i) === 'weapon' && normalize(i.weaponBase || i.name) === normalize(attackName.split(' · ').at(-1) || attackName)).map(i => Number(i[key]) || 0);
+  return values.length ? Math.max(...values) : 0;
+}
+
 export function updateInventory(c: ExportCharacter, items: PlayItem[]) { return { ...c, inventoryOverride: inventoryText(items), adventure: c.adventure ? { ...c.adventure, inventory: items } : undefined }; }
 
 export function applyPlayDamage(c: ExportCharacter, amount: number, defense: 'normal' | 'resistance' | 'vulnerability' | 'immune' = 'normal'): ExportCharacter {

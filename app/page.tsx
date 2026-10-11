@@ -170,6 +170,10 @@ const personalityHints: Record<PersonalityKey, string> = {
 };
 const alignments = ["", "Законно-доброе", "Нейтрально-доброе", "Хаотично-доброе", "Законно-нейтральное", "Истинно нейтральное", "Хаотично-нейтральное", "Законно-злое", "Нейтрально-злое", "Хаотично-злое"];
 const siteChangelog = [{
+  version: "1.6.1",
+  publishedAt: "2026-10-11T20:00:00Z",
+  changes: ["Таверна и игровой режим доступны по отдельному адресу /adventure/ и используют тему основного сайта.", "Добавлена постоянная панель кубов: выбор костей, количество, модификатор, отдельные значения, сумма и три последних результата.", "Инвентарь разделён на оружие, фокусировки, доспехи, расходники, боеприпасы и снаряжение. Добавлены бонусы магического оружия и фокусировок, контейнеры, разделение стопок и операции с монетами."],
+}, {
   version: "1.6.0",
   publishedAt: "2026-10-11T18:00:00Z",
   changes: ["Таверна и приключения: независимые игровые копии созданных героев с собственным сохранением и журналом.", "Добавлен игровой экран: здоровье, концентрация, атаки и урон, заклинания и ячейки, ресурсы, отдых, инвентарь и настройка магических предметов.", "Для телефона создана отдельная структура игрового режима с нижней навигацией и крупными кнопками. Итоговый лист снова служит для проверки и экспорта героя."],
@@ -767,8 +771,10 @@ function AccountAccess({account,cloudState,compact=false}:{account:AccountState|
   return <a className={`account-access is-user${compact?' compact':''}`} href="/account"><span className="account-online">●</span><span><strong>{account.displayName||'Аккаунт HeroList'}</strong>{!compact&&<small>{cloudState==='saving'?'Синхронизация…':cloudState==='error'?'Ошибка синхронизации':'Данные сохранены'}</small>}</span></a>;
 }
 
-function Builder() {
-  const [view, setView] = useState<"home" | "quiz" | "builder" | "banlist" | "characters" | "homebrew" | "game">("home");
+export function AdventureApp() { return <BuilderErrorBoundary><Builder adventureRoute /></BuilderErrorBoundary>; }
+
+function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) {
+  const [view, setView] = useState<"home" | "quiz" | "builder" | "banlist" | "characters" | "homebrew" | "game">(adventureRoute ? "characters" : "home");
   const [step, setStep] = useState(0);
   const [character, setCharacter] = useState<ExportCharacter>(initial);
   const [banDraft, setBanDraft] = useState<BanList>(() => normalizeBanList({}));
@@ -870,6 +876,11 @@ function Builder() {
         if (stored) latestLocal = normalizeVault(JSON.parse(stored));
       } catch { /* Keep the already recovered local vault. */ }
       const merged = mergeVaults(latestLocal, remotePayload.vault);
+      const requestedPlay = adventureRoute ? new URLSearchParams(window.location.search).get("play") : null;
+      if (requestedPlay && merged.slots.some(slot => slot.id === requestedPlay && slot.character.adventure)) {
+        merged.activeId = requestedPlay;
+        if (!latestLocal.slots.some(slot => slot.id === requestedPlay && slot.character.adventure)) setView("game");
+      }
       setVault(merged);
       const active = merged.slots.find(slot => slot.id === merged.activeId);
       if (active) setCharacter(active.character);
@@ -923,6 +934,13 @@ function Builder() {
       const slot = createSlot(initial);
       loadedVault = { version: 1, capacity: 5, activeId: slot.id, slots: [slot], folders: [] };
       setVault(loadedVault);
+    }
+    const requestedPlay = adventureRoute ? new URLSearchParams(window.location.search).get("play") : null;
+    const requestedSlot = loadedVault!.slots.find(slot => slot.id === requestedPlay && slot.character.adventure);
+    if (requestedSlot) {
+      loadedVault = { ...loadedVault!, activeId: requestedSlot.id };
+      setVault(loadedVault); setCharacter(requestedSlot.character); setView("game");
+      localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(loadedVault));
     }
     setReady(true);
     void connectAccount(loadedVault!);
@@ -2234,6 +2252,7 @@ function Builder() {
     download({ format: "herolist-homebrew", exportedAt: new Date().toISOString(), ...homebrew }, "HeroList — моё хоумбрю.json");
   }
 
+  function goHome() { if (adventureRoute) { persistVault({ ...vault, slots: vault.slots.map(slot => slot.id === vault.activeId ? { ...slot, character, updatedAt: new Date().toISOString() } : slot) }); window.location.assign(assetUrl("")); } else setView("home"); }
   function openCharacterManager() {
     const updatedAt = new Date().toISOString();
     const next = {
@@ -2241,6 +2260,8 @@ function Builder() {
       slots: vault.slots.map(slot => slot.id === vault.activeId ? { ...slot, character, updatedAt } : slot),
     };
     persistVault(next);
+    if (!adventureRoute) { window.location.assign(assetUrl("adventure/")); return; }
+    window.history.replaceState(null, "", assetUrl("adventure/"));
     setView("characters");
   }
 
@@ -2252,6 +2273,8 @@ function Builder() {
     setCharacter(normalizeCharacter(id === vault.activeId ? character : slot.character));
     setImportMessage(null);
     stopTutorial();
+    if (slot.character.adventure && !adventureRoute) { window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(id)}`)); return; }
+    if (adventureRoute) window.history.replaceState(null, "", slot.character.adventure ? assetUrl(`adventure/?play=${encodeURIComponent(id)}`) : assetUrl("adventure/"));
     setView(slot.character.adventure ? "game" : "builder");
     resetFilters(0, false);
   }
@@ -2267,7 +2290,9 @@ function Builder() {
     const slot = createSlot(copy);
     const slots = vault.slots.map(item => item.id === vault.activeId ? { ...item, character, updatedAt: new Date().toISOString() } : item);
     persistVault({ ...vault, capacity: Math.max(vault.capacity, slots.length + 1), activeId: slot.id, slots: [...slots, slot] });
-    setCharacter(copy); setVaultSection("adventures"); setActiveFolderId("all"); stopTutorial(); setView("game");
+    setCharacter(copy); setVaultSection("adventures"); setActiveFolderId("all"); stopTutorial();
+    if (!adventureRoute) { window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`)); return; }
+    window.history.replaceState(null, "", assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`)); setView("game");
   }
 
   function startCharacter(withTutorial: boolean) {
@@ -2572,11 +2597,11 @@ function Builder() {
     setCharacter(generated); setView("builder"); resetFilters(10, false);
   }
 
-  if (view === "game" && character.adventure) return <GameMode key={vault.activeId} character={character} onChange={setCharacter} features={[...selectedRaceFeatures, ...selectedClassFeatures, ...selectedFeatFeatures, ...runtimeFeatures, ...customFeatures, ...customNotes.map(note => ({ name: note.name, description: note.description }))]} onBack={() => { setVaultSection("adventures"); openCharacterManager(); }} onEdit={() => { setStep(10); setView("builder"); }} onExport={() => download(createNativeCharacterFile(character), `${safeName(character.name)} — приключение.json`)} saveStatus={cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : account?.authenticated ? "Сохранено в аккаунте" : "Сохранено на устройстве"} />;
+  if (view === "game" && character.adventure) return <GameMode key={vault.activeId} shellClassName={shellThemeClass} shellStyle={appearance.style} siteTheme={siteTheme} chrome={<><ThemeControls label="Дизайн" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><AccountAccess account={account} cloudState={cloudState} compact /></>} character={character} onChange={setCharacter} features={[...selectedRaceFeatures, ...selectedClassFeatures, ...selectedFeatFeatures, ...runtimeFeatures, ...customFeatures, ...customNotes.map(note => ({ name: note.name, description: note.description }))]} onBack={() => { setVaultSection("adventures"); openCharacterManager(); }} onEdit={() => { setStep(10); setView("builder"); }} onExport={() => download(createNativeCharacterFile(character), `${safeName(character.name)} — приключение.json`)} saveStatus={cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : account?.authenticated ? "Сохранено в аккаунте" : "Сохранено на устройстве"} />;
 
   if (view === "home" || view === "quiz") return <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
 {view === "home" && <header className="topbar home-topbar">
-  <button className="brand" onClick={() => setView("home")} aria-label="Лист Героя — главная"><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+  <button className="brand" onClick={goHome} aria-label="Лист Героя — главная"><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
   <nav className="home-top-actions" aria-label="Главная навигация">
     <button className="nav-button" onClick={openCharacterManager}>Персонажи</button>
     <button className="nav-button" onClick={() => setView("homebrew")}>Homebrew</button>
@@ -2584,7 +2609,7 @@ function Builder() {
     <AccountAccess account={account} cloudState={cloudState} compact />
   </nav>
 </header>}
-{view === "quiz" ? <HeroQuiz onClose={() => setView("home")} onCreate={createFromQuiz} /> : <div className="home-page">
+{view === "quiz" ? <HeroQuiz onClose={goHome} onCreate={createFromQuiz} /> : <div className="home-page">
   <section className="home-hero">
     <div className="home-hero-copy">
       <p className="eyebrow">Конструктор персонажей D&amp;D 5e · редакция 2014</p>
@@ -2594,7 +2619,7 @@ function Builder() {
       <div className="home-cta">
         <button className="home-primary" disabled={!ready} onClick={addCharacter}>Создать персонажа</button>
         <button disabled={!ready} onClick={addTutorialCharacter}>Создать с обучением</button>
-        {ready && vault.activeId && <button onClick={() => setView(character.adventure ? "game" : "builder")}>Продолжить текущего персонажа</button>}
+        {ready && vault.activeId && <button onClick={() => character.adventure ? selectSlot(vault.activeId) : setView("builder")}>Продолжить текущего персонажа</button>}
       </div>
       <div className="home-quick-actions">
         <button onClick={openCharacterManager}><strong>Таверна и приключения</strong><span>{vault.slots.length} сохранено</span></button>
@@ -2624,7 +2649,7 @@ function Builder() {
   if (view === "homebrew") return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
       <header className="topbar">
-        <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+        <button className="brand" onClick={goHome}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
         <div className="section-top-actions"><button className="nav-button" onClick={() => setView("characters")}>← К персонажам</button><AccountAccess account={account} cloudState={cloudState} compact /></div>
       </header>
       <HomebrewEditor library={homebrew} onSave={persistHomebrew} character={bindHomebrewLibrary(character, homebrew)} onCharacter={next => setCharacter(homebrewReferencesOnly(next))} saveState={homebrewState} onClose={() => setView("builder")} />
@@ -2640,9 +2665,9 @@ function Builder() {
     return (
       <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
         <header className="topbar">
-          <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className="brand" onClick={goHome}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
-          <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
+          <button className="nav-button" onClick={goHome}>← В главное меню</button>
           <AccountAccess account={account} cloudState={cloudState} compact />
           <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
@@ -2754,9 +2779,9 @@ function Builder() {
     return (
       <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
         <header className="topbar">
-          <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+          <button className="brand" onClick={goHome}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
           <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
-          <button className="nav-button" onClick={() => setView("home")}>← В главное меню</button>
+          <button className="nav-button" onClick={goHome}>← В главное меню</button>
           <AccountAccess account={account} cloudState={cloudState} compact />
           <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><button className="nav-button" onClick={() => setView("builder")}>← К мастеру</button></div></details>
         </header>
@@ -2870,10 +2895,10 @@ function Builder() {
   return (
     <main className={`app-shell${shellThemeClass}`} data-site-theme={siteTheme} style={appearance.style}>
       <header className="topbar">
-        <button className="brand" onClick={() => setView("home")}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
+        <button className="brand" onClick={goHome}><span className={`brand-mark${usesOrnateIcons ? " experimental-site-mark" : ""}`}>{usesOrnateIcons ? <img src={assetUrl("experimental/site-mark.png")} alt="" /> : "✦"}</span>Лист Героя <small>5E · 2014</small></button>
         <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
         <div className="top-actions">
-          <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
+          <button className="nav-button" onClick={goHome}>Главное меню</button>
           <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
           <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
           <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Бан-листы</button>
@@ -2885,7 +2910,7 @@ function Builder() {
           <summary aria-label="Открыть меню">☰</summary>
           <div>
             <ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} />
-            <button className="nav-button" onClick={() => setView("home")}>Главное меню</button>
+            <button className="nav-button" onClick={goHome}>Главное меню</button>
             <button className="nav-button character-nav" onClick={openCharacterManager}>Персонажи <b>{vault.slots.length}/{vault.capacity}</b></button>
             <button className="nav-button" onClick={() => setView("homebrew")}>Хоумбрю</button>
             <button className="nav-button" onClick={() => { setView("banlist"); setSearch(""); }}>Бан-листы</button>
@@ -3642,7 +3667,7 @@ function Builder() {
                 <label>Опыт<input type="number" min="0" value={character.experience || 0} onChange={event => setCharacter(current => ({ ...current, experience: Math.max(0, Number(event.target.value) || 0) }))} /></label>
                 <label>Мировоззрение<select value={character.alignment} onChange={event => setCharacter(current => ({ ...current, alignment: event.target.value }))}>{alignments.map(value => <option key={value} value={value}>{value || "Не выбрано"}</option>)}</select></label>
                 <label>Вдохновение<select value={character.inspiration ? "yes" : "no"} onChange={event => setCharacter(current => ({ ...current, inspiration: event.target.value === "yes" }))}><option value="no">Нет</option><option value="yes">Есть</option></select></label>
-                <button className="primary-action" onClick={() => character.adventure ? setView("game") : sendToAdventure(vault.activeId)}>{character.adventure ? "Вернуться в игру" : "Отправить в приключение"}</button>
+                <button className="primary-action" onClick={() => character.adventure ? selectSlot(vault.activeId) : sendToAdventure(vault.activeId)}>{character.adventure ? "Вернуться в игру" : "Отправить в приключение"}</button>
               </div>
               <div className="desktop-hp-roll-editor"><HitPointRollEditor character={character} onChange={updateHitPointRoll} /></div>
               <HomebrewOnSheet character={exportCharacter} onChange={next => setCharacter(homebrewReferencesOnly({ ...next, abilities: character.abilities }))} />
