@@ -2267,7 +2267,7 @@ function Builder() {
     const slot = createSlot(copy);
     const slots = vault.slots.map(item => item.id === vault.activeId ? { ...item, character, updatedAt: new Date().toISOString() } : item);
     persistVault({ ...vault, capacity: Math.max(vault.capacity, slots.length + 1), activeId: slot.id, slots: [...slots, slot] });
-    setCharacter(copy); setVaultSection("adventures"); stopTutorial(); setView("game");
+    setCharacter(copy); setVaultSection("adventures"); setActiveFolderId("all"); stopTutorial(); setView("game");
   }
 
   function startCharacter(withTutorial: boolean) {
