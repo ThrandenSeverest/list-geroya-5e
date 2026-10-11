@@ -177,7 +177,7 @@ async function saved(page) {
         await page.getByRole('button',{name:'← Таверна',exact:true}).click();
         await page.getByRole('heading',{name:'Приключения',exact:true}).waitFor();
         assert.equal(await page.locator('.character-grid article').count(),1);
-        await page.getByRole('button',{name:/^Таверна ·/}).click();
+        await page.getByRole('navigation',{name:'Таверна и приключения'}).getByRole('button',{name:/^Таверна\s+\d+\s+героев$/}).click();
         assert.equal(await page.locator('.character-grid article').count(),2);
         assert.deepEqual(errors,[]);
         const gameUrl=await page.evaluate(()=>{const v=JSON.parse(localStorage.getItem('list-geroya-character-vault-v1'));const slot=v.slots.find(s=>s.id===v.activeId);const c=slot.character;c.className='wizard';c.startingClassId='wizard';c.level=5;c.subclass='';c.classes=[{classId:'wizard',level:5,acquiredAtCharacterLevel:1}];c.levelHistory=Array.from({length:5},(_,i)=>({characterLevel:i+1,classId:'wizard',classLevelAfter:i+1,hpMode:'average'}));c.abilities={str:10,dex:14,con:12,int:16,wis:12,cha:10};c.race='human';c.raceVariant='standard';c.spells=['firebolt','fireball','scorching-ray'];c.spellGrants=c.spells.map(spellId=>({spellId,sourceType:'class',sourceId:'wizard',classId:'wizard',mode:'prepared'}));c.preparationVersion=1;c.preparedSpellsByClass={wizard:c.spells};c.preparedSpells=c.spells;c.spellSlotsUsed=[];c.adventure.inventory=[];localStorage.setItem('list-geroya-character-vault-v1',JSON.stringify(v));localStorage.setItem('list-geroya-site-theme','parchment');return location.href.split('?')[0]+'?play='+slot.id;});
