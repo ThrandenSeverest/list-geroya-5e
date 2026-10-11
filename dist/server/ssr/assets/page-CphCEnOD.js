@@ -2,1082 +2,6 @@ import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
 import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
-var mergeClasses = (...classes) => classes.filter((className, index, array) => {
-	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
-}).join(" ").trim();
-//#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var defaultAttributes = {
-	xmlns: "http://www.w3.org/2000/svg",
-	width: 24,
-	height: 24,
-	viewBox: "0 0 24 24",
-	fill: "none",
-	stroke: "currentColor",
-	strokeWidth: 2,
-	strokeLinecap: "round",
-	strokeLinejoin: "round"
-};
-//#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
-	return createElement("svg", {
-		ref,
-		...defaultAttributes,
-		width: size,
-		height: size,
-		stroke: color,
-		strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
-		className: mergeClasses("lucide", className),
-		...rest
-	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
-});
-//#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var createLucideIcon = (iconName, iconNode) => {
-	const Component = forwardRef(({ className, ...props }, ref) => createElement(Icon, {
-		ref,
-		iconNode,
-		className: mergeClasses(`lucide-${toKebabCase(iconName)}`, className),
-		...props
-	}));
-	Component.displayName = `${iconName}`;
-	return Component;
-};
-//#endregion
-//#region node_modules/lucide-react/dist/esm/icons/settings.js
-/**
-* @license lucide-react v0.468.0 - ISC
-*
-* This source code is licensed under the ISC license.
-* See the LICENSE file in the root directory of this source tree.
-*/
-var Settings = createLucideIcon("Settings", [["path", {
-	d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
-	key: "1qme2f"
-}], ["circle", {
-	cx: "12",
-	cy: "12",
-	r: "3",
-	key: "1v7zrd"
-}]]);
-//#endregion
-//#region app/themeColors.json
-var themeColors_default = [
-	"000000",
-	"02080b",
-	"040c10",
-	"040d12",
-	"040e12",
-	"040e13",
-	"050e12",
-	"050f14",
-	"061116",
-	"071116",
-	"071217",
-	"071318",
-	"071419",
-	"081116",
-	"081318",
-	"081419",
-	"08141a",
-	"08191f",
-	"09171d",
-	"0a1920",
-	"0b171d",
-	"0b1a20",
-	"0d2027",
-	"0f1d23",
-	"0f1f26",
-	"111111",
-	"111e24",
-	"12252c",
-	"131313",
-	"151515",
-	"17110a",
-	"17120e",
-	"172126",
-	"173d43",
-	"176f9d",
-	"1b2f32",
-	"202020",
-	"203036",
-	"211b12",
-	"222222",
-	"2381ae",
-	"24211e",
-	"249bd7",
-	"2b241c",
-	"333333",
-	"34464d",
-	"365b5e",
-	"3d3028",
-	"3f260f",
-	"3f3026",
-	"3f6c6c",
-	"405c63",
-	"432812",
-	"444444",
-	"447674",
-	"462a10",
-	"496b6c",
-	"4a2d12",
-	"4b5f65",
-	"4d6870",
-	"50a9d1",
-	"513416",
-	"536168",
-	"53696f",
-	"554b40",
-	"555555",
-	"55777a",
-	"566f76",
-	"58696b",
-	"596766",
-	"59696f",
-	"597578",
-	"5a3a16",
-	"5c8484",
-	"5d5144",
-	"5d7f80",
-	"5e0c12",
-	"5e5347",
-	"5e6e6d",
-	"5f503d",
-	"5f5147",
-	"647574",
-	"64d39b",
-	"657373",
-	"65a09b",
-	"667479",
-	"675946",
-	"69aaa2",
-	"6b0d14",
-	"6b6254",
-	"6b7e80",
-	"6c351f",
-	"6c7777",
-	"6e9292",
-	"6f1015",
-	"6f111b",
-	"6f4a36",
-	"6f858a",
-	"705b43",
-	"713a24",
-	"756955",
-	"758187",
-	"76501e",
-	"76aaa5",
-	"777777",
-	"7a141b",
-	"7b1119",
-	"7c6550",
-	"7d6a55",
-	"7f201b",
-	"7f5b22",
-	"7f5c2c",
-	"827768",
-	"843c30",
-	"85101e",
-	"888888",
-	"8a6b23",
-	"8b6427",
-	"8ba09e",
-	"8c7258",
-	"8ca8a8",
-	"8d1820",
-	"8f1821",
-	"9065cc",
-	"941b24",
-	"975530",
-	"981f26",
-	"998855",
-	"999999",
-	"9a5a35",
-	"9aa4a5",
-	"9aa9a6",
-	"9c5b35",
-	"a14a3f",
-	"a4633e",
-	"a4b9b7",
-	"a65b49",
-	"a7afb0",
-	"a91e29",
-	"a9c4c0",
-	"aaaaaa",
-	"aeb8b8",
-	"b47a50",
-	"b5222d",
-	"b5873d",
-	"b6aaa0",
-	"b71928",
-	"b86145",
-	"b8754b",
-	"b8c0c0",
-	"b8c2bf",
-	"b8d2ce",
-	"b96e3f",
-	"b99c72",
-	"b9c7c6",
-	"bb9944",
-	"bbbbbb",
-	"bdeaff",
-	"bfc6c2",
-	"c29b56",
-	"c46a5c",
-	"c4cbc7",
-	"c58979",
-	"c7b8a5",
-	"c7d0cf",
-	"c8a15e",
-	"c8cbc4",
-	"c8d0ce",
-	"c9a557",
-	"c9b89c",
-	"cccccc",
-	"d07263",
-	"d54e4e",
-	"d6a18e",
-	"d6d7d1",
-	"d77b75",
-	"d7d5cb",
-	"d7d7d7",
-	"d7d9d2",
-	"d87a69",
-	"d9b787",
-	"dac495",
-	"dddddd",
-	"ded4bb",
-	"e1a071",
-	"e4bf77",
-	"e4cfa1",
-	"e4d4ae",
-	"e4e4e4",
-	"e5d0a2",
-	"e5dcc4",
-	"e5e5e5",
-	"e7a076",
-	"e7b572",
-	"ead4a5",
-	"ead5a7",
-	"ead8ae",
-	"ecd9ae",
-	"eedaad",
-	"eee1cf",
-	"efdeb4",
-	"efe0b9",
-	"f0d39a",
-	"f1d486",
-	"f1e2bd",
-	"f1f1f1",
-	"f2e3bd",
-	"f3efe5",
-	"f4f4f4",
-	"f5f4f1",
-	"f6ebcb",
-	"f7eac7",
-	"f8eccc",
-	"f8efd9",
-	"fafafa",
-	"fbfaf5",
-	"ff7979",
-	"ff8d7d",
-	"ffd3cb",
-	"ffd4c9",
-	"ffdfb6",
-	"ffe4a0",
-	"fff0bc",
-	"fff4d6",
-	"fff7dc",
-	"fff7df",
-	"fff8e3",
-	"fff8e7",
-	"fff9ed",
-	"fffaef",
-	"ffffff"
-];
-//#endregion
-//#region app/interfacePreferences.ts
-var defaultPreferences = {
-	zoom: 125,
-	font: 100,
-	activePreset: "",
-	presets: []
-};
-var limit = (value, min, max, fallback) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
-function normalizePreferences(value) {
-	const raw = value && typeof value === "object" ? value : {};
-	const seen = /* @__PURE__ */ new Set();
-	const presets = (Array.isArray(raw.presets) ? raw.presets : []).filter((p) => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map((p) => ({
-		id: p.id,
-		name: typeof p.name === "string" ? p.name.slice(0, 80) : "Моя тема",
-		base: p.base === "parchment" ? "parchment" : "classic",
-		roles: Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key, value]) => paletteRoles.some((role) => role.token === key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))),
-		colors: Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key, value]) => themeColors_default.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value)))
-	}));
-	return {
-		zoom: limit(raw.zoom, 75, 175, 125),
-		font: limit(raw.font, 80, 160, 100),
-		activePreset: presets.some((p) => p.id === raw.activePreset) ? raw.activePreset : "",
-		presets
-	};
-}
-var paletteRoles = [
-	{
-		label: "Фон страницы",
-		token: "ink",
-		classic: "050f14",
-		parchment: "f2e3bd",
-		aliases: []
-	},
-	{
-		label: "Основной фон",
-		token: "panel",
-		classic: "09171d",
-		parchment: "efe0b9",
-		aliases: ["f8eccc"]
-	},
-	{
-		label: "Вторичный фон",
-		token: "panel-2",
-		classic: "0d2027",
-		parchment: "e5d0a2",
-		aliases: [
-			"ead8ae",
-			"ead5a7",
-			"ead4a5"
-		]
-	},
-	{
-		label: "Фон карточек и полей",
-		token: "surface",
-		classic: "081116",
-		parchment: "f6ebcb",
-		aliases: ["fff7dc"]
-	},
-	{
-		label: "Основной текст",
-		token: "ivory",
-		classic: "eee1cf",
-		parchment: "17120e",
-		aliases: []
-	},
-	{
-		label: "Вторичный текст",
-		token: "muted",
-		classic: "9aa4a5",
-		parchment: "5e5347",
-		aliases: ["554b40"]
-	},
-	{
-		label: "Рамки",
-		token: "line",
-		classic: "34464d",
-		parchment: "17120e",
-		aliases: ["7d6a55", "8c7258"]
-	},
-	{
-		label: "Акцент выбора",
-		token: "selection",
-		classic: "e1a071",
-		parchment: "8f1821",
-		aliases: [
-			"7a141b",
-			"7b1119",
-			"941b24",
-			"b5222d",
-			"8d1820",
-			"a91e29"
-		]
-	},
-	{
-		label: "Светлый акцент",
-		token: "copper-light",
-		classic: "e1a071",
-		parchment: "b5222d",
-		aliases: []
-	},
-	{
-		label: "Тёмный акцент",
-		token: "copper",
-		classic: "b8754b",
-		parchment: "941b24",
-		aliases: ["6b0d14"]
-	},
-	{
-		label: "Текст на акценте",
-		token: "accent-text",
-		classic: "f0d39a",
-		parchment: "fff8e7",
-		aliases: ["fff7df"]
-	},
-	{
-		label: "Ссылки и подсказки",
-		token: "teal",
-		classic: "76aaa5",
-		parchment: "566f76",
-		aliases: [
-			"405c63",
-			"4b5f65",
-			"4d6870"
-		]
-	},
-	{
-		label: "Золотой акцент",
-		token: "gold",
-		classic: "c8a15e",
-		parchment: "8d1820",
-		aliases: []
-	},
-	{
-		label: "Яркий акцент",
-		token: "gold-bright",
-		classic: "f0d39a",
-		parchment: "b5222d",
-		aliases: []
-	},
-	{
-		label: "Глубокий акцент",
-		token: "gold-deep",
-		classic: "76501e",
-		parchment: "5e0c12",
-		aliases: []
-	}
-];
-function changePaletteRole(preset, index, color) {
-	const role = paletteRoles[index];
-	return {
-		...preset,
-		roles: {
-			...preset.roles,
-			[role.token]: color
-		},
-		colors: {
-			...preset.colors,
-			...Object.fromEntries([role[preset.base], ...preset.base === "parchment" ? role.aliases : []].map((key) => [key, color]))
-		}
-	};
-}
-function themeStyle(preferences, base) {
-	const preset = preferences.presets.find((p) => p.id === preferences.activePreset);
-	const style = { "--interface-font": preferences.font / 100 };
-	if (!preset) return style;
-	for (const role of paletteRoles) style[`--${role.token}`] = preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;
-	for (const [key, value] of Object.entries(preset.colors)) {
-		style[`--theme-${key}`] = value;
-		style[`--theme-rgb-${key}`] = [
-			1,
-			3,
-			5
-		].map((i) => parseInt(value.slice(i, i + 2), 16)).join(",");
-	}
-	return style;
-}
-//#endregion
-//#region app/ThemeSettings.tsx
-var storageKey$1 = "list-geroya-interface-v1";
-function useInterfacePreferences() {
-	const [preferences, setPreferences] = useState(defaultPreferences);
-	const [loaded, setLoaded] = useState(false);
-	useEffect(() => {
-		try {
-			setPreferences(normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null")));
-		} catch {}
-		setLoaded(true);
-	}, []);
-	useEffect(() => {
-		if (!loaded) return;
-		try {
-			localStorage.setItem(storageKey$1, JSON.stringify(preferences));
-		} catch {}
-		document.documentElement.style.setProperty("--interface-zoom", String(preferences.zoom / 100));
-	}, [preferences, loaded]);
-	return {
-		preferences,
-		update: setPreferences,
-		style: themeStyle(preferences, preferences.presets.find((p) => p.id === preferences.activePreset)?.base || "classic")
-	};
-}
-function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
-	const settingsId = useId();
-	const dialog = useRef(null);
-	const { preferences, update } = appearance;
-	const active = preferences.presets.find((p) => p.id === preferences.activePreset);
-	const [draft, setDraft] = useState(null);
-	const [notice, setNotice] = useState("");
-	function open() {
-		setDraft(active ? {
-			...active,
-			colors: { ...active.colors }
-		} : null);
-		setNotice("");
-		dialog.current?.showModal();
-	}
-	function select(id) {
-		const preset = preferences.presets.find((p) => p.id === id);
-		update({
-			...preferences,
-			activePreset: id
-		});
-		if (preset) onTheme(preset.base);
-		setDraft(preset ? {
-			...preset,
-			colors: { ...preset.colors }
-		} : null);
-		setNotice("");
-	}
-	function create() {
-		const preset = {
-			id: crypto.randomUUID(),
-			name: "Моя тема",
-			base: theme,
-			colors: {}
-		};
-		setDraft(preset);
-		update({
-			...preferences,
-			activePreset: preset.id,
-			presets: [...preferences.presets, preset]
-		});
-		setNotice("Новая тема создана. Изменения цветов сохраняются автоматически.");
-	}
-	function edit(next) {
-		setDraft(next);
-		update({
-			...preferences,
-			presets: preferences.presets.map((p) => p.id === next.id ? next : p)
-		});
-	}
-	return /* @__PURE__ */ jsxs("span", {
-		className: "theme-controls",
-		children: [
-			/* @__PURE__ */ jsx("button", {
-				className: `experimental-toggle theme-${theme}`,
-				onClick: onCycle,
-				title: `Включить ${theme === "classic" ? "пергаментный" : "синий с золотом"} дизайн`,
-				children: label
-			}),
-			/* @__PURE__ */ jsx("button", {
-				className: "experimental-toggle theme-gear",
-				onClick: open,
-				"aria-label": "Настройки интерфейса",
-				title: "Настройки интерфейса",
-				children: /* @__PURE__ */ jsx(Settings, {
-					size: 18,
-					"aria-hidden": "true"
-				})
-			}),
-			/* @__PURE__ */ jsxs("dialog", {
-				ref: dialog,
-				className: "interface-settings",
-				"aria-labelledby": settingsId,
-				onClick: (event) => {
-					if (event.target === dialog.current) {
-						const r = dialog.current.getBoundingClientRect();
-						if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current.close();
-					}
-				},
-				children: [
-					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
-						id: settingsId,
-						children: "Настройки интерфейса"
-					}), /* @__PURE__ */ jsx("button", {
-						onClick: () => dialog.current?.close(),
-						"aria-label": "Закрыть настройки",
-						children: "✕"
-					})] }),
-					/* @__PURE__ */ jsxs("label", { children: [
-						"Размер интерфейса на ПК: ",
-						preferences.zoom,
-						"%",
-						/* @__PURE__ */ jsx("input", {
-							"aria-label": "Размер интерфейса на ПК",
-							type: "range",
-							min: "75",
-							max: "175",
-							step: "5",
-							value: preferences.zoom,
-							onChange: (e) => {
-								const zoom = Number(e.target.value);
-								update((current) => ({
-									...current,
-									zoom
-								}));
-							}
-						})
-					] }),
-					/* @__PURE__ */ jsxs("label", { children: [
-						"Размер шрифта: ",
-						preferences.font,
-						"%",
-						/* @__PURE__ */ jsx("input", {
-							"aria-label": "Размер шрифта",
-							type: "range",
-							min: "80",
-							max: "160",
-							step: "5",
-							value: preferences.font,
-							onChange: (e) => {
-								const font = Number(e.target.value);
-								update((current) => ({
-									...current,
-									font
-								}));
-							}
-						})
-					] }),
-					/* @__PURE__ */ jsx("p", { children: "Масштаб интерфейса применяется на компьютере. Размер шрифта меняется отдельно; печатный и мобильный листы сохраняют свои размеры." }),
-					/* @__PURE__ */ jsx("button", {
-						onClick: () => update({
-							...preferences,
-							zoom: 125,
-							font: 100
-						}),
-						children: "Сбросить размеры"
-					}),
-					/* @__PURE__ */ jsxs("label", { children: ["Цветовая тема", /* @__PURE__ */ jsxs("select", {
-						value: preferences.activePreset || theme,
-						onChange: (e) => {
-							const value = e.target.value;
-							if (value === "classic" || value === "parchment") {
-								update({
-									...preferences,
-									activePreset: ""
-								});
-								onTheme(value);
-								setDraft(null);
-							} else select(value);
-						},
-						children: [
-							/* @__PURE__ */ jsx("option", {
-								value: "classic",
-								children: "Синий с золотом"
-							}),
-							/* @__PURE__ */ jsx("option", {
-								value: "parchment",
-								children: "Пергамент"
-							}),
-							preferences.presets.map((p) => /* @__PURE__ */ jsx("option", {
-								value: p.id,
-								children: p.name || "Моя тема"
-							}, p.id))
-						]
-					})] }),
-					/* @__PURE__ */ jsxs("div", {
-						className: "theme-preset-actions",
-						children: [/* @__PURE__ */ jsx("button", {
-							onClick: create,
-							children: "Создать свою тему"
-						}), draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
-							onClick: () => {
-								const copy = {
-									...draft,
-									id: crypto.randomUUID(),
-									name: `${draft.name} — копия`,
-									colors: { ...draft.colors }
-								};
-								update({
-									...preferences,
-									activePreset: copy.id,
-									presets: [...preferences.presets, copy]
-								});
-								setDraft(copy);
-							},
-							children: "Копировать тему"
-						}), /* @__PURE__ */ jsx("button", {
-							onClick: () => {
-								if (!confirm(`Удалить тему «${draft.name}»?`)) return;
-								update({
-									...preferences,
-									activePreset: "",
-									presets: preferences.presets.filter((p) => p.id !== draft.id)
-								});
-								setDraft(null);
-							},
-							children: "Удалить тему"
-						})] })]
-					}),
-					draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-						/* @__PURE__ */ jsxs("label", { children: ["Название темы", /* @__PURE__ */ jsx("input", {
-							maxLength: 80,
-							value: draft.name,
-							onChange: (e) => edit({
-								...draft,
-								name: e.target.value
-							})
-						})] }),
-						/* @__PURE__ */ jsxs("label", { children: ["Основа темы", /* @__PURE__ */ jsxs("select", {
-							value: draft.base,
-							onChange: (e) => {
-								const base = e.target.value;
-								edit({
-									...draft,
-									base,
-									colors: {},
-									roles: {}
-								});
-								onTheme(base);
-							},
-							children: [/* @__PURE__ */ jsx("option", {
-								value: "classic",
-								children: "Синий с золотом"
-							}), /* @__PURE__ */ jsx("option", {
-								value: "parchment",
-								children: "Пергамент"
-							})]
-						})] }),
-						/* @__PURE__ */ jsx("div", {
-							className: "theme-palette",
-							children: paletteRoles.map((role, index) => /* @__PURE__ */ jsxs("label", { children: [role.label, /* @__PURE__ */ jsx("input", {
-								type: "color",
-								"aria-label": role.label,
-								value: draft.roles?.[role.token] || draft.colors[role[draft.base]] || `#${role[draft.base]}`,
-								onChange: (e) => edit(changePaletteRole(draft, index, e.target.value))
-							})] }, role.token))
-						}),
-						/* @__PURE__ */ jsxs("details", { children: [
-							/* @__PURE__ */ jsx("summary", { children: "Все цвета · тонкая настройка" }),
-							/* @__PURE__ */ jsx("p", { children: "Здесь можно изменить отдельные оттенки, включая служебные цвета и эффекты. Исходный цвет указан рядом с образцом." }),
-							/* @__PURE__ */ jsx("div", {
-								className: "theme-palette",
-								children: themeColors_default.map((color) => /* @__PURE__ */ jsxs("label", { children: [
-									"#",
-									color,
-									/* @__PURE__ */ jsx("input", {
-										type: "color",
-										"aria-label": `Цвет #${color}`,
-										value: draft.colors[color] || `#${color}`,
-										onChange: (e) => edit({
-											...draft,
-											colors: {
-												...draft.colors,
-												[color]: e.target.value
-											}
-										})
-									})
-								] }, color))
-							})
-						] }),
-						/* @__PURE__ */ jsxs("div", {
-							className: "theme-preset-actions",
-							children: [/* @__PURE__ */ jsx("button", {
-								onClick: () => edit({
-									...draft,
-									colors: {},
-									roles: {}
-								}),
-								children: "Вернуть цвета основы"
-							}), /* @__PURE__ */ jsx("button", {
-								onClick: () => {
-									setNotice("Тема сохранена в этом браузере.");
-								},
-								children: "Сохранить тему"
-							})]
-						})
-					] }),
-					/* @__PURE__ */ jsx("p", {
-						role: "status",
-						children: notice
-					})
-				]
-			})
-		]
-	});
-}
-//#endregion
-//#region app/homebrewTemplates.ts
-/** D&D 5e 2014 subclass feature progression (including cleric domain levels). */
-var subclassFeatureLevels = {
-	barbarian: [
-		3,
-		6,
-		10,
-		14
-	],
-	bard: [
-		3,
-		6,
-		14
-	],
-	cleric: [
-		1,
-		2,
-		6,
-		8,
-		17
-	],
-	druid: [
-		2,
-		6,
-		10,
-		14
-	],
-	fighter: [
-		3,
-		7,
-		10,
-		15,
-		18
-	],
-	monk: [
-		3,
-		6,
-		11,
-		17
-	],
-	paladin: [
-		3,
-		7,
-		15,
-		20
-	],
-	ranger: [
-		3,
-		7,
-		11,
-		15
-	],
-	rogue: [
-		3,
-		9,
-		13,
-		17
-	],
-	sorcerer: [
-		1,
-		6,
-		14,
-		18
-	],
-	warlock: [
-		1,
-		6,
-		10,
-		14
-	],
-	wizard: [
-		2,
-		6,
-		10,
-		14
-	],
-	artificer: [
-		3,
-		5,
-		9,
-		15
-	]
-};
-function subclassTemplate(parentId, entities) {
-	const parent = entities.find((e) => e.id === parentId);
-	const levels = subclassFeatureLevels[parentId.replace("official:class:", "")] || parent?.subclass?.featureLevels || [parent?.subclass?.chooseAtLevel || 3];
-	return Object.fromEntries(levels.map((level) => [String(level), [{ type: "feature" }]]));
-}
-function homebrewAsiLevels(entities, classId) {
-	const owner = entities.find((e) => e.id === classId && e.type === "class");
-	if (!owner) return void 0;
-	return Object.entries(owner.advancement || {}).filter(([, rows]) => rows.some((row) => row.type === "asi_or_feat")).map(([level]) => Number(level)).filter((level) => Number.isInteger(level) && level >= 1 && level <= 20).sort((a, b) => a - b);
-}
-function homebrewTableFeatures(entities) {
-	return entities.filter((e) => e.table?.columns.length).map((e) => {
-		const table = e.table;
-		const clean = (s) => s.replace(/\|/g, "／").replace(/[\r\n]+/g, " ");
-		return {
-			name: e.name,
-			description: [
-				e.description,
-				"| " + table.columns.map(clean).join(" | ") + " |",
-				"| " + table.columns.map(() => "---").join(" | ") + " |",
-				...table.rows.map((row) => "| " + table.columns.map((_, j) => clean(row[j] || "")).join(" | ") + " |")
-			].filter(Boolean).join("\n")
-		};
-	});
-}
-//#endregion
-//#region app/homebrewCatalog.ts
-function homebrewOptions(entities, type) {
-	return entities.filter((e) => e.type === type).map((e) => ({
-		id: e.id,
-		name: e.name,
-		source: "Homebrew",
-		description: e.summary || e.description,
-		tags: e.tags
-	}));
-}
-function homebrewSpells(entities) {
-	const damage = (rows) => (rows || []).map((row) => `${row.formula} ${row.type}`).join(" + ");
-	return entities.filter((e) => e.type === "spell").map((e) => {
-		const mechanics = e.spellMechanics;
-		const rules = mechanics ? [
-			`Урон: ${damage(mechanics.damage)}.`,
-			...(mechanics.cantripScaling || []).map((row) => `С ${row.level}-го уровня: +${damage(row.damage)}${row.effect ? `; ${row.effect}` : ""}.`),
-			mechanics.slotScaling ? `Ячейка выше базовой: +${damage(mechanics.slotScaling.damage)} за каждые ${mechanics.slotScaling.every} круга${mechanics.slotScaling.effect ? `; ${mechanics.slotScaling.effect}` : ""}.` : ""
-		].filter(Boolean).join(" ") : "";
-		return {
-			id: e.id,
-			name: e.name,
-			source: "Homebrew",
-			description: [
-				e.description,
-				rules,
-				e.higherLevels
-			].filter(Boolean).join("\n\n"),
-			level: e.level || 0,
-			school: e.school || "Авторская",
-			classes: e.spellClasses?.length ? e.spellClasses : [],
-			ritual: e.ritual,
-			castingTime: e.castingTime,
-			range: e.range,
-			duration: e.concentration ? `Концентрация · ${e.duration || ""}` : e.duration,
-			components: e.components,
-			mechanics
-		};
-	});
-}
-function homebrewSpellAvailable(classId, spell, entities) {
-	if (!spell.id.startsWith("hb:") && !entities.some((e) => e.type === "spell" && e.id === spell.id)) {
-		const owner = entities.find((e) => e.type === "class" && e.id === classId);
-		return !!owner && (!!owner.spellList?.includes(spell.id) || !!owner.spellListSources?.some((source) => spell.classes.includes(source.replace("official:class:", ""))));
-	}
-	const entity = entities.find((e) => e.id === spell.id && e.type === "spell");
-	return !!entity && (!entity.spellClasses?.length || entity.spellClasses.includes(classId));
-}
-function homebrewSubclassOptions(classId, entities) {
-	return entities.filter((e) => e.type === "subclass" && e.parentClassId?.replace("official:class:", "") === classId).map((e) => ({
-		id: e.id,
-		name: e.name,
-		source: "Homebrew",
-		description: e.description,
-		flags: void 0,
-		expandedSpells: void 0,
-		features: (e.features || []).map((f) => ({
-			name: f.name,
-			description: f.description,
-			level: f.level
-		}))
-	}));
-}
-//#endregion
-//#region app/featureHandling.ts
-var classHandling = {
-	barbarian: {
-		"Быстрое передвижение": "conditional",
-		"Ярость": "conditional",
-		"Защита без доспехов": "conditional",
-		"Безрассудная атака": "conditional",
-		"Форма зверя": "conditional"
-	},
-	bard: { "Мастер на все руки": "automatic" },
-	fighter: { "Всплеск действий": "manual" },
-	rogue: {
-		"Скрытая атака": "conditional",
-		"Психические клинки": "conditional",
-		"Увёртливость": "conditional"
-	},
-	monk: {
-		"Боевые искусства": "conditional",
-		"Защита без доспехов": "conditional",
-		"Движение без доспехов": "conditional",
-		"Руки астрального тела": "conditional",
-		"Луч сияющего солнца": "conditional"
-	},
-	paladin: {
-		"Божественная кара": "conditional",
-		"Улучшенная божественная кара": "conditional",
-		"Аура защиты": "conditional"
-	},
-	ranger: {
-		"Спутник-дрейк": "conditional",
-		"Дрейк-спутник": "conditional",
-		"Убийца колоссов": "conditional"
-	},
-	artificer: {
-		"Мистическая пушка": "conditional",
-		"Стальной защитник": "conditional",
-		"Модель доспеха": "conditional"
-	},
-	druid: {
-		"Дикий облик": "manual",
-		"Симбиотическая сущность": "conditional"
-	},
-	cleric: {
-		"Божественный удар": "conditional",
-		"Могущественное колдовство": "conditional"
-	},
-	warlock: { "Мистические воззвания": "conditional" },
-	sorcerer: { "Стихийное родство": "conditional" }
-};
-var raceHandling = {
-	tabaxi: {
-		"Кошачья ловкость": "conditional",
-		"Кошачье проворство": "conditional",
-		"Кошачьи когти": "automatic"
-	},
-	tortle: {
-		"Когти": "automatic",
-		"Защита панцирем": "conditional",
-		"Защита в панцире": "conditional"
-	},
-	minotaur: {
-		"Рога": "automatic",
-		"Бодание с разбега": "conditional"
-	},
-	centaur: {
-		"Копыта": "automatic",
-		"Разбег": "conditional"
-	},
-	aarakocra: { "Когти": "automatic" },
-	leonin: { "Когти": "automatic" },
-	lizardfolk: {
-		"Укус": "automatic",
-		"Голодная пасть": "conditional"
-	},
-	dhampir: { "Вампирский укус": "automatic" },
-	shifter: { "Клыки длиннозуба": "conditional" }
-};
-var featHandling = {
-	alert: "conditional",
-	observant: "conditional",
-	mobile: "conditional",
-	"medium-armor-master": "conditional",
-	"defensive-duelist": "conditional",
-	"dual-wielder": "conditional"
-};
-function markFeature(feature, source, id, featId) {
-	const name = source === "class" ? feature.name.split(" · ").at(-1) || feature.name : feature.name;
-	const effectHandling = feature.effectHandling || (source === "class" ? classHandling[id]?.[name] : source === "race" ? raceHandling[id]?.[name] : source === "feat" ? featHandling[featId || ""] : void 0) || "manual";
-	return {
-		...feature,
-		effectHandling
-	};
-}
-//#endregion
 //#region app/documentBackgrounds.ts
 var documentBackgrounds = [
 	{
@@ -24756,6 +23680,7 @@ function hbAttacks(c) {
 }
 /** Definitions belong to the shared library; character saves contain references and play state. */
 function bindHomebrewLibrary(c, library) {
+	if (c.adventure) return c;
 	return {
 		...c,
 		homebrew: {
@@ -24766,6 +23691,7 @@ function bindHomebrewLibrary(c, library) {
 	};
 }
 function homebrewReferencesOnly(c) {
+	if (c.adventure) return c;
 	if (!c.homebrew) return c;
 	const { entities: _definitions, ...state } = c.homebrew;
 	return {
@@ -28810,6 +27736,3253 @@ function createLongStoryShortExport(context, options = {}) {
 		jsonType: "character",
 		version: "2",
 		wizard: {}
+	};
+}
+//#endregion
+//#region app/homebrewCatalog.ts
+function homebrewOptions(entities, type) {
+	return entities.filter((e) => e.type === type).map((e) => ({
+		id: e.id,
+		name: e.name,
+		source: "Homebrew",
+		description: e.summary || e.description,
+		tags: e.tags
+	}));
+}
+function homebrewSpells(entities) {
+	const damage = (rows) => (rows || []).map((row) => `${row.formula} ${row.type}`).join(" + ");
+	return entities.filter((e) => e.type === "spell").map((e) => {
+		const mechanics = e.spellMechanics;
+		const rules = mechanics ? [
+			`Урон: ${damage(mechanics.damage)}.`,
+			...(mechanics.cantripScaling || []).map((row) => `С ${row.level}-го уровня: +${damage(row.damage)}${row.effect ? `; ${row.effect}` : ""}.`),
+			mechanics.slotScaling ? `Ячейка выше базовой: +${damage(mechanics.slotScaling.damage)} за каждые ${mechanics.slotScaling.every} круга${mechanics.slotScaling.effect ? `; ${mechanics.slotScaling.effect}` : ""}.` : ""
+		].filter(Boolean).join(" ") : "";
+		return {
+			id: e.id,
+			name: e.name,
+			source: "Homebrew",
+			description: [
+				e.description,
+				rules,
+				e.higherLevels
+			].filter(Boolean).join("\n\n"),
+			level: e.level || 0,
+			school: e.school || "Авторская",
+			classes: e.spellClasses?.length ? e.spellClasses : [],
+			ritual: e.ritual,
+			castingTime: e.castingTime,
+			range: e.range,
+			duration: e.concentration ? `Концентрация · ${e.duration || ""}` : e.duration,
+			components: e.components,
+			mechanics
+		};
+	});
+}
+function homebrewSpellAvailable(classId, spell, entities) {
+	if (!spell.id.startsWith("hb:") && !entities.some((e) => e.type === "spell" && e.id === spell.id)) {
+		const owner = entities.find((e) => e.type === "class" && e.id === classId);
+		return !!owner && (!!owner.spellList?.includes(spell.id) || !!owner.spellListSources?.some((source) => spell.classes.includes(source.replace("official:class:", ""))));
+	}
+	const entity = entities.find((e) => e.id === spell.id && e.type === "spell");
+	return !!entity && (!entity.spellClasses?.length || entity.spellClasses.includes(classId));
+}
+function homebrewSubclassOptions(classId, entities) {
+	return entities.filter((e) => e.type === "subclass" && e.parentClassId?.replace("official:class:", "") === classId).map((e) => ({
+		id: e.id,
+		name: e.name,
+		source: "Homebrew",
+		description: e.description,
+		flags: void 0,
+		expandedSpells: void 0,
+		features: (e.features || []).map((f) => ({
+			name: f.name,
+			description: f.description,
+			level: f.level
+		}))
+	}));
+}
+//#endregion
+//#region app/spellSources.ts
+/** Keep class associations even when two classes grant the same catalog spell. */
+function classSpellGroups(character, catalog) {
+	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
+	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
+		spellId,
+		sourceType: "class",
+		sourceId: character.className,
+		classId: character.className,
+		mode: "known"
+	}));
+	return orderedCharacterClasses(character).flatMap((entry) => {
+		const scoped = {
+			...character,
+			className: entry.classId,
+			subclass: entry.subclassId || "",
+			level: entry.level
+		};
+		const rule = spellSelectionRuleForClass(scoped, entry.classId, entry.level);
+		if (!rule.caster) return [];
+		const automatic = alwaysPreparedSpellEntries(scoped, catalog);
+		const spells = /* @__PURE__ */ new Map();
+		for (const grant of grants.filter((grant) => grant.classId === entry.classId)) {
+			const spell = byId.get(grant.spellId);
+			if (!spell) continue;
+			spells.set(spell.id, {
+				spell,
+				classId: entry.classId,
+				source: grant.sourceType === "class" ? entry.classId : grant.sourceId,
+				prepared: spell.level === 0 || rule.mode === "known" || classPreparedSpellIds(character, entry.classId).includes(spell.id) || grant.mode === "always-prepared",
+				alwaysPrepared: grant.mode === "always-prepared"
+			});
+		}
+		for (const grant of automatic) {
+			const spell = byId.get(grant.id);
+			if (!spell) continue;
+			const existing = spells.get(grant.id);
+			spells.set(grant.id, {
+				spell,
+				classId: entry.classId,
+				source: grant.source,
+				prepared: existing?.prepared || grant.mode === "always-prepared" || grant.mode === "known",
+				alwaysPrepared: grant.mode === "always-prepared"
+			});
+		}
+		return [{
+			classId: entry.classId,
+			level: entry.level,
+			preparedMaximum: rule.prepared,
+			spells: [...spells.values()].sort((a, b) => a.spell.level - b.spell.level || a.spell.name.localeCompare(b.spell.name, "ru"))
+		}];
+	});
+}
+/** Resolve an internal source id to a user-facing name for exports. */
+function spellSourceDisplayName(sourceId, character, classCatalog) {
+	const catalogName = classCatalog.find((item) => item.id === sourceId)?.name;
+	if (catalogName) return catalogName;
+	const hbDefinition = character.homebrew?.entities?.find((item) => item.id === sourceId && item.type === "class");
+	if (hbDefinition?.name) return hbDefinition.name;
+	return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
+}
+function otherSpellSources(character, catalog) {
+	const casterIds = new Set(orderedCharacterClasses(character).filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map((entry) => entry.classId));
+	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
+	const saved = (character.spellGrants || []).flatMap((grant) => {
+		if (grant.classId && casterIds.has(grant.classId)) return [];
+		const spell = byId.get(grant.spellId);
+		return spell ? [{
+			spell,
+			classId: "other",
+			source: grant.sourceId || grant.sourceType,
+			prepared: true,
+			alwaysPrepared: grant.mode === "always-prepared"
+		}] : [];
+	});
+	const racial = resolvedRacialSpells(character, catalog).map((entry) => ({
+		spell: entry.spell,
+		classId: "race",
+		source: entry.source,
+		prepared: true,
+		alwaysPrepared: false
+	}));
+	return [...racial, ...saved.filter((entry) => !racial.some((race) => race.spell.id === entry.spell.id && race.source === entry.source))];
+}
+//#endregion
+//#region app/subclassRuntime.ts
+var O$1 = (id, name, description = "") => ({
+	id,
+	name,
+	description
+});
+var yesNo = [O$1("inactive", "Не активно"), O$1("active", "Активно")];
+var elements5 = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("poison", "Яд")
+];
+var giantElements = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("thunder", "Звук")
+];
+var skillsAndTools = [
+	...Object.keys(skillKeys),
+	...artisanTools,
+	...musicalInstruments,
+	...gamingSets
+].map((value) => O$1(value, value));
+var wildSurges = [
+	O$1("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
+	O$1("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
+	O$1("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
+	O$1("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
+	O$1("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
+	O$1("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
+	O$1("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
+	O$1("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
+];
+var spiritTales = Array.from({ length: 12 }, (_, index) => O$1(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
+function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
+	return {
+		classId,
+		subclassId,
+		minLevel,
+		key: `${classId}:${subclassId}:${key}`,
+		title,
+		description,
+		trigger,
+		options,
+		randomDie
+	};
+}
+var definitions = [
+	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
+	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
+		O$1("bite", "Укус"),
+		O$1("claws", "Когти"),
+		O$1("tail", "Хвост")
+	]),
+	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
+		O$1("swim", "Плавание и дыхание под водой"),
+		O$1("climb", "Лазание"),
+		O$1("jump", "Прыжок")
+	]),
+	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
+	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
+	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
+	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
+	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
+		O$1("inactive", "Нет двойника"),
+		O$1("1", "1 двойник"),
+		O$1("2", "2 двойника"),
+		O$1("3", "3 двойника"),
+		O$1("4", "4 двойника")
+	]),
+	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
+	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
+	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
+	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
+		O$1("0", "Нет эха"),
+		O$1("1", "1 эхо"),
+		O$1("2", "2 эха (только 18 уровень)")
+	]),
+	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
+		O$1("none", "Не проявлено"),
+		O$1("arms", "Руки"),
+		O$1("arms-visage", "Руки + облик"),
+		O$1("full", "Пробуждённое астральное тело")
+	]),
+	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O$1("cone", "Конус"), O$1("line", "Линия")]),
+	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O$1("resistance", "Стихийное сопротивление"), O$1("fear", "Пугающее присутствие")]),
+	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
+	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
+	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
+	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
+	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
+	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
+		O$1("1", "1 продолжительный отдых"),
+		O$1("2", "2 продолжительных отдыха"),
+		O$1("3", "3 продолжительных отдыха"),
+		O$1("4", "4 продолжительных отдыха")
+	], 4),
+	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
+	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
+		O$1("inactive", "Не активно"),
+		O$1("lighter", "Вес уменьшен вдвое"),
+		O$1("heavier", "Вес удвоен")
+	]),
+	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
+];
+function subclassRuntimeControls(character, spells = []) {
+	const classes = orderedCharacterClasses(character);
+	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
+		const entry = classes.find((item) => item.classId === control.classId);
+		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
+			...control,
+			options: control.options.filter((option) => option.id !== "2")
+		};
+		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
+			...control,
+			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
+		};
+		if (control.key === "monk:astral-self:astral-manifestation") {
+			const level = entry?.level || 0;
+			return {
+				...control,
+				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
+			};
+		}
+		return control;
+	});
+	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
+		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
+		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O$1(String(index + 1), String(index + 1))), void 0));
+		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O$1(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
+	}
+	return controls;
+}
+function subclassRuntimeValue(character, key) {
+	return character.subclassState?.[key];
+}
+function setSubclassRuntimeValue(character, key, value) {
+	return {
+		...character,
+		subclassState: {
+			...character.subclassState || {},
+			[key]: value
+		}
+	};
+}
+var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
+function necroticHuskCooldown(character) {
+	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
+}
+function applySubclassLongRest(character) {
+	const cooldown = necroticHuskCooldown(character);
+	const state = { ...character.subclassState || {} };
+	delete state["bard:spirits:spirit-session-spell"];
+	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
+	return {
+		...character,
+		subclassState: state
+	};
+}
+//#endregion
+//#region app/adventure.ts
+var playConditions = [
+	"Ослеплён",
+	"Очарован",
+	"Оглох",
+	"Испуган",
+	"Схвачен",
+	"Недееспособен",
+	"Невидим",
+	"Парализован",
+	"Окаменел",
+	"Отравлен",
+	"Сбит с ног",
+	"Опутан",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var incapacitating = [
+	"Недееспособен",
+	"Парализован",
+	"Окаменел",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var playId = () => crypto.randomUUID();
+var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
+function newPlayItem(name = "") {
+	return {
+		id: playId(),
+		name,
+		quantity: 1,
+		weight: 0,
+		equipped: false,
+		magical: false,
+		requiresAttunement: false,
+		attuned: false,
+		charges: 0,
+		maxCharges: 0,
+		recharge: "none",
+		notes: "",
+		container: "",
+		acBonus: 0,
+		attackBonus: 0,
+		damageBonus: 0
+	};
+}
+function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
+	const c = structuredClone(source);
+	delete c.adventure;
+	if (c.homebrew) {
+		const library = c.homebrew.entities || [];
+		const ids = new Set([
+			...activeHomebrew(c).map((e) => e.id),
+			...c.feats || [],
+			...(c.advancements || []).map((e) => e.featId),
+			...c.spells
+		]);
+		const frozen = /* @__PURE__ */ new Map();
+		for (const root of library.filter((e) => ids.has(e.id))) for (const entry of homebrewExportClosure(root, library)) frozen.set(entry.id, entry);
+		c.homebrew = {
+			...c.homebrew,
+			entities: [...frozen.values()]
+		};
+	}
+	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
+		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
+		const item = newPlayItem(match?.[1] || line);
+		item.quantity = match ? integer(match[2], 1) : 1;
+		item.equipped = true;
+		return item;
+	});
+	c.adventure = {
+		version: 1,
+		name: name.trim() || "Новое приключение",
+		sourceId,
+		sourceUpdatedAt,
+		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
+		status: "active",
+		inventory,
+		effects: [],
+		concentrationChecks: [],
+		conditions: [],
+		exhaustion: 0,
+		journal: [],
+		notes: "",
+		round: 1,
+		turn: {
+			action: false,
+			bonus: false,
+			reaction: false
+		},
+		attunementLimit: 3,
+		elapsedMinutes: 0
+	};
+	c.currentHitPoints ??= estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
+}
+function logPlay(c, text, result) {
+	if (!c.adventure) return c;
+	const entry = {
+		id: playId(),
+		at: (/* @__PURE__ */ new Date()).toISOString(),
+		text,
+		...result ? {
+			formula: result.formula,
+			rolls: result.rolls,
+			total: result.total
+		} : {}
+	};
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			journal: [entry, ...c.adventure.journal].slice(0, 150)
+		}
+	};
+}
+function playMaximum(c) {
+	return c.adventure?.hpMaximum ?? estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+}
+function inventoryText(items) {
+	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
+}
+function playDerived(c) {
+	const items = c.adventure?.inventory;
+	return {
+		...c,
+		abilities: finalAbilityScores(c),
+		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped)) } : {}
+	};
+}
+function activeItem(i) {
+	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
+}
+function itemBonus(c, key) {
+	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+function updateInventory(c, items) {
+	return {
+		...c,
+		inventoryOverride: inventoryText(items),
+		adventure: c.adventure ? {
+			...c.adventure,
+			inventory: items
+		} : void 0
+	};
+}
+function applyPlayDamage(c, amount, defense = "normal") {
+	if (!c.adventure) return c;
+	const raw = integer(amount);
+	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const temp = c.temporaryHitPoints || 0;
+	const lost = Math.max(0, damage - temp);
+	const nextHp = Math.max(0, hp - lost);
+	const conditions = [...c.adventure.conditions];
+	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
+	const checks = [...c.adventure.concentrationChecks];
+	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
+		const dc = Math.max(10, Math.floor(damage / 2));
+		checks.push({
+			id: playId(),
+			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
+			damage
+		});
+	}
+	let next = {
+		...c,
+		currentHitPoints: nextHp,
+		temporaryHitPoints: Math.max(0, temp - damage),
+		deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
+		deathSaveFailures: hp === 0 && damage > 0 ? Math.min(3, (c.deathSaveFailures || 0) + 1) : c.deathSaveFailures,
+		adventure: {
+			...c.adventure,
+			conditions,
+			concentrationChecks: nextHp === 0 ? [] : checks,
+			concentration: nextHp === 0 ? void 0 : c.adventure.concentration,
+			effects: nextHp === 0 ? c.adventure.effects.filter((e) => !e.concentration) : c.adventure.effects
+		}
+	};
+	next = logPlay(next, `Урон ${damage}${damage !== raw ? ` (исходный ${raw})` : ""}: HP ${hp} → ${nextHp}, временные ${temp} → ${Math.max(0, temp - damage)}.${lost >= hp + playMaximum(c) && damage > 0 ? " Массивный урон: проверьте мгновенную смерть с мастером." : ""}`);
+	return next;
+}
+function healPlay(c, amount) {
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
+	return logPlay({
+		...c,
+		currentHitPoints: nextHp,
+		...nextHp > 0 ? {
+			deathSaveSuccesses: 0,
+			deathSaveFailures: 0,
+			adventure: c.adventure ? {
+				...c.adventure,
+				conditions: c.adventure.conditions.filter((s) => s !== "Бессознателен")
+			} : void 0
+		} : {}
+	}, `Лечение: HP ${hp} → ${nextHp}`);
+}
+function endConcentration(c) {
+	if (!c.adventure) return c;
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			concentration: void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration)
+		}
+	};
+}
+function toggleCondition(c, name) {
+	if (!c.adventure) return c;
+	const removing = c.adventure.conditions.includes(name);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			conditions: removing ? c.adventure.conditions.filter((s) => s !== name) : [...c.adventure.conditions, name]
+		}
+	};
+	if (!removing && incapacitating.includes(name)) next = endConcentration(next);
+	return logPlay(next, `${removing ? "Снято" : "Добавлено"} состояние: ${name}`);
+}
+function queueAttunement(c, id) {
+	if (!c.adventure) return c;
+	const item = c.adventure.inventory.find((i) => i.id === id);
+	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
+	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
+	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
+	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
+	if (!item.attuned && !item.attunementPending && c.adventure.inventory.filter((i) => i.attuned || i.attunementPending === "start").length >= c.adventure.attunementLimit) throw new Error("Лимит настройки занят. Сначала завершите прекращение другой настройки.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
+		...i,
+		attunementPending: i.attunementPending ? void 0 : i.attuned ? "end" : "start"
+	} : i));
+}
+function finishAttunement(c) {
+	if (!c.adventure) return c;
+	if (c.adventure.inventory.filter((i) => i.attunementPending).length > 1) throw new Error("На один короткий отдых выберите только один предмет для настройки или её прекращения.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.attunementPending ? {
+		...i,
+		attuned: i.attunementPending === "start",
+		attunementPending: void 0
+	} : i));
+}
+function randomDie(sides) {
+	const limit = Math.floor(4294967296 / sides) * sides;
+	const values = new Uint32Array(1);
+	do
+		crypto.getRandomValues(values);
+	while (values[0] >= limit);
+	return values[0] % sides + 1;
+}
+/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
+function rollDice(formula, die = randomDie, critical = false) {
+	const value = formula.toLowerCase().replace(/к/g, "d").replace(/\s/g, "").replace(/\+\-/g, "-").replace(/--/g, "+");
+	if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error("Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.");
+	const rolls = [];
+	let total = 0;
+	for (const term of value.match(/[+-]?[^+-]+/g) || []) {
+		const sign = term.startsWith("-") ? -1 : 1;
+		const part = term.replace(/^[+-]/, "");
+		if (part.includes("d")) {
+			const [count, sides] = part.split("d").map(Number);
+			const n = (count || 1) * (critical ? 2 : 1);
+			if (count === 0 && part.startsWith("0") || n < 1 || n > 200 || sides < 2 || sides > 1e3 || rolls.length + n > 200) throw new Error("Слишком много костей или недопустимый размер кости.");
+			for (let i = 0; i < n; i++) {
+				const rolled = die(sides);
+				rolls.push(rolled);
+				total += sign * rolled;
+			}
+		} else {
+			const n = Number(part);
+			if (!Number.isSafeInteger(n) || n > 1e6) throw new Error("Слишком большой модификатор.");
+			total += sign * n;
+		}
+	}
+	return {
+		formula: critical ? `${formula} (крит: кости ×2)` : formula,
+		rolls,
+		total
+	};
+}
+function rollD20(bonus, mode = "normal", die = randomDie) {
+	const rolls = [die(20)];
+	if (mode !== "normal") rolls.push(die(20));
+	const natural = mode === "advantage" ? Math.max(...rolls) : mode === "disadvantage" ? Math.min(...rolls) : rolls[0];
+	return {
+		formula: `${mode === "normal" ? "1d20" : "2d20" + (mode === "advantage" ? " (лучший)" : " (худший)")}${bonus >= 0 ? "+" : ""}${bonus}`,
+		rolls,
+		total: natural + bonus,
+		natural,
+		critical: natural === 20
+	};
+}
+function applyDeathSave(c, natural) {
+	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
+	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
+	const succeeds = natural >= 10;
+	return logPlay({
+		...c,
+		deathSaveSuccesses: integer((c.deathSaveSuccesses || 0) + (succeeds ? 1 : 0), 0, 3),
+		deathSaveFailures: integer((c.deathSaveFailures || 0) + (succeeds ? 0 : natural === 1 ? 2 : 1), 0, 3)
+	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
+}
+function playHitDicePools(c) {
+	return orderedCharacterClasses(c).map((entry) => ({
+		classId: entry.classId,
+		die: classRuleFor(c, entry.classId)?.hitDie || 8,
+		max: entry.level,
+		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
+	}));
+}
+function durationMinutes(text) {
+	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
+	if (!match) return void 0;
+	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
+}
+function restPlay(c, kind, selectedDice = {}, die = randomDie) {
+	if (!c.adventure) return c;
+	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
+	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
+	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
+	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
+	const derived = playDerived(c);
+	const pools = playHitDicePools(c);
+	const spent = Object.fromEntries(pools.map((p) => [p.classId, p.spent]));
+	let healing = 0;
+	if (kind === "short") for (const pool of pools) {
+		const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
+		for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier$1(derived.abilities.con));
+		spent[pool.classId] += count;
+	}
+	if (kind === "long") {
+		let recover = c.rulesetId === "5e-2024" ? characterLevel(c) : Math.max(1, Math.floor(characterLevel(c) / 2));
+		for (const pool of pools) {
+			const n = Math.min(recover, spent[pool.classId]);
+			spent[pool.classId] -= n;
+			recover -= n;
+		}
+	}
+	const resources = kind === "long" ? spentResourcesAfterLongRest(derived) : { ...c.resourceSpent };
+	if (kind === "short") characterResources(derived).filter((r) => r.isShortRest).forEach((r) => {
+		resources[r.key] = 0;
+	});
+	let next = {
+		...c,
+		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
+		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
+		hitDiceSpentByClass: spent,
+		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
+		resourceSpent: resources,
+		spellSlotsUsed: kind === "long" ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived),
+		pactSlotsUsed: 0,
+		adventure: {
+			...c.adventure,
+			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
+			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
+			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
+				...i,
+				charges: i.maxCharges
+			} : i),
+			concentration: keepConcentration ? {
+				...c.adventure.concentration,
+				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
+			} : void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - (kind === "long" ? 4800 : 600)
+			})
+		}
+	};
+	if (kind === "long") next = applySubclassLongRest(next);
+	if (kind === "short") next = finishAttunement(next);
+	if ((next.currentHitPoints || 0) > 0) next = {
+		...next,
+		deathSaveSuccesses: 0,
+		deathSaveFailures: 0,
+		adventure: {
+			...next.adventure,
+			conditions: next.adventure.conditions.filter((s) => s !== "Бессознателен")
+		}
+	};
+	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
+}
+function advancePlayTurn(c) {
+	if (!c.adventure) return c;
+	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			round: c.adventure.round + 1,
+			turn: {
+				action: false,
+				bonus: false,
+				reaction: false
+			},
+			effects: c.adventure.effects.filter((e) => !ended.includes(e)).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - 1
+			})
+		}
+	};
+	if (c.adventure.concentration?.remainingMinutes !== void 0) {
+		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
+		next.adventure.concentration = {
+			...c.adventure.concentration,
+			remainingMinutes
+		};
+		if (remainingMinutes < 1e-5) next = endConcentration(next);
+	}
+	if (ended.some((e) => e.concentration)) next = endConcentration(next);
+	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
+}
+//#endregion
+//#region app/GameMode.tsx
+var tabs = [
+	["actions", "Действия"],
+	["spells", "Магия"],
+	["inventory", "Рюкзак"],
+	["hero", "Герой"],
+	["journal", "Журнал"]
+];
+var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
+function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus, features }) {
+	const a = c.adventure;
+	const [tab, setTab] = useState("actions");
+	const [error, setError] = useState("");
+	const [history, setHistory] = useState([]);
+	const [result, setResult] = useState();
+	const [mode, setMode] = useState("normal");
+	const [formula, setFormula] = useState("1d20");
+	const [amount, setAmount] = useState(1);
+	const [defense, setDefense] = useState("normal");
+	const [item, setItem] = useState();
+	const [search, setSearch] = useState("");
+	const [rest, setRest] = useState();
+	const [dice, setDice] = useState({});
+	const [casting, setCasting] = useState();
+	const [castMethod, setCastMethod] = useState("");
+	const [showUnprepared, setShowUnprepared] = useState(false);
+	const [effectName, setEffectName] = useState("");
+	const [effectRounds, setEffectRounds] = useState(0);
+	useEffect(() => {
+		if (!item && !casting && !rest) return;
+		const previous = document.activeElement;
+		const dialog = document.querySelector(".play-modal");
+		const oldOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		dialog?.querySelector("button,input,select,textarea")?.focus();
+		const keydown = (event) => {
+			if (event.key === "Escape") {
+				setItem(void 0);
+				setCasting(void 0);
+				setRest(void 0);
+			}
+			if (event.key !== "Tab" || !dialog) return;
+			const controls = [...dialog.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex=\"0\"]")];
+			const first = controls[0], last = controls.at(-1);
+			if (event.shiftKey && document.activeElement === first) {
+				event.preventDefault();
+				last?.focus();
+			}
+			if (!event.shiftKey && document.activeElement === last) {
+				event.preventDefault();
+				first?.focus();
+			}
+		};
+		document.addEventListener("keydown", keydown);
+		return () => {
+			document.body.style.overflow = oldOverflow;
+			document.removeEventListener("keydown", keydown);
+			previous?.focus();
+		};
+	}, [
+		!!item,
+		!!casting,
+		!!rest
+	]);
+	const d = playDerived(c);
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const max = playMaximum(c);
+	const catalog = [...spells, ...homebrewSpells(c.homebrew?.entities || [])];
+	const attacks = characterAttacks({
+		...d,
+		spells: [...new Set([...d.spells, ...featGrantedSpellIds(d)])]
+	}, catalog);
+	const slots = resolveSpellSlots(d);
+	const pact = resolvePactMagic(d);
+	const pools = playHitDicePools(c);
+	const resources = characterResources(d);
+	const groups = classSpellGroups(d, catalog);
+	const racial = resolvedRacialSpells(d, catalog);
+	const others = otherSpellSources(d, catalog);
+	const granted = featGrantedSpellIds(d).filter((id) => !others.some((x) => x.spell.id === id) && !groups.some((g) => g.spells.some((x) => x.spell.id === id))).flatMap((id) => {
+		const spell = catalog.find((s) => s.id === id);
+		return spell ? [{
+			spell,
+			classId: "other",
+			source: "Черта",
+			prepared: true,
+			alwaysPrepared: false
+		}] : [];
+	});
+	const baseAc = armorClassBreakdown(d);
+	const ac = a.acOverride ?? baseAc.value + itemBonus(c, "acBonus");
+	const speed = speedBreakdown(d);
+	const pb = proficiencyBonus(characterLevel(c));
+	const saves = classRuleFor(c, getStartingClassId(c))?.saves || [];
+	const saveBonus = (key) => abilityModifier$1(d.abilities[key]) + (saves.includes(key) ? pb : 0) + hbSum(d, "save_bonus", (e) => !e.ability || e.ability === key);
+	function change(next) {
+		try {
+			const value = typeof next === "function" ? next(c) : next;
+			setHistory((h) => [...h.slice(-19), structuredClone(c)]);
+			onChange(value);
+			setError("");
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		}
+	}
+	function rolled(name, fn) {
+		try {
+			const r = fn();
+			setResult({
+				name,
+				result: r
+			});
+			change(logPlay(c, name, r));
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		}
+	}
+	function d20(name, bonus) {
+		rolled(name, () => rollD20(bonus, mode));
+	}
+	function damageFormula(value) {
+		return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()]))) + sign(itemBonus(c, "damageBonus"));
+	}
+	function beginCast(spell) {
+		const innate = racial.find((r) => r.spell.id === spell.id);
+		const freeKey = innate?.resourceKey && innate.remainingUses > 0 ? innate.resourceKey : void 0;
+		const canSlots = !innate || innate.castWithSlots;
+		const method = spell.level === 0 ? "cantrip" : freeKey ? "free" : canSlots && slots.some((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0)) ? `slot:${slots.findIndex((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0))}` : canSlots && pact.level >= spell.level && pact.slots > (c.pactSlotsUsed || 0) ? "pact" : spell.ritual ? "ritual" : "";
+		setCasting({
+			spell,
+			freeKey,
+			canSlots
+		});
+		setCastMethod(method);
+	}
+	function commitCast() {
+		if (!casting || !castMethod) return;
+		change((prev) => {
+			const { spell, freeKey } = casting;
+			let next = { ...prev };
+			if (castMethod.startsWith("slot:")) {
+				const i = Number(castMethod.split(":")[1]);
+				if (slots[i] <= (prev.spellSlotsUsed?.[i] || 0)) throw new Error("Ячейка уже потрачена.");
+				const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+				used[i]++;
+				next.spellSlotsUsed = used;
+			}
+			if (castMethod === "pact") {
+				if ((prev.pactSlotsUsed || 0) >= pact.slots) throw new Error("Ячейки магии договора закончились.");
+				next.pactSlotsUsed = (prev.pactSlotsUsed || 0) + 1;
+			}
+			if (castMethod === "free" && freeKey) next.resourceSpent = {
+				...prev.resourceSpent,
+				[freeKey]: (prev.resourceSpent?.[freeKey] || 0) + 1
+			};
+			if (/концентрац|concentration/i.test(spell.duration || "")) {
+				next = endConcentration(next);
+				next.adventure = {
+					...next.adventure,
+					concentration: {
+						name: spell.name,
+						duration: spell.duration || "",
+						remainingMinutes: durationMinutes(spell.duration || "")
+					}
+				};
+			}
+			return logPlay(next, `Сотворено: ${spell.name} · ${castMethod === "ritual" ? "ритуал; проверьте право на ритуальное колдовство" : castMethod === "free" ? "расовый ресурс" : castMethod === "cantrip" ? "заговор" : castMethod === "pact" ? `магия договора, ${pact.level} круг` : `${Number(castMethod.split(":")[1]) + 1} круг`}`);
+		});
+		setCasting(void 0);
+	}
+	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: tabs.map(([id, label]) => /* @__PURE__ */ jsx("button", {
+		"aria-current": tab === id ? "page" : void 0,
+		className: tab === id ? "active" : "",
+		onClick: () => {
+			setTab(id);
+			setSearch("");
+		},
+		children: label
+	}, id)) });
+	const spellCard = (entry, prepMax) => /* @__PURE__ */ jsxs("article", {
+		className: "play-card",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "play-row",
+				children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: entry.spell.name }), /* @__PURE__ */ jsxs("small", { children: [
+					entry.spell.level ? `${entry.spell.level} круг` : "Заговор",
+					" · ",
+					spellSourceDisplayName(entry.source, d, classes),
+					entry.spell.ritual ? " · Ритуал" : ""
+				] })] }), prepMax !== void 0 && entry.spell.level > 0 && !entry.alwaysPrepared && /* @__PURE__ */ jsxs("label", {
+					className: "play-check",
+					children: [/* @__PURE__ */ jsx("input", {
+						type: "checkbox",
+						checked: entry.prepared,
+						onChange: () => change((prev) => {
+							const ids = classPreparedSpellIds(prev, entry.classId);
+							if (!entry.prepared && ids.length >= prepMax) throw new Error("Достигнут лимит подготовленных заклинаний.");
+							return setClassPreparedSpells(prev, entry.classId, entry.prepared ? ids.filter((id) => id !== entry.spell.id) : [...ids, entry.spell.id]);
+						})
+					}), "Подготовлено"]
+				})]
+			}),
+			/* @__PURE__ */ jsxs("p", { children: [
+				entry.spell.castingTime,
+				" · ",
+				entry.spell.range,
+				" · ",
+				entry.spell.components
+			] }),
+			/* @__PURE__ */ jsx("p", { children: entry.spell.duration }),
+			/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Описание" }), /* @__PURE__ */ jsx("p", {
+				className: "play-description",
+				children: entry.spell.description
+			})] }),
+			/* @__PURE__ */ jsx("button", {
+				disabled: !entry.prepared && !entry.spell.ritual,
+				onClick: () => beginCast(entry.spell),
+				children: "Сотворить"
+			})
+		]
+	}, `${entry.classId}-${entry.source}-${entry.spell.id}`);
+	return /* @__PURE__ */ jsxs("main", {
+		className: "play-shell",
+		children: [
+			/* @__PURE__ */ jsxs("header", {
+				className: "play-header",
+				children: [
+					/* @__PURE__ */ jsx("button", {
+						onClick: onBack,
+						children: "← Таверна"
+					}),
+					/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [a.name, " · независимая копия"] }), /* @__PURE__ */ jsx("h1", { children: c.name || "Безымянный герой" })] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-header-tools",
+						children: [
+							/* @__PURE__ */ jsx("span", {
+								role: "status",
+								children: saveStatus
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: onExport,
+								children: "Экспорт JSON"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: onEdit,
+								children: "Изменить героя"
+							})
+						]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "play-hud",
+				"aria-label": "Состояние героя",
+				children: [
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-hp",
+						children: [
+							/* @__PURE__ */ jsx("small", { children: "Здоровье" }),
+							/* @__PURE__ */ jsxs("strong", { children: [hp, /* @__PURE__ */ jsxs("span", { children: [" / ", max] })] }),
+							/* @__PURE__ */ jsxs("small", { children: ["Временные: ", c.temporaryHitPoints || 0] }),
+							/* @__PURE__ */ jsx("progress", {
+								value: hp,
+								max: Math.max(1, max)
+							})
+						]
+					}),
+					/* @__PURE__ */ jsxs("div", { children: [
+						/* @__PURE__ */ jsx("small", { children: "Класс доспеха" }),
+						/* @__PURE__ */ jsx("strong", { children: ac }),
+						/* @__PURE__ */ jsx("small", { children: a.acOverride !== void 0 ? "Задан вручную" : baseAc.base })
+					] }),
+					/* @__PURE__ */ jsxs("div", { children: [
+						/* @__PURE__ */ jsx("small", { children: "Скорость" }),
+						/* @__PURE__ */ jsxs("strong", { children: [
+							speed.walk,
+							" ",
+							/* @__PURE__ */ jsx("span", { children: "фт" })
+						] }),
+						/* @__PURE__ */ jsxs("small", { children: ["Инициатива ", sign(initiativeBreakdown(d).value)] })
+					] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-concentration",
+						children: [
+							/* @__PURE__ */ jsx("small", { children: "Концентрация" }),
+							/* @__PURE__ */ jsx("strong", { children: a.concentration?.name || "Нет" }),
+							a.concentration && /* @__PURE__ */ jsx("button", {
+								onClick: () => change(logPlay(endConcentration(c), "Концентрация прекращена")),
+								children: "Прекратить"
+							})
+						]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsx("nav", {
+				className: "play-desktop-nav",
+				"aria-label": "Игровые разделы",
+				children: nav
+			}),
+			/* @__PURE__ */ jsxs("div", {
+				className: "play-toolbar",
+				children: [
+					/* @__PURE__ */ jsxs("label", { children: ["Броски", /* @__PURE__ */ jsxs("select", {
+						value: mode,
+						onChange: (e) => setMode(e.target.value),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "normal",
+								children: "Обычный"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "advantage",
+								children: "Преимущество"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "disadvantage",
+								children: "Помеха"
+							})
+						]
+					})] }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => {
+							setDice({});
+							setRest("short");
+						},
+						children: "Короткий отдых"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => {
+							setDice({});
+							setRest("long");
+						},
+						children: "Длинный отдых"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						disabled: !history.length,
+						onClick: () => {
+							onChange(logPlay(history.at(-1), "Последнее действие отменено"));
+							setHistory((h) => h.slice(0, -1));
+							setError("");
+						},
+						children: "Отменить действие"
+					})
+				]
+			}),
+			error && /* @__PURE__ */ jsxs("div", {
+				className: "play-error",
+				role: "alert",
+				children: [error, /* @__PURE__ */ jsx("button", {
+					onClick: () => setError(""),
+					children: "Закрыть"
+				})]
+			}),
+			a.status === "archived" && /* @__PURE__ */ jsx("p", {
+				className: "play-notice",
+				children: "Приключение в архиве. Изменения по-прежнему сохраняются в этой копии."
+			}),
+			a.concentrationChecks.map((check) => /* @__PURE__ */ jsxs("div", {
+				className: "play-notice",
+				children: [
+					/* @__PURE__ */ jsxs("strong", { children: ["Проверка концентрации: Сл ", check.dc] }),
+					/* @__PURE__ */ jsxs("span", { children: [
+						"Получен урон ",
+						check.damage,
+						", включая временные HP."
+					] }),
+					/* @__PURE__ */ jsxs("button", {
+						onClick: () => change((prev) => {
+							const r = rollD20(saveBonus("con"), mode);
+							setResult({
+								name: "Концентрация",
+								result: r
+							});
+							let next = {
+								...prev,
+								adventure: {
+									...prev.adventure,
+									concentrationChecks: prev.adventure.concentrationChecks.filter((x) => x.id !== check.id)
+								}
+							};
+							if (r.total < check.dc) next = endConcentration(next);
+							return logPlay(next, `Концентрация: ${r.total >= check.dc ? "сохранена" : "прервана"}, Сл ${check.dc}`, r);
+						}),
+						children: ["Бросить Телосложение ", sign(saveBonus("con"))]
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => change({
+							...c,
+							adventure: {
+								...a,
+								concentrationChecks: a.concentrationChecks.filter((x) => x.id !== check.id)
+							}
+						}),
+						children: "Успех вручную"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => change(logPlay(endConcentration(c), "Концентрация: провал вручную")),
+						children: "Провал вручную"
+					})
+				]
+			}, check.id)),
+			/* @__PURE__ */ jsxs("div", {
+				className: "play-content",
+				children: [
+					tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [
+										/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											value: amount,
+											onChange: (e) => setAmount(integer(e.target.value))
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
+											value: defense,
+											onChange: (e) => setDefense(e.target.value),
+											children: [
+												/* @__PURE__ */ jsx("option", {
+													value: "normal",
+													children: "Обычный"
+												}),
+												/* @__PURE__ */ jsx("option", {
+													value: "resistance",
+													children: "Сопротивление ×½"
+												}),
+												/* @__PURE__ */ jsx("option", {
+													value: "vulnerability",
+													children: "Уязвимость ×2"
+												}),
+												/* @__PURE__ */ jsx("option", {
+													value: "immune",
+													children: "Иммунитет"
+												})
+											]
+										})] }),
+										/* @__PURE__ */ jsx("button", {
+											className: "play-danger",
+											onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
+											children: "Получить урон"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => change(healPlay(c, amount)),
+											children: "Лечение"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => change(logPlay({
+												...c,
+												temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
+											}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
+											children: "Временные HP"
+										})
+									]
+								}),
+								hp === 0 && /* @__PURE__ */ jsxs("div", {
+									className: "play-notice",
+									children: [
+										/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
+										/* @__PURE__ */ jsxs("span", { children: [
+											"Успехи ",
+											c.deathSaveSuccesses || 0,
+											"/3 · Провалы ",
+											c.deathSaveFailures || 0,
+											"/3"
+										] }),
+										/* @__PURE__ */ jsx("button", {
+											disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
+											onClick: () => change((prev) => {
+												const r = rollD20(0, mode);
+												setResult({
+													name: "Спасбросок смерти",
+													result: r
+												});
+												return applyDeathSave(prev, r.natural);
+											}),
+											children: "Бросить d20"
+										}),
+										/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+									]
+								})
+							]
+						}),
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row",
+									children: [/* @__PURE__ */ jsxs("h2", { children: ["Собственный ход ", a.round] }), /* @__PURE__ */ jsx("button", {
+										onClick: () => change(advancePlayTurn(c)),
+										children: "Следующий ход"
+									})]
+								}),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-row play-wrap",
+									children: [
+										"action",
+										"bonus",
+										"reaction"
+									].map((key, i) => /* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: a.turn[key],
+											onChange: () => change({
+												...c,
+												adventure: {
+													...a,
+													turn: {
+														...a.turn,
+														[key]: !a.turn[key]
+													}
+												}
+											})
+										}), [
+											"Действие потрачено",
+											"Бонусное потрачено",
+											"Реакция потрачена"
+										][i]]
+									}, key))
+								}),
+								/* @__PURE__ */ jsx("small", { children: "Отметки помогают учитывать ход. Броски сами не тратят действие." }),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-row play-wrap",
+									children: [
+										"Рывок",
+										"Отход",
+										"Уклонение",
+										"Помощь",
+										"Засада",
+										"Поиск",
+										"Подготовка"
+									].map((name) => /* @__PURE__ */ jsx("button", {
+										onClick: () => change(logPlay({
+											...c,
+											adventure: {
+												...a,
+												turn: {
+													...a.turn,
+													action: true
+												}
+											}
+										}, `Действие: ${name}`)),
+										children: name
+									}, name))
+								})
+							]
+						}),
+						/* @__PURE__ */ jsx("div", {
+							className: "play-grid",
+							children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h3", { children: attack.name }),
+									/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc}` : ""] }),
+									/* @__PURE__ */ jsx("p", { children: attack.note }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("button", {
+											onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + itemBonus(c, "attackBonus")),
+											children: ["Атака ", sign(attack.attackBonus + itemBonus(c, "attackBonus"))]
+										}), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+											onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula))),
+											children: "Урон"
+										}), /* @__PURE__ */ jsx("button", {
+											onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula), void 0, true)),
+											children: "Крит"
+										})] })]
+									})
+								]
+							}, attack.id))
+						}),
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsx("h2", { children: "Произвольный бросок" }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row",
+									children: [/* @__PURE__ */ jsx("input", {
+										"aria-label": "Формула броска",
+										value: formula,
+										onChange: (e) => setFormula(e.target.value),
+										placeholder: "2d6+3"
+									}), /* @__PURE__ */ jsx("button", {
+										onClick: () => rolled("Произвольный бросок", () => rollDice(formula)),
+										children: "Бросить"
+									})]
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [[
+										4,
+										6,
+										8,
+										10,
+										12,
+										20,
+										100
+									].map((n) => /* @__PURE__ */ jsxs("button", {
+										onClick: () => rolled(`d${n}`, () => rollDice(`1d${n}`)),
+										children: ["d", n]
+									}, n)), /* @__PURE__ */ jsx("button", {
+										onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
+										children: "Инициатива"
+									})]
+								})
+							]
+						})
+					] }),
+					tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [/* @__PURE__ */ jsx("h2", { children: "Ячейки" }), /* @__PURE__ */ jsxs("div", {
+								className: "play-row play-wrap",
+								children: [slots.map((n, i) => n > 0 && /* @__PURE__ */ jsxs("div", {
+									className: "play-counter",
+									children: [
+										/* @__PURE__ */ jsxs("strong", { children: [i + 1, " круг"] }),
+										/* @__PURE__ */ jsxs("span", { children: [
+											Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
+											" / ",
+											n
+										] }),
+										/* @__PURE__ */ jsx("button", {
+											"aria-label": `Потратить ячейку ${i + 1} круга`,
+											disabled: (c.spellSlotsUsed?.[i] || 0) >= n,
+											onClick: () => change((prev) => {
+												const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+												used[i]++;
+												return logPlay({
+													...prev,
+													spellSlotsUsed: used
+												}, `Потрачена ячейка ${i + 1} круга`);
+											}),
+											children: "−"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											"aria-label": `Вернуть ячейку ${i + 1} круга`,
+											disabled: !(c.spellSlotsUsed?.[i] || 0),
+											onClick: () => change((prev) => {
+												const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+												used[i]--;
+												return {
+													...prev,
+													spellSlotsUsed: used
+												};
+											}),
+											children: "+"
+										})
+									]
+								}, i)), pact.slots > 0 && /* @__PURE__ */ jsxs("div", {
+									className: "play-counter",
+									children: [
+										/* @__PURE__ */ jsxs("strong", { children: [
+											"Договор · ",
+											pact.level,
+											" круг"
+										] }),
+										/* @__PURE__ */ jsxs("span", { children: [
+											pact.slots - (c.pactSlotsUsed || 0),
+											" / ",
+											pact.slots
+										] }),
+										/* @__PURE__ */ jsx("button", {
+											disabled: (c.pactSlotsUsed || 0) >= pact.slots,
+											onClick: () => change({
+												...c,
+												pactSlotsUsed: (c.pactSlotsUsed || 0) + 1
+											}),
+											children: "−"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											disabled: !c.pactSlotsUsed,
+											onClick: () => change({
+												...c,
+												pactSlotsUsed: (c.pactSlotsUsed || 0) - 1
+											}),
+											children: "+"
+										})
+									]
+								})]
+							})]
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row play-wrap",
+							children: [/* @__PURE__ */ jsx("input", {
+								"aria-label": "Поиск заклинаний",
+								placeholder: "Найти заклинание",
+								value: search,
+								onChange: (e) => setSearch(e.target.value)
+							}), /* @__PURE__ */ jsxs("label", {
+								className: "play-check",
+								children: [/* @__PURE__ */ jsx("input", {
+									type: "checkbox",
+									checked: showUnprepared,
+									onChange: (e) => setShowUnprepared(e.target.checked)
+								}), "Показать неподготовленные"]
+							})]
+						}),
+						groups.map((g) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("h2", { children: [spellSourceDisplayName(g.classId, d, classes), g.preparedMaximum !== void 0 ? ` · подготовка до ${g.preparedMaximum}` : ""] }), /* @__PURE__ */ jsx("div", {
+							className: "play-grid",
+							children: g.spells.filter((x) => (showUnprepared || x.prepared) && x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x, g.preparedMaximum))
+						})] }, g.classId)),
+						[...others, ...granted].length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h2", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
+							className: "play-grid",
+							children: [...others, ...granted].filter((x) => x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x))
+						})] }),
+						/* @__PURE__ */ jsx("p", {
+							className: "play-notice",
+							children: "Сотворение учитывает ячейку и концентрацию. Цели, дистанцию, компоненты, право на ритуал и эффекты сверяйте по описанию. Урон можно бросить в «Действиях»."
+						})
+					] }),
+					tab === "inventory" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [
+										/* @__PURE__ */ jsx("h2", { children: "Рюкзак" }),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => setItem(newPlayItem()),
+											children: "+ Предмет"
+										}),
+										/* @__PURE__ */ jsx("input", {
+											"aria-label": "Поиск предметов",
+											placeholder: "Поиск предметов",
+											value: search,
+											onChange: (e) => setSearch(e.target.value)
+										})
+									]
+								}),
+								/* @__PURE__ */ jsxs("p", { children: [
+									"Вес: ",
+									a.inventory.reduce((n, i) => n + i.quantity * i.weight, 0).toFixed(1),
+									" фунт. · Настройка: ",
+									a.inventory.filter((i) => i.attuned).length,
+									"/",
+									a.attunementLimit
+								] }),
+								/* @__PURE__ */ jsx("small", { children: "Вес наборов и предметов введите вручную. Бонусы активны у надетых предметов после необходимой настройки." }),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-row play-wrap",
+									children: [
+										"gp",
+										"sp",
+										"cp",
+										"pp"
+									].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
+										"ЗМ",
+										"СМ",
+										"ММ",
+										"ПМ"
+									][i], /* @__PURE__ */ jsx("input", {
+										type: "number",
+										min: "0",
+										value: c.currency?.[key] || 0,
+										onChange: (e) => change({
+											...c,
+											currency: {
+												...c.currency,
+												[key]: integer(e.target.value)
+											}
+										})
+									})] }, key))
+								})
+							]
+						}),
+						/* @__PURE__ */ jsx("div", {
+							className: "play-grid",
+							children: a.inventory.filter((i) => i.name.toLowerCase().includes(search.toLowerCase())).map((i) => /* @__PURE__ */ jsxs("article", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row",
+										children: [/* @__PURE__ */ jsxs("h3", { children: [
+											i.name,
+											" ×",
+											i.quantity
+										] }), /* @__PURE__ */ jsx("button", {
+											onClick: () => setItem(structuredClone(i)),
+											children: "Изменить"
+										})]
+									}),
+									/* @__PURE__ */ jsxs("p", { children: [
+										i.container,
+										i.magical ? " · Магический" : "",
+										i.attuned ? " · Настроен" : "",
+										i.attunementPending ? " · Ожидает короткого отдыха" : ""
+									] }),
+									/* @__PURE__ */ jsx("p", { children: i.notes }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [
+											/* @__PURE__ */ jsxs("label", {
+												className: "play-check",
+												children: [/* @__PURE__ */ jsx("input", {
+													type: "checkbox",
+													checked: i.equipped,
+													onChange: () => change(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
+														...x,
+														equipped: !x.equipped
+													} : x)))
+												}), "Надет / в руках"]
+											}),
+											i.requiresAttunement && /* @__PURE__ */ jsx("button", {
+												onClick: () => change((prev) => queueAttunement(prev, i.id)),
+												children: i.attunementPending ? "Отменить ожидание" : i.attuned ? "Прекратить настройку" : "Настроиться"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												disabled: i.quantity < 1,
+												onClick: () => change(logPlay(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
+													...x,
+													quantity: x.quantity - 1
+												} : x)), `Использован предмет: ${i.name}`)),
+												children: "Использовать 1"
+											})
+										]
+									}),
+									i.maxCharges > 0 && /* @__PURE__ */ jsxs("div", {
+										className: "play-row",
+										children: [/* @__PURE__ */ jsxs("span", { children: [
+											"Заряды ",
+											i.charges,
+											"/",
+											i.maxCharges
+										] }), /* @__PURE__ */ jsx("button", {
+											disabled: !i.charges || !activeItem(i),
+											onClick: () => change(logPlay(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
+												...x,
+												charges: x.charges - 1
+											} : x)), `Потрачен заряд: ${i.name}`)),
+											children: "Потратить заряд"
+										})]
+									}),
+									i.requirement && /* @__PURE__ */ jsxs("small", { children: [
+										"Требование: ",
+										i.requirement,
+										" — проверьте перед настройкой."
+									] })
+								]
+							}, i.id))
+						}),
+						/* @__PURE__ */ jsx("button", {
+							onClick: () => change(logPlay(updateInventory(c, a.inventory.map((i) => i.recharge === "dawn" ? {
+								...i,
+								charges: i.maxCharges
+							} : i)), "Наступил рассвет: восстановлены отмеченные заряды")),
+							children: "Рассвет: восстановить заряды"
+						})
+					] }),
+					tab === "hero" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-grid",
+							children: [/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Характеристики и спасброски" }),
+									Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("div", {
+										className: "play-stat",
+										children: [
+											/* @__PURE__ */ jsxs("span", { children: [
+												abilityLabels[key],
+												" ",
+												/* @__PURE__ */ jsx("b", { children: d.abilities[key] })
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => d20(`Проверка: ${abilityLabels[key]}`, abilityModifier$1(d.abilities[key])),
+												children: sign(abilityModifier$1(d.abilities[key]))
+											}),
+											/* @__PURE__ */ jsxs("button", {
+												onClick: () => d20(`Спасбросок: ${abilityLabels[key]}`, saveBonus(key)),
+												children: ["Спас ", sign(saveBonus(key))]
+											})
+										]
+									}, key)),
+									/* @__PURE__ */ jsxs("p", { children: [
+										"Бонус мастерства ",
+										sign(pb),
+										" · Пассивная внимательность ",
+										passivePerceptionBreakdown(d).value
+									] }),
+									/* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: !!c.inspiration,
+											onChange: () => change({
+												...c,
+												inspiration: !c.inspiration
+											})
+										}), "Вдохновение"]
+									})
+								]
+							}), /* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsx("h2", { children: "Навыки" }), Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("button", {
+									className: "play-skill",
+									onClick: () => d20(skill, skillBonusBreakdown(d, skill).value),
+									children: [/* @__PURE__ */ jsx("span", { children: skill }), /* @__PURE__ */ jsx("b", { children: sign(skillBonusBreakdown(d, skill).value) })]
+								}, skill))]
+							})]
+						}),
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-grid",
+									children: resources.map((r) => /* @__PURE__ */ jsxs("div", {
+										className: "play-counter",
+										children: [
+											/* @__PURE__ */ jsx("strong", { children: r.name }),
+											/* @__PURE__ */ jsxs("span", { children: [
+												resourceCurrent(d, r),
+												" / ",
+												r.max
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												disabled: resourceCurrent(d, r) <= 0,
+												onClick: () => change(logPlay({
+													...c,
+													resourceSpent: {
+														...c.resourceSpent,
+														[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
+													}
+												}, `Использован ресурс: ${r.name}`)),
+												children: "−"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												disabled: !(c.resourceSpent?.[r.key] || 0),
+												onClick: () => change({
+													...c,
+													resourceSpent: {
+														...c.resourceSpent,
+														[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
+													}
+												}),
+												children: "+"
+											}),
+											/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
+										]
+									}, r.key))
+								}),
+								subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
+									value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
+									onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
+									children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
+										value: String(option.id),
+										children: option.name
+									}, String(option.id)))
+								})] }, control.key))
+							]
+						}),
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsx("h2", { children: "Состояния и эффекты" }),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-row play-wrap",
+									children: playConditions.map((name) => /* @__PURE__ */ jsx("button", {
+										className: a.conditions.includes(name) ? "active" : "",
+										onClick: () => change(toggleCondition(c, name)),
+										children: name
+									}, name))
+								}),
+								/* @__PURE__ */ jsxs("label", { children: ["Истощение", /* @__PURE__ */ jsx("input", {
+									type: "number",
+									min: "0",
+									max: "6",
+									value: a.exhaustion,
+									onChange: (e) => change({
+										...c,
+										adventure: {
+											...a,
+											exhaustion: integer(e.target.value, 0, 6)
+										}
+									})
+								})] }),
+								/* @__PURE__ */ jsx("p", { children: "Состояния и истощение — отметки для игры. Их модификаторы, скорость и преимущества выбирайте вручную. Недееспособность автоматически прерывает концентрацию." }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [
+										/* @__PURE__ */ jsx("input", {
+											"aria-label": "Название эффекта",
+											placeholder: "Эффект или напоминание",
+											value: effectName,
+											onChange: (e) => setEffectName(e.target.value)
+										}),
+										/* @__PURE__ */ jsxs("label", { children: ["Собственных ходов (0 — без срока)", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											value: effectRounds,
+											onChange: (e) => setEffectRounds(integer(e.target.value))
+										})] }),
+										/* @__PURE__ */ jsx("button", {
+											disabled: !effectName.trim(),
+											onClick: () => {
+												change({
+													...c,
+													adventure: {
+														...a,
+														effects: [...a.effects, {
+															id: playId(),
+															name: effectName.trim(),
+															remaining: effectRounds || void 0
+														}]
+													}
+												});
+												setEffectName("");
+											},
+											children: "Добавить"
+										})
+									]
+								}),
+								a.effects.map((e) => /* @__PURE__ */ jsxs("div", {
+									className: "play-row",
+									children: [/* @__PURE__ */ jsxs("span", { children: [e.name, e.remaining ? ` · осталось ${e.remaining} ходов` : ""] }), /* @__PURE__ */ jsx("button", {
+										onClick: () => change({
+											...c,
+											adventure: {
+												...a,
+												effects: a.effects.filter((x) => x.id !== e.id)
+											}
+										}),
+										children: "Снять"
+									})]
+								}, e.id))
+							]
+						}),
+						/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [/* @__PURE__ */ jsx("h2", { children: "Особенности героя" }), features.map((f, i) => /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: f.name }), /* @__PURE__ */ jsx("p", {
+								className: "play-description",
+								children: f.description
+							})] }, `${f.name}-${i}`))]
+						}),
+						/* @__PURE__ */ jsxs("details", {
+							className: "play-card",
+							children: [
+								/* @__PURE__ */ jsx("summary", { children: "Ручные значения и завершение приключения" }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-grid",
+									children: [
+										/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "1",
+											value: a.hpMaximum ?? max,
+											onChange: (e) => change({
+												...c,
+												adventure: {
+													...a,
+													hpMaximum: integer(e.target.value, 1)
+												}
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											value: a.acOverride ?? "",
+											onChange: (e) => change({
+												...c,
+												adventure: {
+													...a,
+													acOverride: e.target.value === "" ? void 0 : integer(e.target.value)
+												}
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											max,
+											value: hp,
+											onChange: (e) => change({
+												...c,
+												currentHitPoints: integer(e.target.value, 0, max)
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Временные HP", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											value: c.temporaryHitPoints || 0,
+											onChange: (e) => change({
+												...c,
+												temporaryHitPoints: integer(e.target.value)
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Успехи смерти", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											max: "3",
+											value: c.deathSaveSuccesses || 0,
+											onChange: (e) => change({
+												...c,
+												deathSaveSuccesses: integer(e.target.value, 0, 3)
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Провалы смерти", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "0",
+											max: "3",
+											value: c.deathSaveFailures || 0,
+											onChange: (e) => change({
+												...c,
+												deathSaveFailures: integer(e.target.value, 0, 3)
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Лимит настройки", /* @__PURE__ */ jsx("input", {
+											type: "number",
+											min: "1",
+											max: "10",
+											value: a.attunementLimit,
+											onChange: (e) => change({
+												...c,
+												adventure: {
+													...a,
+													attunementLimit: integer(e.target.value, 1, 10)
+												}
+											})
+										})] }),
+										/* @__PURE__ */ jsxs("label", { children: ["Название приключения", /* @__PURE__ */ jsx("input", {
+											value: a.name,
+											onChange: (e) => change({
+												...c,
+												adventure: {
+													...a,
+													name: e.target.value
+												}
+											})
+										})] })
+									]
+								}),
+								/* @__PURE__ */ jsx("button", {
+									onClick: () => change(logPlay({
+										...c,
+										adventure: {
+											...a,
+											status: a.status === "active" ? "archived" : "active"
+										}
+									}, a.status === "active" ? "Приключение завершено и архивировано" : "Приключение возобновлено")),
+									children: a.status === "active" ? "Завершить приключение" : "Возобновить приключение"
+								}),
+								/* @__PURE__ */ jsx("p", { children: "Развитие героя, особенности и подробный лист доступны через «Изменить героя». Вы редактируете эту игровую копию." })
+							]
+						})
+					] }),
+					tab === "journal" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("section", {
+						className: "play-card",
+						children: [/* @__PURE__ */ jsx("h2", { children: "Заметки приключения" }), /* @__PURE__ */ jsx("textarea", {
+							rows: 6,
+							value: a.notes,
+							onChange: (e) => onChange({
+								...c,
+								adventure: {
+									...a,
+									notes: e.target.value
+								}
+							}),
+							placeholder: "Квесты, договорённости с мастером, добыча…"
+						})]
+					}), /* @__PURE__ */ jsxs("section", {
+						className: "play-card",
+						children: [
+							/* @__PURE__ */ jsx("h2", { children: "История действий" }),
+							/* @__PURE__ */ jsxs("small", { children: [
+								"Последние 150 записей. Прошло игрового времени: ",
+								a.elapsedMinutes,
+								" мин."
+							] }),
+							a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
+								className: "play-log",
+								children: [
+									/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
+									/* @__PURE__ */ jsx("p", { children: entry.text }),
+									entry.formula && /* @__PURE__ */ jsxs("p", { children: [
+										/* @__PURE__ */ jsx("b", { children: entry.total }),
+										" · ",
+										entry.formula,
+										" · кости [",
+										entry.rolls?.join(", "),
+										"]"
+									] })
+								]
+							}, entry.id))
+						]
+					})] })
+				]
+			}),
+			/* @__PURE__ */ jsx("nav", {
+				className: "play-mobile-nav",
+				"aria-label": "Игровые разделы на телефоне",
+				children: nav
+			}),
+			result && /* @__PURE__ */ jsxs("div", {
+				className: "play-result",
+				role: "status",
+				children: [
+					/* @__PURE__ */ jsx("button", {
+						"aria-label": "Закрыть результат броска",
+						onClick: () => setResult(void 0),
+						children: "×"
+					}),
+					/* @__PURE__ */ jsx("small", { children: result.name }),
+					/* @__PURE__ */ jsx("strong", { children: result.result.total }),
+					/* @__PURE__ */ jsxs("span", { children: [
+						result.result.formula,
+						" · [",
+						result.result.rolls.join(", "),
+						"]"
+					] }),
+					result.result.natural === 20 && /* @__PURE__ */ jsx("b", { children: "Натуральная 20" }),
+					result.result.natural === 1 && /* @__PURE__ */ jsx("b", { children: "Натуральная 1" })
+				]
+			}),
+			rest && /* @__PURE__ */ jsx("div", {
+				className: "play-backdrop",
+				children: /* @__PURE__ */ jsxs("section", {
+					className: "play-modal",
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Отдых",
+					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row",
+							children: [/* @__PURE__ */ jsxs("h2", { children: [rest === "short" ? "Короткий" : "Длинный", " отдых"] }), /* @__PURE__ */ jsx("button", {
+								onClick: () => setRest(void 0),
+								children: "Закрыть"
+							})]
+						}),
+						/* @__PURE__ */ jsx("p", { children: rest === "short" ? "Один час. Выберите кости хитов; каждая лечит на бросок + Телосложение. Настройка завершится для одного отмеченного предмета." : "Восемь часов. Восстановятся HP, ячейки и подходящие ресурсы. Кости хитов восстанавливаются по редакции правил героя." }),
+						rest === "short" && pools.map((p) => /* @__PURE__ */ jsxs("label", { children: [
+							spellSourceDisplayName(p.classId, d, classes),
+							" · d",
+							p.die,
+							", доступно ",
+							p.max - p.spent,
+							/* @__PURE__ */ jsx("input", {
+								type: "number",
+								min: "0",
+								max: p.max - p.spent,
+								value: dice[p.classId] || 0,
+								onChange: (e) => setDice({
+									...dice,
+									[p.classId]: integer(e.target.value, 0, p.max - p.spent)
+								})
+							})
+						] }, p.classId)),
+						/* @__PURE__ */ jsx("p", { children: "Короткий отдых отсчитывает час длительности концентрации; длинный завершает её. Остальные состояния требуют отдельного решения. Заряды «на рассвете» восстанавливаются отдельной кнопкой." }),
+						/* @__PURE__ */ jsx("button", {
+							className: "play-primary",
+							onClick: () => {
+								try {
+									change(restPlay(c, rest, dice));
+									setRest(void 0);
+								} catch (e) {
+									setError(e.message);
+								}
+							},
+							children: "Завершить отдых"
+						})
+					]
+				})
+			}),
+			casting && /* @__PURE__ */ jsx("div", {
+				className: "play-backdrop",
+				children: /* @__PURE__ */ jsxs("section", {
+					className: "play-modal",
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Сотворение заклинания",
+					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row",
+							children: [/* @__PURE__ */ jsx("h2", { children: casting.spell.name }), /* @__PURE__ */ jsx("button", {
+								onClick: () => setCasting(void 0),
+								children: "Закрыть"
+							})]
+						}),
+						/* @__PURE__ */ jsxs("p", { children: [
+							casting.spell.duration,
+							" · ",
+							casting.spell.components
+						] }),
+						a.concentration && /концентрац|concentration/i.test(casting.spell.duration || "") && /* @__PURE__ */ jsxs("p", {
+							className: "play-error",
+							children: [
+								"Заменит текущую концентрацию: ",
+								a.concentration.name,
+								"."
+							]
+						}),
+						/* @__PURE__ */ jsxs("label", { children: ["Способ сотворения", /* @__PURE__ */ jsxs("select", {
+							value: castMethod,
+							onChange: (e) => setCastMethod(e.target.value),
+							children: [/* @__PURE__ */ jsx("option", {
+								value: "",
+								children: "Выберите доступный способ"
+							}), casting.spell.level === 0 ? /* @__PURE__ */ jsx("option", {
+								value: "cantrip",
+								children: "Заговор — без ячейки"
+							}) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
+								casting.freeKey && /* @__PURE__ */ jsx("option", {
+									value: "free",
+									children: "Расовое использование — без ячейки"
+								}),
+								casting.canSlots && slots.map((n, i) => i + 1 >= casting.spell.level && n > (c.spellSlotsUsed?.[i] || 0) && /* @__PURE__ */ jsxs("option", {
+									value: `slot:${i}`,
+									children: [
+										i + 1,
+										" круг · осталось ",
+										n - (c.spellSlotsUsed?.[i] || 0)
+									]
+								}, i)),
+								casting.canSlots && pact.level >= casting.spell.level && pact.slots > (c.pactSlotsUsed || 0) && /* @__PURE__ */ jsxs("option", {
+									value: "pact",
+									children: [
+										"Магия договора · ",
+										pact.level,
+										" круг"
+									]
+								}),
+								casting.spell.ritual && /* @__PURE__ */ jsx("option", {
+									value: "ritual",
+									children: "Ритуал — проверьте право класса"
+								})
+							] })]
+						})] }),
+						/* @__PURE__ */ jsx("p", {
+							className: "play-description",
+							children: casting.spell.description
+						}),
+						/* @__PURE__ */ jsx("button", {
+							className: "play-primary",
+							disabled: !castMethod,
+							onClick: commitCast,
+							children: "Сотворить и записать"
+						})
+					]
+				})
+			}),
+			item && /* @__PURE__ */ jsx("div", {
+				className: "play-backdrop",
+				children: /* @__PURE__ */ jsxs("section", {
+					className: "play-modal",
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Редактор предмета",
+					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row",
+							children: [/* @__PURE__ */ jsx("h2", { children: "Предмет" }), /* @__PURE__ */ jsx("button", {
+								onClick: () => setItem(void 0),
+								children: "Закрыть"
+							})]
+						}),
+						/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
+							value: item.name,
+							onChange: (e) => setItem({
+								...item,
+								name: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsx("div", {
+							className: "play-grid",
+							children: [
+								"quantity",
+								"weight",
+								"charges",
+								"maxCharges",
+								"acBonus",
+								"attackBonus",
+								"damageBonus"
+							].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
+								"Количество",
+								"Вес одного (фунт.)",
+								"Текущие заряды",
+								"Максимум зарядов",
+								"Общий бонус КД",
+								"Общий бонус атак",
+								"Общий бонус урона"
+							][i], /* @__PURE__ */ jsx("input", {
+								type: "number",
+								min: key.endsWith("Bonus") ? void 0 : 0,
+								step: key === "weight" ? .1 : 1,
+								value: item[key],
+								onChange: (e) => setItem({
+									...item,
+									[key]: key === "weight" ? Math.max(0, Number(e.target.value) || 0) : integer(e.target.value, key.endsWith("Bonus") ? -100 : 0)
+								})
+							})] }, key))
+						}),
+						/* @__PURE__ */ jsx("div", {
+							className: "play-row play-wrap",
+							children: [
+								"equipped",
+								"magical",
+								"requiresAttunement",
+								"cursed"
+							].map((key, i) => /* @__PURE__ */ jsxs("label", {
+								className: "play-check",
+								children: [/* @__PURE__ */ jsx("input", {
+									type: "checkbox",
+									checked: !!item[key],
+									onChange: (e) => setItem({
+										...item,
+										[key]: e.target.checked
+									})
+								}), [
+									"Надет / в руках",
+									"Магический",
+									"Требует настройки",
+									"Проклят"
+								][i]]
+							}, key))
+						}),
+						/* @__PURE__ */ jsxs("label", { children: ["Восстановление зарядов", /* @__PURE__ */ jsxs("select", {
+							value: item.recharge,
+							onChange: (e) => setItem({
+								...item,
+								recharge: e.target.value
+							}),
+							children: [
+								/* @__PURE__ */ jsx("option", {
+									value: "none",
+									children: "Вручную"
+								}),
+								/* @__PURE__ */ jsx("option", {
+									value: "short",
+									children: "Короткий отдых"
+								}),
+								/* @__PURE__ */ jsx("option", {
+									value: "long",
+									children: "Длинный отдых"
+								}),
+								/* @__PURE__ */ jsx("option", {
+									value: "dawn",
+									children: "Рассвет"
+								})
+							]
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Где лежит", /* @__PURE__ */ jsx("input", {
+							value: item.container,
+							onChange: (e) => setItem({
+								...item,
+								container: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Требование к настройке", /* @__PURE__ */ jsx("input", {
+							value: item.requirement || "",
+							onChange: (e) => setItem({
+								...item,
+								requirement: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Описание", /* @__PURE__ */ jsx("textarea", {
+							value: item.notes,
+							onChange: (e) => setItem({
+								...item,
+								notes: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsx("small", { children: "Бонусы здесь общие для героя. Если бонус относится только к одному оружию, добавьте его в формулу нужного броска. Настройка выполняется через короткий отдых." }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row",
+							children: [/* @__PURE__ */ jsx("button", {
+								className: "play-primary",
+								disabled: !item.name.trim(),
+								onClick: () => {
+									const clean = {
+										...item,
+										name: item.name.trim(),
+										charges: Math.min(item.charges, item.maxCharges),
+										attuned: item.requiresAttunement && item.attuned
+									};
+									change(logPlay(updateInventory(c, a.inventory.some((i) => i.id === item.id) ? a.inventory.map((i) => i.id === item.id ? clean : i) : [...a.inventory, clean]), `Сохранён предмет: ${clean.name}`));
+									setItem(void 0);
+								},
+								children: "Сохранить"
+							}), a.inventory.some((i) => i.id === item.id) && /* @__PURE__ */ jsx("button", {
+								className: "play-danger",
+								onClick: () => {
+									change(logPlay(updateInventory(c, a.inventory.filter((i) => i.id !== item.id)), `Удалён предмет: ${item.name}`));
+									setItem(void 0);
+								},
+								children: "Удалить предмет"
+							})]
+						})
+					]
+				})
+			})
+		]
+	});
+}
+//#endregion
+//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var toKebabCase = (string) => string.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+var mergeClasses = (...classes) => classes.filter((className, index, array) => {
+	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
+}).join(" ").trim();
+//#endregion
+//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var defaultAttributes = {
+	xmlns: "http://www.w3.org/2000/svg",
+	width: 24,
+	height: 24,
+	viewBox: "0 0 24 24",
+	fill: "none",
+	stroke: "currentColor",
+	strokeWidth: 2,
+	strokeLinecap: "round",
+	strokeLinejoin: "round"
+};
+//#endregion
+//#region node_modules/lucide-react/dist/esm/Icon.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, absoluteStrokeWidth, className = "", children, iconNode, ...rest }, ref) => {
+	return createElement("svg", {
+		ref,
+		...defaultAttributes,
+		width: size,
+		height: size,
+		stroke: color,
+		strokeWidth: absoluteStrokeWidth ? Number(strokeWidth) * 24 / Number(size) : strokeWidth,
+		className: mergeClasses("lucide", className),
+		...rest
+	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
+});
+//#endregion
+//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var createLucideIcon = (iconName, iconNode) => {
+	const Component = forwardRef(({ className, ...props }, ref) => createElement(Icon, {
+		ref,
+		iconNode,
+		className: mergeClasses(`lucide-${toKebabCase(iconName)}`, className),
+		...props
+	}));
+	Component.displayName = `${iconName}`;
+	return Component;
+};
+//#endregion
+//#region node_modules/lucide-react/dist/esm/icons/settings.js
+/**
+* @license lucide-react v0.468.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Settings = createLucideIcon("Settings", [["path", {
+	d: "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z",
+	key: "1qme2f"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "3",
+	key: "1v7zrd"
+}]]);
+//#endregion
+//#region app/themeColors.json
+var themeColors_default = [
+	"000000",
+	"02080b",
+	"040c10",
+	"040d12",
+	"040e12",
+	"040e13",
+	"050e12",
+	"050f14",
+	"061116",
+	"071116",
+	"071217",
+	"071318",
+	"071419",
+	"081116",
+	"081318",
+	"081419",
+	"08141a",
+	"08191f",
+	"09171d",
+	"0a1920",
+	"0b171d",
+	"0b1a20",
+	"0d2027",
+	"0f1d23",
+	"0f1f26",
+	"111111",
+	"111e24",
+	"12252c",
+	"131313",
+	"151515",
+	"17110a",
+	"17120e",
+	"172126",
+	"173d43",
+	"176f9d",
+	"1b2f32",
+	"202020",
+	"203036",
+	"211b12",
+	"222222",
+	"2381ae",
+	"24211e",
+	"249bd7",
+	"2b241c",
+	"333333",
+	"34464d",
+	"365b5e",
+	"3d3028",
+	"3f260f",
+	"3f3026",
+	"3f6c6c",
+	"405c63",
+	"432812",
+	"444444",
+	"447674",
+	"462a10",
+	"496b6c",
+	"4a2d12",
+	"4b5f65",
+	"4d6870",
+	"50a9d1",
+	"513416",
+	"536168",
+	"53696f",
+	"554b40",
+	"555555",
+	"55777a",
+	"566f76",
+	"58696b",
+	"596766",
+	"59696f",
+	"597578",
+	"5a3a16",
+	"5c8484",
+	"5d5144",
+	"5d7f80",
+	"5e0c12",
+	"5e5347",
+	"5e6e6d",
+	"5f503d",
+	"5f5147",
+	"647574",
+	"64d39b",
+	"657373",
+	"65a09b",
+	"667479",
+	"675946",
+	"69aaa2",
+	"6b0d14",
+	"6b6254",
+	"6b7e80",
+	"6c351f",
+	"6c7777",
+	"6e9292",
+	"6f1015",
+	"6f111b",
+	"6f4a36",
+	"6f858a",
+	"705b43",
+	"713a24",
+	"756955",
+	"758187",
+	"76501e",
+	"76aaa5",
+	"777777",
+	"7a141b",
+	"7b1119",
+	"7c6550",
+	"7d6a55",
+	"7f201b",
+	"7f5b22",
+	"7f5c2c",
+	"827768",
+	"843c30",
+	"85101e",
+	"888888",
+	"8a6b23",
+	"8b6427",
+	"8ba09e",
+	"8c7258",
+	"8ca8a8",
+	"8d1820",
+	"8f1821",
+	"9065cc",
+	"941b24",
+	"975530",
+	"981f26",
+	"998855",
+	"999999",
+	"9a5a35",
+	"9aa4a5",
+	"9aa9a6",
+	"9c5b35",
+	"a14a3f",
+	"a4633e",
+	"a4b9b7",
+	"a65b49",
+	"a7afb0",
+	"a91e29",
+	"a9c4c0",
+	"aaaaaa",
+	"aeb8b8",
+	"b47a50",
+	"b5222d",
+	"b5873d",
+	"b6aaa0",
+	"b71928",
+	"b86145",
+	"b8754b",
+	"b8c0c0",
+	"b8c2bf",
+	"b8d2ce",
+	"b96e3f",
+	"b99c72",
+	"b9c7c6",
+	"bb9944",
+	"bbbbbb",
+	"bdeaff",
+	"bfc6c2",
+	"c29b56",
+	"c46a5c",
+	"c4cbc7",
+	"c58979",
+	"c7b8a5",
+	"c7d0cf",
+	"c8a15e",
+	"c8cbc4",
+	"c8d0ce",
+	"c9a557",
+	"c9b89c",
+	"cccccc",
+	"d07263",
+	"d54e4e",
+	"d6a18e",
+	"d6d7d1",
+	"d77b75",
+	"d7d5cb",
+	"d7d7d7",
+	"d7d9d2",
+	"d87a69",
+	"d9b787",
+	"dac495",
+	"dddddd",
+	"ded4bb",
+	"e1a071",
+	"e4bf77",
+	"e4cfa1",
+	"e4d4ae",
+	"e4e4e4",
+	"e5d0a2",
+	"e5dcc4",
+	"e5e5e5",
+	"e7a076",
+	"e7b572",
+	"ead4a5",
+	"ead5a7",
+	"ead8ae",
+	"ecd9ae",
+	"eedaad",
+	"eee1cf",
+	"efdeb4",
+	"efe0b9",
+	"f0d39a",
+	"f1d486",
+	"f1e2bd",
+	"f1f1f1",
+	"f2e3bd",
+	"f3efe5",
+	"f4f4f4",
+	"f5f4f1",
+	"f6ebcb",
+	"f7eac7",
+	"f8eccc",
+	"f8efd9",
+	"fafafa",
+	"fbfaf5",
+	"ff7979",
+	"ff8d7d",
+	"ffd3cb",
+	"ffd4c9",
+	"ffdfb6",
+	"ffe4a0",
+	"fff0bc",
+	"fff4d6",
+	"fff7dc",
+	"fff7df",
+	"fff8e3",
+	"fff8e7",
+	"fff9ed",
+	"fffaef",
+	"ffffff"
+];
+//#endregion
+//#region app/interfacePreferences.ts
+var defaultPreferences = {
+	zoom: 125,
+	font: 100,
+	activePreset: "",
+	presets: []
+};
+var limit = (value, min, max, fallback) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
+function normalizePreferences(value) {
+	const raw = value && typeof value === "object" ? value : {};
+	const seen = /* @__PURE__ */ new Set();
+	const presets = (Array.isArray(raw.presets) ? raw.presets : []).filter((p) => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map((p) => ({
+		id: p.id,
+		name: typeof p.name === "string" ? p.name.slice(0, 80) : "Моя тема",
+		base: p.base === "parchment" ? "parchment" : "classic",
+		roles: Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key, value]) => paletteRoles.some((role) => role.token === key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))),
+		colors: Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key, value]) => themeColors_default.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value)))
+	}));
+	return {
+		zoom: limit(raw.zoom, 75, 175, 125),
+		font: limit(raw.font, 80, 160, 100),
+		activePreset: presets.some((p) => p.id === raw.activePreset) ? raw.activePreset : "",
+		presets
+	};
+}
+var paletteRoles = [
+	{
+		label: "Фон страницы",
+		token: "ink",
+		classic: "050f14",
+		parchment: "f2e3bd",
+		aliases: []
+	},
+	{
+		label: "Основной фон",
+		token: "panel",
+		classic: "09171d",
+		parchment: "efe0b9",
+		aliases: ["f8eccc"]
+	},
+	{
+		label: "Вторичный фон",
+		token: "panel-2",
+		classic: "0d2027",
+		parchment: "e5d0a2",
+		aliases: [
+			"ead8ae",
+			"ead5a7",
+			"ead4a5"
+		]
+	},
+	{
+		label: "Фон карточек и полей",
+		token: "surface",
+		classic: "081116",
+		parchment: "f6ebcb",
+		aliases: ["fff7dc"]
+	},
+	{
+		label: "Основной текст",
+		token: "ivory",
+		classic: "eee1cf",
+		parchment: "17120e",
+		aliases: []
+	},
+	{
+		label: "Вторичный текст",
+		token: "muted",
+		classic: "9aa4a5",
+		parchment: "5e5347",
+		aliases: ["554b40"]
+	},
+	{
+		label: "Рамки",
+		token: "line",
+		classic: "34464d",
+		parchment: "17120e",
+		aliases: ["7d6a55", "8c7258"]
+	},
+	{
+		label: "Акцент выбора",
+		token: "selection",
+		classic: "e1a071",
+		parchment: "8f1821",
+		aliases: [
+			"7a141b",
+			"7b1119",
+			"941b24",
+			"b5222d",
+			"8d1820",
+			"a91e29"
+		]
+	},
+	{
+		label: "Светлый акцент",
+		token: "copper-light",
+		classic: "e1a071",
+		parchment: "b5222d",
+		aliases: []
+	},
+	{
+		label: "Тёмный акцент",
+		token: "copper",
+		classic: "b8754b",
+		parchment: "941b24",
+		aliases: ["6b0d14"]
+	},
+	{
+		label: "Текст на акценте",
+		token: "accent-text",
+		classic: "f0d39a",
+		parchment: "fff8e7",
+		aliases: ["fff7df"]
+	},
+	{
+		label: "Ссылки и подсказки",
+		token: "teal",
+		classic: "76aaa5",
+		parchment: "566f76",
+		aliases: [
+			"405c63",
+			"4b5f65",
+			"4d6870"
+		]
+	},
+	{
+		label: "Золотой акцент",
+		token: "gold",
+		classic: "c8a15e",
+		parchment: "8d1820",
+		aliases: []
+	},
+	{
+		label: "Яркий акцент",
+		token: "gold-bright",
+		classic: "f0d39a",
+		parchment: "b5222d",
+		aliases: []
+	},
+	{
+		label: "Глубокий акцент",
+		token: "gold-deep",
+		classic: "76501e",
+		parchment: "5e0c12",
+		aliases: []
+	}
+];
+function changePaletteRole(preset, index, color) {
+	const role = paletteRoles[index];
+	return {
+		...preset,
+		roles: {
+			...preset.roles,
+			[role.token]: color
+		},
+		colors: {
+			...preset.colors,
+			...Object.fromEntries([role[preset.base], ...preset.base === "parchment" ? role.aliases : []].map((key) => [key, color]))
+		}
+	};
+}
+function themeStyle(preferences, base) {
+	const preset = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const style = { "--interface-font": preferences.font / 100 };
+	if (!preset) return style;
+	for (const role of paletteRoles) style[`--${role.token}`] = preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;
+	for (const [key, value] of Object.entries(preset.colors)) {
+		style[`--theme-${key}`] = value;
+		style[`--theme-rgb-${key}`] = [
+			1,
+			3,
+			5
+		].map((i) => parseInt(value.slice(i, i + 2), 16)).join(",");
+	}
+	return style;
+}
+//#endregion
+//#region app/ThemeSettings.tsx
+var storageKey$1 = "list-geroya-interface-v1";
+function useInterfacePreferences() {
+	const [preferences, setPreferences] = useState(defaultPreferences);
+	const [loaded, setLoaded] = useState(false);
+	useEffect(() => {
+		try {
+			setPreferences(normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null")));
+		} catch {}
+		setLoaded(true);
+	}, []);
+	useEffect(() => {
+		if (!loaded) return;
+		try {
+			localStorage.setItem(storageKey$1, JSON.stringify(preferences));
+		} catch {}
+		document.documentElement.style.setProperty("--interface-zoom", String(preferences.zoom / 100));
+	}, [preferences, loaded]);
+	return {
+		preferences,
+		update: setPreferences,
+		style: themeStyle(preferences, preferences.presets.find((p) => p.id === preferences.activePreset)?.base || "classic")
+	};
+}
+function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
+	const settingsId = useId();
+	const dialog = useRef(null);
+	const { preferences, update } = appearance;
+	const active = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const [draft, setDraft] = useState(null);
+	const [notice, setNotice] = useState("");
+	function open() {
+		setDraft(active ? {
+			...active,
+			colors: { ...active.colors }
+		} : null);
+		setNotice("");
+		dialog.current?.showModal();
+	}
+	function select(id) {
+		const preset = preferences.presets.find((p) => p.id === id);
+		update({
+			...preferences,
+			activePreset: id
+		});
+		if (preset) onTheme(preset.base);
+		setDraft(preset ? {
+			...preset,
+			colors: { ...preset.colors }
+		} : null);
+		setNotice("");
+	}
+	function create() {
+		const preset = {
+			id: crypto.randomUUID(),
+			name: "Моя тема",
+			base: theme,
+			colors: {}
+		};
+		setDraft(preset);
+		update({
+			...preferences,
+			activePreset: preset.id,
+			presets: [...preferences.presets, preset]
+		});
+		setNotice("Новая тема создана. Изменения цветов сохраняются автоматически.");
+	}
+	function edit(next) {
+		setDraft(next);
+		update({
+			...preferences,
+			presets: preferences.presets.map((p) => p.id === next.id ? next : p)
+		});
+	}
+	return /* @__PURE__ */ jsxs("span", {
+		className: "theme-controls",
+		children: [
+			/* @__PURE__ */ jsx("button", {
+				className: `experimental-toggle theme-${theme}`,
+				onClick: onCycle,
+				title: `Включить ${theme === "classic" ? "пергаментный" : "синий с золотом"} дизайн`,
+				children: label
+			}),
+			/* @__PURE__ */ jsx("button", {
+				className: "experimental-toggle theme-gear",
+				onClick: open,
+				"aria-label": "Настройки интерфейса",
+				title: "Настройки интерфейса",
+				children: /* @__PURE__ */ jsx(Settings, {
+					size: 18,
+					"aria-hidden": "true"
+				})
+			}),
+			/* @__PURE__ */ jsxs("dialog", {
+				ref: dialog,
+				className: "interface-settings",
+				"aria-labelledby": settingsId,
+				onClick: (event) => {
+					if (event.target === dialog.current) {
+						const r = dialog.current.getBoundingClientRect();
+						if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current.close();
+					}
+				},
+				children: [
+					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
+						id: settingsId,
+						children: "Настройки интерфейса"
+					}), /* @__PURE__ */ jsx("button", {
+						onClick: () => dialog.current?.close(),
+						"aria-label": "Закрыть настройки",
+						children: "✕"
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: [
+						"Размер интерфейса на ПК: ",
+						preferences.zoom,
+						"%",
+						/* @__PURE__ */ jsx("input", {
+							"aria-label": "Размер интерфейса на ПК",
+							type: "range",
+							min: "75",
+							max: "175",
+							step: "5",
+							value: preferences.zoom,
+							onChange: (e) => {
+								const zoom = Number(e.target.value);
+								update((current) => ({
+									...current,
+									zoom
+								}));
+							}
+						})
+					] }),
+					/* @__PURE__ */ jsxs("label", { children: [
+						"Размер шрифта: ",
+						preferences.font,
+						"%",
+						/* @__PURE__ */ jsx("input", {
+							"aria-label": "Размер шрифта",
+							type: "range",
+							min: "80",
+							max: "160",
+							step: "5",
+							value: preferences.font,
+							onChange: (e) => {
+								const font = Number(e.target.value);
+								update((current) => ({
+									...current,
+									font
+								}));
+							}
+						})
+					] }),
+					/* @__PURE__ */ jsx("p", { children: "Масштаб интерфейса применяется на компьютере. Размер шрифта меняется отдельно; печатный и мобильный листы сохраняют свои размеры." }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => update({
+							...preferences,
+							zoom: 125,
+							font: 100
+						}),
+						children: "Сбросить размеры"
+					}),
+					/* @__PURE__ */ jsxs("label", { children: ["Цветовая тема", /* @__PURE__ */ jsxs("select", {
+						value: preferences.activePreset || theme,
+						onChange: (e) => {
+							const value = e.target.value;
+							if (value === "classic" || value === "parchment") {
+								update({
+									...preferences,
+									activePreset: ""
+								});
+								onTheme(value);
+								setDraft(null);
+							} else select(value);
+						},
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "classic",
+								children: "Синий с золотом"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "parchment",
+								children: "Пергамент"
+							}),
+							preferences.presets.map((p) => /* @__PURE__ */ jsx("option", {
+								value: p.id,
+								children: p.name || "Моя тема"
+							}, p.id))
+						]
+					})] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "theme-preset-actions",
+						children: [/* @__PURE__ */ jsx("button", {
+							onClick: create,
+							children: "Создать свою тему"
+						}), draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+							onClick: () => {
+								const copy = {
+									...draft,
+									id: crypto.randomUUID(),
+									name: `${draft.name} — копия`,
+									colors: { ...draft.colors }
+								};
+								update({
+									...preferences,
+									activePreset: copy.id,
+									presets: [...preferences.presets, copy]
+								});
+								setDraft(copy);
+							},
+							children: "Копировать тему"
+						}), /* @__PURE__ */ jsx("button", {
+							onClick: () => {
+								if (!confirm(`Удалить тему «${draft.name}»?`)) return;
+								update({
+									...preferences,
+									activePreset: "",
+									presets: preferences.presets.filter((p) => p.id !== draft.id)
+								});
+								setDraft(null);
+							},
+							children: "Удалить тему"
+						})] })]
+					}),
+					draft && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+						/* @__PURE__ */ jsxs("label", { children: ["Название темы", /* @__PURE__ */ jsx("input", {
+							maxLength: 80,
+							value: draft.name,
+							onChange: (e) => edit({
+								...draft,
+								name: e.target.value
+							})
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Основа темы", /* @__PURE__ */ jsxs("select", {
+							value: draft.base,
+							onChange: (e) => {
+								const base = e.target.value;
+								edit({
+									...draft,
+									base,
+									colors: {},
+									roles: {}
+								});
+								onTheme(base);
+							},
+							children: [/* @__PURE__ */ jsx("option", {
+								value: "classic",
+								children: "Синий с золотом"
+							}), /* @__PURE__ */ jsx("option", {
+								value: "parchment",
+								children: "Пергамент"
+							})]
+						})] }),
+						/* @__PURE__ */ jsx("div", {
+							className: "theme-palette",
+							children: paletteRoles.map((role, index) => /* @__PURE__ */ jsxs("label", { children: [role.label, /* @__PURE__ */ jsx("input", {
+								type: "color",
+								"aria-label": role.label,
+								value: draft.roles?.[role.token] || draft.colors[role[draft.base]] || `#${role[draft.base]}`,
+								onChange: (e) => edit(changePaletteRole(draft, index, e.target.value))
+							})] }, role.token))
+						}),
+						/* @__PURE__ */ jsxs("details", { children: [
+							/* @__PURE__ */ jsx("summary", { children: "Все цвета · тонкая настройка" }),
+							/* @__PURE__ */ jsx("p", { children: "Здесь можно изменить отдельные оттенки, включая служебные цвета и эффекты. Исходный цвет указан рядом с образцом." }),
+							/* @__PURE__ */ jsx("div", {
+								className: "theme-palette",
+								children: themeColors_default.map((color) => /* @__PURE__ */ jsxs("label", { children: [
+									"#",
+									color,
+									/* @__PURE__ */ jsx("input", {
+										type: "color",
+										"aria-label": `Цвет #${color}`,
+										value: draft.colors[color] || `#${color}`,
+										onChange: (e) => edit({
+											...draft,
+											colors: {
+												...draft.colors,
+												[color]: e.target.value
+											}
+										})
+									})
+								] }, color))
+							})
+						] }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "theme-preset-actions",
+							children: [/* @__PURE__ */ jsx("button", {
+								onClick: () => edit({
+									...draft,
+									colors: {},
+									roles: {}
+								}),
+								children: "Вернуть цвета основы"
+							}), /* @__PURE__ */ jsx("button", {
+								onClick: () => {
+									setNotice("Тема сохранена в этом браузере.");
+								},
+								children: "Сохранить тему"
+							})]
+						})
+					] }),
+					/* @__PURE__ */ jsx("p", {
+						role: "status",
+						children: notice
+					})
+				]
+			})
+		]
+	});
+}
+//#endregion
+//#region app/homebrewTemplates.ts
+/** D&D 5e 2014 subclass feature progression (including cleric domain levels). */
+var subclassFeatureLevels = {
+	barbarian: [
+		3,
+		6,
+		10,
+		14
+	],
+	bard: [
+		3,
+		6,
+		14
+	],
+	cleric: [
+		1,
+		2,
+		6,
+		8,
+		17
+	],
+	druid: [
+		2,
+		6,
+		10,
+		14
+	],
+	fighter: [
+		3,
+		7,
+		10,
+		15,
+		18
+	],
+	monk: [
+		3,
+		6,
+		11,
+		17
+	],
+	paladin: [
+		3,
+		7,
+		15,
+		20
+	],
+	ranger: [
+		3,
+		7,
+		11,
+		15
+	],
+	rogue: [
+		3,
+		9,
+		13,
+		17
+	],
+	sorcerer: [
+		1,
+		6,
+		14,
+		18
+	],
+	warlock: [
+		1,
+		6,
+		10,
+		14
+	],
+	wizard: [
+		2,
+		6,
+		10,
+		14
+	],
+	artificer: [
+		3,
+		5,
+		9,
+		15
+	]
+};
+function subclassTemplate(parentId, entities) {
+	const parent = entities.find((e) => e.id === parentId);
+	const levels = subclassFeatureLevels[parentId.replace("official:class:", "")] || parent?.subclass?.featureLevels || [parent?.subclass?.chooseAtLevel || 3];
+	return Object.fromEntries(levels.map((level) => [String(level), [{ type: "feature" }]]));
+}
+function homebrewAsiLevels(entities, classId) {
+	const owner = entities.find((e) => e.id === classId && e.type === "class");
+	if (!owner) return void 0;
+	return Object.entries(owner.advancement || {}).filter(([, rows]) => rows.some((row) => row.type === "asi_or_feat")).map(([level]) => Number(level)).filter((level) => Number.isInteger(level) && level >= 1 && level <= 20).sort((a, b) => a - b);
+}
+function homebrewTableFeatures(entities) {
+	return entities.filter((e) => e.table?.columns.length).map((e) => {
+		const table = e.table;
+		const clean = (s) => s.replace(/\|/g, "／").replace(/[\r\n]+/g, " ");
+		return {
+			name: e.name,
+			description: [
+				e.description,
+				"| " + table.columns.map(clean).join(" | ") + " |",
+				"| " + table.columns.map(() => "---").join(" | ") + " |",
+				...table.rows.map((row) => "| " + table.columns.map((_, j) => clean(row[j] || "")).join(" | ") + " |")
+			].filter(Boolean).join("\n")
+		};
+	});
+}
+//#endregion
+//#region app/featureHandling.ts
+var classHandling = {
+	barbarian: {
+		"Быстрое передвижение": "conditional",
+		"Ярость": "conditional",
+		"Защита без доспехов": "conditional",
+		"Безрассудная атака": "conditional",
+		"Форма зверя": "conditional"
+	},
+	bard: { "Мастер на все руки": "automatic" },
+	fighter: { "Всплеск действий": "manual" },
+	rogue: {
+		"Скрытая атака": "conditional",
+		"Психические клинки": "conditional",
+		"Увёртливость": "conditional"
+	},
+	monk: {
+		"Боевые искусства": "conditional",
+		"Защита без доспехов": "conditional",
+		"Движение без доспехов": "conditional",
+		"Руки астрального тела": "conditional",
+		"Луч сияющего солнца": "conditional"
+	},
+	paladin: {
+		"Божественная кара": "conditional",
+		"Улучшенная божественная кара": "conditional",
+		"Аура защиты": "conditional"
+	},
+	ranger: {
+		"Спутник-дрейк": "conditional",
+		"Дрейк-спутник": "conditional",
+		"Убийца колоссов": "conditional"
+	},
+	artificer: {
+		"Мистическая пушка": "conditional",
+		"Стальной защитник": "conditional",
+		"Модель доспеха": "conditional"
+	},
+	druid: {
+		"Дикий облик": "manual",
+		"Симбиотическая сущность": "conditional"
+	},
+	cleric: {
+		"Божественный удар": "conditional",
+		"Могущественное колдовство": "conditional"
+	},
+	warlock: { "Мистические воззвания": "conditional" },
+	sorcerer: { "Стихийное родство": "conditional" }
+};
+var raceHandling = {
+	tabaxi: {
+		"Кошачья ловкость": "conditional",
+		"Кошачье проворство": "conditional",
+		"Кошачьи когти": "automatic"
+	},
+	tortle: {
+		"Когти": "automatic",
+		"Защита панцирем": "conditional",
+		"Защита в панцире": "conditional"
+	},
+	minotaur: {
+		"Рога": "automatic",
+		"Бодание с разбега": "conditional"
+	},
+	centaur: {
+		"Копыта": "automatic",
+		"Разбег": "conditional"
+	},
+	aarakocra: { "Когти": "automatic" },
+	leonin: { "Когти": "automatic" },
+	lizardfolk: {
+		"Укус": "automatic",
+		"Голодная пасть": "conditional"
+	},
+	dhampir: { "Вампирский укус": "automatic" },
+	shifter: { "Клыки длиннозуба": "conditional" }
+};
+var featHandling = {
+	alert: "conditional",
+	observant: "conditional",
+	mobile: "conditional",
+	"medium-armor-master": "conditional",
+	"defensive-duelist": "conditional",
+	"dual-wielder": "conditional"
+};
+function markFeature(feature, source, id, featId) {
+	const name = source === "class" ? feature.name.split(" · ").at(-1) || feature.name : feature.name;
+	const effectHandling = feature.effectHandling || (source === "class" ? classHandling[id]?.[name] : source === "race" ? raceHandling[id]?.[name] : source === "feat" ? featHandling[featId || ""] : void 0) || "manual";
+	return {
+		...feature,
+		effectHandling
 	};
 }
 //#endregion
@@ -40721,7 +42894,7 @@ var sheetChoiceDescriptions = {
 function normalizedName(value) {
 	return value.toLocaleLowerCase("ru-RU").replace(/ё/g, "е").replace(/\b(?:tce|tcoe)\b/gi, "").replace(/[^a-zа-я0-9]+/g, " ").trim();
 }
-var O$1 = (id, name, source, description, extra = {}) => ({
+var O = (id, name, source, description, extra = {}) => ({
 	id,
 	name,
 	source,
@@ -40742,178 +42915,178 @@ function sheetFeature(classId, name, subclass = "") {
 }
 function documentedOption(classId, id, name, source, summary, extra = {}) {
 	const documented = sheetFeature(classId, extra.canonicalFeatureName || name);
-	return O$1(id, documented?.name || name, source, summary, {
+	return O(id, documented?.name || name, source, summary, {
 		...extra,
 		fullDescription: documented?.description || extra.fullDescription
 	});
 }
 var fightingStyles = [
-	O$1("archery", "Стрельба", "PHB", "+2 к броскам атаки дальнобойным оружием."),
-	O$1("defense", "Оборона", "PHB", "+1 к КД, пока вы носите доспех."),
-	O$1("dueling", "Дуэлянт", "PHB", "+2 к урону одноручным оружием, когда во второй руке нет оружия."),
-	O$1("great-weapon", "Сражение большим оружием", "PHB", "Перебрасывает 1 и 2 на костях урона двуручного оружия."),
-	O$1("protection", "Защита", "PHB", "Реакцией создаёт помеху атаке по соседнему союзнику, если у вас есть щит."),
-	O$1("two-weapon", "Сражение двумя оружиями", "PHB", "Добавляет модификатор характеристики к урону второй атаки."),
-	O$1("blind-fighting", "Слепой бой", "TCE", "Даёт слепое зрение в пределах 10 футов.", { tasha: true }),
-	O$1("interception", "Перехват", "TCE", "Реакцией уменьшает урон по соседней цели.", { tasha: true }),
-	O$1("superior-technique", "Превосходная техника", "TCE", "Даёт один манёвр и одну кость превосходства к6.", { tasha: true }),
-	O$1("thrown-weapon", "Сражение метательным оружием", "TCE", "Позволяет доставать метательное оружие частью атаки и добавляет +2 к урону.", { tasha: true }),
-	O$1("unarmed-fighting", "Сражение без оружия", "TCE", "Безоружные удары наносят 1к6 + Сила, либо 1к8 + Сила при свободных руках; захваченная цель получает 1к4 урона в начале вашего хода.", { tasha: true }),
-	O$1("blessed-warrior", "Благословенный воин", "TCE", "Вы изучаете два заговора жреца. Для них используется Харизма паладина.", {
+	O("archery", "Стрельба", "PHB", "+2 к броскам атаки дальнобойным оружием."),
+	O("defense", "Оборона", "PHB", "+1 к КД, пока вы носите доспех."),
+	O("dueling", "Дуэлянт", "PHB", "+2 к урону одноручным оружием, когда во второй руке нет оружия."),
+	O("great-weapon", "Сражение большим оружием", "PHB", "Перебрасывает 1 и 2 на костях урона двуручного оружия."),
+	O("protection", "Защита", "PHB", "Реакцией создаёт помеху атаке по соседнему союзнику, если у вас есть щит."),
+	O("two-weapon", "Сражение двумя оружиями", "PHB", "Добавляет модификатор характеристики к урону второй атаки."),
+	O("blind-fighting", "Слепой бой", "TCE", "Даёт слепое зрение в пределах 10 футов.", { tasha: true }),
+	O("interception", "Перехват", "TCE", "Реакцией уменьшает урон по соседней цели.", { tasha: true }),
+	O("superior-technique", "Превосходная техника", "TCE", "Даёт один манёвр и одну кость превосходства к6.", { tasha: true }),
+	O("thrown-weapon", "Сражение метательным оружием", "TCE", "Позволяет доставать метательное оружие частью атаки и добавляет +2 к урону.", { tasha: true }),
+	O("unarmed-fighting", "Сражение без оружия", "TCE", "Безоружные удары наносят 1к6 + Сила, либо 1к8 + Сила при свободных руках; захваченная цель получает 1к4 урона в начале вашего хода.", { tasha: true }),
+	O("blessed-warrior", "Благословенный воин", "TCE", "Вы изучаете два заговора жреца. Для них используется Харизма паладина.", {
 		tasha: true,
 		mode: "grant"
 	}),
-	O$1("druidic-warrior", "Воин-друид", "TCE", "Вы изучаете два заговора друида. Для них используется Мудрость следопыта.", {
+	O("druidic-warrior", "Воин-друид", "TCE", "Вы изучаете два заговора друида. Для них используется Мудрость следопыта.", {
 		tasha: true,
 		mode: "grant"
 	})
 ];
 var metamagic = [
-	O$1("careful", "Аккуратное заклинание", "PHB", "Стоимость: 1 очко чародейства. Защищает выбранных существ от худшего результата спасброска вашего заклинания."),
-	O$1("distant", "Далёкое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает дистанцию заклинания или превращает касание в дистанцию 30 футов."),
-	O$1("empowered", "Усиленное заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет перебросить часть костей урона."),
-	O$1("extended", "Продлённое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает длительность заклинания, максимум до 24 часов."),
-	O$1("heightened", "Неодолимое заклинание", "PHB", "Стоимость: 3 очка чародейства. Даёт одной цели помеху на первый спасбросок от заклинания."),
-	O$1("quickened", "Ускоренное заклинание", "PHB", "Стоимость: 2 очка чародейства. Меняет время накладывания с действия на бонусное действие."),
-	O$1("subtle", "Неуловимое заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет обойти словесные и соматические компоненты."),
-	O$1("twinned", "Удвоенное заклинание", "PHB", "Стоимость: число очков чародейства, равное кругу заклинания (минимум 1). Добавляет вторую цель заклинанию, которое обычно нацеливается только на одно существо."),
-	O$1("seeking", "Ищущее заклинание", "TCE", "Стоимость: 2 очка чародейства. Позволяет перебросить промах броска атаки заклинанием.", { tasha: true }),
-	O$1("transmuted", "Преобразованное заклинание", "TCE", "Стоимость: 1 очко чародейства. Меняет один стихийный тип урона заклинания на другой.", { tasha: true })
+	O("careful", "Аккуратное заклинание", "PHB", "Стоимость: 1 очко чародейства. Защищает выбранных существ от худшего результата спасброска вашего заклинания."),
+	O("distant", "Далёкое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает дистанцию заклинания или превращает касание в дистанцию 30 футов."),
+	O("empowered", "Усиленное заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет перебросить часть костей урона."),
+	O("extended", "Продлённое заклинание", "PHB", "Стоимость: 1 очко чародейства. Удваивает длительность заклинания, максимум до 24 часов."),
+	O("heightened", "Неодолимое заклинание", "PHB", "Стоимость: 3 очка чародейства. Даёт одной цели помеху на первый спасбросок от заклинания."),
+	O("quickened", "Ускоренное заклинание", "PHB", "Стоимость: 2 очка чародейства. Меняет время накладывания с действия на бонусное действие."),
+	O("subtle", "Неуловимое заклинание", "PHB", "Стоимость: 1 очко чародейства. Позволяет обойти словесные и соматические компоненты."),
+	O("twinned", "Удвоенное заклинание", "PHB", "Стоимость: число очков чародейства, равное кругу заклинания (минимум 1). Добавляет вторую цель заклинанию, которое обычно нацеливается только на одно существо."),
+	O("seeking", "Ищущее заклинание", "TCE", "Стоимость: 2 очка чародейства. Позволяет перебросить промах броска атаки заклинанием.", { tasha: true }),
+	O("transmuted", "Преобразованное заклинание", "TCE", "Стоимость: 1 очко чародейства. Меняет один стихийный тип урона заклинания на другой.", { tasha: true })
 ];
 var maneuvers = [
-	O$1("ambush", "Засада", "TCE", "Добавляет кость превосходства к Скрытности или инициативе.", { tasha: true }),
-	O$1("bait-switch", "Обманный манёвр", "TCE", "Меняется местами с союзником и повышает КД одного из вас.", { tasha: true }),
-	O$1("brace", "Стойка", "TCE", "Реакцией атакует существо, вошедшее в досягаемость.", { tasha: true }),
-	O$1("commanding-presence", "Командное присутствие", "TCE", "При проверке Харизмы (Запугивание, Выступление или Убеждение) потратьте кость превосходства и добавьте её к проверке.", { tasha: true }),
-	O$1("grappling-strike", "Захватывающий удар", "TCE", "После попадания рукопашной атакой потратьте кость и бонусным действием попытайтесь захватить цель, добавив кость к Атлетике.", { tasha: true }),
-	O$1("quick-toss", "Быстрый бросок", "TCE", "Бонусным действием потратьте кость и атакуйте метательным оружием; при попадании добавьте кость к урону.", { tasha: true }),
-	O$1("tactical-assessment", "Тактическая оценка", "TCE", "Добавьте кость превосходства к проверке Расследования, Истории или Проницательности.", { tasha: true }),
-	O$1("commanders-strike", "Командирская атака", "PHB", "Отдаёт одну атаку союзнику реакцией."),
-	O$1("disarming", "Обезоруживающая атака", "PHB", "Усиливает попадание и заставляет цель выронить предмет."),
-	O$1("distracting", "Отвлекающая атака", "PHB", "Следующая атака союзника по цели получает преимущество."),
-	O$1("evasive-footwork", "Манёвр уклонения", "PHB", "Добавляет кость превосходства к КД во время перемещения."),
-	O$1("feinting", "Ложный выпад", "PHB", "Бонусным действием получает преимущество и дополнительный урон."),
-	O$1("goading", "Провоцирующая атака", "PHB", "Цели сложнее атаковать кого-либо, кроме вас."),
-	O$1("lunging", "Атака с выпадом", "PHB", "Увеличивает досягаемость и урон атаки."),
-	O$1("maneuvering", "Маневрирующая атака", "PHB", "Позволяет союзнику безопасно переместиться реакцией."),
-	O$1("menacing", "Устрашающая атака", "PHB", "Может напугать поражённую цель."),
-	O$1("parry", "Парирование", "PHB", "Реакцией уменьшает урон атаки ближнего боя."),
-	O$1("precision", "Точная атака", "PHB", "Добавляет кость превосходства к броску атаки."),
-	O$1("pushing", "Толкающая атака", "PHB", "Отталкивает цель после попадания."),
-	O$1("rally", "Сплочение", "PHB", "Бонусным действием даёт союзнику временные хиты."),
-	O$1("riposte", "Ответный удар", "PHB", "Реакцией атакует промахнувшегося противника."),
-	O$1("sweeping", "Размашистая атака", "PHB", "Переносит часть урона на вторую соседнюю цель."),
-	O$1("trip", "Сбивающая атака", "PHB", "Может сбить цель с ног после попадания.")
+	O("ambush", "Засада", "TCE", "Добавляет кость превосходства к Скрытности или инициативе.", { tasha: true }),
+	O("bait-switch", "Обманный манёвр", "TCE", "Меняется местами с союзником и повышает КД одного из вас.", { tasha: true }),
+	O("brace", "Стойка", "TCE", "Реакцией атакует существо, вошедшее в досягаемость.", { tasha: true }),
+	O("commanding-presence", "Командное присутствие", "TCE", "При проверке Харизмы (Запугивание, Выступление или Убеждение) потратьте кость превосходства и добавьте её к проверке.", { tasha: true }),
+	O("grappling-strike", "Захватывающий удар", "TCE", "После попадания рукопашной атакой потратьте кость и бонусным действием попытайтесь захватить цель, добавив кость к Атлетике.", { tasha: true }),
+	O("quick-toss", "Быстрый бросок", "TCE", "Бонусным действием потратьте кость и атакуйте метательным оружием; при попадании добавьте кость к урону.", { tasha: true }),
+	O("tactical-assessment", "Тактическая оценка", "TCE", "Добавьте кость превосходства к проверке Расследования, Истории или Проницательности.", { tasha: true }),
+	O("commanders-strike", "Командирская атака", "PHB", "Отдаёт одну атаку союзнику реакцией."),
+	O("disarming", "Обезоруживающая атака", "PHB", "Усиливает попадание и заставляет цель выронить предмет."),
+	O("distracting", "Отвлекающая атака", "PHB", "Следующая атака союзника по цели получает преимущество."),
+	O("evasive-footwork", "Манёвр уклонения", "PHB", "Добавляет кость превосходства к КД во время перемещения."),
+	O("feinting", "Ложный выпад", "PHB", "Бонусным действием получает преимущество и дополнительный урон."),
+	O("goading", "Провоцирующая атака", "PHB", "Цели сложнее атаковать кого-либо, кроме вас."),
+	O("lunging", "Атака с выпадом", "PHB", "Увеличивает досягаемость и урон атаки."),
+	O("maneuvering", "Маневрирующая атака", "PHB", "Позволяет союзнику безопасно переместиться реакцией."),
+	O("menacing", "Устрашающая атака", "PHB", "Может напугать поражённую цель."),
+	O("parry", "Парирование", "PHB", "Реакцией уменьшает урон атаки ближнего боя."),
+	O("precision", "Точная атака", "PHB", "Добавляет кость превосходства к броску атаки."),
+	O("pushing", "Толкающая атака", "PHB", "Отталкивает цель после попадания."),
+	O("rally", "Сплочение", "PHB", "Бонусным действием даёт союзнику временные хиты."),
+	O("riposte", "Ответный удар", "PHB", "Реакцией атакует промахнувшегося противника."),
+	O("sweeping", "Размашистая атака", "PHB", "Переносит часть урона на вторую соседнюю цель."),
+	O("trip", "Сбивающая атака", "PHB", "Может сбить цель с ног после попадания.")
 ];
 var arcaneShots = [
-	O$1("banishing-arrow", "Изгоняющая стрела", "XGE", "На время отправляет поражённую цель в безвредное место в Стране Фей."),
-	O$1("beguiling-arrow", "Обманная стрела", "XGE", "Наносит психический урон и может очаровать цель одним из союзников."),
-	O$1("bursting-arrow", "Разрывная стрела", "XGE", "Взрывается силовой энергией и ранит существ рядом с целью."),
-	O$1("enfeebling-arrow", "Ослабляющая стрела", "XGE", "Наносит некротический урон и ослабляет урон оружием цели."),
-	O$1("grasping-arrow", "Опутывающая стрела", "XGE", "Опутывает цель колючими растениями, замедляя и раня при движении."),
-	O$1("piercing-arrow", "Пронзающая стрела", "XGE", "Проходит линией сквозь существ и препятствия."),
-	O$1("seeking-arrow", "Ищущая стрела", "XGE", "Ищет известную вам цель за укрытиями и поворотами."),
-	O$1("shadow-arrow", "Теневая стрела", "XGE", "Наносит психический урон и резко ограничивает зрение цели.")
+	O("banishing-arrow", "Изгоняющая стрела", "XGE", "На время отправляет поражённую цель в безвредное место в Стране Фей."),
+	O("beguiling-arrow", "Обманная стрела", "XGE", "Наносит психический урон и может очаровать цель одним из союзников."),
+	O("bursting-arrow", "Разрывная стрела", "XGE", "Взрывается силовой энергией и ранит существ рядом с целью."),
+	O("enfeebling-arrow", "Ослабляющая стрела", "XGE", "Наносит некротический урон и ослабляет урон оружием цели."),
+	O("grasping-arrow", "Опутывающая стрела", "XGE", "Опутывает цель колючими растениями, замедляя и раня при движении."),
+	O("piercing-arrow", "Пронзающая стрела", "XGE", "Проходит линией сквозь существ и препятствия."),
+	O("seeking-arrow", "Ищущая стрела", "XGE", "Ищет известную вам цель за укрытиями и поворотами."),
+	O("shadow-arrow", "Теневая стрела", "XGE", "Наносит психический урон и резко ограничивает зрение цели.")
 ];
 var invocations = [
-	O$1("agonizing-blast", "Мучительный взрыв", "PHB", "Добавляет модификатор Харизмы к урону мистического заряда."),
-	O$1("armor-shadows", "Доспех теней", "PHB", "Позволяет без ячейки накладывать на себя доспехи мага."),
-	O$1("beast-speech", "Звериная речь", "PHB", "Позволяет без ячейки накладывать разговор с животными."),
-	O$1("beguiling-influence", "Обманчивое влияние", "PHB", "Даёт владение Обманом и Убеждением."),
-	O$1("devils-sight", "Дьявольский взгляд", "PHB", "Позволяет видеть в обычной и магической тьме на 120 футов."),
-	O$1("eldritch-sight", "Мистическое зрение", "PHB", "Позволяет без ячейки накладывать обнаружение магии."),
-	O$1("eyes-rune-keeper", "Глаза хранителя рун", "PHB", "Позволяет читать любые письмена."),
-	O$1("fiendish-vigor", "Дьявольская живучесть", "PHB", "Позволяет без ячейки накладывать на себя ложную жизнь."),
-	O$1("gaze-two-minds", "Взгляд двух умов", "PHB", "Позволяет воспринимать мир чувствами согласного гуманоида."),
-	O$1("mask-many-faces", "Маска многих лиц", "PHB", "Позволяет без ячейки накладывать маскировку."),
-	O$1("misty-visions", "Туманные видения", "PHB", "Позволяет без ячейки накладывать безмолвный образ."),
-	O$1("repelling-blast", "Отталкивающий заряд", "PHB", "Мистический заряд отталкивает поражённую цель."),
-	O$1("thief-five-fates", "Похититель пяти судеб", "PHB", "Позволяет раз в отдых наложить порчу ячейкой колдуна."),
-	O$1("voice-chain-master", "Голос хозяина цепи", "PHB", "Позволяет общаться и воспринимать мир через фамильяра.", { pact: "chain" }),
-	O$1("book-ancient-secrets", "Книга древних секретов", "PHB", "Добавляет ритуалы в Книгу Теней.", { pact: "tome" }),
-	O$1("improved-pact-weapon", "Улучшенное оружие договора", "XGE", "Оружие договора становится фокусировкой и получает бонус, если ещё не магическое.", { pact: "blade" }),
-	O$1("gift-ever-living", "Дар вечноживых", "XGE", "Рядом с фамильяром вы получаете максимальный результат костей лечения.", { pact: "chain" }),
-	O$1("tomb-levistus", "Гробница Левистуса", "XGE", "Реакцией заключает вас в защитный лёд.", { minLevel: 5 }),
-	O$1("cloak-flies", "Покров мух", "XGE", "Бонусным действием создаёт вокруг себя наносящую урон ауру.", { minLevel: 5 }),
-	O$1("eldritch-smite", "Мистическая кара", "XGE", "Тратит ячейку договора, чтобы усилить попадание и сбить цель.", {
+	O("agonizing-blast", "Мучительный взрыв", "PHB", "Добавляет модификатор Харизмы к урону мистического заряда."),
+	O("armor-shadows", "Доспех теней", "PHB", "Позволяет без ячейки накладывать на себя доспехи мага."),
+	O("beast-speech", "Звериная речь", "PHB", "Позволяет без ячейки накладывать разговор с животными."),
+	O("beguiling-influence", "Обманчивое влияние", "PHB", "Даёт владение Обманом и Убеждением."),
+	O("devils-sight", "Дьявольский взгляд", "PHB", "Позволяет видеть в обычной и магической тьме на 120 футов."),
+	O("eldritch-sight", "Мистическое зрение", "PHB", "Позволяет без ячейки накладывать обнаружение магии."),
+	O("eyes-rune-keeper", "Глаза хранителя рун", "PHB", "Позволяет читать любые письмена."),
+	O("fiendish-vigor", "Дьявольская живучесть", "PHB", "Позволяет без ячейки накладывать на себя ложную жизнь."),
+	O("gaze-two-minds", "Взгляд двух умов", "PHB", "Позволяет воспринимать мир чувствами согласного гуманоида."),
+	O("mask-many-faces", "Маска многих лиц", "PHB", "Позволяет без ячейки накладывать маскировку."),
+	O("misty-visions", "Туманные видения", "PHB", "Позволяет без ячейки накладывать безмолвный образ."),
+	O("repelling-blast", "Отталкивающий заряд", "PHB", "Мистический заряд отталкивает поражённую цель."),
+	O("thief-five-fates", "Похититель пяти судеб", "PHB", "Позволяет раз в отдых наложить порчу ячейкой колдуна."),
+	O("voice-chain-master", "Голос хозяина цепи", "PHB", "Позволяет общаться и воспринимать мир через фамильяра.", { pact: "chain" }),
+	O("book-ancient-secrets", "Книга древних секретов", "PHB", "Добавляет ритуалы в Книгу Теней.", { pact: "tome" }),
+	O("improved-pact-weapon", "Улучшенное оружие договора", "XGE", "Оружие договора становится фокусировкой и получает бонус, если ещё не магическое.", { pact: "blade" }),
+	O("gift-ever-living", "Дар вечноживых", "XGE", "Рядом с фамильяром вы получаете максимальный результат костей лечения.", { pact: "chain" }),
+	O("tomb-levistus", "Гробница Левистуса", "XGE", "Реакцией заключает вас в защитный лёд.", { minLevel: 5 }),
+	O("cloak-flies", "Покров мух", "XGE", "Бонусным действием создаёт вокруг себя наносящую урон ауру.", { minLevel: 5 }),
+	O("eldritch-smite", "Мистическая кара", "XGE", "Тратит ячейку договора, чтобы усилить попадание и сбить цель.", {
 		minLevel: 5,
 		pact: "blade"
 	}),
-	O$1("ghostly-gaze", "Призрачный взгляд", "XGE", "На короткое время позволяет видеть сквозь твёрдые предметы.", { minLevel: 7 }),
-	O$1("relentless-hex", "Неотступное проклятие", "XGE", "Телепортирует вас к проклятой цели.", { minLevel: 7 }),
-	O$1("shroud-shadow", "Покров тени", "XGE", "Позволяет без ячейки накладывать невидимость.", { minLevel: 15 }),
-	O$1("eldritch-mind", "Мистический разум", "TCE", "Даёт преимущество на спасброски Телосложения для концентрации.", { tasha: true }),
-	O$1("investment-chain-master", "Вложение хозяина цепи", "TCE", "Усиливает фамильяра договора и управление им.", {
+	O("ghostly-gaze", "Призрачный взгляд", "XGE", "На короткое время позволяет видеть сквозь твёрдые предметы.", { minLevel: 7 }),
+	O("relentless-hex", "Неотступное проклятие", "XGE", "Телепортирует вас к проклятой цели.", { minLevel: 7 }),
+	O("shroud-shadow", "Покров тени", "XGE", "Позволяет без ячейки накладывать невидимость.", { minLevel: 15 }),
+	O("eldritch-mind", "Мистический разум", "TCE", "Даёт преимущество на спасброски Телосложения для концентрации.", { tasha: true }),
+	O("investment-chain-master", "Вложение хозяина цепи", "TCE", "Усиливает фамильяра договора и управление им.", {
 		pact: "chain",
 		tasha: true
 	}),
-	O$1("bond-talisman", "Узы талисмана", "TCE", "Действием телепортирует владельца талисмана к вам или вас к нему; число применений равно бонусу мастерства за продолжительный отдых.", {
+	O("bond-talisman", "Узы талисмана", "TCE", "Действием телепортирует владельца талисмана к вам или вас к нему; число применений равно бонусу мастерства за продолжительный отдых.", {
 		minLevel: 12,
 		pact: "talisman",
 		tasha: true
 	}),
-	O$1("far-scribe", "Дальний писец", "TCE", "В Книге Теней появляется страница имён; с записанным существом можно обмениваться сообщениями без ячейки.", {
+	O("far-scribe", "Дальний писец", "TCE", "В Книге Теней появляется страница имён; с записанным существом можно обмениваться сообщениями без ячейки.", {
 		minLevel: 5,
 		pact: "tome",
 		tasha: true
 	}),
-	O$1("gift-protectors", "Дар защитников", "TCE", "Записанное в Книге Теней существо вместо падения до 0 хитов остаётся с 1; после срабатывания способность восстанавливается после продолжительного отдыха.", {
+	O("gift-protectors", "Дар защитников", "TCE", "Записанное в Книге Теней существо вместо падения до 0 хитов остаётся с 1; после срабатывания способность восстанавливается после продолжительного отдыха.", {
 		minLevel: 9,
 		pact: "tome",
 		tasha: true
 	}),
-	O$1("protection-talisman", "Защита талисмана", "TCE", "Провалив спасбросок, носитель талисмана может добавить к4 и потенциально превратить провал в успех.", {
+	O("protection-talisman", "Защита талисмана", "TCE", "Провалив спасбросок, носитель талисмана может добавить к4 и потенциально превратить провал в успех.", {
 		minLevel: 7,
 		pact: "talisman",
 		tasha: true
 	}),
-	O$1("rebuke-talisman", "Возмездие талисмана", "TCE", "Когда носителя талисмана поражают в пределах 30 футов, реакцией нанесите атакующему психический урон и оттолкните его.", {
+	O("rebuke-talisman", "Возмездие талисмана", "TCE", "Когда носителя талисмана поражают в пределах 30 футов, реакцией нанесите атакующему психический урон и оттолкните его.", {
 		pact: "talisman",
 		tasha: true
 	}),
-	O$1("undying-servitude", "Бессмертное служение", "TCE", "Один раз за продолжительный отдых позволяет наложить оживление мертвеца без ячейки и материальных компонентов.", {
+	O("undying-servitude", "Бессмертное служение", "TCE", "Один раз за продолжительный отдых позволяет наложить оживление мертвеца без ячейки и материальных компонентов.", {
 		minLevel: 5,
 		tasha: true
 	})
 ];
 var infusions = [
-	O$1("enhanced-defense", "Усиленная защита", "TCE", "Даёт доспеху или щиту магический бонус к КД."),
-	O$1("enhanced-weapon", "Усиленное оружие", "TCE", "Даёт оружию магический бонус к атаке и урону."),
-	O$1("enhanced-focus", "Усиленная магическая фокусировка", "TCE", "Улучшает броски атаки заклинаниями и игнорирует часть укрытия."),
-	O$1("homunculus", "Слуга-гомункул", "TCE", "Создаёт летающего магического слугу."),
-	O$1("mind-sharpener", "Укрепитель разума", "TCE", "Помогает сохранять концентрацию на заклинаниях."),
-	O$1("repeating-shot", "Повторяющий выстрел", "TCE", "Улучшает оружие с боеприпасами и создаёт собственные снаряды."),
-	O$1("returning-weapon", "Возвращающееся оружие", "TCE", "Улучшает метательное оружие и возвращает его в руку."),
-	O$1("repulsion-shield", "Отталкивающий щит", "TCE", "Улучшает щит и может оттолкнуть ударившего врага.", { minLevel: 6 }),
-	O$1("resistant-armor", "Доспех сопротивления", "TCE", "Даёт доспеху сопротивление выбранному типу урона.", { minLevel: 6 }),
-	O$1("boots-winding", "Ботинки извилистого пути", "TCE", "Телепортируют в недавно покинутое место.", { minLevel: 6 }),
-	O$1("arcane-propulsion", "Доспех магической тяги", "TCE", "Усиливает скорость и превращает перчатки в метательное оружие.", { minLevel: 14 })
+	O("enhanced-defense", "Усиленная защита", "TCE", "Даёт доспеху или щиту магический бонус к КД."),
+	O("enhanced-weapon", "Усиленное оружие", "TCE", "Даёт оружию магический бонус к атаке и урону."),
+	O("enhanced-focus", "Усиленная магическая фокусировка", "TCE", "Улучшает броски атаки заклинаниями и игнорирует часть укрытия."),
+	O("homunculus", "Слуга-гомункул", "TCE", "Создаёт летающего магического слугу."),
+	O("mind-sharpener", "Укрепитель разума", "TCE", "Помогает сохранять концентрацию на заклинаниях."),
+	O("repeating-shot", "Повторяющий выстрел", "TCE", "Улучшает оружие с боеприпасами и создаёт собственные снаряды."),
+	O("returning-weapon", "Возвращающееся оружие", "TCE", "Улучшает метательное оружие и возвращает его в руку."),
+	O("repulsion-shield", "Отталкивающий щит", "TCE", "Улучшает щит и может оттолкнуть ударившего врага.", { minLevel: 6 }),
+	O("resistant-armor", "Доспех сопротивления", "TCE", "Даёт доспеху сопротивление выбранному типу урона.", { minLevel: 6 }),
+	O("boots-winding", "Ботинки извилистого пути", "TCE", "Телепортируют в недавно покинутое место.", { minLevel: 6 }),
+	O("arcane-propulsion", "Доспех магической тяги", "TCE", "Усиливает скорость и превращает перчатки в метательное оружие.", { minLevel: 14 })
 ];
 var runes = [
-	O$1("cloud-rune", "Облачная руна", "TCE", "Даёт ловкость обмана и реакцией перенаправляет попадание."),
-	O$1("fire-rune", "Огненная руна", "TCE", "Усиливает работу инструментами и может заковать цель в огненные цепи."),
-	O$1("frost-rune", "Ледяная руна", "TCE", "Усиливает обращение с животными, запугивание и силовые проверки."),
-	O$1("stone-rune", "Каменная руна", "TCE", "Даёт тёмное зрение и может очаровать противника реакцией."),
-	O$1("hill-rune", "Холмовая руна", "TCE", "Даёт стойкость к яду и временную устойчивость к оружейному урону.", { minLevel: 7 }),
-	O$1("storm-rune", "Штормовая руна", "TCE", "Позволяет реакцией давать преимущество или помеху броскам.", { minLevel: 7 })
+	O("cloud-rune", "Облачная руна", "TCE", "Даёт ловкость обмана и реакцией перенаправляет попадание."),
+	O("fire-rune", "Огненная руна", "TCE", "Усиливает работу инструментами и может заковать цель в огненные цепи."),
+	O("frost-rune", "Ледяная руна", "TCE", "Усиливает обращение с животными, запугивание и силовые проверки."),
+	O("stone-rune", "Каменная руна", "TCE", "Даёт тёмное зрение и может очаровать противника реакцией."),
+	O("hill-rune", "Холмовая руна", "TCE", "Даёт стойкость к яду и временную устойчивость к оружейному урону.", { minLevel: 7 }),
+	O("storm-rune", "Штормовая руна", "TCE", "Позволяет реакцией давать преимущество или помеху броскам.", { minLevel: 7 })
 ];
 var fourElementsDisciplines = [
-	O$1("fangs-fire-snake", "Клыки огненной змеи", "PHB", "1 ци: увеличивает досягаемость безоружных атак и позволяет наносить огненный урон."),
-	O$1("fist-four-thunders", "Кулак четырёх громов", "PHB", "2 ци: Волна грома."),
-	O$1("fist-unbroken-air", "Кулак несокрушимого воздуха", "PHB", "2+ ци: силовой толчок, урон и падение ничком."),
-	O$1("rush-gale-spirits", "Порыв духов бури", "PHB", "2 ци: Порыв ветра."),
-	O$1("shape-flowing-river", "Форма текущей реки", "PHB", "1 ци: формирование воды и льда."),
-	O$1("sweeping-cinder-strike", "Размашистый удар угля", "PHB", "2 ци: Огненные ладони."),
-	O$1("water-whip", "Водяной кнут", "PHB", "2+ ци: урон, подтягивание или падение ничком."),
-	O$1("clench-north-wind", "Объятия северного ветра", "PHB", "3 ци: Удержание личности.", { minLevel: 6 }),
-	O$1("gong-summit", "Гонг вершины", "PHB", "3 ци: Дребезги.", { minLevel: 6 }),
-	O$1("flames-phoenix", "Пламя феникса", "PHB", "4 ци: Огненный шар.", { minLevel: 11 }),
-	O$1("mist-stance", "Стойка тумана", "PHB", "4 ци: Газообразная форма на себя.", { minLevel: 11 }),
-	O$1("ride-wind", "Оседлать ветер", "PHB", "4 ци: Полёт на себя.", { minLevel: 11 }),
-	O$1("breath-winter", "Дыхание зимы", "PHB", "6 ци: Конус холода.", { minLevel: 17 }),
-	O$1("eternal-mountain-defense", "Защита вечной горы", "PHB", "5 ци: Каменная кожа на себя без материального компонента.", { minLevel: 17 }),
-	O$1("river-hungry-flame", "Река голодного пламени", "PHB", "5 ци: Стена огня.", { minLevel: 17 }),
-	O$1("wave-rolling-earth", "Волна катящейся земли", "PHB", "6 ци: Каменная стена.", { minLevel: 17 })
+	O("fangs-fire-snake", "Клыки огненной змеи", "PHB", "1 ци: увеличивает досягаемость безоружных атак и позволяет наносить огненный урон."),
+	O("fist-four-thunders", "Кулак четырёх громов", "PHB", "2 ци: Волна грома."),
+	O("fist-unbroken-air", "Кулак несокрушимого воздуха", "PHB", "2+ ци: силовой толчок, урон и падение ничком."),
+	O("rush-gale-spirits", "Порыв духов бури", "PHB", "2 ци: Порыв ветра."),
+	O("shape-flowing-river", "Форма текущей реки", "PHB", "1 ци: формирование воды и льда."),
+	O("sweeping-cinder-strike", "Размашистый удар угля", "PHB", "2 ци: Огненные ладони."),
+	O("water-whip", "Водяной кнут", "PHB", "2+ ци: урон, подтягивание или падение ничком."),
+	O("clench-north-wind", "Объятия северного ветра", "PHB", "3 ци: Удержание личности.", { minLevel: 6 }),
+	O("gong-summit", "Гонг вершины", "PHB", "3 ци: Дребезги.", { minLevel: 6 }),
+	O("flames-phoenix", "Пламя феникса", "PHB", "4 ци: Огненный шар.", { minLevel: 11 }),
+	O("mist-stance", "Стойка тумана", "PHB", "4 ци: Газообразная форма на себя.", { minLevel: 11 }),
+	O("ride-wind", "Оседлать ветер", "PHB", "4 ци: Полёт на себя.", { minLevel: 11 }),
+	O("breath-winter", "Дыхание зимы", "PHB", "6 ци: Конус холода.", { minLevel: 17 }),
+	O("eternal-mountain-defense", "Защита вечной горы", "PHB", "5 ци: Каменная кожа на себя без материального компонента.", { minLevel: 17 }),
+	O("river-hungry-flame", "Река голодного пламени", "PHB", "5 ци: Стена огня.", { minLevel: 17 }),
+	O("wave-rolling-earth", "Волна катящейся земли", "PHB", "6 ци: Каменная стена.", { minLevel: 17 })
 ];
 var expertiseOptions = [
 	"Акробатика",
@@ -40934,7 +43107,7 @@ var expertiseOptions = [
 	"Скрытность",
 	"Выживание",
 	"Уход за животными"
-].map((name) => O$1(`skill-${name}`, name, "PHB", "Удваивает бонус владения для выбранного навыка."));
+].map((name) => O(`skill-${name}`, name, "PHB", "Удваивает бонус владения для выбранного навыка."));
 var choiceCount = (level, rows) => rows.reduce((value, [at, count]) => level >= at ? count : value, 0);
 function available(options, character, pact = "") {
 	return options.filter((option) => !option.tasha || !character.tceFullBanned).map((option) => ({
@@ -40943,7 +43116,7 @@ function available(options, character, pact = "") {
 	}));
 }
 function spellOptions(spells, predicate) {
-	return spells.filter(predicate).map((spell) => O$1(spell.id, spell.name, spell.source, spell.description));
+	return spells.filter(predicate).map((spell) => O(spell.id, spell.name, spell.source, spell.description));
 }
 var clericSubclassNames = {
 	tempest: "Домен бури",
@@ -40985,7 +43158,7 @@ function singleClassChoiceGroups(character, spells = []) {
 				"Запугивание",
 				"Природа",
 				"Уход за животными"
-			].map((name) => O$1(name, name, "TCE", "Дополнительное владение навыком."))
+			].map((name) => O(name, name, "TCE", "Дополнительное владение навыком."))
 		});
 		if (character.className === "monk" && level >= 2) add({
 			key: "tce-dedicated-weapon",
@@ -40999,7 +43172,7 @@ function singleClassChoiceGroups(character, spells = []) {
 				"Копьё",
 				"Ручной топор",
 				"Кнут"
-			].map((name) => O$1(name, name, "TCE", "Подходящее оружие становится монашеским."))
+			].map((name) => O(name, name, "TCE", "Подходящее оружие становится монашеским."))
 		});
 		if (character.className === "ranger") {
 			add({
@@ -41055,7 +43228,7 @@ function singleClassChoiceGroups(character, spells = []) {
 					"Расследование",
 					"Скрытность",
 					"Уход за животными"
-				].map((name) => O$1(name, name, "TCE", "Бонус мастерства удваивается."))
+				].map((name) => O(name, name, "TCE", "Бонус мастерства удваивается."))
 			});
 			if (level >= 3) add({
 				key: "tce-primal-awareness",
@@ -41103,7 +43276,7 @@ function singleClassChoiceGroups(character, spells = []) {
 				level: 8,
 				count: 1,
 				defaultOptionId: "domain-feature",
-				options: [O$1("domain-feature", phb?.name || "Доменная способность 8-го уровня", "PHB · базовое правило", phb?.description || "Оставляет исходную способность вашего домена.", {
+				options: [O("domain-feature", phb?.name || "Доменная способность 8-го уровня", "PHB · базовое правило", phb?.description || "Оставляет исходную способность вашего домена.", {
 					mode: "passthrough",
 					canonicalFeatureName: phb?.name,
 					emitFeature: false,
@@ -41276,7 +43449,7 @@ function singleClassChoiceGroups(character, spells = []) {
 				"Красный — огонь",
 				"Серебряный — холод",
 				"Белый — холод"
-			].map((name, i) => O$1(`dragon-${i}`, name, "PHB", "Выбранное происхождение."))
+			].map((name, i) => O(`dragon-${i}`, name, "PHB", "Выбранное происхождение."))
 		});
 		if (level >= 3) add({
 			key: "metamagic",
@@ -41316,10 +43489,10 @@ function singleClassChoiceGroups(character, spells = []) {
 			level: 3,
 			count: 1,
 			options: available([
-				O$1("chain", "Договор цепи", "PHB", "Даёт улучшенного фамильяра."),
-				O$1("blade", "Договор клинка", "PHB", "Связывает оружие договора."),
-				O$1("tome", "Договор гримуара", "PHB", "Даёт Книгу Теней."),
-				O$1("talisman", "Договор талисмана", "TCE", "Помогает проваленным проверкам.", { tasha: true })
+				O("chain", "Договор цепи", "PHB", "Даёт улучшенного фамильяра."),
+				O("blade", "Договор клинка", "PHB", "Связывает оружие договора."),
+				O("tome", "Договор гримуара", "PHB", "Даёт Книгу Теней."),
+				O("talisman", "Договор талисмана", "TCE", "Помогает проваленным проверкам.", { tasha: true })
 			], character)
 		});
 		for (const [circle, at] of [
@@ -41336,7 +43509,7 @@ function singleClassChoiceGroups(character, spells = []) {
 				description: "Одно заклинание арканума.",
 				level: at,
 				count: 1,
-				options: (warlockSpells.length ? warlockSpells : fallback).map((s) => O$1(s.id, s.name, s.source, s.description))
+				options: (warlockSpells.length ? warlockSpells : fallback).map((s) => O(s.id, s.name, s.source, s.description))
 			});
 		}
 	}
@@ -41359,15 +43532,15 @@ function singleClassChoiceGroups(character, spells = []) {
 		description: "Модель можно менять после отдыха.",
 		level: 3,
 		count: 1,
-		options: character.tceFullBanned ? [] : [O$1("guardian", "Страж", "TCE", "Передовая модель."), O$1("infiltrator", "Лазутчик", "TCE", "Скрытная модель.")]
+		options: character.tceFullBanned ? [] : [O("guardian", "Страж", "TCE", "Передовая модель."), O("infiltrator", "Лазутчик", "TCE", "Скрытная модель.")]
 	});
 	if (character.className === "barbarian" && subclass === "totem") {
 		const totems = [
-			O$1("bear", "Медведь", "PHB", "Защитные и силовые качества."),
-			O$1("eagle", "Орёл", "PHB", "Подвижность и зрение."),
-			O$1("wolf", "Волк", "PHB", "Командная охота."),
-			O$1("elk", "Лось", "SCAG", "Скорость."),
-			O$1("tiger", "Тигр", "SCAG", "Прыжки и навыки.")
+			O("bear", "Медведь", "PHB", "Защитные и силовые качества."),
+			O("eagle", "Орёл", "PHB", "Подвижность и зрение."),
+			O("wolf", "Волк", "PHB", "Командная охота."),
+			O("elk", "Лось", "SCAG", "Скорость."),
+			O("tiger", "Тигр", "SCAG", "Прыжки и навыки.")
 		];
 		for (const at of [
 			3,
@@ -41397,25 +43570,25 @@ function singleClassChoiceGroups(character, spells = []) {
 			"Горы",
 			"Болото",
 			"Подземье"
-		].map((name) => O$1(`land-${name}`, name, "PHB", "Набор заклинаний местности."))
+		].map((name) => O(`land-${name}`, name, "PHB", "Набор заклинаний местности."))
 	});
 	if (character.className === "ranger" && subclass === "hunter") {
 		const hunter = {
 			3: [
-				O$1("colossus", "Убийца колоссов", "PHB", "Дополнительный урон раненой цели."),
-				O$1("giant-killer", "Убийца великанов", "PHB", "Реакционная атака."),
-				O$1("horde-breaker", "Сокрушитель орды", "PHB", "Дополнительная атака по соседней цели.")
+				O("colossus", "Убийца колоссов", "PHB", "Дополнительный урон раненой цели."),
+				O("giant-killer", "Убийца великанов", "PHB", "Реакционная атака."),
+				O("horde-breaker", "Сокрушитель орды", "PHB", "Дополнительная атака по соседней цели.")
 			],
 			7: [
-				O$1("escape-horde", "Спасение от орды", "PHB", "Помеха провоцированным атакам."),
-				O$1("multiattack-defense", "Защита от множественных атак", "PHB", "Защита от повторных атак."),
-				O$1("steel-will", "Стальная воля", "PHB", "Преимущество против испуга.")
+				O("escape-horde", "Спасение от орды", "PHB", "Помеха провоцированным атакам."),
+				O("multiattack-defense", "Защита от множественных атак", "PHB", "Защита от повторных атак."),
+				O("steel-will", "Стальная воля", "PHB", "Преимущество против испуга.")
 			],
-			11: [O$1("volley", "Залп", "PHB", "Атаки по множеству целей."), O$1("whirlwind", "Вихревая атака", "PHB", "Атаки по соседним противникам.")],
+			11: [O("volley", "Залп", "PHB", "Атаки по множеству целей."), O("whirlwind", "Вихревая атака", "PHB", "Атаки по соседним противникам.")],
 			15: [
-				O$1("evasion", "Увёртливость", "PHB", "Защита от эффектов Ловкости."),
-				O$1("stand-tide", "Стоять против течения", "PHB", "Перенаправляет промах."),
-				O$1("uncanny-dodge", "Невероятное уклонение", "PHB", "Половина урона видимой атаки.")
+				O("evasion", "Увёртливость", "PHB", "Защита от эффектов Ловкости."),
+				O("stand-tide", "Стоять против течения", "PHB", "Перенаправляет промах."),
+				O("uncanny-dodge", "Невероятное уклонение", "PHB", "Половина урона видимой атаки.")
 			]
 		};
 		for (const at of [
@@ -41439,10 +43612,10 @@ function singleClassChoiceGroups(character, spells = []) {
 		level: 3,
 		count: 1,
 		options: available([
-			O$1("classic-beast", "Классический зверь", "PHB", "Зверь PHB."),
-			O$1("beast-land", "Зверь земли", "TCE", "Первозданный зверь земли.", { tasha: true }),
-			O$1("beast-sea", "Зверь моря", "TCE", "Первозданный зверь моря.", { tasha: true }),
-			O$1("beast-sky", "Зверь неба", "TCE", "Первозданный зверь неба.", { tasha: true })
+			O("classic-beast", "Классический зверь", "PHB", "Зверь PHB."),
+			O("beast-land", "Зверь земли", "TCE", "Первозданный зверь земли.", { tasha: true }),
+			O("beast-sea", "Зверь моря", "TCE", "Первозданный зверь моря.", { tasha: true }),
+			O("beast-sky", "Зверь неба", "TCE", "Первозданный зверь неба.", { tasha: true })
 		], character)
 	});
 	if (character.className === "monk" && subclass === "kensei" && level >= 3) add({
@@ -41467,7 +43640,7 @@ function singleClassChoiceGroups(character, spells = []) {
 			"Лёгкий арбалет",
 			"Ручной арбалет",
 			"Дротик"
-		].map((name) => O$1(`weapon-${name}`, name, "PHB", "Оружие кэнсэя."))
+		].map((name) => O(`weapon-${name}`, name, "PHB", "Оружие кэнсэя."))
 	});
 	if (character.className === "sorcerer" && subclass === "lunar") add({
 		key: "lunar-phase",
@@ -41476,9 +43649,9 @@ function singleClassChoiceGroups(character, spells = []) {
 		level: 1,
 		count: 1,
 		options: [
-			O$1("full-moon", "Полная луна", "SDQ", "Защитная магия."),
-			O$1("new-moon", "Новолуние", "SDQ", "Тёмная магия."),
-			O$1("crescent-moon", "Полумесяц", "SDQ", "Преобразующая магия.")
+			O("full-moon", "Полная луна", "SDQ", "Защитная магия."),
+			O("new-moon", "Новолуние", "SDQ", "Тёмная магия."),
+			O("crescent-moon", "Полумесяц", "SDQ", "Преобразующая магия.")
 		]
 	});
 	if (character.className === "barbarian" && subclass === "stormherald" && level >= 3) add({
@@ -41488,9 +43661,9 @@ function singleClassChoiceGroups(character, spells = []) {
 		level: 3,
 		count: 1,
 		options: [
-			O$1("desert", "Пустыня", "XGE", "Огненная аура и сопротивление огню."),
-			O$1("sea", "Море", "XGE", "Электрическая аура и морские свойства."),
-			O$1("tundra", "Тундра", "XGE", "Временные хиты и сопротивление холоду.")
+			O("desert", "Пустыня", "XGE", "Огненная аура и сопротивление огню."),
+			O("sea", "Море", "XGE", "Электрическая аура и морские свойства."),
+			O("tundra", "Тундра", "XGE", "Временные хиты и сопротивление холоду.")
 		]
 	});
 	if (character.className === "barbarian" && subclass === "giant" && level >= 3) add({
@@ -41606,7 +43779,7 @@ function singleClassChoiceGroups(character, spells = []) {
 		if (level < at) return;
 		const circle = Math.ceil(at / 2);
 		const replacement = spells.filter((spell) => spell.level === circle && (spell.classes.includes("sorcerer") || spell.classes.includes("warlock") || spell.classes.includes("wizard")) && /огражден|преобразован/i.test(spell.school));
-		const options = [O$1(id, name, "TCE", "Исходное заклинание Заводной магии."), ...spellOptions(replacement, () => true).filter((option) => option.id !== id)];
+		const options = [O(id, name, "TCE", "Исходное заклинание Заводной магии."), ...spellOptions(replacement, () => true).filter((option) => option.id !== id)];
 		add({
 			key: `clockwork-magic-${index}`,
 			title: `Заводная магия: ${name}`,
@@ -43944,91 +46117,6 @@ function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", exper
 			})
 		]
 	});
-}
-//#endregion
-//#region app/spellSources.ts
-/** Keep class associations even when two classes grant the same catalog spell. */
-function classSpellGroups(character, catalog) {
-	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
-	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
-		spellId,
-		sourceType: "class",
-		sourceId: character.className,
-		classId: character.className,
-		mode: "known"
-	}));
-	return orderedCharacterClasses(character).flatMap((entry) => {
-		const scoped = {
-			...character,
-			className: entry.classId,
-			subclass: entry.subclassId || "",
-			level: entry.level
-		};
-		const rule = spellSelectionRuleForClass(scoped, entry.classId, entry.level);
-		if (!rule.caster) return [];
-		const automatic = alwaysPreparedSpellEntries(scoped, catalog);
-		const spells = /* @__PURE__ */ new Map();
-		for (const grant of grants.filter((grant) => grant.classId === entry.classId)) {
-			const spell = byId.get(grant.spellId);
-			if (!spell) continue;
-			spells.set(spell.id, {
-				spell,
-				classId: entry.classId,
-				source: grant.sourceType === "class" ? entry.classId : grant.sourceId,
-				prepared: spell.level === 0 || rule.mode === "known" || classPreparedSpellIds(character, entry.classId).includes(spell.id) || grant.mode === "always-prepared",
-				alwaysPrepared: grant.mode === "always-prepared"
-			});
-		}
-		for (const grant of automatic) {
-			const spell = byId.get(grant.id);
-			if (!spell) continue;
-			const existing = spells.get(grant.id);
-			spells.set(grant.id, {
-				spell,
-				classId: entry.classId,
-				source: grant.source,
-				prepared: existing?.prepared || grant.mode === "always-prepared" || grant.mode === "known",
-				alwaysPrepared: grant.mode === "always-prepared"
-			});
-		}
-		return [{
-			classId: entry.classId,
-			level: entry.level,
-			preparedMaximum: rule.prepared,
-			spells: [...spells.values()].sort((a, b) => a.spell.level - b.spell.level || a.spell.name.localeCompare(b.spell.name, "ru"))
-		}];
-	});
-}
-/** Resolve an internal source id to a user-facing name for exports. */
-function spellSourceDisplayName(sourceId, character, classCatalog) {
-	const catalogName = classCatalog.find((item) => item.id === sourceId)?.name;
-	if (catalogName) return catalogName;
-	const hbDefinition = character.homebrew?.entities?.find((item) => item.id === sourceId && item.type === "class");
-	if (hbDefinition?.name) return hbDefinition.name;
-	return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
-}
-function otherSpellSources(character, catalog) {
-	const casterIds = new Set(orderedCharacterClasses(character).filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster).map((entry) => entry.classId));
-	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
-	const saved = (character.spellGrants || []).flatMap((grant) => {
-		if (grant.classId && casterIds.has(grant.classId)) return [];
-		const spell = byId.get(grant.spellId);
-		return spell ? [{
-			spell,
-			classId: "other",
-			source: grant.sourceId || grant.sourceType,
-			prepared: true,
-			alwaysPrepared: grant.mode === "always-prepared"
-		}] : [];
-	});
-	const racial = resolvedRacialSpells(character, catalog).map((entry) => ({
-		spell: entry.spell,
-		classId: "race",
-		source: entry.source,
-		prepared: true,
-		alwaysPrepared: false
-	}));
-	return [...racial, ...saved.filter((entry) => !racial.some((race) => race.spell.id === entry.spell.id && race.source === entry.source))];
 }
 //#endregion
 //#region app/knownLimitations.ts
@@ -48709,186 +50797,6 @@ function isAdditionalSpell(spell) {
 }
 function sourceAvailableSpellCatalog(catalog, additionalUnlocked) {
 	return catalog.filter((spell) => additionalUnlocked || !isAdditionalSpell(spell));
-}
-//#endregion
-//#region app/restRules.ts
-function hitDieHealing(roll, constitutionModifier) {
-	return Math.max(0, roll + constitutionModifier);
-}
-function shortRestHitDieHealing(rolls, constitutionModifier) {
-	return rolls.reduce((total, roll) => total + hitDieHealing(roll, constitutionModifier), 0);
-}
-//#endregion
-//#region app/subclassRuntime.ts
-var O = (id, name, description = "") => ({
-	id,
-	name,
-	description
-});
-var yesNo = [O("inactive", "Не активно"), O("active", "Активно")];
-var elements5 = [
-	O("acid", "Кислота"),
-	O("cold", "Холод"),
-	O("fire", "Огонь"),
-	O("lightning", "Электричество"),
-	O("poison", "Яд")
-];
-var giantElements = [
-	O("acid", "Кислота"),
-	O("cold", "Холод"),
-	O("fire", "Огонь"),
-	O("lightning", "Электричество"),
-	O("thunder", "Звук")
-];
-var skillsAndTools = [
-	...Object.keys(skillKeys),
-	...artisanTools,
-	...musicalInstruments,
-	...gamingSets
-].map((value) => O(value, value));
-var wildSurges = [
-	O("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
-	O("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
-	O("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
-	O("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
-	O("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
-	O("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
-	O("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
-	O("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
-];
-var spiritTales = Array.from({ length: 12 }, (_, index) => O(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
-function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
-	return {
-		classId,
-		subclassId,
-		minLevel,
-		key: `${classId}:${subclassId}:${key}`,
-		title,
-		description,
-		trigger,
-		options,
-		randomDie
-	};
-}
-var definitions = [
-	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
-	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
-		O("bite", "Укус"),
-		O("claws", "Когти"),
-		O("tail", "Хвост")
-	]),
-	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
-		O("swim", "Плавание и дыхание под водой"),
-		O("climb", "Лазание"),
-		O("jump", "Прыжок")
-	]),
-	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
-	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
-	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
-	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
-	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
-		O("inactive", "Нет двойника"),
-		O("1", "1 двойник"),
-		O("2", "2 двойника"),
-		O("3", "3 двойника"),
-		O("4", "4 двойника")
-	]),
-	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
-	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
-	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
-	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
-		O("0", "Нет эха"),
-		O("1", "1 эхо"),
-		O("2", "2 эха (только 18 уровень)")
-	]),
-	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
-		O("none", "Не проявлено"),
-		O("arms", "Руки"),
-		O("arms-visage", "Руки + облик"),
-		O("full", "Пробуждённое астральное тело")
-	]),
-	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O("cone", "Конус"), O("line", "Линия")]),
-	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O("resistance", "Стихийное сопротивление"), O("fear", "Пугающее присутствие")]),
-	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
-	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
-	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
-	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
-	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
-	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
-		O("1", "1 продолжительный отдых"),
-		O("2", "2 продолжительных отдыха"),
-		O("3", "3 продолжительных отдыха"),
-		O("4", "4 продолжительных отдыха")
-	], 4),
-	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
-	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
-		O("inactive", "Не активно"),
-		O("lighter", "Вес уменьшен вдвое"),
-		O("heavier", "Вес удвоен")
-	]),
-	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
-];
-function subclassRuntimeControls(character, spells = []) {
-	const classes = orderedCharacterClasses(character);
-	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
-		const entry = classes.find((item) => item.classId === control.classId);
-		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
-			...control,
-			options: control.options.filter((option) => option.id !== "2")
-		};
-		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
-			...control,
-			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
-		};
-		if (control.key === "monk:astral-self:astral-manifestation") {
-			const level = entry?.level || 0;
-			return {
-				...control,
-				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
-			};
-		}
-		return control;
-	});
-	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
-		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
-		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O(String(index + 1), String(index + 1))), void 0));
-		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
-	}
-	return controls;
-}
-function subclassRuntimeValue(character, key) {
-	return character.subclassState?.[key];
-}
-function setSubclassRuntimeValue(character, key, value) {
-	return {
-		...character,
-		subclassState: {
-			...character.subclassState || {},
-			[key]: value
-		}
-	};
-}
-function rollSubclassRuntimeControl(character, control) {
-	if (!control.randomDie) return character;
-	const roll = crypto.getRandomValues(new Uint32Array(1))[0] % control.randomDie + 1;
-	const option = control.options.find((item) => item.id === String(roll)) || control.options[(roll - 1) % control.options.length];
-	return setSubclassRuntimeValue(character, control.key, option?.id || String(roll));
-}
-var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
-function necroticHuskCooldown(character) {
-	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
-}
-function applySubclassLongRest(character) {
-	const cooldown = necroticHuskCooldown(character);
-	const state = { ...character.subclassState || {} };
-	delete state["bard:spirits:spirit-session-spell"];
-	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
-	return {
-		...character,
-		subclassState: state
-	};
 }
 //#endregion
 //#region node_modules/fflate/esm/index.mjs
@@ -59680,6 +61588,15 @@ var alignments = [
 ];
 var siteChangelog = [
 	{
+		version: "1.6.0",
+		publishedAt: "2026-10-11T18:00:00Z",
+		changes: [
+			"Таверна и приключения: независимые игровые копии созданных героев с собственным сохранением и журналом.",
+			"Добавлен игровой экран: здоровье, концентрация, атаки и урон, заклинания и ячейки, ресурсы, отдых, инвентарь и настройка магических предметов.",
+			"Для телефона создана отдельная структура игрового режима с нижней навигацией и крупными кнопками. Итоговый лист снова служит для проверки и экспорта героя."
+		]
+	},
+	{
 		version: "1.5.4",
 		publishedAt: "2026-10-06T21:00:00Z",
 		changes: ["Способности Homebrew редактируются через понятные действия. Числа, бонусы и кости можно настроить без формул; технические инструменты перенесены в дополнительные настройки.", "Добавлены улучшения ресурсов по уровням, заклинания внутри способности и расход общего ресурса разными действиями. Всё развитие класса можно посмотреть одной таблицей."]
@@ -60469,8 +62386,7 @@ function Builder() {
 	const [additionalSpellsAcknowledged, setAdditionalSpellsAcknowledged] = useState(false);
 	const appearance = useInterfacePreferences();
 	const [siteTheme, setSiteTheme] = useState("classic");
-	const [mobileSheet, setMobileSheet] = useState(false);
-	const [mobileSheetTab, setMobileSheetTab] = useState("overview");
+	const [vaultSection, setVaultSection] = useState("tavern");
 	const [hitDiceToRoll, setHitDiceToRoll] = useState(0);
 	const [hitPointAdjustment, setHitPointAdjustment] = useState(0);
 	const [lastHitDieRoll, setLastHitDieRoll] = useState(null);
@@ -60860,8 +62776,7 @@ function Builder() {
 		castingTime: element.castingTime,
 		duration: element.concentration ? "Концентрация" : void 0
 	}));
-	const runtimeControls = subclassRuntimeControls(exportCharacter, availableSpellCatalog);
-	const runtimeFeatures = runtimeControls.flatMap((control) => {
+	const runtimeFeatures = subclassRuntimeControls(exportCharacter, availableSpellCatalog).flatMap((control) => {
 		const value = subclassRuntimeValue(exportCharacter, control.key);
 		const option = control.options.find((item) => item.id === String(value));
 		return option ? [{
@@ -60905,7 +62820,6 @@ function Builder() {
 	const selectedCantrips = ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === 0);
 	const selectedLeveled = ordinarySpellIds.filter((id) => (availableSpellCatalog.find((item) => item.id === id)?.level || 0) > 0);
 	const selectedPrepared = classPreparedSpellIds(character, activeSpellClassId).filter((id) => selectedLeveled.includes(id));
-	const mobilePreparedIds = selectedPrepared;
 	const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === level).length);
 	const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
 	const featSlots = advancementSlots.length;
@@ -60917,7 +62831,7 @@ function Builder() {
 	const racialSpells = resolvedRacialSpells(exportCharacter, availableSpellCatalog);
 	const racialChoiceGroups = racialSpellChoiceOptions(exportCharacter, availableSpellCatalog);
 	const otherGrantedSpells = otherSpellSources(exportCharacter, availableSpellCatalog).filter((entry) => entry.classId !== "race").filter((entry) => !grantedFeatSpells.includes(entry.spell.id));
-	const mobileSpellPool = [...new Map((spellRule.mode === "prepared" ? [
+	[...new Map((spellRule.mode === "prepared" ? [
 		...selectedCantrips.map((id) => spells.find((spell) => spell.id === id)),
 		...availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(spellCharacter, spell) || homebrewSpellAvailable(spellCharacter.className, spell, homebrew.elements))),
 		...alwaysPrepared.map((id) => spells.find((spell) => spell.id === id)),
@@ -61408,42 +63322,6 @@ function Builder() {
 			return setClassPreparedSpells(current, activeSpellClassId, [...selected, id]);
 		});
 	}
-	function toggleMobilePreparedSpell(id) {
-		setCharacter((current) => {
-			const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
-				spellId,
-				sourceType: "class",
-				sourceId: current.className,
-				classId: current.className,
-				mode: "prepared"
-			}));
-			const classSpellIds = grants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
-			const scoped = {
-				...current,
-				className: activeSpellClassId,
-				subclass: activeSpellClass?.entry.subclassId || "",
-				level: activeSpellClass?.entry.level || current.level
-			};
-			const available = spellRule.mode === "prepared" ? availableSpellCatalog.filter((spell) => spell.level > 0 && spell.level <= spellRule.maxLevel && (spellAvailableToCharacter(scoped, spell) || homebrewSpellAvailable(scoped.className, spell, homebrew.elements)) && !alwaysPreparedSet.has(spell.id)).map((spell) => spell.id) : classSpellIds.filter((spellId) => (availableSpellCatalog.find((spell) => spell.id === spellId)?.level || 0) > 0);
-			const initialPrepared = classPreparedSpellIds(current, activeSpellClassId).filter((spellId) => available.includes(spellId));
-			if (!available.includes(id)) return current;
-			const next = initialPrepared.includes(id) ? initialPrepared.filter((spellId) => spellId !== id) : initialPrepared.length < (spellRule.prepared || 0) ? [...initialPrepared, id] : initialPrepared;
-			const otherClassIds = new Set(grants.filter((grant) => grant.classId !== activeSpellClassId).map((grant) => grant.spellId));
-			const nextSpells = spellRule.mode === "prepared" ? [...new Set([...current.spells.filter((spellId) => otherClassIds.has(spellId) || !classSpellIds.includes(spellId) || (availableSpellCatalog.find((spell) => spell.id === spellId)?.level || 0) === 0), ...next])] : current.spells;
-			const nextGrants = spellRule.mode === "prepared" ? [...grants.filter((grant) => grant.classId !== activeSpellClassId || (spells.find((spell) => spell.id === grant.spellId)?.level || 0) === 0), ...next.map((spellId) => ({
-				spellId,
-				sourceType: "class",
-				sourceId: activeSpellClassId,
-				classId: activeSpellClassId,
-				mode: "prepared"
-			}))] : grants;
-			return {
-				...setClassPreparedSpells(current, activeSpellClassId, next),
-				spells: nextSpells,
-				spellGrants: nextGrants
-			};
-		});
-	}
 	function toggleTasha(enabled) {
 		setCharacter((current) => {
 			if (enabled) return {
@@ -61808,111 +63686,6 @@ function Builder() {
 			}
 		}));
 	}
-	function setRuntimeControl(key, value) {
-		setCharacter((current) => setSubclassRuntimeValue(current, key, value));
-	}
-	function rollRuntimeControl(key) {
-		setCharacter((current) => {
-			const control = subclassRuntimeControls({
-				...current,
-				abilities: finalAbilityScores(current)
-			}, availableSpellCatalog).find((item) => item.key === key);
-			return control ? rollSubclassRuntimeControl(current, control) : current;
-		});
-	}
-	function setCurrentHitPoints(value) {
-		const next = Math.max(-hitPoints, Math.min(hitPoints, value));
-		setCharacter((current) => ({
-			...current,
-			currentHitPoints: next,
-			...next > 0 ? {
-				deathSaveSuccesses: 0,
-				deathSaveFailures: 0
-			} : {}
-		}));
-	}
-	function applyHitPointAdjustment(direction) {
-		const amount = Math.max(0, Math.floor(hitPointAdjustment || 0));
-		if (!amount) return;
-		setCurrentHitPoints((character.currentHitPoints || 0) + direction * amount);
-	}
-	function setDeathSave(kind, index) {
-		const field = kind === "success" ? "deathSaveSuccesses" : "deathSaveFailures";
-		setCharacter((current) => ({
-			...current,
-			[field]: (current[field] || 0) === index + 1 ? index : index + 1
-		}));
-	}
-	function takeShortRest() {
-		const diceUsed = Math.min(availableHitDice, hitDiceToRoll);
-		const spentByClass = { ...character.hitDiceSpentByClass || {} };
-		const rolls = [];
-		let remaining = diceUsed;
-		for (const entry of [...orderedCharacterClasses(character)].sort((left, right) => (classRules[right.classId]?.hitDie || 8) - (classRules[left.classId]?.hitDie || 8))) {
-			const available = Math.max(0, entry.level - (spentByClass[entry.classId] || 0));
-			const used = Math.min(remaining, available);
-			const die = classRules[entry.classId]?.hitDie || 8;
-			rolls.push(...Array.from({ length: used }, () => crypto.getRandomValues(new Uint32Array(1))[0] % die + 1));
-			spentByClass[entry.classId] = (spentByClass[entry.classId] || 0) + used;
-			remaining -= used;
-			if (!remaining) break;
-		}
-		const healing = shortRestHitDieHealing(rolls, abilityModifier$1(finalAbilities.con));
-		const nextSpent = { ...character.resourceSpent || {} };
-		characterResources({
-			...character,
-			abilities: finalAbilities
-		}).forEach((resource) => {
-			if (resource.isShortRest) nextSpent[resource.key] = 0;
-		});
-		const nextHitPoints = Math.min(hitPoints, (character.currentHitPoints || 0) + healing);
-		setCharacter((current) => ({
-			...current,
-			currentHitPoints: nextHitPoints,
-			hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
-			hitDiceSpentByClass: spentByClass,
-			resourceSpent: nextSpent,
-			pactSlotsUsed: 0,
-			spellSlotsUsed: shortRestSpellSlots(bindHomebrewLibrary(current, homebrew)),
-			...nextHitPoints > 0 ? {
-				deathSaveSuccesses: 0,
-				deathSaveFailures: 0
-			} : {}
-		}));
-		setHitDiceToRoll(0);
-		setLastHitDieRoll(diceUsed ? healing : null);
-	}
-	function takeLongRest() {
-		setCharacter((current) => {
-			const spentByClass = { ...current.hitDiceSpentByClass || {} };
-			let recovered = Math.max(1, Math.floor(characterLevel(current) / 2));
-			for (const entry of [...orderedCharacterClasses(current)].sort((left, right) => (classRules[left.classId]?.hitDie || 8) - (classRules[right.classId]?.hitDie || 8))) {
-				const restored = Math.min(recovered, spentByClass[entry.classId] || 0);
-				spentByClass[entry.classId] = Math.max(0, (spentByClass[entry.classId] || 0) - restored);
-				recovered -= restored;
-				if (!recovered) break;
-			}
-			const resolvedForRest = {
-				...current,
-				abilities: finalAbilityScores(current)
-			};
-			const persistentResourceSpent = spentResourcesAfterLongRest(resolvedForRest);
-			return applySubclassLongRest({
-				...current,
-				currentHitPoints: estimatedHitPoints(resolvedForRest),
-				temporaryHitPoints: 0,
-				hitDiceSpent: Object.values(spentByClass).reduce((sum, value) => sum + value, 0),
-				hitDiceSpentByClass: spentByClass,
-				deathSaveSuccesses: 0,
-				deathSaveFailures: 0,
-				resourceSpent: persistentResourceSpent,
-				spellSlotsUsed: (current.spellSlotsUsed || []).map(() => 0),
-				pactSlotsUsed: 0
-			});
-		});
-		setHitDiceToRoll(0);
-		setLastHitDieRoll(null);
-	}
 	function changeAsiAbility(slotKey, key, delta) {
 		setCharacter((current) => {
 			const existing = current.advancements || [];
@@ -62162,15 +63935,49 @@ function Builder() {
 	function selectSlot(id) {
 		const slot = vault.slots.find((item) => item.id === id);
 		if (!slot) return;
+		const slots = vault.slots.map((item) => item.id === vault.activeId ? {
+			...item,
+			character,
+			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+		} : item);
 		persistVault({
 			...vault,
+			slots,
 			activeId: id
 		});
-		setCharacter(normalizeCharacter(slot.character));
+		setCharacter(normalizeCharacter(id === vault.activeId ? character : slot.character));
 		setImportMessage(null);
 		stopTutorial();
-		setView("builder");
+		setView(slot.character.adventure ? "game" : "builder");
 		resetFilters(0, false);
+	}
+	function sendToAdventure(id) {
+		const source = vault.slots.find((slot) => slot.id === id);
+		if (!source) return;
+		const hero = id === vault.activeId ? character : normalizeCharacter(source.character);
+		if (hero.adventure) {
+			selectSlot(id);
+			return;
+		}
+		const name = window.prompt("Название приключения. Будет создана независимая игровая копия; герой останется в Таверне.", "Новое приключение");
+		if (name === null || !name.trim()) return;
+		const copy = createAdventureCharacter(bindHomebrewLibrary(hero, homebrew), source.id, id === vault.activeId ? (/* @__PURE__ */ new Date()).toISOString() : source.updatedAt, name);
+		const slot = createSlot(copy);
+		const slots = vault.slots.map((item) => item.id === vault.activeId ? {
+			...item,
+			character,
+			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+		} : item);
+		persistVault({
+			...vault,
+			capacity: Math.max(vault.capacity, slots.length + 1),
+			activeId: slot.id,
+			slots: [...slots, slot]
+		});
+		setCharacter(copy);
+		setVaultSection("adventures");
+		stopTutorial();
+		setView("game");
 	}
 	function startCharacter(withTutorial) {
 		if (!ready) return;
@@ -62537,6 +64344,31 @@ function Builder() {
 		setView("builder");
 		resetFilters(10, false);
 	}
+	if (view === "game" && character.adventure) return /* @__PURE__ */ jsx(GameMode, {
+		character,
+		onChange: setCharacter,
+		features: [
+			...selectedRaceFeatures,
+			...selectedClassFeatures,
+			...selectedFeatFeatures,
+			...runtimeFeatures,
+			...customFeatures,
+			...customNotes.map((note) => ({
+				name: note.name,
+				description: note.description
+			}))
+		],
+		onBack: () => {
+			setVaultSection("adventures");
+			openCharacterManager();
+		},
+		onEdit: () => {
+			setStep(10);
+			setView("builder");
+		},
+		onExport: () => download(createNativeCharacterFile(character), `${safeName(character.name)} — приключение.json`),
+		saveStatus: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : account?.authenticated ? "Сохранено в аккаунте" : "Сохранено на устройстве"
+	}, vault.activeId);
 	if (view === "home" || view === "quiz") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
 		"data-site-theme": siteTheme,
@@ -62632,7 +64464,7 @@ function Builder() {
 										children: "Создать с обучением"
 									}),
 									ready && vault.activeId && /* @__PURE__ */ jsx("button", {
-										onClick: () => setView("builder"),
+										onClick: () => setView(character.adventure ? "game" : "builder"),
 										children: "Продолжить текущего персонажа"
 									})
 								]
@@ -62642,7 +64474,7 @@ function Builder() {
 								children: [
 									/* @__PURE__ */ jsxs("button", {
 										onClick: openCharacterManager,
-										children: [/* @__PURE__ */ jsx("strong", { children: "Мои персонажи" }), /* @__PURE__ */ jsxs("span", { children: [vault.slots.length, " сохранено"] })]
+										children: [/* @__PURE__ */ jsx("strong", { children: "Таверна и приключения" }), /* @__PURE__ */ jsxs("span", { children: [vault.slots.length, " сохранено"] })]
 									}),
 									/* @__PURE__ */ jsxs("button", {
 										onClick: () => setView("homebrew"),
@@ -62810,7 +64642,7 @@ function Builder() {
 	});
 	if (view === "characters") {
 		const free = vault.capacity - vault.slots.length;
-		const visibleSlots = vault.slots.filter((slot) => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
+		const visibleSlots = vault.slots.filter((slot) => vaultSection === "adventures" ? !!slot.character.adventure : !slot.character.adventure).filter((slot) => activeFolderId === "all" || (activeFolderId === "unfiled" ? !slot.folderId : slot.folderId === activeFolderId));
 		const allVisibleSelected = visibleSlots.length > 0 && visibleSlots.every((slot) => selectedSlotIds.includes(slot.id));
 		const selectedFolder = vault.folders.find((folder) => folder.id === activeFolderId);
 		return /* @__PURE__ */ jsxs("main", {
@@ -62896,7 +64728,7 @@ function Builder() {
 									className: "eyebrow",
 									children: "Локальная коллекция"
 								}),
-								/* @__PURE__ */ jsx("h1", { children: "Ваши персонажи" }),
+								/* @__PURE__ */ jsx("h1", { children: vaultSection === "tavern" ? "Таверна" : "Приключения" }),
 								/* @__PURE__ */ jsxs("p", { children: [
 									"До ",
 									vault.capacity,
@@ -62940,6 +64772,26 @@ function Builder() {
 								]
 							})]
 						}),
+						/* @__PURE__ */ jsxs("nav", {
+							className: "folder-list",
+							"aria-label": "Таверна и приключения",
+							children: [/* @__PURE__ */ jsxs("button", {
+								className: vaultSection === "tavern" ? "active" : "",
+								onClick: () => {
+									setVaultSection("tavern");
+									setSelectedSlotIds([]);
+								},
+								children: ["Таверна · ", vault.slots.filter((s) => !s.character.adventure).length]
+							}), /* @__PURE__ */ jsxs("button", {
+								className: vaultSection === "adventures" ? "active" : "",
+								onClick: () => {
+									setVaultSection("adventures");
+									setSelectedSlotIds([]);
+								},
+								children: ["Приключения · ", vault.slots.filter((s) => s.character.adventure).length]
+							})]
+						}),
+						/* @__PURE__ */ jsx("p", { children: vaultSection === "tavern" ? "Здесь живут созданные герои. Отправьте героя в приключение, чтобы начать игру с независимой копией." : "Каждая копия хранит собственное здоровье, заклинания, предметы и журнал. Исходные герои остаются в Таверне." }),
 						/* @__PURE__ */ jsxs("div", {
 							className: "import-guide",
 							children: [
@@ -63064,6 +64916,11 @@ function Builder() {
 										/* @__PURE__ */ jsxs("div", { children: [
 											/* @__PURE__ */ jsx("small", { children: slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}` }),
 											/* @__PURE__ */ jsx("h2", { children: slot.character.name || "Безымянный герой" }),
+											slot.character.adventure && /* @__PURE__ */ jsxs("p", { children: [
+												/* @__PURE__ */ jsx("b", { children: slot.character.adventure.name }),
+												" · ",
+												slot.character.adventure.status === "archived" ? "Завершено" : "В игре"
+											] }),
 											/* @__PURE__ */ jsxs("p", { children: [
 												itemRace?.name || "Раса не выбрана",
 												" · ",
@@ -63083,6 +64940,11 @@ function Builder() {
 												/* @__PURE__ */ jsx("button", {
 													onClick: () => duplicateSlot(slot.id),
 													children: "Копировать"
+												}),
+												!slot.character.adventure && /* @__PURE__ */ jsx("button", {
+													className: "primary-action",
+													onClick: () => sendToAdventure(slot.id),
+													children: "Отправить в приключение"
 												}),
 												/* @__PURE__ */ jsxs("details", {
 													className: "character-move-menu",
@@ -65730,14 +67592,14 @@ function Builder() {
 													children: "Есть"
 												})]
 											})] }),
-											/* @__PURE__ */ jsxs("button", {
-												className: `mobile-sheet-toggle${mobileSheet ? " active" : ""}`,
-												onClick: () => setMobileSheet((value) => !value),
-												children: ["Мобильный лист ", /* @__PURE__ */ jsx("small", { children: "ЭКСПЕРИМЕНТАЛЬНО" })]
+											/* @__PURE__ */ jsx("button", {
+												className: "primary-action",
+												onClick: () => character.adventure ? setView("game") : sendToAdventure(vault.activeId),
+												children: character.adventure ? "Вернуться в игру" : "Отправить в приключение"
 											})
 										]
 									}),
-									!mobileSheet && /* @__PURE__ */ jsx("div", {
+									/* @__PURE__ */ jsx("div", {
 										className: "desktop-hp-roll-editor",
 										children: /* @__PURE__ */ jsx(HitPointRollEditor, {
 											character,
@@ -65750,565 +67612,6 @@ function Builder() {
 											...next,
 											abilities: character.abilities
 										}))
-									}),
-									mobileSheet && /* @__PURE__ */ jsxs("section", {
-										className: "mobile-character-sheet",
-										children: [
-											/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [
-												selectedRace?.name,
-												" · ",
-												selectedClass?.name,
-												" ",
-												character.level
-											] }), /* @__PURE__ */ jsx("h2", { children: character.name || "Безымянный герой" })] }), /* @__PURE__ */ jsx("button", {
-												onClick: () => setMobileSheet(false),
-												"aria-label": "Закрыть мобильный лист",
-												children: "×"
-											})] }),
-											/* @__PURE__ */ jsx("nav", {
-												className: "mobile-sheet-tabs",
-												"aria-label": "Разделы мобильного листа",
-												children: [
-													["overview", "Обзор"],
-													["combat", "Бой"],
-													["spells", "Заклинания"],
-													["resources", "Ресурсы"],
-													["equipment", "Снаряжение"],
-													["notes", "Заметки"]
-												].map(([id, label]) => /* @__PURE__ */ jsx("button", {
-													className: mobileSheetTab === id ? "active" : "",
-													onClick: () => setMobileSheetTab(id),
-													children: label
-												}, id))
-											}),
-											mobileSheetTab === "overview" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel mobile-overview",
-												children: [
-													/* @__PURE__ */ jsx("div", {
-														className: "mobile-stat-grid",
-														children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("div", { children: [
-															/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
-															/* @__PURE__ */ jsx("strong", { children: finalAbilities[key] }),
-															/* @__PURE__ */ jsxs("span", { children: [abilityModifier$1(finalAbilities[key]) >= 0 ? "+" : "", abilityModifier$1(finalAbilities[key])] })
-														] }, key))
-													}),
-													/* @__PURE__ */ jsxs("div", {
-														className: "mobile-quick-grid",
-														children: [
-															/* @__PURE__ */ jsxs("div", {
-																title: [
-																	ac.base,
-																	...ac.bonuses,
-																	...ac.conditions
-																].join("; "),
-																children: [/* @__PURE__ */ jsx("small", { children: "КД" }), /* @__PURE__ */ jsx("strong", { children: ac.value })]
-															}),
-															/* @__PURE__ */ jsxs("div", {
-																title: [...initiative.sources, ...initiative.notes].join("; "),
-																children: [/* @__PURE__ */ jsx("small", { children: "Инициатива" }), /* @__PURE__ */ jsxs("strong", { children: [initiative.value >= 0 ? "+" : "", initiative.value] })]
-															}),
-															/* @__PURE__ */ jsxs("div", { children: [
-																/* @__PURE__ */ jsx("small", { children: "Скорость" }),
-																/* @__PURE__ */ jsx("strong", { children: speedBreakdown(exportCharacter).walk }),
-																(() => {
-																	const movement = speedBreakdown(exportCharacter);
-																	const extra = [
-																		movement.swim ? `Плав. ${movement.swim}` : "",
-																		movement.climb ? `Лаз. ${movement.climb}` : "",
-																		movement.fly ? `Полёт ${movement.fly}` : ""
-																	].filter(Boolean);
-																	return extra.length ? /* @__PURE__ */ jsx("span", { children: extra.join(" · ") }) : null;
-																})()
-															] }),
-															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Бонус мастерства" }), /* @__PURE__ */ jsxs("strong", { children: ["+", proficiency] })] })
-														]
-													}),
-													ac.conditions.length > 0 && /* @__PURE__ */ jsxs("small", { children: ["Условная КД: ", ac.conditions.join(" ")] }),
-													initiative.notes.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
-														/* @__PURE__ */ jsx("b", { children: "Инициатива:" }),
-														" ",
-														initiative.notes.join("; ")
-													] }),
-													/* @__PURE__ */ jsxs("p", { children: [
-														/* @__PURE__ */ jsx("b", { children: "Раса:" }),
-														" ",
-														selectedRace?.name,
-														" · ",
-														/* @__PURE__ */ jsx("b", { children: "Класс:" }),
-														" ",
-														selectedClass?.name,
-														" · ",
-														/* @__PURE__ */ jsx("b", { children: "Предыстория:" }),
-														" ",
-														selectedBackground?.name
-													] })
-												]
-											}),
-											mobileSheetTab === "combat" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel",
-												children: [
-													/* @__PURE__ */ jsxs("div", {
-														className: "mobile-hp-card mobile-current-hp",
-														children: [/* @__PURE__ */ jsxs("div", { children: [
-															/* @__PURE__ */ jsx("label", { children: "Текущие хиты" }),
-															/* @__PURE__ */ jsx("strong", { children: character.currentHitPoints || 0 }),
-															/* @__PURE__ */ jsxs("span", { children: ["из ", hitPoints] })
-														] }), /* @__PURE__ */ jsxs("div", {
-															className: "mobile-hp-adjuster",
-															"aria-label": "Изменить текущие хиты",
-															children: [
-																/* @__PURE__ */ jsx("button", {
-																	onClick: () => applyHitPointAdjustment(-1),
-																	"aria-label": "Вычесть хиты",
-																	children: "−"
-																}),
-																/* @__PURE__ */ jsx("input", {
-																	type: "number",
-																	min: "0",
-																	value: hitPointAdjustment || "",
-																	placeholder: "0",
-																	onChange: (event) => setHitPointAdjustment(Math.max(0, Number(event.target.value) || 0)),
-																	"aria-label": "Число хитов для изменения"
-																}),
-																/* @__PURE__ */ jsx("button", {
-																	onClick: () => applyHitPointAdjustment(1),
-																	"aria-label": "Добавить хиты",
-																	children: "+"
-																})
-															]
-														})]
-													}),
-													/* @__PURE__ */ jsx("div", {
-														className: "mobile-hp-card",
-														children: /* @__PURE__ */ jsxs("label", { children: ["Временные хиты", /* @__PURE__ */ jsx("input", {
-															type: "number",
-															min: "0",
-															value: character.temporaryHitPoints || 0,
-															onChange: (event) => setCharacter((current) => ({
-																...current,
-																temporaryHitPoints: Math.max(0, Number(event.target.value) || 0)
-															}))
-														})] })
-													}),
-													(character.currentHitPoints || 0) <= 0 && /* @__PURE__ */ jsxs("section", {
-														className: "mobile-death-saves",
-														"aria-label": "Спасброски от смерти",
-														children: [/* @__PURE__ */ jsx("strong", { children: "Спасброски от смерти" }), ["success", "failure"].map((kind) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: kind === "success" ? "Успехи" : "Провалы" }), /* @__PURE__ */ jsx("span", { children: [
-															0,
-															1,
-															2
-														].map((index) => {
-															return /* @__PURE__ */ jsx("button", {
-																className: ((kind === "success" ? character.deathSaveSuccesses : character.deathSaveFailures) || 0) > index ? "filled" : "",
-																onClick: () => setDeathSave(kind, index),
-																"aria-label": `${kind === "success" ? "Успех" : "Провал"} ${index + 1}`
-															}, index);
-														}) })] }, kind))]
-													}),
-													/* @__PURE__ */ jsxs("div", {
-														className: "mobile-rest-row",
-														children: [
-															/* @__PURE__ */ jsxs("div", { children: [
-																/* @__PURE__ */ jsx("span", { children: hitDicePoolsForCharacter.map((pool) => `${pool.max - pool.spent}к${pool.die}`).join(" + ") || "к8" }),
-																/* @__PURE__ */ jsxs("small", { children: [
-																	availableHitDice,
-																	" / ",
-																	characterLevel(character)
-																] }),
-																/* @__PURE__ */ jsxs("b", { children: ["к отдыху: ", hitDiceToRoll] })
-															] }),
-															/* @__PURE__ */ jsx("button", {
-																className: "hit-die-step",
-																onClick: () => setHitDiceToRoll((value) => Math.max(0, value - 1)),
-																disabled: !hitDiceToRoll,
-																"aria-label": "Уменьшить число костей хитов",
-																children: "−"
-															}),
-															/* @__PURE__ */ jsx("button", {
-																className: "hit-die-button",
-																onClick: () => setHitDiceToRoll((value) => Math.min(availableHitDice, value + 1)),
-																disabled: availableHitDice <= hitDiceToRoll,
-																"aria-label": "Добавить кость хитов к короткому отдыху",
-																children: "+"
-															}),
-															/* @__PURE__ */ jsx("button", {
-																onClick: takeShortRest,
-																children: "Короткий отдых"
-															}),
-															/* @__PURE__ */ jsx("button", {
-																onClick: takeLongRest,
-																children: "Длинный отдых"
-															})
-														]
-													}),
-													lastHitDieRoll !== null && /* @__PURE__ */ jsxs("p", {
-														className: "mobile-roll-result",
-														children: [
-															"Восстановлено хитов: ",
-															/* @__PURE__ */ jsx("b", { children: lastHitDieRoll }),
-															" (бросок выбранных костей + модификатор Телосложения к каждой)"
-														]
-													}),
-													/* @__PURE__ */ jsx("div", {
-														className: "mobile-attack-list",
-														children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsx("strong", { children: attack.name }),
-															/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? `${attack.attackBonus >= 0 ? "+" : ""}${attack.attackBonus}` : attack.saveDc !== void 0 ? `Сл ${attack.saveDc}` : "авто" }),
-															/* @__PURE__ */ jsx("code", { children: attack.damageDisplay }),
-															attack.note && /* @__PURE__ */ jsx("small", { children: attack.note })
-														] }, attack.id))
-													}),
-													/* @__PURE__ */ jsx("small", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." })
-												]
-											}),
-											mobileSheetTab === "spells" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel",
-												children: [
-													/* @__PURE__ */ jsxs("div", {
-														className: "mobile-prepared-head",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Заклинания по классам" }), /* @__PURE__ */ jsx("span", { children: sourcedSpells.length })]
-													}),
-													sourcedSpellGroups.map((group) => /* @__PURE__ */ jsxs("section", { children: [
-														/* @__PURE__ */ jsxs("div", {
-															className: "mobile-prepared-head",
-															children: [/* @__PURE__ */ jsxs("h3", { children: [
-																classes.find((item) => item.id === group.classId)?.name || group.classId,
-																" ",
-																group.level
-															] }), /* @__PURE__ */ jsx("span", { children: group.spells.length })]
-														}),
-														group.preparedMaximum !== void 0 && /* @__PURE__ */ jsxs("p", {
-															className: "mobile-prepared-limit",
-															children: [
-																"Лимит подготовки: ",
-																group.preparedMaximum,
-																". Заговоры и всегда подготовленные заклинания его не занимают."
-															]
-														}),
-														/* @__PURE__ */ jsx("div", {
-															className: "mobile-spell-list",
-															children: group.spells.map(({ spell, source, prepared, alwaysPrepared }) => /* @__PURE__ */ jsxs("button", {
-																className: prepared ? "prepared" : "",
-																type: "button",
-																onClick: () => {
-																	if (group.classId !== activeSpellClassId) setSpellClassId(group.classId);
-																	else if (group.preparedMaximum !== void 0 && spell.level > 0 && !alwaysPrepared) toggleMobilePreparedSpell(spell.id);
-																},
-																title: group.classId !== activeSpellClassId ? "Выбрать класс для подготовки" : alwaysPrepared ? "Всегда подготовлено" : "Заклинание класса",
-																children: [
-																	/* @__PURE__ */ jsx("span", { children: spell.level === 0 ? "∞" : alwaysPrepared ? "◆" : prepared ? "●" : "○" }),
-																	/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																	/* @__PURE__ */ jsxs("small", { children: [
-																		levelLabel(spell.level),
-																		" · ",
-																		source === group.classId ? classes.find((item) => item.id === source)?.name || source : source
-																	] })
-																]
-															}, spell.id))
-														})
-													] }, group.classId)),
-													grantedFeatSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Черты" }), /* @__PURE__ */ jsx("div", {
-														className: "mobile-spell-list",
-														children: grantedFeatSpells.map((id) => spells.find((spell) => spell.id === id)).filter((spell) => !!spell).map((spell) => /* @__PURE__ */ jsxs("button", {
-															type: "button",
-															className: "prepared",
-															children: [
-																/* @__PURE__ */ jsx("span", { children: "◆" }),
-																/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																/* @__PURE__ */ jsxs("small", { children: [levelLabel(spell.level), " · Черта"] })
-															]
-														}, spell.id))
-													})] }),
-													racialSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Расовая магия" }), /* @__PURE__ */ jsx("div", {
-														className: "mobile-spell-list",
-														children: racialSpells.map((entry) => /* @__PURE__ */ jsxs("button", {
-															type: "button",
-															className: "prepared",
-															children: [
-																/* @__PURE__ */ jsx("span", { children: entry.spell.level === 0 ? "∞" : "◆" }),
-																/* @__PURE__ */ jsx("strong", { children: entry.spell.name }),
-																/* @__PURE__ */ jsxs("small", { children: [
-																	levelLabel(entry.spell.level),
-																	" · ",
-																	entry.source,
-																	" · ",
-																	abilityLabels[entry.ability],
-																	" · Сл ",
-																	entry.saveDc,
-																	" · атака ",
-																	entry.attackBonus >= 0 ? "+" : "",
-																	entry.attackBonus,
-																	entry.freeUses ? ` · ${entry.remainingUses}/${entry.freeUses} бесплатно` : "",
-																	entry.castWithSlots ? " · можно ячейками" : ""
-																] })
-															]
-														}, `${entry.source}-${entry.spell.id}`))
-													})] }),
-													otherGrantedSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
-														className: "mobile-spell-list",
-														children: otherGrantedSpells.map(({ spell, source }) => /* @__PURE__ */ jsxs("button", {
-															type: "button",
-															className: "prepared",
-															children: [
-																/* @__PURE__ */ jsx("span", { children: "◆" }),
-																/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																/* @__PURE__ */ jsxs("small", { children: [
-																	levelLabel(spell.level),
-																	" · ",
-																	source
-																] })
-															]
-														}, `${source}-${spell.id}`))
-													})] }),
-													customSpells.length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h3", { children: "Хоумбрю" }), /* @__PURE__ */ jsx("div", {
-														className: "mobile-spell-list",
-														children: customSpells.map((spell) => /* @__PURE__ */ jsxs("button", {
-															type: "button",
-															className: "prepared",
-															children: [
-																/* @__PURE__ */ jsx("span", { children: "◆" }),
-																/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																/* @__PURE__ */ jsxs("small", { children: [levelLabel(spell.level), " · Хоумбрю"] })
-															]
-														}, spell.id))
-													})] }),
-													spellRule.prepared !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("p", {
-														className: "mobile-prepared-limit",
-														children: [
-															"Выбор для класса «",
-															classes.find((item) => item.id === activeSpellClassId)?.name || activeSpellClassId,
-															"»: ",
-															mobilePreparedIds.length,
-															" из ",
-															spellRule.prepared,
-															"."
-														]
-													}), /* @__PURE__ */ jsx("div", {
-														className: "mobile-spell-list",
-														children: mobileSpellPool.filter((spell) => spell.level > 0 && !sourcedSpellGroups.find((group) => group.classId === activeSpellClassId)?.spells.some((entry) => entry.spell.id === spell.id)).map((spell) => /* @__PURE__ */ jsxs("button", {
-															type: "button",
-															onClick: () => toggleMobilePreparedSpell(spell.id),
-															children: [
-																/* @__PURE__ */ jsx("span", { children: "○" }),
-																/* @__PURE__ */ jsx("strong", { children: spell.name }),
-																/* @__PURE__ */ jsx("small", { children: levelLabel(spell.level) })
-															]
-														}, spell.id))
-													})] }),
-													!sourcedSpells.length && !racialSpells.length && !otherGrantedSpells.length && !grantedFeatSpells.length && !customSpells.length && spellRule.prepared === void 0 && /* @__PURE__ */ jsx("p", { children: "У персонажа нет доступных заклинаний." }),
-													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
-														className: "mobile-slot-list mobile-spell-slots",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum),
-																children: "Потратить"
-															}),
-															/* @__PURE__ */ jsxs("b", { children: [
-																maximum - (character.spellSlotsUsed?.[circle] || 0),
-																" / ",
-																maximum
-															] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum),
-																children: "Вернуть"
-															})
-														] }, circle))]
-													}),
-													pactMagicSlots.slots > 0 && /* @__PURE__ */ jsxs("div", {
-														className: "mobile-slot-list mobile-spell-slots",
-														children: [/* @__PURE__ */ jsxs("h3", { children: [
-															"Ячейки договора · ",
-															pactMagicSlots.level,
-															" круг"
-														] }), /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsx("span", { children: "Договор" }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setCharacter((current) => ({
-																	...current,
-																	pactSlotsUsed: Math.min(pactMagicSlots.slots, (current.pactSlotsUsed || 0) + 1)
-																})),
-																children: "Потратить"
-															}),
-															/* @__PURE__ */ jsxs("b", { children: [
-																pactMagicSlots.slots - (character.pactSlotsUsed || 0),
-																" / ",
-																pactMagicSlots.slots
-															] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setCharacter((current) => ({
-																	...current,
-																	pactSlotsUsed: Math.max(0, (current.pactSlotsUsed || 0) - 1)
-																})),
-																children: "Вернуть"
-															})
-														] })]
-													})
-												]
-											}),
-											mobileSheetTab === "resources" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel",
-												children: [
-													/* @__PURE__ */ jsxs("div", {
-														className: "mobile-rest-actions",
-														children: [/* @__PURE__ */ jsx("button", {
-															onClick: takeShortRest,
-															children: "Восстановить после короткого отдыха"
-														}), /* @__PURE__ */ jsx("button", {
-															onClick: takeLongRest,
-															children: "Восстановить после длинного отдыха"
-														})]
-													}),
-													/* @__PURE__ */ jsx(HitPointRollEditor, {
-														character,
-														onChange: updateHitPointRoll
-													}),
-													/* @__PURE__ */ jsx("div", {
-														className: "mobile-resource-list",
-														children: resources.map((resource) => /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: resource.name }), /* @__PURE__ */ jsx("small", { children: resourceRestLabel(resource) })] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setResourceCurrent(resource.key, Math.max(0, resourceCurrent(exportCharacter, resource) - (resource.unit || 1)), resource.max),
-																children: "−"
-															}),
-															/* @__PURE__ */ jsxs("b", { children: [
-																resourceCurrent(exportCharacter, resource),
-																" / ",
-																resource.max
-															] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setResourceCurrent(resource.key, Math.min(resource.max, resourceCurrent(exportCharacter, resource) + (resource.unit || 1)), resource.max),
-																children: "+"
-															})
-														] }, resource.key))
-													}),
-													runtimeControls.length > 0 && /* @__PURE__ */ jsxs("section", {
-														className: "mobile-runtime-controls",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Состояния подклассов" }), runtimeControls.map((control) => {
-															const currentValue = subclassRuntimeValue(exportCharacter, control.key);
-															const currentOption = control.options.find((option) => option.id === String(currentValue));
-															return /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", { children: [
-																/* @__PURE__ */ jsx("strong", { children: control.title }),
-																/* @__PURE__ */ jsx("small", { children: control.description }),
-																control.key === "warlock:undead:necrotic-husk-cooldown" && /* @__PURE__ */ jsx("em", { children: currentValue ? `Осталось отдыхов: ${currentValue}` : "Готово к применению" })
-															] }), control.randomDie ? /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
-																type: "button",
-																onClick: () => rollRuntimeControl(control.key),
-																children: ["Бросить к", control.randomDie]
-															}), /* @__PURE__ */ jsx("b", { children: currentOption?.name || "—" })] }) : /* @__PURE__ */ jsxs("select", {
-																"aria-label": control.title,
-																value: String(currentValue || ""),
-																onChange: (event) => setRuntimeControl(control.key, event.target.value),
-																children: [/* @__PURE__ */ jsx("option", {
-																	value: "",
-																	children: "Выберите…"
-																}), control.options.map((option) => /* @__PURE__ */ jsx("option", {
-																	value: option.id,
-																	children: option.name
-																}, option.id))]
-															})] }, control.key);
-														})]
-													}),
-													sharedSpellSlots.length > 0 && /* @__PURE__ */ jsxs("div", {
-														className: "mobile-slot-list",
-														children: [/* @__PURE__ */ jsx("h3", { children: "Ячейки заклинаний" }), sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("article", { children: [
-															/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setUsedSlots(circle, Math.min(maximum, (character.spellSlotsUsed?.[circle] || 0) + 1), maximum),
-																children: "Потратить"
-															}),
-															/* @__PURE__ */ jsxs("b", { children: [
-																maximum - (character.spellSlotsUsed?.[circle] || 0),
-																" / ",
-																maximum
-															] }),
-															/* @__PURE__ */ jsx("button", {
-																onClick: () => setUsedSlots(circle, Math.max(0, (character.spellSlotsUsed?.[circle] || 0) - 1), maximum),
-																children: "Вернуть"
-															})
-														] }, circle))]
-													})
-												]
-											}),
-											mobileSheetTab === "equipment" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel mobile-equipment-editor",
-												children: [
-													/* @__PURE__ */ jsx("h3", { children: "Снаряжение" }),
-													/* @__PURE__ */ jsxs("label", { children: ["Инвентарь", /* @__PURE__ */ jsx("textarea", {
-														value: character.inventoryOverride ?? equipmentItems.join("\n"),
-														onChange: (event) => setCharacter((current) => ({
-															...current,
-															inventoryOverride: event.target.value
-														})),
-														"aria-label": "Инвентарь персонажа",
-														placeholder: "По одному предмету на строку"
-													})] }),
-													customEquipment.length > 0 && /* @__PURE__ */ jsxs("p", { children: [
-														/* @__PURE__ */ jsx("b", { children: "Хоумбрю:" }),
-														" ",
-														customEquipment.join(" · ")
-													] }),
-													/* @__PURE__ */ jsx("small", { children: "Можно переписать список полностью. Изменения сохраняются вместе с персонажем." }),
-													/* @__PURE__ */ jsx("h3", { children: "Монеты" }),
-													/* @__PURE__ */ jsx("div", {
-														className: "mobile-coin-grid",
-														children: [
-															"gp",
-															"sp",
-															"cp",
-															"pp"
-														].map((key) => {
-															const labels = {
-																gp: "ЗМ",
-																sp: "СМ",
-																cp: "ММ",
-																pp: "ПМ"
-															};
-															return /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("span", { children: labels[key] }), /* @__PURE__ */ jsx("input", {
-																type: "number",
-																min: "0",
-																value: character.currency?.[key] || 0,
-																onChange: (event) => setCharacter((current) => ({
-																	...current,
-																	currency: {
-																		...initial.currency,
-																		...current.currency,
-																		[key]: Math.max(0, Number(event.target.value) || 0)
-																	}
-																})),
-																"aria-label": `${labels[key]}: количество`
-															})] }, key);
-														})
-													})
-												]
-											}),
-											mobileSheetTab === "notes" && /* @__PURE__ */ jsxs("div", {
-												className: "mobile-sheet-panel mobile-notes",
-												children: [
-													/* @__PURE__ */ jsx("h3", { children: "Характер и заметки" }),
-													Object.keys(personalityNames).map((key) => /* @__PURE__ */ jsxs("label", { children: [personalityNames[key], /* @__PURE__ */ jsx("textarea", {
-														value: character.personality[key],
-														onChange: (event) => setCharacter((current) => ({
-															...current,
-															personality: {
-																...current.personality,
-																[key]: event.target.value
-															}
-														}))
-													})] }, key)),
-													/* @__PURE__ */ jsx("h3", { children: "Особенности" }),
-													[
-														...selectedRaceFeatures,
-														...selectedClassFeatures,
-														...selectedFeatFeatures
-													].map((feature, index) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsx("strong", { children: feature.name }), /* @__PURE__ */ jsx("p", { children: feature.description })] }, `${feature.name}-${index}`)),
-													customNotes.map((note) => /* @__PURE__ */ jsxs("article", {
-														className: "homebrew-note",
-														children: [/* @__PURE__ */ jsx("strong", { children: note.name }), /* @__PURE__ */ jsx("p", { children: note.description })]
-													}, note.id))
-												]
-											})
-										]
 									}),
 									/* @__PURE__ */ jsxs("div", {
 										className: "sheet-page",
