@@ -79,6 +79,7 @@ const table = {
         await homebrewButton.waitFor({ state: "visible", timeout: 10000 });
       }
       await homebrewButton.click();
+      await page.locator(".hb-workspace-sidebar").waitFor({ state: "visible" });
       assert.ok(await page.locator(".hb-workspace-sidebar").isVisible());
       await page
         .locator(".hb-sidebar-package > button")
