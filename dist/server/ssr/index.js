@@ -3124,10 +3124,15 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-CShnRTwa.js");
-		return { get "default"() {
-			return m["default"];
-		} };
+		const m = await import("./assets/page-BO268VDg.js");
+		return {
+			get "AdventureApp"() {
+				return m["AdventureApp"];
+			},
+			get "default"() {
+				return m["default"];
+			}
+		};
 	},
 	"724dcbd470a5": async () => {
 		const m = await import("./assets/page-CNL9_3ER.js");

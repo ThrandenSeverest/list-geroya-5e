@@ -28121,6 +28121,7 @@ function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
 	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
 		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
 		const item = newPlayItem(match?.[1] || line);
+		item.category = itemCategory(item);
 		item.quantity = match ? integer(match[2], 1) : 1;
 		item.equipped = true;
 		return item;
@@ -28188,7 +28189,10 @@ function playDerived(c) {
 	return {
 		...c,
 		abilities: finalAbilityScores(c),
-		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped)) } : {}
+		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped && i.quantity > 0).map((i) => ({
+			...i,
+			name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, "")
+		}))) } : {}
 	};
 }
 function activeItem(i) {
@@ -28196,6 +28200,39 @@ function activeItem(i) {
 }
 function itemBonus(c, key) {
 	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+var itemCategoryLabels = {
+	weapon: "Оружие",
+	focus: "Фокусировки",
+	armor: "Доспехи",
+	consumable: "Расходники",
+	ammunition: "Боеприпасы",
+	gear: "Снаряжение"
+};
+function itemCategory(i) {
+	if (i.category) return i.category;
+	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
+	if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return "ammunition";
+	if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return "weapon";
+	if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return "armor";
+	return "gear";
+}
+function consumePlayItem(c, id) {
+	const i = c.adventure?.inventory.find((i) => i.id === id);
+	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
+	if (i.quantity <= 0) throw new Error("Предмет закончился.");
+	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
+		...x,
+		quantity: x.quantity - 1
+	} : x)), `Использован предмет: ${i.name}`);
+}
+function spellItemBonus(c, key, classId) {
+	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+function weaponItemBonus(c, attackName, key) {
+	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
+	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
+	return values.length ? Math.max(...values) : 0;
 }
 function updateInventory(c, items) {
 	return {
@@ -28478,6 +28515,867 @@ function advancePlayTurn(c) {
 	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
 }
 //#endregion
+//#region app/PlayInventory.tsx
+var categories = Object.keys(itemCategoryLabels);
+var weaponNames = [
+	"Палица",
+	"Метательное копьё",
+	"Лёгкий молот",
+	"Духовая трубка",
+	"Длинное копьё",
+	"Моргенштерн",
+	"Скимитар",
+	"Трезубец",
+	"Боевая кирка",
+	"Цеп",
+	"Рапира",
+	"Кинжал",
+	"Длинный меч",
+	"Короткий меч",
+	"Двуручный меч",
+	"Ручной топор",
+	"Боевой топор",
+	"Секира",
+	"Боевой посох",
+	"Дубинка",
+	"Булава",
+	"Боевой молот",
+	"Копьё",
+	"Дротик",
+	"Длинный лук",
+	"Короткий лук",
+	"Лёгкий арбалет",
+	"Тяжёлый арбалет",
+	"Ручной арбалет",
+	"Глефа",
+	"Алебарда",
+	"Пика",
+	"Кнут",
+	"Серп",
+	"Праща"
+];
+function PlayInventory({ character: c, onChange, onRoll }) {
+	const items = c.adventure.inventory;
+	const [filter, setFilter] = useState("all"), [search, setSearch] = useState(""), [worn, setWorn] = useState(false), [draft, setDraft] = useState(), [error, setError] = useState("");
+	const [coin, setCoin] = useState("gp"), [coinAmount, setCoinAmount] = useState(1);
+	const dialog = useRef(null);
+	useEffect(() => {
+		if (draft) dialog.current?.showModal();
+		else dialog.current?.close();
+	}, [!!draft]);
+	function mutate(fn) {
+		try {
+			onChange(fn());
+			setError("");
+		} catch (e) {
+			setError(e.message);
+		}
+	}
+	function modify(i, fields, message) {
+		mutate(() => logPlay(updateInventory(c, items.map((x) => x.id === i.id ? {
+			...x,
+			...fields
+		} : x)), message));
+	}
+	function add(category = "gear") {
+		setError("");
+		setDraft({
+			...newPlayItem(),
+			category
+		});
+	}
+	function money(sign) {
+		mutate(() => {
+			const value = (c.currency?.[coin] || 0) + coinAmount * sign;
+			if (value < 0) throw new Error("Недостаточно монет.");
+			return logPlay({
+				...c,
+				currency: {
+					...c.currency,
+					[coin]: value
+				}
+			}, `${sign > 0 ? "Получено" : "Потрачено"} ${coinAmount} ${coin.toUpperCase()}`);
+		});
+	}
+	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
+		/* @__PURE__ */ jsxs("section", {
+			className: "play-card",
+			children: [/* @__PURE__ */ jsxs("div", {
+				className: "play-row play-wrap",
+				children: [
+					/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h2", { children: "Инвентарь" }), /* @__PURE__ */ jsxs("small", { children: [
+						"Вес ",
+						items.reduce((n, i) => n + i.quantity * i.weight, 0).toFixed(1),
+						" фунт. · Настройка ",
+						items.filter((i) => i.attuned).length,
+						"/",
+						c.adventure.attunementLimit
+					] })] }),
+					/* @__PURE__ */ jsx("button", {
+						className: "play-primary",
+						onClick: () => add(),
+						children: "+ Предмет"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => add("consumable"),
+						children: "+ Расходник"
+					})
+				]
+			}), /* @__PURE__ */ jsxs("div", {
+				className: "inventory-filters",
+				children: [
+					/* @__PURE__ */ jsx("input", {
+						"aria-label": "Поиск предметов",
+						placeholder: "Найти предмет",
+						value: search,
+						onChange: (e) => setSearch(e.target.value)
+					}),
+					/* @__PURE__ */ jsxs("select", {
+						"aria-label": "Категория предметов",
+						value: filter,
+						onChange: (e) => setFilter(e.target.value),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "all",
+							children: "Все предметы"
+						}), categories.map((key) => /* @__PURE__ */ jsx("option", {
+							value: key,
+							children: itemCategoryLabels[key]
+						}, key))]
+					}),
+					/* @__PURE__ */ jsxs("label", {
+						className: "play-check",
+						children: [/* @__PURE__ */ jsx("input", {
+							type: "checkbox",
+							checked: worn,
+							onChange: (e) => setWorn(e.target.checked)
+						}), "Только надетое"]
+					})
+				]
+			})]
+		}),
+		error && !draft && /* @__PURE__ */ jsx("p", {
+			className: "play-error",
+			role: "alert",
+			children: error
+		}),
+		categories.filter((key) => filter === "all" || filter === key).map((key) => {
+			const group = items.filter((i) => itemCategory(i) === key && (!worn || i.equipped) && i.name.toLowerCase().includes(search.toLowerCase()));
+			if (!group.length) return null;
+			return /* @__PURE__ */ jsxs("section", {
+				className: "inventory-group",
+				children: [/* @__PURE__ */ jsxs("h2", { children: [
+					itemCategoryLabels[key],
+					" ",
+					/* @__PURE__ */ jsx("small", { children: group.length })
+				] }), /* @__PURE__ */ jsx("div", {
+					className: "play-grid",
+					children: group.map((i) => /* @__PURE__ */ jsxs("article", {
+						className: `play-card inventory-item${i.quantity === 0 ? " inventory-empty" : ""}`,
+						children: [
+							/* @__PURE__ */ jsxs("header", {
+								className: "play-row",
+								children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }), /* @__PURE__ */ jsx("button", {
+									"aria-label": `Изменить ${i.name}`,
+									onClick: () => {
+										setError("");
+										setDraft({
+											...i,
+											category: itemCategory(i)
+										});
+									},
+									children: "Изменить"
+								})]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "inventory-quantity",
+								children: [
+									/* @__PURE__ */ jsx("button", {
+										"aria-label": `Убавить количество: ${i.name}`,
+										disabled: !i.quantity,
+										onClick: () => modify(i, { quantity: i.quantity - 1 }, `Убрана единица: ${i.name}`),
+										children: "−"
+									}),
+									/* @__PURE__ */ jsxs("strong", { children: [i.quantity, " шт."] }),
+									/* @__PURE__ */ jsx("button", {
+										"aria-label": `Добавить количество: ${i.name}`,
+										onClick: () => modify(i, { quantity: i.quantity + 1 }, `Добавлена единица: ${i.name}`),
+										children: "+"
+									}),
+									/* @__PURE__ */ jsxs("span", { children: [i.weight * i.quantity, " фунт."] })
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "play-row play-wrap",
+								children: [
+									key !== "consumable" && key !== "ammunition" && /* @__PURE__ */ jsx("button", {
+										disabled: !i.quantity,
+										className: i.equipped ? "active" : "",
+										onClick: () => modify(i, { equipped: !i.equipped }, `${i.equipped ? "Убрано" : "Надето / взято в руки"}: ${i.name}`),
+										children: i.equipped ? "Надето / в руках" : "Надеть / взять"
+									}),
+									(key === "consumable" || key === "ammunition") && /* @__PURE__ */ jsx("button", {
+										disabled: !i.quantity,
+										onClick: () => mutate(() => consumePlayItem(c, i.id)),
+										children: "Использовать 1"
+									}),
+									key === "consumable" && i.healingFormula && /* @__PURE__ */ jsxs("button", {
+										disabled: !i.quantity,
+										onClick: () => mutate(() => {
+											const r = rollDice(i.healingFormula);
+											const next = logPlay(healPlay(consumePlayItem(c, i.id), r.total), `Лечение: ${i.name}`, r);
+											onRoll(`Лечение: ${i.name}`, r);
+											return next;
+										}),
+										children: ["Выпить: ", i.healingFormula]
+									}),
+									i.requiresAttunement && /* @__PURE__ */ jsx("button", {
+										onClick: () => mutate(() => queueAttunement(c, i.id)),
+										children: i.attunementPending ? "Отменить ожидание" : i.attuned ? "Прекратить настройку" : "Настроиться"
+									}),
+									i.maxCharges > 0 && /* @__PURE__ */ jsxs("button", {
+										disabled: !i.charges || !activeItem(i),
+										onClick: () => modify(i, { charges: i.charges - 1 }, `Использован заряд: ${i.name}`),
+										children: [
+											"Заряд ",
+											i.charges,
+											"/",
+											i.maxCharges,
+											" · использовать"
+										]
+									})
+								]
+							}),
+							i.attuned && /* @__PURE__ */ jsx("p", {
+								className: "inventory-badge",
+								children: "Настроен"
+							}),
+							i.attunementPending && /* @__PURE__ */ jsx("p", {
+								className: "inventory-badge",
+								children: "Настройка ожидает короткого отдыха"
+							}),
+							(i.weaponAttackBonus || i.weaponDamageBonus || i.spellAttackBonus || i.spellSaveDcBonus) && /* @__PURE__ */ jsxs("p", {
+								className: "inventory-bonuses",
+								children: [
+									i.weaponAttackBonus ? `Оружие: попадание +${i.weaponAttackBonus}. ` : "",
+									i.weaponDamageBonus ? `Урон +${i.weaponDamageBonus}. ` : "",
+									i.spellAttackBonus ? `Заклинания: попадание +${i.spellAttackBonus}. ` : "",
+									i.spellSaveDcBonus ? `Сл спаса +${i.spellSaveDcBonus}.` : ""
+								]
+							}),
+							/* @__PURE__ */ jsxs("details", { children: [
+								/* @__PURE__ */ jsx("summary", { children: "Описание и управление" }),
+								/* @__PURE__ */ jsx("p", { children: i.notes || "Описание не добавлено." }),
+								i.requirement && /* @__PURE__ */ jsxs("p", { children: ["Требование настройки: ", i.requirement] }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [
+										/* @__PURE__ */ jsx("button", {
+											disabled: i.quantity < 2 || i.attuned || !!i.attunementPending,
+											onClick: () => mutate(() => {
+												const n = Math.floor(i.quantity / 2), split = {
+													...i,
+													id: playId(),
+													quantity: n,
+													attuned: false,
+													attunementPending: void 0
+												};
+												return logPlay(updateInventory(c, [...items.map((x) => x.id === i.id ? {
+													...x,
+													quantity: i.quantity - n
+												} : x), split]), `Разделена стопка: ${i.name}`);
+											}),
+											children: "Разделить стопку"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											disabled: !i.quantity,
+											onClick: () => modify(i, { quantity: i.quantity - 1 }, `Передана / оставлена единица: ${i.name}`),
+											children: "Передать / оставить 1"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => {
+												setDraft({
+													...i,
+													category: itemCategory(i)
+												});
+											},
+											children: "Переложить в контейнер"
+										})
+									]
+								})
+							] })
+						]
+					}, i.id))
+				})]
+			}, key);
+		}),
+		!items.some((i) => (filter === "all" || itemCategory(i) === filter) && (!worn || i.equipped) && i.name.toLowerCase().includes(search.toLowerCase())) && /* @__PURE__ */ jsx("p", {
+			className: "play-card",
+			children: "Предметы не найдены."
+		}),
+		/* @__PURE__ */ jsxs("section", {
+			className: "play-card",
+			children: [
+				/* @__PURE__ */ jsx("h2", { children: "Монеты" }),
+				/* @__PURE__ */ jsx("div", {
+					className: "play-row play-wrap",
+					children: [
+						"gp",
+						"sp",
+						"cp",
+						"pp"
+					].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
+						"ЗМ",
+						"СМ",
+						"ММ",
+						"ПМ"
+					][i], /* @__PURE__ */ jsx("input", {
+						type: "number",
+						min: "0",
+						value: c.currency?.[key] || 0,
+						onChange: (e) => onChange({
+							...c,
+							currency: {
+								...c.currency,
+								[key]: integer(e.target.value)
+							}
+						})
+					})] }, key))
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "play-row play-wrap",
+					children: [
+						/* @__PURE__ */ jsxs("label", { children: ["Сумма", /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: "1",
+							value: coinAmount,
+							onChange: (e) => setCoinAmount(integer(e.target.value, 1))
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Монета", /* @__PURE__ */ jsx("select", {
+							value: coin,
+							onChange: (e) => setCoin(e.target.value),
+							children: [
+								"gp",
+								"sp",
+								"cp",
+								"pp"
+							].map((key, i) => /* @__PURE__ */ jsx("option", {
+								value: key,
+								children: [
+									"ЗМ",
+									"СМ",
+									"ММ",
+									"ПМ"
+								][i]
+							}, key))
+						})] }),
+						/* @__PURE__ */ jsx("button", {
+							onClick: () => money(1),
+							children: "Получить"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							onClick: () => money(-1),
+							children: "Потратить"
+						})
+					]
+				})
+			]
+		}),
+		/* @__PURE__ */ jsx("button", {
+			onClick: () => mutate(() => logPlay(updateInventory(c, items.map((i) => i.recharge === "dawn" ? {
+				...i,
+				charges: i.maxCharges
+			} : i)), "Наступил рассвет: восстановлены заряды")),
+			children: "Рассвет: восстановить заряды"
+		}),
+		/* @__PURE__ */ jsx("dialog", {
+			ref: dialog,
+			className: "play-inventory-dialog",
+			"aria-label": "Редактор предмета",
+			onCancel: () => setDraft(void 0),
+			onClose: () => setDraft(void 0),
+			children: draft && /* @__PURE__ */ jsxs("form", {
+				className: "play-modal",
+				onSubmit: (e) => {
+					e.preventDefault();
+					if (!draft.name.trim()) return;
+					const clean = {
+						...draft,
+						name: draft.name.trim(),
+						charges: Math.min(draft.charges, draft.maxCharges),
+						attuned: draft.requiresAttunement && draft.attuned
+					};
+					mutate(() => logPlay(updateInventory(c, items.some((i) => i.id === draft.id) ? items.map((i) => i.id === draft.id ? clean : i) : [...items, clean]), `Сохранён предмет: ${clean.name}`));
+					setDraft(void 0);
+				},
+				children: [
+					/* @__PURE__ */ jsxs("header", {
+						className: "play-row",
+						children: [/* @__PURE__ */ jsx("h2", { children: items.some((i) => i.id === draft.id) ? "Изменить предмет" : "Новый предмет" }), /* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => setDraft(void 0),
+							children: "Закрыть"
+						})]
+					}),
+					/* @__PURE__ */ jsxs("label", { children: ["Название предмета", /* @__PURE__ */ jsx("input", {
+						required: true,
+						value: draft.name,
+						onChange: (e) => setDraft({
+							...draft,
+							name: e.target.value
+						})
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Тип предмета", /* @__PURE__ */ jsx("select", {
+						value: draft.category || "gear",
+						onChange: (e) => setDraft({
+							...draft,
+							category: e.target.value
+						}),
+						children: categories.map((key) => /* @__PURE__ */ jsx("option", {
+							value: key,
+							children: itemCategoryLabels[key]
+						}, key))
+					})] }),
+					draft.category === "weapon" && /* @__PURE__ */ jsxs("label", { children: ["Базовое оружие", /* @__PURE__ */ jsxs("select", {
+						value: draft.weaponBase || weaponNames.find((n) => draft.name.startsWith(n)) || "",
+						onChange: (e) => setDraft({
+							...draft,
+							weaponBase: e.target.value
+						}),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "",
+							children: "Выберите для расчёта атак"
+						}), weaponNames.map((n) => /* @__PURE__ */ jsx("option", {
+							value: n,
+							children: n
+						}, n))]
+					})] }),
+					(draft.category === "weapon" || draft.category === "focus") && /* @__PURE__ */ jsxs("div", {
+						className: "play-row play-wrap",
+						children: [/* @__PURE__ */ jsx("span", { children: "Магический бонус" }), [
+							0,
+							1,
+							2,
+							3
+						].map((n) => /* @__PURE__ */ jsx("button", {
+							type: "button",
+							className: (draft.category === "weapon" ? draft.weaponAttackBonus : draft.spellAttackBonus) === n ? "active" : "",
+							onClick: () => setDraft({
+								...draft,
+								magical: n > 0,
+								...draft.category === "weapon" ? {
+									weaponAttackBonus: n,
+									weaponDamageBonus: n
+								} : {
+									spellAttackBonus: n,
+									spellSaveDcBonus: n
+								}
+							}),
+							children: n ? `+${n}` : "Без бонуса"
+						}, n))]
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "play-grid",
+						children: [
+							"quantity",
+							"weight",
+							"charges",
+							"maxCharges",
+							"acBonus"
+						].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
+							"Количество",
+							"Вес одного (фунт.)",
+							"Текущие заряды",
+							"Максимум зарядов",
+							"Бонус КД"
+						][i], /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: key === "acBonus" ? -100 : 0,
+							step: key === "weight" ? .1 : 1,
+							value: draft[key],
+							onChange: (e) => setDraft({
+								...draft,
+								[key]: key === "weight" ? Math.max(0, Number(e.target.value) || 0) : integer(e.target.value, key === "acBonus" ? -100 : 0)
+							})
+						})] }, key))
+					}),
+					/* @__PURE__ */ jsxs("fieldset", {
+						className: "inventory-bonus-fields",
+						children: [
+							/* @__PURE__ */ jsx("legend", { children: "Бонусы к атакам и магии" }),
+							/* @__PURE__ */ jsx("div", {
+								className: "play-grid",
+								children: [
+									"weaponAttackBonus",
+									"weaponDamageBonus",
+									"spellAttackBonus",
+									"spellSaveDcBonus"
+								].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
+									"Попадание этим оружием",
+									"Урон этим оружием",
+									"Попадание заклинаниями",
+									"Сложность спасброска заклинаний"
+								][i], /* @__PURE__ */ jsx("input", {
+									type: "number",
+									min: "-10",
+									max: "20",
+									value: draft[key] || 0,
+									onChange: (e) => setDraft({
+										...draft,
+										[key]: integer(e.target.value, -10, 20)
+									})
+								})] }, key))
+							}),
+							/* @__PURE__ */ jsxs("label", { children: ["Магический бонус действует на", /* @__PURE__ */ jsxs("select", {
+								value: draft.bonusClassId || "",
+								onChange: (e) => setDraft({
+									...draft,
+									bonusClassId: e.target.value
+								}),
+								children: [/* @__PURE__ */ jsx("option", {
+									value: "",
+									children: "Все классы"
+								}), orderedCharacterClasses(c).map((entry) => /* @__PURE__ */ jsx("option", {
+									value: entry.classId,
+									children: classes.find((x) => x.id === entry.classId)?.name || c.homebrew?.entities.find((x) => x.id === entry.classId)?.name || entry.classId
+								}, entry.classId))]
+							})] }),
+							/* @__PURE__ */ jsx("small", { children: "Оружейные бонусы применяются только к выбранному базовому оружию. Магические — к указанным классам. Предмет должен быть надет / в руках и настроен, если требует настройки." })
+						]
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "play-row play-wrap",
+						children: [
+							"equipped",
+							"magical",
+							"requiresAttunement",
+							"cursed"
+						].map((key, i) => /* @__PURE__ */ jsxs("label", {
+							className: "play-check",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: !!draft[key],
+								onChange: (e) => setDraft({
+									...draft,
+									[key]: e.target.checked
+								})
+							}), [
+								"Надет / в руках",
+								"Магический",
+								"Требует настройки",
+								"Проклят"
+							][i]]
+						}, key))
+					}),
+					draft.category === "consumable" && /* @__PURE__ */ jsxs("label", { children: ["Формула лечения при выпивании", /* @__PURE__ */ jsx("input", {
+						placeholder: "2d4+2",
+						value: draft.healingFormula || "",
+						onChange: (e) => setDraft({
+							...draft,
+							healingFormula: e.target.value
+						})
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Восстановление зарядов", /* @__PURE__ */ jsxs("select", {
+						value: draft.recharge,
+						onChange: (e) => setDraft({
+							...draft,
+							recharge: e.target.value
+						}),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "none",
+								children: "Вручную"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "short",
+								children: "Короткий отдых"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "long",
+								children: "Длинный отдых"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "dawn",
+								children: "Рассвет"
+							})
+						]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Контейнер / место хранения", /* @__PURE__ */ jsx("input", {
+						placeholder: "Рюкзак, пояс, сумка…",
+						value: draft.container,
+						onChange: (e) => setDraft({
+							...draft,
+							container: e.target.value
+						})
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Требование к настройке", /* @__PURE__ */ jsx("input", {
+						value: draft.requirement || "",
+						onChange: (e) => setDraft({
+							...draft,
+							requirement: e.target.value
+						})
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Описание", /* @__PURE__ */ jsx("textarea", {
+						value: draft.notes,
+						onChange: (e) => setDraft({
+							...draft,
+							notes: e.target.value
+						})
+					})] }),
+					error && /* @__PURE__ */ jsx("p", {
+						className: "play-error",
+						role: "alert",
+						children: error
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-row",
+						children: [/* @__PURE__ */ jsx("button", {
+							type: "submit",
+							className: "play-primary",
+							children: "Сохранить предмет"
+						}), items.some((i) => i.id === draft.id) && /* @__PURE__ */ jsx("button", {
+							type: "button",
+							className: "play-danger",
+							onClick: () => {
+								mutate(() => logPlay(updateInventory(c, items.filter((i) => i.id !== draft.id)), `Удалён предмет: ${draft.name}`));
+								setDraft(void 0);
+							},
+							children: "Удалить предмет"
+						})]
+					})
+				]
+			})
+		})
+	] });
+}
+//#endregion
+//#region app/DiceTray.tsx
+var shapes = {
+	4: "50,5 95,88 5,88",
+	6: "14,14 86,14 86,86 14,86",
+	8: "50,4 95,50 50,96 5,50",
+	10: "50,4 91,34 77,87 23,87 9,34",
+	12: "50,4 94,36 78,89 22,89 6,36",
+	20: "50,4 92,27 92,73 50,96 8,73 8,27",
+	100: "50,4 91,34 77,87 23,87 9,34"
+};
+function DiceFace({ sides, value }) {
+	return /* @__PURE__ */ jsxs("svg", {
+		className: "dice-face",
+		viewBox: "0 0 100 100",
+		"aria-hidden": "true",
+		children: [
+			/* @__PURE__ */ jsx("polygon", { points: shapes[sides] || shapes[20] }),
+			/* @__PURE__ */ jsx("path", { d: sides === 20 ? "M8 27L50 22L92 27M8 73L30 77L50 96L70 77L92 73M50 4L50 22L30 77L8 27M50 22L70 77L92 27M30 77L70 77" : sides === 4 ? "M50 5L50 66L5 88M50 66L95 88" : "" }),
+			/* @__PURE__ */ jsx("text", {
+				x: "50",
+				y: "57",
+				textAnchor: "middle",
+				children: value ?? `d${sides}`
+			})
+		]
+	});
+}
+function DiceTray({ rolls, onRoll }) {
+	const [sides, setSides] = useState(20), [count, setCount] = useState(1), [modifier, setModifier] = useState(0), [formula, setFormula] = useState("1d20"), [error, setError] = useState("");
+	function cast(value) {
+		try {
+			onRoll("Кубы", rollDice(value));
+			setError("");
+		} catch (e) {
+			setError(e.message);
+		}
+	}
+	const latest = rolls[0];
+	const dieSides = latest ? [...latest.result.formula.matchAll(/(\d+)d(\d+)/gi)].flatMap((m) => Array(Number(m[1]) * (latest.result.formula.includes("крит:") ? 2 : 1)).fill(Number(m[2]))) : [];
+	return /* @__PURE__ */ jsxs("aside", {
+		className: "dice-tray",
+		"aria-label": "Постоянная панель кубов",
+		children: [
+			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("span", {
+				className: "eyebrow",
+				children: "Броски"
+			}), /* @__PURE__ */ jsx("h2", { children: "Кубы всегда под рукой" })] }),
+			/* @__PURE__ */ jsx("div", {
+				className: "dice-types",
+				children: [
+					4,
+					6,
+					8,
+					10,
+					12,
+					20,
+					100
+				].map((n) => /* @__PURE__ */ jsxs("button", {
+					className: sides === n ? "active" : "",
+					"aria-pressed": sides === n,
+					onClick: () => setSides(n),
+					"aria-label": `Выбрать d${n}`,
+					children: [/* @__PURE__ */ jsx(DiceFace, { sides: n }), /* @__PURE__ */ jsxs("span", { children: ["d", n] })]
+				}, n))
+			}),
+			/* @__PURE__ */ jsxs("div", {
+				className: "dice-config",
+				children: [/* @__PURE__ */ jsxs("label", { children: ["Количество кубов", /* @__PURE__ */ jsx("input", {
+					type: "number",
+					min: "1",
+					max: "100",
+					value: count,
+					onChange: (e) => setCount(integer(e.target.value, 1, 100))
+				})] }), /* @__PURE__ */ jsxs("label", { children: ["Модификатор", /* @__PURE__ */ jsx("input", {
+					type: "number",
+					min: "-10000",
+					max: "10000",
+					value: modifier,
+					onChange: (e) => setModifier(integer(e.target.value, -1e4, 1e4))
+				})] })]
+			}),
+			/* @__PURE__ */ jsxs("button", {
+				className: "play-primary dice-roll-button",
+				onClick: () => cast(`${count}d${sides}${modifier >= 0 ? "+" : ""}${modifier}`),
+				children: [
+					"Бросить ",
+					count,
+					"d",
+					sides,
+					modifier ? `${modifier >= 0 ? "+" : ""}${modifier}` : ""
+				]
+			}),
+			/* @__PURE__ */ jsxs("details", { children: [
+				/* @__PURE__ */ jsx("summary", { children: "Своя формула" }),
+				/* @__PURE__ */ jsxs("label", { children: ["Формула броска", /* @__PURE__ */ jsx("input", {
+					value: formula,
+					onChange: (e) => setFormula(e.target.value),
+					placeholder: "2d6+1d4+3"
+				})] }),
+				/* @__PURE__ */ jsx("button", {
+					onClick: () => cast(formula),
+					children: "Бросить формулу"
+				})
+			] }),
+			error && /* @__PURE__ */ jsx("p", {
+				role: "alert",
+				children: error
+			}),
+			latest && /* @__PURE__ */ jsxs("section", {
+				className: "dice-latest",
+				"aria-live": "polite",
+				children: [
+					/* @__PURE__ */ jsxs("small", { children: [
+						latest.name,
+						" · ",
+						latest.result.formula
+					] }),
+					/* @__PURE__ */ jsx("div", {
+						className: "dice-values",
+						children: latest.result.rolls.map((value, i) => /* @__PURE__ */ jsxs("span", {
+							className: "die-result",
+							children: [/* @__PURE__ */ jsx(DiceFace, {
+								sides: dieSides[i] || 20,
+								value
+							}), /* @__PURE__ */ jsx("b", { children: value })]
+						}, i))
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "dice-total",
+						children: [/* @__PURE__ */ jsx("span", { children: "Сумма с модификатором" }), /* @__PURE__ */ jsx("strong", { children: latest.result.total })]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "dice-history",
+				children: [
+					/* @__PURE__ */ jsx("h3", { children: "Последние результаты" }),
+					rolls.slice(0, 3).map((r) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", { children: [
+						/* @__PURE__ */ jsx("strong", { children: r.name }),
+						/* @__PURE__ */ jsx("small", { children: r.result.formula }),
+						/* @__PURE__ */ jsx("span", { children: r.result.rolls.join(" + ") })
+					] }), /* @__PURE__ */ jsx("b", { children: r.result.total })] }, r.id)),
+					!rolls.length && /* @__PURE__ */ jsx("p", { children: "Здесь появятся три последних броска." })
+				]
+			})
+		]
+	});
+}
+//#endregion
+//#region app/playSpells.ts
+var saveNames = {
+	str: "Силы",
+	dex: "Ловкости",
+	con: "Телосложения",
+	int: "Интеллекта",
+	wis: "Мудрости",
+	cha: "Харизмы"
+};
+/** Structured mechanics take precedence. Official text supplies delivery; ambiguous compound damage stays manual. */
+function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.className) {
+	const d = playDerived(c), level = characterLevel(c), pb = proficiencyBonus(level), m = spell.mechanics;
+	const innate = classId === "race" ? resolvedRacialSpells(d, [spell])[0] : void 0;
+	const ability = m?.ability || innate?.ability || classRuleFor(c, classId)?.spellAbility || classRuleFor(c, c.className)?.spellAbility || "int";
+	const mod = abilityModifier$1(d.abilities[ability]);
+	const text = spell.description || "";
+	const attack = /атак[ауи]\s+заклинанием|spell attack/i.test(text);
+	const saves = /(?<!не требует )спасброс(?:ок|ки|ка)/i.test(text);
+	const delivery = m ? m.delivery : attack ? "attack" : saves ? "save" : /автоматически попадает|автоматически попадают/.test(text) ? "automatic" : "effect";
+	const symbolic = (value) => value.replace(/@mod\.spell/g, String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => String(abilityModifier$1(d.abilities[key]))).replace(/@pb/g, String(pb)).replace(/@level/g, String(level));
+	let damageFormula, healingFormula;
+	let projectiles = 1, note;
+	if (m) {
+		const parts = [...m.damage, ...spell.level === 0 ? (m.cantripScaling || []).filter((s) => s.level <= level).flatMap((s) => s.damage) : []];
+		const steps = m.slotScaling ? Math.max(0, Math.floor((slotLevel - spell.level) / Math.max(1, m.slotScaling.every))) : 0;
+		for (let i = 0; i < steps; i++) parts.push(...m.slotScaling.damage);
+		damageFormula = parts.length ? parts.map((p) => symbolic(p.formula)).join("+") : void 0;
+	} else {
+		const known = characterAttacks({
+			...d,
+			spells: [spell.id],
+			spellGrants: [{
+				spellId: spell.id,
+				sourceType: "class",
+				sourceId: classId,
+				classId,
+				mode: "known"
+			}]
+		}, [spell]).filter((a) => a.kind === "cantrip");
+		const dice = text.match(/(\d+)\s*[кd](\d+)(?:\s*\+\s*(\d+))?/i);
+		if (spell.level === 0 && known.length) {
+			damageFormula = known[0].damageFormula.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/g, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()])));
+			projectiles = known.length;
+			note = known[0].note;
+		} else if (dice && /урон|хит|лечени|восстанавлива/i.test(text)) {
+			let count = Number(dice[1]), sides = Number(dice[2]), flat = Number(dice[3] || 0);
+			if (spell.level === 0) count *= level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
+			const upcast = text.match(/Ячейка выше[^:]*:\s*\+(\d+)\s*[кd](\d+)/i);
+			if (upcast && Number(upcast[2]) === sides) count += Math.max(0, slotLevel - spell.level) * Number(upcast[1]);
+			if (/восстанавливает|лечени/i.test(text) && !/урон/i.test(text)) {
+				if (/модификатор.*характеристик/i.test(text)) flat += mod;
+				healingFormula = `${count}d${sides}${flat >= 0 ? "+" : ""}${flat}`;
+			} else damageFormula = `${count}d${sides}${flat ? `+${flat}` : ""}`;
+			if (spell.id === "scorching-ray") {
+				projectiles = 3 + Math.max(0, slotLevel - 2);
+				note = "Каждый луч — отдельная атака и отдельный урон.";
+			}
+			if (spell.id === "magic-missile") {
+				projectiles = 3 + Math.max(0, slotLevel - 1);
+				note = "Показан урон одного дротика; распределите дротики между целями.";
+			}
+			if (/(?:два|несколько|различн).{0,30}(?:тип|урон)|позже|в начале каждого/i.test(text)) note = "Формула относится к первому указанному эффекту. Повторный и дополнительный урон сверяйте с описанием.";
+		}
+	}
+	const saveAbility = m?.saveAbility ? saveNames[m.saveAbility] : text.match(/спасброс(?:ок|ки|ка)\s+(Силы|Ловкости|Телосложения|Интеллекта|Мудрости|Харизмы)/i)?.[1];
+	return {
+		delivery,
+		ability,
+		attackBonus: delivery === "attack" ? pb + mod + spellItemBonus(c, "spellAttackBonus", classId) : void 0,
+		saveDc: delivery === "save" ? 8 + pb + mod + spellItemBonus(c, "spellSaveDcBonus", classId) : void 0,
+		saveAbility,
+		damageFormula,
+		healingFormula,
+		projectiles,
+		note,
+		criticalAllowed: delivery === "attack"
+	};
+}
+//#endregion
 //#region app/GameMode.tsx
 var tabs = [
 	["actions", "Действия"],
@@ -28487,17 +29385,26 @@ var tabs = [
 	["journal", "Журнал"]
 ];
 var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
-function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus, features }) {
+function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
 	const a = c.adventure;
 	const [tab, setTab] = useState("actions");
 	const [error, setError] = useState("");
 	const [history, setHistory] = useState([]);
 	const [result, setResult] = useState();
+	const [visibleRolls, setVisibleRolls] = useState(() => a.journal.filter((e) => e.rolls && e.formula && e.total !== void 0).slice(0, 3).map((e) => ({
+		id: e.id,
+		name: e.text,
+		result: {
+			formula: e.formula,
+			rolls: e.rolls,
+			total: e.total
+		}
+	})));
+	const [resolution, setResolution] = useState();
+	const [diceOpen, setDiceOpen] = useState(false);
 	const [mode, setMode] = useState("normal");
-	const [formula, setFormula] = useState("1d20");
 	const [amount, setAmount] = useState(1);
 	const [defense, setDefense] = useState("normal");
-	const [item, setItem] = useState();
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
 	const [dice, setDice] = useState({});
@@ -28507,7 +29414,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [effectName, setEffectName] = useState("");
 	const [effectRounds, setEffectRounds] = useState(0);
 	useEffect(() => {
-		if (!item && !casting && !rest) return;
+		if (!casting && !rest) return;
 		const previous = document.activeElement;
 		const dialog = document.querySelector(".play-modal");
 		const oldOverflow = document.body.style.overflow;
@@ -28515,7 +29422,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		dialog?.querySelector("button,input,select,textarea")?.focus();
 		const keydown = (event) => {
 			if (event.key === "Escape") {
-				setItem(void 0);
 				setCasting(void 0);
 				setRest(void 0);
 			}
@@ -28537,11 +29443,37 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			document.removeEventListener("keydown", keydown);
 			previous?.focus();
 		};
-	}, [
-		!!item,
-		!!casting,
-		!!rest
-	]);
+	}, [!!casting, !!rest]);
+	useEffect(() => {
+		if (resolution) document.querySelector(".play-resolution")?.scrollIntoView({ block: "nearest" });
+	}, [resolution?.spell.id]);
+	useEffect(() => {
+		if (!diceOpen) return;
+		const previous = document.activeElement;
+		const rail = document.querySelector(".play-dice-sidebar");
+		const oldOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		rail?.querySelector(".dice-mobile-close")?.focus();
+		const keydown = (e) => {
+			if (e.key === "Escape") setDiceOpen(false);
+			if (e.key !== "Tab" || !rail) return;
+			const controls = [...rail.querySelectorAll("button:not(:disabled),input,summary")].filter((el) => el.getClientRects().length);
+			if (e.shiftKey && document.activeElement === controls[0]) {
+				e.preventDefault();
+				controls.at(-1)?.focus();
+			}
+			if (!e.shiftKey && document.activeElement === controls.at(-1)) {
+				e.preventDefault();
+				controls[0]?.focus();
+			}
+		};
+		document.addEventListener("keydown", keydown);
+		return () => {
+			document.body.style.overflow = oldOverflow;
+			document.removeEventListener("keydown", keydown);
+			previous?.focus();
+		};
+	}, [diceOpen]);
 	const d = playDerived(c);
 	const hp = c.currentHitPoints ?? playMaximum(c);
 	const max = playMaximum(c);
@@ -28583,13 +29515,21 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			setError(e instanceof Error ? e.message : String(e));
 		}
 	}
+	function presentRoll(name, r) {
+		setResult({
+			name,
+			result: r
+		});
+		setVisibleRolls((old) => [{
+			id: playId(),
+			name,
+			result: r
+		}, ...old].slice(0, 3));
+	}
 	function rolled(name, fn) {
 		try {
 			const r = fn();
-			setResult({
-				name,
-				result: r
-			});
+			presentRoll(name, r);
 			change(logPlay(c, name, r));
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -28598,18 +29538,22 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	function d20(name, bonus) {
 		rolled(name, () => rollD20(bonus, mode));
 	}
-	function damageFormula(value) {
-		return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()]))) + sign(itemBonus(c, "damageBonus"));
+	function damageFormula(value, bonus = 0) {
+		return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()]))).replace(/\[PB\]/g, String(pb)) + sign(itemBonus(c, "damageBonus") + bonus);
 	}
-	function beginCast(spell) {
-		const innate = racial.find((r) => r.spell.id === spell.id);
+	function attackBonusFor(attack) {
+		return itemBonus(c, "attackBonus") + (attack.kind === "weapon" || attack.id.includes("weapon-") ? weaponItemBonus(c, attack.name, "weaponAttackBonus") : attack.kind === "spell" || attack.kind === "cantrip" ? spellItemBonus(c, "spellAttackBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className) : 0);
+	}
+	function beginCast(spell, classId = c.className) {
+		const innate = classId === "race" ? racial.find((r) => r.spell.id === spell.id) : void 0;
 		const freeKey = innate?.resourceKey && innate.remainingUses > 0 ? innate.resourceKey : void 0;
 		const canSlots = !innate || innate.castWithSlots;
 		const method = spell.level === 0 ? "cantrip" : freeKey ? "free" : canSlots && slots.some((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0)) ? `slot:${slots.findIndex((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0))}` : canSlots && pact.level >= spell.level && pact.slots > (c.pactSlotsUsed || 0) ? "pact" : spell.ritual ? "ritual" : "";
 		setCasting({
 			spell,
 			freeKey,
-			canSlots
+			canSlots,
+			classId
 		});
 		setCastMethod(method);
 	}
@@ -28644,7 +29588,20 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					}
 				};
 			}
-			return logPlay(next, `Сотворено: ${spell.name} · ${castMethod === "ritual" ? "ритуал; проверьте право на ритуальное колдовство" : castMethod === "free" ? "расовый ресурс" : castMethod === "cantrip" ? "заговор" : castMethod === "pact" ? `магия договора, ${pact.level} круг` : `${Number(castMethod.split(":")[1]) + 1} круг`}`);
+			next = logPlay(next, `Сотворено: ${spell.name} · ${castMethod === "ritual" ? "ритуал; проверьте право на ритуальное колдовство" : castMethod === "free" ? "расовый ресурс" : castMethod === "cantrip" ? "заговор" : castMethod === "pact" ? `магия договора, ${pact.level} круг` : `${Number(castMethod.split(":")[1]) + 1} круг`}`);
+			const profile = spellPlayProfile(prev, spell, castMethod.startsWith("slot:") ? Number(castMethod.split(":")[1]) + 1 : castMethod === "pact" ? pact.level : spell.level, casting.classId);
+			let attack;
+			if (profile.attackBonus !== void 0) {
+				attack = rollD20(profile.attackBonus, mode);
+				presentRoll(`Атака: ${spell.name}`, attack);
+				next = logPlay(next, `Атака: ${spell.name}`, attack);
+			}
+			setResolution({
+				spell,
+				profile,
+				attack
+			});
+			return next;
 		});
 		setCasting(void 0);
 	}
@@ -28688,19 +29645,28 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				entry.spell.components
 			] }),
 			/* @__PURE__ */ jsx("p", { children: entry.spell.duration }),
+			/* @__PURE__ */ jsx("p", {
+				className: "play-spell-mechanics",
+				children: (() => {
+					const p = spellPlayProfile(c, entry.spell, entry.spell.level, entry.classId);
+					return p.attackBonus !== void 0 ? `Атака заклинанием ${sign(p.attackBonus)}` : p.saveDc !== void 0 ? `Спасбросок ${p.saveAbility || "цели"} · Сл ${p.saveDc} · без крита` : p.delivery === "automatic" ? "Автоматическое попадание · без крита" : p.healingFormula ? `Лечение ${p.healingFormula}` : "Эффект по описанию";
+				})()
+			}),
 			/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Описание" }), /* @__PURE__ */ jsx("p", {
 				className: "play-description",
 				children: entry.spell.description
 			})] }),
 			/* @__PURE__ */ jsx("button", {
 				disabled: !entry.prepared && !entry.spell.ritual,
-				onClick: () => beginCast(entry.spell),
+				onClick: () => beginCast(entry.spell, entry.classId),
 				children: "Сотворить"
 			})
 		]
 	}, `${entry.classId}-${entry.source}-${entry.spell.id}`);
 	return /* @__PURE__ */ jsxs("main", {
-		className: "play-shell",
+		className: `app-shell play-shell${shellClassName}`,
+		style: shellStyle,
+		"data-site-theme": siteTheme,
 		children: [
 			/* @__PURE__ */ jsxs("header", {
 				className: "play-header",
@@ -28713,6 +29679,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					/* @__PURE__ */ jsxs("div", {
 						className: "play-header-tools",
 						children: [
+							chrome,
 							/* @__PURE__ */ jsx("span", {
 								role: "status",
 								children: saveStatus
@@ -28847,10 +29814,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					/* @__PURE__ */ jsxs("button", {
 						onClick: () => change((prev) => {
 							const r = rollD20(saveBonus("con"), mode);
-							setResult({
-								name: "Концентрация",
-								result: r
-							});
+							presentRoll("Концентрация", r);
 							let next = {
 								...prev,
 								adventure: {
@@ -28880,793 +29844,713 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				]
 			}, check.id)),
 			/* @__PURE__ */ jsxs("div", {
-				className: "play-content",
-				children: [
-					tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
+				className: "play-workspace",
+				children: [/* @__PURE__ */ jsxs("div", {
+					className: "play-content",
+					children: [
+						resolution && /* @__PURE__ */ jsxs("section", {
+							className: "play-resolution play-card",
+							"aria-label": "Результат заклинания",
 							children: [
-								/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [
-										/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											value: amount,
-											onChange: (e) => setAmount(integer(e.target.value))
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
-											value: defense,
-											onChange: (e) => setDefense(e.target.value),
-											children: [
-												/* @__PURE__ */ jsx("option", {
-													value: "normal",
-													children: "Обычный"
-												}),
-												/* @__PURE__ */ jsx("option", {
-													value: "resistance",
-													children: "Сопротивление ×½"
-												}),
-												/* @__PURE__ */ jsx("option", {
-													value: "vulnerability",
-													children: "Уязвимость ×2"
-												}),
-												/* @__PURE__ */ jsx("option", {
-													value: "immune",
-													children: "Иммунитет"
-												})
-											]
-										})] }),
-										/* @__PURE__ */ jsx("button", {
-											className: "play-danger",
-											onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
-											children: "Получить урон"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => change(healPlay(c, amount)),
-											children: "Лечение"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => change(logPlay({
-												...c,
-												temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
-											}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
-											children: "Временные HP"
-										})
-									]
-								}),
-								hp === 0 && /* @__PURE__ */ jsxs("div", {
-									className: "play-notice",
-									children: [
-										/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
-										/* @__PURE__ */ jsxs("span", { children: [
-											"Успехи ",
-											c.deathSaveSuccesses || 0,
-											"/3 · Провалы ",
-											c.deathSaveFailures || 0,
-											"/3"
-										] }),
-										/* @__PURE__ */ jsx("button", {
-											disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
-											onClick: () => change((prev) => {
-												const r = rollD20(0, mode);
-												setResult({
-													name: "Спасбросок смерти",
-													result: r
-												});
-												return applyDeathSave(prev, r.natural);
-											}),
-											children: "Бросить d20"
-										}),
-										/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
-									]
-								})
-							]
-						}),
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsxs("div", {
+								/* @__PURE__ */ jsxs("header", {
 									className: "play-row",
-									children: [/* @__PURE__ */ jsxs("h2", { children: ["Собственный ход ", a.round] }), /* @__PURE__ */ jsx("button", {
-										onClick: () => change(advancePlayTurn(c)),
-										children: "Следующий ход"
+									children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Сотворено" }), /* @__PURE__ */ jsx("h2", { children: resolution.spell.name })] }), /* @__PURE__ */ jsx("button", {
+										onClick: () => setResolution(void 0),
+										children: "Закрыть заклинание"
 									})]
 								}),
-								/* @__PURE__ */ jsx("div", {
+								resolution.profile.attackBonus !== void 0 && /* @__PURE__ */ jsxs("div", {
 									className: "play-row play-wrap",
-									children: [
-										"action",
-										"bonus",
-										"reaction"
-									].map((key, i) => /* @__PURE__ */ jsxs("label", {
-										className: "play-check",
-										children: [/* @__PURE__ */ jsx("input", {
-											type: "checkbox",
-											checked: a.turn[key],
-											onChange: () => change({
+									children: [/* @__PURE__ */ jsxs("span", { children: [
+										"Попадание: ",
+										/* @__PURE__ */ jsx("b", { children: resolution.attack?.total ?? "—" }),
+										" ",
+										resolution.attack?.natural === 20 ? "· крит" : resolution.attack?.natural === 1 ? "· промах" : ""
+									] }), /* @__PURE__ */ jsxs("button", {
+										onClick: () => {
+											const r = rollD20(resolution.profile.attackBonus, mode);
+											presentRoll(`Атака: ${resolution.spell.name}`, r);
+											change(logPlay(c, `Атака: ${resolution.spell.name}`, r));
+											setResolution({
+												...resolution,
+												attack: r
+											});
+										},
+										children: ["Бросить атаку ", sign(resolution.profile.attackBonus)]
+									})]
+								}),
+								resolution.profile.saveDc !== void 0 && /* @__PURE__ */ jsxs("p", { children: [
+									"Цель делает спасбросок ",
+									resolution.profile.saveAbility || "",
+									": ",
+									/* @__PURE__ */ jsxs("b", { children: ["Сл ", resolution.profile.saveDc] }),
+									". Крит недоступен."
+								] }),
+								resolution.profile.projectiles > 1 && /* @__PURE__ */ jsxs("p", { children: [
+									"Атак / снарядов: ",
+									resolution.profile.projectiles,
+									". Каждый бросок здесь относится к одному лучу или снаряду."
+								] }),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [resolution.profile.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
+										onClick: () => rolled(`Урон: ${resolution.spell.name}`, () => rollDice(resolution.profile.damageFormula)),
+										children: [
+											resolution.profile.delivery === "effect" ? "Бросить эффект" : "Бросить урон",
+											" ",
+											resolution.profile.damageFormula
+										]
+									}), resolution.profile.criticalAllowed && /* @__PURE__ */ jsx("button", {
+										onClick: () => rolled(`Крит: ${resolution.spell.name}`, () => rollDice(resolution.profile.damageFormula, void 0, true)),
+										children: "Критический урон"
+									})] }), resolution.profile.healingFormula && /* @__PURE__ */ jsxs("button", {
+										onClick: () => rolled(`Лечение: ${resolution.spell.name}`, () => rollDice(resolution.profile.healingFormula)),
+										children: ["Бросить лечение ", resolution.profile.healingFormula]
+									})]
+								}),
+								resolution.profile.note && /* @__PURE__ */ jsx("p", { children: resolution.profile.note }),
+								!resolution.profile.damageFormula && !resolution.profile.healingFormula && /* @__PURE__ */ jsx("p", { children: "Эффект выполняется по описанию заклинания." })
+							]
+						}),
+						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [
+											/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												value: amount,
+												onChange: (e) => setAmount(integer(e.target.value))
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
+												value: defense,
+												onChange: (e) => setDefense(e.target.value),
+												children: [
+													/* @__PURE__ */ jsx("option", {
+														value: "normal",
+														children: "Обычный"
+													}),
+													/* @__PURE__ */ jsx("option", {
+														value: "resistance",
+														children: "Сопротивление ×½"
+													}),
+													/* @__PURE__ */ jsx("option", {
+														value: "vulnerability",
+														children: "Уязвимость ×2"
+													}),
+													/* @__PURE__ */ jsx("option", {
+														value: "immune",
+														children: "Иммунитет"
+													})
+												]
+											})] }),
+											/* @__PURE__ */ jsx("button", {
+												className: "play-danger",
+												onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
+												children: "Получить урон"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => change(healPlay(c, amount)),
+												children: "Лечение"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => change(logPlay({
+													...c,
+													temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
+												}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
+												children: "Временные HP"
+											})
+										]
+									}),
+									hp === 0 && /* @__PURE__ */ jsxs("div", {
+										className: "play-notice",
+										children: [
+											/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
+											/* @__PURE__ */ jsxs("span", { children: [
+												"Успехи ",
+												c.deathSaveSuccesses || 0,
+												"/3 · Провалы ",
+												c.deathSaveFailures || 0,
+												"/3"
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
+												onClick: () => change((prev) => {
+													const r = rollD20(0, mode);
+													presentRoll("Спасбросок смерти", r);
+													return applyDeathSave(prev, r.natural);
+												}),
+												children: "Бросить d20"
+											}),
+											/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+										]
+									})
+								]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row",
+										children: [/* @__PURE__ */ jsxs("h2", { children: ["Собственный ход ", a.round] }), /* @__PURE__ */ jsx("button", {
+											onClick: () => change(advancePlayTurn(c)),
+											children: "Следующий ход"
+										})]
+									}),
+									/* @__PURE__ */ jsx("div", {
+										className: "play-row play-wrap",
+										children: [
+											"action",
+											"bonus",
+											"reaction"
+										].map((key, i) => /* @__PURE__ */ jsxs("label", {
+											className: "play-check",
+											children: [/* @__PURE__ */ jsx("input", {
+												type: "checkbox",
+												checked: a.turn[key],
+												onChange: () => change({
+													...c,
+													adventure: {
+														...a,
+														turn: {
+															...a.turn,
+															[key]: !a.turn[key]
+														}
+													}
+												})
+											}), [
+												"Действие потрачено",
+												"Бонусное потрачено",
+												"Реакция потрачена"
+											][i]]
+										}, key))
+									}),
+									/* @__PURE__ */ jsx("small", { children: "Отметки помогают учитывать ход. Броски сами не тратят действие." }),
+									/* @__PURE__ */ jsx("div", {
+										className: "play-row play-wrap",
+										children: [
+											"Рывок",
+											"Отход",
+											"Уклонение",
+											"Помощь",
+											"Засада",
+											"Поиск",
+											"Подготовка"
+										].map((name) => /* @__PURE__ */ jsx("button", {
+											onClick: () => change(logPlay({
 												...c,
 												adventure: {
 													...a,
 													turn: {
 														...a.turn,
-														[key]: !a.turn[key]
+														action: true
 													}
 												}
-											})
-										}), [
-											"Действие потрачено",
-											"Бонусное потрачено",
-											"Реакция потрачена"
-										][i]]
-									}, key))
-								}),
-								/* @__PURE__ */ jsx("small", { children: "Отметки помогают учитывать ход. Броски сами не тратят действие." }),
-								/* @__PURE__ */ jsx("div", {
-									className: "play-row play-wrap",
+											}, `Действие: ${name}`)),
+											children: name
+										}, name))
+									})
+								]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "play-grid",
+								children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", {
+									className: "play-card",
 									children: [
-										"Рывок",
-										"Отход",
-										"Уклонение",
-										"Помощь",
-										"Засада",
-										"Поиск",
-										"Подготовка"
-									].map((name) => /* @__PURE__ */ jsx("button", {
+										/* @__PURE__ */ jsx("h3", { children: attack.name }),
+										/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
+										/* @__PURE__ */ jsx("p", { children: attack.note }),
+										/* @__PURE__ */ jsxs("div", {
+											className: "play-row play-wrap",
+											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("button", {
+												onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+												children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
+											}), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+												onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")))),
+												children: "Урон"
+											}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
+												onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")), void 0, true)),
+												children: "Крит"
+											})] })]
+										})
+									]
+								}, attack.id))
+							}),
+							/* @__PURE__ */ jsxs("button", {
+								onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
+								children: ["Бросить инициативу ", sign(initiativeBreakdown(d).value)]
+							})
+						] }),
+						tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsx("h2", { children: "Ячейки" }), /* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [slots.map((n, i) => n > 0 && /* @__PURE__ */ jsxs("div", {
+										className: "play-counter",
+										children: [
+											/* @__PURE__ */ jsxs("strong", { children: [i + 1, " круг"] }),
+											/* @__PURE__ */ jsxs("span", { children: [
+												Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
+												" / ",
+												n
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												"aria-label": `Потратить ячейку ${i + 1} круга`,
+												disabled: (c.spellSlotsUsed?.[i] || 0) >= n,
+												onClick: () => change((prev) => {
+													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+													used[i]++;
+													return logPlay({
+														...prev,
+														spellSlotsUsed: used
+													}, `Потрачена ячейка ${i + 1} круга`);
+												}),
+												children: "−"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												"aria-label": `Вернуть ячейку ${i + 1} круга`,
+												disabled: !(c.spellSlotsUsed?.[i] || 0),
+												onClick: () => change((prev) => {
+													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+													used[i]--;
+													return {
+														...prev,
+														spellSlotsUsed: used
+													};
+												}),
+												children: "+"
+											})
+										]
+									}, i)), pact.slots > 0 && /* @__PURE__ */ jsxs("div", {
+										className: "play-counter",
+										children: [
+											/* @__PURE__ */ jsxs("strong", { children: [
+												"Договор · ",
+												pact.level,
+												" круг"
+											] }),
+											/* @__PURE__ */ jsxs("span", { children: [
+												pact.slots - (c.pactSlotsUsed || 0),
+												" / ",
+												pact.slots
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												disabled: (c.pactSlotsUsed || 0) >= pact.slots,
+												onClick: () => change({
+													...c,
+													pactSlotsUsed: (c.pactSlotsUsed || 0) + 1
+												}),
+												children: "−"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												disabled: !c.pactSlotsUsed,
+												onClick: () => change({
+													...c,
+													pactSlotsUsed: (c.pactSlotsUsed || 0) - 1
+												}),
+												children: "+"
+											})
+										]
+									})]
+								})]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "play-row play-wrap",
+								children: [/* @__PURE__ */ jsx("input", {
+									"aria-label": "Поиск заклинаний",
+									placeholder: "Найти заклинание",
+									value: search,
+									onChange: (e) => setSearch(e.target.value)
+								}), /* @__PURE__ */ jsxs("label", {
+									className: "play-check",
+									children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: showUnprepared,
+										onChange: (e) => setShowUnprepared(e.target.checked)
+									}), "Показать неподготовленные"]
+								})]
+							}),
+							groups.map((g) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("h2", { children: [spellSourceDisplayName(g.classId, d, classes), g.preparedMaximum !== void 0 ? ` · подготовка до ${g.preparedMaximum}` : ""] }), /* @__PURE__ */ jsx("div", {
+								className: "play-grid",
+								children: g.spells.filter((x) => (showUnprepared || x.prepared) && x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x, g.preparedMaximum))
+							})] }, g.classId)),
+							[...others, ...granted].length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h2", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
+								className: "play-grid",
+								children: [...others, ...granted].filter((x) => x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x))
+							})] }),
+							/* @__PURE__ */ jsx("p", {
+								className: "play-notice",
+								children: "Сотворение учитывает ячейку, концентрацию, тип броска, круг ячейки и бонусы фокусировки. Цели, дистанцию, компоненты, право на ритуал и эффекты сверяйте по описанию. Броски попадания и урона доступны в карточке сотворённого заклинания."
+							})
+						] }),
+						tab === "inventory" && /* @__PURE__ */ jsx(PlayInventory, {
+							character: c,
+							onChange: change,
+							onRoll: presentRoll
+						}),
+						tab === "hero" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsxs("div", {
+								className: "play-grid",
+								children: [/* @__PURE__ */ jsxs("section", {
+									className: "play-card",
+									children: [
+										/* @__PURE__ */ jsx("h2", { children: "Характеристики и спасброски" }),
+										Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("div", {
+											className: "play-stat",
+											children: [
+												/* @__PURE__ */ jsxs("span", { children: [
+													abilityLabels[key],
+													" ",
+													/* @__PURE__ */ jsx("b", { children: d.abilities[key] })
+												] }),
+												/* @__PURE__ */ jsx("button", {
+													onClick: () => d20(`Проверка: ${abilityLabels[key]}`, abilityModifier$1(d.abilities[key])),
+													children: sign(abilityModifier$1(d.abilities[key]))
+												}),
+												/* @__PURE__ */ jsxs("button", {
+													onClick: () => d20(`Спасбросок: ${abilityLabels[key]}`, saveBonus(key)),
+													children: ["Спас ", sign(saveBonus(key))]
+												})
+											]
+										}, key)),
+										/* @__PURE__ */ jsxs("p", { children: [
+											"Бонус мастерства ",
+											sign(pb),
+											" · Пассивная внимательность ",
+											passivePerceptionBreakdown(d).value
+										] }),
+										/* @__PURE__ */ jsxs("label", {
+											className: "play-check",
+											children: [/* @__PURE__ */ jsx("input", {
+												type: "checkbox",
+												checked: !!c.inspiration,
+												onChange: () => change({
+													...c,
+													inspiration: !c.inspiration
+												})
+											}), "Вдохновение"]
+										})
+									]
+								}), /* @__PURE__ */ jsxs("section", {
+									className: "play-card",
+									children: [/* @__PURE__ */ jsx("h2", { children: "Навыки" }), Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("button", {
+										className: "play-skill",
+										onClick: () => d20(skill, skillBonusBreakdown(d, skill).value),
+										children: [/* @__PURE__ */ jsx("span", { children: skill }), /* @__PURE__ */ jsx("b", { children: sign(skillBonusBreakdown(d, skill).value) })]
+									}, skill))]
+								})]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
+									/* @__PURE__ */ jsx("div", {
+										className: "play-grid",
+										children: resources.map((r) => /* @__PURE__ */ jsxs("div", {
+											className: "play-counter",
+											children: [
+												/* @__PURE__ */ jsx("strong", { children: r.name }),
+												/* @__PURE__ */ jsxs("span", { children: [
+													resourceCurrent(d, r),
+													" / ",
+													r.max
+												] }),
+												/* @__PURE__ */ jsx("button", {
+													disabled: resourceCurrent(d, r) <= 0,
+													onClick: () => change(logPlay({
+														...c,
+														resourceSpent: {
+															...c.resourceSpent,
+															[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
+														}
+													}, `Использован ресурс: ${r.name}`)),
+													children: "−"
+												}),
+												/* @__PURE__ */ jsx("button", {
+													disabled: !(c.resourceSpent?.[r.key] || 0),
+													onClick: () => change({
+														...c,
+														resourceSpent: {
+															...c.resourceSpent,
+															[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
+														}
+													}),
+													children: "+"
+												}),
+												/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
+											]
+										}, r.key))
+									}),
+									subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
+										value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
+										onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
+										children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
+											value: String(option.id),
+											children: option.name
+										}, String(option.id)))
+									})] }, control.key))
+								]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Состояния и эффекты" }),
+									/* @__PURE__ */ jsx("div", {
+										className: "play-row play-wrap",
+										children: playConditions.map((name) => /* @__PURE__ */ jsx("button", {
+											className: a.conditions.includes(name) ? "active" : "",
+											onClick: () => change(toggleCondition(c, name)),
+											children: name
+										}, name))
+									}),
+									/* @__PURE__ */ jsxs("label", { children: ["Истощение", /* @__PURE__ */ jsx("input", {
+										type: "number",
+										min: "0",
+										max: "6",
+										value: a.exhaustion,
+										onChange: (e) => change({
+											...c,
+											adventure: {
+												...a,
+												exhaustion: integer(e.target.value, 0, 6)
+											}
+										})
+									})] }),
+									/* @__PURE__ */ jsx("p", { children: "Состояния и истощение — отметки для игры. Их модификаторы, скорость и преимущества выбирайте вручную. Недееспособность автоматически прерывает концентрацию." }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [
+											/* @__PURE__ */ jsx("input", {
+												"aria-label": "Название эффекта",
+												placeholder: "Эффект или напоминание",
+												value: effectName,
+												onChange: (e) => setEffectName(e.target.value)
+											}),
+											/* @__PURE__ */ jsxs("label", { children: ["Собственных ходов (0 — без срока)", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												value: effectRounds,
+												onChange: (e) => setEffectRounds(integer(e.target.value))
+											})] }),
+											/* @__PURE__ */ jsx("button", {
+												disabled: !effectName.trim(),
+												onClick: () => {
+													change({
+														...c,
+														adventure: {
+															...a,
+															effects: [...a.effects, {
+																id: playId(),
+																name: effectName.trim(),
+																remaining: effectRounds || void 0
+															}]
+														}
+													});
+													setEffectName("");
+												},
+												children: "Добавить"
+											})
+										]
+									}),
+									a.effects.map((e) => /* @__PURE__ */ jsxs("div", {
+										className: "play-row",
+										children: [/* @__PURE__ */ jsxs("span", { children: [e.name, e.remaining ? ` · осталось ${e.remaining} ходов` : ""] }), /* @__PURE__ */ jsx("button", {
+											onClick: () => change({
+												...c,
+												adventure: {
+													...a,
+													effects: a.effects.filter((x) => x.id !== e.id)
+												}
+											}),
+											children: "Снять"
+										})]
+									}, e.id))
+								]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsx("h2", { children: "Особенности героя" }), features.map((f, i) => /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: f.name }), /* @__PURE__ */ jsx("p", {
+									className: "play-description",
+									children: f.description
+								})] }, `${f.name}-${i}`))]
+							}),
+							/* @__PURE__ */ jsxs("details", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("summary", { children: "Ручные значения и завершение приключения" }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-grid",
+										children: [
+											/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "1",
+												value: a.hpMaximum ?? max,
+												onChange: (e) => change({
+													...c,
+													adventure: {
+														...a,
+														hpMaximum: integer(e.target.value, 1)
+													}
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												value: a.acOverride ?? "",
+												onChange: (e) => change({
+													...c,
+													adventure: {
+														...a,
+														acOverride: e.target.value === "" ? void 0 : integer(e.target.value)
+													}
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												max,
+												value: hp,
+												onChange: (e) => change({
+													...c,
+													currentHitPoints: integer(e.target.value, 0, max)
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Временные HP", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												value: c.temporaryHitPoints || 0,
+												onChange: (e) => change({
+													...c,
+													temporaryHitPoints: integer(e.target.value)
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Успехи смерти", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												max: "3",
+												value: c.deathSaveSuccesses || 0,
+												onChange: (e) => change({
+													...c,
+													deathSaveSuccesses: integer(e.target.value, 0, 3)
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Провалы смерти", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "0",
+												max: "3",
+												value: c.deathSaveFailures || 0,
+												onChange: (e) => change({
+													...c,
+													deathSaveFailures: integer(e.target.value, 0, 3)
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Лимит настройки", /* @__PURE__ */ jsx("input", {
+												type: "number",
+												min: "1",
+												max: "10",
+												value: a.attunementLimit,
+												onChange: (e) => change({
+													...c,
+													adventure: {
+														...a,
+														attunementLimit: integer(e.target.value, 1, 10)
+													}
+												})
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Название приключения", /* @__PURE__ */ jsx("input", {
+												value: a.name,
+												onChange: (e) => change({
+													...c,
+													adventure: {
+														...a,
+														name: e.target.value
+													}
+												})
+											})] })
+										]
+									}),
+									/* @__PURE__ */ jsx("button", {
 										onClick: () => change(logPlay({
 											...c,
 											adventure: {
 												...a,
-												turn: {
-													...a.turn,
-													action: true
-												}
+												status: a.status === "active" ? "archived" : "active"
 											}
-										}, `Действие: ${name}`)),
-										children: name
-									}, name))
-								})
-							]
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "play-grid",
-							children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", {
-								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsx("h3", { children: attack.name }),
-									/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc}` : ""] }),
-									/* @__PURE__ */ jsx("p", { children: attack.note }),
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row play-wrap",
-										children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("button", {
-											onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + itemBonus(c, "attackBonus")),
-											children: ["Атака ", sign(attack.attackBonus + itemBonus(c, "attackBonus"))]
-										}), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
-											onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula))),
-											children: "Урон"
-										}), /* @__PURE__ */ jsx("button", {
-											onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula), void 0, true)),
-											children: "Крит"
-										})] })]
-									})
+										}, a.status === "active" ? "Приключение завершено и архивировано" : "Приключение возобновлено")),
+										children: a.status === "active" ? "Завершить приключение" : "Возобновить приключение"
+									}),
+									/* @__PURE__ */ jsx("p", { children: "Развитие героя, особенности и подробный лист доступны через «Изменить героя». Вы редактируете эту игровую копию." })
 								]
-							}, attack.id))
-						}),
-						/* @__PURE__ */ jsxs("section", {
+							})
+						] }),
+						tab === "journal" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("section", {
+							className: "play-card",
+							children: [/* @__PURE__ */ jsx("h2", { children: "Заметки приключения" }), /* @__PURE__ */ jsx("textarea", {
+								rows: 6,
+								value: a.notes,
+								onChange: (e) => onChange({
+									...c,
+									adventure: {
+										...a,
+										notes: e.target.value
+									}
+								}),
+								placeholder: "Квесты, договорённости с мастером, добыча…"
+							})]
+						}), /* @__PURE__ */ jsxs("section", {
 							className: "play-card",
 							children: [
-								/* @__PURE__ */ jsx("h2", { children: "Произвольный бросок" }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row",
-									children: [/* @__PURE__ */ jsx("input", {
-										"aria-label": "Формула броска",
-										value: formula,
-										onChange: (e) => setFormula(e.target.value),
-										placeholder: "2d6+3"
-									}), /* @__PURE__ */ jsx("button", {
-										onClick: () => rolled("Произвольный бросок", () => rollDice(formula)),
-										children: "Бросить"
-									})]
-								}),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [[
-										4,
-										6,
-										8,
-										10,
-										12,
-										20,
-										100
-									].map((n) => /* @__PURE__ */ jsxs("button", {
-										onClick: () => rolled(`d${n}`, () => rollDice(`1d${n}`)),
-										children: ["d", n]
-									}, n)), /* @__PURE__ */ jsx("button", {
-										onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
-										children: "Инициатива"
-									})]
-								})
-							]
-						})
-					] }),
-					tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [/* @__PURE__ */ jsx("h2", { children: "Ячейки" }), /* @__PURE__ */ jsxs("div", {
-								className: "play-row play-wrap",
-								children: [slots.map((n, i) => n > 0 && /* @__PURE__ */ jsxs("div", {
-									className: "play-counter",
-									children: [
-										/* @__PURE__ */ jsxs("strong", { children: [i + 1, " круг"] }),
-										/* @__PURE__ */ jsxs("span", { children: [
-											Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
-											" / ",
-											n
-										] }),
-										/* @__PURE__ */ jsx("button", {
-											"aria-label": `Потратить ячейку ${i + 1} круга`,
-											disabled: (c.spellSlotsUsed?.[i] || 0) >= n,
-											onClick: () => change((prev) => {
-												const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
-												used[i]++;
-												return logPlay({
-													...prev,
-													spellSlotsUsed: used
-												}, `Потрачена ячейка ${i + 1} круга`);
-											}),
-											children: "−"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											"aria-label": `Вернуть ячейку ${i + 1} круга`,
-											disabled: !(c.spellSlotsUsed?.[i] || 0),
-											onClick: () => change((prev) => {
-												const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
-												used[i]--;
-												return {
-													...prev,
-													spellSlotsUsed: used
-												};
-											}),
-											children: "+"
-										})
-									]
-								}, i)), pact.slots > 0 && /* @__PURE__ */ jsxs("div", {
-									className: "play-counter",
-									children: [
-										/* @__PURE__ */ jsxs("strong", { children: [
-											"Договор · ",
-											pact.level,
-											" круг"
-										] }),
-										/* @__PURE__ */ jsxs("span", { children: [
-											pact.slots - (c.pactSlotsUsed || 0),
-											" / ",
-											pact.slots
-										] }),
-										/* @__PURE__ */ jsx("button", {
-											disabled: (c.pactSlotsUsed || 0) >= pact.slots,
-											onClick: () => change({
-												...c,
-												pactSlotsUsed: (c.pactSlotsUsed || 0) + 1
-											}),
-											children: "−"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											disabled: !c.pactSlotsUsed,
-											onClick: () => change({
-												...c,
-												pactSlotsUsed: (c.pactSlotsUsed || 0) - 1
-											}),
-											children: "+"
-										})
-									]
-								})]
-							})]
-						}),
-						/* @__PURE__ */ jsxs("div", {
-							className: "play-row play-wrap",
-							children: [/* @__PURE__ */ jsx("input", {
-								"aria-label": "Поиск заклинаний",
-								placeholder: "Найти заклинание",
-								value: search,
-								onChange: (e) => setSearch(e.target.value)
-							}), /* @__PURE__ */ jsxs("label", {
-								className: "play-check",
-								children: [/* @__PURE__ */ jsx("input", {
-									type: "checkbox",
-									checked: showUnprepared,
-									onChange: (e) => setShowUnprepared(e.target.checked)
-								}), "Показать неподготовленные"]
-							})]
-						}),
-						groups.map((g) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("h2", { children: [spellSourceDisplayName(g.classId, d, classes), g.preparedMaximum !== void 0 ? ` · подготовка до ${g.preparedMaximum}` : ""] }), /* @__PURE__ */ jsx("div", {
-							className: "play-grid",
-							children: g.spells.filter((x) => (showUnprepared || x.prepared) && x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x, g.preparedMaximum))
-						})] }, g.classId)),
-						[...others, ...granted].length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h2", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
-							className: "play-grid",
-							children: [...others, ...granted].filter((x) => x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x))
-						})] }),
-						/* @__PURE__ */ jsx("p", {
-							className: "play-notice",
-							children: "Сотворение учитывает ячейку и концентрацию. Цели, дистанцию, компоненты, право на ритуал и эффекты сверяйте по описанию. Урон можно бросить в «Действиях»."
-						})
-					] }),
-					tab === "inventory" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [
-										/* @__PURE__ */ jsx("h2", { children: "Рюкзак" }),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => setItem(newPlayItem()),
-											children: "+ Предмет"
-										}),
-										/* @__PURE__ */ jsx("input", {
-											"aria-label": "Поиск предметов",
-											placeholder: "Поиск предметов",
-											value: search,
-											onChange: (e) => setSearch(e.target.value)
-										})
-									]
-								}),
-								/* @__PURE__ */ jsxs("p", { children: [
-									"Вес: ",
-									a.inventory.reduce((n, i) => n + i.quantity * i.weight, 0).toFixed(1),
-									" фунт. · Настройка: ",
-									a.inventory.filter((i) => i.attuned).length,
-									"/",
-									a.attunementLimit
+								/* @__PURE__ */ jsx("h2", { children: "История действий" }),
+								/* @__PURE__ */ jsxs("small", { children: [
+									"Последние 150 записей. Прошло игрового времени: ",
+									a.elapsedMinutes,
+									" мин."
 								] }),
-								/* @__PURE__ */ jsx("small", { children: "Вес наборов и предметов введите вручную. Бонусы активны у надетых предметов после необходимой настройки." }),
-								/* @__PURE__ */ jsx("div", {
-									className: "play-row play-wrap",
+								a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
+									className: "play-log",
 									children: [
-										"gp",
-										"sp",
-										"cp",
-										"pp"
-									].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
-										"ЗМ",
-										"СМ",
-										"ММ",
-										"ПМ"
-									][i], /* @__PURE__ */ jsx("input", {
-										type: "number",
-										min: "0",
-										value: c.currency?.[key] || 0,
-										onChange: (e) => change({
-											...c,
-											currency: {
-												...c.currency,
-												[key]: integer(e.target.value)
-											}
-										})
-									})] }, key))
-								})
-							]
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "play-grid",
-							children: a.inventory.filter((i) => i.name.toLowerCase().includes(search.toLowerCase())).map((i) => /* @__PURE__ */ jsxs("article", {
-								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row",
-										children: [/* @__PURE__ */ jsxs("h3", { children: [
-											i.name,
-											" ×",
-											i.quantity
-										] }), /* @__PURE__ */ jsx("button", {
-											onClick: () => setItem(structuredClone(i)),
-											children: "Изменить"
-										})]
-									}),
-									/* @__PURE__ */ jsxs("p", { children: [
-										i.container,
-										i.magical ? " · Магический" : "",
-										i.attuned ? " · Настроен" : "",
-										i.attunementPending ? " · Ожидает короткого отдыха" : ""
-									] }),
-									/* @__PURE__ */ jsx("p", { children: i.notes }),
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row play-wrap",
-										children: [
-											/* @__PURE__ */ jsxs("label", {
-												className: "play-check",
-												children: [/* @__PURE__ */ jsx("input", {
-													type: "checkbox",
-													checked: i.equipped,
-													onChange: () => change(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
-														...x,
-														equipped: !x.equipped
-													} : x)))
-												}), "Надет / в руках"]
-											}),
-											i.requiresAttunement && /* @__PURE__ */ jsx("button", {
-												onClick: () => change((prev) => queueAttunement(prev, i.id)),
-												children: i.attunementPending ? "Отменить ожидание" : i.attuned ? "Прекратить настройку" : "Настроиться"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												disabled: i.quantity < 1,
-												onClick: () => change(logPlay(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
-													...x,
-													quantity: x.quantity - 1
-												} : x)), `Использован предмет: ${i.name}`)),
-												children: "Использовать 1"
-											})
-										]
-									}),
-									i.maxCharges > 0 && /* @__PURE__ */ jsxs("div", {
-										className: "play-row",
-										children: [/* @__PURE__ */ jsxs("span", { children: [
-											"Заряды ",
-											i.charges,
-											"/",
-											i.maxCharges
-										] }), /* @__PURE__ */ jsx("button", {
-											disabled: !i.charges || !activeItem(i),
-											onClick: () => change(logPlay(updateInventory(c, a.inventory.map((x) => x.id === i.id ? {
-												...x,
-												charges: x.charges - 1
-											} : x)), `Потрачен заряд: ${i.name}`)),
-											children: "Потратить заряд"
-										})]
-									}),
-									i.requirement && /* @__PURE__ */ jsxs("small", { children: [
-										"Требование: ",
-										i.requirement,
-										" — проверьте перед настройкой."
-									] })
-								]
-							}, i.id))
-						}),
-						/* @__PURE__ */ jsx("button", {
-							onClick: () => change(logPlay(updateInventory(c, a.inventory.map((i) => i.recharge === "dawn" ? {
-								...i,
-								charges: i.maxCharges
-							} : i)), "Наступил рассвет: восстановлены отмеченные заряды")),
-							children: "Рассвет: восстановить заряды"
-						})
-					] }),
-					tab === "hero" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-						/* @__PURE__ */ jsxs("div", {
-							className: "play-grid",
-							children: [/* @__PURE__ */ jsxs("section", {
-								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsx("h2", { children: "Характеристики и спасброски" }),
-									Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("div", {
-										className: "play-stat",
-										children: [
-											/* @__PURE__ */ jsxs("span", { children: [
-												abilityLabels[key],
-												" ",
-												/* @__PURE__ */ jsx("b", { children: d.abilities[key] })
-											] }),
-											/* @__PURE__ */ jsx("button", {
-												onClick: () => d20(`Проверка: ${abilityLabels[key]}`, abilityModifier$1(d.abilities[key])),
-												children: sign(abilityModifier$1(d.abilities[key]))
-											}),
-											/* @__PURE__ */ jsxs("button", {
-												onClick: () => d20(`Спасбросок: ${abilityLabels[key]}`, saveBonus(key)),
-												children: ["Спас ", sign(saveBonus(key))]
-											})
-										]
-									}, key)),
-									/* @__PURE__ */ jsxs("p", { children: [
-										"Бонус мастерства ",
-										sign(pb),
-										" · Пассивная внимательность ",
-										passivePerceptionBreakdown(d).value
-									] }),
-									/* @__PURE__ */ jsxs("label", {
-										className: "play-check",
-										children: [/* @__PURE__ */ jsx("input", {
-											type: "checkbox",
-											checked: !!c.inspiration,
-											onChange: () => change({
-												...c,
-												inspiration: !c.inspiration
-											})
-										}), "Вдохновение"]
-									})
-								]
-							}), /* @__PURE__ */ jsxs("section", {
-								className: "play-card",
-								children: [/* @__PURE__ */ jsx("h2", { children: "Навыки" }), Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("button", {
-									className: "play-skill",
-									onClick: () => d20(skill, skillBonusBreakdown(d, skill).value),
-									children: [/* @__PURE__ */ jsx("span", { children: skill }), /* @__PURE__ */ jsx("b", { children: sign(skillBonusBreakdown(d, skill).value) })]
-								}, skill))]
-							})]
-						}),
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
-								/* @__PURE__ */ jsx("div", {
-									className: "play-grid",
-									children: resources.map((r) => /* @__PURE__ */ jsxs("div", {
-										className: "play-counter",
-										children: [
-											/* @__PURE__ */ jsx("strong", { children: r.name }),
-											/* @__PURE__ */ jsxs("span", { children: [
-												resourceCurrent(d, r),
-												" / ",
-												r.max
-											] }),
-											/* @__PURE__ */ jsx("button", {
-												disabled: resourceCurrent(d, r) <= 0,
-												onClick: () => change(logPlay({
-													...c,
-													resourceSpent: {
-														...c.resourceSpent,
-														[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
-													}
-												}, `Использован ресурс: ${r.name}`)),
-												children: "−"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												disabled: !(c.resourceSpent?.[r.key] || 0),
-												onClick: () => change({
-													...c,
-													resourceSpent: {
-														...c.resourceSpent,
-														[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
-													}
-												}),
-												children: "+"
-											}),
-											/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
-										]
-									}, r.key))
-								}),
-								subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
-									value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
-									onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
-									children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
-										value: String(option.id),
-										children: option.name
-									}, String(option.id)))
-								})] }, control.key))
-							]
-						}),
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsx("h2", { children: "Состояния и эффекты" }),
-								/* @__PURE__ */ jsx("div", {
-									className: "play-row play-wrap",
-									children: playConditions.map((name) => /* @__PURE__ */ jsx("button", {
-										className: a.conditions.includes(name) ? "active" : "",
-										onClick: () => change(toggleCondition(c, name)),
-										children: name
-									}, name))
-								}),
-								/* @__PURE__ */ jsxs("label", { children: ["Истощение", /* @__PURE__ */ jsx("input", {
-									type: "number",
-									min: "0",
-									max: "6",
-									value: a.exhaustion,
-									onChange: (e) => change({
-										...c,
-										adventure: {
-											...a,
-											exhaustion: integer(e.target.value, 0, 6)
-										}
-									})
-								})] }),
-								/* @__PURE__ */ jsx("p", { children: "Состояния и истощение — отметки для игры. Их модификаторы, скорость и преимущества выбирайте вручную. Недееспособность автоматически прерывает концентрацию." }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [
-										/* @__PURE__ */ jsx("input", {
-											"aria-label": "Название эффекта",
-											placeholder: "Эффект или напоминание",
-											value: effectName,
-											onChange: (e) => setEffectName(e.target.value)
-										}),
-										/* @__PURE__ */ jsxs("label", { children: ["Собственных ходов (0 — без срока)", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											value: effectRounds,
-											onChange: (e) => setEffectRounds(integer(e.target.value))
-										})] }),
-										/* @__PURE__ */ jsx("button", {
-											disabled: !effectName.trim(),
-											onClick: () => {
-												change({
-													...c,
-													adventure: {
-														...a,
-														effects: [...a.effects, {
-															id: playId(),
-															name: effectName.trim(),
-															remaining: effectRounds || void 0
-														}]
-													}
-												});
-												setEffectName("");
-											},
-											children: "Добавить"
-										})
+										/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
+										/* @__PURE__ */ jsx("p", { children: entry.text }),
+										entry.formula && /* @__PURE__ */ jsxs("p", { children: [
+											/* @__PURE__ */ jsx("b", { children: entry.total }),
+											" · ",
+											entry.formula,
+											" · кости [",
+											entry.rolls?.join(", "),
+											"]"
+										] })
 									]
-								}),
-								a.effects.map((e) => /* @__PURE__ */ jsxs("div", {
-									className: "play-row",
-									children: [/* @__PURE__ */ jsxs("span", { children: [e.name, e.remaining ? ` · осталось ${e.remaining} ходов` : ""] }), /* @__PURE__ */ jsx("button", {
-										onClick: () => change({
-											...c,
-											adventure: {
-												...a,
-												effects: a.effects.filter((x) => x.id !== e.id)
-											}
-										}),
-										children: "Снять"
-									})]
-								}, e.id))
+								}, entry.id))
 							]
-						}),
-						/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [/* @__PURE__ */ jsx("h2", { children: "Особенности героя" }), features.map((f, i) => /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: f.name }), /* @__PURE__ */ jsx("p", {
-								className: "play-description",
-								children: f.description
-							})] }, `${f.name}-${i}`))]
-						}),
-						/* @__PURE__ */ jsxs("details", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsx("summary", { children: "Ручные значения и завершение приключения" }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-grid",
-									children: [
-										/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "1",
-											value: a.hpMaximum ?? max,
-											onChange: (e) => change({
-												...c,
-												adventure: {
-													...a,
-													hpMaximum: integer(e.target.value, 1)
-												}
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											value: a.acOverride ?? "",
-											onChange: (e) => change({
-												...c,
-												adventure: {
-													...a,
-													acOverride: e.target.value === "" ? void 0 : integer(e.target.value)
-												}
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											max,
-											value: hp,
-											onChange: (e) => change({
-												...c,
-												currentHitPoints: integer(e.target.value, 0, max)
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Временные HP", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											value: c.temporaryHitPoints || 0,
-											onChange: (e) => change({
-												...c,
-												temporaryHitPoints: integer(e.target.value)
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Успехи смерти", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											max: "3",
-											value: c.deathSaveSuccesses || 0,
-											onChange: (e) => change({
-												...c,
-												deathSaveSuccesses: integer(e.target.value, 0, 3)
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Провалы смерти", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "0",
-											max: "3",
-											value: c.deathSaveFailures || 0,
-											onChange: (e) => change({
-												...c,
-												deathSaveFailures: integer(e.target.value, 0, 3)
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Лимит настройки", /* @__PURE__ */ jsx("input", {
-											type: "number",
-											min: "1",
-											max: "10",
-											value: a.attunementLimit,
-											onChange: (e) => change({
-												...c,
-												adventure: {
-													...a,
-													attunementLimit: integer(e.target.value, 1, 10)
-												}
-											})
-										})] }),
-										/* @__PURE__ */ jsxs("label", { children: ["Название приключения", /* @__PURE__ */ jsx("input", {
-											value: a.name,
-											onChange: (e) => change({
-												...c,
-												adventure: {
-													...a,
-													name: e.target.value
-												}
-											})
-										})] })
-									]
-								}),
-								/* @__PURE__ */ jsx("button", {
-									onClick: () => change(logPlay({
-										...c,
-										adventure: {
-											...a,
-											status: a.status === "active" ? "archived" : "active"
-										}
-									}, a.status === "active" ? "Приключение завершено и архивировано" : "Приключение возобновлено")),
-									children: a.status === "active" ? "Завершить приключение" : "Возобновить приключение"
-								}),
-								/* @__PURE__ */ jsx("p", { children: "Развитие героя, особенности и подробный лист доступны через «Изменить героя». Вы редактируете эту игровую копию." })
-							]
-						})
-					] }),
-					tab === "journal" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("section", {
-						className: "play-card",
-						children: [/* @__PURE__ */ jsx("h2", { children: "Заметки приключения" }), /* @__PURE__ */ jsx("textarea", {
-							rows: 6,
-							value: a.notes,
-							onChange: (e) => onChange({
-								...c,
-								adventure: {
-									...a,
-									notes: e.target.value
-								}
-							}),
-							placeholder: "Квесты, договорённости с мастером, добыча…"
-						})]
-					}), /* @__PURE__ */ jsxs("section", {
-						className: "play-card",
-						children: [
-							/* @__PURE__ */ jsx("h2", { children: "История действий" }),
-							/* @__PURE__ */ jsxs("small", { children: [
-								"Последние 150 записей. Прошло игрового времени: ",
-								a.elapsedMinutes,
-								" мин."
-							] }),
-							a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
-								className: "play-log",
-								children: [
-									/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
-									/* @__PURE__ */ jsx("p", { children: entry.text }),
-									entry.formula && /* @__PURE__ */ jsxs("p", { children: [
-										/* @__PURE__ */ jsx("b", { children: entry.total }),
-										" · ",
-										entry.formula,
-										" · кости [",
-										entry.rolls?.join(", "),
-										"]"
-									] })
-								]
-							}, entry.id))
-						]
-					})] })
-				]
+						})] })
+					]
+				}), /* @__PURE__ */ jsxs("div", {
+					className: `play-dice-sidebar${diceOpen ? " is-open" : ""}`,
+					role: diceOpen ? "dialog" : void 0,
+					"aria-modal": diceOpen || void 0,
+					"aria-label": diceOpen ? "Кубы" : void 0,
+					children: [/* @__PURE__ */ jsx("button", {
+						className: "dice-mobile-close",
+						onClick: () => setDiceOpen(false),
+						children: "Закрыть кубы"
+					}), /* @__PURE__ */ jsx(DiceTray, {
+						rolls: visibleRolls,
+						onRoll: (name, r) => {
+							presentRoll(name, r);
+							change(logPlay(c, name, r));
+						}
+					})]
+				})]
+			}),
+			/* @__PURE__ */ jsx("button", {
+				className: "dice-mobile-toggle",
+				onClick: () => setDiceOpen(true),
+				"aria-label": "Открыть кубы",
+				children: "◆ Кубы"
 			}),
 			/* @__PURE__ */ jsx("nav", {
 				className: "play-mobile-nav",
@@ -29684,14 +30568,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					}),
 					/* @__PURE__ */ jsx("small", { children: result.name }),
 					/* @__PURE__ */ jsx("strong", { children: result.result.total }),
-					/* @__PURE__ */ jsxs("span", { children: [
-						result.result.formula,
-						" · [",
-						result.result.rolls.join(", "),
-						"]"
-					] }),
-					result.result.natural === 20 && /* @__PURE__ */ jsx("b", { children: "Натуральная 20" }),
-					result.result.natural === 1 && /* @__PURE__ */ jsx("b", { children: "Натуральная 1" })
+					/* @__PURE__ */ jsx("span", { children: result.result.formula }),
+					/* @__PURE__ */ jsx("div", {
+						className: "roll-value-chips",
+						children: result.result.rolls.map((n, i) => /* @__PURE__ */ jsx("b", { children: n }, i))
+					})
 				]
 			}),
 			rest && /* @__PURE__ */ jsx("div", {
@@ -29816,156 +30697,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							disabled: !castMethod,
 							onClick: commitCast,
 							children: "Сотворить и записать"
-						})
-					]
-				})
-			}),
-			item && /* @__PURE__ */ jsx("div", {
-				className: "play-backdrop",
-				children: /* @__PURE__ */ jsxs("section", {
-					className: "play-modal",
-					role: "dialog",
-					"aria-modal": "true",
-					"aria-label": "Редактор предмета",
-					children: [
-						/* @__PURE__ */ jsxs("div", {
-							className: "play-row",
-							children: [/* @__PURE__ */ jsx("h2", { children: "Предмет" }), /* @__PURE__ */ jsx("button", {
-								onClick: () => setItem(void 0),
-								children: "Закрыть"
-							})]
-						}),
-						/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
-							value: item.name,
-							onChange: (e) => setItem({
-								...item,
-								name: e.target.value
-							})
-						})] }),
-						/* @__PURE__ */ jsx("div", {
-							className: "play-grid",
-							children: [
-								"quantity",
-								"weight",
-								"charges",
-								"maxCharges",
-								"acBonus",
-								"attackBonus",
-								"damageBonus"
-							].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
-								"Количество",
-								"Вес одного (фунт.)",
-								"Текущие заряды",
-								"Максимум зарядов",
-								"Общий бонус КД",
-								"Общий бонус атак",
-								"Общий бонус урона"
-							][i], /* @__PURE__ */ jsx("input", {
-								type: "number",
-								min: key.endsWith("Bonus") ? void 0 : 0,
-								step: key === "weight" ? .1 : 1,
-								value: item[key],
-								onChange: (e) => setItem({
-									...item,
-									[key]: key === "weight" ? Math.max(0, Number(e.target.value) || 0) : integer(e.target.value, key.endsWith("Bonus") ? -100 : 0)
-								})
-							})] }, key))
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "play-row play-wrap",
-							children: [
-								"equipped",
-								"magical",
-								"requiresAttunement",
-								"cursed"
-							].map((key, i) => /* @__PURE__ */ jsxs("label", {
-								className: "play-check",
-								children: [/* @__PURE__ */ jsx("input", {
-									type: "checkbox",
-									checked: !!item[key],
-									onChange: (e) => setItem({
-										...item,
-										[key]: e.target.checked
-									})
-								}), [
-									"Надет / в руках",
-									"Магический",
-									"Требует настройки",
-									"Проклят"
-								][i]]
-							}, key))
-						}),
-						/* @__PURE__ */ jsxs("label", { children: ["Восстановление зарядов", /* @__PURE__ */ jsxs("select", {
-							value: item.recharge,
-							onChange: (e) => setItem({
-								...item,
-								recharge: e.target.value
-							}),
-							children: [
-								/* @__PURE__ */ jsx("option", {
-									value: "none",
-									children: "Вручную"
-								}),
-								/* @__PURE__ */ jsx("option", {
-									value: "short",
-									children: "Короткий отдых"
-								}),
-								/* @__PURE__ */ jsx("option", {
-									value: "long",
-									children: "Длинный отдых"
-								}),
-								/* @__PURE__ */ jsx("option", {
-									value: "dawn",
-									children: "Рассвет"
-								})
-							]
-						})] }),
-						/* @__PURE__ */ jsxs("label", { children: ["Где лежит", /* @__PURE__ */ jsx("input", {
-							value: item.container,
-							onChange: (e) => setItem({
-								...item,
-								container: e.target.value
-							})
-						})] }),
-						/* @__PURE__ */ jsxs("label", { children: ["Требование к настройке", /* @__PURE__ */ jsx("input", {
-							value: item.requirement || "",
-							onChange: (e) => setItem({
-								...item,
-								requirement: e.target.value
-							})
-						})] }),
-						/* @__PURE__ */ jsxs("label", { children: ["Описание", /* @__PURE__ */ jsx("textarea", {
-							value: item.notes,
-							onChange: (e) => setItem({
-								...item,
-								notes: e.target.value
-							})
-						})] }),
-						/* @__PURE__ */ jsx("small", { children: "Бонусы здесь общие для героя. Если бонус относится только к одному оружию, добавьте его в формулу нужного броска. Настройка выполняется через короткий отдых." }),
-						/* @__PURE__ */ jsxs("div", {
-							className: "play-row",
-							children: [/* @__PURE__ */ jsx("button", {
-								className: "play-primary",
-								disabled: !item.name.trim(),
-								onClick: () => {
-									const clean = {
-										...item,
-										name: item.name.trim(),
-										charges: Math.min(item.charges, item.maxCharges),
-										attuned: item.requiresAttunement && item.attuned
-									};
-									change(logPlay(updateInventory(c, a.inventory.some((i) => i.id === item.id) ? a.inventory.map((i) => i.id === item.id ? clean : i) : [...a.inventory, clean]), `Сохранён предмет: ${clean.name}`));
-									setItem(void 0);
-								},
-								children: "Сохранить"
-							}), a.inventory.some((i) => i.id === item.id) && /* @__PURE__ */ jsx("button", {
-								className: "play-danger",
-								onClick: () => {
-									change(logPlay(updateInventory(c, a.inventory.filter((i) => i.id !== item.id)), `Удалён предмет: ${item.name}`));
-									setItem(void 0);
-								},
-								children: "Удалить предмет"
-							})]
 						})
 					]
 				})
@@ -61588,6 +62319,15 @@ var alignments = [
 ];
 var siteChangelog = [
 	{
+		version: "1.6.1",
+		publishedAt: "2026-10-11T20:00:00Z",
+		changes: [
+			"Таверна и игровой режим доступны по отдельному адресу /adventure/ и используют тему основного сайта.",
+			"Добавлена постоянная панель кубов: выбор костей, количество, модификатор, отдельные значения, сумма и три последних результата.",
+			"Инвентарь разделён на оружие, фокусировки, доспехи, расходники, боеприпасы и снаряжение. Добавлены бонусы магического оружия и фокусировок, контейнеры, разделение стопок и операции с монетами."
+		]
+	},
+	{
 		version: "1.6.0",
 		publishedAt: "2026-10-11T18:00:00Z",
 		changes: [
@@ -62366,8 +63106,11 @@ function AccountAccess({ account, cloudState, compact = false }) {
 		}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: account.displayName || "Аккаунт HeroList" }), !compact && /* @__PURE__ */ jsx("small", { children: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : "Данные сохранены" })] })]
 	});
 }
-function Builder() {
-	const [view, setView] = useState("home");
+function AdventureApp() {
+	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, { adventureRoute: true }) });
+}
+function Builder({ adventureRoute = false } = {}) {
+	const [view, setView] = useState(adventureRoute ? "characters" : "home");
 	const [step, setStep] = useState(0);
 	const [character, setCharacter] = useState(initial);
 	const [banDraft, setBanDraft] = useState(() => normalizeBanList({}));
@@ -62487,6 +63230,11 @@ function Builder() {
 				if (stored) latestLocal = normalizeVault(JSON.parse(stored));
 			} catch {}
 			const merged = mergeVaults(latestLocal, remotePayload.vault);
+			const requestedPlay = adventureRoute ? new URLSearchParams(window.location.search).get("play") : null;
+			if (requestedPlay && merged.slots.some((slot) => slot.id === requestedPlay && slot.character.adventure)) {
+				merged.activeId = requestedPlay;
+				if (!latestLocal.slots.some((slot) => slot.id === requestedPlay && slot.character.adventure)) setView("game");
+			}
 			setVault(merged);
 			const active = merged.slots.find((slot) => slot.id === merged.activeId);
 			if (active) setCharacter(active.character);
@@ -62556,6 +63304,18 @@ function Builder() {
 				folders: []
 			};
 			setVault(loadedVault);
+		}
+		const requestedPlay = adventureRoute ? new URLSearchParams(window.location.search).get("play") : null;
+		const requestedSlot = loadedVault.slots.find((slot) => slot.id === requestedPlay && slot.character.adventure);
+		if (requestedSlot) {
+			loadedVault = {
+				...loadedVault,
+				activeId: requestedSlot.id
+			};
+			setVault(loadedVault);
+			setCharacter(requestedSlot.character);
+			setView("game");
+			localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(loadedVault));
 		}
 		setReady(true);
 		connectAccount(loadedVault);
@@ -63920,6 +64680,19 @@ function Builder() {
 			throw error;
 		}
 	}
+	function goHome() {
+		if (adventureRoute) {
+			persistVault({
+				...vault,
+				slots: vault.slots.map((slot) => slot.id === vault.activeId ? {
+					...slot,
+					character,
+					updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+				} : slot)
+			});
+			window.location.assign(assetUrl(""));
+		} else setView("home");
+	}
 	function openCharacterManager() {
 		const updatedAt = (/* @__PURE__ */ new Date()).toISOString();
 		persistVault({
@@ -63930,6 +64703,11 @@ function Builder() {
 				updatedAt
 			} : slot)
 		});
+		if (!adventureRoute) {
+			window.location.assign(assetUrl("adventure/"));
+			return;
+		}
+		window.history.replaceState(null, "", assetUrl("adventure/"));
 		setView("characters");
 	}
 	function selectSlot(id) {
@@ -63948,6 +64726,11 @@ function Builder() {
 		setCharacter(normalizeCharacter(id === vault.activeId ? character : slot.character));
 		setImportMessage(null);
 		stopTutorial();
+		if (slot.character.adventure && !adventureRoute) {
+			window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(id)}`));
+			return;
+		}
+		if (adventureRoute) window.history.replaceState(null, "", slot.character.adventure ? assetUrl(`adventure/?play=${encodeURIComponent(id)}`) : assetUrl("adventure/"));
 		setView(slot.character.adventure ? "game" : "builder");
 		resetFilters(0, false);
 	}
@@ -63978,6 +64761,11 @@ function Builder() {
 		setVaultSection("adventures");
 		setActiveFolderId("all");
 		stopTutorial();
+		if (!adventureRoute) {
+			window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`));
+			return;
+		}
+		window.history.replaceState(null, "", assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`));
 		setView("game");
 	}
 	function startCharacter(withTutorial) {
@@ -64346,6 +65134,23 @@ function Builder() {
 		resetFilters(10, false);
 	}
 	if (view === "game" && character.adventure) return /* @__PURE__ */ jsx(GameMode, {
+		shellClassName: shellThemeClass,
+		shellStyle: appearance.style,
+		siteTheme,
+		chrome: /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(ThemeControls, {
+			label: "Дизайн",
+			theme: siteTheme,
+			onCycle: cycleSiteTheme,
+			onTheme: (theme) => {
+				setSiteTheme(theme);
+				localStorage.setItem("list-geroya-site-theme", theme);
+			},
+			appearance
+		}), /* @__PURE__ */ jsx(AccountAccess, {
+			account,
+			cloudState,
+			compact: true
+		})] }),
 		character,
 		onChange: setCharacter,
 		features: [
@@ -64378,7 +65183,7 @@ function Builder() {
 			className: "topbar home-topbar",
 			children: [/* @__PURE__ */ jsxs("button", {
 				className: "brand",
-				onClick: () => setView("home"),
+				onClick: goHome,
 				"aria-label": "Лист Героя — главная",
 				children: [
 					/* @__PURE__ */ jsx("span", {
@@ -64423,7 +65228,7 @@ function Builder() {
 				]
 			})]
 		}), view === "quiz" ? /* @__PURE__ */ jsx(HeroQuiz, {
-			onClose: () => setView("home"),
+			onClose: goHome,
 			onCreate: createFromQuiz
 		}) : /* @__PURE__ */ jsxs("div", {
 			className: "home-page",
@@ -64465,7 +65270,7 @@ function Builder() {
 										children: "Создать с обучением"
 									}),
 									ready && vault.activeId && /* @__PURE__ */ jsx("button", {
-										onClick: () => setView(character.adventure ? "game" : "builder"),
+										onClick: () => character.adventure ? selectSlot(vault.activeId) : setView("builder"),
 										children: "Продолжить текущего персонажа"
 									})
 								]
@@ -64605,7 +65410,7 @@ function Builder() {
 				className: "topbar",
 				children: [/* @__PURE__ */ jsxs("button", {
 					className: "brand",
-					onClick: () => setView("home"),
+					onClick: goHome,
 					children: [
 						/* @__PURE__ */ jsx("span", {
 							className: `brand-mark experimental-site-mark`,
@@ -64656,7 +65461,7 @@ function Builder() {
 					children: [
 						/* @__PURE__ */ jsxs("button", {
 							className: "brand",
-							onClick: () => setView("home"),
+							onClick: goHome,
 							children: [
 								/* @__PURE__ */ jsx("span", {
 									className: `brand-mark experimental-site-mark`,
@@ -64681,7 +65486,7 @@ function Builder() {
 						}),
 						/* @__PURE__ */ jsx("button", {
 							className: "nav-button",
-							onClick: () => setView("home"),
+							onClick: goHome,
 							children: "← В главное меню"
 						}),
 						/* @__PURE__ */ jsx(AccountAccess, {
@@ -65122,7 +65927,7 @@ function Builder() {
 					children: [
 						/* @__PURE__ */ jsxs("button", {
 							className: "brand",
-							onClick: () => setView("home"),
+							onClick: goHome,
 							children: [
 								/* @__PURE__ */ jsx("span", {
 									className: `brand-mark experimental-site-mark`,
@@ -65147,7 +65952,7 @@ function Builder() {
 						}),
 						/* @__PURE__ */ jsx("button", {
 							className: "nav-button",
-							onClick: () => setView("home"),
+							onClick: goHome,
 							children: "← В главное меню"
 						}),
 						/* @__PURE__ */ jsx(AccountAccess, {
@@ -65511,7 +66316,7 @@ function Builder() {
 				children: [
 					/* @__PURE__ */ jsxs("button", {
 						className: "brand",
-						onClick: () => setView("home"),
+						onClick: goHome,
 						children: [
 							/* @__PURE__ */ jsx("span", {
 								className: `brand-mark experimental-site-mark`,
@@ -65539,7 +66344,7 @@ function Builder() {
 						children: [
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
-								onClick: () => setView("home"),
+								onClick: goHome,
 								children: "Главное меню"
 							}),
 							/* @__PURE__ */ jsxs("button", {
@@ -65601,7 +66406,7 @@ function Builder() {
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
-								onClick: () => setView("home"),
+								onClick: goHome,
 								children: "Главное меню"
 							}),
 							/* @__PURE__ */ jsxs("button", {
@@ -67595,7 +68400,7 @@ function Builder() {
 											})] }),
 											/* @__PURE__ */ jsx("button", {
 												className: "primary-action",
-												onClick: () => character.adventure ? setView("game") : sendToAdventure(vault.activeId),
+												onClick: () => character.adventure ? selectSlot(vault.activeId) : sendToAdventure(vault.activeId),
 												children: character.adventure ? "Вернуться в игру" : "Отправить в приключение"
 											})
 										]
@@ -68327,4 +69132,4 @@ function Builder() {
 	});
 }
 //#endregion
-export { Home as default };
+export { AdventureApp, Home as default };

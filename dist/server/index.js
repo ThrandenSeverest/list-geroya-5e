@@ -7359,7 +7359,7 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "96c41371-d0a2-4062-9135-97135d43338d";
+		return "dbf65fec-314c-4256-94a3-6b05153f47a4";
 	}
 };
 var RequestCookies = class {
@@ -12481,7 +12481,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "96c41371-d0a2-4062-9135-97135d43338d") {
+function appIsrCacheKey(pathname, suffix, buildId = "dbf65fec-314c-4256-94a3-6b05153f47a4") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12810,7 +12810,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "96c41371-d0a2-4062-9135-97135d43338d",
+		deploymentVersion: "dbf65fec-314c-4256-94a3-6b05153f47a4",
 		rootBoundaryId
 	});
 }
@@ -14207,10 +14207,16 @@ function clearAppRequestContext() {
 }
 //#endregion
 //#region app/page.tsx
-var page_exports$1 = /* @__PURE__ */ __exportAll({ default: () => page_default$1 });
+var page_exports$2 = /* @__PURE__ */ __exportAll({
+	AdventureApp: () => AdventureApp,
+	default: () => page_default$1
+});
 var page_default$1 = /* @__PURE__ */ registerClientReference(() => {
 	throw new Error("Unexpectedly client reference export 'default' is called on server");
 }, "6efdf509a785", "default");
+var AdventureApp = /* @__PURE__ */ registerClientReference(() => {
+	throw new Error("Unexpectedly client reference export 'AdventureApp' is called on server");
+}, "6efdf509a785", "AdventureApp");
 var Resources = ((React, deps, RemoveDuplicateServerCss, precedence) => {
 	return function Resources() {
 		return React.createElement(React.Fragment, null, [...deps.css.map((href) => React.createElement("link", {
@@ -14338,9 +14344,9 @@ var storageGuardScript = String.raw`
 //#region app/layout.tsx
 var layout_exports = /* @__PURE__ */ __exportAll({
 	default: () => $$wrap_RootLayout,
-	metadata: () => metadata
+	metadata: () => metadata$1
 });
-var metadata = {
+var metadata$1 = {
 	title: "Лист Героя 5e — создание персонажа D&D 2014",
 	description: "Пошаговый конструктор персонажа D&D 5e в редакции 2014 года.",
 	other: { "codex-preview": "development" },
@@ -14369,10 +14375,23 @@ function __vite_rsc_wrap_css__(value, name) {
 }
 //#endregion
 //#region app/account/page.tsx
-var page_exports = /* @__PURE__ */ __exportAll({ default: () => page_default });
+var page_exports$1 = /* @__PURE__ */ __exportAll({ default: () => page_default });
 var page_default = /* @__PURE__ */ registerClientReference(() => {
 	throw new Error("Unexpectedly client reference export 'default' is called on server");
 }, "724dcbd470a5", "default");
+//#endregion
+//#region app/adventure/page.tsx
+var page_exports = /* @__PURE__ */ __exportAll({
+	default: () => AdventurePage,
+	metadata: () => metadata
+});
+var metadata = {
+	title: "Таверна и приключения — Лист Героя 5e",
+	description: "Игровой помощник D&D: персонажи, заклинания, инвентарь и броски кубов."
+};
+function AdventurePage() {
+	return /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(AdventureApp, {});
+}
 //#endregion
 //#region app/BUILD_INFO.json/route.ts
 var route_exports = /* @__PURE__ */ __exportAll({ GET: () => GET });
@@ -14412,6 +14431,7 @@ function __VINEXT_CLASS(routeIdx) { return ((routeIdx) => {
       case 0: return new Map([[0, "static"]]);
       case 1: return new Map([[0, "static"]]);
       case 2: return new Map([[0, "static"]]);
+      case 3: return new Map([[0, "static"]]);
       default: return null;
     }
   })(routeIdx); }
@@ -14436,7 +14456,7 @@ var routes = [
 		isDynamic: false,
 		params: [],
 		rootParamNames: [],
-		page: page_exports$1,
+		page: page_exports$2,
 		routeHandler: null,
 		layouts: [layout_exports],
 		routeSegments: [],
@@ -14473,7 +14493,7 @@ var routes = [
 		isDynamic: false,
 		params: [],
 		rootParamNames: [],
-		page: page_exports,
+		page: page_exports$1,
 		routeHandler: null,
 		layouts: [layout_exports],
 		routeSegments: ["account"],
@@ -14496,6 +14516,43 @@ var routes = [
 	{
 		__buildTimeClassifications: __VINEXT_CLASS(2),
 		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(2) : null,
+		ids: {
+			"route": "route:/adventure",
+			"page": "page:/adventure",
+			"routeHandler": null,
+			"rootBoundary": "root-boundary:/",
+			"layouts": ["layout:/"],
+			"templates": [],
+			"slots": {}
+		},
+		pattern: "/adventure",
+		patternParts: ["adventure"],
+		isDynamic: false,
+		params: [],
+		rootParamNames: [],
+		page: page_exports,
+		routeHandler: null,
+		layouts: [layout_exports],
+		routeSegments: ["adventure"],
+		templateTreePositions: [],
+		layoutTreePositions: [0],
+		templates: [],
+		errors: [null],
+		errorPaths: [],
+		errorTreePositions: [],
+		slots: {},
+		loading: null,
+		error: null,
+		notFound: null,
+		notFounds: [null],
+		forbidden: null,
+		forbiddens: [null],
+		unauthorized: null,
+		unauthorizeds: [null]
+	},
+	{
+		__buildTimeClassifications: __VINEXT_CLASS(3),
+		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(3) : null,
 		ids: {
 			"route": "route:/BUILD_INFO.json",
 			"page": null,
