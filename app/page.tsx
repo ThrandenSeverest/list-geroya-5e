@@ -2675,7 +2675,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
           <header className="library-head">
             <div><p className="eyebrow">Локальная коллекция</p><h1>{vaultSection === "tavern" ? "Таверна" : "Приключения"}</h1><p>До {vault.capacity} слотов на этом устройстве. Каждый лист сохраняется автоматически.</p></div>
             <div className="library-actions">
-              <button onClick={() => setView("homebrew")}>Моё хоумбрю</button>
+              <button disabled={!ready} onClick={() => setView("homebrew")}>Моё хоумбрю</button>
               <button onClick={() => characterFileRef.current?.click()}>Импорт JSON</button>
               <button onClick={() => folderFileRef.current?.click()}>Импорт папки ZIP</button>
               <button className="primary-action" disabled={free <= 0} onClick={addCharacter}>Новый персонаж</button>
