@@ -1,5 +1,6 @@
 "use client";
 
+import { ModeSigns } from "./ModeSigns";
 import { GameMode } from "./GameMode";
 import { createAdventureCharacter } from "./adventure";
 
@@ -2671,6 +2672,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
           <AccountAccess account={account} cloudState={cloudState} compact />
           <details className="mobile-top-menu"><summary aria-label="Открыть меню">☰</summary><div><AccountAccess account={account} cloudState={cloudState} compact /><ThemeControls label="Дизайн сайта" theme={siteTheme} onCycle={cycleSiteTheme} onTheme={theme => { setSiteTheme(theme); localStorage.setItem("list-geroya-site-theme", theme); }} appearance={appearance} /><button className="nav-button" onClick={() => setView("builder")}>← К персонажу</button></div></details>
         </header>
+        <div className="character-library-layout">
+          <ModeSigns value={vaultSection} tavernCount={vault.slots.filter(s => !s.character.adventure).length} adventureCount={vault.slots.filter(s => s.character.adventure).length} onChange={mode => { setVaultSection(mode); setSelectedSlotIds([]); }} />
         <section className="character-library">
           <header className="library-head">
             <div><p className="eyebrow">Локальная коллекция</p><h1>{vaultSection === "tavern" ? "Таверна" : "Приключения"}</h1><p>До {vault.capacity} слотов на этом устройстве. Каждый лист сохраняется автоматически.</p></div>
@@ -2683,7 +2686,6 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
               <input ref={folderFileRef} hidden type="file" accept=".zip,application/zip" onChange={importFolderArchive} />
             </div>
           </header>
-          <nav className="folder-list" aria-label="Таверна и приключения"><button className={vaultSection === "tavern" ? "active" : ""} onClick={() => { setVaultSection("tavern"); setSelectedSlotIds([]); }}>Таверна · {vault.slots.filter(s => !s.character.adventure).length}</button><button className={vaultSection === "adventures" ? "active" : ""} onClick={() => { setVaultSection("adventures"); setSelectedSlotIds([]); }}>Приключения · {vault.slots.filter(s => s.character.adventure).length}</button></nav>
           <p>{vaultSection === "tavern" ? "Здесь живут созданные герои. Отправьте героя в приключение, чтобы начать игру с независимой копией." : "Каждая копия хранит собственное здоровье, заклинания, предметы и журнал. Исходные герои остаются в Таверне."}</p>
           <div className="import-guide">
             <div><strong>Long Story Short</strong><span>Основной импорт: характеристики, личные данные, навыки, текстовые заклинания, карточки LSS и потраченные ячейки.</span></div>
@@ -2734,6 +2736,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
           {!visibleSlots.length && <div className="empty-folder"><strong>В этой папке пока пусто.</strong><span>Выберите персонажей в разделе «Все» и перенесите их сюда.</span></div>}
           <footer className="slot-footer"><span>Занято {vault.slots.length} из {vault.capacity} · свободно {free}</span><button onClick={addFiveSlots}>Добавить ещё 5 слотов</button></footer>
         </section>
+        </div>
         {libraryExportTarget && <div className="modal-backdrop" role="presentation">
           <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="library-export-title">
             <small>{libraryExportTarget.kind === "folder" ? "Экспорт папки" : "Экспорт персонажа"}</small>
