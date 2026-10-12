@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spells } from "../app/catalog";
-import { createHelpmateExport, type ExportCharacter } from "../app/exportFormats";
+import { createHelpmateExport, helpmateSkillSlots, type ExportCharacter } from "../app/exportFormats";
 
 /**
  * Helpmate uses array indices in Parameters[].Abilities. A skill's position
@@ -98,4 +98,56 @@ test("Screenshot regression: Helpmate receives all skill bonuses including exper
     }
   }
   assert.deepEqual(actualBonus, expectedBonus);
+});
+
+
+test("Helpmate skill slots agree with all 18 unique numeric labels from its native editor", () => {
+  // Read directly from a Helpmate-authored JSON and screenshot, independently of code.
+  const reference: Array<[string, number, string]> = [
+    ["STR", 0, "Атлетика"],
+    ["DEX", 1, "Акробатика"], ["DEX", 2, "Ловкость рук"], ["DEX", 3, "Скрытность"],
+    ["INT", 4, "Расследование"], ["INT", 5, "История"], ["INT", 6, "Магия"],
+    ["INT", 7, "Природа"], ["INT", 8, "Религия"],
+    ["WIS", 9, "Внимательность"], ["WIS", 10, "Проницательность"],
+    ["WIS", 11, "Выживание"], ["WIS", 12, "Медицина"], ["WIS", 13, "Уход за животными"],
+    ["CHA", 14, "Выступление"], ["CHA", 15, "Запугивание"],
+    ["CHA", 16, "Обман"], ["CHA", 17, "Убеждение"],
+  ];
+  assert.deepEqual(
+    Object.entries(helpmateSkillSlots).flatMap(([ability, slots]) => slots.map(([id, skill]) => [ability.toUpperCase(), id, skill])),
+    reference,
+  );
+});
+
+test("Helpmate clean-import regression: all 18 bonuses of a level-5 bard with expertise", () => {
+  const character: ExportCharacter = {
+    name: "Тест экспорта барда", playerName: "",
+    className: "bard", startingClassId: "bard", level: 5,
+    classes: [{ classId: "bard", level: 5, acquiredAtCharacterLevel: 1,
+      classSkills: ["Убеждение", "Внимательность", "Проницательность"] }],
+    race: "", raceVariant: "", background: "",
+    classSkills: ["Убеждение", "Внимательность", "Проницательность"],
+    raceSkills: ["Скрытность", "Запугивание"],
+    backgroundSkills: ["Ловкость рук", "Обман"],
+    expertiseSkills: ["Обман", "Убеждение"],
+    abilities: { str: 8, dex: 14, con: 14, int: 9, wis: 14, cha: 19 },
+    spells: [], currency: { gp: 0, sp: 0, cp: 0, pp: 0 },
+    personality: { traits: "", ideals: "", bonds: "", flaws: "" },
+  };
+  const exported = createHelpmateExport({ character, spells, raceFeatureList: [], classFeatureList: [] });
+  const abilities = ["str", "dex", "con", "int", "wis", "cha"] as const;
+  const expectedBonuses = [
+    [-1], [2, 5, 5], [], [-1, -1, -1, -1, -1],
+    [5, 5, 2, 2, 2], [4, 7, 10, 10],
+  ];
+  for (const [index, ability] of abilities.entries()) {
+    const base = Math.floor((character.abilities[ability] - 10) / 2);
+    const calculated = exported.Parameters[index].Abilities.map(skill =>
+      base + (skill.Proficiency ? 3 : 0) + skill.UserValue);
+    assert.deepEqual(calculated, expectedBonuses[index], "Wrong skills for " + ability);
+  }
+  assert.equal(exported.Parameters[4].Abilities[1].Proficiency, true);
+  assert.equal(exported.Parameters[4].Abilities[3].Proficiency, false);
+  assert.equal(exported.Parameters[5].Abilities[2].UserValue, 3);
+  assert.equal(exported.Parameters[5].Abilities[3].UserValue, 3);
 });

@@ -315,20 +315,22 @@ function summaryText(context: ExportContext) {
   ].join("\n\n");
 }
 
-// Helpmate deserializes Parameters[].Abilities by ARRAY POSITION, not by name.
-// The index map below is the order seen in Helpmate's character sheet, NOT the
-// alphabetical order of our rules or UI. In particular, Helpmate puts
-// Проницательность before Выживание and Медицина, and labels
-// Расследование as "Анализ", Уход за животными as "Дрессировка".
-// Changing a position silently assigns proficiency to a different skill.
-const helpmateAbilityOrder: Record<keyof AbilityScores, string[]> = {
-  str: ["Атлетика"],
-  dex: ["Акробатика", "Ловкость рук", "Скрытность"],
+/**
+ * Verified directly from a native Helpmate editor export: each skill was
+ * assigned a distinct UserValue marker (0–17). The first element of each
+ * tuple is that marker (the flattened position across STR/DEX/CON/INT/WIS/CHA).
+ * Never sort or derive this list from Russian names or the HeroList UI.
+ * Helpmate labels Расследование "Анализ", Внимательность "Внимание",
+ * Проницательность "Проницание", and Уход за животными "Дрессировка".
+ */
+export const helpmateSkillSlots: Readonly<Record<keyof AbilityScores, readonly (readonly [number, string])[]>> = Object.freeze({
+  str: [[0, "Атлетика"]],
+  dex: [[1, "Акробатика"], [2, "Ловкость рук"], [3, "Скрытность"]],
   con: [],
-  int: ["Расследование", "История", "Магия", "Природа", "Религия"],
-  wis: ["Внимательность", "Проницательность", "Выживание", "Медицина", "Уход за животными"],
-  cha: ["Выступление", "Запугивание", "Обман", "Убеждение"],
-};
+  int: [[4, "Расследование"], [5, "История"], [6, "Магия"], [7, "Природа"], [8, "Религия"]],
+  wis: [[9, "Внимательность"], [10, "Проницательность"], [11, "Выживание"], [12, "Медицина"], [13, "Уход за животными"]],
+  cha: [[14, "Выступление"], [15, "Запугивание"], [16, "Обман"], [17, "Убеждение"]],
+});
 
 const helpmateAbilityNames: Record<keyof AbilityScores, string> = {
   str: "STR",
@@ -391,15 +393,14 @@ export function createHelpmateExport(context: ExportContext) {
   const hitPoints = estimatedHitPoints(character);
   const darkvision = darkvisionDistance(raceFeatureList);
   const movement = speedBreakdown(character);
-  const parameters = (Object.keys(helpmateAbilityOrder) as (keyof AbilityScores)[]).map(key => ({
+  const parameters = (Object.keys(helpmateSkillSlots) as (keyof AbilityScores)[]).map(key => ({
     Name: helpmateAbilityNames[key],
     Value: character.abilities[key],
     UserSpasValue: 0,
     Proficiency: saves.has(key),
-    Abilities: helpmateAbilityOrder[key].map(skill => ({
-      // Helpmate's Proficiency is a boolean. Expertise needs a second
-      // proficiency bonus as a flat per-skill UserValue on import.
-      // Never apply this on a non-proficient skill, or it adds a ghost bonus.
+    Abilities: helpmateSkillSlots[key].map(([, skill]) => ({
+      // Verified in a real Helpmate clean import: UserValue adds to the
+      // displayed skill modifier; expertise adds one proficiency bonus.
       UserValue: selectedSkills.has(skill) && expertiseSkills.has(skill) ? proficiencyBonus(totalLevel) : 0,
       MinValue: 0,
       Proficiency: selectedSkills.has(skill),
