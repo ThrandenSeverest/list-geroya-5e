@@ -9,10 +9,11 @@ import { applySubclassLongRest } from './subclassRuntime';
 
 export type ItemCategory = 'weapon' | 'focus' | 'armor' | 'consumable' | 'ammunition' | 'gear';
 export type PlayItem = { category?: ItemCategory; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
-export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number };
+import type { PlayTransaction } from './playTransactions';
+export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number; natural?: number; critical?: boolean };
 export type PlayEffect = { id: string; name: string; remaining?: number; concentration?: boolean };
 export type AdventureState = {
-  version: 1; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
+  version: 1; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
   inventory: PlayItem[]; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
@@ -48,7 +49,7 @@ export function createAdventureCharacter(source: ExportCharacter, sourceId: stri
 }
 export function logPlay(c: ExportCharacter, text: string, result?: DiceResult): ExportCharacter {
   if (!c.adventure) return c;
-  const entry: PlayLog = { id: playId(), at: new Date().toISOString(), text, ...(result ? { formula: result.formula, rolls: result.rolls, total: result.total } : {}) };
+  const entry: PlayLog = { id: playId(), at: new Date().toISOString(), text, ...(result ? { formula: result.formula, rolls: result.rolls, total: result.total, natural: result.natural, critical: result.critical } : {}) };
   return { ...c, adventure: { ...c.adventure, journal: [entry, ...c.adventure.journal].slice(0, 150) } };
 }
 export function playMaximum(c: ExportCharacter) { return c.adventure?.hpMaximum ?? estimatedHitPoints({ ...c, abilities: finalAbilityScores(c) }); }

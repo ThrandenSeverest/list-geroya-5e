@@ -6,10 +6,11 @@ import { classRuleFor } from './homebrewEngine';
 import { playDerived, spellItemBonus } from './adventure';
 import { characterAttacks } from './combat';
 import { resolvedRacialSpells } from './racialSpellcasting';
-export type SpellPlayProfile = { delivery: 'attack' | 'save' | 'automatic' | 'effect'; ability: keyof AbilityScores; attackBonus?: number; saveDc?: number; saveAbility?: string; damageFormula?: string; healingFormula?: string; projectiles: number; note?: string; criticalAllowed: boolean };
+export type SpellPlayProfile = { delivery: 'attack' | 'save' | 'automatic' | 'effect'; ability: keyof AbilityScores; attackBonus?: number; saveDc?: number; saveAbility?: string; damageFormula?: string; healingFormula?: string; recurringDamageFormula?: string; projectiles: number; note?: string; criticalAllowed: boolean };
 const saveNames: Record<string,string> = { str:'Силы',dex:'Ловкости',con:'Телосложения',int:'Интеллекта',wis:'Мудрости',cha:'Харизмы' };
 /** Structured mechanics take precedence. Official text supplies delivery; ambiguous compound damage stays manual. */
 export function spellPlayProfile(c: ExportCharacter, spell: CatalogSpell, slotLevel = spell.level, classId = c.className): SpellPlayProfile {
+ slotLevel=spell.level===0?0:Math.max(spell.level,Math.min(9,Math.trunc(slotLevel)||spell.level));
  const d=playDerived(c),level=characterLevel(c),pb=proficiencyBonus(level),m=spell.mechanics;
  const innate=classId==='race'?resolvedRacialSpells(d,[spell])[0]:undefined;
  const ability=(m?.ability || innate?.ability || classRuleFor(c,classId)?.spellAbility || classRuleFor(c,c.className)?.spellAbility || 'int') as keyof AbilityScores;
@@ -20,7 +21,7 @@ export function spellPlayProfile(c: ExportCharacter, spell: CatalogSpell, slotLe
  const delivery=m ? m.delivery : attack ? 'attack' : saves ? 'save' : /автоматически попадает|автоматически попадают/.test(text) ? 'automatic' : 'effect';
  const symbolic=(value:string)=>value.replace(/@mod\.spell/g,String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g,(_,key:keyof AbilityScores)=>String(abilityModifier(d.abilities[key]))).replace(/@pb/g,String(pb)).replace(/@level/g,String(level));
  let damageFormula:string|undefined,healingFormula:string|undefined;
- let projectiles=1,note:string|undefined;
+ let projectiles=1,note:string|undefined,recurringDamageFormula:string|undefined;
  if(m){
    const parts=[...m.damage,...(spell.level===0?(m.cantripScaling||[]).filter(s=>s.level<=level).flatMap(s=>s.damage):[])];
    const steps=m.slotScaling ? Math.max(0,Math.floor((slotLevel-spell.level)/Math.max(1,m.slotScaling.every))):0;
@@ -34,7 +35,7 @@ export function spellPlayProfile(c: ExportCharacter, spell: CatalogSpell, slotLe
    else if(dice && /урон|хит|лечени|восстанавлива/i.test(text)){
      let count=Number(dice[1]),sides=Number(dice[2]),flat=Number(dice[3]||0);
      if(spell.level===0) count*=level>=17?4:level>=11?3:level>=5?2:1;
-     const upcast=text.match(/Ячейка выше[^:]*:\s*\+(\d+)\s*[кd](\d+)/i);
+     const upcast=text.match(/Ячейка выше[^:]*:[^.;]*?\+(\d+)\s*[кd](\d+)/i);
      if(upcast&&Number(upcast[2])===sides)count+=Math.max(0,slotLevel-spell.level)*Number(upcast[1]);
      if(/восстанавливает|лечени/i.test(text)&&!/урон/i.test(text)){if(/модификатор.*характеристик/i.test(text))flat+=mod;healingFormula=`${count}d${sides}${flat>=0?'+':''}${flat}`;}
      else damageFormula=`${count}d${sides}${flat?`+${flat}`:''}`;
@@ -43,6 +44,17 @@ export function spellPlayProfile(c: ExportCharacter, spell: CatalogSpell, slotLe
      if(/(?:два|несколько|различн).{0,30}(?:тип|урон)|позже|в начале каждого/i.test(text))note='Формула относится к первому указанному эффекту. Повторный и дополнительный урон сверяйте с описанием.';
    }
  }
+ // Explicit catalog profiles for compound pools and scaling that is not a simple +die.
+ // Keep independently rolled / delayed components out of one summed hit.
+ if(!m){
+   const higher=Math.max(0,slotLevel-spell.level);
+   if(spell.id==='ice-storm'){damageFormula=`${2+higher}d8+4d6`;note='Дробящий урон и холод бросаются вместе; повышенная ячейка усиливает только дробящий урон. При успехе спасброска — половина.';}
+   if(spell.id==='flame-strike'){damageFormula=`4d6+4d6${higher?`+${higher}d6`:''}`;note='Огонь + излучение. Дополнительные кости от ячейки отнесите к одному выбранному типу урона. При успехе спасброска — половина.';}
+   if(spell.id==='false-life'){damageFormula=`1d4+${4+higher*5}`;note='Результат — временные хиты, а не урон или лечение.';}
+   if(spell.id==='hail-of-thorns')damageFormula=`${Math.min(6,1+higher)}d10`;
+   if(spell.id==='sleep'){damageFormula=`${5+higher*2}d8`;note='Результат — пул хитов для усыпления, не урон.';}
+   if(spell.id==='witch-bolt'){recurringDamageFormula='1d12';damageFormula=`${1+higher}d12`;note='Первоначальное попадание. Для повторного автоматического урона используйте 1d12; повторный урон не критует.';}
+ }
  const saveAbility=m?.saveAbility ? saveNames[m.saveAbility] : text.match(/спасброс(?:ок|ки|ка)\s+(Силы|Ловкости|Телосложения|Интеллекта|Мудрости|Харизмы)/i)?.[1];
- return {delivery,ability,attackBonus:delivery==='attack'?pb+mod+spellItemBonus(c,'spellAttackBonus',classId):undefined,saveDc:delivery==='save'?8+pb+mod+spellItemBonus(c,'spellSaveDcBonus',classId):undefined,saveAbility,damageFormula,healingFormula,projectiles,note,criticalAllowed:delivery==='attack'};
+ return {delivery,ability,attackBonus:delivery==='attack'?pb+mod+spellItemBonus(c,'spellAttackBonus',classId):undefined,saveDc:delivery==='save'?8+pb+mod+spellItemBonus(c,'spellSaveDcBonus',classId):undefined,saveAbility,damageFormula,healingFormula,recurringDamageFormula,projectiles,note,criticalAllowed:delivery==='attack'};
 }

@@ -27,6 +27,7 @@ function exportWithSkills(chosen: readonly string[]) {
     classSkills: [], backgroundSkills: [...chosen],
     abilities: { str: 10, dex: 14, con: 12, int: 16, wis: 14, cha: 10 },
     spells: [], currency: { gp: 0, sp: 0, cp: 0, pp: 0 },
+    alignment: "",
     personality: { traits: "", ideals: "", bonds: "", flaws: "" },
   };
   return createHelpmateExport({ character, spells, raceFeatureList: [], classFeatureList: [] });
@@ -72,6 +73,7 @@ test("Screenshot regression: Helpmate receives all skill bonuses including exper
     classSkills: [], backgroundSkills: proficient, expertiseSkills: expertise,
     abilities: { str: 8, dex: 14, con: 14, int: 8, wis: 14, cha: 18 },
     spells: [], currency: { gp: 0, sp: 0, cp: 0, pp: 0 },
+    alignment: "",
     personality: { traits: "", ideals: "", bonds: "", flaws: "" },
   };
   const result = createHelpmateExport({ character: hero, spells, raceFeatureList: [], classFeatureList: [] });
@@ -132,6 +134,7 @@ test("Helpmate clean-import regression: all 18 bonuses of a level-5 bard with ex
     expertiseSkills: ["Обман", "Убеждение"],
     abilities: { str: 8, dex: 14, con: 14, int: 9, wis: 14, cha: 19 },
     spells: [], currency: { gp: 0, sp: 0, cp: 0, pp: 0 },
+    alignment: "",
     personality: { traits: "", ideals: "", bonds: "", flaws: "" },
   };
   const exported = createHelpmateExport({ character, spells, raceFeatureList: [], classFeatureList: [] });

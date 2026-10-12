@@ -37,3 +37,19 @@ test('healing uses source class ability and higher slot; structured homebrew mec
  const custom={id:'custom',name:'HB',level:1,source:'HB',classes:['wizard'],school:'Воплощение',description:'атака заклинанием',mechanics:{delivery:'save',ability:'wis',saveAbility:'con',damage:[{formula:'1d6+@mod.spell',type:'fire'}],slotScaling:{every:1,damage:[{formula:'1d6',type:'fire'}]}}} as CatalogSpell;
  const p=spellPlayProfile(c,custom,3);assert.equal(p.delivery,'save');assert.equal(p.saveDc,12);assert.equal(p.damageFormula,'1d6+1+1d6+1d6');assert.equal(p.criticalAllowed,false);
 });
+
+test('leveled magic calculates damage without placing the spell in the attacks list or known cantrips',()=>{
+ const c=hero();assert.deepEqual(c.spells,[]);
+ for(const [id,slot,formula] of [['burning-hands',3,'5d6'],['inflict-wounds',2,'4d10'],['chromatic-orb',3,'5d8'],['shatter',4,'5d8'],['ice-storm',6,'4d8+4d6'],['flame-strike',7,'4d6+4d6+2d6'],['witch-bolt',3,'3d12'],['hail-of-thorns',9,'6d10'],['sleep',3,'9d8'],['false-life',3,'1d4+14']] as const){
+   assert.equal(spellPlayProfile(c,spell(id),slot).damageFormula,formula,id);
+ }
+});
+test('spell roll panel is directly available from every magic card and uses an independent profile',async()=>{
+ const {renderToStaticMarkup}=await import('react-dom/server');
+ const {createElement}=await import('react');
+ const {SpellRollPanel}=await import('../app/SpellRollPanel');
+ const html=renderToStaticMarkup(createElement(SpellRollPanel,{character:hero(),spell:spell('fireball'),classId:'wizard',slotLevel:5,committed:false,mode:'normal',onRoll:()=>{},onClose:()=>{}}));
+ assert.match(html,/value="10d6"/);assert.match(html,/Бросить урон/);assert.match(html,/без расхода ячейки/);assert.doesNotMatch(html,/Критический урон/);
+ const ray=renderToStaticMarkup(createElement(SpellRollPanel,{character:hero(),spell:spell('scorching-ray'),classId:'wizard',slotLevel:4,committed:true,mode:'normal',onRoll:()=>{},onClose:()=>{}}));
+ assert.equal((ray.match(/spell-roll-step/g)||[]).length,5);assert.match(ray,/стоимость уже учтена/);assert.match(ray,/Критический урон/);
+});

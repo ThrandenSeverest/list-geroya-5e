@@ -11,3 +11,6 @@
 .roll-value-chips{display:flex;flex-wrap:wrap;gap:5px}.roll-value-chips b{padding:5px 8px;border:1px solid var(--copper);background:var(--panel);border-radius:4px;color:var(--gold-bright)}
 
 .play-inventory-dialog .play-modal>.play-row:last-child{position:sticky;bottom:0;z-index:1;background:var(--panel);border-top:1px solid var(--line);padding:12px 0 0}
+
+.play-skill-row{display:flex;gap:8px;align-items:center}.play-skill-row .play-skill{flex:1;min-width:0}.play-skill-row>button:last-child{flex:none;min-width:44px}
+.spell-roll-step{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}.play-resolution>label{display:grid;gap:8px;margin:12px 0}.play-resolution input{width:100%}
