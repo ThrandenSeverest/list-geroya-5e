@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - app/exportFormats.ts
+      - tests/helpmate-skills.test.ts
       - app/page.tsx
       - tests/browser-sheet.cjs
       - tests/racial-choice-ui.test.ts

@@ -315,13 +315,19 @@ function summaryText(context: ExportContext) {
   ].join("\n\n");
 }
 
+// Helpmate deserializes Parameters[].Abilities by ARRAY POSITION, not by skill
+// name or our skillKeys identifiers. Keep the ordering of the Russian character
+// sheet (alphabetical within each ability), even if the HeroList UI changes.
+// Helpmate labels Расследование as "Анализ" and Уход за животными as
+// "Дрессировка". Changing a position silently assigns proficiency to a
+// different skill in the imported character.
 const helpmateAbilityOrder: Record<keyof AbilityScores, string[]> = {
   str: ["Атлетика"],
   dex: ["Акробатика", "Ловкость рук", "Скрытность"],
   con: [],
-  int: ["Магия", "История", "Расследование", "Природа", "Религия"],
-  wis: ["Уход за животными", "Проницательность", "Медицина", "Внимательность", "Выживание"],
-  cha: ["Обман", "Запугивание", "Выступление", "Убеждение"],
+  int: ["Расследование", "История", "Магия", "Природа", "Религия"],
+  wis: ["Внимательность", "Выживание", "Медицина", "Проницательность", "Уход за животными"],
+  cha: ["Выступление", "Запугивание", "Обман", "Убеждение"],
 };
 
 const helpmateAbilityNames: Record<keyof AbilityScores, string> = {
