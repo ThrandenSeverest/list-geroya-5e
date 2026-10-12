@@ -315,18 +315,18 @@ function summaryText(context: ExportContext) {
   ].join("\n\n");
 }
 
-// Helpmate deserializes Parameters[].Abilities by ARRAY POSITION, not by skill
-// name or our skillKeys identifiers. Keep the ordering of the Russian character
-// sheet (alphabetical within each ability), even if the HeroList UI changes.
-// Helpmate labels Расследование as "Анализ" and Уход за животными as
-// "Дрессировка". Changing a position silently assigns proficiency to a
-// different skill in the imported character.
+// Helpmate deserializes Parameters[].Abilities by ARRAY POSITION, not by name.
+// The index map below is the order seen in Helpmate's character sheet, NOT the
+// alphabetical order of our rules or UI. In particular, Helpmate puts
+// Проницательность before Выживание and Медицина, and labels
+// Расследование as "Анализ", Уход за животными as "Дрессировка".
+// Changing a position silently assigns proficiency to a different skill.
 const helpmateAbilityOrder: Record<keyof AbilityScores, string[]> = {
   str: ["Атлетика"],
   dex: ["Акробатика", "Ловкость рук", "Скрытность"],
   con: [],
   int: ["Расследование", "История", "Магия", "Природа", "Религия"],
-  wis: ["Внимательность", "Выживание", "Медицина", "Проницательность", "Уход за животными"],
+  wis: ["Внимательность", "Проницательность", "Выживание", "Медицина", "Уход за животными"],
   cha: ["Выступление", "Запугивание", "Обман", "Убеждение"],
 };
 
@@ -383,6 +383,7 @@ export function helpmateSkippedSpells(context: ExportContext) {
 export function createHelpmateExport(context: ExportContext) {
   const { character, race, raceFeatureList } = context;
   const selectedSkills = new Set(characterProficiencies(character).skills);
+  const expertiseSkills = new Set(characterExpertiseSkills(character));
   const classes = orderedCharacterClasses(character);
   const totalLevel = characterLevel(character);
   const startingClassId = getStartingClassId(character);
@@ -396,7 +397,10 @@ export function createHelpmateExport(context: ExportContext) {
     UserSpasValue: 0,
     Proficiency: saves.has(key),
     Abilities: helpmateAbilityOrder[key].map(skill => ({
-      UserValue: 0,
+      // Helpmate's Proficiency is a boolean. Expertise needs a second
+      // proficiency bonus as a flat per-skill UserValue on import.
+      // Never apply this on a non-proficient skill, or it adds a ghost bonus.
+      UserValue: selectedSkills.has(skill) && expertiseSkills.has(skill) ? proficiencyBonus(totalLevel) : 0,
       MinValue: 0,
       Proficiency: selectedSkills.has(skill),
     })),
