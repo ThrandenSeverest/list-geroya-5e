@@ -28210,7 +28210,9 @@ function logPlay(c, text, result) {
 		...result ? {
 			formula: result.formula,
 			rolls: result.rolls,
-			total: result.total
+			total: result.total,
+			natural: result.natural,
+			critical: result.critical
 		} : {}
 	};
 	return {
@@ -29325,6 +29327,11 @@ function DiceTray({ rolls, onRoll }) {
 							}), /* @__PURE__ */ jsx("b", { children: value })]
 						}, i))
 					}),
+					latest.result.natural !== void 0 && /* @__PURE__ */ jsxs("p", { children: [
+						"Выбранный d20: ",
+						/* @__PURE__ */ jsx("b", { children: latest.result.natural }),
+						". Остальные кости и модификаторы учтены в результате."
+					] }),
 					/* @__PURE__ */ jsxs("div", {
 						className: "dice-total",
 						children: [/* @__PURE__ */ jsx("span", { children: "Сумма с модификатором" }), /* @__PURE__ */ jsx("strong", { children: latest.result.total })]
@@ -29338,7 +29345,11 @@ function DiceTray({ rolls, onRoll }) {
 					rolls.slice(0, 3).map((r) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", { children: [
 						/* @__PURE__ */ jsx("strong", { children: r.name }),
 						/* @__PURE__ */ jsx("small", { children: r.result.formula }),
-						/* @__PURE__ */ jsx("span", { children: r.result.rolls.join(" + ") })
+						/* @__PURE__ */ jsxs("span", { children: [
+							"Кости: [",
+							r.result.rolls.join(", "),
+							"]"
+						] })
 					] }), /* @__PURE__ */ jsx("b", { children: r.result.total })] }, r.id)),
 					!rolls.length && /* @__PURE__ */ jsx("p", { children: "Здесь появятся три последних броска." })
 				]
@@ -29358,6 +29369,7 @@ var saveNames = {
 };
 /** Structured mechanics take precedence. Official text supplies delivery; ambiguous compound damage stays manual. */
 function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.className) {
+	slotLevel = spell.level === 0 ? 0 : Math.max(spell.level, Math.min(9, Math.trunc(slotLevel) || spell.level));
 	const d = playDerived(c), level = characterLevel(c), pb = proficiencyBonus(level), m = spell.mechanics;
 	const innate = classId === "race" ? resolvedRacialSpells(d, [spell])[0] : void 0;
 	const ability = m?.ability || innate?.ability || classRuleFor(c, classId)?.spellAbility || classRuleFor(c, c.className)?.spellAbility || "int";
@@ -29368,7 +29380,7 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 	const delivery = m ? m.delivery : attack ? "attack" : saves ? "save" : /автоматически попадает|автоматически попадают/.test(text) ? "automatic" : "effect";
 	const symbolic = (value) => value.replace(/@mod\.spell/g, String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => String(abilityModifier$1(d.abilities[key]))).replace(/@pb/g, String(pb)).replace(/@level/g, String(level));
 	let damageFormula, healingFormula;
-	let projectiles = 1, note;
+	let projectiles = 1, note, recurringDamageFormula;
 	if (m) {
 		const parts = [...m.damage, ...spell.level === 0 ? (m.cantripScaling || []).filter((s) => s.level <= level).flatMap((s) => s.damage) : []];
 		const steps = m.slotScaling ? Math.max(0, Math.floor((slotLevel - spell.level) / Math.max(1, m.slotScaling.every))) : 0;
@@ -29394,7 +29406,7 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 		} else if (dice && /урон|хит|лечени|восстанавлива/i.test(text)) {
 			let count = Number(dice[1]), sides = Number(dice[2]), flat = Number(dice[3] || 0);
 			if (spell.level === 0) count *= level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
-			const upcast = text.match(/Ячейка выше[^:]*:\s*\+(\d+)\s*[кd](\d+)/i);
+			const upcast = text.match(/Ячейка выше[^:]*:[^.;]*?\+(\d+)\s*[кd](\d+)/i);
 			if (upcast && Number(upcast[2]) === sides) count += Math.max(0, slotLevel - spell.level) * Number(upcast[1]);
 			if (/восстанавливает|лечени/i.test(text) && !/урон/i.test(text)) {
 				if (/модификатор.*характеристик/i.test(text)) flat += mod;
@@ -29411,6 +29423,31 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 			if (/(?:два|несколько|различн).{0,30}(?:тип|урон)|позже|в начале каждого/i.test(text)) note = "Формула относится к первому указанному эффекту. Повторный и дополнительный урон сверяйте с описанием.";
 		}
 	}
+	if (!m) {
+		const higher = Math.max(0, slotLevel - spell.level);
+		if (spell.id === "ice-storm") {
+			damageFormula = `${2 + higher}d8+4d6`;
+			note = "Дробящий урон и холод бросаются вместе; повышенная ячейка усиливает только дробящий урон. При успехе спасброска — половина.";
+		}
+		if (spell.id === "flame-strike") {
+			damageFormula = `4d6+4d6${higher ? `+${higher}d6` : ""}`;
+			note = "Огонь + излучение. Дополнительные кости от ячейки отнесите к одному выбранному типу урона. При успехе спасброска — половина.";
+		}
+		if (spell.id === "false-life") {
+			damageFormula = `1d4+${4 + higher * 5}`;
+			note = "Результат — временные хиты, а не урон или лечение.";
+		}
+		if (spell.id === "hail-of-thorns") damageFormula = `${Math.min(6, 1 + higher)}d10`;
+		if (spell.id === "sleep") {
+			damageFormula = `${5 + higher * 2}d8`;
+			note = "Результат — пул хитов для усыпления, не урон.";
+		}
+		if (spell.id === "witch-bolt") {
+			recurringDamageFormula = "1d12";
+			damageFormula = `${1 + higher}d12`;
+			note = "Первоначальное попадание. Для повторного автоматического урона используйте 1d12; повторный урон не критует.";
+		}
+	}
 	const saveAbility = m?.saveAbility ? saveNames[m.saveAbility] : text.match(/спасброс(?:ок|ки|ка)\s+(Силы|Ловкости|Телосложения|Интеллекта|Мудрости|Харизмы)/i)?.[1];
 	return {
 		delivery,
@@ -29420,10 +29457,217 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 		saveAbility,
 		damageFormula,
 		healingFormula,
+		recurringDamageFormula,
 		projectiles,
 		note,
 		criticalAllowed: delivery === "attack"
 	};
+}
+//#endregion
+//#region app/playTransactions.ts
+var limit$1 = 20;
+var byteLimit = 512e3;
+function patch(before, after, omit = []) {
+	const a = before, b = after;
+	const result = {
+		values: {},
+		absent: []
+	};
+	for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+		if (omit.includes(key) || JSON.stringify(a[key]) === JSON.stringify(b[key])) continue;
+		if (a[key] === void 0) result.absent.push(key);
+		else result.values[key] = structuredClone(a[key]);
+	}
+	return result;
+}
+function restore(state, delta) {
+	const result = { ...state };
+	for (const key of delta.absent) delete result[key];
+	return {
+		...result,
+		...structuredClone(delta.values)
+	};
+}
+/** Persist only changed fields; never embed another undo history in a snapshot. */
+function commitPlayChange(before, after) {
+	if (!before.adventure || !after.adventure) return after;
+	const character = patch(before, after, ["adventure"]);
+	const adventure = patch(before.adventure, after.adventure, ["undo"]);
+	if (!Object.keys(character.values).length && !character.absent.length && !Object.keys(adventure.values).length && !adventure.absent.length) return before;
+	const label = after.adventure.journal[0]?.id !== before.adventure.journal[0]?.id ? after.adventure.journal[0]?.text || "Изменение героя" : "Изменение героя";
+	const entry = {
+		id: playId(),
+		at: (/* @__PURE__ */ new Date()).toISOString(),
+		label,
+		character,
+		adventure
+	};
+	const undo = [...before.adventure.undo || [], entry].slice(-limit$1);
+	while (undo.length && new TextEncoder().encode(JSON.stringify(undo)).length > byteLimit) undo.shift();
+	return {
+		...after,
+		adventure: {
+			...after.adventure,
+			undo
+		}
+	};
+}
+function undoPlayChange(c) {
+	const entry = c.adventure?.undo?.at(-1);
+	if (!entry || !c.adventure) return c;
+	const previous = restore(c, entry.character);
+	previous.adventure = {
+		...restore(c.adventure, entry.adventure),
+		undo: c.adventure.undo.slice(0, -1)
+	};
+	return logPlay(previous, `Отменено: ${entry.label}`);
+}
+//#endregion
+//#region app/rollComposer.ts
+/** One-shot extras never alter the underlying character. Natural d20 is preserved. */
+function composeD20(options, die) {
+	const adjustment = options.adjustment ?? 0;
+	if (![options.bonus, adjustment].every(Number.isSafeInteger) || Math.abs(adjustment) > 1e3) throw new Error("Поправка должна быть целым числом от −1000 до 1000.");
+	const formula = options.extraDice?.trim();
+	if (formula) rollDice(formula, () => 1);
+	const base = rollD20(options.bonus + adjustment, options.mode, die);
+	if (!formula) return base;
+	const extra = rollDice(formula, die);
+	return {
+		...base,
+		formula: `${base.formula} + (${formula})`,
+		rolls: [...base.rolls, ...extra.rolls],
+		total: base.total + extra.total
+	};
+}
+//#endregion
+//#region app/SpellRollPanel.tsx
+function SpellRollPanel({ character, spell, classId, slotLevel, committed, initialAttack, mode, onRoll, onClose }) {
+	const [level, setLevel] = useState(slotLevel);
+	const [manual, setManual] = useState();
+	const [attacks, setAttacks] = useState(initialAttack ? { 0: initialAttack } : {});
+	const [error, setError] = useState("");
+	const profile = spellPlayProfile(character, spell, level, classId);
+	const formula = manual ?? profile.damageFormula ?? profile.healingFormula ?? "";
+	function cast(name, fn) {
+		try {
+			const result = fn();
+			onRoll(`${spell.name}: ${name}`, result);
+			setError("");
+			return result;
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		}
+	}
+	function damage(index = 0, critical = false) {
+		cast(`${profile.healingFormula ? "лечение" : profile.delivery === "effect" ? "эффект" : "урон"}${profile.projectiles > 1 ? ` · снаряд ${index + 1}` : ""}${critical ? " · крит" : ""}`, () => rollDice(formula, void 0, critical));
+	}
+	return /* @__PURE__ */ jsxs("section", {
+		className: "play-resolution play-card",
+		"aria-label": `Броски заклинания: ${spell.name}`,
+		children: [
+			/* @__PURE__ */ jsxs("header", {
+				className: "play-row play-wrap",
+				children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: committed ? "Сотворено · стоимость уже учтена" : "Броски · без расхода ячейки" }), /* @__PURE__ */ jsx("h2", { children: spell.name })] }), /* @__PURE__ */ jsx("button", {
+					onClick: onClose,
+					children: "Закрыть броски"
+				})]
+			}),
+			spell.level > 0 && /* @__PURE__ */ jsxs("label", { children: ["Круг ячейки для расчёта", /* @__PURE__ */ jsx("select", {
+				"aria-label": "Круг ячейки для расчёта",
+				disabled: committed,
+				value: level,
+				onChange: (e) => {
+					setLevel(Number(e.target.value));
+					setManual(void 0);
+					setAttacks({});
+				},
+				children: Array.from({ length: 10 - spell.level }, (_, i) => spell.level + i).map((n) => /* @__PURE__ */ jsxs("option", {
+					value: n,
+					children: [n, " круг"]
+				}, n))
+			})] }),
+			/* @__PURE__ */ jsx("p", { children: committed ? "Броски ниже не расходуют ячейку повторно." : "Чтобы потратить ячейку и начать концентрацию, используйте «Сотворить» в карточке." }),
+			profile.saveDc !== void 0 && /* @__PURE__ */ jsxs("p", { children: [
+				"Спасбросок ",
+				profile.saveAbility || "цели",
+				": ",
+				/* @__PURE__ */ jsxs("b", { children: ["Сл ", profile.saveDc] }),
+				". Крит недоступен."
+			] }),
+			profile.delivery === "automatic" && /* @__PURE__ */ jsx("p", { children: "Автоматическое попадание. Крит недоступен." }),
+			/* @__PURE__ */ jsxs("label", { children: [profile.healingFormula ? "Формула лечения" : profile.delivery === "effect" ? "Формула эффекта" : "Формула урона", /* @__PURE__ */ jsx("input", {
+				"aria-label": "Формула броска заклинания",
+				value: formula,
+				placeholder: "Например, 8d6 или 2d8+4d6",
+				onChange: (e) => setManual(e.target.value)
+			})] }),
+			!formula && /* @__PURE__ */ jsx("p", { children: "Автоматическая формула не определена. Введите её по описанию заклинания." }),
+			manual !== void 0 && /* @__PURE__ */ jsx("button", {
+				onClick: () => setManual(void 0),
+				children: "Вернуть формулу заклинания"
+			}),
+			profile.projectiles > 1 && /* @__PURE__ */ jsxs("p", { children: [
+				"Снарядов / лучей: ",
+				profile.projectiles,
+				". Результаты попадания учитываются отдельно; урон указан для одного снаряда."
+			] }),
+			Array.from({ length: profile.projectiles }, (_, index) => /* @__PURE__ */ jsxs("div", {
+				className: "play-row play-wrap spell-roll-step",
+				children: [
+					profile.projectiles > 1 && /* @__PURE__ */ jsxs("b", { children: ["Снаряд ", index + 1] }),
+					profile.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
+						onClick: () => {
+							const r = cast(`атака${profile.projectiles > 1 ? ` · снаряд ${index + 1}` : ""}`, () => rollD20(profile.attackBonus, mode));
+							if (r) setAttacks((old) => ({
+								...old,
+								[index]: r
+							}));
+						},
+						children: [
+							"Атака ",
+							profile.attackBonus >= 0 ? "+" : "",
+							profile.attackBonus
+						]
+					}), attacks[index] && /* @__PURE__ */ jsxs("span", { children: [
+						"Попадание ",
+						attacks[index].total,
+						" · d20: ",
+						attacks[index].natural,
+						attacks[index].natural === 20 ? " · крит" : attacks[index].natural === 1 ? " · промах" : ""
+					] })] }),
+					/* @__PURE__ */ jsx("button", {
+						disabled: !formula.trim(),
+						onClick: () => damage(index),
+						children: profile.healingFormula ? "Бросить лечение" : profile.delivery === "effect" ? "Бросить эффект" : "Бросить урон"
+					}),
+					profile.criticalAllowed && /* @__PURE__ */ jsx("button", {
+						disabled: !formula.trim(),
+						onClick: () => damage(index, true),
+						children: "Критический урон"
+					})
+				]
+			}, index)),
+			profile.recurringDamageFormula && /* @__PURE__ */ jsxs("button", {
+				onClick: () => cast("повторный урон · без крита", () => rollDice(profile.recurringDamageFormula)),
+				children: [
+					"Повторный урон ",
+					profile.recurringDamageFormula,
+					" · без крита"
+				]
+			}),
+			profile.note && /* @__PURE__ */ jsx("p", { children: profile.note }),
+			/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Описание заклинания" }), /* @__PURE__ */ jsx("p", {
+				className: "play-description",
+				children: spell.description
+			})] }),
+			error && /* @__PURE__ */ jsx("p", {
+				className: "play-error",
+				role: "alert",
+				children: error
+			})
+		]
+	});
 }
 //#endregion
 //#region app/GameMode.tsx
@@ -29439,7 +29683,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const a = c.adventure;
 	const [tab, setTab] = useState("actions");
 	const [error, setError] = useState("");
-	const [history, setHistory] = useState([]);
+	const [rollDraft, setRollDraft] = useState();
+	const [rollAdjustment, setRollAdjustment] = useState(0);
+	const [extraDice, setExtraDice] = useState("");
+	const [draftMode, setDraftMode] = useState("normal");
+	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const [result, setResult] = useState();
 	const [visibleRolls, setVisibleRolls] = useState(() => a.journal.filter((e) => e.rolls && e.formula && e.total !== void 0).slice(0, 3).map((e) => ({
 		id: e.id,
@@ -29447,7 +29695,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		result: {
 			formula: e.formula,
 			rolls: e.rolls,
-			total: e.total
+			total: e.total,
+			natural: e.natural,
+			critical: e.critical
 		}
 	})));
 	const [resolution, setResolution] = useState();
@@ -29464,7 +29714,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [effectName, setEffectName] = useState("");
 	const [effectRounds, setEffectRounds] = useState(0);
 	useEffect(() => {
-		if (!casting && !rest) return;
+		if (!casting && !rest && !rollDraft) return;
 		const previous = document.activeElement;
 		const dialog = document.querySelector(".play-modal");
 		const oldOverflow = document.body.style.overflow;
@@ -29474,6 +29724,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			if (event.key === "Escape") {
 				setCasting(void 0);
 				setRest(void 0);
+				setRollDraft(void 0);
 			}
 			if (event.key !== "Tab" || !dialog) return;
 			const controls = [...dialog.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex=\"0\"]")];
@@ -29493,7 +29744,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			document.removeEventListener("keydown", keydown);
 			previous?.focus();
 		};
-	}, [!!casting, !!rest]);
+	}, [
+		!!casting,
+		!!rest,
+		!!rollDraft
+	]);
 	useEffect(() => {
 		if (resolution) document.querySelector(".play-resolution")?.scrollIntoView({ block: "nearest" });
 	}, [resolution?.spell.id]);
@@ -29557,9 +29812,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const saveBonus = (key) => abilityModifier$1(d.abilities[key]) + (saves.includes(key) ? pb : 0) + hbSum(d, "save_bonus", (e) => !e.ability || e.ability === key);
 	function change(next) {
 		try {
-			const value = typeof next === "function" ? next(c) : next;
-			setHistory((h) => [...h.slice(-19), structuredClone(c)]);
-			onChange(value);
+			onChange(commitPlayChange(c, typeof next === "function" ? next(c) : next));
 			setError("");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -29584,6 +29837,15 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
 		}
+	}
+	function beginRoll(name, bonus) {
+		setRollDraft({
+			name,
+			bonus
+		});
+		setRollAdjustment(0);
+		setExtraDice("");
+		setDraftMode(mode);
 	}
 	function d20(name, bonus) {
 		rolled(name, () => rollD20(bonus, mode));
@@ -29639,7 +29901,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				};
 			}
 			next = logPlay(next, `Сотворено: ${spell.name} · ${castMethod === "ritual" ? "ритуал; проверьте право на ритуальное колдовство" : castMethod === "free" ? "расовый ресурс" : castMethod === "cantrip" ? "заговор" : castMethod === "pact" ? `магия договора, ${pact.level} круг` : `${Number(castMethod.split(":")[1]) + 1} круг`}`);
-			const profile = spellPlayProfile(prev, spell, castMethod.startsWith("slot:") ? Number(castMethod.split(":")[1]) + 1 : castMethod === "pact" ? pact.level : spell.level, casting.classId);
+			const level = castMethod.startsWith("slot:") ? Number(castMethod.split(":")[1]) + 1 : castMethod === "pact" ? pact.level : spell.level;
+			const profile = spellPlayProfile(prev, spell, level, casting.classId);
 			let attack;
 			if (profile.attackBonus !== void 0) {
 				attack = rollD20(profile.attackBonus, mode);
@@ -29647,8 +29910,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				next = logPlay(next, `Атака: ${spell.name}`, attack);
 			}
 			setResolution({
+				id: playId(),
 				spell,
-				profile,
+				classId: casting.classId,
+				slotLevel: level,
+				committed: true,
 				attack
 			});
 			return next;
@@ -29706,6 +29972,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				className: "play-description",
 				children: entry.spell.description
 			})] }),
+			/* @__PURE__ */ jsx("button", {
+				onClick: () => setResolution({
+					id: playId(),
+					spell: entry.spell,
+					classId: entry.classId,
+					slotLevel: entry.spell.level,
+					committed: false
+				}),
+				children: "Броски"
+			}),
 			/* @__PURE__ */ jsx("button", {
 				disabled: !entry.prepared && !entry.spell.ritual,
 				onClick: () => beginCast(entry.spell, entry.classId),
@@ -29829,16 +30105,137 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 						},
 						children: "Длинный отдых"
 					}),
-					/* @__PURE__ */ jsx("button", {
-						disabled: !history.length,
+					/* @__PURE__ */ jsxs("button", {
+						disabled: !a.undo?.length,
+						title: a.undo?.at(-1)?.label,
 						onClick: () => {
-							onChange(logPlay(history.at(-1), "Последнее действие отменено"));
-							setHistory((h) => h.slice(0, -1));
-							setError("");
+							try {
+								const previous = undoPlayChange(c);
+								onChange(previous);
+								setResult(void 0);
+								setResolution(void 0);
+								setVisibleRolls(previous.adventure.journal.filter((e) => e.rolls && e.formula && e.total !== void 0).slice(0, 3).map((e) => ({
+									id: e.id,
+									name: e.text,
+									result: {
+										formula: e.formula,
+										rolls: e.rolls,
+										total: e.total,
+										natural: e.natural,
+										critical: e.critical
+									}
+								})));
+								setError("");
+							} catch (e) {
+								setError(e instanceof Error ? e.message : String(e));
+							}
 						},
-						children: "Отменить действие"
+						children: ["Отменить действие", a.undo?.length ? ` (${a.undo.length})` : ""]
 					})
 				]
+			}),
+			rollDraft && /* @__PURE__ */ jsx("div", {
+				className: "play-backdrop",
+				children: /* @__PURE__ */ jsxs("form", {
+					className: "play-modal",
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-labelledby": "roll-draft-title",
+					onSubmit: (e) => {
+						e.preventDefault();
+						try {
+							const r = composeD20({
+								bonus: rollDraft.bonus,
+								mode: draftMode,
+								adjustment: rollAdjustment,
+								extraDice
+							});
+							presentRoll(rollDraft.name, r);
+							change(logPlay(c, rollDraft.name, r));
+							setRollDraft(void 0);
+						} catch (e) {
+							setError(e instanceof Error ? e.message : String(e));
+						}
+					},
+					children: [
+						/* @__PURE__ */ jsxs("header", {
+							className: "play-row",
+							children: [/* @__PURE__ */ jsx("h2", {
+								id: "roll-draft-title",
+								children: rollDraft.name
+							}), /* @__PURE__ */ jsx("button", {
+								type: "button",
+								onClick: () => setRollDraft(void 0),
+								children: "Закрыть"
+							})]
+						}),
+						/* @__PURE__ */ jsxs("p", { children: [
+							"Текущий бонус героя: ",
+							/* @__PURE__ */ jsx("b", { children: sign(rollDraft.bonus) }),
+							". Поправки ниже действуют только на этот бросок."
+						] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Режим", /* @__PURE__ */ jsxs("select", {
+							value: draftMode,
+							onChange: (e) => setDraftMode(e.target.value),
+							children: [
+								/* @__PURE__ */ jsx("option", {
+									value: "normal",
+									children: "Обычный"
+								}),
+								/* @__PURE__ */ jsx("option", {
+									value: "advantage",
+									children: "Преимущество"
+								}),
+								/* @__PURE__ */ jsx("option", {
+									value: "disadvantage",
+									children: "Помеха"
+								})
+							]
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Разовая поправка", /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: "-1000",
+							max: "1000",
+							value: rollAdjustment,
+							onChange: (e) => setRollAdjustment(Number(e.target.value))
+						})] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Дополнительные кости", /* @__PURE__ */ jsx("input", {
+							placeholder: "1d4 или 1d4-1d4",
+							value: extraDice,
+							onChange: (e) => setExtraDice(e.target.value)
+						})] }),
+						/* @__PURE__ */ jsxs("div", {
+							className: "play-row play-wrap",
+							children: [
+								/* @__PURE__ */ jsx("button", {
+									type: "button",
+									onClick: () => setExtraDice("1d4"),
+									children: "+1d4"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									type: "button",
+									onClick: () => setExtraDice("-1d4"),
+									children: "−1d4"
+								}),
+								/* @__PURE__ */ jsx("button", {
+									type: "button",
+									onClick: () => setExtraDice(""),
+									children: "Очистить кости"
+								})
+							]
+						}),
+						/* @__PURE__ */ jsxs("p", { children: [
+							"Бонус без дополнительных костей: ",
+							sign(rollDraft.bonus + rollAdjustment),
+							". Натуральное значение d20 сохраняется отдельно."
+						] }),
+						/* @__PURE__ */ jsx("button", {
+							className: "play-primary",
+							type: "submit",
+							children: "Бросить"
+						})
+					]
+				})
 			}),
 			error && /* @__PURE__ */ jsxs("div", {
 				className: "play-error",
@@ -29898,70 +30295,20 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				children: [/* @__PURE__ */ jsxs("div", {
 					className: "play-content",
 					children: [
-						resolution && /* @__PURE__ */ jsxs("section", {
-							className: "play-resolution play-card",
-							"aria-label": "Результат заклинания",
-							children: [
-								/* @__PURE__ */ jsxs("header", {
-									className: "play-row",
-									children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Сотворено" }), /* @__PURE__ */ jsx("h2", { children: resolution.spell.name })] }), /* @__PURE__ */ jsx("button", {
-										onClick: () => setResolution(void 0),
-										children: "Закрыть заклинание"
-									})]
-								}),
-								resolution.profile.attackBonus !== void 0 && /* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [/* @__PURE__ */ jsxs("span", { children: [
-										"Попадание: ",
-										/* @__PURE__ */ jsx("b", { children: resolution.attack?.total ?? "—" }),
-										" ",
-										resolution.attack?.natural === 20 ? "· крит" : resolution.attack?.natural === 1 ? "· промах" : ""
-									] }), /* @__PURE__ */ jsxs("button", {
-										onClick: () => {
-											const r = rollD20(resolution.profile.attackBonus, mode);
-											presentRoll(`Атака: ${resolution.spell.name}`, r);
-											change(logPlay(c, `Атака: ${resolution.spell.name}`, r));
-											setResolution({
-												...resolution,
-												attack: r
-											});
-										},
-										children: ["Бросить атаку ", sign(resolution.profile.attackBonus)]
-									})]
-								}),
-								resolution.profile.saveDc !== void 0 && /* @__PURE__ */ jsxs("p", { children: [
-									"Цель делает спасбросок ",
-									resolution.profile.saveAbility || "",
-									": ",
-									/* @__PURE__ */ jsxs("b", { children: ["Сл ", resolution.profile.saveDc] }),
-									". Крит недоступен."
-								] }),
-								resolution.profile.projectiles > 1 && /* @__PURE__ */ jsxs("p", { children: [
-									"Атак / снарядов: ",
-									resolution.profile.projectiles,
-									". Каждый бросок здесь относится к одному лучу или снаряду."
-								] }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [resolution.profile.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
-										onClick: () => rolled(`Урон: ${resolution.spell.name}`, () => rollDice(resolution.profile.damageFormula)),
-										children: [
-											resolution.profile.delivery === "effect" ? "Бросить эффект" : "Бросить урон",
-											" ",
-											resolution.profile.damageFormula
-										]
-									}), resolution.profile.criticalAllowed && /* @__PURE__ */ jsx("button", {
-										onClick: () => rolled(`Крит: ${resolution.spell.name}`, () => rollDice(resolution.profile.damageFormula, void 0, true)),
-										children: "Критический урон"
-									})] }), resolution.profile.healingFormula && /* @__PURE__ */ jsxs("button", {
-										onClick: () => rolled(`Лечение: ${resolution.spell.name}`, () => rollDice(resolution.profile.healingFormula)),
-										children: ["Бросить лечение ", resolution.profile.healingFormula]
-									})]
-								}),
-								resolution.profile.note && /* @__PURE__ */ jsx("p", { children: resolution.profile.note }),
-								!resolution.profile.damageFormula && !resolution.profile.healingFormula && /* @__PURE__ */ jsx("p", { children: "Эффект выполняется по описанию заклинания." })
-							]
-						}),
+						resolution && /* @__PURE__ */ jsx(SpellRollPanel, {
+							character: c,
+							spell: resolution.spell,
+							classId: resolution.classId,
+							slotLevel: resolution.slotLevel,
+							committed: resolution.committed,
+							initialAttack: resolution.attack,
+							mode,
+							onClose: () => setResolution(void 0),
+							onRoll: (name, r) => {
+								presentRoll(name, r);
+								change(logPlay(c, name, r));
+							}
+						}, resolution.id),
 						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
@@ -30106,20 +30453,69 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									})
 								]
 							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap",
+									children: [/* @__PURE__ */ jsx("h2", { children: "Атаки" }), /* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: favoritesOnly,
+											onChange: (e) => setFavoritesOnly(e.target.checked)
+										}), "Только избранные"]
+									})]
+								}), favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })]
+							}),
 							/* @__PURE__ */ jsx("div", {
 								className: "play-grid",
-								children: attacks.map((attack) => /* @__PURE__ */ jsxs("article", {
+								children: attacks.filter((x) => !favoritesOnly || a.favoriteActions?.includes(x.id)).sort((x, y) => Number(!!a.favoriteActions?.includes(y.id)) - Number(!!a.favoriteActions?.includes(x.id))).map((attack) => /* @__PURE__ */ jsxs("article", {
 									className: "play-card",
 									children: [
-										/* @__PURE__ */ jsx("h3", { children: attack.name }),
+										/* @__PURE__ */ jsxs("div", {
+											className: "play-row",
+											children: [/* @__PURE__ */ jsx("h3", { children: attack.name }), /* @__PURE__ */ jsx("button", {
+												"aria-label": `Избранное: ${attack.name}`,
+												"aria-pressed": !!a.favoriteActions?.includes(attack.id),
+												onClick: () => change({
+													...c,
+													adventure: {
+														...a,
+														favoriteActions: a.favoriteActions?.includes(attack.id) ? a.favoriteActions.filter((id) => id !== attack.id) : [...a.favoriteActions || [], attack.id]
+													}
+												}),
+												children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
+											})]
+										}),
 										/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
 										/* @__PURE__ */ jsx("p", { children: attack.note }),
+										attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsxs("summary", { children: [
+											"Почему ",
+											sign(attack.attackBonus + attackBonusFor(attack)),
+											"?"
+										] }), /* @__PURE__ */ jsxs("p", { children: [
+											abilityLabels[attack.ability],
+											": ",
+											sign(abilityModifier$1(d.abilities[attack.ability])),
+											/* @__PURE__ */ jsx("br", {}),
+											"Мастерство: ",
+											sign(attack.proficient ? pb : 0),
+											/* @__PURE__ */ jsx("br", {}),
+											"Особенности и остальные бонусы листа: ",
+											sign(attack.attackBonus - abilityModifier$1(d.abilities[attack.ability]) - (attack.proficient ? pb : 0)),
+											/* @__PURE__ */ jsx("br", {}),
+											"Активные предметы игрового режима: ",
+											sign(attackBonusFor(attack))
+										] })] }),
 										/* @__PURE__ */ jsxs("div", {
 											className: "play-row play-wrap",
-											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("button", {
+											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
 												onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
 												children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
-											}), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+											}), /* @__PURE__ */ jsx("button", {
+												onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+												children: "Настроить бросок"
+											})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
 												onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")))),
 												children: "Урон"
 											}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
@@ -30130,9 +30526,15 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									]
 								}, attack.id))
 							}),
-							/* @__PURE__ */ jsxs("button", {
-								onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
-								children: ["Бросить инициативу ", sign(initiativeBreakdown(d).value)]
+							/* @__PURE__ */ jsxs("div", {
+								className: "play-row play-wrap",
+								children: [/* @__PURE__ */ jsxs("button", {
+									onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
+									children: ["Бросить инициативу ", sign(initiativeBreakdown(d).value)]
+								}), /* @__PURE__ */ jsx("button", {
+									onClick: () => beginRoll("Инициатива", initiativeBreakdown(d).value),
+									children: "Настроить бросок инициативы"
+								})]
 							})
 						] }),
 						tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
@@ -30288,11 +30690,22 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									]
 								}), /* @__PURE__ */ jsxs("section", {
 									className: "play-card",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Навыки" }), Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("button", {
-										className: "play-skill",
-										onClick: () => d20(skill, skillBonusBreakdown(d, skill).value),
-										children: [/* @__PURE__ */ jsx("span", { children: skill }), /* @__PURE__ */ jsx("b", { children: sign(skillBonusBreakdown(d, skill).value) })]
-									}, skill))]
+									children: [
+										/* @__PURE__ */ jsx("h2", { children: "Навыки" }),
+										/* @__PURE__ */ jsx("small", { children: "Нажатие — быстрый бросок. Кнопка ⚙ — разовые поправки." }),
+										Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("div", {
+											className: "play-skill-row",
+											children: [/* @__PURE__ */ jsxs("button", {
+												className: "play-skill",
+												onClick: () => d20(skill, skillBonusBreakdown(d, skill).value),
+												children: [/* @__PURE__ */ jsx("span", { children: skill }), /* @__PURE__ */ jsx("b", { children: sign(skillBonusBreakdown(d, skill).value) })]
+											}), /* @__PURE__ */ jsx("button", {
+												"aria-label": `Настроить бросок: ${skill}`,
+												onClick: () => beginRoll(skill, skillBonusBreakdown(d, skill).value),
+												children: "⚙"
+											})]
+										}, skill))
+									]
 								})]
 							}),
 							/* @__PURE__ */ jsxs("section", {
@@ -62368,6 +62781,16 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.6.2",
+		publishedAt: "2026-10-12T22:00:00Z",
+		changes: [
+			"Отмена игровых действий сохраняется вместе с героем и доступна после перезагрузки или переноса родного JSON.",
+			"Атаки и навыки получили настройку разового броска: преимущество, помеха, поправка и дополнительные кости. В атаках доступен разбор бонуса.",
+			"Избранные атаки сохраняются, поднимаются наверх списка и доступны через отдельный фильтр.",
+			"В карточках магии доступны отдельные броски заклинаний всех кругов: попадание, урон, лечение и выбор круга ячейки для расчёта без повторной траты ресурса."
+		]
+	},
 	{
 		version: "1.6.1",
 		publishedAt: "2026-10-11T20:00:00Z",
