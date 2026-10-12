@@ -27022,9 +27022,9 @@ var helpmateAbilityOrder = {
 	],
 	wis: [
 		"Внимательность",
+		"Проницательность",
 		"Выживание",
 		"Медицина",
-		"Проницательность",
 		"Уход за животными"
 	],
 	cha: [
@@ -27075,6 +27075,7 @@ function helpmateSkippedSpells(context) {
 function createHelpmateExport(context) {
 	const { character, race, raceFeatureList } = context;
 	const selectedSkills = new Set(characterProficiencies(character).skills);
+	const expertiseSkills = new Set(characterExpertiseSkills(character));
 	const classes = orderedCharacterClasses(character);
 	const totalLevel = characterLevel(character);
 	const startingClassId = getStartingClassId(character);
@@ -27088,7 +27089,7 @@ function createHelpmateExport(context) {
 		UserSpasValue: 0,
 		Proficiency: saves.has(key),
 		Abilities: helpmateAbilityOrder[key].map((skill) => ({
-			UserValue: 0,
+			UserValue: selectedSkills.has(skill) && expertiseSkills.has(skill) ? proficiencyBonus(totalLevel) : 0,
 			MinValue: 0,
 			Proficiency: selectedSkills.has(skill)
 		}))
