@@ -1,10 +1,12 @@
 import type { ExportCharacter } from './exportFormats';
 import { consumePlayItem, healPlay, logPlay, rollD20, rollDice, type DiceResult, type RollMode } from './adventure';
+import { healingFormulaForItem } from './healingPotions';
 export function useQuickItem(c:ExportCharacter,id:string,die?:(sides:number)=>number):{character:ExportCharacter;roll?:DiceResult;name:string} {
  const item=c.adventure?.inventory.find(i=>i.id===id);
  if(!item)throw new Error('Предмет не найден.');
  if(item.quantity<=0)throw new Error('Предмет закончился.');
- const roll=item.healingFormula?rollDice(item.healingFormula,die):undefined;
+ const formula=healingFormulaForItem(item);
+ const roll=formula?rollDice(formula,die):undefined;
  let next=consumePlayItem(c,id);
  if(roll)next=logPlay(healPlay(next,roll.total),`Лечение: ${item.name}`,roll);
  return {character:next,roll,name:item.name};
