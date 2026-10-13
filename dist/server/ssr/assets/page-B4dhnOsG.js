@@ -39,6 +39,61 @@ function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
 	});
 }
 //#endregion
+//#region app/NumberSlider.tsx
+/** The track previews while dragging; pointer/key release commits one change. Exact entry has no spinner. */
+function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) {
+	const [preview, setPreview] = useState();
+	const pending = useRef(void 0);
+	useEffect(() => {
+		if (pending.current === void 0) setPreview(void 0);
+	}, [value]);
+	function commit() {
+		const next = pending.current;
+		if (next === void 0) return;
+		pending.current = void 0;
+		setPreview(void 0);
+		if (Number(next) !== Number(value)) onChange(next);
+	}
+	const display = preview ?? String(value);
+	return /* @__PURE__ */ jsxs("span", {
+		className: "number-slider",
+		children: [/* @__PURE__ */ jsx("input", {
+			"aria-label": `${label}: ползунок`,
+			type: "range",
+			min,
+			max: Math.max(min, max),
+			step,
+			value: Math.min(Math.max(min, Number(display) || 0), Math.max(min, max)),
+			onChange: (e) => {
+				pending.current = e.target.value;
+				setPreview(e.target.value);
+			},
+			onPointerDown: (e) => e.currentTarget.setPointerCapture(e.pointerId),
+			onPointerUp: commit,
+			onPointerCancel: () => {
+				pending.current = void 0;
+				setPreview(void 0);
+			},
+			onKeyUp: commit,
+			onBlur: () => {
+				commit();
+				setPreview(void 0);
+			}
+		}), /* @__PURE__ */ jsx("input", {
+			"aria-label": label,
+			type: "text",
+			inputMode: step < 1 ? "decimal" : "numeric",
+			value: display,
+			onChange: (e) => {
+				pending.current = void 0;
+				const next = step < 1 ? e.target.value.replace(",", ".") : e.target.value;
+				setPreview(next);
+				if (next.trim() === "" || Number.isFinite(Number(next))) onChange(next);
+			}
+		})]
+	});
+}
+//#endregion
 //#region app/documentBackgrounds.ts
 var documentBackgrounds = [
 	{
@@ -28567,12 +28622,53 @@ function advancePlayTurn(c) {
 	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
 }
 //#endregion
+//#region app/healingPotions.ts
+var healingPotions = [
+	{
+		id: "normal",
+		name: "Зелье лечения",
+		label: "Обычное",
+		formula: "2d4+2"
+	},
+	{
+		id: "greater",
+		name: "Зелье большого лечения",
+		label: "Большое",
+		formula: "4d4+4"
+	},
+	{
+		id: "superior",
+		name: "Зелье отличного лечения",
+		label: "Отличное",
+		formula: "8d4+8"
+	},
+	{
+		id: "supreme",
+		name: "Зелье превосходного лечения",
+		label: "Превосходное",
+		formula: "10d4+20"
+	}
+];
+var normalized$1 = (value) => value.toLocaleLowerCase("ru").replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+function potionPreset(item) {
+	if (itemCategory(item) !== "consumable" || !/(?:зелье|potion)/i.test(item.name)) return void 0;
+	if (item.healingFormula) {
+		const formula = item.healingFormula.toLowerCase().replace(/\s/g, "").replace(/к/g, "d");
+		return healingPotions.find((p) => p.formula === formula);
+	}
+	return healingPotions.find((p) => normalized$1(p.name) === normalized$1(item.name));
+}
+function healingFormulaForItem(item) {
+	return item.healingFormula || potionPreset(item)?.formula;
+}
+//#endregion
 //#region app/playActions.ts
 function useQuickItem(c, id, die) {
 	const item = c.adventure?.inventory.find((i) => i.id === id);
 	if (!item) throw new Error("Предмет не найден.");
 	if (item.quantity <= 0) throw new Error("Предмет закончился.");
-	const roll = item.healingFormula ? rollDice(item.healingFormula, die) : void 0;
+	const formula = healingFormulaForItem(item);
+	const roll = formula ? rollDice(formula, die) : void 0;
 	let next = consumePlayItem(c, id);
 	if (roll) next = logPlay(healPlay(next, roll.total), `Лечение: ${item.name}`, roll);
 	return {
@@ -28792,6 +28888,13 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 										children: "−"
 									}),
 									/* @__PURE__ */ jsxs("strong", { children: [i.quantity, " шт."] }),
+									/* @__PURE__ */ jsx(NumberSlider, {
+										label: `Количество: ${i.name}`,
+										min: 0,
+										max: Math.max(100, i.quantity),
+										value: i.quantity,
+										onChange: (value) => modify(i, { quantity: integer(value) }, `Количество: ${i.name} — ${integer(value)}`)
+									}),
 									/* @__PURE__ */ jsx("button", {
 										"aria-label": `Добавить количество: ${i.name}`,
 										onClick: () => modify(i, { quantity: i.quantity + 1 }, `Добавлена единица: ${i.name}`),
@@ -28814,14 +28917,14 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 										onClick: () => mutate(() => consumePlayItem(c, i.id)),
 										children: "Использовать 1"
 									}),
-									key === "consumable" && i.healingFormula && /* @__PURE__ */ jsxs("button", {
+									key === "consumable" && healingFormulaForItem(i) && /* @__PURE__ */ jsxs("button", {
 										disabled: !i.quantity,
 										onClick: () => mutate(() => {
 											const action = useQuickItem(c, i.id);
 											if (action.roll) onRoll(`Лечение: ${i.name}`, action.roll);
 											return action.character;
 										}),
-										children: ["Выпить: ", i.healingFormula]
+										children: ["Выпить: ", healingFormulaForItem(i)]
 									}),
 									i.requiresAttunement && /* @__PURE__ */ jsx("button", {
 										onClick: () => mutate(() => queueAttunement(c, i.id)),
@@ -28923,27 +29026,34 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						"СМ",
 						"ММ",
 						"ПМ"
-					][i], /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: "0",
+					][i], /* @__PURE__ */ jsx(NumberSlider, {
+						label: [
+							"ЗМ",
+							"СМ",
+							"ММ",
+							"ПМ"
+						][i],
+						min: 0,
 						value: c.currency?.[key] || 0,
-						onChange: (e) => onChange({
+						onChange: (value) => onChange({
 							...c,
 							currency: {
 								...c.currency,
-								[key]: integer(e.target.value)
+								[key]: integer(value)
 							}
-						})
+						}),
+						max: 100
 					})] }, key))
 				}),
 				/* @__PURE__ */ jsxs("div", {
 					className: "play-row play-wrap",
 					children: [
-						/* @__PURE__ */ jsxs("label", { children: ["Сумма", /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: "1",
+						/* @__PURE__ */ jsxs("label", { children: ["Сумма", /* @__PURE__ */ jsx(NumberSlider, {
+							label: "Сумма",
+							min: 1,
 							value: coinAmount,
-							onChange: (e) => setCoinAmount(integer(e.target.value, 1))
+							onChange: (value) => setCoinAmount(integer(value, 1)),
+							max: 100
 						})] }),
 						/* @__PURE__ */ jsxs("label", { children: ["Монета", /* @__PURE__ */ jsx("select", {
 							value: coin,
@@ -29084,15 +29194,22 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 							"Текущие заряды",
 							"Максимум зарядов",
 							"Бонус КД"
-						][i], /* @__PURE__ */ jsx("input", {
-							type: "number",
+						][i], /* @__PURE__ */ jsx(NumberSlider, {
+							label: [
+								"Количество",
+								"Вес одного (фунт.)",
+								"Текущие заряды",
+								"Максимум зарядов",
+								"Бонус КД"
+							][i],
 							min: key === "acBonus" ? -100 : 0,
 							step: key === "weight" ? .1 : 1,
 							value: draft[key],
-							onChange: (e) => setDraft({
+							onChange: (value) => setDraft({
 								...draft,
-								[key]: key === "weight" ? Math.max(0, Number(e.target.value) || 0) : integer(e.target.value, key === "acBonus" ? -100 : 0)
-							})
+								[key]: key === "weight" ? Math.max(0, Number(value) || 0) : integer(value, key === "acBonus" ? -100 : 0)
+							}),
+							max: 100
 						})] }, key))
 					}),
 					/* @__PURE__ */ jsxs("fieldset", {
@@ -29111,14 +29228,19 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 									"Урон этим оружием",
 									"Попадание заклинаниями",
 									"Сложность спасброска заклинаний"
-								][i], /* @__PURE__ */ jsx("input", {
-									type: "number",
-									min: "-10",
-									max: "20",
+								][i], /* @__PURE__ */ jsx(NumberSlider, {
+									label: [
+										"Попадание этим оружием",
+										"Урон этим оружием",
+										"Попадание заклинаниями",
+										"Сложность спасброска заклинаний"
+									][i],
+									min: -10,
+									max: 20,
 									value: draft[key] || 0,
-									onChange: (e) => setDraft({
+									onChange: (value) => setDraft({
 										...draft,
-										[key]: integer(e.target.value, -10, 20)
+										[key]: integer(value, -10, 20)
 									})
 								})] }, key))
 							}),
@@ -29314,18 +29436,18 @@ function DiceTray({ rolls, onRoll }) {
 			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "dice-config",
-				children: [/* @__PURE__ */ jsxs("label", { children: ["Количество кубов", /* @__PURE__ */ jsx("input", {
-					type: "number",
-					min: "1",
-					max: "100",
+				children: [/* @__PURE__ */ jsxs("label", { children: ["Количество кубов", /* @__PURE__ */ jsx(NumberSlider, {
+					label: "Количество кубов",
+					min: 1,
+					max: 100,
 					value: count,
-					onChange: (e) => setCount(integer(e.target.value, 1, 100))
-				})] }), /* @__PURE__ */ jsxs("label", { children: ["Модификатор", /* @__PURE__ */ jsx("input", {
-					type: "number",
-					min: "-10000",
-					max: "10000",
+					onChange: (value) => setCount(integer(value, 1, 100))
+				})] }), /* @__PURE__ */ jsxs("label", { children: ["Модификатор", /* @__PURE__ */ jsx(NumberSlider, {
+					label: "Модификатор",
+					min: -1e4,
+					max: 1e4,
 					value: modifier,
-					onChange: (e) => setModifier(integer(e.target.value, -1e4, 1e4))
+					onChange: (value) => setModifier(integer(value, -1e4, 1e4))
 				})] })]
 			}),
 			/* @__PURE__ */ jsxs("button", {
@@ -29666,6 +29788,61 @@ function SpellRollPanel({ spell, result, onClose }) {
 	});
 }
 //#endregion
+//#region app/HealingPotions.tsx
+function HealingPotions({ character: c, onChange, onRoll }) {
+	return /* @__PURE__ */ jsx("div", {
+		className: "healing-potions",
+		"aria-label": "Автоматические зелья лечения",
+		children: healingPotions.map((p) => {
+			const items = c.adventure.inventory.filter((i) => potionPreset(i)?.id === p.id), count = items.reduce((n, i) => n + i.quantity, 0);
+			return /* @__PURE__ */ jsxs("div", {
+				className: "potion-tile",
+				children: [
+					/* @__PURE__ */ jsxs("span", { children: [
+						/* @__PURE__ */ jsx("b", { children: p.label }),
+						" · ",
+						p.formula,
+						" · ",
+						count,
+						" шт."
+					] }),
+					/* @__PURE__ */ jsxs("button", {
+						type: "button",
+						className: "play-primary",
+						disabled: count <= 0,
+						onClick: () => {
+							const item = items.find((i) => i.quantity > 0);
+							if (!item) return;
+							const action = useQuickItem(c, item.id);
+							onChange(action.character);
+							if (action.roll) onRoll(p.name, action.roll);
+						},
+						children: ["Выпить ", p.label.toLocaleLowerCase("ru")]
+					}),
+					/* @__PURE__ */ jsx("button", {
+						type: "button",
+						"aria-label": `Добавить: ${p.name}`,
+						onClick: () => {
+							const item = items[0];
+							onChange(logPlay(updateInventory(c, item ? c.adventure.inventory.map((i) => i.id === item.id ? {
+								...i,
+								quantity: i.quantity + 1
+							} : i) : [...c.adventure.inventory, {
+								...newPlayItem(p.name),
+								category: "consumable",
+								magical: true,
+								weight: .5,
+								healingFormula: p.formula
+							}]), `Добавлено: ${p.name}`));
+						},
+						children: "+ Добавить зелье"
+					})
+				]
+			}, p.id);
+		})
+	});
+}
+//#endregion
 //#region app/SessionResources.tsx
 function SessionResources({ character: c, onChange }) {
 	const d = playDerived(c), resources = characterResources(d), a = c.adventure;
@@ -29685,6 +29862,19 @@ function SessionResources({ character: c, onChange }) {
 							"/",
 							r.max
 						] }),
+						/* @__PURE__ */ jsx(NumberSlider, {
+							label: `Остаток: ${r.name}`,
+							min: 0,
+							max: r.max,
+							value: resourceCurrent(d, r),
+							onChange: (value) => onChange(logPlay({
+								...c,
+								resourceSpent: {
+									...c.resourceSpent,
+									[r.key]: r.max - integer(value, 0, r.max)
+								}
+							}, `Ресурс ${r.name}: ${integer(value, 0, r.max)}/${r.max}`))
+						}),
 						/* @__PURE__ */ jsx("button", {
 							"aria-label": `Потратить ресурс: ${r.name}`,
 							disabled: resourceCurrent(d, r) <= 0,
@@ -29695,7 +29885,7 @@ function SessionResources({ character: c, onChange }) {
 									[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
 								}
 							}, `Использован ресурс: ${r.name}`)),
-							children: "−"
+							children: "Использовать"
 						}),
 						/* @__PURE__ */ jsx("button", {
 							"aria-label": `Вернуть ресурс: ${r.name}`,
@@ -29707,7 +29897,7 @@ function SessionResources({ character: c, onChange }) {
 									[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
 								}
 							}, `Возвращён ресурс: ${r.name}`)),
-							children: "+"
+							children: "Вернуть"
 						}),
 						/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
 					]
@@ -29720,6 +29910,22 @@ function SessionResources({ character: c, onChange }) {
 							"/",
 							r.max
 						] }),
+						/* @__PURE__ */ jsx(NumberSlider, {
+							label: `Остаток: ${r.name}`,
+							min: 0,
+							max: r.max,
+							value: r.current,
+							onChange: (value) => onChange(logPlay({
+								...c,
+								adventure: {
+									...a,
+									customResources: a.customResources.map((x) => x.id === r.id ? {
+										...x,
+										current: integer(value, 0, r.max)
+									} : x)
+								}
+							}, `Ресурс ${r.name}: ${integer(value, 0, r.max)}/${r.max}`))
+						}),
 						/* @__PURE__ */ jsx("button", {
 							"aria-label": `Потратить ресурс: ${r.name}`,
 							disabled: r.current <= 0,
@@ -29733,7 +29939,7 @@ function SessionResources({ character: c, onChange }) {
 									} : x)
 								}
 							}, `Использован ресурс: ${r.name}`)),
-							children: "−"
+							children: "Использовать"
 						}),
 						/* @__PURE__ */ jsx("button", {
 							"aria-label": `Вернуть ресурс: ${r.name}`,
@@ -29748,7 +29954,7 @@ function SessionResources({ character: c, onChange }) {
 									} : x)
 								}
 							}, `Возвращён ресурс: ${r.name}`)),
-							children: "+"
+							children: "Вернуть"
 						}),
 						/* @__PURE__ */ jsx("small", { children: r.recharge === "none" ? "Вручную" : r.recharge === "short" ? "Короткий / длинный отдых" : "Длинный отдых" }),
 						/* @__PURE__ */ jsx("button", {
@@ -29792,12 +29998,12 @@ function SessionResources({ character: c, onChange }) {
 						value: name,
 						onChange: (e) => setName(e.target.value)
 					})] }),
-					/* @__PURE__ */ jsxs("label", { children: ["Максимум ресурса", /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: "1",
-						max: "10000",
+					/* @__PURE__ */ jsxs("label", { children: ["Максимум ресурса", /* @__PURE__ */ jsx(NumberSlider, {
+						label: "Максимум ресурса",
+						min: 1,
+						max: 1e4,
 						value: maximum,
-						onChange: (e) => setMaximum(integer(e.target.value, 1, 1e4))
+						onChange: (value) => setMaximum(integer(value, 1, 1e4))
 					})] }),
 					/* @__PURE__ */ jsxs("label", { children: ["Восстановление ресурса", /* @__PURE__ */ jsxs("select", {
 						value: recharge,
@@ -29995,7 +30201,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		const dialog = document.querySelector(".play-modal");
 		const oldOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
-		dialog?.querySelector("button,input,select,textarea")?.focus();
+		dialog?.querySelector("button,input,select,textarea")?.focus({ preventScroll: true });
 		const keydown = (event) => {
 			if (event.key === "Escape") {
 				setRest(void 0);
@@ -30006,48 +30212,45 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			const first = controls[0], last = controls.at(-1);
 			if (event.shiftKey && document.activeElement === first) {
 				event.preventDefault();
-				last?.focus();
+				last?.focus({ preventScroll: true });
 			}
 			if (!event.shiftKey && document.activeElement === last) {
 				event.preventDefault();
-				first?.focus();
+				first?.focus({ preventScroll: true });
 			}
 		};
 		document.addEventListener("keydown", keydown);
 		return () => {
 			document.body.style.overflow = oldOverflow;
 			document.removeEventListener("keydown", keydown);
-			previous?.focus();
+			previous?.focus({ preventScroll: true });
 		};
 	}, [!!rest, !!rollDraft]);
-	useEffect(() => {
-		if (resolution) document.querySelector(".play-resolution")?.scrollIntoView({ block: "nearest" });
-	}, [resolution?.spell.id]);
 	useEffect(() => {
 		if (!diceOpen) return;
 		const previous = document.activeElement;
 		const rail = document.querySelector(".play-dice-sidebar");
 		const oldOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
-		rail?.querySelector(".dice-mobile-close")?.focus();
+		rail?.querySelector(".dice-mobile-close")?.focus({ preventScroll: true });
 		const keydown = (e) => {
 			if (e.key === "Escape") setDiceOpen(false);
 			if (e.key !== "Tab" || !rail) return;
 			const controls = [...rail.querySelectorAll("button:not(:disabled),input,summary")].filter((el) => el.getClientRects().length);
 			if (e.shiftKey && document.activeElement === controls[0]) {
 				e.preventDefault();
-				controls.at(-1)?.focus();
+				controls.at(-1)?.focus({ preventScroll: true });
 			}
 			if (!e.shiftKey && document.activeElement === controls.at(-1)) {
 				e.preventDefault();
-				controls[0]?.focus();
+				controls[0]?.focus({ preventScroll: true });
 			}
 		};
 		document.addEventListener("keydown", keydown);
 		return () => {
 			document.body.style.overflow = oldOverflow;
 			document.removeEventListener("keydown", keydown);
-			previous?.focus();
+			previous?.focus({ preventScroll: true });
 		};
 	}, [diceOpen]);
 	useEffect(() => {
@@ -30099,7 +30302,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			favoriteActions: isPinned(key) ? a.favoriteActions.filter((x) => x !== key) : [...a.favoriteActions || [], key]
 		}
 	});
-	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0) && (!favoritesOnly || isPinned(spellKey(e))));
+	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0 || resolution?.spell.id === e.spell.id && resolution.classId === e.classId) && (!favoritesOnly || isPinned(spellKey(e))));
 	const hasPinnedSpells = readySpells.some((e) => isPinned(spellKey(e)));
 	const quickSpells = quickSearch || favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
 	const matchingItems = a.inventory.filter((i) => itemCategory(i) === "consumable" && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
@@ -30109,7 +30312,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		name: quickCheck.slice(6),
 		bonus: skillBonusBreakdown(d, quickCheck.slice(6)).value
 	} : void 0;
-	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && spellCastOptions(c, entry.spell, entry.classId).length > 0) && (!favoritesOnly || isPinned(spellKey(entry)));
+	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && (spellCastOptions(c, entry.spell, entry.classId).length > 0 || resolution?.spell.id === entry.spell.id && resolution.classId === entry.classId)) && (!favoritesOnly || isPinned(spellKey(entry)));
 	const baseAc = armorClassBreakdown(d);
 	const ac = a.acOverride ?? baseAc.value + itemBonus(c, "acBonus");
 	const speed = speedBreakdown(d);
@@ -30170,6 +30373,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			setResolution({
 				id: playId(),
 				spell,
+				classId,
 				result: cast.result
 			});
 			for (const event of cast.result.events) presentRoll(event.name, event.result);
@@ -30185,7 +30389,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			if (action.attack) presentRoll(`Атака: ${action.name}`, action.attack);
 			if (action.damage) presentRoll(`Урон: ${action.name}`, action.damage);
 			setResolution(void 0);
-			setAttackResolution(action);
+			setAttackResolution({
+				...action,
+				attackId: attack.id
+			});
 			setError("");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -30301,7 +30508,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					disabled: !method || !entry.prepared && method !== "ritual",
 					onClick: () => commitCast(entry.spell, entry.classId, method, castFormulas[key]),
 					children: "Сотворить"
-				})
+				}),
+				resolution?.spell.id === entry.spell.id && resolution.classId === entry.classId && /* @__PURE__ */ jsx(SpellRollPanel, {
+					spell: resolution.spell,
+					result: resolution.result,
+					onClose: () => setResolution(void 0)
+				}, resolution.id)
 			]
 		}, `${entry.classId}-${entry.source}-${entry.spell.id}`);
 	};
@@ -30509,12 +30721,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								})
 							]
 						})] }),
-						/* @__PURE__ */ jsxs("label", { children: ["Разовая поправка", /* @__PURE__ */ jsx("input", {
-							type: "number",
-							min: "-1000",
-							max: "1000",
+						/* @__PURE__ */ jsxs("label", { children: ["Разовая поправка", /* @__PURE__ */ jsx(NumberSlider, {
+							label: "Разовая поправка",
+							min: -1e3,
+							max: 1e3,
 							value: rollAdjustment,
-							onChange: (e) => setRollAdjustment(Number(e.target.value))
+							onChange: (value) => setRollAdjustment(Number(value))
 						})] }),
 						/* @__PURE__ */ jsxs("label", { children: ["Дополнительные кости", /* @__PURE__ */ jsx("input", {
 							placeholder: "1d4 или 1d4-1d4",
@@ -30620,14 +30832,25 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									className: "play-card",
 									children: [
 										/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
+										/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx(NumberSlider, {
+											label: "Текущие HP",
+											min: 0,
+											max,
+											value: hp,
+											onChange: (value) => change({
+												...c,
+												currentHitPoints: integer(value, 0, max)
+											})
+										})] }),
 										/* @__PURE__ */ jsxs("div", {
 											className: "play-row play-wrap",
 											children: [
-												/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
-													type: "number",
-													min: "0",
+												/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx(NumberSlider, {
+													label: "Количество",
+													min: 0,
 													value: amount,
-													onChange: (e) => setAmount(integer(e.target.value))
+													onChange: (value) => setAmount(integer(value)),
+													max: 100
 												})] }),
 												/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
 													value: defense,
@@ -30669,6 +30892,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												})
 											]
 										}),
+										/* @__PURE__ */ jsx(HealingPotions, {
+											character: c,
+											onChange: change,
+											onRoll: presentRoll
+										}),
 										hp === 0 && /* @__PURE__ */ jsxs("div", {
 											className: "play-notice",
 											children: [
@@ -30707,39 +30935,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								onClick: () => change(toggleCondition(c, name)),
 								children: [name, " ×"]
 							}, name))
-						}),
-						resolution && /* @__PURE__ */ jsx(SpellRollPanel, {
-							spell: resolution.spell,
-							result: resolution.result,
-							onClose: () => setResolution(void 0)
-						}, resolution.id),
-						attackResolution && /* @__PURE__ */ jsxs("section", {
-							className: "play-card play-resolution",
-							"aria-label": "Результат атаки",
-							children: [
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row",
-									children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
-										onClick: () => setAttackResolution(void 0),
-										children: "Закрыть атаку"
-									})]
-								}),
-								attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
-									"Попадание: ",
-									/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
-									" · d20: ",
-									attackResolution.attack.natural,
-									attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
-								] }),
-								/* @__PURE__ */ jsxs("p", { children: [
-									"Урон",
-									attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
-									": ",
-									/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
-									" · ",
-									attackResolution.damage?.formula || "Промах"
-								] })
-							]
 						}),
 						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("section", {
@@ -30953,6 +31148,34 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 											onClick: () => performAttack(attack),
 											children: "Атаковать"
 										}),
+										attackResolution?.attackId === attack.id && /* @__PURE__ */ jsxs("section", {
+											className: "play-card play-resolution",
+											"aria-label": "Результат атаки",
+											children: [
+												/* @__PURE__ */ jsxs("div", {
+													className: "play-row",
+													children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
+														onClick: () => setAttackResolution(void 0),
+														children: "Закрыть атаку"
+													})]
+												}),
+												attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
+													"Попадание: ",
+													/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
+													" · d20: ",
+													attackResolution.attack.natural,
+													attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
+												] }),
+												/* @__PURE__ */ jsxs("p", { children: [
+													"Урон",
+													attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
+													": ",
+													/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
+													" · ",
+													attackResolution.damage?.formula || "Промах"
+												] })
+											]
+										}),
 										/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
 											className: "play-row play-wrap",
 											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
@@ -30991,13 +31214,13 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 											/* @__PURE__ */ jsxs("p", { children: [
 												i.quantity,
 												" шт.",
-												i.healingFormula ? ` · лечение ${i.healingFormula}` : ""
+												healingFormulaForItem(i) ? ` · лечение ${healingFormulaForItem(i)}` : ""
 											] }),
 											/* @__PURE__ */ jsx("button", {
 												className: "play-primary",
 												disabled: !i.quantity,
 												onClick: () => consumeQuick(i.id),
-												children: i.healingFormula ? "Выпить и восстановить HP" : "Использовать 1"
+												children: healingFormulaForItem(i) ? "Выпить и восстановить HP" : "Использовать 1"
 											})
 										]
 									}, i.id))]
@@ -31028,6 +31251,20 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												" / ",
 												n
 											] }),
+											/* @__PURE__ */ jsx(NumberSlider, {
+												label: `Осталось ячеек ${i + 1} круга`,
+												min: 0,
+												max: n,
+												value: Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
+												onChange: (value) => change((prev) => {
+													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
+													used[i] = n - integer(value, 0, n);
+													return logPlay({
+														...prev,
+														spellSlotsUsed: used
+													}, `Ячейки ${i + 1} круга: ${integer(value, 0, n)}/${n}`);
+												})
+											}),
 											/* @__PURE__ */ jsx("button", {
 												"aria-label": `Потратить ячейку ${i + 1} круга`,
 												disabled: (c.spellSlotsUsed?.[i] || 0) >= n,
@@ -31068,6 +31305,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												" / ",
 												pact.slots
 											] }),
+											/* @__PURE__ */ jsx(NumberSlider, {
+												label: "Осталось ячеек договора",
+												min: 0,
+												max: pact.slots,
+												value: pact.slots - (c.pactSlotsUsed || 0),
+												onChange: (value) => change(logPlay({
+													...c,
+													pactSlotsUsed: pact.slots - integer(value, 0, pact.slots)
+												}, `Ячейки договора: ${integer(value, 0, pact.slots)}/${pact.slots}`))
+											}),
 											/* @__PURE__ */ jsx("button", {
 												disabled: (c.pactSlotsUsed || 0) >= pact.slots,
 												onClick: () => change({
@@ -31270,16 +31517,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 											children: name
 										}, name))
 									}),
-									/* @__PURE__ */ jsxs("label", { children: ["Истощение", /* @__PURE__ */ jsx("input", {
-										type: "number",
-										min: "0",
-										max: "6",
+									/* @__PURE__ */ jsxs("label", { children: ["Истощение", /* @__PURE__ */ jsx(NumberSlider, {
+										label: "Истощение",
+										min: 0,
+										max: 6,
 										value: a.exhaustion,
-										onChange: (e) => change({
+										onChange: (value) => change({
 											...c,
 											adventure: {
 												...a,
-												exhaustion: integer(e.target.value, 0, 6)
+												exhaustion: integer(value, 0, 6)
 											}
 										})
 									})] }),
@@ -31293,11 +31540,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												value: effectName,
 												onChange: (e) => setEffectName(e.target.value)
 											}),
-											/* @__PURE__ */ jsxs("label", { children: ["Собственных ходов (0 — без срока)", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
+											/* @__PURE__ */ jsxs("label", { children: ["Собственных ходов (0 — без срока)", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Собственных ходов",
+												min: 0,
 												value: effectRounds,
-												onChange: (e) => setEffectRounds(integer(e.target.value))
+												onChange: (value) => setEffectRounds(integer(value)),
+												max: 100
 											})] }),
 											/* @__PURE__ */ jsx("button", {
 												disabled: !effectName.trim(),
@@ -31348,78 +31596,81 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									/* @__PURE__ */ jsxs("div", {
 										className: "play-grid",
 										children: [
-											/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "1",
+											/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Максимум HP",
+												min: 1,
 												value: a.hpMaximum ?? max,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
 													adventure: {
 														...a,
-														hpMaximum: integer(e.target.value, 1)
+														hpMaximum: integer(value, 1)
 													}
-												})
+												}),
+												max: 100
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx("input", {
-												type: "number",
+											/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "КД вручную",
 												value: a.acOverride ?? "",
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
 													adventure: {
 														...a,
-														acOverride: e.target.value === "" ? void 0 : integer(e.target.value)
+														acOverride: value === "" ? void 0 : integer(value)
 													}
-												})
+												}),
+												max: 100
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
+											/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Текущие HP вручную",
+												min: 0,
 												max,
 												value: hp,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
-													currentHitPoints: integer(e.target.value, 0, max)
+													currentHitPoints: integer(value, 0, max)
 												})
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Временные HP", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
+											/* @__PURE__ */ jsxs("label", { children: ["Временные HP", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Временные HP",
+												min: 0,
 												value: c.temporaryHitPoints || 0,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
-													temporaryHitPoints: integer(e.target.value)
-												})
+													temporaryHitPoints: integer(value)
+												}),
+												max: 100
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Успехи смерти", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
-												max: "3",
+											/* @__PURE__ */ jsxs("label", { children: ["Успехи смерти", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Успехи смерти",
+												min: 0,
+												max: 3,
 												value: c.deathSaveSuccesses || 0,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
-													deathSaveSuccesses: integer(e.target.value, 0, 3)
+													deathSaveSuccesses: integer(value, 0, 3)
 												})
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Провалы смерти", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
-												max: "3",
+											/* @__PURE__ */ jsxs("label", { children: ["Провалы смерти", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Провалы смерти",
+												min: 0,
+												max: 3,
 												value: c.deathSaveFailures || 0,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
-													deathSaveFailures: integer(e.target.value, 0, 3)
+													deathSaveFailures: integer(value, 0, 3)
 												})
 											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Лимит настройки", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "1",
-												max: "10",
+											/* @__PURE__ */ jsxs("label", { children: ["Лимит настройки", /* @__PURE__ */ jsx(NumberSlider, {
+												label: "Лимит настройки",
+												min: 1,
+												max: 10,
 												value: a.attunementLimit,
-												onChange: (e) => change({
+												onChange: (value) => change({
 													...c,
 													adventure: {
 														...a,
-														attunementLimit: integer(e.target.value, 1, 10)
+														attunementLimit: integer(value, 1, 10)
 													}
 												})
 											})] }),
@@ -31559,14 +31810,14 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							p.die,
 							", доступно ",
 							p.max - p.spent,
-							/* @__PURE__ */ jsx("input", {
-								type: "number",
-								min: "0",
+							/* @__PURE__ */ jsx(NumberSlider, {
+								label: `Кости хитов: ${spellSourceDisplayName(p.classId, d, classes)}`,
+								min: 0,
 								max: p.max - p.spent,
 								value: dice[p.classId] || 0,
-								onChange: (e) => setDice({
+								onChange: (value) => setDice({
 									...dice,
-									[p.classId]: integer(e.target.value, 0, p.max - p.spent)
+									[p.classId]: integer(value, 0, p.max - p.spent)
 								})
 							})
 						] }, p.classId)),
@@ -63203,6 +63454,11 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.7.1",
+		publishedAt: "2026-10-13T17:00:00Z",
+		changes: ["Ползунки для здоровья, ресурсов, ячеек, количества предметов и кубов с точным вводом значения.", "Готовые кнопки четырёх типов зелий лечения: автоматический бросок, восстановление HP и расход из инвентаря."]
+	},
 	{
 		version: "1.7.0",
 		publishedAt: "2026-10-13T16:30:00Z",
