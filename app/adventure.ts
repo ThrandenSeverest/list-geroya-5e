@@ -132,7 +132,7 @@ export function weaponItemBonus(c: ExportCharacter, attackName: string, key: 'we
   return values.length ? Math.max(...values) : 0;
 }
 
-/** Refresh legacy zero-weight equipment once, preserving explicitly edited properties. */
+/** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
 export function upgradeLegacyInventory(c:ExportCharacter): ExportCharacter {
   if(!c.adventure || c.adventure.inventoryCatalogVersion === 2)return c;
   const upgrade=(item:PlayItem):PlayItem=>{
