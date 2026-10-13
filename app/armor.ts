@@ -1,7 +1,6 @@
 import { hbEffects } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedEquipment } from "./equipment";
-import { catalogItemFor } from "./itemCatalog";
 import { isShieldItem } from "./adventure";
 import { characterLevel, getClassProgress, getClassLevel, normalizedLevelHistory, orderedCharacterClasses } from "./multiclass";
 
@@ -32,6 +31,8 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   const shield = equipped ? equipped.some(isShieldItem) : hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
 
   const armors: Array<{ pattern: RegExp; ac: number; dex: "full" | "max2" | "none"; name: string }> = [
+    { pattern: /ст[её]ган(?:ый|ая) доспех/i, ac: 11, dex: "full", name: "Стёганый доспех" },
+    { pattern: /колечн(?:ый|ая) доспех/i, ac: 14, dex: "none", name: "Колечный доспех" },
     { pattern: /полулаты/i, ac: 15, dex: "max2", name: "Полулаты" },
     { pattern: /(?:^|\s)латы(?:$|\s)/i, ac: 18, dex: "none", name: "Латы" },
     { pattern: /наборн(?:ый|ая) доспех/i, ac: 17, dex: "none", name: "Наборный доспех" },
