@@ -16,7 +16,16 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
    const errors=[];page.on('pageerror',error=>errors.push(error.message));
    await page.route('**/api/account',route=>route.fulfill({json:{authenticated:false}}));
    await page.addInitScript(({root,body,dependent})=>{if(!localStorage.getItem('herolist-homebrew-local-v2'))localStorage.setItem('herolist-homebrew-local-v2',JSON.stringify({version:2,schemaVersion:2,elements:[root,body,dependent]}));}, {root,body,dependent});
-   const openWorkshop=async()=>{const hb=page.getByRole('button',{name:'Моё хоумбрю',exact:true});if(!new URL(page.url()).pathname.replace(/\/$/,'').endsWith('/adventure'))await page.getByRole('button',{name:'Таверна и приключения',exact:false}).first().click();await hb.waitFor({state:'visible'});await hb.click();await page.locator('.hb-workspace-sidebar').waitFor({state:'visible'});};
+   const openWorkshop=async()=>{
+    const hb=page.getByRole('button',{name:'Моё хоумбрю',exact:true});
+    if(!await hb.isVisible()){
+     const manager=page.getByRole('button',{name:'Таверна и приключения',exact:false}).first();
+     await manager.click();
+     try { await hb.waitFor({state:'visible',timeout:5000}); }
+     catch { await manager.click(); await hb.waitFor({state:'visible'}); }
+    }
+    await hb.click();await page.locator('.hb-workspace-sidebar').waitFor({state:'visible'});
+   };
    const openChoices=async()=>{if(type==='subclass'){await page.getByRole('button',{name:'Развитие и способности',exact:true}).click();await page.getByRole('button',{name:/^Уровень 1:/}).click();}else await page.getByRole('button',{name:'Механика',exact:true}).click();};
    await page.goto(base);await openWorkshop();
    await page.locator('.hb-sidebar-package > button').filter({hasText:root.name}).click();await openChoices();
