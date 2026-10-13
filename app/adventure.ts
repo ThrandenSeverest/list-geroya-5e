@@ -2,7 +2,7 @@ import type { ExportCharacter } from './exportFormats';
 import { abilityModifier, estimatedHitPoints } from './exportFormats';
 import { finalAbilityScores } from './characterRules';
 import { selectedEquipment } from './equipment';
-import { catalogItemFor, type CatalogItem } from './itemCatalog';
+import { catalogItemFor, isHandTool } from './itemCatalog';
 import { characterLevel, hitDicePools, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from './multiclass';
 import { characterResources, spentResourcesAfterLongRest } from './characterResources';
 import { activeHomebrew, classRuleFor, homebrewExportClosure } from './homebrewEngine';
@@ -16,7 +16,7 @@ export type PlayEffect = { id: string; name: string; remaining?: number; concent
 export type PlayResource = { id: string; name: string; current: number; max: number; recharge: 'none' | 'short' | 'long' };
 export type AdventureState = {
   version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
-  inventory: PlayItem[]; inventoryTrash?: PlayItem[]; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
+  inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
   hpMaximum?: number; acOverride?: number; attunementLimit: number; elapsedMinutes: number;
@@ -40,7 +40,7 @@ export function handCost(i: PlayItem): number {
   if (i.quantity <= 0 || !i.equipped) return 0;
   if (i.hands !== undefined) return i.hands;
   const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
-  return ref?.hands ?? (isShieldItem(i) || itemCategory(i) === 'weapon' || itemCategory(i) === 'focus' ? 1 : 0);
+  return ref?.hands ?? (isShieldItem(i) || itemCategory(i) === 'weapon' || itemCategory(i) === 'focus' || isHandTool(i.name) ? 1 : 0);
 }
 export function equippedHands(c: ExportCharacter) {
   const held = (c.adventure?.inventory || []).filter(i => handCost(i) > 0);
@@ -66,7 +66,7 @@ function prepareStartingEquipment(items: PlayItem[]) {
   if(weapon)weapon.equipped=true;
   if(!weapon&&focus)focus.equipped=true;
   if((weapon?handCost(weapon):focus?handCost(focus):0)+(shield?1:0)<2) {
-    const extra=items.find(i=>!i.equipped && (itemCategory(i)==='focus'||itemCategory(i)==='weapon') && handCost({...i,equipped:true})<=1);
+    const extra=items.find(i=>!i.equipped && itemCategory(i)==='weapon' && handCost({...i,equipped:true})<=1);
     if(extra)extra.equipped=true;
   }
   return items;
@@ -89,7 +89,7 @@ export function createAdventureCharacter(source: ExportCharacter, sourceId: stri
     return item;
   });
   prepareStartingEquipment(inventory);
-  c.adventure = { version: 1, name: name.trim() || 'Новое приключение', sourceId, sourceUpdatedAt, startedAt: new Date().toISOString(), status: 'active', inventory, effects: [], concentrationChecks: [], conditions: [], exhaustion: 0, journal: [], notes: '', round: 1, turn: { action: false, bonus: false, reaction: false }, attunementLimit: 3, elapsedMinutes: 0 };
+  c.adventure = { version: 1, name: name.trim() || 'Новое приключение', sourceId, sourceUpdatedAt, startedAt: new Date().toISOString(), status: 'active', inventory, inventoryCatalogVersion: 2, effects: [], concentrationChecks: [], conditions: [], exhaustion: 0, journal: [], notes: '', round: 1, turn: { action: false, bonus: false, reaction: false }, attunementLimit: 3, elapsedMinutes: 0 };
   c.currentHitPoints ??= estimatedHitPoints({ ...c, abilities: finalAbilityScores(c) });
   return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
 }
@@ -108,7 +108,7 @@ export function activeItem(i: PlayItem) { return i.quantity > 0 && i.equipped &&
 export function itemBonus(c: ExportCharacter, key: 'acBonus' | 'attackBonus' | 'damageBonus') { return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0); }
 export const itemCategoryLabels: Record<ItemCategory, string> = { weapon: 'Оружие', focus: 'Фокусировки', armor: 'Доспехи', consumable: 'Расходники', ammunition: 'Боеприпасы', gear: 'Снаряжение' };
 export function itemCategory(i: PlayItem): ItemCategory {
-  if (i.category) return i.category;
+  if (i.category && !(i.category==='gear' && catalogItemFor(i.catalogName||i.name)?.category!=='gear')) return i.category;
   const ref=catalogItemFor(i.catalogName||i.weaponBase||i.name);
   if(ref)return ref.category;
   if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return 'consumable';
@@ -132,6 +132,28 @@ export function weaponItemBonus(c: ExportCharacter, attackName: string, key: 'we
   return values.length ? Math.max(...values) : 0;
 }
 
+/** Refresh legacy zero-weight equipment once, preserving explicitly edited properties. */
+export function upgradeLegacyInventory(c:ExportCharacter): ExportCharacter {
+  if(!c.adventure || c.adventure.inventoryCatalogVersion === 2)return c;
+  const upgrade=(item:PlayItem):PlayItem=>{
+    const ref=catalogItemFor(item.catalogName||item.name);
+    if(!ref)return item;
+    return {...item,
+      catalogName:item.catalogName||ref.name,
+      category:item.category==='gear' && ref.category!=='gear'?ref.category:(item.category||ref.category),
+      weight:item.weight===0 && ref.weight>0?ref.weight:item.weight,
+      hands:item.hands??ref.hands,
+    };
+  };
+  const inventory=c.adventure.inventory.map(upgrade);
+  // Legacy adventures incorrectly equipped all starting items. Release tools and
+  // all mundane carried gear while keeping selected weapons, armor and foci.
+  const wasLegacy=c.adventure.inventory.some(i=>i.equipped&&i.weight===0);
+  const corrected=inventory.map(i=>wasLegacy && (isHandTool(i.name)||itemCategory(i)==='gear') ? {...i,equipped:false} : i);
+  return {...c,adventure:{...c.adventure,inventory:corrected,
+    inventoryTrash:(c.adventure.inventoryTrash||[]).map(upgrade),
+    inventoryCatalogVersion:2}};
+}
 export function updateInventory(c: ExportCharacter, items: PlayItem[]): ExportCharacter {
   if (!c.adventure) return { ...c, inventoryOverride: inventoryText(items) };
   const inventory = items.filter(i => i.quantity > 0);
