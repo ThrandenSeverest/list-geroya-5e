@@ -7,6 +7,12 @@ on:
       - app/exportFormats.ts
       - tests/helpmate-skills.test.ts
       - app/page.tsx
+      - app/adventure.ts
+      - app/itemCatalog.ts
+      - app/PlayInventory.tsx
+      - app/GameMode.tsx
+      - app/armor.ts
+      - app/spellCasting.ts
       - tests/browser-sheet.cjs
       - tests/racial-choice-ui.test.ts
 
@@ -67,6 +73,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A dist
           if ! git diff --cached --quiet; then
-            git commit -m "build: commit verified production dist for racial spell hotfix"
+            git commit -m "build: commit updated production dist after gameplay fixes"
             git push origin HEAD:main
           fi
