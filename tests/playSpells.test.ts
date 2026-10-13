@@ -44,12 +44,12 @@ test('leveled magic calculates damage without placing the spell in the attacks l
    assert.equal(spellPlayProfile(c,spell(id),slot).damageFormula,formula,id);
  }
 });
-test('spell roll panel is directly available from every magic card and uses an independent profile',async()=>{
+test('spell result panel shows already rolled damage without separate roll buttons',async()=>{
  const {renderToStaticMarkup}=await import('react-dom/server');
  const {createElement}=await import('react');
  const {SpellRollPanel}=await import('../app/SpellRollPanel');
- const html=renderToStaticMarkup(createElement(SpellRollPanel,{character:hero(),spell:spell('fireball'),classId:'wizard',slotLevel:5,committed:false,mode:'normal',onRoll:()=>{},onClose:()=>{}}));
- assert.match(html,/value="10d6"/);assert.match(html,/Бросить урон/);assert.match(html,/без расхода ячейки/);assert.doesNotMatch(html,/Критический урон/);
- const ray=renderToStaticMarkup(createElement(SpellRollPanel,{character:hero(),spell:spell('scorching-ray'),classId:'wizard',slotLevel:4,committed:true,mode:'normal',onRoll:()=>{},onClose:()=>{}}));
- assert.equal((ray.match(/spell-roll-step/g)||[]).length,5);assert.match(ray,/стоимость уже учтена/);assert.match(ray,/Критический урон/);
+ const {castPlaySpell}=await import('../app/spellCasting');
+ const cast=castPlaySpell(hero(),spell('fireball'),'slot:2','wizard','normal',()=>2);
+ const html=renderToStaticMarkup(createElement(SpellRollPanel,{spell:spell('fireball'),result:cast.result,onClose:()=>{}}));
+ assert.match(html,/8d6/);assert.match(html,/16/);assert.match(html,/Сл/);assert.doesNotMatch(html,/Бросить урон|Критический урон/);
 });

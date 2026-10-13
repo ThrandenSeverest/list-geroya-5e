@@ -16,10 +16,9 @@ import { characterLevel, getStartingClassId, hitDicePools, resolvePactMagic, res
 import { characterResources, resourceCurrent, resourceRestLabel } from './characterResources';
 import { classSpellGroups, otherSpellSources, spellSourceDisplayName } from './spellSources';
 import { classPreparedSpellIds, setClassPreparedSpells } from './spellPreparation';
-import { resolvedRacialSpells } from './racialSpellcasting';
 import { featGrantedSpellIds } from './featChoices';
 import { subclassRuntimeControls, subclassRuntimeValue, setSubclassRuntimeValue } from './subclassRuntime';
-import { advancePlayTurn, applyDeathSave, applyPlayDamage, durationMinutes, endConcentration, healPlay, integer, itemBonus, logPlay, playConditions, playHitDicePools, playDerived, playId, playMaximum, restPlay, rollD20, rollDice, toggleCondition } from './adventure';
+import { advancePlayTurn, applyDeathSave, applyPlayDamage, endConcentration, healPlay, integer, itemBonus, logPlay, playConditions, playHitDicePools, playDerived, playId, playMaximum, restPlay, rollD20, rollDice, toggleCondition } from './adventure';
 import { PlayInventory } from './PlayInventory';
 import { DiceTray, type VisibleRoll } from './DiceTray';
 import { spellPlayProfile } from './playSpells';
@@ -29,6 +28,7 @@ import type { DiceResult, RollMode } from './adventure';
 import { commitPlayChange, undoPlayChange } from './playTransactions';
 import { composeD20 } from './rollComposer';
 import { SpellRollPanel } from './SpellRollPanel';
+import { castPlaySpell, spellCastOptions, type SpellCastResult } from './spellCasting';
 
 type Props = { shellClassName?: string; shellStyle?: CSSProperties; siteTheme?: string; chrome?: ReactNode; character: ExportCharacter; onChange: (c: ExportCharacter) => void; onBack: () => void; onEdit: () => void; onExport: () => void; saveStatus: string; features: { name: string; description: string }[] };
 const tabs = [['actions', 'Действия'], ['spells', 'Магия'], ['inventory', 'Рюкзак'], ['hero', 'Герой'], ['journal', 'Журнал']] as const;
@@ -45,7 +45,7 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [result, setResult] = useState<{ name: string; result: DiceResult }>();
   const [visibleRolls, setVisibleRolls] = useState<VisibleRoll[]>(() => a.journal.filter(e => e.rolls && e.formula && e.total !== undefined).slice(0,3).map(e => ({ id:e.id, name:e.text, result:{ formula:e.formula!, rolls:e.rolls!, total:e.total!, natural:e.natural, critical:e.critical } })));
-  const [resolution, setResolution] = useState<{ id: string; spell: CatalogSpell; classId: string; slotLevel: number; committed: boolean; attack?: DiceResult }>();
+  const [resolution, setResolution] = useState<{ id: string; spell: CatalogSpell; result: SpellCastResult }>();
   const [diceOpen, setDiceOpen] = useState(false);
   const [mode, setMode] = useState<RollMode>('normal');
   const [amount, setAmount] = useState(1);
@@ -53,20 +53,20 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
   const [search, setSearch] = useState('');
   const [rest, setRest] = useState<'short' | 'long'>();
   const [dice, setDice] = useState<Record<string, number>>({});
-  const [casting, setCasting] = useState<{ spell: CatalogSpell; freeKey?: string; canSlots: boolean; classId: string }>();
-  const [castMethod, setCastMethod] = useState('');
+  const [castMethods, setCastMethods] = useState<Record<string,string>>({});
+  const [castFormulas, setCastFormulas] = useState<Record<string,string>>({});
   const [showUnprepared, setShowUnprepared] = useState(false);
   const [effectName, setEffectName] = useState('');
   const [effectRounds, setEffectRounds] = useState(0);
   useEffect(() => {
-    if (!casting && !rest && !rollDraft) return;
+    if (!rest && !rollDraft) return;
     const previous = document.activeElement as HTMLElement | null;
     const dialog = document.querySelector<HTMLElement>('.play-modal');
     const oldOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     dialog?.querySelector<HTMLElement>('button,input,select,textarea')?.focus();
     const keydown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') { setCasting(undefined); setRest(undefined); setRollDraft(undefined); }
+      if (event.key === 'Escape') { setRest(undefined); setRollDraft(undefined); }
       if (event.key !== 'Tab' || !dialog) return;
       const controls = [...dialog.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')];
       const first = controls[0], last = controls.at(-1);
@@ -75,7 +75,7 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
     };
     document.addEventListener('keydown', keydown);
     return () => { document.body.style.overflow = oldOverflow; document.removeEventListener('keydown', keydown); previous?.focus(); };
-  }, [!!casting, !!rest, !!rollDraft]);
+  }, [!!rest, !!rollDraft]);
   useEffect(() => { if (resolution) document.querySelector('.play-resolution')?.scrollIntoView({ block: 'nearest' }); }, [resolution?.spell.id]);
   useEffect(() => {
     if (!diceOpen) return;
@@ -99,7 +99,6 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
   const attacks = characterAttacks({ ...d, spells: [...new Set([...d.spells, ...featGrantedSpellIds(d)])] }, catalog);
   const slots = resolveSpellSlots(d); const pact = resolvePactMagic(d); const pools = playHitDicePools(c);
   const resources = characterResources(d); const groups = classSpellGroups(d, catalog);
-  const racial = resolvedRacialSpells(d, catalog);
   const others = otherSpellSources(d, catalog);
   const granted = featGrantedSpellIds(d).filter(id => !others.some(x => x.spell.id === id) && !groups.some(g => g.spells.some(x => x.spell.id === id))).flatMap(id => { const spell = catalog.find(s => s.id === id); return spell ? [{ spell, classId: 'other', source: 'Черта', prepared: true, alwaysPrepared: false }] : []; });
   const baseAc = armorClassBreakdown(d); const ac = a.acOverride ?? baseAc.value + itemBonus(c, 'acBonus');
@@ -115,33 +114,23 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
   function d20(name: string, bonus: number) { rolled(name, () => rollD20(bonus, mode)); }
   function damageFormula(value: string, bonus = 0) { return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key: string) => String(abilityModifier(d.abilities[key.toLowerCase() as keyof AbilityScores]))).replace(/\[PB\]/g, String(pb)) + sign(itemBonus(c, 'damageBonus') + bonus); }
   function attackBonusFor(attack: typeof attacks[number]) { return itemBonus(c,'attackBonus') + (attack.kind === 'weapon' || attack.id.includes('weapon-') ? weaponItemBonus(c,attack.name,'weaponAttackBonus') : attack.kind === 'spell' || attack.kind === 'cantrip' ? spellItemBonus(c,'spellAttackBonus',c.spellGrants?.find(g => attack.id.includes(g.spellId))?.classId || c.className) : 0); }
-  function beginCast(spell: CatalogSpell, classId = c.className) {
-    const innate = classId === "race" ? racial.find(r => r.spell.id === spell.id) : undefined;
-    const freeKey = innate?.resourceKey && innate.remainingUses > 0 ? innate.resourceKey : undefined;
-    const canSlots = !innate || innate.castWithSlots;
-    const method = spell.level === 0 ? 'cantrip' : freeKey ? 'free' : canSlots && slots.some((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0)) ? `slot:${slots.findIndex((n, i) => i + 1 >= spell.level && n > (c.spellSlotsUsed?.[i] || 0))}` : canSlots && pact.level >= spell.level && pact.slots > (c.pactSlotsUsed || 0) ? 'pact' : spell.ritual ? 'ritual' : '';
-    setCasting({ spell, freeKey, canSlots, classId }); setCastMethod(method);
-  }
-  function commitCast() {
-    if (!casting || !castMethod) return;
-    change(prev => {
-      const { spell, freeKey } = casting;
-      let next = { ...prev };
-      if (castMethod.startsWith('slot:')) { const i = Number(castMethod.split(':')[1]); if (slots[i] <= (prev.spellSlotsUsed?.[i] || 0)) throw new Error('Ячейка уже потрачена.'); const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0); used[i]++; next.spellSlotsUsed = used; }
-      if (castMethod === 'pact') { if ((prev.pactSlotsUsed || 0) >= pact.slots) throw new Error('Ячейки магии договора закончились.'); next.pactSlotsUsed = (prev.pactSlotsUsed || 0) + 1; }
-      if (castMethod === 'free' && freeKey) next.resourceSpent = { ...prev.resourceSpent, [freeKey]: (prev.resourceSpent?.[freeKey] || 0) + 1 };
-      if (/концентрац|concentration/i.test(spell.duration || '')) { next = endConcentration(next); next.adventure = { ...next.adventure!, concentration: { name: spell.name, duration: spell.duration || '', remainingMinutes: durationMinutes(spell.duration || '') } }; }
-      next = logPlay(next, `Сотворено: ${spell.name} · ${castMethod === 'ritual' ? 'ритуал; проверьте право на ритуальное колдовство' : castMethod === 'free' ? 'расовый ресурс' : castMethod === 'cantrip' ? 'заговор' : castMethod === 'pact' ? `магия договора, ${pact.level} круг` : `${Number(castMethod.split(':')[1]) + 1} круг`}`);
-      const level = castMethod.startsWith('slot:') ? Number(castMethod.split(':')[1]) + 1 : castMethod === 'pact' ? pact.level : spell.level;
-      const profile = spellPlayProfile(prev, spell, level, casting.classId);
-      let attack: DiceResult | undefined;
-      if (profile.attackBonus !== undefined) { attack = rollD20(profile.attackBonus, mode); presentRoll(`Атака: ${spell.name}`, attack); next = logPlay(next, `Атака: ${spell.name}`, attack); }
-      setResolution({ id:playId(), spell, classId: casting.classId, slotLevel: level, committed: true, attack });
-      return next;
-    }); setCasting(undefined);
+  function commitCast(spell: CatalogSpell, classId: string, method: string, formula?: string) {
+    try {
+      const cast=castPlaySpell(c,spell,method,classId,mode,undefined,formula);
+      onChange(commitPlayChange(c,cast.character));
+      setResolution({id:playId(),spell,result:cast.result});
+      for(const event of cast.result.events)presentRoll(event.name,event.result);
+      setError('');
+    } catch(e) {setError(e instanceof Error?e.message:String(e));}
   }
   const nav = <>{tabs.map(([id, label]) => <button key={id} aria-current={tab === id ? 'page' : undefined} className={tab === id ? 'active' : ''} onClick={() => { setTab(id); setSearch(''); }}>{label}</button>)}</>;
-  const spellCard = (entry: { spell: CatalogSpell; prepared: boolean; alwaysPrepared: boolean; classId: string; source: string }, prepMax?: number) => <article className="play-card" key={`${entry.classId}-${entry.source}-${entry.spell.id}`}><div className="play-row"><div><h3>{entry.spell.name}</h3><small>{entry.spell.level ? `${entry.spell.level} круг` : 'Заговор'} · {spellSourceDisplayName(entry.source, d, classes)}{entry.spell.ritual ? ' · Ритуал' : ''}</small></div>{prepMax !== undefined && entry.spell.level > 0 && !entry.alwaysPrepared && <label className="play-check"><input type="checkbox" checked={entry.prepared} onChange={() => change(prev => { const ids = classPreparedSpellIds(prev, entry.classId); if (!entry.prepared && ids.length >= prepMax) throw new Error('Достигнут лимит подготовленных заклинаний.'); return setClassPreparedSpells(prev, entry.classId, entry.prepared ? ids.filter(id => id !== entry.spell.id) : [...ids, entry.spell.id]); })} />Подготовлено</label>}</div><p>{entry.spell.castingTime} · {entry.spell.range} · {entry.spell.components}</p><p>{entry.spell.duration}</p><p className="play-spell-mechanics">{(() => { const p = spellPlayProfile(c, entry.spell, entry.spell.level, entry.classId); return p.attackBonus !== undefined ? `Атака заклинанием ${sign(p.attackBonus)}` : p.saveDc !== undefined ? `Спасбросок ${p.saveAbility || "цели"} · Сл ${p.saveDc} · без крита` : p.delivery === "automatic" ? "Автоматическое попадание · без крита" : p.healingFormula ? `Лечение ${p.healingFormula}` : "Эффект по описанию"; })()}</p><details><summary>Описание</summary><p className="play-description">{entry.spell.description}</p></details><button onClick={() => setResolution({id:playId(),spell:entry.spell,classId:entry.classId,slotLevel:entry.spell.level,committed:false})}>Броски</button><button disabled={!entry.prepared && !entry.spell.ritual} onClick={() => beginCast(entry.spell, entry.classId)}>Сотворить</button></article>;
+  const spellCard = (entry: { spell: CatalogSpell; prepared: boolean; alwaysPrepared: boolean; classId: string; source: string }, prepMax?: number) => {
+    const key=`${entry.classId}:${entry.spell.id}`;
+    const options=spellCastOptions(c,entry.spell,entry.classId);
+    const method=options.find(x=>x.id===castMethods[key])?.id || options[0]?.id || '';
+    const profile=spellPlayProfile(c,entry.spell,options.find(x=>x.id===method)?.level ?? entry.spell.level,entry.classId);
+    return <article className="play-card" key={`${entry.classId}-${entry.source}-${entry.spell.id}`}><div className="play-row"><div><h3>{entry.spell.name}</h3><small>{entry.spell.level ? `${entry.spell.level} круг` : 'Заговор'} · {spellSourceDisplayName(entry.source, d, classes)}{entry.spell.ritual ? ' · Ритуал' : ''}</small></div>{prepMax !== undefined && entry.spell.level > 0 && !entry.alwaysPrepared && <label className="play-check"><input type="checkbox" checked={entry.prepared} onChange={() => change(prev => { const ids = classPreparedSpellIds(prev, entry.classId); if (!entry.prepared && ids.length >= prepMax) throw new Error('Достигнут лимит подготовленных заклинаний.'); return setClassPreparedSpells(prev, entry.classId, entry.prepared ? ids.filter(id => id !== entry.spell.id) : [...ids, entry.spell.id]); })} />Подготовлено</label>}</div><p>{entry.spell.castingTime} · {entry.spell.range} · {entry.spell.components}</p><p>{entry.spell.duration}</p><p className="play-spell-mechanics">{(() => { const p = profile; return p.attackBonus !== undefined ? `Атака заклинанием ${sign(p.attackBonus)}` : p.saveDc !== undefined ? `Спасбросок ${p.saveAbility || "цели"} · Сл ${p.saveDc} · без крита` : p.delivery === "automatic" ? "Автоматическое попадание · без крита" : p.healingFormula ? `Лечение ${p.healingFormula}` : "Эффект по описанию"; })()}</p><details><summary>Описание</summary><p className="play-description">{entry.spell.description}</p></details><p>{profile.damageFormula?`Урон / эффект: ${profile.damageFormula}`:profile.healingFormula?`Лечение: ${profile.healingFormula}`:'Эффект по описанию'}</p><label>Способ сотворения<select aria-label={`Способ сотворения: ${entry.spell.name}`} value={method} disabled={!options.length} onChange={e=>setCastMethods({...castMethods,[key]:e.target.value})}>{!options.length&&<option value="">Нет доступных использований</option>}{options.map(option=><option key={option.id} value={option.id}>{option.label}</option>)}</select></label>{!profile.damageFormula&&!profile.healingFormula&&<details><summary>Формула эффекта вручную</summary><label>Формула<input placeholder="Если по описанию нужен бросок" value={castFormulas[key]||''} onChange={e=>setCastFormulas({...castFormulas,[key]:e.target.value})}/></label></details>}{a.concentration&&/концентрац|concentration/i.test(entry.spell.duration||'')&&<p>Заменит концентрацию: {a.concentration.name}.</p>}<button className="play-primary" disabled={!method||(!entry.prepared&&method!=='ritual')} onClick={()=>commitCast(entry.spell,entry.classId,method,castFormulas[key])}>Сотворить</button></article>;
+  };
   return <main className={`app-shell play-shell${shellClassName}`} style={shellStyle} data-site-theme={siteTheme}>
     <header className="play-header"><button onClick={onBack}>← Таверна</button><div><small>{a.name} · независимая копия</small><h1>{c.name || 'Безымянный герой'}</h1></div><div className="play-header-tools">{chrome}<span role="status">{saveStatus}</span><button onClick={onExport}>Экспорт JSON</button><button onClick={onEdit}>Изменить героя</button></div></header>
     <section className="play-hud" aria-label="Состояние героя"><div className="play-hp"><small>Здоровье</small><strong>{hp}<span> / {max}</span></strong><small>Временные: {c.temporaryHitPoints || 0}</small><progress value={hp} max={Math.max(1,max)} /></div><div><small>Класс доспеха</small><strong>{ac}</strong><small>{a.acOverride !== undefined ? 'Задан вручную' : baseAc.base}</small></div><div><small>Скорость</small><strong>{speed.walk} <span>фт</span></strong><small>Инициатива {sign(initiativeBreakdown(d).value)}</small></div><div className="play-concentration"><small>Концентрация</small><strong>{a.concentration?.name || 'Нет'}</strong>{a.concentration && <button onClick={() => change(logPlay(endConcentration(c), 'Концентрация прекращена'))}>Прекратить</button>}</div></section>
@@ -152,7 +141,7 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
     {a.status === 'archived' && <p className="play-notice">Приключение в архиве. Изменения по-прежнему сохраняются в этой копии.</p>}
     {a.concentrationChecks.map(check => <div className="play-notice" key={check.id}><strong>Проверка концентрации: Сл {check.dc}</strong><span>Получен урон {check.damage}, включая временные HP.</span><button onClick={() => change(prev => { const r = rollD20(saveBonus('con'), mode); presentRoll('Концентрация', r); let next: ExportCharacter = { ...prev, adventure: { ...prev.adventure!, concentrationChecks: prev.adventure!.concentrationChecks.filter(x => x.id !== check.id) } }; if (r.total < check.dc) next = endConcentration(next); return logPlay(next, `Концентрация: ${r.total >= check.dc ? 'сохранена' : 'прервана'}, Сл ${check.dc}`, r); })}>Бросить Телосложение {sign(saveBonus('con'))}</button><button onClick={() => change({ ...c, adventure: { ...a, concentrationChecks: a.concentrationChecks.filter(x => x.id !== check.id) } })}>Успех вручную</button><button onClick={() => change(logPlay(endConcentration(c), 'Концентрация: провал вручную'))}>Провал вручную</button></div>)}
     <div className="play-workspace"><div className="play-content">
-    {resolution && <SpellRollPanel key={resolution.id} character={c} spell={resolution.spell} classId={resolution.classId} slotLevel={resolution.slotLevel} committed={resolution.committed} initialAttack={resolution.attack} mode={mode} onClose={()=>setResolution(undefined)} onRoll={(name,r)=>{presentRoll(name,r);change(logPlay(c,name,r));}}/>}
+    {resolution && <SpellRollPanel key={resolution.id} spell={resolution.spell} result={resolution.result} onClose={()=>setResolution(undefined)}/>}
     {tab === 'actions' && <>
       <section className="play-card"><h2>Здоровье</h2><div className="play-row play-wrap"><label>Количество<input type="number" min="0" value={amount} onChange={e => setAmount(integer(e.target.value))} /></label><label>Получаемый урон<select value={defense} onChange={e => setDefense(e.target.value as typeof defense)}><option value="normal">Обычный</option><option value="resistance">Сопротивление ×½</option><option value="vulnerability">Уязвимость ×2</option><option value="immune">Иммунитет</option></select></label><button className="play-danger" onClick={() => change(prev => applyPlayDamage(prev, amount, defense))}>Получить урон</button><button onClick={() => change(healPlay(c, amount))}>Лечение</button><button onClick={() => change(logPlay({ ...c, temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount) }, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`))}>Временные HP</button></div>{hp === 0 && <div className="play-notice"><strong>{(c.deathSaveFailures || 0) >= 3 ? 'Три провала — смерть' : (c.deathSaveSuccesses || 0) >= 3 ? 'Стабилен' : 'Спасброски смерти'}</strong><span>Успехи {c.deathSaveSuccesses || 0}/3 · Провалы {c.deathSaveFailures || 0}/3</span><button disabled={(c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3} onClick={() => change(prev => { const r = rollD20(0, mode); presentRoll('Спасбросок смерти', r); return applyDeathSave(prev, r.natural!); })}>Бросить d20</button><small>Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой».</small></div>}</section>
       <section className="play-card"><div className="play-row"><h2>Собственный ход {a.round}</h2><button onClick={() => change(advancePlayTurn(c))}>Следующий ход</button></div><div className="play-row play-wrap">{(['action','bonus','reaction'] as const).map((key,i) => <label className="play-check" key={key}><input type="checkbox" checked={a.turn[key]} onChange={() => change({ ...c, adventure: { ...a, turn: { ...a.turn, [key]: !a.turn[key] } } })} />{['Действие потрачено','Бонусное потрачено','Реакция потрачена'][i]}</label>)}</div><small>Отметки помогают учитывать ход. Броски сами не тратят действие.</small><div className="play-row play-wrap">{["Рывок", "Отход", "Уклонение", "Помощь", "Засада", "Поиск", "Подготовка"].map(name => <button key={name} onClick={() => change(logPlay({ ...c, adventure: { ...a, turn: { ...a.turn, action: true } } }, `Действие: ${name}`))}>{name}</button>)}</div></section>
@@ -167,7 +156,7 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onExport, sav
     {result&&<div className="play-result" role="status"><button aria-label="Закрыть результат броска" onClick={() => setResult(undefined)}>×</button><small>{result.name}</small><strong>{result.result.total}</strong><span>{result.result.formula}</span><div className="roll-value-chips">{result.result.rolls.map((n,i)=><b key={i}>{n}</b>)}</div></div>}
 
     {rest&&<div className="play-backdrop"><section className="play-modal" role="dialog" aria-modal="true" aria-label="Отдых"><div className="play-row"><h2>{rest==='short'?'Короткий':'Длинный'} отдых</h2><button onClick={()=>setRest(undefined)}>Закрыть</button></div><p>{rest==='short'?'Один час. Выберите кости хитов; каждая лечит на бросок + Телосложение. Настройка завершится для одного отмеченного предмета.':'Восемь часов. Восстановятся HP, ячейки и подходящие ресурсы. Кости хитов восстанавливаются по редакции правил героя.'}</p>{rest==='short'&&pools.map(p=><label key={p.classId}>{spellSourceDisplayName(p.classId,d,classes)} · d{p.die}, доступно {p.max-p.spent}<input type="number" min="0" max={p.max-p.spent} value={dice[p.classId]||0} onChange={e=>setDice({...dice,[p.classId]:integer(e.target.value,0,p.max-p.spent)})} /></label>)}<p>Короткий отдых отсчитывает час длительности концентрации; длинный завершает её. Остальные состояния требуют отдельного решения. Заряды «на рассвете» восстанавливаются отдельной кнопкой.</p><button className="play-primary" onClick={()=>{try{const next=restPlay(c,rest,dice);change(next);setRest(undefined);}catch(e){setError((e as Error).message);}}}>Завершить отдых</button></section></div>}
-    {casting&&<div className="play-backdrop"><section className="play-modal" role="dialog" aria-modal="true" aria-label="Сотворение заклинания"><div className="play-row"><h2>{casting.spell.name}</h2><button onClick={()=>setCasting(undefined)}>Закрыть</button></div><p>{casting.spell.duration} · {casting.spell.components}</p>{a.concentration&&/концентрац|concentration/i.test(casting.spell.duration||'')&&<p className="play-error">Заменит текущую концентрацию: {a.concentration.name}.</p>}<label>Способ сотворения<select value={castMethod} onChange={e=>setCastMethod(e.target.value)}><option value="">Выберите доступный способ</option>{casting.spell.level===0?<option value="cantrip">Заговор — без ячейки</option>:<>{casting.freeKey&&<option value="free">Расовое использование — без ячейки</option>}{casting.canSlots&&slots.map((n,i)=>i+1>=casting.spell.level&&n>(c.spellSlotsUsed?.[i]||0)&&<option key={i} value={`slot:${i}`}>{i+1} круг · осталось {n-(c.spellSlotsUsed?.[i]||0)}</option>)}{casting.canSlots&&pact.level>=casting.spell.level&&pact.slots>(c.pactSlotsUsed||0)&&<option value="pact">Магия договора · {pact.level} круг</option>}{casting.spell.ritual&&<option value="ritual">Ритуал — проверьте право класса</option>}</>}</select></label><p className="play-description">{casting.spell.description}</p><button className="play-primary" disabled={!castMethod} onClick={commitCast}>Сотворить и записать</button></section></div>}
+
 
   </main>;
 }
