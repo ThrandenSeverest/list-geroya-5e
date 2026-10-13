@@ -3124,7 +3124,7 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-B4dhnOsG.js");
+		const m = await import("./assets/page-DLQHIReW.js");
 		return {
 			get "AdventureApp"() {
 				return m["AdventureApp"];
