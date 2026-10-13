@@ -200,6 +200,30 @@ const supplyRows = String.raw`Абак|2|2
 Набор священника|19|0
 Набор учёного|40|0`;
 const rows=(raw:string)=>raw.trim().split('\n').map(s=>s.split('|'));
+const handToolNames = new Set([
+  'Барабан','Виола','Волынка','Лира','Лютня','Рожок','Свирель','Флейта','Цимбалы','Шалмей',
+  'Воровские инструменты','Инструменты навигатора','Инструменты отравителя',
+  'Набор для грима','Набор для фальсификации','Набор травника','Набор для фальсификации',
+  'Инструменты алхимика','Инструменты гончара','Инструменты каллиграфа',
+  'Инструменты каменщика','Инструменты картографа','Инструменты кожевника',
+  'Инструменты кузнеца','Инструменты пивовара','Инструменты плотника',
+  'Инструменты повара','Инструменты резчика по дереву','Инструменты ремонтника',
+  'Инструменты сапожника','Инструменты стеклодува','Инструменты ткача',
+  'Инструменты художника','Инструменты ювелира',
+]);
+export function isHandTool(name:string):boolean {
+  return handToolNames.has(name) || /^(?:инструменты |набор (?:для грима|для фальсификации|травника))/i.test(name);
+}
+// Composite weight of starting packs, counting their described contents once.
+const packWeights:Record<string,number>={
+  'Набор взломщика':47.5,
+  'Набор дипломата':40,
+  'Набор исследователя подземелий':61.5,
+  'Набор путешественника':59,
+  'Набор артиста':38,
+  'Набор священника':24,
+  'Набор учёного':12,
+};
 export const itemCatalog: CatalogItem[] = [
  ...rows(armorRows).map(([name,price,weight,base,dex,strength,stealth]):CatalogItem=>({
    name,category:'armor',priceGp:Number(price),weight:Number(weight),
@@ -210,7 +234,7 @@ export const itemCatalog: CatalogItem[] = [
    name,category:'weapon',priceGp:Number(price),weight:Number(weight),damage,properties,hands:Number(hands) as 1|2
  })),
  ...rows(supplyRows).map(([name,price,weight,category]):CatalogItem=>({
-   name,category:(category||'gear') as CatalogItem['category'],priceGp:Number(price),weight:Number(weight),...(category==='focus'?{hands:1 as const}:{})
+   name,category:(category||'gear') as CatalogItem['category'],priceGp:Number(price),weight:packWeights[name] ?? Number(weight),...((category==='focus'||isHandTool(name))?{hands:1 as const}:{})
  })),
  {name:'Магическая фокусировка',category:'focus',weight:1,hands:1},
  {name:'Фокусировка друидов',category:'focus',weight:1,hands:1},
