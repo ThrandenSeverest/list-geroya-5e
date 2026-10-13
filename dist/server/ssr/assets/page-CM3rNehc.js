@@ -28504,6 +28504,10 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie) {
 			...c.adventure,
 			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
 			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
+			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
+				...r,
+				current: r.max
+			} : r),
 			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
 				...i,
 				charges: i.maxCharges
@@ -28561,6 +28565,35 @@ function advancePlayTurn(c) {
 	}
 	if (ended.some((e) => e.concentration)) next = endConcentration(next);
 	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
+}
+//#endregion
+//#region app/playActions.ts
+function useQuickItem(c, id, die) {
+	const item = c.adventure?.inventory.find((i) => i.id === id);
+	if (!item) throw new Error("Предмет не найден.");
+	if (item.quantity <= 0) throw new Error("Предмет закончился.");
+	const roll = item.healingFormula ? rollDice(item.healingFormula, die) : void 0;
+	let next = consumePlayItem(c, id);
+	if (roll) next = logPlay(healPlay(next, roll.total), `Лечение: ${item.name}`, roll);
+	return {
+		character: next,
+		roll,
+		name: item.name
+	};
+}
+function resolvePlayAttack(c, name, bonus, formula, mode, die) {
+	if (formula) rollDice(formula, () => 1);
+	const attack = bonus !== void 0 ? rollD20(bonus, mode, die) : void 0;
+	const damage = formula && attack?.natural !== 1 ? rollDice(formula, die, attack?.natural === 20) : void 0;
+	let next = c;
+	if (attack) next = logPlay(next, `Атака: ${name}`, attack);
+	if (damage) next = logPlay(next, `Урон: ${name}`, damage);
+	return {
+		character: next,
+		name,
+		attack,
+		damage
+	};
 }
 //#endregion
 //#region app/PlayInventory.tsx
@@ -28722,17 +28755,32 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						children: [
 							/* @__PURE__ */ jsxs("header", {
 								className: "play-row",
-								children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }), /* @__PURE__ */ jsx("button", {
-									"aria-label": `Изменить ${i.name}`,
-									onClick: () => {
-										setError("");
-										setDraft({
-											...i,
-											category: itemCategory(i)
-										});
-									},
-									children: "Изменить"
-								})]
+								children: [
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }),
+									key === "consumable" && /* @__PURE__ */ jsx("button", {
+										"aria-label": `Закрепить предмет: ${i.name}`,
+										"aria-pressed": !!c.adventure.favoriteActions?.includes(`item:${i.id}`),
+										onClick: () => onChange({
+											...c,
+											adventure: {
+												...c.adventure,
+												favoriteActions: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? c.adventure.favoriteActions.filter((key) => key !== `item:${i.id}`) : [...c.adventure.favoriteActions || [], `item:${i.id}`]
+											}
+										}),
+										children: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? "★" : "☆"
+									}),
+									/* @__PURE__ */ jsx("button", {
+										"aria-label": `Изменить ${i.name}`,
+										onClick: () => {
+											setError("");
+											setDraft({
+												...i,
+												category: itemCategory(i)
+											});
+										},
+										children: "Изменить"
+									})
+								]
 							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "inventory-quantity",
@@ -28769,10 +28817,9 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 									key === "consumable" && i.healingFormula && /* @__PURE__ */ jsxs("button", {
 										disabled: !i.quantity,
 										onClick: () => mutate(() => {
-											const r = rollDice(i.healingFormula);
-											const next = logPlay(healPlay(consumePlayItem(c, i.id), r.total), `Лечение: ${i.name}`, r);
-											onRoll(`Лечение: ${i.name}`, r);
-											return next;
+											const action = useQuickItem(c, i.id);
+											if (action.roll) onRoll(`Лечение: ${i.name}`, action.roll);
+											return action.character;
 										}),
 										children: ["Выпить: ", i.healingFormula]
 									}),
@@ -29619,6 +29666,167 @@ function SpellRollPanel({ spell, result, onClose }) {
 	});
 }
 //#endregion
+//#region app/SessionResources.tsx
+function SessionResources({ character: c, onChange }) {
+	const d = playDerived(c), resources = characterResources(d), a = c.adventure;
+	const [name, setName] = useState(""), [maximum, setMaximum] = useState(3), [recharge, setRecharge] = useState("long");
+	return /* @__PURE__ */ jsxs("details", {
+		className: "play-card session-resources",
+		children: [
+			/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы ", /* @__PURE__ */ jsx("small", { children: resources.length + (a.customResources?.length || 0) })] }),
+			/* @__PURE__ */ jsxs("div", {
+				className: "session-resource-grid",
+				children: [resources.map((r) => /* @__PURE__ */ jsxs("div", {
+					className: "play-counter",
+					children: [
+						/* @__PURE__ */ jsx("strong", { children: r.name }),
+						/* @__PURE__ */ jsxs("b", { children: [
+							resourceCurrent(d, r),
+							"/",
+							r.max
+						] }),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Потратить ресурс: ${r.name}`,
+							disabled: resourceCurrent(d, r) <= 0,
+							onClick: () => onChange(logPlay({
+								...c,
+								resourceSpent: {
+									...c.resourceSpent,
+									[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
+								}
+							}, `Использован ресурс: ${r.name}`)),
+							children: "−"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Вернуть ресурс: ${r.name}`,
+							disabled: !(c.resourceSpent?.[r.key] || 0),
+							onClick: () => onChange(logPlay({
+								...c,
+								resourceSpent: {
+									...c.resourceSpent,
+									[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
+								}
+							}, `Возвращён ресурс: ${r.name}`)),
+							children: "+"
+						}),
+						/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
+					]
+				}, r.key)), (a.customResources || []).map((r) => /* @__PURE__ */ jsxs("div", {
+					className: "play-counter",
+					children: [
+						/* @__PURE__ */ jsx("strong", { children: r.name }),
+						/* @__PURE__ */ jsxs("b", { children: [
+							r.current,
+							"/",
+							r.max
+						] }),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Потратить ресурс: ${r.name}`,
+							disabled: r.current <= 0,
+							onClick: () => onChange(logPlay({
+								...c,
+								adventure: {
+									...a,
+									customResources: a.customResources.map((x) => x.id === r.id ? {
+										...x,
+										current: x.current - 1
+									} : x)
+								}
+							}, `Использован ресурс: ${r.name}`)),
+							children: "−"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Вернуть ресурс: ${r.name}`,
+							disabled: r.current >= r.max,
+							onClick: () => onChange(logPlay({
+								...c,
+								adventure: {
+									...a,
+									customResources: a.customResources.map((x) => x.id === r.id ? {
+										...x,
+										current: x.current + 1
+									} : x)
+								}
+							}, `Возвращён ресурс: ${r.name}`)),
+							children: "+"
+						}),
+						/* @__PURE__ */ jsx("small", { children: r.recharge === "none" ? "Вручную" : r.recharge === "short" ? "Короткий / длинный отдых" : "Длинный отдых" }),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Удалить ресурс: ${r.name}`,
+							onClick: () => onChange(logPlay({
+								...c,
+								adventure: {
+									...a,
+									customResources: a.customResources.filter((x) => x.id !== r.id)
+								}
+							}, `Удалён ресурс: ${r.name}`)),
+							children: "Удалить"
+						})
+					]
+				}, r.id))]
+			}),
+			/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Добавить свой ресурс" }), /* @__PURE__ */ jsxs("form", {
+				className: "play-row play-wrap",
+				onSubmit: (e) => {
+					e.preventDefault();
+					if (!name.trim()) return;
+					onChange(logPlay({
+						...c,
+						adventure: {
+							...a,
+							customResources: [...a.customResources || [], {
+								id: playId(),
+								name: name.trim(),
+								current: maximum,
+								max: maximum,
+								recharge
+							}]
+						}
+					}, `Добавлен ресурс: ${name.trim()}`));
+					setName("");
+				},
+				children: [
+					/* @__PURE__ */ jsxs("label", { children: ["Название ресурса", /* @__PURE__ */ jsx("input", {
+						required: true,
+						maxLength: 100,
+						value: name,
+						onChange: (e) => setName(e.target.value)
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Максимум ресурса", /* @__PURE__ */ jsx("input", {
+						type: "number",
+						min: "1",
+						max: "10000",
+						value: maximum,
+						onChange: (e) => setMaximum(integer(e.target.value, 1, 1e4))
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Восстановление ресурса", /* @__PURE__ */ jsxs("select", {
+						value: recharge,
+						onChange: (e) => setRecharge(e.target.value),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "long",
+								children: "Длинный отдых"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "short",
+								children: "Короткий / длинный отдых"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "none",
+								children: "Вручную"
+							})
+						]
+					})] }),
+					/* @__PURE__ */ jsx("button", {
+						type: "submit",
+						children: "Добавить ресурс"
+					})
+				]
+			})] })
+		]
+	});
+}
+//#endregion
 //#region app/spellCasting.ts
 function spellCastOptions(c, spell, classId = c.className) {
 	if (spell.level === 0) return [{
@@ -29747,6 +29955,14 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [rollAdjustment, setRollAdjustment] = useState(0);
 	const [extraDice, setExtraDice] = useState("");
 	const [draftMode, setDraftMode] = useState("normal");
+	const [quickSearch, setQuickSearch] = useState("");
+	const quickSearchRef = useRef(null);
+	const [availableOnly, setAvailableOnly] = useState(false);
+	const [quickCheck, setQuickCheck] = useState("skill:Внимательность");
+	const [spellCircle, setSpellCircle] = useState("all");
+	const [spellSchool, setSpellSchool] = useState("all");
+	const [spellKind, setSpellKind] = useState("all");
+	const [attackResolution, setAttackResolution] = useState();
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
 	const [result, setResult] = useState();
 	const [visibleRolls, setVisibleRolls] = useState(() => a.journal.filter((e) => e.rolls && e.formula && e.total !== void 0).slice(0, 3).map((e) => ({
@@ -29834,6 +30050,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			previous?.focus();
 		};
 	}, [diceOpen]);
+	useEffect(() => {
+		const handler = (e) => {
+			if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || document.querySelector(".play-modal,dialog[open]") || diceOpen || e.target instanceof HTMLElement && (e.target.matches("input,textarea,select") || e.target.isContentEditable)) return;
+			e.preventDefault();
+			setTab("actions");
+			requestAnimationFrame(() => quickSearchRef.current?.focus());
+		};
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, [diceOpen]);
 	const d = playDerived(c);
 	const hp = c.currentHitPoints ?? playMaximum(c);
 	const max = playMaximum(c);
@@ -29845,7 +30071,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const slots = resolveSpellSlots(d);
 	const pact = resolvePactMagic(d);
 	const pools = playHitDicePools(c);
-	const resources = characterResources(d);
+	characterResources(d);
 	const groups = classSpellGroups(d, catalog);
 	const others = otherSpellSources(d, catalog);
 	const granted = featGrantedSpellIds(d).filter((id) => !others.some((x) => x.spell.id === id) && !groups.some((g) => g.spells.some((x) => x.spell.id === id))).flatMap((id) => {
@@ -29858,6 +30084,32 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			alwaysPrepared: false
 		}] : [];
 	});
+	const allSpellEntries = [...new Map([
+		...groups.flatMap((g) => g.spells),
+		...others,
+		...granted
+	].map((e) => [`${e.classId}:${e.spell.id}`, e])).values()];
+	const matches = (name, query = quickSearch) => name.toLocaleLowerCase("ru").replace(/ё/g, "е").includes(query.toLocaleLowerCase("ru").replace(/ё/g, "е"));
+	const spellKey = (entry) => `spell:${entry.classId}:${entry.spell.id}`;
+	const isPinned = (key) => !!a.favoriteActions?.includes(key);
+	const togglePin = (key) => change({
+		...c,
+		adventure: {
+			...a,
+			favoriteActions: isPinned(key) ? a.favoriteActions.filter((x) => x !== key) : [...a.favoriteActions || [], key]
+		}
+	});
+	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0) && (!favoritesOnly || isPinned(spellKey(e))));
+	const hasPinnedSpells = readySpells.some((e) => isPinned(spellKey(e)));
+	const quickSpells = quickSearch || favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
+	const matchingItems = a.inventory.filter((i) => itemCategory(i) === "consumable" && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
+	const quickItems = quickSearch || favoritesOnly ? matchingItems : matchingItems.some((i) => isPinned(`item:${i.id}`)) ? matchingItems.filter((i) => isPinned(`item:${i.id}`)) : matchingItems.slice(0, 3);
+	const visibleAttacks = attacks.filter((x) => (x.kind === "weapon" || x.kind === "feature" || x.kind === "cantrip" && isPinned(x.id)) && matches(x.name) && (!favoritesOnly || isPinned(x.id))).sort((x, y) => Number(isPinned(y.id)) - Number(isPinned(x.id)));
+	const selectedCheck = quickCheck.startsWith("skill:") ? {
+		name: quickCheck.slice(6),
+		bonus: skillBonusBreakdown(d, quickCheck.slice(6)).value
+	} : void 0;
+	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && spellCastOptions(c, entry.spell, entry.classId).length > 0) && (!favoritesOnly || isPinned(spellKey(entry)));
 	const baseAc = armorClassBreakdown(d);
 	const ac = a.acOverride ?? baseAc.value + itemBonus(c, "acBonus");
 	const speed = speedBreakdown(d);
@@ -29914,12 +30166,36 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		try {
 			const cast = castPlaySpell(c, spell, method, classId, mode, void 0, formula);
 			onChange(commitPlayChange(c, cast.character));
+			setAttackResolution(void 0);
 			setResolution({
 				id: playId(),
 				spell,
 				result: cast.result
 			});
 			for (const event of cast.result.events) presentRoll(event.name, event.result);
+			setError("");
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		}
+	}
+	function performAttack(attack) {
+		try {
+			const action = resolvePlayAttack(c, attack.name, attack.attackBonus === void 0 ? void 0 : attack.attackBonus + attackBonusFor(attack), attack.damageFormula ? damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")) : "", mode);
+			onChange(commitPlayChange(c, action.character));
+			if (action.attack) presentRoll(`Атака: ${action.name}`, action.attack);
+			if (action.damage) presentRoll(`Урон: ${action.name}`, action.damage);
+			setResolution(void 0);
+			setAttackResolution(action);
+			setError("");
+		} catch (e) {
+			setError(e instanceof Error ? e.message : String(e));
+		}
+	}
+	function consumeQuick(id) {
+		try {
+			const action = useQuickItem(c, id);
+			onChange(commitPlayChange(c, action.character));
+			if (action.roll) presentRoll(`Лечение: ${action.name}`, action.roll);
 			setError("");
 		} catch (e) {
 			setError(e instanceof Error ? e.message : String(e));
@@ -29940,27 +30216,36 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		const method = options.find((x) => x.id === castMethods[key])?.id || options[0]?.id || "";
 		const profile = spellPlayProfile(c, entry.spell, options.find((x) => x.id === method)?.level ?? entry.spell.level, entry.classId);
 		return /* @__PURE__ */ jsxs("article", {
-			className: "play-card",
+			className: "play-card play-spell-card",
 			children: [
 				/* @__PURE__ */ jsxs("div", {
 					className: "play-row",
-					children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: entry.spell.name }), /* @__PURE__ */ jsxs("small", { children: [
-						entry.spell.level ? `${entry.spell.level} круг` : "Заговор",
-						" · ",
-						spellSourceDisplayName(entry.source, d, classes),
-						entry.spell.ritual ? " · Ритуал" : ""
-					] })] }), prepMax !== void 0 && entry.spell.level > 0 && !entry.alwaysPrepared && /* @__PURE__ */ jsxs("label", {
-						className: "play-check",
-						children: [/* @__PURE__ */ jsx("input", {
-							type: "checkbox",
-							checked: entry.prepared,
-							onChange: () => change((prev) => {
-								const ids = classPreparedSpellIds(prev, entry.classId);
-								if (!entry.prepared && ids.length >= prepMax) throw new Error("Достигнут лимит подготовленных заклинаний.");
-								return setClassPreparedSpells(prev, entry.classId, entry.prepared ? ids.filter((id) => id !== entry.spell.id) : [...ids, entry.spell.id]);
-							})
-						}), "Подготовлено"]
-					})]
+					children: [
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h3", { children: entry.spell.name }), /* @__PURE__ */ jsxs("small", { children: [
+							entry.spell.level ? `${entry.spell.level} круг` : "Заговор",
+							" · ",
+							spellSourceDisplayName(entry.source, d, classes),
+							entry.spell.ritual ? " · Ритуал" : ""
+						] })] }),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Закрепить заклинание: ${entry.spell.name}`,
+							"aria-pressed": isPinned(spellKey(entry)),
+							onClick: () => togglePin(spellKey(entry)),
+							children: isPinned(spellKey(entry)) ? "★" : "☆"
+						}),
+						prepMax !== void 0 && entry.spell.level > 0 && !entry.alwaysPrepared && /* @__PURE__ */ jsxs("label", {
+							className: "play-check",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: entry.prepared,
+								onChange: () => change((prev) => {
+									const ids = classPreparedSpellIds(prev, entry.classId);
+									if (!entry.prepared && ids.length >= prepMax) throw new Error("Достигнут лимит подготовленных заклинаний.");
+									return setClassPreparedSpells(prev, entry.classId, entry.prepared ? ids.filter((id) => id !== entry.spell.id) : [...ids, entry.spell.id]);
+								})
+							}), "Подготовлено"]
+						})
+					]
 				}),
 				/* @__PURE__ */ jsxs("p", { children: [
 					entry.spell.castingTime,
@@ -30021,7 +30306,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		}, `${entry.classId}-${entry.source}-${entry.spell.id}`);
 	};
 	return /* @__PURE__ */ jsxs("main", {
-		className: `app-shell play-shell${shellClassName}`,
+		className: `app-shell play-shell${a.interfaceDensity === "comfortable" ? "" : " play-compact"}${shellClassName}`,
 		style: shellStyle,
 		"data-site-theme": siteTheme,
 		children: [
@@ -30145,6 +30430,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								onChange(previous);
 								setResult(void 0);
 								setResolution(void 0);
+								setAttackResolution(void 0);
 								setVisibleRolls(previous.adventure.journal.filter((e) => e.rolls && e.formula && e.total !== void 0).slice(0, 3).map((e) => ({
 									id: e.id,
 									name: e.text,
@@ -30326,86 +30612,225 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 				children: [/* @__PURE__ */ jsxs("div", {
 					className: "play-content",
 					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "session-status",
+							children: [
+								"      ",
+								/* @__PURE__ */ jsxs("section", {
+									className: "play-card",
+									children: [
+										/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
+										/* @__PURE__ */ jsxs("div", {
+											className: "play-row play-wrap",
+											children: [
+												/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
+													type: "number",
+													min: "0",
+													value: amount,
+													onChange: (e) => setAmount(integer(e.target.value))
+												})] }),
+												/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
+													value: defense,
+													onChange: (e) => setDefense(e.target.value),
+													children: [
+														/* @__PURE__ */ jsx("option", {
+															value: "normal",
+															children: "Обычный"
+														}),
+														/* @__PURE__ */ jsx("option", {
+															value: "resistance",
+															children: "Сопротивление ×½"
+														}),
+														/* @__PURE__ */ jsx("option", {
+															value: "vulnerability",
+															children: "Уязвимость ×2"
+														}),
+														/* @__PURE__ */ jsx("option", {
+															value: "immune",
+															children: "Иммунитет"
+														})
+													]
+												})] }),
+												/* @__PURE__ */ jsx("button", {
+													className: "play-danger",
+													onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
+													children: "Получить урон"
+												}),
+												/* @__PURE__ */ jsx("button", {
+													onClick: () => change(healPlay(c, amount)),
+													children: "Лечение"
+												}),
+												/* @__PURE__ */ jsx("button", {
+													onClick: () => change(logPlay({
+														...c,
+														temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
+													}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
+													children: "Временные HP"
+												})
+											]
+										}),
+										hp === 0 && /* @__PURE__ */ jsxs("div", {
+											className: "play-notice",
+											children: [
+												/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
+												/* @__PURE__ */ jsxs("span", { children: [
+													"Успехи ",
+													c.deathSaveSuccesses || 0,
+													"/3 · Провалы ",
+													c.deathSaveFailures || 0,
+													"/3"
+												] }),
+												/* @__PURE__ */ jsx("button", {
+													disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
+													onClick: () => change((prev) => {
+														const r = rollD20(0, mode);
+														presentRoll("Спасбросок смерти", r);
+														return applyDeathSave(prev, r.natural);
+													}),
+													children: "Бросить d20"
+												}),
+												/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+											]
+										})
+									]
+								}),
+								/* @__PURE__ */ jsx(SessionResources, {
+									character: c,
+									onChange: change
+								})
+							]
+						}),
+						a.conditions.length > 0 && /* @__PURE__ */ jsx("div", {
+							className: "session-condition-strip",
+							children: a.conditions.map((name) => /* @__PURE__ */ jsxs("button", {
+								"aria-label": `Снять состояние: ${name}`,
+								onClick: () => change(toggleCondition(c, name)),
+								children: [name, " ×"]
+							}, name))
+						}),
 						resolution && /* @__PURE__ */ jsx(SpellRollPanel, {
 							spell: resolution.spell,
 							result: resolution.result,
 							onClose: () => setResolution(void 0)
 						}, resolution.id),
+						attackResolution && /* @__PURE__ */ jsxs("section", {
+							className: "play-card play-resolution",
+							"aria-label": "Результат атаки",
+							children: [
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row",
+									children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
+										onClick: () => setAttackResolution(void 0),
+										children: "Закрыть атаку"
+									})]
+								}),
+								attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
+									"Попадание: ",
+									/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
+									" · d20: ",
+									attackResolution.attack.natural,
+									attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
+								] }),
+								/* @__PURE__ */ jsxs("p", { children: [
+									"Урон",
+									attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
+									": ",
+									/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
+									" · ",
+									attackResolution.damage?.formula || "Промах"
+								] })
+							]
+						}),
 						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("section", {
-								className: "play-card",
+								className: "play-card session-command",
 								children: [
-									/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
 									/* @__PURE__ */ jsxs("div", {
 										className: "play-row play-wrap",
-										children: [
-											/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: "0",
-												value: amount,
-												onChange: (e) => setAmount(integer(e.target.value))
-											})] }),
-											/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
-												value: defense,
-												onChange: (e) => setDefense(e.target.value),
-												children: [
-													/* @__PURE__ */ jsx("option", {
-														value: "normal",
-														children: "Обычный"
-													}),
-													/* @__PURE__ */ jsx("option", {
-														value: "resistance",
-														children: "Сопротивление ×½"
-													}),
-													/* @__PURE__ */ jsx("option", {
-														value: "vulnerability",
-														children: "Уязвимость ×2"
-													}),
-													/* @__PURE__ */ jsx("option", {
-														value: "immune",
-														children: "Иммунитет"
-													})
-												]
-											})] }),
-											/* @__PURE__ */ jsx("button", {
-												className: "play-danger",
-												onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
-												children: "Получить урон"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												onClick: () => change(healPlay(c, amount)),
-												children: "Лечение"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												onClick: () => change(logPlay({
+										children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Игровая панель" }), /* @__PURE__ */ jsx("h2", { children: "Быстрые действия" })] }), /* @__PURE__ */ jsxs("label", {
+											className: "play-check",
+											children: [/* @__PURE__ */ jsx("input", {
+												type: "checkbox",
+												checked: a.interfaceDensity !== "comfortable",
+												onChange: (e) => change({
 													...c,
-													temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
-												}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
-												children: "Временные HP"
-											})
-										]
+													adventure: {
+														...a,
+														interfaceDensity: e.target.checked ? "compact" : "comfortable"
+													}
+												})
+											}), "Компактный вид"]
+										})]
 									}),
-									hp === 0 && /* @__PURE__ */ jsxs("div", {
-										className: "play-notice",
+									/* @__PURE__ */ jsxs("div", {
+										className: "session-search",
+										children: [/* @__PURE__ */ jsx("input", {
+											ref: quickSearchRef,
+											"aria-label": "Поиск быстрых действий",
+											placeholder: "Атака, заклинание, зелье… · /",
+											value: quickSearch,
+											onChange: (e) => setQuickSearch(e.target.value)
+										}), /* @__PURE__ */ jsx("button", {
+											disabled: !quickSearch,
+											onClick: () => setQuickSearch(""),
+											children: "Очистить"
+										})]
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [/* @__PURE__ */ jsxs("label", {
+											className: "play-check",
+											children: [/* @__PURE__ */ jsx("input", {
+												type: "checkbox",
+												checked: favoritesOnly,
+												onChange: (e) => setFavoritesOnly(e.target.checked)
+											}), "Только избранные"]
+										}), /* @__PURE__ */ jsxs("label", {
+											className: "play-check",
+											children: [/* @__PURE__ */ jsx("input", {
+												type: "checkbox",
+												checked: availableOnly,
+												onChange: (e) => setAvailableOnly(e.target.checked)
+											}), "Доступно сейчас"]
+										})]
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "session-check",
 										children: [
-											/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
-											/* @__PURE__ */ jsxs("span", { children: [
-												"Успехи ",
-												c.deathSaveSuccesses || 0,
-												"/3 · Провалы ",
-												c.deathSaveFailures || 0,
-												"/3"
-											] }),
-											/* @__PURE__ */ jsx("button", {
-												disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
-												onClick: () => change((prev) => {
-													const r = rollD20(0, mode);
-													presentRoll("Спасбросок смерти", r);
-													return applyDeathSave(prev, r.natural);
-												}),
-												children: "Бросить d20"
+											/* @__PURE__ */ jsxs("select", {
+												"aria-label": "Быстрая проверка",
+												value: quickCheck,
+												onChange: (e) => setQuickCheck(e.target.value),
+												children: [/* @__PURE__ */ jsx("optgroup", {
+													label: "Навыки",
+													children: Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("option", {
+														value: `skill:${skill}`,
+														children: [
+															skill,
+															" ",
+															sign(skillBonusBreakdown(d, skill).value)
+														]
+													}, skill))
+												}), /* @__PURE__ */ jsx("optgroup", {
+													label: "Спасброски",
+													children: Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("option", {
+														value: `save:${key}`,
+														children: [
+															abilityLabels[key],
+															" ",
+															sign(saveBonus(key))
+														]
+													}, key))
+												})]
 											}),
-											/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+												children: "Проверка"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+												children: "Поправки"
+											})
 										]
 									})
 								]
@@ -30477,22 +30902,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
-								children: [/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Атаки" }), /* @__PURE__ */ jsxs("label", {
-										className: "play-check",
-										children: [/* @__PURE__ */ jsx("input", {
-											type: "checkbox",
-											checked: favoritesOnly,
-											onChange: (e) => setFavoritesOnly(e.target.checked)
-										}), "Только избранные"]
-									})]
-								}), favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })]
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Атаки" }),
+									quickSearch && !visibleAttacks.length && !quickSpells.length && !quickItems.length && /* @__PURE__ */ jsx("p", { children: "Ничего не найдено. Измените поиск или снимите фильтры." }),
+									favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })
+								]
 							}),
 							/* @__PURE__ */ jsx("div", {
 								className: "play-grid",
-								children: attacks.filter((x) => !favoritesOnly || a.favoriteActions?.includes(x.id)).sort((x, y) => Number(!!a.favoriteActions?.includes(y.id)) - Number(!!a.favoriteActions?.includes(x.id))).map((attack) => /* @__PURE__ */ jsxs("article", {
-									className: "play-card",
+								children: visibleAttacks.map((attack) => /* @__PURE__ */ jsxs("article", {
+									className: "play-card play-attack-card",
 									children: [
 										/* @__PURE__ */ jsxs("div", {
 											className: "play-row",
@@ -30529,7 +30948,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 											"Активные предметы игрового режима: ",
 											sign(attackBonusFor(attack))
 										] })] }),
-										/* @__PURE__ */ jsxs("div", {
+										/* @__PURE__ */ jsx("button", {
+											className: "play-primary",
+											onClick: () => performAttack(attack),
+											children: "Атаковать"
+										}),
+										/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
 											className: "play-row play-wrap",
 											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
 												onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
@@ -30544,9 +30968,40 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")), void 0, true)),
 												children: "Крит"
 											})] })]
-										})
+										})] })
 									]
 								}, attack.id))
+							}),
+							(quickSpells.length > 0 || quickItems.length > 0) && /* @__PURE__ */ jsxs("section", {
+								className: "session-quick",
+								children: [/* @__PURE__ */ jsx("h2", { children: "Магия и расходники под рукой" }), /* @__PURE__ */ jsxs("div", {
+									className: "play-grid",
+									children: [quickSpells.map((e) => spellCard(e)), quickItems.map((i) => /* @__PURE__ */ jsxs("article", {
+										className: "play-card session-item",
+										children: [
+											/* @__PURE__ */ jsxs("div", {
+												className: "play-row",
+												children: [/* @__PURE__ */ jsx("h3", { children: i.name }), /* @__PURE__ */ jsx("button", {
+													"aria-label": `Закрепить предмет: ${i.name}`,
+													"aria-pressed": isPinned(`item:${i.id}`),
+													onClick: () => togglePin(`item:${i.id}`),
+													children: isPinned(`item:${i.id}`) ? "★" : "☆"
+												})]
+											}),
+											/* @__PURE__ */ jsxs("p", { children: [
+												i.quantity,
+												" шт.",
+												i.healingFormula ? ` · лечение ${i.healingFormula}` : ""
+											] }),
+											/* @__PURE__ */ jsx("button", {
+												className: "play-primary",
+												disabled: !i.quantity,
+												onClick: () => consumeQuick(i.id),
+												children: i.healingFormula ? "Выпить и восстановить HP" : "Использовать 1"
+											})
+										]
+									}, i.id))]
+								})]
 							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "play-row play-wrap",
@@ -30635,27 +31090,89 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "play-row play-wrap",
-								children: [/* @__PURE__ */ jsx("input", {
-									"aria-label": "Поиск заклинаний",
-									placeholder: "Найти заклинание",
-									value: search,
-									onChange: (e) => setSearch(e.target.value)
-								}), /* @__PURE__ */ jsxs("label", {
-									className: "play-check",
-									children: [/* @__PURE__ */ jsx("input", {
-										type: "checkbox",
-										checked: showUnprepared,
-										onChange: (e) => setShowUnprepared(e.target.checked)
-									}), "Показать неподготовленные"]
-								})]
+								children: [
+									/* @__PURE__ */ jsx("input", {
+										"aria-label": "Поиск заклинаний",
+										placeholder: "Найти заклинание",
+										value: search,
+										onChange: (e) => setSearch(e.target.value)
+									}),
+									/* @__PURE__ */ jsxs("select", {
+										"aria-label": "Круг заклинаний",
+										value: spellCircle,
+										onChange: (e) => setSpellCircle(e.target.value),
+										children: [/* @__PURE__ */ jsx("option", {
+											value: "all",
+											children: "Все круги"
+										}), Array.from({ length: 10 }, (_, i) => /* @__PURE__ */ jsx("option", {
+											value: i,
+											children: i === 0 ? "Заговоры" : `${i} круг`
+										}, i))]
+									}),
+									/* @__PURE__ */ jsxs("select", {
+										"aria-label": "Школа заклинаний",
+										value: spellSchool,
+										onChange: (e) => setSpellSchool(e.target.value),
+										children: [/* @__PURE__ */ jsx("option", {
+											value: "all",
+											children: "Все школы"
+										}), [...new Set(allSpellEntries.map((e) => e.spell.school))].sort().map((school) => /* @__PURE__ */ jsx("option", {
+											value: school,
+											children: school
+										}, school))]
+									}),
+									/* @__PURE__ */ jsxs("select", {
+										"aria-label": "Тип заклинаний",
+										value: spellKind,
+										onChange: (e) => setSpellKind(e.target.value),
+										children: [
+											/* @__PURE__ */ jsx("option", {
+												value: "all",
+												children: "Все типы"
+											}),
+											/* @__PURE__ */ jsx("option", {
+												value: "concentration",
+												children: "Концентрация"
+											}),
+											/* @__PURE__ */ jsx("option", {
+												value: "ritual",
+												children: "Ритуалы"
+											})
+										]
+									}),
+									/* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: favoritesOnly,
+											onChange: (e) => setFavoritesOnly(e.target.checked)
+										}), "Только избранные"]
+									}),
+									/* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: availableOnly,
+											onChange: (e) => setAvailableOnly(e.target.checked)
+										}), "Доступно сейчас"]
+									}),
+									/* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: showUnprepared,
+											onChange: (e) => setShowUnprepared(e.target.checked)
+										}), "Показать неподготовленные"]
+									})
+								]
 							}),
 							groups.map((g) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsxs("h2", { children: [spellSourceDisplayName(g.classId, d, classes), g.preparedMaximum !== void 0 ? ` · подготовка до ${g.preparedMaximum}` : ""] }), /* @__PURE__ */ jsx("div", {
 								className: "play-grid",
-								children: g.spells.filter((x) => (showUnprepared || x.prepared) && x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x, g.preparedMaximum))
+								children: g.spells.filter(spellMatches).map((x) => spellCard(x, g.preparedMaximum))
 							})] }, g.classId)),
 							[...others, ...granted].length > 0 && /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h2", { children: "Другие источники" }), /* @__PURE__ */ jsx("div", {
 								className: "play-grid",
-								children: [...others, ...granted].filter((x) => x.spell.name.toLowerCase().includes(search.toLowerCase())).map((x) => spellCard(x))
+								children: [...others, ...granted].filter(spellMatches).map((x) => spellCard(x))
 							})] }),
 							/* @__PURE__ */ jsx("p", {
 								className: "play-notice",
@@ -30732,54 +31249,14 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
-									/* @__PURE__ */ jsx("div", {
-										className: "play-grid",
-										children: resources.map((r) => /* @__PURE__ */ jsxs("div", {
-											className: "play-counter",
-											children: [
-												/* @__PURE__ */ jsx("strong", { children: r.name }),
-												/* @__PURE__ */ jsxs("span", { children: [
-													resourceCurrent(d, r),
-													" / ",
-													r.max
-												] }),
-												/* @__PURE__ */ jsx("button", {
-													disabled: resourceCurrent(d, r) <= 0,
-													onClick: () => change(logPlay({
-														...c,
-														resourceSpent: {
-															...c.resourceSpent,
-															[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
-														}
-													}, `Использован ресурс: ${r.name}`)),
-													children: "−"
-												}),
-												/* @__PURE__ */ jsx("button", {
-													disabled: !(c.resourceSpent?.[r.key] || 0),
-													onClick: () => change({
-														...c,
-														resourceSpent: {
-															...c.resourceSpent,
-															[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
-														}
-													}),
-													children: "+"
-												}),
-												/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
-											]
-										}, r.key))
-									}),
-									subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
-										value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
-										onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
-										children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
-											value: String(option.id),
-											children: option.name
-										}, String(option.id)))
-									})] }, control.key))
-								]
+								children: [/* @__PURE__ */ jsx("h2", { children: "Настройки подкласса" }), subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
+									value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
+									onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
+									children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
+										value: String(option.id),
+										children: option.name
+									}, String(option.id)))
+								})] }, control.key))]
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
@@ -62726,6 +63203,15 @@ var alignments = [
 	"Хаотично-злое"
 ];
 var siteChangelog = [
+	{
+		version: "1.7.0",
+		publishedAt: "2026-10-13T16:30:00Z",
+		changes: [
+			"Единая игровая панель: закреплённая магия, расходники, быстрые проверки и атаки без переходов между разделами.",
+			"Здоровье и ресурсы доступны в любом игровом разделе. Добавлены свои ресурсы с восстановлением на отдыхе.",
+			"Компактные карточки, поиск быстрых действий и фильтры магии по кругу, школе, концентрации, ритуалам и доступности."
+		]
+	},
 	{
 		version: "1.6.2",
 		publishedAt: "2026-10-12T22:00:00Z",
