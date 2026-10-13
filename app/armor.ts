@@ -1,6 +1,8 @@
 import { hbEffects } from "./homebrewEngine";
 import type { ExportCharacter } from "./exportFormats";
 import { selectedEquipment } from "./equipment";
+import { catalogItemFor } from "./itemCatalog";
+import { isShieldItem } from "./adventure";
 import { characterLevel, getClassProgress, getClassLevel, normalizedLevelHistory, orderedCharacterClasses } from "./multiclass";
 
 const modifier = (score: number) => Math.floor((score - 10) / 2);
@@ -26,7 +28,8 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   const dex = modifier(character.abilities.dex);
   const con = modifier(character.abilities.con);
   const wis = modifier(character.abilities.wis);
-  const shield = hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
+  const equipped = character.adventure?.inventory.filter(i=>i.equipped && i.quantity>0);
+  const shield = equipped ? equipped.some(isShieldItem) : hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
 
   const armors: Array<{ pattern: RegExp; ac: number; dex: "full" | "max2" | "none"; name: string }> = [
     { pattern: /полулаты/i, ac: 15, dex: "max2", name: "Полулаты" },
@@ -41,41 +44,37 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     { pattern: /прокл[её]панн(?:ая|ый) кож/i, ac: 12, dex: "full", name: "Проклёпанная кожа" },
     { pattern: /кожан(?:ый|ая) доспех/i, ac: 11, dex: "full", name: "Кожаный доспех" },
   ];
-  const worn = armors.find(armor => hasItem(items, armor.pattern));
+  const worn = equipped
+    ? armors.find(armor => equipped.some(i=>!isShieldItem(i) && hasItem([i.catalogName||i.name],armor.pattern)))
+    : armors.find(armor => hasItem(items, armor.pattern));
   const mediumArmorMaster = hasFeat(character, "medium-armor-master");
   let value = 10 + dex;
   let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
   let wearingArmor = false;
 
+  const candidates: Array<{value:number;base:string;wearingArmor:boolean}> = [{value,base,wearingArmor:false}];
+  if (character.race === "tortle") candidates.push({value:17,base:"Природный панцирь: 17",wearingArmor:false});
+  if (character.race === "lizardfolk") candidates.push({value:13+dex,base:"Природный доспех: 13 + Ловкость",wearingArmor:false});
+  if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({value:13+dex,base:"Драконья устойчивость: 13 + Ловкость",wearingArmor:false});
+  const unarmoredSource = normalizedLevelHistory(character).find(entry => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
+  if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk"))
+    candidates.push({value:10+dex+wis,base:"Защита без доспехов монаха: 10 + Ловкость + Мудрость",wearingArmor:false});
+  if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian"))
+    candidates.push({value:10+dex+con,base:"Защита без доспехов варвара: 10 + Ловкость + Телосложение",wearingArmor:false});
+  for (const row of hbEffects(character, "ac_formula"))
+    candidates.push({value:row.value,base:`${row.source.name}: формула КД ${row.value}`,wearingArmor:false});
   if (worn) {
     const dexCap = mediumArmorMaster ? 3 : 2;
-    const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
-    value = worn.ac + dexBonus;
-    base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
-    wearingArmor = true;
-  } else if (character.race === "tortle") {
-    value = 17;
-    base = "Природный панцирь: 17";
-  } else if (character.race === "lizardfolk") {
-    value = 13 + dex;
-    base = "Природный доспех: 13 + Ловкость";
-  } else if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") {
-    value = 13 + dex;
-    base = "Драконья устойчивость: 13 + Ловкость";
-  } else {
-    // Legacy 2014: Monk and Barbarian do not acquire a second instance of
-    // Unarmored Defense. The first class obtained in level history wins.
-    const unarmoredSource = normalizedLevelHistory(character).find(entry => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
-    if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) {
-      value = 10 + dex + wis;
-      base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
-    } else if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) {
-      value = 10 + dex + con;
-      base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
-    }
+    const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap,dex) : 0;
+    candidates.push({value:worn.ac+dexBonus,base:`${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`,wearingArmor:true});
   }
+  const stylesForSelection = new Set([...(character.classChoices?.["fighting-style"] || []),...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.["fighting-style"] || [])]);
+  const optimal = candidates.reduce((best,next)=>{
+    const score=(candidate:typeof next)=>candidate.value+(candidate.wearingArmor&&stylesForSelection.has("defense")?1:0)+(candidate.wearingArmor&&character.race==="warforged"?1:0);
+    return score(next)>score(best)?next:best;
+  });
+  value=optimal.value;base=optimal.base;wearingArmor=optimal.wearingArmor;
 
-  for (const row of hbEffects(character, "ac_formula")) { if (row.value > value) { value = row.value; base = `${row.source.name}: формула КД ${row.value}`; } }
   const bonuses: string[] = [];
   if (shield) {
     value += 2;
@@ -96,7 +95,7 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   const conditions: string[] = [];
   if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
   if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
-  if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
+  if (!wearingArmor && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
   if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
   if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
   if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
