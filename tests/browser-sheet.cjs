@@ -215,6 +215,8 @@ async function saved(page) {
         await itemEditor.getByRole('button',{name:'Сохранить предмет',exact:true}).click();
         const rapier=page.locator('.inventory-item').filter({has:page.getByRole('heading',{name:'Рапира +1',exact:true})});
         assert.equal(await rapier.getByRole('button',{name:'Использовать 1',exact:true}).count(),0);
+        // Somatic-only spells require a free hand: stow the rapier, keep the focus equipped.
+        await rapier.getByRole('button',{name:'Надето / в руках',exact:true}).click();
         await page.getByRole('button',{name:'Магия',exact:true}).click();
         const bolt=page.locator('.play-card').filter({has:page.getByRole('heading',{name:'Огненный снаряд',exact:true})});
         assert.match(await bolt.innerText(),/Атака заклинанием \+8/);
@@ -258,9 +260,8 @@ async function saved(page) {
         await page.getByRole('button',{name:'Действия',exact:true}).click();
         const quickSpell=page.locator('.session-quick .play-spell-card').filter({has:page.getByRole('heading',{name:'Огненный шар',exact:true})});
         await quickSpell.waitFor();
-        await page.getByLabel('Поиск быстрых действий',{exact:true}).fill('Огненный шар');
+        assert.equal(await page.getByLabel('Поиск быстрых действий',{exact:true}).count(),0,'Actions search has been removed');
         assert.equal(await page.locator('.session-quick .play-spell-card').count(),1);
-        await page.getByRole('button',{name:'Очистить',exact:true}).click();
         await page.locator('.session-panel > summary').click();
         await page.locator('.session-resources > summary').click();
         await page.getByText('Добавить свой ресурс',{exact:true}).click();
