@@ -15,9 +15,8 @@ export function spellHandsWarning(c:ExportCharacter,spell:CatalogSpell):string|u
   const focus=hands.held.some(i=>itemCategory(i)==='focus'||/священный символ|фокусировк/i.test(i.name));
   const pouch=(c.adventure?.inventory||[]).some(i=>i.quantity>0&&/мешочек с компонентами/i.test(i.name));
   if(material&&!focus&&hands.free===0)return 'Для материального компонента нужна свободная рука, фокусировка или доступный мешочек с компонентами. Сначала освободите руку.';
-  if(material&&!focus&&pouch&&hands.free===0)return 'Для мешочка с компонентами необходима свободная рука.';
   if(material&&!focus&&hands.free===0)return 'Нет руки для материального компонента.';
-  if(somatic&&!warCaster&&!focus&&hands.free===0)return 'Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.';
+  if(somatic&&!warCaster&&!(focus&&material)&&hands.free===0)return 'Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.';
   if(material&&!focus&&!pouch)return 'Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).';
 }
 export type CastOption = { id: string; label: string; level: number; freeKey?: string };
