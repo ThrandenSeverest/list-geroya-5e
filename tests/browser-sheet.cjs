@@ -162,6 +162,8 @@ async function saved(page) {
         await page.locator('.play-shell').waitFor();
         assert.equal(await page.locator(width<=700?'.play-mobile-nav':'.play-desktop-nav').isVisible(),true);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false,'Game stays within viewport');
+        assert.equal(await page.locator('.session-panel').getAttribute('open'),null);
+        await page.locator('.session-panel > summary').click();
         await page.getByLabel('Количество',{exact:true}).fill('4');
         await page.getByRole('button',{name:'Получить урон',exact:true}).click();
         await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));return v.slots.find(s=>s.id===v.activeId).character.currentHitPoints===23;},key);
@@ -173,7 +175,7 @@ async function saved(page) {
         await page.locator('.play-shell').waitFor();
         await page.getByRole('button',{name:/^Отменить действие/}).click();
         await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));return v.slots.find(s=>s.id===v.activeId).character.currentHitPoints===27;},key);
-        assert.match(page.url(), /\/adventure\/\?play=/);
+        assert.match(page.url(), /\/adventure\/?\?play=/);
         await page.reload();
         await page.locator('.play-shell').waitFor();
         await page.getByRole('button',{name:'← Таверна',exact:true}).click();
@@ -249,6 +251,8 @@ async function saved(page) {
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
         // Integrated session controls remain available while viewing magic.
+        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
+        await page.locator('.session-panel > summary').click();
         assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),true);
         await fireball.getByRole('button',{name:'Закрепить заклинание: Огненный шар',exact:true}).click();
         await page.getByRole('button',{name:'Действия',exact:true}).click();
@@ -257,6 +261,7 @@ async function saved(page) {
         await page.getByLabel('Поиск быстрых действий',{exact:true}).fill('Огненный шар');
         assert.equal(await page.locator('.session-quick .play-spell-card').count(),1);
         await page.getByRole('button',{name:'Очистить',exact:true}).click();
+        await page.locator('.session-panel > summary').click();
         await page.locator('.session-resources > summary').click();
         await page.getByText('Добавить свой ресурс',{exact:true}).click();
         await page.getByLabel('Название ресурса',{exact:true}).fill('Запас решимости');
@@ -273,6 +278,7 @@ async function saved(page) {
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
         assert.equal(await page.locator('.play-shell input[type=number]').count(),0,'Game uses sliders and exact text entry without spin buttons');
+        await page.locator('.session-panel > summary').click();
         const hpControl=page.getByRole('slider',{name:'Текущие HP: ползунок',exact:true});
         await hpControl.focus();
         const sliderBefore=await saved(page);
@@ -285,10 +291,22 @@ async function saved(page) {
         assert.equal(activeAfter.adventure.undo.length,Math.min(20,activeBefore.adventure.undo.length+1));
         await page.getByRole('button',{name:'Добавить: Зелье лечения',exact:true}).click();
         await page.getByRole('button',{name:'Выпить обычное',exact:true}).click();
-        await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventory?.some(i=>i.name==='Зелье лечения'&&i.quantity===0)),key);
+        await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventoryTrash?.some(i=>i.name==='Зелье лечения'&&i.quantity===0)),key);
         const potionVault=await saved(page),potionHero=potionVault.slots.find(s=>s.id===potionVault.activeId).character;
         assert.ok(potionHero.currentHitPoints>activeAfter.currentHitPoints,'Potion restores HP automatically');
         assert.equal(await page.getByRole('button',{name:'Выпить обычное',exact:true}).isDisabled(),true);
+        await page.getByRole('button',{name:'Рюкзак',exact:true}).click();
+        assert.equal(await page.locator('.inventory-item').filter({has:page.getByRole('heading',{name:'Зелье лечения',exact:true})}).count(),0);
+        await page.locator('.inventory-trash > summary').click();
+        await page.getByRole('button',{name:'Вернуть из корзины: Зелье лечения',exact:true}).click();
+        await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventory?.some(i=>i.name==='Зелье лечения'&&i.quantity===1)),key);
+        await page.reload();await page.locator('.play-shell').waitFor();
+        await page.getByRole('button',{name:'Герой',exact:true}).click();
+        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),true);
+        await page.locator('.session-panel > summary').click();
+        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
+        await page.getByRole('button',{name:'Магия',exact:true}).click();
+        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
         console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','responsive game','independent adventure','undo','reload','preserved vault']}));

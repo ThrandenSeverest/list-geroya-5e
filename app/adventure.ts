@@ -15,7 +15,7 @@ export type PlayEffect = { id: string; name: string; remaining?: number; concent
 export type PlayResource = { id: string; name: string; current: number; max: number; recharge: 'none' | 'short' | 'long' };
 export type AdventureState = {
   version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
-  inventory: PlayItem[]; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
+  inventory: PlayItem[]; inventoryTrash?: PlayItem[]; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
   hpMaximum?: number; acOverride?: number; attunementLimit: number; elapsedMinutes: number;
@@ -85,7 +85,21 @@ export function weaponItemBonus(c: ExportCharacter, attackName: string, key: 'we
   return values.length ? Math.max(...values) : 0;
 }
 
-export function updateInventory(c: ExportCharacter, items: PlayItem[]) { return { ...c, inventoryOverride: inventoryText(items), adventure: c.adventure ? { ...c.adventure, inventory: items } : undefined }; }
+export function updateInventory(c: ExportCharacter, items: PlayItem[]): ExportCharacter {
+  if (!c.adventure) return { ...c, inventoryOverride: inventoryText(items) };
+  const inventory = items.filter(i => i.quantity > 0);
+  const activeIds = new Set(inventory.map(i => i.id));
+  const removed = c.adventure.inventory.filter(i => !items.some(next => next.id === i.id));
+  const trash = new Map((c.adventure.inventoryTrash || []).map(i => [i.id, i]));
+  for (const i of [...removed, ...items.filter(i => i.quantity <= 0)]) trash.set(i.id, { ...i, equipped: false, attuned: false, attunementPending: undefined });
+  for (const id of activeIds) trash.delete(id);
+  return { ...c, inventoryOverride: inventoryText(inventory), adventure: { ...c.adventure, inventory, inventoryTrash: [...trash.values()] } };
+}
+export function restorePlayItem(c: ExportCharacter, id: string): ExportCharacter {
+  const item = c.adventure?.inventoryTrash?.find(i => i.id === id);
+  if (!item) throw new Error('Предмет не найден в корзине.');
+  return logPlay(updateInventory(c, [...c.adventure!.inventory, { ...item, quantity: Math.max(1, item.quantity), equipped: false, attuned: false, attunementPending: undefined }]), `Возвращено из корзины: ${item.name}`);
+}
 
 export function applyPlayDamage(c: ExportCharacter, amount: number, defense: 'normal' | 'resistance' | 'vulnerability' | 'immune' = 'normal'): ExportCharacter {
   if (!c.adventure) return c;
