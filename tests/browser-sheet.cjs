@@ -199,14 +199,14 @@ async function saved(page) {
         assert.equal(await tray.locator('.dice-history article').count(),3);
         if(width<=700) await page.getByRole('button',{name:'Закрыть кубы',exact:true}).click();
         await page.getByRole('button',{name:'Рюкзак',exact:true}).click();
-        await page.getByRole('button',{name:'+ Предмет',exact:true}).click();
+        await page.getByRole('button',{name:'+ Свой предмет',exact:true}).click();
         const itemEditor=page.getByRole('dialog',{name:'Редактор предмета'});
         await itemEditor.getByLabel('Название предмета',{exact:true}).fill('Фокусировка +2');
         await itemEditor.getByLabel('Тип предмета',{exact:true}).selectOption('focus');
         await itemEditor.getByRole('button',{name:'+2',exact:true}).click();
         await itemEditor.getByLabel('Надет / в руках',{exact:true}).check();
         await itemEditor.getByRole('button',{name:'Сохранить предмет',exact:true}).click();
-        await page.getByRole('button',{name:'+ Предмет',exact:true}).click();
+        await page.getByRole('button',{name:'+ Свой предмет',exact:true}).click();
         await itemEditor.getByLabel('Название предмета',{exact:true}).fill('Рапира +1');
         await itemEditor.getByLabel('Тип предмета',{exact:true}).selectOption('weapon');
         await itemEditor.getByLabel('Базовое оружие',{exact:true}).selectOption('Рапира');
