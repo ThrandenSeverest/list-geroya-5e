@@ -245,6 +245,30 @@ async function saved(page) {
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.spellSlotsUsed?.[2]===1),key);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
+        // Integrated session controls remain available while viewing magic.
+        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),true);
+        await fireball.getByRole('button',{name:'Закрепить заклинание: Огненный шар',exact:true}).click();
+        await page.getByRole('button',{name:'Действия',exact:true}).click();
+        const quickSpell=page.locator('.session-quick .play-spell-card').filter({has:page.getByRole('heading',{name:'Огненный шар',exact:true})});
+        await quickSpell.waitFor();
+        await page.getByLabel('Поиск быстрых действий',{exact:true}).fill('Огненный шар');
+        assert.equal(await page.locator('.session-quick .play-spell-card').count(),1);
+        await page.getByRole('button',{name:'Очистить',exact:true}).click();
+        await page.locator('.session-resources > summary').click();
+        await page.getByText('Добавить свой ресурс',{exact:true}).click();
+        await page.getByLabel('Название ресурса',{exact:true}).fill('Запас решимости');
+        await page.getByLabel('Максимум ресурса',{exact:true}).fill('2');
+        await page.getByRole('button',{name:'Добавить ресурс',exact:true}).click();
+        await page.getByRole('button',{name:'Потратить ресурс: Запас решимости',exact:true}).click();
+        await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.customResources?.some(r=>r.name==='Запас решимости'&&r.current===1)),key);
+        await page.reload();await page.locator('.play-shell').waitFor();
+        assert.equal(await page.locator('.session-quick .play-spell-card').filter({has:page.getByRole('heading',{name:'Огненный шар',exact:true})}).count(),1,'Pinned magic survives reload');
+        assert.equal(await page.getByRole('button',{name:'Атаковать',exact:true}).count()>0,true,'Attacks have an integrated action');
+        await page.getByRole('button',{name:'Атаковать',exact:true}).first().click();
+        await page.getByRole('region',{name:'Результат атаки',exact:true}).waitFor();
+        assert.match(await page.getByRole('region',{name:'Результат атаки',exact:true}).innerText(),/Попадание|Урон/);
+        assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
+        assert.deepEqual(errors,[]);
         console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','responsive game','independent adventure','undo','reload','preserved vault']}));
       } finally { await context.close(); }
     }

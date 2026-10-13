@@ -12,8 +12,9 @@ export type PlayItem = { category?: ItemCategory; weaponBase?: string; weaponAtt
 import type { PlayTransaction } from './playTransactions';
 export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number; natural?: number; critical?: boolean };
 export type PlayEffect = { id: string; name: string; remaining?: number; concentration?: boolean };
+export type PlayResource = { id: string; name: string; current: number; max: number; recharge: 'none' | 'short' | 'long' };
 export type AdventureState = {
-  version: 1; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
+  version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
   inventory: PlayItem[]; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
@@ -207,6 +208,7 @@ export function restPlay(c: ExportCharacter, kind: 'short' | 'long', selectedDic
     temporaryHitPoints: kind === 'long' ? 0 : c.temporaryHitPoints, hitDiceSpentByClass: spent, hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
     resourceSpent: resources, spellSlotsUsed: kind === 'long' ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived), pactSlotsUsed: 0,
     adventure: { ...c.adventure, elapsedMinutes: c.adventure.elapsedMinutes + (kind === 'long' ? 480 : 60), exhaustion: kind === 'long' ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
+      customResources: c.adventure.customResources?.map(r => (r.recharge === kind || (kind === 'long' && r.recharge === 'short')) ? { ...r, current: r.max } : r),
       inventory: c.adventure.inventory.map(i => (i.recharge === kind || (kind === 'long' && i.recharge === 'short')) ? { ...i, charges: i.maxCharges } : i),
       concentration: keepConcentration ? { ...c.adventure.concentration!, remainingMinutes: remaining === undefined ? undefined : remaining - 60 } : undefined, concentrationChecks: [], effects: c.adventure.effects.filter(e => !e.concentration && (e.remaining === undefined || e.remaining > (kind === 'long' ? 4800 : 600))).map(e => e.remaining === undefined ? e : { ...e, remaining: e.remaining - (kind === 'long' ? 4800 : 600) }) } };
   if (kind === 'long') next = applySubclassLongRest(next);
