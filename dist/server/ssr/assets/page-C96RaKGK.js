@@ -26498,6 +26498,1077 @@ function lssWeaponAttacks(attacks) {
 	}));
 }
 //#endregion
+//#region app/itemCatalog.ts
+var armorRows = String.raw`Стёганый доспех|5|8|11|full|0|1
+Кожаный доспех|10|10|11|full|0|0
+Проклёпанный кожаный доспех|45|13|12|full|0|0
+Шкурный доспех|10|12|12|max2|0|0
+Кольчужная рубаха|50|20|13|max2|0|0
+Чешуйчатый доспех|50|45|14|max2|0|1
+Кираса|400|20|14|max2|0|0
+Полулаты|750|40|15|max2|0|1
+Колечный доспех|30|40|14|none|0|1
+Кольчуга|75|55|16|none|13|1
+Наборный доспех|200|60|17|none|15|1
+Латы|1500|65|18|none|15|1`;
+var weaponRows = String.raw`Боевой посох|0.2|4|1к6 дробящий|универсальное 1к8|1
+Булава|5|4|1к6 дробящий||1
+Дубинка|0.1|2|1к4 дробящий|лёгкое|1
+Кинжал|2|1|1к4 колющий|лёгкое, метательное 20/60, фехтовальное|1
+Копьё|1|3|1к6 колющий|метательное 20/60, универсальное 1к8|1
+Лёгкий молот|2|2|1к4 дробящий|лёгкое, метательное 20/60|1
+Метательное копьё|0.5|2|1к6 колющий|метательное 30/120|1
+Палица|0.2|10|1к8 дробящий|двуручное|2
+Ручной топор|5|2|1к6 рубящий|лёгкое, метательное 20/60|1
+Серп|1|2|1к4 рубящий|лёгкое|1
+Арбалет, лёгкий|25|5|1к8 колющий|боеприпас 80/320, двуручное, перезарядка|2
+Дротик|0.05|0.25|1к4 колющий|метательное 20/60, фехтовальное|1
+Короткий лук|25|2|1к6 колющий|боеприпас 80/320, двуручное|2
+Праща|0.1|0|1к4 дробящий|боеприпас 30/120|1
+Алебарда|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
+Боевая кирка|5|2|1к8 колющий||1
+Боевой молот|15|2|1к8 дробящий|универсальное 1к10|1
+Боевой топор|10|4|1к8 рубящий|универсальное 1к10|1
+Глефа|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
+Двуручный меч|50|6|2к6 рубящий|двуручное, тяжёлое|2
+Длинное копьё|10|6|1к12 колющий|досягаемость, особое|1
+Длинный меч|15|3|1к8 рубящий|универсальное 1к10|1
+Кнут|2|3|1к4 рубящий|досягаемость, фехтовальное|1
+Короткий меч|10|2|1к6 колющий|лёгкое, фехтовальное|1
+Молот|10|10|2к6 дробящий|двуручное, тяжёлое|2
+Моргенштерн|15|4|1к8 колющий||1
+Пика|5|18|1к10 колющий|двуручное, досягаемость, тяжёлое|2
+Рапира|25|2|1к8 колющий|фехтовальное|1
+Секира|30|7|1к12 рубящий|двуручное, тяжёлое|2
+Скимитар|25|3|1к6 рубящий|лёгкое, фехтовальное|1
+Трезубец|5|4|1к6 колющий|метательное 20/60, универсальное 1к8|1
+Цеп|10|2|1к8 дробящий||1
+Арбалет, ручной|75|3|1к6 колющий|боеприпас 30/120, лёгкое, перезарядка|1
+Арбалет, тяжёлый|50|18|1к10 колющий|боеприпас 100/400, двуручное, перезарядка, тяжёлое|2
+Длинный лук|50|2|1к8 колющий|боеприпас 150/600, двуручное, тяжёлое|2
+Духовая трубка|10|1|1 колющий|боеприпас 25/100, перезарядка|1
+Сеть|1|3|—|метательное 5/15, особое|1`;
+var supplyRows = String.raw`Абак|2|2
+Алхимический огонь (фляга)|50|1|consumable
+Блок и лебёдка|1|5
+Арбалетные болты (20)|1|1.5|ammunition
+Иглы для трубки (50)|1|1|ammunition
+Снаряды для пращи (20)|0.04|1.5|ammunition
+Стрелы (20)|1|1|ammunition
+Бочка|2|70
+Бумага (один лист)|0.2|0
+Бурдюк|0.2|5
+Бутылка, стеклянная|2|2
+Ведро|0.05|2
+Верёвка пеньковая (50 футов)|1|10
+Верёвка, шёлковая (50 футов)|10|5
+Весы, торговые|5|3
+Воск|0.5|0
+Горшок, железный|2|10
+Духи (флакон)|5|0
+Замок|10|1
+Зелье лечения|50|0.5|consumable
+Зеркало, стальное|5|0.5
+Калтропы (20 штук в сумке)|1|2
+Кандалы|2|6
+Кирка, горняцкая|2|10
+Кислота (флакон)|25|1|consumable
+Книга|25|5
+Книга заклинаний|50|3
+Колокольчик|1|0
+Колчан|1|1
+Кольцо-печатка|5|0
+Комплект для лазания|25|12
+Комплект для рыбалки|1|4
+Комплект целителя|5|3
+Контейнер для арбалетных болтов|1|1
+Контейнер для карт и свитков|1|1
+Корзина|0.4|2
+Кошель|0.5|1
+Крюк-кошка|2|4
+Кувшин или графин|0.02|4
+Лампа|0.5|1
+Лестница (10 футов)|0.1|25
+Ломик|2|5
+Лопата|2|5
+Волшебная палочка|10|1|focus
+Жезл|10|2|focus
+Кристалл|10|1|focus
+Магическая фокусировка — посох|5|4|focus
+Сфера|20|3|focus
+Масло (фляга)|0.1|1|consumable
+Мел (1 кусочек)|0.01|0
+Металлические шарики (1000 шт. в сумке)|1|2
+Мешок|0.01|0.5
+Мешочек с компонентами|25|2
+Молот, кузнечный|2|10
+Молоток|1|3
+Мыло|0.02|0
+Одежда, дорожная|2|4
+Одежда, костюм|5|4
+Одежда, обычная|0.5|3
+Одежда, отличная|15|6
+Одеяло|0.5|3
+Охотничий капкан|5|25
+Палатка, двухместная|2|20
+Пергамент (один лист)|0.1|0
+Песочные часы|25|1
+Писчее перо|0.02|0
+Подзорная труба|1000|1
+Противоядие (флакон)|50|0|consumable
+Рационы (1 день)|0.5|2|consumable
+Рюкзак|2|5
+Ряса|1|4
+Свеча|0.01|0
+Святая вода (фляга)|25|1|consumable
+Священный символ — амулет|5|1|focus
+Священный символ — реликварий|5|2|focus
+Священный символ — эмблема|5|0|focus
+Сигнальный свисток|0.05|0
+Спальник|1|7
+Столовый набор|0.2|1
+Сундук|5|25
+Таран, портативный|4|35
+Точильный камень|0.01|1
+Трутница|0.5|1
+Увеличительное стекло|100|0
+Факел|0.01|1
+Флакон|1|0
+Фляга или большая кружка|0.02|1
+Фокусировка друидов — омела|1|0|focus
+Фокусировка друидов — посох|5|4|focus
+Фокусировка друидов — палочка|10|1|focus
+Фокусировка друидов — тотем|1|0|focus
+Фонарь, закрытый|5|2
+Фонарь, направленный|10|2
+Цепь (10 футов)|5|10
+Чернила (бутылочка 30 граммов)|10|0
+Шест (10 футов)|0.05|7
+Шипы, железные (10)|1|5
+Шлямбур|0.05|0.25
+Яд, простой (флакон)|100|0|consumable
+Воровские инструменты|25|1
+Драконьи шахматы|1|0.5
+Карты|0.5|0
+Кости|0.1|0
+Ставка трёх драконов|1|0
+Инструменты навигатора|25|2
+Инструменты отравителя|50|2
+Барабан|6|3
+Виола|30|1
+Волынка|30|6
+Лира|30|2
+Лютня|35|2
+Рожок|3|2
+Свирель|12|2
+Флейта|2|1
+Цимбалы|25|10
+Шалмей|2|1
+Набор для грима|25|3
+Набор для фальсификации|15|5
+Набор травника|5|3
+Инструменты алхимика|50|8
+Инструменты гончара|10|3
+Инструменты каллиграфа|10|5
+Инструменты каменщика|10|8
+Инструменты картографа|15|6
+Инструменты кожевника|5|5
+Инструменты кузнеца|20|8
+Инструменты пивовара|20|9
+Инструменты плотника|8|6
+Инструменты повара|1|8
+Инструменты резчика по дереву|1|5
+Инструменты ремонтника|50|10
+Инструменты сапожника|5|5
+Инструменты стеклодува|30|5
+Инструменты ткача|1|5
+Инструменты художника|10|5
+Инструменты ювелира|25|2
+Набор взломщика|16|0
+Набор дипломата|39|0
+Набор исследователя подземелий|12|0
+Набор путешественника|10|0
+Набор артиста|40|0
+Набор священника|19|0
+Набор учёного|40|0`;
+var rows = (raw) => raw.trim().split("\n").map((s) => s.split("|"));
+var handToolNames = new Set([
+	"Барабан",
+	"Виола",
+	"Волынка",
+	"Лира",
+	"Лютня",
+	"Рожок",
+	"Свирель",
+	"Флейта",
+	"Цимбалы",
+	"Шалмей",
+	"Воровские инструменты",
+	"Инструменты навигатора",
+	"Инструменты отравителя",
+	"Набор для грима",
+	"Набор для фальсификации",
+	"Набор травника",
+	"Набор для фальсификации",
+	"Инструменты алхимика",
+	"Инструменты гончара",
+	"Инструменты каллиграфа",
+	"Инструменты каменщика",
+	"Инструменты картографа",
+	"Инструменты кожевника",
+	"Инструменты кузнеца",
+	"Инструменты пивовара",
+	"Инструменты плотника",
+	"Инструменты повара",
+	"Инструменты резчика по дереву",
+	"Инструменты ремонтника",
+	"Инструменты сапожника",
+	"Инструменты стеклодува",
+	"Инструменты ткача",
+	"Инструменты художника",
+	"Инструменты ювелира"
+]);
+function isHandTool(name) {
+	return handToolNames.has(name) || /^(?:инструменты |набор (?:для грима|для фальсификации|травника))/i.test(name);
+}
+var packWeights = {
+	"Набор взломщика": 47.5,
+	"Набор дипломата": 40,
+	"Набор исследователя подземелий": 61.5,
+	"Набор путешественника": 59,
+	"Набор артиста": 38,
+	"Набор священника": 24,
+	"Набор учёного": 12
+};
+var itemCatalog = [
+	...rows(armorRows).map(([name, price, weight, base, dex, strength, stealth]) => ({
+		name,
+		category: "armor",
+		priceGp: Number(price),
+		weight: Number(weight),
+		armor: {
+			base: Number(base),
+			dex,
+			strength: Number(strength) || void 0,
+			stealth: stealth === "1"
+		}
+	})),
+	{
+		name: "Щит",
+		category: "armor",
+		priceGp: 10,
+		weight: 6,
+		hands: 1,
+		shield: true,
+		aliases: ["Деревянный щит"]
+	},
+	...rows(weaponRows).map(([name, price, weight, damage, properties, hands]) => ({
+		name,
+		category: "weapon",
+		priceGp: Number(price),
+		weight: Number(weight),
+		damage,
+		properties,
+		hands: Number(hands)
+	})),
+	...rows(supplyRows).map(([name, price, weight, category]) => ({
+		name,
+		category: category || "gear",
+		priceGp: Number(price),
+		weight: packWeights[name] ?? Number(weight),
+		...category === "focus" || isHandTool(name) ? { hands: 1 } : {}
+	})),
+	{
+		name: "Магическая фокусировка",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Фокусировка друидов",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Священный символ",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Стрела",
+		category: "ammunition",
+		weight: .05,
+		priceGp: .05
+	},
+	{
+		name: "Болт",
+		category: "ammunition",
+		weight: .075,
+		priceGp: .05
+	}
+];
+var aliases$1 = {
+	"проклёпанная кожа": "Проклёпанный кожаный доспех",
+	"проклепанная кожа": "Проклёпанный кожаный доспех",
+	"кольчатый доспех": "Колечный доспех",
+	"нагрудник": "Кираса",
+	"лёгкий арбалет": "Арбалет, лёгкий",
+	"тяжёлый арбалет": "Арбалет, тяжёлый",
+	"ручной арбалет": "Арбалет, ручной",
+	"стрелы": "Стрелы (20)",
+	"болты": "Арбалетные болты (20)",
+	"кожаный доспех": "Кожаный доспех"
+};
+function normalizedItemName(name) {
+	return name.toLowerCase().replace(/ё/g, "е").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s*\+[123]\s*$/, "").replace(/\s*\((?:кд\b|[+]?\d+\s*к\s*кд)[^)]*\)/gi, "").trim();
+}
+function catalogItemFor(name) {
+	const key = normalizedItemName(name);
+	const redirected = aliases$1[key] ? normalizedItemName(aliases$1[key]) : key;
+	return itemCatalog.find((item) => normalizedItemName(item.name) === redirected || item.aliases?.some((a) => normalizedItemName(a) === redirected)) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
+}
+//#endregion
+//#region app/subclassRuntime.ts
+var O$1 = (id, name, description = "") => ({
+	id,
+	name,
+	description
+});
+var yesNo = [O$1("inactive", "Не активно"), O$1("active", "Активно")];
+var elements5 = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("poison", "Яд")
+];
+var giantElements = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("thunder", "Звук")
+];
+var skillsAndTools = [
+	...Object.keys(skillKeys),
+	...artisanTools,
+	...musicalInstruments,
+	...gamingSets
+].map((value) => O$1(value, value));
+var wildSurges = [
+	O$1("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
+	O$1("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
+	O$1("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
+	O$1("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
+	O$1("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
+	O$1("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
+	O$1("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
+	O$1("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
+];
+var spiritTales = Array.from({ length: 12 }, (_, index) => O$1(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
+function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
+	return {
+		classId,
+		subclassId,
+		minLevel,
+		key: `${classId}:${subclassId}:${key}`,
+		title,
+		description,
+		trigger,
+		options,
+		randomDie
+	};
+}
+var definitions = [
+	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
+	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
+		O$1("bite", "Укус"),
+		O$1("claws", "Когти"),
+		O$1("tail", "Хвост")
+	]),
+	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
+		O$1("swim", "Плавание и дыхание под водой"),
+		O$1("climb", "Лазание"),
+		O$1("jump", "Прыжок")
+	]),
+	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
+	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
+	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
+	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
+	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
+		O$1("inactive", "Нет двойника"),
+		O$1("1", "1 двойник"),
+		O$1("2", "2 двойника"),
+		O$1("3", "3 двойника"),
+		O$1("4", "4 двойника")
+	]),
+	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
+	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
+	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
+	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
+		O$1("0", "Нет эха"),
+		O$1("1", "1 эхо"),
+		O$1("2", "2 эха (только 18 уровень)")
+	]),
+	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
+		O$1("none", "Не проявлено"),
+		O$1("arms", "Руки"),
+		O$1("arms-visage", "Руки + облик"),
+		O$1("full", "Пробуждённое астральное тело")
+	]),
+	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O$1("cone", "Конус"), O$1("line", "Линия")]),
+	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O$1("resistance", "Стихийное сопротивление"), O$1("fear", "Пугающее присутствие")]),
+	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
+	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
+	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
+	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
+	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
+	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
+		O$1("1", "1 продолжительный отдых"),
+		O$1("2", "2 продолжительных отдыха"),
+		O$1("3", "3 продолжительных отдыха"),
+		O$1("4", "4 продолжительных отдыха")
+	], 4),
+	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
+	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
+		O$1("inactive", "Не активно"),
+		O$1("lighter", "Вес уменьшен вдвое"),
+		O$1("heavier", "Вес удвоен")
+	]),
+	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
+];
+function subclassRuntimeControls(character, spells = []) {
+	const classes = orderedCharacterClasses(character);
+	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
+		const entry = classes.find((item) => item.classId === control.classId);
+		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
+			...control,
+			options: control.options.filter((option) => option.id !== "2")
+		};
+		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
+			...control,
+			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
+		};
+		if (control.key === "monk:astral-self:astral-manifestation") {
+			const level = entry?.level || 0;
+			return {
+				...control,
+				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
+			};
+		}
+		return control;
+	});
+	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
+		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
+		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O$1(String(index + 1), String(index + 1))), void 0));
+		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O$1(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
+	}
+	return controls;
+}
+function subclassRuntimeValue(character, key) {
+	return character.subclassState?.[key];
+}
+function setSubclassRuntimeValue(character, key, value) {
+	return {
+		...character,
+		subclassState: {
+			...character.subclassState || {},
+			[key]: value
+		}
+	};
+}
+var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
+function necroticHuskCooldown(character) {
+	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
+}
+function applySubclassLongRest(character) {
+	const cooldown = necroticHuskCooldown(character);
+	const state = { ...character.subclassState || {} };
+	delete state["bard:spirits:spirit-session-spell"];
+	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
+	return {
+		...character,
+		subclassState: state
+	};
+}
+//#endregion
+//#region app/adventure.ts
+var playConditions = [
+	"Ослеплён",
+	"Очарован",
+	"Оглох",
+	"Испуган",
+	"Схвачен",
+	"Недееспособен",
+	"Невидим",
+	"Парализован",
+	"Окаменел",
+	"Отравлен",
+	"Сбит с ног",
+	"Опутан",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var incapacitating = [
+	"Недееспособен",
+	"Парализован",
+	"Окаменел",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var playId = () => crypto.randomUUID();
+var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
+function newPlayItem(name = "") {
+	const ref = catalogItemFor(name);
+	return {
+		id: playId(),
+		name,
+		category: ref?.category,
+		catalogName: ref?.name,
+		hands: ref?.hands,
+		quantity: 1,
+		weight: ref?.weight ?? 0,
+		equipped: false,
+		magical: false,
+		requiresAttunement: false,
+		attuned: false,
+		charges: 0,
+		maxCharges: 0,
+		recharge: "none",
+		notes: ref?.damage ? [ref.damage, ref.properties].filter(Boolean).join(" · ") : "",
+		container: "",
+		acBonus: 0,
+		attackBonus: 0,
+		damageBonus: 0
+	};
+}
+function isShieldItem(i) {
+	return !!catalogItemFor(i.catalogName || i.name)?.shield || /^(?:деревянный\s+)?щит(?:\s*\(|\s*\+[123]|$)/i.test(i.name);
+}
+function handCost(i) {
+	if (i.quantity <= 0 || !i.equipped) return 0;
+	if (i.hands !== void 0) return i.hands;
+	return catalogItemFor(i.catalogName || i.weaponBase || i.name)?.hands ?? (isShieldItem(i) || itemCategory(i) === "weapon" || itemCategory(i) === "focus" || isHandTool(i.name) ? 1 : 0);
+}
+function equippedHands(c) {
+	const held = (c.adventure?.inventory || []).filter((i) => handCost(i) > 0);
+	return {
+		held,
+		used: held.reduce((n, i) => n + handCost(i), 0),
+		free: Math.max(0, 2 - held.reduce((n, i) => n + handCost(i), 0))
+	};
+}
+function checkEquipmentCapacity(items) {
+	const held = items.filter((i) => i.quantity > 0 && i.equipped);
+	if (held.reduce((n, i) => n + handCost(i), 0) > 2) throw new Error("Заняты обе руки. Уберите оружие, щит или фокусировку, прежде чем брать новый предмет.");
+	if (held.filter((i) => isShieldItem(i)).length > 1) throw new Error("Нельзя использовать два щита одновременно.");
+	if (held.filter((i) => !isShieldItem(i) && !!catalogItemFor(i.catalogName || i.name)?.armor).length > 1) throw new Error("Можно носить только один комплект доспехов.");
+}
+function prepareStartingEquipment(items) {
+	const best = items.filter((i) => !!catalogItemFor(i.catalogName || i.name)?.armor).sort((a, b) => (catalogItemFor(b.catalogName || b.name)?.armor?.base || 0) - (catalogItemFor(a.catalogName || a.name)?.armor?.base || 0))[0];
+	if (best) best.equipped = true;
+	const shield = items.find(isShieldItem);
+	if (shield) shield.equipped = true;
+	const handsLeft = shield ? 1 : 2;
+	const weapon = items.find((i) => itemCategory(i) === "weapon" && (i.hands || 1) <= handsLeft);
+	const focus = items.find((i) => itemCategory(i) === "focus" && (i.hands || 1) <= handsLeft);
+	if (weapon) weapon.equipped = true;
+	if (!weapon && focus) focus.equipped = true;
+	if ((weapon ? handCost(weapon) : focus ? handCost(focus) : 0) + (shield ? 1 : 0) < 2) {
+		const extra = items.find((i) => !i.equipped && itemCategory(i) === "weapon" && handCost({
+			...i,
+			equipped: true
+		}) <= 1);
+		if (extra) extra.equipped = true;
+	}
+	return items;
+}
+function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
+	const c = structuredClone(source);
+	delete c.adventure;
+	if (c.homebrew) {
+		const library = c.homebrew.entities || [];
+		const ids = new Set([
+			...activeHomebrew(c).map((e) => e.id),
+			...c.feats || [],
+			...(c.advancements || []).map((e) => e.featId),
+			...c.spells
+		]);
+		const frozen = /* @__PURE__ */ new Map();
+		for (const root of library.filter((e) => ids.has(e.id))) for (const entry of homebrewExportClosure(root, library)) frozen.set(entry.id, entry);
+		c.homebrew = {
+			...c.homebrew,
+			entities: [...frozen.values()]
+		};
+	}
+	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
+		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
+		const item = newPlayItem(match?.[1] || line);
+		item.category = itemCategory(item);
+		item.quantity = match ? integer(match[2], 1) : 1;
+		return item;
+	});
+	prepareStartingEquipment(inventory);
+	c.adventure = {
+		version: 1,
+		name: name.trim() || "Новое приключение",
+		sourceId,
+		sourceUpdatedAt,
+		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
+		status: "active",
+		inventory,
+		inventoryCatalogVersion: 2,
+		effects: [],
+		concentrationChecks: [],
+		conditions: [],
+		exhaustion: 0,
+		journal: [],
+		notes: "",
+		round: 1,
+		turn: {
+			action: false,
+			bonus: false,
+			reaction: false
+		},
+		attunementLimit: 3,
+		elapsedMinutes: 0
+	};
+	c.currentHitPoints ??= estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
+}
+function logPlay(c, text, result) {
+	if (!c.adventure) return c;
+	const entry = {
+		id: playId(),
+		at: (/* @__PURE__ */ new Date()).toISOString(),
+		text,
+		...result ? {
+			formula: result.formula,
+			rolls: result.rolls,
+			total: result.total,
+			natural: result.natural,
+			critical: result.critical
+		} : {}
+	};
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			journal: [entry, ...c.adventure.journal].slice(0, 150)
+		}
+	};
+}
+function playMaximum(c) {
+	return c.adventure?.hpMaximum ?? estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+}
+function inventoryText(items) {
+	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
+}
+function playDerived(c) {
+	const items = c.adventure?.inventory;
+	return {
+		...c,
+		abilities: finalAbilityScores(c),
+		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped && i.quantity > 0).map((i) => ({
+			...i,
+			name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, "")
+		}))) } : {}
+	};
+}
+function activeItem(i) {
+	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
+}
+function itemBonus(c, key) {
+	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+var itemCategoryLabels = {
+	weapon: "Оружие",
+	focus: "Фокусировки",
+	armor: "Доспехи",
+	consumable: "Расходники",
+	ammunition: "Боеприпасы",
+	gear: "Снаряжение"
+};
+function itemCategory(i) {
+	if (i.category && !(i.category === "gear" && catalogItemFor(i.catalogName || i.name)?.category !== "gear")) return i.category;
+	const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
+	if (ref) return ref.category;
+	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
+	if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return "ammunition";
+	if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return "weapon";
+	if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return "armor";
+	return "gear";
+}
+function consumePlayItem(c, id) {
+	const i = c.adventure?.inventory.find((i) => i.id === id);
+	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
+	if (i.quantity <= 0) throw new Error("Предмет закончился.");
+	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
+		...x,
+		quantity: x.quantity - 1
+	} : x)), `Использован предмет: ${i.name}`);
+}
+function spellItemBonus(c, key, classId) {
+	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+function weaponItemBonus(c, attackName, key) {
+	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
+	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
+	return values.length ? Math.max(...values) : 0;
+}
+/** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
+function upgradeLegacyInventory(c) {
+	if (!c.adventure || c.adventure.inventoryCatalogVersion === 2) return c;
+	const upgrade = (item) => {
+		const ref = catalogItemFor(item.catalogName || item.name);
+		if (!ref) return item;
+		return {
+			...item,
+			catalogName: item.catalogName || ref.name,
+			category: item.category === "gear" && ref.category !== "gear" ? ref.category : item.category || ref.category,
+			weight: item.weight === 0 && ref.weight > 0 ? ref.weight : item.weight,
+			hands: item.hands ?? ref.hands
+		};
+	};
+	const inventory = c.adventure.inventory.map(upgrade);
+	const wasLegacy = c.adventure.inventory.some((i) => i.equipped && i.weight === 0);
+	const corrected = inventory.map((i) => wasLegacy && (isHandTool(i.name) || itemCategory(i) === "gear") ? {
+		...i,
+		equipped: false
+	} : i);
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			inventory: corrected,
+			inventoryTrash: (c.adventure.inventoryTrash || []).map(upgrade),
+			inventoryCatalogVersion: 2
+		}
+	};
+}
+function updateInventory(c, items) {
+	if (!c.adventure) return {
+		...c,
+		inventoryOverride: inventoryText(items)
+	};
+	const inventory = items.filter((i) => i.quantity > 0);
+	if (inventory.some((i) => i.equipped && !c.adventure.inventory.find((old) => old.id === i.id)?.equipped)) checkEquipmentCapacity(inventory);
+	const activeIds = new Set(inventory.map((i) => i.id));
+	const removed = c.adventure.inventory.filter((i) => !items.some((next) => next.id === i.id));
+	const trash = new Map((c.adventure.inventoryTrash || []).map((i) => [i.id, i]));
+	for (const i of [...removed, ...items.filter((i) => i.quantity <= 0)]) trash.set(i.id, {
+		...i,
+		equipped: false,
+		attuned: false,
+		attunementPending: void 0
+	});
+	for (const id of activeIds) trash.delete(id);
+	return {
+		...c,
+		inventoryOverride: inventoryText(inventory),
+		adventure: {
+			...c.adventure,
+			inventory,
+			inventoryTrash: [...trash.values()]
+		}
+	};
+}
+function restorePlayItem(c, id) {
+	const item = c.adventure?.inventoryTrash?.find((i) => i.id === id);
+	if (!item) throw new Error("Предмет не найден в корзине.");
+	return logPlay(updateInventory(c, [...c.adventure.inventory, {
+		...item,
+		quantity: Math.max(1, item.quantity),
+		equipped: false,
+		attuned: false,
+		attunementPending: void 0
+	}]), `Возвращено из корзины: ${item.name}`);
+}
+function applyPlayDamage(c, amount, defense = "normal") {
+	if (!c.adventure) return c;
+	const raw = integer(amount);
+	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const temp = c.temporaryHitPoints || 0;
+	const lost = Math.max(0, damage - temp);
+	const nextHp = Math.max(0, hp - lost);
+	const conditions = [...c.adventure.conditions];
+	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
+	const checks = [...c.adventure.concentrationChecks];
+	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
+		const dc = Math.max(10, Math.floor(damage / 2));
+		checks.push({
+			id: playId(),
+			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
+			damage
+		});
+	}
+	let next = {
+		...c,
+		currentHitPoints: nextHp,
+		temporaryHitPoints: Math.max(0, temp - damage),
+		deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
+		deathSaveFailures: hp === 0 && damage > 0 ? Math.min(3, (c.deathSaveFailures || 0) + 1) : c.deathSaveFailures,
+		adventure: {
+			...c.adventure,
+			conditions,
+			concentrationChecks: nextHp === 0 ? [] : checks,
+			concentration: nextHp === 0 ? void 0 : c.adventure.concentration,
+			effects: nextHp === 0 ? c.adventure.effects.filter((e) => !e.concentration) : c.adventure.effects
+		}
+	};
+	next = logPlay(next, `Урон ${damage}${damage !== raw ? ` (исходный ${raw})` : ""}: HP ${hp} → ${nextHp}, временные ${temp} → ${Math.max(0, temp - damage)}.${lost >= hp + playMaximum(c) && damage > 0 ? " Массивный урон: проверьте мгновенную смерть с мастером." : ""}`);
+	return next;
+}
+function healPlay(c, amount) {
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
+	return logPlay({
+		...c,
+		currentHitPoints: nextHp,
+		...nextHp > 0 ? {
+			deathSaveSuccesses: 0,
+			deathSaveFailures: 0,
+			adventure: c.adventure ? {
+				...c.adventure,
+				conditions: c.adventure.conditions.filter((s) => s !== "Бессознателен")
+			} : void 0
+		} : {}
+	}, `Лечение: HP ${hp} → ${nextHp}`);
+}
+function endConcentration(c) {
+	if (!c.adventure) return c;
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			concentration: void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration)
+		}
+	};
+}
+function toggleCondition(c, name) {
+	if (!c.adventure) return c;
+	const removing = c.adventure.conditions.includes(name);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			conditions: removing ? c.adventure.conditions.filter((s) => s !== name) : [...c.adventure.conditions, name]
+		}
+	};
+	if (!removing && incapacitating.includes(name)) next = endConcentration(next);
+	return logPlay(next, `${removing ? "Снято" : "Добавлено"} состояние: ${name}`);
+}
+function queueAttunement(c, id) {
+	if (!c.adventure) return c;
+	const item = c.adventure.inventory.find((i) => i.id === id);
+	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
+	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
+	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
+	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
+	if (!item.attuned && !item.attunementPending && c.adventure.inventory.filter((i) => i.attuned || i.attunementPending === "start").length >= c.adventure.attunementLimit) throw new Error("Лимит настройки занят. Сначала завершите прекращение другой настройки.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
+		...i,
+		attunementPending: i.attunementPending ? void 0 : i.attuned ? "end" : "start"
+	} : i));
+}
+function finishAttunement(c) {
+	if (!c.adventure) return c;
+	if (c.adventure.inventory.filter((i) => i.attunementPending).length > 1) throw new Error("На один короткий отдых выберите только один предмет для настройки или её прекращения.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.attunementPending ? {
+		...i,
+		attuned: i.attunementPending === "start",
+		attunementPending: void 0
+	} : i));
+}
+function randomDie(sides) {
+	const limit = Math.floor(4294967296 / sides) * sides;
+	const values = new Uint32Array(1);
+	do
+		crypto.getRandomValues(values);
+	while (values[0] >= limit);
+	return values[0] % sides + 1;
+}
+/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
+function rollDice(formula, die = randomDie, critical = false) {
+	const value = formula.toLowerCase().replace(/к/g, "d").replace(/\s/g, "").replace(/\+\-/g, "-").replace(/--/g, "+");
+	if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error("Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.");
+	const rolls = [];
+	let total = 0;
+	for (const term of value.match(/[+-]?[^+-]+/g) || []) {
+		const sign = term.startsWith("-") ? -1 : 1;
+		const part = term.replace(/^[+-]/, "");
+		if (part.includes("d")) {
+			const [count, sides] = part.split("d").map(Number);
+			const n = (count || 1) * (critical ? 2 : 1);
+			if (count === 0 && part.startsWith("0") || n < 1 || n > 200 || sides < 2 || sides > 1e3 || rolls.length + n > 200) throw new Error("Слишком много костей или недопустимый размер кости.");
+			for (let i = 0; i < n; i++) {
+				const rolled = die(sides);
+				rolls.push(rolled);
+				total += sign * rolled;
+			}
+		} else {
+			const n = Number(part);
+			if (!Number.isSafeInteger(n) || n > 1e6) throw new Error("Слишком большой модификатор.");
+			total += sign * n;
+		}
+	}
+	return {
+		formula: critical ? `${formula} (крит: кости ×2)` : formula,
+		rolls,
+		total
+	};
+}
+function rollD20(bonus, mode = "normal", die = randomDie) {
+	const rolls = [die(20)];
+	if (mode !== "normal") rolls.push(die(20));
+	const natural = mode === "advantage" ? Math.max(...rolls) : mode === "disadvantage" ? Math.min(...rolls) : rolls[0];
+	return {
+		formula: `${mode === "normal" ? "1d20" : "2d20" + (mode === "advantage" ? " (лучший)" : " (худший)")}${bonus >= 0 ? "+" : ""}${bonus}`,
+		rolls,
+		total: natural + bonus,
+		natural,
+		critical: natural === 20
+	};
+}
+function applyDeathSave(c, natural) {
+	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
+	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
+	const succeeds = natural >= 10;
+	return logPlay({
+		...c,
+		deathSaveSuccesses: integer((c.deathSaveSuccesses || 0) + (succeeds ? 1 : 0), 0, 3),
+		deathSaveFailures: integer((c.deathSaveFailures || 0) + (succeeds ? 0 : natural === 1 ? 2 : 1), 0, 3)
+	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
+}
+function playHitDicePools(c) {
+	return orderedCharacterClasses(c).map((entry) => ({
+		classId: entry.classId,
+		die: classRuleFor(c, entry.classId)?.hitDie || 8,
+		max: entry.level,
+		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
+	}));
+}
+function durationMinutes(text) {
+	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
+	if (!match) return void 0;
+	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
+}
+function restPlay(c, kind, selectedDice = {}, die = randomDie) {
+	if (!c.adventure) return c;
+	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
+	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
+	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
+	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
+	const derived = playDerived(c);
+	const pools = playHitDicePools(c);
+	const spent = Object.fromEntries(pools.map((p) => [p.classId, p.spent]));
+	let healing = 0;
+	if (kind === "short") for (const pool of pools) {
+		const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
+		for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier$1(derived.abilities.con));
+		spent[pool.classId] += count;
+	}
+	if (kind === "long") {
+		let recover = c.rulesetId === "5e-2024" ? characterLevel(c) : Math.max(1, Math.floor(characterLevel(c) / 2));
+		for (const pool of pools) {
+			const n = Math.min(recover, spent[pool.classId]);
+			spent[pool.classId] -= n;
+			recover -= n;
+		}
+	}
+	const resources = kind === "long" ? spentResourcesAfterLongRest(derived) : { ...c.resourceSpent };
+	if (kind === "short") characterResources(derived).filter((r) => r.isShortRest).forEach((r) => {
+		resources[r.key] = 0;
+	});
+	let next = {
+		...c,
+		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
+		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
+		hitDiceSpentByClass: spent,
+		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
+		resourceSpent: resources,
+		spellSlotsUsed: kind === "long" ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived),
+		pactSlotsUsed: 0,
+		adventure: {
+			...c.adventure,
+			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
+			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
+			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
+				...r,
+				current: r.max
+			} : r),
+			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
+				...i,
+				charges: i.maxCharges
+			} : i),
+			concentration: keepConcentration ? {
+				...c.adventure.concentration,
+				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
+			} : void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - (kind === "long" ? 4800 : 600)
+			})
+		}
+	};
+	if (kind === "long") next = applySubclassLongRest(next);
+	if (kind === "short") next = finishAttunement(next);
+	if ((next.currentHitPoints || 0) > 0) next = {
+		...next,
+		deathSaveSuccesses: 0,
+		deathSaveFailures: 0,
+		adventure: {
+			...next.adventure,
+			conditions: next.adventure.conditions.filter((s) => s !== "Бессознателен")
+		}
+	};
+	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
+}
+function advancePlayTurn(c) {
+	if (!c.adventure) return c;
+	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			round: c.adventure.round + 1,
+			turn: {
+				action: false,
+				bonus: false,
+				reaction: false
+			},
+			effects: c.adventure.effects.filter((e) => !ended.includes(e)).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - 1
+			})
+		}
+	};
+	if (c.adventure.concentration?.remainingMinutes !== void 0) {
+		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
+		next.adventure.concentration = {
+			...c.adventure.concentration,
+			remainingMinutes
+		};
+		if (remainingMinutes < 1e-5) next = endConcentration(next);
+	}
+	if (ended.some((e) => e.concentration)) next = endConcentration(next);
+	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
+}
+//#endregion
 //#region app/armor.ts
 var modifier$2 = (score) => Math.floor((score - 10) / 2);
 function hasItem(items, pattern) {
@@ -26511,8 +27582,21 @@ function armorClassBreakdown(character) {
 	const dex = modifier$2(character.abilities.dex);
 	const con = modifier$2(character.abilities.con);
 	const wis = modifier$2(character.abilities.wis);
-	const shield = hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
-	const worn = [
+	const equipped = character.adventure?.inventory.filter((i) => i.equipped && i.quantity > 0);
+	const shield = equipped ? equipped.some(isShieldItem) : hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
+	const armors = [
+		{
+			pattern: /ст[её]ган(?:ый|ая) доспех/i,
+			ac: 11,
+			dex: "full",
+			name: "Стёганый доспех"
+		},
+		{
+			pattern: /колечн(?:ый|ая) доспех/i,
+			ac: 14,
+			dex: "none",
+			name: "Колечный доспех"
+		},
 		{
 			pattern: /полулаты/i,
 			ac: 15,
@@ -26579,40 +27663,65 @@ function armorClassBreakdown(character) {
 			dex: "full",
 			name: "Кожаный доспех"
 		}
-	].find((armor) => hasItem(items, armor.pattern));
+	];
+	const worn = equipped ? armors.find((armor) => equipped.some((i) => !isShieldItem(i) && hasItem([i.catalogName || i.name], armor.pattern))) : armors.find((armor) => hasItem(items, armor.pattern));
 	const mediumArmorMaster = hasFeat(character, "medium-armor-master");
 	let value = 10 + dex;
 	let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
 	let wearingArmor = false;
+	const candidates = [{
+		value,
+		base,
+		wearingArmor: false
+	}];
+	if (character.race === "tortle") candidates.push({
+		value: 17,
+		base: "Природный панцирь: 17",
+		wearingArmor: false
+	});
+	if (character.race === "lizardfolk") candidates.push({
+		value: 13 + dex,
+		base: "Природный доспех: 13 + Ловкость",
+		wearingArmor: false
+	});
+	if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({
+		value: 13 + dex,
+		base: "Драконья устойчивость: 13 + Ловкость",
+		wearingArmor: false
+	});
+	const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
+	if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) candidates.push({
+		value: 10 + dex + wis,
+		base: "Защита без доспехов монаха: 10 + Ловкость + Мудрость",
+		wearingArmor: false
+	});
+	if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) candidates.push({
+		value: 10 + dex + con,
+		base: "Защита без доспехов варвара: 10 + Ловкость + Телосложение",
+		wearingArmor: false
+	});
+	for (const row of hbEffects(character, "ac_formula")) candidates.push({
+		value: row.value,
+		base: `${row.source.name}: формула КД ${row.value}`,
+		wearingArmor: false
+	});
 	if (worn) {
 		const dexCap = mediumArmorMaster ? 3 : 2;
 		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
-		value = worn.ac + dexBonus;
-		base = `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`;
-		wearingArmor = true;
-	} else if (character.race === "tortle") {
-		value = 17;
-		base = "Природный панцирь: 17";
-	} else if (character.race === "lizardfolk") {
-		value = 13 + dex;
-		base = "Природный доспех: 13 + Ловкость";
-	} else if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") {
-		value = 13 + dex;
-		base = "Драконья устойчивость: 13 + Ловкость";
-	} else {
-		const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
-		if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) {
-			value = 10 + dex + wis;
-			base = "Защита без доспехов монаха: 10 + Ловкость + Мудрость";
-		} else if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) {
-			value = 10 + dex + con;
-			base = "Защита без доспехов варвара: 10 + Ловкость + Телосложение";
-		}
+		candidates.push({
+			value: worn.ac + dexBonus,
+			base: `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`,
+			wearingArmor: true
+		});
 	}
-	for (const row of hbEffects(character, "ac_formula")) if (row.value > value) {
-		value = row.value;
-		base = `${row.source.name}: формула КД ${row.value}`;
-	}
+	const stylesForSelection = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	const optimal = candidates.reduce((best, next) => {
+		const score = (candidate) => candidate.value + (candidate.wearingArmor && stylesForSelection.has("defense") ? 1 : 0) + (candidate.wearingArmor && character.race === "warforged" ? 1 : 0);
+		return score(next) > score(best) ? next : best;
+	});
+	value = optimal.value;
+	base = optimal.base;
+	wearingArmor = optimal.wearingArmor;
 	const bonuses = [];
 	if (shield) {
 		value += 2;
@@ -26630,7 +27739,7 @@ function armorClassBreakdown(character) {
 	const conditions = [];
 	if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
 	if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
-	if (!worn && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
+	if (!wearingArmor && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
 	if (character.spells.includes("shield")) conditions.push("Щит (заклинание): реакцией +5 КД до начала следующего хода.");
 	if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
 	if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
@@ -27989,666 +29098,6 @@ function otherSpellSources(character, catalog) {
 	return [...racial, ...saved.filter((entry) => !racial.some((race) => race.spell.id === entry.spell.id && race.source === entry.source))];
 }
 //#endregion
-//#region app/subclassRuntime.ts
-var O$1 = (id, name, description = "") => ({
-	id,
-	name,
-	description
-});
-var yesNo = [O$1("inactive", "Не активно"), O$1("active", "Активно")];
-var elements5 = [
-	O$1("acid", "Кислота"),
-	O$1("cold", "Холод"),
-	O$1("fire", "Огонь"),
-	O$1("lightning", "Электричество"),
-	O$1("poison", "Яд")
-];
-var giantElements = [
-	O$1("acid", "Кислота"),
-	O$1("cold", "Холод"),
-	O$1("fire", "Огонь"),
-	O$1("lightning", "Электричество"),
-	O$1("thunder", "Звук")
-];
-var skillsAndTools = [
-	...Object.keys(skillKeys),
-	...artisanTools,
-	...musicalInstruments,
-	...gamingSets
-].map((value) => O$1(value, value));
-var wildSurges = [
-	O$1("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
-	O$1("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
-	O$1("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
-	O$1("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
-	O$1("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
-	O$1("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
-	O$1("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
-	O$1("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
-];
-var spiritTales = Array.from({ length: 12 }, (_, index) => O$1(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
-function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
-	return {
-		classId,
-		subclassId,
-		minLevel,
-		key: `${classId}:${subclassId}:${key}`,
-		title,
-		description,
-		trigger,
-		options,
-		randomDie
-	};
-}
-var definitions = [
-	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
-	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
-		O$1("bite", "Укус"),
-		O$1("claws", "Когти"),
-		O$1("tail", "Хвост")
-	]),
-	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
-		O$1("swim", "Плавание и дыхание под водой"),
-		O$1("climb", "Лазание"),
-		O$1("jump", "Прыжок")
-	]),
-	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
-	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
-	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
-	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
-	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
-		O$1("inactive", "Нет двойника"),
-		O$1("1", "1 двойник"),
-		O$1("2", "2 двойника"),
-		O$1("3", "3 двойника"),
-		O$1("4", "4 двойника")
-	]),
-	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
-	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
-	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
-	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
-		O$1("0", "Нет эха"),
-		O$1("1", "1 эхо"),
-		O$1("2", "2 эха (только 18 уровень)")
-	]),
-	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
-		O$1("none", "Не проявлено"),
-		O$1("arms", "Руки"),
-		O$1("arms-visage", "Руки + облик"),
-		O$1("full", "Пробуждённое астральное тело")
-	]),
-	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O$1("cone", "Конус"), O$1("line", "Линия")]),
-	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O$1("resistance", "Стихийное сопротивление"), O$1("fear", "Пугающее присутствие")]),
-	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
-	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
-	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
-	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
-	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
-	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
-		O$1("1", "1 продолжительный отдых"),
-		O$1("2", "2 продолжительных отдыха"),
-		O$1("3", "3 продолжительных отдыха"),
-		O$1("4", "4 продолжительных отдыха")
-	], 4),
-	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
-	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
-		O$1("inactive", "Не активно"),
-		O$1("lighter", "Вес уменьшен вдвое"),
-		O$1("heavier", "Вес удвоен")
-	]),
-	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
-];
-function subclassRuntimeControls(character, spells = []) {
-	const classes = orderedCharacterClasses(character);
-	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
-		const entry = classes.find((item) => item.classId === control.classId);
-		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
-			...control,
-			options: control.options.filter((option) => option.id !== "2")
-		};
-		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
-			...control,
-			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
-		};
-		if (control.key === "monk:astral-self:astral-manifestation") {
-			const level = entry?.level || 0;
-			return {
-				...control,
-				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
-			};
-		}
-		return control;
-	});
-	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
-		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
-		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O$1(String(index + 1), String(index + 1))), void 0));
-		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O$1(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
-	}
-	return controls;
-}
-function subclassRuntimeValue(character, key) {
-	return character.subclassState?.[key];
-}
-function setSubclassRuntimeValue(character, key, value) {
-	return {
-		...character,
-		subclassState: {
-			...character.subclassState || {},
-			[key]: value
-		}
-	};
-}
-var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
-function necroticHuskCooldown(character) {
-	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
-}
-function applySubclassLongRest(character) {
-	const cooldown = necroticHuskCooldown(character);
-	const state = { ...character.subclassState || {} };
-	delete state["bard:spirits:spirit-session-spell"];
-	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
-	return {
-		...character,
-		subclassState: state
-	};
-}
-//#endregion
-//#region app/adventure.ts
-var playConditions = [
-	"Ослеплён",
-	"Очарован",
-	"Оглох",
-	"Испуган",
-	"Схвачен",
-	"Недееспособен",
-	"Невидим",
-	"Парализован",
-	"Окаменел",
-	"Отравлен",
-	"Сбит с ног",
-	"Опутан",
-	"Ошеломлён",
-	"Бессознателен"
-];
-var incapacitating = [
-	"Недееспособен",
-	"Парализован",
-	"Окаменел",
-	"Ошеломлён",
-	"Бессознателен"
-];
-var playId = () => crypto.randomUUID();
-var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
-function newPlayItem(name = "") {
-	return {
-		id: playId(),
-		name,
-		quantity: 1,
-		weight: 0,
-		equipped: false,
-		magical: false,
-		requiresAttunement: false,
-		attuned: false,
-		charges: 0,
-		maxCharges: 0,
-		recharge: "none",
-		notes: "",
-		container: "",
-		acBonus: 0,
-		attackBonus: 0,
-		damageBonus: 0
-	};
-}
-function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
-	const c = structuredClone(source);
-	delete c.adventure;
-	if (c.homebrew) {
-		const library = c.homebrew.entities || [];
-		const ids = new Set([
-			...activeHomebrew(c).map((e) => e.id),
-			...c.feats || [],
-			...(c.advancements || []).map((e) => e.featId),
-			...c.spells
-		]);
-		const frozen = /* @__PURE__ */ new Map();
-		for (const root of library.filter((e) => ids.has(e.id))) for (const entry of homebrewExportClosure(root, library)) frozen.set(entry.id, entry);
-		c.homebrew = {
-			...c.homebrew,
-			entities: [...frozen.values()]
-		};
-	}
-	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
-		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
-		const item = newPlayItem(match?.[1] || line);
-		item.category = itemCategory(item);
-		item.quantity = match ? integer(match[2], 1) : 1;
-		item.equipped = true;
-		return item;
-	});
-	c.adventure = {
-		version: 1,
-		name: name.trim() || "Новое приключение",
-		sourceId,
-		sourceUpdatedAt,
-		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
-		status: "active",
-		inventory,
-		effects: [],
-		concentrationChecks: [],
-		conditions: [],
-		exhaustion: 0,
-		journal: [],
-		notes: "",
-		round: 1,
-		turn: {
-			action: false,
-			bonus: false,
-			reaction: false
-		},
-		attunementLimit: 3,
-		elapsedMinutes: 0
-	};
-	c.currentHitPoints ??= estimatedHitPoints({
-		...c,
-		abilities: finalAbilityScores(c)
-	});
-	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
-}
-function logPlay(c, text, result) {
-	if (!c.adventure) return c;
-	const entry = {
-		id: playId(),
-		at: (/* @__PURE__ */ new Date()).toISOString(),
-		text,
-		...result ? {
-			formula: result.formula,
-			rolls: result.rolls,
-			total: result.total,
-			natural: result.natural,
-			critical: result.critical
-		} : {}
-	};
-	return {
-		...c,
-		adventure: {
-			...c.adventure,
-			journal: [entry, ...c.adventure.journal].slice(0, 150)
-		}
-	};
-}
-function playMaximum(c) {
-	return c.adventure?.hpMaximum ?? estimatedHitPoints({
-		...c,
-		abilities: finalAbilityScores(c)
-	});
-}
-function inventoryText(items) {
-	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
-}
-function playDerived(c) {
-	const items = c.adventure?.inventory;
-	return {
-		...c,
-		abilities: finalAbilityScores(c),
-		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped && i.quantity > 0).map((i) => ({
-			...i,
-			name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, "")
-		}))) } : {}
-	};
-}
-function activeItem(i) {
-	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
-}
-function itemBonus(c, key) {
-	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
-}
-var itemCategoryLabels = {
-	weapon: "Оружие",
-	focus: "Фокусировки",
-	armor: "Доспехи",
-	consumable: "Расходники",
-	ammunition: "Боеприпасы",
-	gear: "Снаряжение"
-};
-function itemCategory(i) {
-	if (i.category) return i.category;
-	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
-	if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return "ammunition";
-	if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return "weapon";
-	if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return "armor";
-	return "gear";
-}
-function consumePlayItem(c, id) {
-	const i = c.adventure?.inventory.find((i) => i.id === id);
-	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
-	if (i.quantity <= 0) throw new Error("Предмет закончился.");
-	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
-		...x,
-		quantity: x.quantity - 1
-	} : x)), `Использован предмет: ${i.name}`);
-}
-function spellItemBonus(c, key, classId) {
-	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
-}
-function weaponItemBonus(c, attackName, key) {
-	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
-	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
-	return values.length ? Math.max(...values) : 0;
-}
-function updateInventory(c, items) {
-	if (!c.adventure) return {
-		...c,
-		inventoryOverride: inventoryText(items)
-	};
-	const inventory = items.filter((i) => i.quantity > 0);
-	const activeIds = new Set(inventory.map((i) => i.id));
-	const removed = c.adventure.inventory.filter((i) => !items.some((next) => next.id === i.id));
-	const trash = new Map((c.adventure.inventoryTrash || []).map((i) => [i.id, i]));
-	for (const i of [...removed, ...items.filter((i) => i.quantity <= 0)]) trash.set(i.id, {
-		...i,
-		equipped: false,
-		attuned: false,
-		attunementPending: void 0
-	});
-	for (const id of activeIds) trash.delete(id);
-	return {
-		...c,
-		inventoryOverride: inventoryText(inventory),
-		adventure: {
-			...c.adventure,
-			inventory,
-			inventoryTrash: [...trash.values()]
-		}
-	};
-}
-function restorePlayItem(c, id) {
-	const item = c.adventure?.inventoryTrash?.find((i) => i.id === id);
-	if (!item) throw new Error("Предмет не найден в корзине.");
-	return logPlay(updateInventory(c, [...c.adventure.inventory, {
-		...item,
-		quantity: Math.max(1, item.quantity),
-		equipped: false,
-		attuned: false,
-		attunementPending: void 0
-	}]), `Возвращено из корзины: ${item.name}`);
-}
-function applyPlayDamage(c, amount, defense = "normal") {
-	if (!c.adventure) return c;
-	const raw = integer(amount);
-	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
-	const hp = c.currentHitPoints ?? playMaximum(c);
-	const temp = c.temporaryHitPoints || 0;
-	const lost = Math.max(0, damage - temp);
-	const nextHp = Math.max(0, hp - lost);
-	const conditions = [...c.adventure.conditions];
-	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
-	const checks = [...c.adventure.concentrationChecks];
-	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
-		const dc = Math.max(10, Math.floor(damage / 2));
-		checks.push({
-			id: playId(),
-			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
-			damage
-		});
-	}
-	let next = {
-		...c,
-		currentHitPoints: nextHp,
-		temporaryHitPoints: Math.max(0, temp - damage),
-		deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
-		deathSaveFailures: hp === 0 && damage > 0 ? Math.min(3, (c.deathSaveFailures || 0) + 1) : c.deathSaveFailures,
-		adventure: {
-			...c.adventure,
-			conditions,
-			concentrationChecks: nextHp === 0 ? [] : checks,
-			concentration: nextHp === 0 ? void 0 : c.adventure.concentration,
-			effects: nextHp === 0 ? c.adventure.effects.filter((e) => !e.concentration) : c.adventure.effects
-		}
-	};
-	next = logPlay(next, `Урон ${damage}${damage !== raw ? ` (исходный ${raw})` : ""}: HP ${hp} → ${nextHp}, временные ${temp} → ${Math.max(0, temp - damage)}.${lost >= hp + playMaximum(c) && damage > 0 ? " Массивный урон: проверьте мгновенную смерть с мастером." : ""}`);
-	return next;
-}
-function healPlay(c, amount) {
-	const hp = c.currentHitPoints ?? playMaximum(c);
-	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
-	return logPlay({
-		...c,
-		currentHitPoints: nextHp,
-		...nextHp > 0 ? {
-			deathSaveSuccesses: 0,
-			deathSaveFailures: 0,
-			adventure: c.adventure ? {
-				...c.adventure,
-				conditions: c.adventure.conditions.filter((s) => s !== "Бессознателен")
-			} : void 0
-		} : {}
-	}, `Лечение: HP ${hp} → ${nextHp}`);
-}
-function endConcentration(c) {
-	if (!c.adventure) return c;
-	return {
-		...c,
-		adventure: {
-			...c.adventure,
-			concentration: void 0,
-			concentrationChecks: [],
-			effects: c.adventure.effects.filter((e) => !e.concentration)
-		}
-	};
-}
-function toggleCondition(c, name) {
-	if (!c.adventure) return c;
-	const removing = c.adventure.conditions.includes(name);
-	let next = {
-		...c,
-		adventure: {
-			...c.adventure,
-			conditions: removing ? c.adventure.conditions.filter((s) => s !== name) : [...c.adventure.conditions, name]
-		}
-	};
-	if (!removing && incapacitating.includes(name)) next = endConcentration(next);
-	return logPlay(next, `${removing ? "Снято" : "Добавлено"} состояние: ${name}`);
-}
-function queueAttunement(c, id) {
-	if (!c.adventure) return c;
-	const item = c.adventure.inventory.find((i) => i.id === id);
-	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
-	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
-	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
-	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
-	if (!item.attuned && !item.attunementPending && c.adventure.inventory.filter((i) => i.attuned || i.attunementPending === "start").length >= c.adventure.attunementLimit) throw new Error("Лимит настройки занят. Сначала завершите прекращение другой настройки.");
-	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
-		...i,
-		attunementPending: i.attunementPending ? void 0 : i.attuned ? "end" : "start"
-	} : i));
-}
-function finishAttunement(c) {
-	if (!c.adventure) return c;
-	if (c.adventure.inventory.filter((i) => i.attunementPending).length > 1) throw new Error("На один короткий отдых выберите только один предмет для настройки или её прекращения.");
-	return updateInventory(c, c.adventure.inventory.map((i) => i.attunementPending ? {
-		...i,
-		attuned: i.attunementPending === "start",
-		attunementPending: void 0
-	} : i));
-}
-function randomDie(sides) {
-	const limit = Math.floor(4294967296 / sides) * sides;
-	const values = new Uint32Array(1);
-	do
-		crypto.getRandomValues(values);
-	while (values[0] >= limit);
-	return values[0] % sides + 1;
-}
-/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
-function rollDice(formula, die = randomDie, critical = false) {
-	const value = formula.toLowerCase().replace(/к/g, "d").replace(/\s/g, "").replace(/\+\-/g, "-").replace(/--/g, "+");
-	if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error("Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.");
-	const rolls = [];
-	let total = 0;
-	for (const term of value.match(/[+-]?[^+-]+/g) || []) {
-		const sign = term.startsWith("-") ? -1 : 1;
-		const part = term.replace(/^[+-]/, "");
-		if (part.includes("d")) {
-			const [count, sides] = part.split("d").map(Number);
-			const n = (count || 1) * (critical ? 2 : 1);
-			if (count === 0 && part.startsWith("0") || n < 1 || n > 200 || sides < 2 || sides > 1e3 || rolls.length + n > 200) throw new Error("Слишком много костей или недопустимый размер кости.");
-			for (let i = 0; i < n; i++) {
-				const rolled = die(sides);
-				rolls.push(rolled);
-				total += sign * rolled;
-			}
-		} else {
-			const n = Number(part);
-			if (!Number.isSafeInteger(n) || n > 1e6) throw new Error("Слишком большой модификатор.");
-			total += sign * n;
-		}
-	}
-	return {
-		formula: critical ? `${formula} (крит: кости ×2)` : formula,
-		rolls,
-		total
-	};
-}
-function rollD20(bonus, mode = "normal", die = randomDie) {
-	const rolls = [die(20)];
-	if (mode !== "normal") rolls.push(die(20));
-	const natural = mode === "advantage" ? Math.max(...rolls) : mode === "disadvantage" ? Math.min(...rolls) : rolls[0];
-	return {
-		formula: `${mode === "normal" ? "1d20" : "2d20" + (mode === "advantage" ? " (лучший)" : " (худший)")}${bonus >= 0 ? "+" : ""}${bonus}`,
-		rolls,
-		total: natural + bonus,
-		natural,
-		critical: natural === 20
-	};
-}
-function applyDeathSave(c, natural) {
-	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
-	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
-	const succeeds = natural >= 10;
-	return logPlay({
-		...c,
-		deathSaveSuccesses: integer((c.deathSaveSuccesses || 0) + (succeeds ? 1 : 0), 0, 3),
-		deathSaveFailures: integer((c.deathSaveFailures || 0) + (succeeds ? 0 : natural === 1 ? 2 : 1), 0, 3)
-	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
-}
-function playHitDicePools(c) {
-	return orderedCharacterClasses(c).map((entry) => ({
-		classId: entry.classId,
-		die: classRuleFor(c, entry.classId)?.hitDie || 8,
-		max: entry.level,
-		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
-	}));
-}
-function durationMinutes(text) {
-	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
-	if (!match) return void 0;
-	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
-}
-function restPlay(c, kind, selectedDice = {}, die = randomDie) {
-	if (!c.adventure) return c;
-	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
-	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
-	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
-	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
-	const derived = playDerived(c);
-	const pools = playHitDicePools(c);
-	const spent = Object.fromEntries(pools.map((p) => [p.classId, p.spent]));
-	let healing = 0;
-	if (kind === "short") for (const pool of pools) {
-		const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
-		for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier$1(derived.abilities.con));
-		spent[pool.classId] += count;
-	}
-	if (kind === "long") {
-		let recover = c.rulesetId === "5e-2024" ? characterLevel(c) : Math.max(1, Math.floor(characterLevel(c) / 2));
-		for (const pool of pools) {
-			const n = Math.min(recover, spent[pool.classId]);
-			spent[pool.classId] -= n;
-			recover -= n;
-		}
-	}
-	const resources = kind === "long" ? spentResourcesAfterLongRest(derived) : { ...c.resourceSpent };
-	if (kind === "short") characterResources(derived).filter((r) => r.isShortRest).forEach((r) => {
-		resources[r.key] = 0;
-	});
-	let next = {
-		...c,
-		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
-		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
-		hitDiceSpentByClass: spent,
-		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
-		resourceSpent: resources,
-		spellSlotsUsed: kind === "long" ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived),
-		pactSlotsUsed: 0,
-		adventure: {
-			...c.adventure,
-			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
-			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
-			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
-				...r,
-				current: r.max
-			} : r),
-			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
-				...i,
-				charges: i.maxCharges
-			} : i),
-			concentration: keepConcentration ? {
-				...c.adventure.concentration,
-				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
-			} : void 0,
-			concentrationChecks: [],
-			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
-				...e,
-				remaining: e.remaining - (kind === "long" ? 4800 : 600)
-			})
-		}
-	};
-	if (kind === "long") next = applySubclassLongRest(next);
-	if (kind === "short") next = finishAttunement(next);
-	if ((next.currentHitPoints || 0) > 0) next = {
-		...next,
-		deathSaveSuccesses: 0,
-		deathSaveFailures: 0,
-		adventure: {
-			...next.adventure,
-			conditions: next.adventure.conditions.filter((s) => s !== "Бессознателен")
-		}
-	};
-	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
-}
-function advancePlayTurn(c) {
-	if (!c.adventure) return c;
-	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
-	let next = {
-		...c,
-		adventure: {
-			...c.adventure,
-			round: c.adventure.round + 1,
-			turn: {
-				action: false,
-				bonus: false,
-				reaction: false
-			},
-			effects: c.adventure.effects.filter((e) => !ended.includes(e)).map((e) => e.remaining === void 0 ? e : {
-				...e,
-				remaining: e.remaining - 1
-			})
-		}
-	};
-	if (c.adventure.concentration?.remainingMinutes !== void 0) {
-		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
-		next.adventure.concentration = {
-			...c.adventure.concentration,
-			remainingMinutes
-		};
-		if (remainingMinutes < 1e-5) next = endConcentration(next);
-	}
-	if (ended.some((e) => e.concentration)) next = endConcentration(next);
-	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
-}
-//#endregion
 //#region app/healingPotions.ts
 var healingPotions = [
 	{
@@ -28762,6 +29211,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 	const items = c.adventure.inventory.filter((i) => i.quantity > 0);
 	const trash = c.adventure.inventoryTrash || [];
 	const [filter, setFilter] = useState("all"), [search, setSearch] = useState(""), [worn, setWorn] = useState(false), [draft, setDraft] = useState(), [error, setError] = useState("");
+	const [catalogOpen, setCatalogOpen] = useState(false), [catalogSearch, setCatalogSearch] = useState(""), [catalogCategory, setCatalogCategory] = useState("all");
 	const [coin, setCoin] = useState("gp"), [coinAmount, setCoinAmount] = useState(1);
 	const dialog = useRef(null);
 	useEffect(() => {
@@ -28818,8 +29268,12 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 					] })] }),
 					/* @__PURE__ */ jsx("button", {
 						className: "play-primary",
+						onClick: () => setCatalogOpen(!catalogOpen),
+						children: "+ Из каталога"
+					}),
+					/* @__PURE__ */ jsx("button", {
 						onClick: () => add(),
-						children: "+ Предмет"
+						children: "+ Свой предмет"
 					}),
 					/* @__PURE__ */ jsx("button", {
 						onClick: () => add("consumable"),
@@ -30087,6 +30541,20 @@ function SessionResources({ character: c, onChange }) {
 }
 //#endregion
 //#region app/spellCasting.ts
+function spellHandsWarning(c, spell) {
+	const parts = (spell.components || "").split(/[,;\s]+/).map((s) => s.toUpperCase().replace(/[^ВСМVSM]/g, ""));
+	const somatic = parts.includes("С") || parts.includes("S");
+	const material = parts.includes("М") || parts.includes("M");
+	if (!somatic && !material) return;
+	const hands = equippedHands(c);
+	const warCaster = (c.feats || []).includes("war-caster") || (c.advancements || []).some((a) => a.featId === "war-caster");
+	const focus = hands.held.some((i) => itemCategory(i) === "focus" || /священный символ|фокусировк/i.test(i.name));
+	const pouch = (c.adventure?.inventory || []).some((i) => i.quantity > 0 && /мешочек с компонентами/i.test(i.name));
+	if (material && !focus && hands.free === 0) return "Для материального компонента нужна свободная рука, фокусировка или доступный мешочек с компонентами. Сначала освободите руку.";
+	if (material && !focus && hands.free === 0) return "Нет руки для материального компонента.";
+	if (somatic && !warCaster && !(focus && material) && hands.free === 0) return "Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.";
+	if (material && !focus && !pouch) return "Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).";
+}
 function spellCastOptions(c, spell, classId = c.className) {
 	if (spell.level === 0) return [{
 		id: "cantrip",
@@ -30125,7 +30593,7 @@ function spellCastOptions(c, spell, classId = c.className) {
 	return options;
 }
 /** Cost, concentration, every attack and damage roll are one atomic character update. */
-function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal", die, manualFormula) {
+function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal", die, manualFormula, ignoreHands = false) {
 	if (!c.adventure) throw new Error("Откройте игровую копию героя.");
 	const method = spellCastOptions(c, spell, classId).find((x) => x.id === methodId);
 	if (!method) throw new Error("Выбранная ячейка или использование уже недоступны.");
@@ -30209,6 +30677,13 @@ var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
 function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
 	const a = c.adventure;
 	useEffect(() => {
+		if (a.inventoryCatalogVersion !== 2) onChange(upgradeLegacyInventory(c));
+	}, [
+		a.inventoryCatalogVersion,
+		c,
+		onChange
+	]);
+	useEffect(() => {
 		if (a.inventory.some((i) => i.quantity <= 0)) onChange(updateInventory(c, a.inventory));
 	}, [c, onChange]);
 	const [tab, setTab] = useState("actions");
@@ -30218,8 +30693,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [rollAdjustment, setRollAdjustment] = useState(0);
 	const [extraDice, setExtraDice] = useState("");
 	const [draftMode, setDraftMode] = useState("normal");
-	const [quickSearch, setQuickSearch] = useState("");
-	const quickSearchRef = useRef(null);
 	const [availableOnly, setAvailableOnly] = useState(false);
 	const [quickCheck, setQuickCheck] = useState("skill:Внимательность");
 	const [spellCircle, setSpellCircle] = useState("all");
@@ -30247,6 +30720,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
 	const [dice, setDice] = useState({});
+	const [ignoredHandWarnings, setIgnoredHandWarnings] = useState({});
 	const [castMethods, setCastMethods] = useState({});
 	const [castFormulas, setCastFormulas] = useState({});
 	const [showUnprepared, setShowUnprepared] = useState(false);
@@ -30310,16 +30784,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 			previous?.focus({ preventScroll: true });
 		};
 	}, [diceOpen]);
-	useEffect(() => {
-		const handler = (e) => {
-			if (e.key !== "/" || e.ctrlKey || e.metaKey || e.altKey || document.querySelector(".play-modal,dialog[open]") || diceOpen || e.target instanceof HTMLElement && (e.target.matches("input,textarea,select") || e.target.isContentEditable)) return;
-			e.preventDefault();
-			setTab("actions");
-			requestAnimationFrame(() => quickSearchRef.current?.focus());
-		};
-		document.addEventListener("keydown", handler);
-		return () => document.removeEventListener("keydown", handler);
-	}, [diceOpen]);
 	const d = playDerived(c);
 	const hp = c.currentHitPoints ?? playMaximum(c);
 	const max = playMaximum(c);
@@ -30349,7 +30813,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		...others,
 		...granted
 	].map((e) => [`${e.classId}:${e.spell.id}`, e])).values()];
-	const matches = (name, query = quickSearch) => name.toLocaleLowerCase("ru").replace(/ё/g, "е").includes(query.toLocaleLowerCase("ru").replace(/ё/g, "е"));
+	const matches = (name, query = "") => name.toLocaleLowerCase("ru").replace(/ё/g, "е").includes(query.toLocaleLowerCase("ru").replace(/ё/g, "е"));
 	const spellKey = (entry) => `spell:${entry.classId}:${entry.spell.id}`;
 	const isPinned = (key) => !!a.favoriteActions?.includes(key);
 	const togglePin = (key) => change({
@@ -30361,9 +30825,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	});
 	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0 || resolution?.spell.id === e.spell.id && resolution.classId === e.classId) && (!favoritesOnly || isPinned(spellKey(e))));
 	const hasPinnedSpells = readySpells.some((e) => isPinned(spellKey(e)));
-	const quickSpells = quickSearch || favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
+	const quickSpells = favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
 	const matchingItems = a.inventory.filter((i) => i.quantity > 0 && itemCategory(i) === "consumable" && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
-	const quickItems = quickSearch || favoritesOnly ? matchingItems : matchingItems.some((i) => isPinned(`item:${i.id}`)) ? matchingItems.filter((i) => isPinned(`item:${i.id}`)) : matchingItems.slice(0, 3);
+	const quickItems = favoritesOnly ? matchingItems : matchingItems.some((i) => isPinned(`item:${i.id}`)) ? matchingItems.filter((i) => isPinned(`item:${i.id}`)) : matchingItems.slice(0, 3);
 	const visibleAttacks = attacks.filter((x) => (x.kind === "weapon" || x.kind === "feature" || x.kind === "cantrip" && isPinned(x.id)) && matches(x.name) && (!favoritesOnly || isPinned(x.id))).sort((x, y) => Number(isPinned(y.id)) - Number(isPinned(x.id)));
 	const selectedCheck = quickCheck.startsWith("skill:") ? {
 		name: quickCheck.slice(6),
@@ -30424,7 +30888,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	}
 	function commitCast(spell, classId, method, formula) {
 		try {
-			const cast = castPlaySpell(c, spell, method, classId, mode, void 0, formula);
+			const cast = castPlaySpell(c, spell, method, classId, mode, void 0, formula, !!ignoredHandWarnings[`${classId}:${spell.id}`]);
 			onChange(commitPlayChange(c, cast.character));
 			setAttackResolution(void 0);
 			setResolution({
@@ -30479,6 +30943,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		const options = spellCastOptions(c, entry.spell, entry.classId);
 		const method = options.find((x) => x.id === castMethods[key])?.id || options[0]?.id || "";
 		const profile = spellPlayProfile(c, entry.spell, options.find((x) => x.id === method)?.level ?? entry.spell.level, entry.classId);
+		const handWarning = spellHandsWarning(c, entry.spell);
 		return /* @__PURE__ */ jsxs("article", {
 			className: "play-card play-spell-card",
 			children: [
@@ -30560,9 +31025,28 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					a.concentration.name,
 					"."
 				] }),
+				handWarning && /* @__PURE__ */ jsxs("div", {
+					className: "play-error",
+					role: "alert",
+					children: [
+						"⚠ ",
+						handWarning,
+						/* @__PURE__ */ jsxs("label", {
+							className: "play-check",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: !!ignoredHandWarnings[key],
+								onChange: (e) => setIgnoredHandWarnings((prev) => ({
+									...prev,
+									[key]: e.target.checked
+								}))
+							}), "Игнорировать предупреждение для этого заклинания"]
+						})
+					]
+				}),
 				/* @__PURE__ */ jsx("button", {
 					className: "play-primary",
-					disabled: !method || !entry.prepared && method !== "ritual",
+					disabled: !method || !entry.prepared && method !== "ritual" || !!handWarning && !ignoredHandWarnings[key],
 					onClick: () => commitCast(entry.spell, entry.classId, method, castFormulas[key]),
 					children: "Сотворить"
 				}),
@@ -31034,20 +31518,6 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 										})]
 									}),
 									/* @__PURE__ */ jsxs("div", {
-										className: "session-search",
-										children: [/* @__PURE__ */ jsx("input", {
-											ref: quickSearchRef,
-											"aria-label": "Поиск быстрых действий",
-											placeholder: "Атака, заклинание, зелье… · /",
-											value: quickSearch,
-											onChange: (e) => setQuickSearch(e.target.value)
-										}), /* @__PURE__ */ jsx("button", {
-											disabled: !quickSearch,
-											onClick: () => setQuickSearch(""),
-											children: "Очистить"
-										})]
-									}),
-									/* @__PURE__ */ jsxs("div", {
 										className: "play-row play-wrap",
 										children: [/* @__PURE__ */ jsxs("label", {
 											className: "play-check",
@@ -31173,11 +31643,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsx("h2", { children: "Атаки" }),
-									quickSearch && !visibleAttacks.length && !quickSpells.length && !quickItems.length && /* @__PURE__ */ jsx("p", { children: "Ничего не найдено. Измените поиск или снимите фильтры." }),
-									favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })
-								]
+								children: [/* @__PURE__ */ jsx("h2", { children: "Атаки" }), favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })]
 							}),
 							/* @__PURE__ */ jsx("div", {
 								className: "play-grid",
