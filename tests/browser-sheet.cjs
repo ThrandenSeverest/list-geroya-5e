@@ -272,7 +272,14 @@ async function saved(page) {
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.customResources?.some(r=>r.name==='Запас решимости'&&r.current===1)),key);
         await page.reload();await page.locator('.play-shell').waitFor();
         assert.equal(await page.locator('.session-quick .play-spell-card').filter({has:page.getByRole('heading',{name:'Огненный шар',exact:true})}).count(),1,'Pinned magic survives reload');
-        assert.equal(await page.getByRole('button',{name:'Атаковать',exact:true}).count()>0,true,'Attacks have an integrated action');
+        // Re-equip the rapier after somatic spell tests: an unequipped weapon
+        // must not appear in the integrated attack action list.
+        await page.getByRole('button',{name:'Рюкзак',exact:true}).click();
+        const savedRapier=page.locator('.inventory-item').filter({has:page.getByRole('heading',{name:'Рапира +1',exact:true})});
+        await savedRapier.getByRole('button',{name:'Надеть / взять',exact:true}).click();
+        await page.getByRole('button',{name:'Действия',exact:true}).click();
+        await page.getByRole('button',{name:'Атаковать',exact:true}).first().waitFor();
+        assert.equal(await page.getByRole('button',{name:'Атаковать',exact:true}).count()>0,true,'Equipped weapons have an integrated action');
         await page.getByRole('button',{name:'Атаковать',exact:true}).first().click();
         await page.getByRole('region',{name:'Результат атаки',exact:true}).waitFor();
         assert.match(await page.getByRole('region',{name:'Результат атаки',exact:true}).innerText(),/Попадание|Урон/);
