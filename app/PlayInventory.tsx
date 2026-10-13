@@ -7,6 +7,8 @@ import type { DiceResult, ItemCategory, PlayItem } from './adventure';
 import { orderedCharacterClasses } from './multiclass';
 import { classes } from './catalog';
 import { healingFormulaForItem } from './healingPotions';
+import { itemCatalog, currencyLabel, catalogItemFor } from './itemCatalog';
+import { equippedHands, handCost } from './adventure';
 import { useQuickItem } from './playActions';
 const categories=Object.keys(itemCategoryLabels) as ItemCategory[];
 const weaponNames=['Палица','Метательное копьё','Лёгкий молот','Духовая трубка','Длинное копьё','Моргенштерн','Скимитар','Трезубец','Боевая кирка','Цеп','Рапира','Кинжал','Длинный меч','Короткий меч','Двуручный меч','Ручной топор','Боевой топор','Секира','Боевой посох','Дубинка','Булава','Боевой молот','Копьё','Дротик','Длинный лук','Короткий лук','Лёгкий арбалет','Тяжёлый арбалет','Ручной арбалет','Глефа','Алебарда','Пика','Кнут','Серп','Праща'];
@@ -14,7 +16,8 @@ export function PlayInventory({character:c,onChange,onRoll}:{character:ExportCha
  const items=c.adventure!.inventory.filter(i=>i.quantity>0);
  const trash=c.adventure!.inventoryTrash||[];
  const [filter,setFilter]=useState('all'),[search,setSearch]=useState(''),[worn,setWorn]=useState(false),[draft,setDraft]=useState<PlayItem>(),[error,setError]=useState('');
- const [coin,setCoin]=useState<keyof Currency>('gp'),[coinAmount,setCoinAmount]=useState(1);
+ const [catalogOpen,setCatalogOpen]=useState(false),[catalogSearch,setCatalogSearch]=useState(''),[catalogCategory,setCatalogCategory]=useState('all');
+  const [coin,setCoin]=useState<keyof Currency>('gp'),[coinAmount,setCoinAmount]=useState(1);
  const dialog=useRef<HTMLDialogElement>(null);
  useEffect(()=>{if(draft)dialog.current?.showModal();else dialog.current?.close();},[!!draft]);
  function mutate(fn:()=>ExportCharacter){try{onChange(fn());setError('');}catch(e){setError((e as Error).message);}}
@@ -22,7 +25,7 @@ export function PlayInventory({character:c,onChange,onRoll}:{character:ExportCha
  function add(category:ItemCategory='gear'){setError('');setDraft({...newPlayItem(),category});}
  function money(sign:number){mutate(()=>{const value=(c.currency?.[coin]||0)+coinAmount*sign;if(value<0)throw new Error('Недостаточно монет.');return logPlay({...c,currency:{...c.currency,[coin]:value}},`${sign>0?'Получено':'Потрачено'} ${coinAmount} ${coin.toUpperCase()}`);});}
  return <>
- <section className="play-card"><div className="play-row play-wrap"><div><h2>Инвентарь</h2><small>Вес {items.reduce((n,i)=>n+i.quantity*i.weight,0).toFixed(1)} фунт. · Настройка {items.filter(i=>i.attuned).length}/{c.adventure!.attunementLimit}</small></div><button className="play-primary" onClick={()=>add()}>+ Предмет</button><button onClick={()=>add('consumable')}>+ Расходник</button></div><div className="inventory-filters"><input aria-label="Поиск предметов" placeholder="Найти предмет" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="Категория предметов" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Все предметы</option>{categories.map(key=><option key={key} value={key}>{itemCategoryLabels[key]}</option>)}</select><label className="play-check"><input type="checkbox" checked={worn} onChange={e=>setWorn(e.target.checked)}/>Только надетое</label></div></section>
+ <section className="play-card"><div className="play-row play-wrap"><div><h2>Инвентарь</h2><small>Вес {items.reduce((n,i)=>n+i.quantity*i.weight,0).toFixed(1)} фунт. · Настройка {items.filter(i=>i.attuned).length}/{c.adventure!.attunementLimit}</small></div><button className="play-primary" onClick={()=>setCatalogOpen(!catalogOpen)}>+ Из каталога</button><button onClick={()=>add()}>+ Свой предмет</button><button onClick={()=>add('consumable')}>+ Расходник</button></div><div className="inventory-filters"><input aria-label="Поиск предметов" placeholder="Найти предмет" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="Категория предметов" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Все предметы</option>{categories.map(key=><option key={key} value={key}>{itemCategoryLabels[key]}</option>)}</select><label className="play-check"><input type="checkbox" checked={worn} onChange={e=>setWorn(e.target.checked)}/>Только надетое</label></div></section>
  {error&&!draft&&<p className="play-error" role="alert">{error}</p>}
  {categories.filter(key=>filter==='all'||filter===key).map(key=>{
    const group=items.filter(i=>itemCategory(i)===key&&(!worn||i.equipped)&&i.name.toLowerCase().includes(search.toLowerCase()));
