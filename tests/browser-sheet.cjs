@@ -297,12 +297,18 @@ async function saved(page) {
         const sliderAfter=await saved(page),activeAfter=sliderAfter.slots.find(s=>s.id===sliderAfter.activeId).character;
         assert.equal(activeAfter.currentHitPoints,hpBefore-1);
         assert.equal(activeAfter.adventure.undo.length,Math.min(20,activeBefore.adventure.undo.length+1));
-        await page.getByRole('button',{name:'Добавить: Зелье лечения',exact:true}).click();
-        await page.getByRole('button',{name:'Выпить обычное',exact:true}).click();
+        // Add through inventory; the four quick potion buttons only consume stock.
+        await page.getByRole('button',{name:'Рюкзак',exact:true}).click();
+        await page.getByRole('button',{name:'+ Расходник',exact:true}).click();
+        await itemEditor.getByLabel('Название предмета',{exact:true}).fill('Зелье лечения');
+        await itemEditor.getByLabel('Формула лечения при выпивании',{exact:true}).fill('2d4+2');
+        await itemEditor.getByRole('button',{name:'Сохранить предмет',exact:true}).click();
+        await page.getByRole('button',{name:'Действия',exact:true}).click();
+        await page.getByRole('button',{name:'Выпить: Зелье лечения, 1 шт.',exact:true}).first().click();
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventoryTrash?.some(i=>i.name==='Зелье лечения'&&i.quantity===0)),key);
         const potionVault=await saved(page),potionHero=potionVault.slots.find(s=>s.id===potionVault.activeId).character;
         assert.ok(potionHero.currentHitPoints>activeAfter.currentHitPoints,'Potion restores HP automatically');
-        assert.equal(await page.getByRole('button',{name:'Выпить обычное',exact:true}).isDisabled(),true);
+        assert.equal(await page.getByRole('button',{name:'Выпить: Зелье лечения, 0 шт.',exact:true}).first().isDisabled(),true);
         await page.getByRole('button',{name:'Рюкзак',exact:true}).click();
         assert.equal(await page.locator('.inventory-item').filter({has:page.getByRole('heading',{name:'Зелье лечения',exact:true})}).count(),0);
         await page.locator('.inventory-trash > summary').click();
