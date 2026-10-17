@@ -29373,7 +29373,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 									/* @__PURE__ */ jsx(NumberSlider, {
 										label: `Количество: ${i.name}`,
 										min: 0,
-										max: Math.max(100, i.quantity),
+										max: Math.max(20, i.quantity),
 										value: i.quantity,
 										onChange: (value) => modify(i, { quantity: integer(value) }, `Количество: ${i.name} — ${integer(value)}`)
 									}),
@@ -29709,14 +29709,14 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 								"Максимум зарядов",
 								"Бонус КД"
 							][i],
-							min: key === "acBonus" ? -100 : 0,
+							min: key === "acBonus" ? -5 : 0,
 							step: key === "weight" ? .1 : 1,
 							value: draft[key],
 							onChange: (value) => setDraft({
 								...draft,
 								[key]: key === "weight" ? Math.max(0, Number(value) || 0) : integer(value, key === "acBonus" ? -100 : 0)
 							}),
-							max: 100
+							max: key === "acBonus" ? 5 : key === "weight" ? 50 : 20
 						})] }, key))
 					}),
 					/* @__PURE__ */ jsxs("fieldset", {
@@ -29922,7 +29922,7 @@ function DiceTray({ rolls, onRoll }) {
 			/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("span", {
 				className: "eyebrow",
 				children: "Броски"
-			}), /* @__PURE__ */ jsx("h2", { children: "Кубы всегда под рукой" })] }),
+			}), /* @__PURE__ */ jsx("h2", { children: "Кубы" })] }),
 			/* @__PURE__ */ jsx("div", {
 				className: "dice-types",
 				children: [
@@ -29946,15 +29946,15 @@ function DiceTray({ rolls, onRoll }) {
 				children: [/* @__PURE__ */ jsxs("label", { children: ["Количество кубов", /* @__PURE__ */ jsx(NumberSlider, {
 					label: "Количество кубов",
 					min: 1,
-					max: 100,
+					max: 20,
 					value: count,
-					onChange: (value) => setCount(integer(value, 1, 100))
+					onChange: (value) => setCount(integer(value, 1, 20))
 				})] }), /* @__PURE__ */ jsxs("label", { children: ["Модификатор", /* @__PURE__ */ jsx(NumberSlider, {
 					label: "Модификатор",
-					min: -1e4,
-					max: 1e4,
+					min: -20,
+					max: 20,
 					value: modifier,
-					onChange: (value) => setModifier(integer(value, -1e4, 1e4))
+					onChange: (value) => setModifier(integer(value, -100, 100))
 				})] })]
 			}),
 			/* @__PURE__ */ jsxs("button", {
@@ -30302,48 +30302,38 @@ function HealingPotions({ character: c, onChange, onRoll }) {
 		"aria-label": "Автоматические зелья лечения",
 		children: healingPotions.map((p) => {
 			const items = c.adventure.inventory.filter((i) => potionPreset(i)?.id === p.id), count = items.reduce((n, i) => n + i.quantity, 0);
-			return /* @__PURE__ */ jsxs("div", {
-				className: "potion-tile",
+			return /* @__PURE__ */ jsxs("button", {
+				className: "potion-button",
+				type: "button",
+				disabled: count <= 0,
+				title: `${p.name}: ${p.formula}. В наличии: ${count}`,
+				"aria-label": `Выпить: ${p.name}, ${count} шт.`,
+				onClick: () => {
+					const item = items.find((i) => i.quantity > 0);
+					if (!item) return;
+					const action = useQuickItem(c, item.id);
+					onChange(action.character);
+					if (action.roll) onRoll(p.name, action.roll);
+				},
 				children: [
-					/* @__PURE__ */ jsxs("span", { children: [
-						/* @__PURE__ */ jsx("b", { children: p.label }),
-						" · ",
-						p.formula,
-						" · ",
-						count,
-						" шт."
-					] }),
-					/* @__PURE__ */ jsxs("button", {
-						type: "button",
-						className: "play-primary",
-						disabled: count <= 0,
-						onClick: () => {
-							const item = items.find((i) => i.quantity > 0);
-							if (!item) return;
-							const action = useQuickItem(c, item.id);
-							onChange(action.character);
-							if (action.roll) onRoll(p.name, action.roll);
-						},
-						children: ["Выпить ", p.label.toLocaleLowerCase("ru")]
+					/* @__PURE__ */ jsxs("svg", {
+						width: 20 + healingPotions.indexOf(p) * 3,
+						height: "32",
+						viewBox: "0 0 32 40",
+						"aria-hidden": "true",
+						children: [/* @__PURE__ */ jsx("path", {
+							d: "M11 2h10v5h-2v7l9 13c5 9-3 11-12 11S-1 36 4 27l9-13V7h-2Z",
+							fill: "none",
+							stroke: "currentColor",
+							strokeWidth: "2"
+						}), /* @__PURE__ */ jsx("path", {
+							d: "M7 26h18M16 27v8M12 31h8",
+							stroke: "currentColor",
+							strokeWidth: "2"
+						})]
 					}),
-					/* @__PURE__ */ jsx("button", {
-						type: "button",
-						"aria-label": `Добавить: ${p.name}`,
-						onClick: () => {
-							const item = items[0];
-							onChange(logPlay(updateInventory(c, item ? c.adventure.inventory.map((i) => i.id === item.id ? {
-								...i,
-								quantity: i.quantity + 1
-							} : i) : [...c.adventure.inventory, {
-								...newPlayItem(p.name),
-								category: "consumable",
-								magical: true,
-								weight: .5,
-								healingFormula: p.formula
-							}]), `Добавлено: ${p.name}`));
-						},
-						children: "+ Добавить зелье"
-					})
+					/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: p.label }), /* @__PURE__ */ jsx("small", { children: p.formula })] }),
+					/* @__PURE__ */ jsxs("strong", { children: ["×", count] })
 				]
 			}, p.id);
 		})
@@ -30508,7 +30498,7 @@ function SessionResources({ character: c, onChange }) {
 					/* @__PURE__ */ jsxs("label", { children: ["Максимум ресурса", /* @__PURE__ */ jsx(NumberSlider, {
 						label: "Максимум ресурса",
 						min: 1,
-						max: 1e4,
+						max: 20,
 						value: maximum,
 						onChange: (value) => setMaximum(integer(value, 1, 1e4))
 					})] }),
@@ -30716,6 +30706,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [diceOpen, setDiceOpen] = useState(false);
 	const [mode, setMode] = useState("normal");
 	const [amount, setAmount] = useState(1);
+	const [concentrationDamage, setConcentrationDamage] = useState(0);
 	const [defense, setDefense] = useState("normal");
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
@@ -30826,7 +30817,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0 || resolution?.spell.id === e.spell.id && resolution.classId === e.classId) && (!favoritesOnly || isPinned(spellKey(e))));
 	const hasPinnedSpells = readySpells.some((e) => isPinned(spellKey(e)));
 	const quickSpells = favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
-	const matchingItems = a.inventory.filter((i) => i.quantity > 0 && itemCategory(i) === "consumable" && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
+	const matchingItems = a.inventory.filter((i) => i.quantity > 0 && itemCategory(i) === "consumable" && !healingFormulaForItem(i) && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
 	const quickItems = favoritesOnly ? matchingItems : matchingItems.some((i) => isPinned(`item:${i.id}`)) ? matchingItems.filter((i) => isPinned(`item:${i.id}`)) : matchingItems.slice(0, 3);
 	const visibleAttacks = attacks.filter((x) => (x.kind === "weapon" || x.kind === "feature" || x.kind === "cantrip" && isPinned(x.id)) && matches(x.name) && (!favoritesOnly || isPinned(x.id))).sort((x, y) => Number(isPinned(y.id)) - Number(isPinned(x.id)));
 	const selectedCheck = quickCheck.startsWith("skill:") ? {
@@ -31124,12 +31115,50 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 					/* @__PURE__ */ jsxs("div", {
 						className: "play-concentration",
 						children: [
-							/* @__PURE__ */ jsx("small", { children: "Концентрация" }),
-							/* @__PURE__ */ jsx("strong", { children: a.concentration?.name || "Нет" }),
-							a.concentration && /* @__PURE__ */ jsx("button", {
-								onClick: () => change(logPlay(endConcentration(c), "Концентрация прекращена")),
-								children: "Прекратить"
-							})
+							/* @__PURE__ */ jsx("small", { children: "Состояния и эффекты" }),
+							/* @__PURE__ */ jsxs("div", {
+								className: "active-effects",
+								children: [
+									a.concentration && /* @__PURE__ */ jsxs("button", {
+										title: "Прекратить концентрацию",
+										onClick: () => change(logPlay(endConcentration(c), "Концентрация прекращена")),
+										children: [
+											"◎ ",
+											a.concentration.name,
+											" ×"
+										]
+									}),
+									a.conditions.map((name) => /* @__PURE__ */ jsxs("button", {
+										onClick: () => change(toggleCondition(c, name)),
+										"aria-label": `Снять состояние: ${name}`,
+										children: [name, " ×"]
+									}, name)),
+									a.effects.map((effect) => /* @__PURE__ */ jsxs("button", {
+										onClick: () => change({
+											...c,
+											adventure: {
+												...a,
+												effects: a.effects.filter((x) => x.id !== effect.id)
+											}
+										}),
+										"aria-label": `Снять эффект: ${effect.name}`,
+										children: [
+											effect.name,
+											effect.remaining ? ` · ${effect.remaining} х.` : "",
+											" ×"
+										]
+									}, effect.id)),
+									a.exhaustion > 0 && /* @__PURE__ */ jsxs("span", { children: ["Истощение ", a.exhaustion] }),
+									!a.concentration && !a.conditions.length && !a.effects.length && !a.exhaustion && /* @__PURE__ */ jsx("small", { children: "Нет активных состояний" })
+								]
+							}),
+							/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Добавить состояние" }), /* @__PURE__ */ jsx("div", {
+								className: "active-effects",
+								children: [...playConditions, "Ярость"].filter((name) => !a.conditions.includes(name)).map((name) => /* @__PURE__ */ jsx("button", {
+									onClick: () => change(toggleCondition(c, name)),
+									children: name
+								}, name))
+							})] })
 						]
 					})
 				]
@@ -31264,8 +31293,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 						})] }),
 						/* @__PURE__ */ jsxs("label", { children: ["Разовая поправка", /* @__PURE__ */ jsx(NumberSlider, {
 							label: "Разовая поправка",
-							min: -1e3,
-							max: 1e3,
+							min: -20,
+							max: 20,
 							value: rollAdjustment,
 							onChange: (value) => setRollAdjustment(Number(value))
 						})] }),
@@ -31488,15 +31517,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								]
 							})]
 						}),
-						a.conditions.length > 0 && /* @__PURE__ */ jsx("div", {
-							className: "session-condition-strip",
-							children: a.conditions.map((name) => /* @__PURE__ */ jsxs("button", {
-								"aria-label": `Снять состояние: ${name}`,
-								onClick: () => change(toggleCondition(c, name)),
-								children: [name, " ×"]
-							}, name))
-						}),
 						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsx("section", {
+								className: "quick-potions",
+								"aria-label": "Зелья лечения",
+								children: /* @__PURE__ */ jsx(HealingPotions, {
+									character: c,
+									onChange: change,
+									onRoll: presentRoll
+								})
+							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card session-command",
 								children: [
@@ -31642,7 +31672,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								]
 							}),
 							/* @__PURE__ */ jsxs("section", {
-								className: "play-card",
+								className: "play-section-heading",
 								children: [/* @__PURE__ */ jsx("h2", { children: "Атаки" }), favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })]
 							}),
 							/* @__PURE__ */ jsx("div", {
@@ -31781,6 +31811,45 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 						] }),
 						tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("section", {
+								className: "play-card concentration-save",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "Проверка концентрации" }),
+									/* @__PURE__ */ jsxs("div", {
+										className: "play-row play-wrap",
+										children: [/* @__PURE__ */ jsxs("label", { children: ["Полученный урон", /* @__PURE__ */ jsx("input", {
+											"aria-label": "Урон для проверки концентрации",
+											type: "text",
+											inputMode: "numeric",
+											value: concentrationDamage,
+											onChange: (e) => setConcentrationDamage(integer(e.target.value, 0))
+										})] }), /* @__PURE__ */ jsxs("button", {
+											disabled: !a.concentration,
+											onClick: () => change((prev) => {
+												const dc = Math.max(10, Math.floor(concentrationDamage / 2));
+												const r = rollD20(saveBonus("con"), mode);
+												presentRoll("Концентрация", r);
+												const pending = prev.adventure.concentrationChecks.find((x) => x.damage === concentrationDamage);
+												const resolved = {
+													...prev,
+													adventure: {
+														...prev.adventure,
+														concentrationChecks: prev.adventure.concentrationChecks.filter((x) => x.id !== pending?.id)
+													}
+												};
+												return logPlay(r.total >= dc ? resolved : endConcentration(resolved), `Концентрация: ${r.total >= dc ? "сохранена" : "прервана"}, Сл ${dc}`, r);
+											}),
+											children: [
+												"Телосложение ",
+												sign(saveBonus("con")),
+												" · Сл ",
+												Math.max(10, Math.floor(concentrationDamage / 2))
+											]
+										})]
+									}),
+									/* @__PURE__ */ jsxs("small", { children: [a.concentration ? `Концентрация: ${a.concentration.name}` : "Нет активной концентрации", " · Сл = половина урона с округлением вниз, минимум 10. HP не изменяются."] })
+								]
+							}),
+							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
 								children: [/* @__PURE__ */ jsx("h2", { children: "Ячейки" }), /* @__PURE__ */ jsxs("div", {
 									className: "play-row play-wrap",
@@ -31878,7 +31947,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 								})]
 							}),
 							/* @__PURE__ */ jsxs("div", {
-								className: "play-row play-wrap",
+								className: "play-row play-wrap spell-filters",
 								children: [
 									/* @__PURE__ */ jsx("input", {
 										"aria-label": "Поиск заклинаний",
@@ -32087,7 +32156,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 												min: 0,
 												value: effectRounds,
 												onChange: (value) => setEffectRounds(integer(value)),
-												max: 100
+												max: 10
 											})] }),
 											/* @__PURE__ */ jsx("button", {
 												disabled: !effectName.trim(),
@@ -32149,10 +32218,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 														hpMaximum: integer(value, 1)
 													}
 												}),
-												max: 100
+												max: Math.max(200, max)
 											})] }),
 											/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx(NumberSlider, {
 												label: "КД вручную",
+												min: 5,
 												value: a.acOverride ?? "",
 												onChange: (value) => change({
 													...c,
@@ -32161,7 +32231,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 														acOverride: value === "" ? void 0 : integer(value)
 													}
 												}),
-												max: 100
+												max: 30
 											})] }),
 											/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx(NumberSlider, {
 												label: "Текущие HP вручную",
