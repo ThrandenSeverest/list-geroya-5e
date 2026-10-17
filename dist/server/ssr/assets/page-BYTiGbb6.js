@@ -39,59 +39,63 @@ function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
 	});
 }
 //#endregion
-//#region app/NumberSlider.tsx
-/** The track previews while dragging; pointer/key release commits one change. Exact entry has no spinner. */
-function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) {
-	const [preview, setPreview] = useState();
-	const pending = useRef(void 0);
-	useEffect(() => {
-		if (pending.current === void 0) setPreview(void 0);
-	}, [value]);
-	function commit() {
-		const next = pending.current;
-		if (next === void 0) return;
-		pending.current = void 0;
-		setPreview(void 0);
-		if (Number(next) !== Number(value)) onChange(next);
-	}
-	const display = preview ?? String(value);
-	return /* @__PURE__ */ jsxs("span", {
-		className: "number-slider",
-		children: [/* @__PURE__ */ jsx("input", {
-			"aria-label": `${label}: ползунок`,
-			type: "range",
-			min,
-			max: Math.max(min, max),
-			step,
-			value: Math.min(Math.max(min, Number(display) || 0), Math.max(min, max)),
-			onChange: (e) => {
-				pending.current = e.target.value;
-				setPreview(e.target.value);
-			},
-			onPointerDown: (e) => e.currentTarget.setPointerCapture(e.pointerId),
-			onPointerUp: commit,
-			onPointerCancel: () => {
-				pending.current = void 0;
-				setPreview(void 0);
-			},
-			onKeyUp: commit,
-			onBlur: () => {
-				commit();
-				setPreview(void 0);
-			}
-		}), /* @__PURE__ */ jsx("input", {
-			"aria-label": label,
-			type: "text",
-			inputMode: step < 1 ? "decimal" : "numeric",
-			value: display,
-			onChange: (e) => {
-				pending.current = void 0;
-				const next = step < 1 ? e.target.value.replace(",", ".") : e.target.value;
-				setPreview(next);
-				if (next.trim() === "" || Number.isFinite(Number(next))) onChange(next);
-			}
-		})]
-	});
+//#region app/campaignRestrictions.ts
+var featureAliases = {
+	"выбранное оружие": "выделенное оружие",
+	"атака, наделённая ци": "атака, подпитанная ци",
+	"фокусировка на цели": "сосредоточенное прицеливание",
+	"универсальность воина": "воинская универсальность",
+	"многогранность воина": "воинская универсальность",
+	"природная завеса": "покров природы",
+	"точное прицеливание": "верный прицел",
+	"направление божественной силы": "праведное восстановление"
+};
+var optionalFeatureId = (classId, name) => {
+	const clean = name.toLowerCase().replace(/ё/g, "е").replace(/\s*\(tco?e\)/g, "").trim();
+	return `${classId}:${Object.fromEntries(Object.entries(featureAliases).map(([key, value]) => [key.replace(/ё/g, "е"), value.replace(/ё/g, "е")]))[clean] || clean}`;
+};
+var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
+function optionalFeatureAllowed(character, classId, name) {
+	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
+}
+var choiceFeatures = {
+	"tce-primal-knowledge": "Первобытное знание",
+	"tce-dedicated-weapon": "Выделенное оружие (TCE)",
+	"tce-favored-foe": "Предпочтительный противник",
+	"tce-deft-explorer": "Искусный исследователь",
+	"tce-deft-explorer-skill": "Искусный исследователь",
+	"tce-primal-awareness": "Изначальная осведомлённость",
+	"tce-natures-veil": "Покров природы",
+	"tce-blessed-strikes": "Благословлённые удары"
+};
+function optionalChoiceAllowed(character, key) {
+	const name = choiceFeatures[key];
+	return !name || optionalFeatureAllowed(character, character.className, name);
+}
+/** A derived view: restrictions never erase a saved character's choices. */
+function restrictedCharacter(character) {
+	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return optionalChoiceAllowed({
+			...character,
+			className: classId
+		}, localKey);
+	}).map(([key, ids]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
+	}));
+	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
+		const classId = key.includes(":") ? key.split(":")[0] : character.className;
+		return Object.entries(choicesFor(classId, { [key]: ids }));
+	}));
+	return {
+		...character,
+		classChoices,
+		classes: character.classes?.map((entry) => ({
+			...entry,
+			choiceValues: choicesFor(entry.classId, entry.choiceValues)
+		}))
+	};
 }
 //#endregion
 //#region app/documentBackgrounds.ts
@@ -23823,877 +23827,6 @@ function homebrewExportWarning(c) {
 	return entries.length ? "Внимание, персонаж содержит Homebrew:\n" + [...new Set(entries)].join("\n") + "\n\nПолная поддержка пользовательских правил доступна в HeroList при подключённой библиотеке Homebrew. LSS и Helpmate могут перенести только часть данных; автоматизация и таблицы могут не сохраниться. Продолжить экспорт?" : "";
 }
 //#endregion
-//#region app/spellPreparation.ts
-/** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
-function classPreparedSpellIds(character, classId) {
-	const explicit = character.preparedSpellsByClass?.[classId];
-	if (Array.isArray(explicit)) return [...new Set(explicit.filter((id) => typeof id === "string"))];
-	const entry = character.classes?.find((entry) => entry.classId === classId);
-	const ids = character.spellGrants?.length ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
-	const rule = spellSelectionRuleForClass(character, classId, entry?.level || character.level);
-	const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
-	if (rule.mode === "prepared" && !character.mobilePreparedConfigured) return leveled.slice(0, rule.prepared || leveled.length);
-	return (character.preparedSpells || []).filter((id) => ids.includes(id));
-}
-function migrateSpellPreparation(character) {
-	const classIds = character.classes?.length ? character.classes.map((entry) => entry.classId) : [character.className];
-	const preparedSpellsByClass = Object.fromEntries(classIds.filter(Boolean).map((id) => [id, classPreparedSpellIds(character, id)]));
-	return {
-		...character,
-		preparationVersion: 1,
-		preparedSpellsByClass,
-		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
-	};
-}
-function setClassPreparedSpells(character, classId, ids) {
-	const migrated = migrateSpellPreparation(character);
-	const preparedSpellsByClass = {
-		...migrated.preparedSpellsByClass,
-		[classId]: [...new Set(ids)]
-	};
-	return {
-		...migrated,
-		preparedSpellsByClass,
-		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
-	};
-}
-function preparedSpellIds(character) {
-	return migrateSpellPreparation(character).preparedSpells || [];
-}
-//#endregion
-//#region app/helpmateSpellMap.ts
-var verifiedHelpmateSpellIds = Object.freeze({
-	"absorb": "502",
-	"acid-splash": "13",
-	"aid": "236",
-	"alarm": "313",
-	"alter-self": "323",
-	"animate-dead": "35",
-	"animate-objects": "364",
-	"antimagic-field": "263",
-	"arcane-eye": "151",
-	"arcane-lock": "29",
-	"armoragathys": "59",
-	"arms-of-hadar": "305",
-	"aura-of-vitality": "3",
-	"bane": "254",
-	"banishment": "116",
-	"barkskin": "74",
-	"beacon-of-hope": "158",
-	"bestow-curse": "285",
-	"bless": "9",
-	"blight": "96",
-	"blindness-deafness": "45",
-	"blink": "161",
-	"blur": "295",
-	"booming": "TCoE_1",
-	"branding-smite": "131",
-	"burning-hands": "203",
-	"call-lightning": "272",
-	"calm-emotions": "102",
-	"catapult": "472",
-	"ceremony": "541",
-	"chain-lightning": "233",
-	"charm-person": "221",
-	"chill-touch": "140",
-	"chromatic-orb": "86",
-	"circle-of-power": "135",
-	"clairvoyance": "238",
-	"cloud-of-daggers": "190",
-	"cloudkill": "191",
-	"command": "276",
-	"commune": "198",
-	"comprehend-languages": "252",
-	"coneofcold": "133",
-	"confusion": "325",
-	"conjure-animals": "267",
-	"conjure-barrage": "268",
-	"conjure-elemental": "275",
-	"conjure-minor-elementals": "271",
-	"contagion": "92",
-	"counterspell": "132",
-	"crusaders-mantle": "156",
-	"curewounds": "145",
-	"darkness": "353",
-	"darkvision": "368",
-	"death-ward": "104",
-	"demiplane": "55",
-	"detect-thoughts": "196",
-	"detectmagic": "195",
-	"dimensiondoor": "228",
-	"disguise-self": "157",
-	"disintegrate": "299",
-	"dispel-magic": "301",
-	"dissonant-whispers": "56",
-	"divination": "266",
-	"divine-favor": "10",
-	"divine-word": "12",
-	"dominate-beast": "239",
-	"dominate-monster": "241",
-	"dominate-person": "240",
-	"eldritch": "168",
-	"elemental-weapon": "339",
-	"enhanceability": "103",
-	"ensnaring-strike": "212",
-	"entangle": "211",
-	"etherealness": "64",
-	"faerie-fire": "207",
-	"false-life": "287",
-	"fear": "109",
-	"feather-fall": "223",
-	"find-steed": "246",
-	"findfamiliar": "248",
-	"finger-of-death": "229",
-	"fire-shield": "206",
-	"fireball": "205",
-	"firebolt": "204",
-	"flame-strike": "181",
-	"flaming-sphere": "289",
-	"fly": "249",
-	"fog-cloud": "351",
-	"forcecage": "107",
-	"foresight": "264",
-	"freedom-of-movement": "308",
-	"gaseous-form": "41",
-	"gate": "36",
-	"gentle-repose": "186",
-	"globe-invulnerability": "342",
-	"glyph-of-warding": "219",
-	"goodberry": "78",
-	"grease": "315",
-	"greaterinvisibility": "38",
-	"greaterrestoration": "39",
-	"greenflame": "TCoE_2",
-	"guardian-of-faith": "340",
-	"guidance": "105",
-	"guiding-bolt": "178",
-	"hail-of-thorns": "50",
-	"haste": "100",
-	"heal": "250",
-	"healing-spirit": "471",
-	"healingword": "144",
-	"heat-metal": "298",
-	"heroes-feast": "230",
-	"heroism": "42",
-	"hex": "312",
-	"hold-monster": "110",
-	"holdperson": "356",
-	"holy-aura": "6",
-	"hunters-mark": "164",
-	"hypnotic-pattern": "44",
-	"ice-storm": "49",
-	"identify": "210",
-	"inflict-wounds": "177",
-	"invisibility": "183",
-	"leomunds-tiny-hut": "143",
-	"lesser-restoration": "155",
-	"levitate": "139",
-	"light": "307",
-	"lightningbolt": "175",
-	"longstrider": "316",
-	"mage-armor": "60",
-	"mage-hand": "26",
-	"magic-missile": "27",
-	"magic-weapon": "153",
-	"major-image": "197",
-	"mass-cure-wounds": "171",
-	"mass-heal": "172",
-	"mass-healing-word": "170",
-	"masssuggestion": "169",
-	"maze": "138",
-	"melfs-acid-arrow": "159",
-	"mending": "258",
-	"message": "331",
-	"meteor": "163",
-	"mind-sliver": "TCoE_4",
-	"mindwhip": "TCoE_9",
-	"minorillusion": "154",
-	"mirror-image": "218",
-	"mistystep": "352",
-	"moonbeam": "146",
-	"nondetection": "185",
-	"pass": "8",
-	"phantasmal-force": "31",
-	"planeShift": "95",
-	"plant-growth": "304",
-	"polymorph": "260",
-	"power-word-kill": "322",
-	"powerstun": "321",
-	"prayer-of-healing": "173",
-	"prestidigitation": "91",
-	"produce-flame": "336",
-	"protection-evil-good": "99",
-	"protection-from-energy": "106",
-	"raise-dead": "208",
-	"ray-of-enfeeblement": "148",
-	"ray-of-frost": "149",
-	"ray-of-sickness": "147",
-	"resurrection": "33",
-	"revivify": "24",
-	"rope-trick": "350",
-	"sacred-flame": "311",
-	"sanctuary": "354",
-	"scorching-ray": "225",
-	"scrying": "176",
-	"searing-smite": "224",
-	"see-invisibility": "20",
-	"sending": "256",
-	"shadow-blade": "532",
-	"shadowmoil": "491",
-	"shape-water": "539",
-	"shapechange": "251",
-	"shatter": "62",
-	"shield": "70",
-	"shield-of-faith": "69",
-	"shocking-grasp": "66",
-	"silence": "349",
-	"simulacrum": "237",
-	"sleep": "98",
-	"sleet-storm": "162",
-	"slow": "83",
-	"spare-the-dying": "94",
-	"speak-with-animals": "292",
-	"speak-with-dead": "293",
-	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
-	"spell-doc-aganazzar_s_scorcher": "495",
-	"spell-doc-animal_friendship": "72",
-	"spell-doc-animal_messenger": "259",
-	"spell-doc-animal_shapes": "261",
-	"spell-doc-antilife_shell": "262",
-	"spell-doc-antipathy_sympathy": "2",
-	"spell-doc-arcane_gate": "150",
-	"spell-doc-astral_projection": "284",
-	"spell-doc-augury": "40",
-	"spell-doc-aura_of_life": "4",
-	"spell-doc-aura_of_purity": "5",
-	"spell-doc-awaken": "282",
-	"spell-doc-banishing_smite": "117",
-	"spell-doc-beast_bond": "464",
-	"spell-doc-beast_sense": "76",
-	"spell-doc-bigby_s_hand": "57",
-	"spell-doc-blade_barrier": "338",
-	"spell-doc-blade_of_disaster": "TCoE_22",
-	"spell-doc-blade_ward": "101",
-	"spell-doc-blinding_smite": "213",
-	"spell-doc-bones_of_the_earth": "475",
-	"spell-doc-catnap": "459",
-	"spell-doc-cause_fear": "455",
-	"spell-doc-chaos_bolt": "525",
-	"spell-doc-charm_monster": "494",
-	"spell-doc-circle_of_death": "136",
-	"spell-doc-clone": "54",
-	"spell-doc-color_spray": "306",
-	"spell-doc-commune_with_nature": "199",
-	"spell-doc-compelled_duel": "37",
-	"spell-doc-compulsion": "278",
-	"spell-doc-conjure_celestial": "273",
-	"spell-doc-conjure_fey": "274",
-	"spell-doc-conjure_volley": "269",
-	"spell-doc-conjure_woodland_beings": "270",
-	"spell-doc-contact_other_plane": "309",
-	"spell-doc-contingency": "265",
-	"spell-doc-continual_flame": "18",
-	"spell-doc-control_flames": "450",
-	"spell-doc-control_water": "21",
-	"spell-doc-control_weather": "22",
-	"spell-doc-control_winds": "449",
-	"spell-doc-cordon_of_arrows": "81",
-	"spell-doc-create_bonfire": "528",
-	"spell-doc-create_food_and_water": "335",
-	"spell-doc-create_homunculus": "527",
-	"spell-doc-create_or_destroy_water": "333",
-	"spell-doc-create_undead": "334",
-	"spell-doc-creation": "366",
-	"spell-doc-crown_of_madness": "134",
-	"spell-doc-crown_of_stars": "474",
-	"spell-doc-dancing_lights": "234",
-	"spell-doc-danse_macabre": "501",
-	"spell-doc-dawn": "517",
-	"spell-doc-daylight": "58",
-	"spell-doc-delayed_blast_fireball": "87",
-	"spell-doc-destructive_wave": "296",
-	"spell-doc-detect_evil_and_good": "194",
-	"spell-doc-detect_poison_and_disease": "193",
-	"spell-doc-dispel_evil_and_good": "300",
-	"spell-doc-dragon_s_breath": "461",
-	"spell-doc-drawmij_s_instant_summons": "68",
-	"spell-doc-dream": "19",
-	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
-	"spell-doc-druid_grove": "518",
-	"spell-doc-druidcraft": "123",
-	"spell-doc-dust_devil": "514",
-	"spell-doc-earth_tremor": "460",
-	"spell-doc-earthbind": "537",
-	"spell-doc-earthquake": "111",
-	"spell-doc-elemental_bane": "510",
-	"spell-doc-enemies_abound": "467",
-	"spell-doc-enervation": "486",
-	"spell-doc-enlarge_reduce": "355",
-	"spell-doc-enthrall": "303",
-	"spell-doc-erupting_earth": "466",
-	"spell-doc-evard_s_black_tentacles": "67",
-	"spell-doc-expeditious_retreat": "257",
-	"spell-doc-eyebite": "297",
-	"spell-doc-fabricate": "118",
-	"spell-doc-far_step": "458",
-	"spell-doc-feeblemind": "317",
-	"spell-doc-feign_death": "280",
-	"spell-doc-find_greater_steed": "504",
-	"spell-doc-find_the_path": "245",
-	"spell-doc-find_traps": "243",
-	"spell-doc-fire_storm": "201",
-	"spell-doc-flame_arrows": "513",
-	"spell-doc-flame_blade": "48",
-	"spell-doc-flesh_to_stone": "209",
-	"spell-doc-forbiddance": "89",
-	"spell-doc-friends": "71",
-	"spell-doc-frostbite": "492",
-	"spell-doc-geas": "189",
-	"spell-doc-giant_insect": "43",
-	"spell-doc-glibness": "179",
-	"spell-doc-grasping_vine": "85",
-	"spell-doc-guardian_of_nature": "530",
-	"spell-doc-guards_and_wards": "341",
-	"spell-doc-gust": "542",
-	"spell-doc-gust_of_wind": "255",
-	"spell-doc-hallow": "310",
-	"spell-doc-hallucinatory_terrain": "167",
-	"spell-doc-harm": "253",
-	"spell-doc-hellish_rebuke": "1",
-	"spell-doc-holy_weapon": "519",
-	"spell-doc-hunger_of_hadar": "47",
-	"spell-doc-ice_knife": "477",
-	"spell-doc-illusory_dragon": "468",
-	"spell-doc-illusory_script": "182",
-	"spell-doc-immolation": "470",
-	"spell-doc-imprisonment": "97",
-	"spell-doc-incendiary_cloud": "34",
-	"spell-doc-infernal_calling": "469",
-	"spell-doc-infestation": "483",
-	"spell-doc-insect_plague": "180",
-	"spell-doc-intellect_fortress": "TCoE_10",
-	"spell-doc-investiture_of_flame": "490",
-	"spell-doc-investiture_of_ice": "489",
-	"spell-doc-investiture_of_stone": "488",
-	"spell-doc-investiture_of_wind": "487",
-	"spell-doc-invulnerability": "485",
-	"spell-doc-jump": "286",
-	"spell-doc-knock": "217",
-	"spell-doc-legend_lore": "115",
-	"spell-doc-leomund_s_secret_chest": "142",
-	"spell-doc-life_transference": "498",
-	"spell-doc-lightning_arrow": "174",
-	"spell-doc-lightning_lure": "TCoE_3",
-	"spell-doc-locate_animals_or_plants": "242",
-	"spell-doc-locate_creature": "247",
-	"spell-doc-locate_object": "244",
-	"spell-doc-maddening_darkness": "493",
-	"spell-doc-maelstrom": "451",
-	"spell-doc-magic_circle": "152",
-	"spell-doc-magic_jar": "30",
-	"spell-doc-magic_mouth": "28",
-	"spell-doc-magic_stone": "454",
-	"spell-doc-mass_polymorph": "481",
-	"spell-doc-maximilian_s_earthen_grasp": "465",
-	"spell-doc-meld_into_stone": "318",
-	"spell-doc-melf_s_minute_meteors": "479",
-	"spell-doc-mental_prison": "480",
-	"spell-doc-mighty_fortress": "482",
-	"spell-doc-mind_blank": "328",
-	"spell-doc-mind_spike": "511",
-	"spell-doc-mirage_arcane": "343",
-	"spell-doc-mislead": "93",
-	"spell-doc-modify_memory": "119",
-	"spell-doc-mold_earth": "478",
-	"spell-doc-mordenkainen_s_faithful_hound": "17",
-	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
-	"spell-doc-mordenkainen_s_private_sanctum": "128",
-	"spell-doc-mordenkainen_s_sword": "166",
-	"spell-doc-move_earth": "53",
-	"spell-doc-negative_energy_flood": "505",
-	"spell-doc-nystul_s_magic_aura": "188",
-	"spell-doc-otiluke_s_freezing_sphere": "215",
-	"spell-doc-otiluke_s_resilient_sphere": "216",
-	"spell-doc-otto_s_irresistible_dance": "187",
-	"spell-doc-passwall": "327",
-	"spell-doc-phantasmal_killer": "32",
-	"spell-doc-phantom_steed": "279",
-	"spell-doc-planar_ally": "232",
-	"spell-doc-planar_binding": "231",
-	"spell-doc-poison_spray": "63",
-	"spell-doc-power_word_heal": "320",
-	"spell-doc-power_word_pain": "522",
-	"spell-doc-primal_savagery": "496",
-	"spell-doc-primordial_ward": "497",
-	"spell-doc-prismatic_spray": "291",
-	"spell-doc-prismatic_wall": "290",
-	"spell-doc-programmed_illusion": "82",
-	"spell-doc-project_image": "283",
-	"spell-doc-protection_from_poison": "108",
-	"spell-doc-psychic_scream": "512",
-	"spell-doc-purify_food_and_drink": "222",
-	"spell-doc-pyrotechnics": "500",
-	"spell-doc-rary_s_telepathic_bond": "160",
-	"spell-doc-regenerate": "302",
-	"spell-doc-reincarnate": "365",
-	"spell-doc-remove_curse": "326",
-	"spell-doc-resistance": "332",
-	"spell-doc-reverse_gravity": "120",
-	"spell-doc-scatter": "516",
-	"spell-doc-seeming": "281",
-	"spell-doc-sequester": "122",
-	"spell-doc-shillelagh": "73",
-	"spell-doc-sickening_radiance": "448",
-	"spell-doc-silent_image": "7",
-	"spell-doc-skill_empowerment": "538",
-	"spell-doc-skywrite": "484",
-	"spell-doc-snare": "520",
-	"spell-doc-snilloc_s_snowball_swarm": "526",
-	"spell-doc-soul_cage": "473",
-	"spell-doc-speak_with_plants": "294",
-	"spell-doc-spider_climb": "226",
-	"spell-doc-spirit_shroud": "TCoE_11",
-	"spell-doc-staggering_smite": "200",
-	"spell-doc-stone_shape": "121",
-	"spell-doc-storm_of_vengeance": "51",
-	"spell-doc-storm_sphere": "531",
-	"spell-doc-summon_aberration": "TCoE_15",
-	"spell-doc-summon_beast": "TCoE_7",
-	"spell-doc-summon_celestial": "TCoE_18",
-	"spell-doc-summon_construct": "TCoE_16",
-	"spell-doc-summon_elemental": "TCoE_17",
-	"spell-doc-summon_fiend": "TCoE_19",
-	"spell-doc-summon_greater_demon": "507",
-	"spell-doc-summon_lesser_demons": "508",
-	"spell-doc-summon_shadowspawn": "TCoE_13",
-	"spell-doc-summon_undead": "TCoE_14",
-	"spell-doc-swift_quiver": "14",
-	"spell-doc-sword_burst": "TCoE_5",
-	"spell-doc-symbol": "114",
-	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
-	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
-	"spell-doc-telepathy": "345",
-	"spell-doc-teleportation_circle": "137",
-	"spell-doc-temple_of_the_gods": "540",
-	"spell-doc-tenser_s_floating_disk": "346",
-	"spell-doc-tenser_s_transformation": "533",
-	"spell-doc-thunder_step": "457",
-	"spell-doc-thunderclap": "515",
-	"spell-doc-thunderous_smite": "52",
-	"spell-doc-tidal_wave": "509",
-	"spell-doc-tiny_servant": "476",
-	"spell-doc-tongues": "61",
-	"spell-doc-transmute_rock": "506",
-	"spell-doc-transport_via_plants": "288",
-	"spell-doc-tree_stride": "65",
-	"spell-doc-true_polymorph": "127",
-	"spell-doc-true_strike": "165",
-	"spell-doc-tsunami": "84",
-	"spell-doc-unseen_servant": "184",
-	"spell-doc-vitriolic_sphere": "462",
-	"spell-doc-wall_of_ice": "141",
-	"spell-doc-wall_of_light": "529",
-	"spell-doc-wall_of_sand": "499",
-	"spell-doc-wall_of_stone": "130",
-	"spell-doc-wall_of_thorns": "347",
-	"spell-doc-wall_of_water": "452",
-	"spell-doc-warding_wind": "463",
-	"spell-doc-water_walk": "88",
-	"spell-doc-watery_sphere": "453",
-	"spell-doc-weird": "324",
-	"spell-doc-whirlwind": "524",
-	"spell-doc-wind_walk": "90",
-	"spell-doc-word_of_recall": "319",
-	"spell-doc-wrath_of_nature": "456",
-	"spell-doc-zephyr_strike": "534",
-	"spike-growth": "77",
-	"spiritguardians": "75",
-	"spiritual-weapon": "11",
-	"steelwind": "535",
-	"stinking-cloud": "113",
-	"stoneskin": "129",
-	"suggestion": "23",
-	"summonfey": "TCoE_12",
-	"sunbeam": "329",
-	"sunburst": "330",
-	"synaptic-static": "521",
-	"tashas-hideous-laughter": "79",
-	"telekinesis": "344",
-	"teleport": "367",
-	"thaumaturgy": "80",
-	"thorn-whip": "348",
-	"thunderwave": "25",
-	"time-stop": "214",
-	"toll-the-dead": "503",
-	"true-seeing": "126",
-	"trueResurrection": "125",
-	"vampiric-touch": "277",
-	"vicious": "112",
-	"wall-of-fire": "202",
-	"wallforce": "314",
-	"warding-bond": "220",
-	"water-breathing": "235",
-	"web": "227",
-	"wind-wall": "337",
-	"wish": "124",
-	"witch-bolt": "15",
-	"word-radiance": "523",
-	"wrathful-smite": "46",
-	"zone-of-truth": "192"
-});
-//#endregion
-//#region app/exportIds.ts
-/**
-* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
-* LSS text blocks also need a stable public URL for every selected spell.
-*/
-var dndSpellRefs = {
-	"acid-splash": ["13", "acid_splash"],
-	"chill-touch": ["140", "chill_touch"],
-	"firebolt": ["204", "fire_bolt"],
-	"guidance": ["105", "guidance"],
-	"minorillusion": ["154", "minor_illusion"],
-	"vicious": ["112", "vicious_mockery"],
-	"eldritch": ["168", "eldritch_blast"],
-	"booming": ["458", "booming_blade"],
-	"greenflame": ["459", "green_flame_blade"],
-	"absorb": ["401", "absorb_elements"],
-	"armoragathys": ["59", "armor_of_agathys"],
-	"bless": ["9", "bless"],
-	"curewounds": ["145", "cure_wounds"],
-	"detectmagic": ["195", "detect_magic"],
-	"findfamiliar": ["248", "find_familiar"],
-	"goodberry": ["78", "goodberry"],
-	"healingword": ["144", "healing_word"],
-	"hex": ["312", "hex"],
-	"shield": ["70", "shield"],
-	"silvery": ["3946", "silvery_barbs"],
-	"aid": ["236", "aid"],
-	"darkness": ["353", "darkness"],
-	"enhanceability": ["103", "enhance_ability"],
-	"holdperson": ["356", "hold_person"],
-	"levitate": ["139", "levitate"],
-	"mistystep": ["352", "misty_step"],
-	"pass": ["8", "pass_without_trace"],
-	"mindwhip": ["3053", "tasha_s_mind_whip"],
-	"counterspell": ["132", "counterspell"],
-	"fireball": ["205", "fireball"],
-	"fly": ["249", "fly"],
-	"haste": ["100", "haste"],
-	"lightningbolt": ["175", "lightning_bolt"],
-	"revivify": ["24", "revivify"],
-	"spiritguardians": ["75", "spirit_guardians"],
-	"summonfey": ["3070", "summon_fey"],
-	"banishment": ["116", "banishment"],
-	"dimensiondoor": ["228", "dimension_door"],
-	"greaterinvisibility": ["38", "greater_invisibility"],
-	"polymorph": ["260", "polymorph"],
-	"shadowmoil": ["478", "shadow_of_moil"],
-	"coneofcold": ["133", "cone_of_cold"],
-	"greaterrestoration": ["39", "greater_restoration"],
-	"steelwind": ["493", "steel_wind_strike"],
-	"wallforce": ["314", "wall_of_force"],
-	"heal": ["250", "heal"],
-	"masssuggestion": ["169", "mass_suggestion"],
-	"disintegrate": ["299", "disintegrate"],
-	"forcecage": ["107", "forcecage"],
-	"planeShift": ["95", "plane_shift"],
-	"draconic": ["3814", "draconic_transformation"],
-	"demiplane": ["55", "demiplane"],
-	"maze": ["138", "maze"],
-	"powerstun": ["321", "power_word_stun"],
-	"foresight": ["264", "foresight"],
-	"meteor": ["163", "meteor_swarm"],
-	"trueResurrection": ["125", "true_resurrection"],
-	"wish": ["124", "wish"],
-	"light": ["307", "light"],
-	"mage-hand": ["26", "mage_hand"],
-	"mending": ["258", "mending"],
-	"message": ["331", "message"],
-	"prestidigitation": ["91", "prestidigitation"],
-	"ray-of-frost": ["149", "ray_of_frost"],
-	"sacred-flame": ["311", "sacred_flame"],
-	"shocking-grasp": ["66", "shocking_grasp"],
-	"spare-the-dying": ["94", "spare_the_dying"],
-	"thaumaturgy": ["80", "thaumaturgy"],
-	"thorn-whip": ["348", "thorn_whip"],
-	"produce-flame": ["336", "produce_flame"],
-	"shape-water": ["414", "shape_water"],
-	"toll-the-dead": ["457", "toll_the_dead"],
-	"mind-sliver": ["3050", "mind_sliver"],
-	"word-radiance": ["455", "word_of_radiance"],
-	"alarm": ["313", "alarm"],
-	"bane": ["254", "bane"],
-	"burning-hands": ["203", "burning_hands"],
-	"charm-person": ["221", "charm_person"],
-	"chromatic-orb": ["86", "chromatic_orb"],
-	"command": ["276", "command"],
-	"comprehend-languages": ["252", "comprehend_languages"],
-	"disguise-self": ["157", "disguise_self"],
-	"dissonant-whispers": ["56", "dissonant_whispers"],
-	"divine-favor": ["10", "divine_favor"],
-	"ensnaring-strike": ["212", "ensnaring_strike"],
-	"entangle": ["211", "entangle"],
-	"faerie-fire": ["207", "faerie_fire"],
-	"false-life": ["287", "false_life"],
-	"feather-fall": ["223", "feather_fall"],
-	"fog-cloud": ["351", "fog_cloud"],
-	"grease": ["315", "grease"],
-	"hail-of-thorns": ["50", "hail_of_thorns"],
-	"heroism": ["42", "heroism"],
-	"hunters-mark": ["164", "hunter_s_mark"],
-	"identify": ["210", "identify"],
-	"inflict-wounds": ["177", "inflict_wounds"],
-	"longstrider": ["316", "longstrider"],
-	"mage-armor": ["60", "mage_armor"],
-	"magic-missile": ["27", "magic_missile"],
-	"protection-evil-good": ["99", "protection_from_evil_and_good"],
-	"sanctuary": ["354", "sanctuary"],
-	"sleep": ["98", "sleep"],
-	"speak-with-animals": ["292", "speak_with_animals"],
-	"thunderwave": ["25", "thunderwave"],
-	"witch-bolt": ["15", "witch_bolt"],
-	"ceremony": ["465", "ceremony"],
-	"catapult": ["386", "catapult"],
-	"alter-self": ["323", "alter_self"],
-	"arcane-lock": ["29", "arcane_lock"],
-	"barkskin": ["74", "barkskin"],
-	"blindness-deafness": ["45", "blindness_deafness"],
-	"blur": ["295", "blur"],
-	"branding-smite": ["131", "branding_smite"],
-	"calm-emotions": ["102", "calm_emotions"],
-	"cloud-of-daggers": ["190", "cloud_of_daggers"],
-	"darkvision": ["368", "darkvision"],
-	"find-steed": ["246", "find_steed"],
-	"flaming-sphere": ["289", "flaming_sphere"],
-	"heat-metal": ["298", "heat_metal"],
-	"invisibility": ["183", "invisibility"],
-	"lesser-restoration": ["155", "lesser_restoration"],
-	"magic-weapon": ["153", "magic_weapon"],
-	"moonbeam": ["146", "moonbeam"],
-	"prayer-of-healing": ["173", "prayer_of_healing"],
-	"scorching-ray": ["225", "scorching_ray"],
-	"see-invisibility": ["20", "see_invisibility"],
-	"shatter": ["62", "shatter"],
-	"silence": ["349", "silence"],
-	"spike-growth": ["77", "spike_growth"],
-	"spiritual-weapon": ["11", "spiritual_weapon"],
-	"suggestion": ["23", "suggestion"],
-	"web": ["227", "web"],
-	"shadow-blade": ["470", "shadow_blade"],
-	"healing-spirit": ["468", "healing_spirit"],
-	"animate-dead": ["35", "animate_dead"],
-	"beacon-of-hope": ["158", "beacon_of_hope"],
-	"bestow-curse": ["285", "bestow_curse"],
-	"call-lightning": ["272", "call_lightning"],
-	"clairvoyance": ["238", "clairvoyance"],
-	"conjure-animals": ["267", "conjure_animals"],
-	"dispel-magic": ["301", "dispel_magic"],
-	"fear": ["109", "fear"],
-	"glyph-of-warding": ["219", "glyph_of_warding"],
-	"hypnotic-pattern": ["44", "hypnotic_pattern"],
-	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
-	"major-image": ["197", "major_image"],
-	"mass-healing-word": ["170", "mass_healing_word"],
-	"plant-growth": ["304", "plant_growth"],
-	"protection-from-energy": ["106", "protection_from_energy"],
-	"sleet-storm": ["162", "sleet_storm"],
-	"slow": ["83", "slow"],
-	"speak-with-dead": ["293", "speak_with_dead"],
-	"water-breathing": ["235", "water_breathing"],
-	"crusaders-mantle": ["156", "crusader_s_mantle"],
-	"aura-of-vitality": ["3", "aura_of_vitality"],
-	"arcane-eye": ["151", "arcane_eye"],
-	"blight": ["96", "blight"],
-	"confusion": ["325", "confusion"],
-	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
-	"death-ward": ["104", "death_ward"],
-	"divination": ["266", "divination"],
-	"dominate-beast": ["239", "dominate_beast"],
-	"freedom-of-movement": ["308", "freedom_of_movement"],
-	"guardian-of-faith": ["340", "guardian_of_faith"],
-	"ice-storm": ["49", "ice_storm"],
-	"stoneskin": ["129", "stoneskin"],
-	"wall-of-fire": ["202", "wall_of_fire"],
-	"animate-objects": ["364", "animate_objects"],
-	"circle-of-power": ["135", "circle_of_power"],
-	"cloudkill": ["191", "cloudkill"],
-	"commune": ["198", "commune"],
-	"conjure-elemental": ["275", "conjure_elemental"],
-	"contagion": ["92", "contagion"],
-	"dominate-person": ["240", "dominate_person"],
-	"flame-strike": ["181", "flame_strike"],
-	"hold-monster": ["110", "hold_monster"],
-	"mass-cure-wounds": ["171", "mass_cure_wounds"],
-	"raise-dead": ["208", "raise_dead"],
-	"scrying": ["176", "scrying"],
-	"telekinesis": ["344", "telekinesis"],
-	"synaptic-static": ["491", "synaptic_static"],
-	"chain-lightning": ["233", "chain_lightning"],
-	"heroes-feast": ["230", "heroes_feast"],
-	"globe-invulnerability": ["342", "globe_of_invulnerability"],
-	"sunbeam": ["329", "sunbeam"],
-	"true-seeing": ["126", "true_seeing"],
-	"divine-word": ["12", "divine_word"],
-	"etherealness": ["64", "etherealness"],
-	"finger-of-death": ["229", "finger_of_death"],
-	"resurrection": ["33", "resurrection"],
-	"simulacrum": ["237", "simulacrum"],
-	"teleport": ["367", "teleport"],
-	"antimagic-field": ["263", "antimagic_field"],
-	"dominate-monster": ["241", "dominate_monster"],
-	"holy-aura": ["6", "holy_aura"],
-	"sunburst": ["330", "sunburst"],
-	"gate": ["36", "gate"],
-	"mass-heal": ["172", "mass_heal"],
-	"power-word-kill": ["322", "power_word_kill"],
-	"shapechange": ["251", "shapechange"],
-	"time-stop": ["214", "time_stop"],
-	"arms-of-hadar": ["305", "arms_of_hadar"],
-	"guiding-bolt": ["178", "guiding_bolt"],
-	"ray-of-sickness": ["147", "ray_of_sickness"],
-	"searing-smite": ["224", "searing_smite"],
-	"shield-of-faith": ["69", "shield_of_faith"],
-	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
-	"wrathful-smite": ["46", "wrathful_smite"],
-	"blink": ["161", "blink"],
-	"detect-thoughts": ["196", "detect_thoughts"],
-	"gentle-repose": ["186", "gentle_repose"],
-	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
-	"mirror-image": ["218", "mirror_image"],
-	"phantasmal-force": ["31", "phantasmal_force"],
-	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
-	"rope-trick": ["350", "rope_trick"],
-	"warding-bond": ["220", "warding_bond"],
-	"zone-of-truth": ["192", "zone_of_truth"],
-	"conjure-barrage": ["268", "conjure_barrage"],
-	"elemental-weapon": ["339", "elemental_weapon"],
-	"gaseous-form": ["41", "gaseous_form"],
-	"nondetection": ["185", "nondetection"],
-	"sending": ["256", "sending"],
-	"stinking-cloud": ["113", "stinking_cloud"],
-	"vampiric-touch": ["277", "vampiric_touch"],
-	"wind-wall": ["337", "wind_wall"],
-	"fire-shield": ["206", "fire_shield"]
-};
-var helpmateSpellIds = verifiedHelpmateSpellIds;
-function helpmateSpellId(id) {
-	return helpmateSpellIds[id] || null;
-}
-function dndSpellUrl(id) {
-	const reference = dndSpellRefs[id];
-	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
-	return documentSpells.find((spell) => spell.id === id)?.url || null;
-}
-var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
-var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
-var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
-	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
-	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
-})));
-/**
-* LSS uses the public dnd.su page as the stable source reference for a spell.
-* Accept absolute/relative links and ignore the mutable transliterated suffix:
-* the numeric dnd.su page id is the canonical part shared with our catalog.
-*/
-function spellIdFromDndUrl(value) {
-	if (typeof value !== "string") return null;
-	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
-	if (match) return spellIdByDndNumber[match[1]] || null;
-	try {
-		const parsed = new URL(value, "https://dnd.su");
-		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
-		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
-	} catch {
-		return null;
-	}
-}
-/**
-* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
-* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
-* URL-bearing card objects never need this fallback.
-*/
-var lssCardDndNumbers = Object.freeze({
-	"65d3c169f3d820fa1add429e": "140",
-	"65d3c168f3d820fa1add425f": "204",
-	"65d3c170f3d820fa1add4759": "258",
-	"65d3c16af3d820fa1add434d": "60",
-	"65d3c16df3d820fa1add45f4": "221",
-	"65d3c16af3d820fa1add437e": "98",
-	"65d3c172f3d820fa1add48b7": "183",
-	"65d3c16ef3d820fa1add465d": "103",
-	"65d3c16df3d820fa1add4561": "44",
-	"65d3c171f3d820fa1add47ec": "109"
-});
-function spellIdFromLssCardId(cardId) {
-	const number = lssCardDndNumbers[cardId];
-	return number ? spellIdByDndNumber[number] || null : null;
-}
-var lssCardIdBySpellId = Object.freeze(Object.fromEntries(Object.entries(lssCardDndNumbers).map(([cardId, number]) => [spellIdByDndNumber[number], cardId]).filter((entry) => Boolean(entry[0]))));
-/** Return a private LSS card id only when the mapping was verified by fixture. */
-function lssCardIdForSpellId(spellId) {
-	return lssCardIdBySpellId[spellId] || null;
-}
-//#endregion
-//#region app/campaignRestrictions.ts
-var featureAliases = {
-	"выбранное оружие": "выделенное оружие",
-	"атака, наделённая ци": "атака, подпитанная ци",
-	"фокусировка на цели": "сосредоточенное прицеливание",
-	"универсальность воина": "воинская универсальность",
-	"многогранность воина": "воинская универсальность",
-	"природная завеса": "покров природы",
-	"точное прицеливание": "верный прицел",
-	"направление божественной силы": "праведное восстановление"
-};
-var optionalFeatureId = (classId, name) => {
-	const clean = name.toLowerCase().replace(/ё/g, "е").replace(/\s*\(tco?e\)/g, "").trim();
-	return `${classId}:${Object.fromEntries(Object.entries(featureAliases).map(([key, value]) => [key.replace(/ё/g, "е"), value.replace(/ё/g, "е")]))[clean] || clean}`;
-};
-var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
-function optionalFeatureAllowed(character, classId, name) {
-	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
-}
-var choiceFeatures = {
-	"tce-primal-knowledge": "Первобытное знание",
-	"tce-dedicated-weapon": "Выделенное оружие (TCE)",
-	"tce-favored-foe": "Предпочтительный противник",
-	"tce-deft-explorer": "Искусный исследователь",
-	"tce-deft-explorer-skill": "Искусный исследователь",
-	"tce-primal-awareness": "Изначальная осведомлённость",
-	"tce-natures-veil": "Покров природы",
-	"tce-blessed-strikes": "Благословлённые удары"
-};
-function optionalChoiceAllowed(character, key) {
-	const name = choiceFeatures[key];
-	return !name || optionalFeatureAllowed(character, character.className, name);
-}
-/** A derived view: restrictions never erase a saved character's choices. */
-function restrictedCharacter(character) {
-	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
-		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
-		return optionalChoiceAllowed({
-			...character,
-			className: classId
-		}, localKey);
-	}).map(([key, ids]) => {
-		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
-		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
-	}));
-	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
-		const classId = key.includes(":") ? key.split(":")[0] : character.className;
-		return Object.entries(choicesFor(classId, { [key]: ids }));
-	}));
-	return {
-		...character,
-		classChoices,
-		classes: character.classes?.map((entry) => ({
-			...entry,
-			choiceValues: choicesFor(entry.classId, entry.choiceValues)
-		}))
-	};
-}
-//#endregion
 //#region app/racialSpellcasting.ts
 var S = (spellId, unlockLevel = 1, extra = {}) => ({
 	spellId,
@@ -25734,6 +24867,818 @@ function spentResourcesAfterLongRest(character) {
 	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
 }
 //#endregion
+//#region app/spellPreparation.ts
+/** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
+function classPreparedSpellIds(character, classId) {
+	const explicit = character.preparedSpellsByClass?.[classId];
+	if (Array.isArray(explicit)) return [...new Set(explicit.filter((id) => typeof id === "string"))];
+	const entry = character.classes?.find((entry) => entry.classId === classId);
+	const ids = character.spellGrants?.length ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
+	const rule = spellSelectionRuleForClass(character, classId, entry?.level || character.level);
+	const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
+	if (rule.mode === "prepared" && !character.mobilePreparedConfigured) return leveled.slice(0, rule.prepared || leveled.length);
+	return (character.preparedSpells || []).filter((id) => ids.includes(id));
+}
+function migrateSpellPreparation(character) {
+	const classIds = character.classes?.length ? character.classes.map((entry) => entry.classId) : [character.className];
+	const preparedSpellsByClass = Object.fromEntries(classIds.filter(Boolean).map((id) => [id, classPreparedSpellIds(character, id)]));
+	return {
+		...character,
+		preparationVersion: 1,
+		preparedSpellsByClass,
+		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
+	};
+}
+function setClassPreparedSpells(character, classId, ids) {
+	const migrated = migrateSpellPreparation(character);
+	const preparedSpellsByClass = {
+		...migrated.preparedSpellsByClass,
+		[classId]: [...new Set(ids)]
+	};
+	return {
+		...migrated,
+		preparedSpellsByClass,
+		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
+	};
+}
+function preparedSpellIds(character) {
+	return migrateSpellPreparation(character).preparedSpells || [];
+}
+//#endregion
+//#region app/helpmateSpellMap.ts
+var verifiedHelpmateSpellIds = Object.freeze({
+	"absorb": "502",
+	"acid-splash": "13",
+	"aid": "236",
+	"alarm": "313",
+	"alter-self": "323",
+	"animate-dead": "35",
+	"animate-objects": "364",
+	"antimagic-field": "263",
+	"arcane-eye": "151",
+	"arcane-lock": "29",
+	"armoragathys": "59",
+	"arms-of-hadar": "305",
+	"aura-of-vitality": "3",
+	"bane": "254",
+	"banishment": "116",
+	"barkskin": "74",
+	"beacon-of-hope": "158",
+	"bestow-curse": "285",
+	"bless": "9",
+	"blight": "96",
+	"blindness-deafness": "45",
+	"blink": "161",
+	"blur": "295",
+	"booming": "TCoE_1",
+	"branding-smite": "131",
+	"burning-hands": "203",
+	"call-lightning": "272",
+	"calm-emotions": "102",
+	"catapult": "472",
+	"ceremony": "541",
+	"chain-lightning": "233",
+	"charm-person": "221",
+	"chill-touch": "140",
+	"chromatic-orb": "86",
+	"circle-of-power": "135",
+	"clairvoyance": "238",
+	"cloud-of-daggers": "190",
+	"cloudkill": "191",
+	"command": "276",
+	"commune": "198",
+	"comprehend-languages": "252",
+	"coneofcold": "133",
+	"confusion": "325",
+	"conjure-animals": "267",
+	"conjure-barrage": "268",
+	"conjure-elemental": "275",
+	"conjure-minor-elementals": "271",
+	"contagion": "92",
+	"counterspell": "132",
+	"crusaders-mantle": "156",
+	"curewounds": "145",
+	"darkness": "353",
+	"darkvision": "368",
+	"death-ward": "104",
+	"demiplane": "55",
+	"detect-thoughts": "196",
+	"detectmagic": "195",
+	"dimensiondoor": "228",
+	"disguise-self": "157",
+	"disintegrate": "299",
+	"dispel-magic": "301",
+	"dissonant-whispers": "56",
+	"divination": "266",
+	"divine-favor": "10",
+	"divine-word": "12",
+	"dominate-beast": "239",
+	"dominate-monster": "241",
+	"dominate-person": "240",
+	"eldritch": "168",
+	"elemental-weapon": "339",
+	"enhanceability": "103",
+	"ensnaring-strike": "212",
+	"entangle": "211",
+	"etherealness": "64",
+	"faerie-fire": "207",
+	"false-life": "287",
+	"fear": "109",
+	"feather-fall": "223",
+	"find-steed": "246",
+	"findfamiliar": "248",
+	"finger-of-death": "229",
+	"fire-shield": "206",
+	"fireball": "205",
+	"firebolt": "204",
+	"flame-strike": "181",
+	"flaming-sphere": "289",
+	"fly": "249",
+	"fog-cloud": "351",
+	"forcecage": "107",
+	"foresight": "264",
+	"freedom-of-movement": "308",
+	"gaseous-form": "41",
+	"gate": "36",
+	"gentle-repose": "186",
+	"globe-invulnerability": "342",
+	"glyph-of-warding": "219",
+	"goodberry": "78",
+	"grease": "315",
+	"greaterinvisibility": "38",
+	"greaterrestoration": "39",
+	"greenflame": "TCoE_2",
+	"guardian-of-faith": "340",
+	"guidance": "105",
+	"guiding-bolt": "178",
+	"hail-of-thorns": "50",
+	"haste": "100",
+	"heal": "250",
+	"healing-spirit": "471",
+	"healingword": "144",
+	"heat-metal": "298",
+	"heroes-feast": "230",
+	"heroism": "42",
+	"hex": "312",
+	"hold-monster": "110",
+	"holdperson": "356",
+	"holy-aura": "6",
+	"hunters-mark": "164",
+	"hypnotic-pattern": "44",
+	"ice-storm": "49",
+	"identify": "210",
+	"inflict-wounds": "177",
+	"invisibility": "183",
+	"leomunds-tiny-hut": "143",
+	"lesser-restoration": "155",
+	"levitate": "139",
+	"light": "307",
+	"lightningbolt": "175",
+	"longstrider": "316",
+	"mage-armor": "60",
+	"mage-hand": "26",
+	"magic-missile": "27",
+	"magic-weapon": "153",
+	"major-image": "197",
+	"mass-cure-wounds": "171",
+	"mass-heal": "172",
+	"mass-healing-word": "170",
+	"masssuggestion": "169",
+	"maze": "138",
+	"melfs-acid-arrow": "159",
+	"mending": "258",
+	"message": "331",
+	"meteor": "163",
+	"mind-sliver": "TCoE_4",
+	"mindwhip": "TCoE_9",
+	"minorillusion": "154",
+	"mirror-image": "218",
+	"mistystep": "352",
+	"moonbeam": "146",
+	"nondetection": "185",
+	"pass": "8",
+	"phantasmal-force": "31",
+	"planeShift": "95",
+	"plant-growth": "304",
+	"polymorph": "260",
+	"power-word-kill": "322",
+	"powerstun": "321",
+	"prayer-of-healing": "173",
+	"prestidigitation": "91",
+	"produce-flame": "336",
+	"protection-evil-good": "99",
+	"protection-from-energy": "106",
+	"raise-dead": "208",
+	"ray-of-enfeeblement": "148",
+	"ray-of-frost": "149",
+	"ray-of-sickness": "147",
+	"resurrection": "33",
+	"revivify": "24",
+	"rope-trick": "350",
+	"sacred-flame": "311",
+	"sanctuary": "354",
+	"scorching-ray": "225",
+	"scrying": "176",
+	"searing-smite": "224",
+	"see-invisibility": "20",
+	"sending": "256",
+	"shadow-blade": "532",
+	"shadowmoil": "491",
+	"shape-water": "539",
+	"shapechange": "251",
+	"shatter": "62",
+	"shield": "70",
+	"shield-of-faith": "69",
+	"shocking-grasp": "66",
+	"silence": "349",
+	"simulacrum": "237",
+	"sleep": "98",
+	"sleet-storm": "162",
+	"slow": "83",
+	"spare-the-dying": "94",
+	"speak-with-animals": "292",
+	"speak-with-dead": "293",
+	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
+	"spell-doc-aganazzar_s_scorcher": "495",
+	"spell-doc-animal_friendship": "72",
+	"spell-doc-animal_messenger": "259",
+	"spell-doc-animal_shapes": "261",
+	"spell-doc-antilife_shell": "262",
+	"spell-doc-antipathy_sympathy": "2",
+	"spell-doc-arcane_gate": "150",
+	"spell-doc-astral_projection": "284",
+	"spell-doc-augury": "40",
+	"spell-doc-aura_of_life": "4",
+	"spell-doc-aura_of_purity": "5",
+	"spell-doc-awaken": "282",
+	"spell-doc-banishing_smite": "117",
+	"spell-doc-beast_bond": "464",
+	"spell-doc-beast_sense": "76",
+	"spell-doc-bigby_s_hand": "57",
+	"spell-doc-blade_barrier": "338",
+	"spell-doc-blade_of_disaster": "TCoE_22",
+	"spell-doc-blade_ward": "101",
+	"spell-doc-blinding_smite": "213",
+	"spell-doc-bones_of_the_earth": "475",
+	"spell-doc-catnap": "459",
+	"spell-doc-cause_fear": "455",
+	"spell-doc-chaos_bolt": "525",
+	"spell-doc-charm_monster": "494",
+	"spell-doc-circle_of_death": "136",
+	"spell-doc-clone": "54",
+	"spell-doc-color_spray": "306",
+	"spell-doc-commune_with_nature": "199",
+	"spell-doc-compelled_duel": "37",
+	"spell-doc-compulsion": "278",
+	"spell-doc-conjure_celestial": "273",
+	"spell-doc-conjure_fey": "274",
+	"spell-doc-conjure_volley": "269",
+	"spell-doc-conjure_woodland_beings": "270",
+	"spell-doc-contact_other_plane": "309",
+	"spell-doc-contingency": "265",
+	"spell-doc-continual_flame": "18",
+	"spell-doc-control_flames": "450",
+	"spell-doc-control_water": "21",
+	"spell-doc-control_weather": "22",
+	"spell-doc-control_winds": "449",
+	"spell-doc-cordon_of_arrows": "81",
+	"spell-doc-create_bonfire": "528",
+	"spell-doc-create_food_and_water": "335",
+	"spell-doc-create_homunculus": "527",
+	"spell-doc-create_or_destroy_water": "333",
+	"spell-doc-create_undead": "334",
+	"spell-doc-creation": "366",
+	"spell-doc-crown_of_madness": "134",
+	"spell-doc-crown_of_stars": "474",
+	"spell-doc-dancing_lights": "234",
+	"spell-doc-danse_macabre": "501",
+	"spell-doc-dawn": "517",
+	"spell-doc-daylight": "58",
+	"spell-doc-delayed_blast_fireball": "87",
+	"spell-doc-destructive_wave": "296",
+	"spell-doc-detect_evil_and_good": "194",
+	"spell-doc-detect_poison_and_disease": "193",
+	"spell-doc-dispel_evil_and_good": "300",
+	"spell-doc-dragon_s_breath": "461",
+	"spell-doc-drawmij_s_instant_summons": "68",
+	"spell-doc-dream": "19",
+	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
+	"spell-doc-druid_grove": "518",
+	"spell-doc-druidcraft": "123",
+	"spell-doc-dust_devil": "514",
+	"spell-doc-earth_tremor": "460",
+	"spell-doc-earthbind": "537",
+	"spell-doc-earthquake": "111",
+	"spell-doc-elemental_bane": "510",
+	"spell-doc-enemies_abound": "467",
+	"spell-doc-enervation": "486",
+	"spell-doc-enlarge_reduce": "355",
+	"spell-doc-enthrall": "303",
+	"spell-doc-erupting_earth": "466",
+	"spell-doc-evard_s_black_tentacles": "67",
+	"spell-doc-expeditious_retreat": "257",
+	"spell-doc-eyebite": "297",
+	"spell-doc-fabricate": "118",
+	"spell-doc-far_step": "458",
+	"spell-doc-feeblemind": "317",
+	"spell-doc-feign_death": "280",
+	"spell-doc-find_greater_steed": "504",
+	"spell-doc-find_the_path": "245",
+	"spell-doc-find_traps": "243",
+	"spell-doc-fire_storm": "201",
+	"spell-doc-flame_arrows": "513",
+	"spell-doc-flame_blade": "48",
+	"spell-doc-flesh_to_stone": "209",
+	"spell-doc-forbiddance": "89",
+	"spell-doc-friends": "71",
+	"spell-doc-frostbite": "492",
+	"spell-doc-geas": "189",
+	"spell-doc-giant_insect": "43",
+	"spell-doc-glibness": "179",
+	"spell-doc-grasping_vine": "85",
+	"spell-doc-guardian_of_nature": "530",
+	"spell-doc-guards_and_wards": "341",
+	"spell-doc-gust": "542",
+	"spell-doc-gust_of_wind": "255",
+	"spell-doc-hallow": "310",
+	"spell-doc-hallucinatory_terrain": "167",
+	"spell-doc-harm": "253",
+	"spell-doc-hellish_rebuke": "1",
+	"spell-doc-holy_weapon": "519",
+	"spell-doc-hunger_of_hadar": "47",
+	"spell-doc-ice_knife": "477",
+	"spell-doc-illusory_dragon": "468",
+	"spell-doc-illusory_script": "182",
+	"spell-doc-immolation": "470",
+	"spell-doc-imprisonment": "97",
+	"spell-doc-incendiary_cloud": "34",
+	"spell-doc-infernal_calling": "469",
+	"spell-doc-infestation": "483",
+	"spell-doc-insect_plague": "180",
+	"spell-doc-intellect_fortress": "TCoE_10",
+	"spell-doc-investiture_of_flame": "490",
+	"spell-doc-investiture_of_ice": "489",
+	"spell-doc-investiture_of_stone": "488",
+	"spell-doc-investiture_of_wind": "487",
+	"spell-doc-invulnerability": "485",
+	"spell-doc-jump": "286",
+	"spell-doc-knock": "217",
+	"spell-doc-legend_lore": "115",
+	"spell-doc-leomund_s_secret_chest": "142",
+	"spell-doc-life_transference": "498",
+	"spell-doc-lightning_arrow": "174",
+	"spell-doc-lightning_lure": "TCoE_3",
+	"spell-doc-locate_animals_or_plants": "242",
+	"spell-doc-locate_creature": "247",
+	"spell-doc-locate_object": "244",
+	"spell-doc-maddening_darkness": "493",
+	"spell-doc-maelstrom": "451",
+	"spell-doc-magic_circle": "152",
+	"spell-doc-magic_jar": "30",
+	"spell-doc-magic_mouth": "28",
+	"spell-doc-magic_stone": "454",
+	"spell-doc-mass_polymorph": "481",
+	"spell-doc-maximilian_s_earthen_grasp": "465",
+	"spell-doc-meld_into_stone": "318",
+	"spell-doc-melf_s_minute_meteors": "479",
+	"spell-doc-mental_prison": "480",
+	"spell-doc-mighty_fortress": "482",
+	"spell-doc-mind_blank": "328",
+	"spell-doc-mind_spike": "511",
+	"spell-doc-mirage_arcane": "343",
+	"spell-doc-mislead": "93",
+	"spell-doc-modify_memory": "119",
+	"spell-doc-mold_earth": "478",
+	"spell-doc-mordenkainen_s_faithful_hound": "17",
+	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
+	"spell-doc-mordenkainen_s_private_sanctum": "128",
+	"spell-doc-mordenkainen_s_sword": "166",
+	"spell-doc-move_earth": "53",
+	"spell-doc-negative_energy_flood": "505",
+	"spell-doc-nystul_s_magic_aura": "188",
+	"spell-doc-otiluke_s_freezing_sphere": "215",
+	"spell-doc-otiluke_s_resilient_sphere": "216",
+	"spell-doc-otto_s_irresistible_dance": "187",
+	"spell-doc-passwall": "327",
+	"spell-doc-phantasmal_killer": "32",
+	"spell-doc-phantom_steed": "279",
+	"spell-doc-planar_ally": "232",
+	"spell-doc-planar_binding": "231",
+	"spell-doc-poison_spray": "63",
+	"spell-doc-power_word_heal": "320",
+	"spell-doc-power_word_pain": "522",
+	"spell-doc-primal_savagery": "496",
+	"spell-doc-primordial_ward": "497",
+	"spell-doc-prismatic_spray": "291",
+	"spell-doc-prismatic_wall": "290",
+	"spell-doc-programmed_illusion": "82",
+	"spell-doc-project_image": "283",
+	"spell-doc-protection_from_poison": "108",
+	"spell-doc-psychic_scream": "512",
+	"spell-doc-purify_food_and_drink": "222",
+	"spell-doc-pyrotechnics": "500",
+	"spell-doc-rary_s_telepathic_bond": "160",
+	"spell-doc-regenerate": "302",
+	"spell-doc-reincarnate": "365",
+	"spell-doc-remove_curse": "326",
+	"spell-doc-resistance": "332",
+	"spell-doc-reverse_gravity": "120",
+	"spell-doc-scatter": "516",
+	"spell-doc-seeming": "281",
+	"spell-doc-sequester": "122",
+	"spell-doc-shillelagh": "73",
+	"spell-doc-sickening_radiance": "448",
+	"spell-doc-silent_image": "7",
+	"spell-doc-skill_empowerment": "538",
+	"spell-doc-skywrite": "484",
+	"spell-doc-snare": "520",
+	"spell-doc-snilloc_s_snowball_swarm": "526",
+	"spell-doc-soul_cage": "473",
+	"spell-doc-speak_with_plants": "294",
+	"spell-doc-spider_climb": "226",
+	"spell-doc-spirit_shroud": "TCoE_11",
+	"spell-doc-staggering_smite": "200",
+	"spell-doc-stone_shape": "121",
+	"spell-doc-storm_of_vengeance": "51",
+	"spell-doc-storm_sphere": "531",
+	"spell-doc-summon_aberration": "TCoE_15",
+	"spell-doc-summon_beast": "TCoE_7",
+	"spell-doc-summon_celestial": "TCoE_18",
+	"spell-doc-summon_construct": "TCoE_16",
+	"spell-doc-summon_elemental": "TCoE_17",
+	"spell-doc-summon_fiend": "TCoE_19",
+	"spell-doc-summon_greater_demon": "507",
+	"spell-doc-summon_lesser_demons": "508",
+	"spell-doc-summon_shadowspawn": "TCoE_13",
+	"spell-doc-summon_undead": "TCoE_14",
+	"spell-doc-swift_quiver": "14",
+	"spell-doc-sword_burst": "TCoE_5",
+	"spell-doc-symbol": "114",
+	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
+	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
+	"spell-doc-telepathy": "345",
+	"spell-doc-teleportation_circle": "137",
+	"spell-doc-temple_of_the_gods": "540",
+	"spell-doc-tenser_s_floating_disk": "346",
+	"spell-doc-tenser_s_transformation": "533",
+	"spell-doc-thunder_step": "457",
+	"spell-doc-thunderclap": "515",
+	"spell-doc-thunderous_smite": "52",
+	"spell-doc-tidal_wave": "509",
+	"spell-doc-tiny_servant": "476",
+	"spell-doc-tongues": "61",
+	"spell-doc-transmute_rock": "506",
+	"spell-doc-transport_via_plants": "288",
+	"spell-doc-tree_stride": "65",
+	"spell-doc-true_polymorph": "127",
+	"spell-doc-true_strike": "165",
+	"spell-doc-tsunami": "84",
+	"spell-doc-unseen_servant": "184",
+	"spell-doc-vitriolic_sphere": "462",
+	"spell-doc-wall_of_ice": "141",
+	"spell-doc-wall_of_light": "529",
+	"spell-doc-wall_of_sand": "499",
+	"spell-doc-wall_of_stone": "130",
+	"spell-doc-wall_of_thorns": "347",
+	"spell-doc-wall_of_water": "452",
+	"spell-doc-warding_wind": "463",
+	"spell-doc-water_walk": "88",
+	"spell-doc-watery_sphere": "453",
+	"spell-doc-weird": "324",
+	"spell-doc-whirlwind": "524",
+	"spell-doc-wind_walk": "90",
+	"spell-doc-word_of_recall": "319",
+	"spell-doc-wrath_of_nature": "456",
+	"spell-doc-zephyr_strike": "534",
+	"spike-growth": "77",
+	"spiritguardians": "75",
+	"spiritual-weapon": "11",
+	"steelwind": "535",
+	"stinking-cloud": "113",
+	"stoneskin": "129",
+	"suggestion": "23",
+	"summonfey": "TCoE_12",
+	"sunbeam": "329",
+	"sunburst": "330",
+	"synaptic-static": "521",
+	"tashas-hideous-laughter": "79",
+	"telekinesis": "344",
+	"teleport": "367",
+	"thaumaturgy": "80",
+	"thorn-whip": "348",
+	"thunderwave": "25",
+	"time-stop": "214",
+	"toll-the-dead": "503",
+	"true-seeing": "126",
+	"trueResurrection": "125",
+	"vampiric-touch": "277",
+	"vicious": "112",
+	"wall-of-fire": "202",
+	"wallforce": "314",
+	"warding-bond": "220",
+	"water-breathing": "235",
+	"web": "227",
+	"wind-wall": "337",
+	"wish": "124",
+	"witch-bolt": "15",
+	"word-radiance": "523",
+	"wrathful-smite": "46",
+	"zone-of-truth": "192"
+});
+//#endregion
+//#region app/exportIds.ts
+/**
+* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
+* LSS text blocks also need a stable public URL for every selected spell.
+*/
+var dndSpellRefs = {
+	"acid-splash": ["13", "acid_splash"],
+	"chill-touch": ["140", "chill_touch"],
+	"firebolt": ["204", "fire_bolt"],
+	"guidance": ["105", "guidance"],
+	"minorillusion": ["154", "minor_illusion"],
+	"vicious": ["112", "vicious_mockery"],
+	"eldritch": ["168", "eldritch_blast"],
+	"booming": ["458", "booming_blade"],
+	"greenflame": ["459", "green_flame_blade"],
+	"absorb": ["401", "absorb_elements"],
+	"armoragathys": ["59", "armor_of_agathys"],
+	"bless": ["9", "bless"],
+	"curewounds": ["145", "cure_wounds"],
+	"detectmagic": ["195", "detect_magic"],
+	"findfamiliar": ["248", "find_familiar"],
+	"goodberry": ["78", "goodberry"],
+	"healingword": ["144", "healing_word"],
+	"hex": ["312", "hex"],
+	"shield": ["70", "shield"],
+	"silvery": ["3946", "silvery_barbs"],
+	"aid": ["236", "aid"],
+	"darkness": ["353", "darkness"],
+	"enhanceability": ["103", "enhance_ability"],
+	"holdperson": ["356", "hold_person"],
+	"levitate": ["139", "levitate"],
+	"mistystep": ["352", "misty_step"],
+	"pass": ["8", "pass_without_trace"],
+	"mindwhip": ["3053", "tasha_s_mind_whip"],
+	"counterspell": ["132", "counterspell"],
+	"fireball": ["205", "fireball"],
+	"fly": ["249", "fly"],
+	"haste": ["100", "haste"],
+	"lightningbolt": ["175", "lightning_bolt"],
+	"revivify": ["24", "revivify"],
+	"spiritguardians": ["75", "spirit_guardians"],
+	"summonfey": ["3070", "summon_fey"],
+	"banishment": ["116", "banishment"],
+	"dimensiondoor": ["228", "dimension_door"],
+	"greaterinvisibility": ["38", "greater_invisibility"],
+	"polymorph": ["260", "polymorph"],
+	"shadowmoil": ["478", "shadow_of_moil"],
+	"coneofcold": ["133", "cone_of_cold"],
+	"greaterrestoration": ["39", "greater_restoration"],
+	"steelwind": ["493", "steel_wind_strike"],
+	"wallforce": ["314", "wall_of_force"],
+	"heal": ["250", "heal"],
+	"masssuggestion": ["169", "mass_suggestion"],
+	"disintegrate": ["299", "disintegrate"],
+	"forcecage": ["107", "forcecage"],
+	"planeShift": ["95", "plane_shift"],
+	"draconic": ["3814", "draconic_transformation"],
+	"demiplane": ["55", "demiplane"],
+	"maze": ["138", "maze"],
+	"powerstun": ["321", "power_word_stun"],
+	"foresight": ["264", "foresight"],
+	"meteor": ["163", "meteor_swarm"],
+	"trueResurrection": ["125", "true_resurrection"],
+	"wish": ["124", "wish"],
+	"light": ["307", "light"],
+	"mage-hand": ["26", "mage_hand"],
+	"mending": ["258", "mending"],
+	"message": ["331", "message"],
+	"prestidigitation": ["91", "prestidigitation"],
+	"ray-of-frost": ["149", "ray_of_frost"],
+	"sacred-flame": ["311", "sacred_flame"],
+	"shocking-grasp": ["66", "shocking_grasp"],
+	"spare-the-dying": ["94", "spare_the_dying"],
+	"thaumaturgy": ["80", "thaumaturgy"],
+	"thorn-whip": ["348", "thorn_whip"],
+	"produce-flame": ["336", "produce_flame"],
+	"shape-water": ["414", "shape_water"],
+	"toll-the-dead": ["457", "toll_the_dead"],
+	"mind-sliver": ["3050", "mind_sliver"],
+	"word-radiance": ["455", "word_of_radiance"],
+	"alarm": ["313", "alarm"],
+	"bane": ["254", "bane"],
+	"burning-hands": ["203", "burning_hands"],
+	"charm-person": ["221", "charm_person"],
+	"chromatic-orb": ["86", "chromatic_orb"],
+	"command": ["276", "command"],
+	"comprehend-languages": ["252", "comprehend_languages"],
+	"disguise-self": ["157", "disguise_self"],
+	"dissonant-whispers": ["56", "dissonant_whispers"],
+	"divine-favor": ["10", "divine_favor"],
+	"ensnaring-strike": ["212", "ensnaring_strike"],
+	"entangle": ["211", "entangle"],
+	"faerie-fire": ["207", "faerie_fire"],
+	"false-life": ["287", "false_life"],
+	"feather-fall": ["223", "feather_fall"],
+	"fog-cloud": ["351", "fog_cloud"],
+	"grease": ["315", "grease"],
+	"hail-of-thorns": ["50", "hail_of_thorns"],
+	"heroism": ["42", "heroism"],
+	"hunters-mark": ["164", "hunter_s_mark"],
+	"identify": ["210", "identify"],
+	"inflict-wounds": ["177", "inflict_wounds"],
+	"longstrider": ["316", "longstrider"],
+	"mage-armor": ["60", "mage_armor"],
+	"magic-missile": ["27", "magic_missile"],
+	"protection-evil-good": ["99", "protection_from_evil_and_good"],
+	"sanctuary": ["354", "sanctuary"],
+	"sleep": ["98", "sleep"],
+	"speak-with-animals": ["292", "speak_with_animals"],
+	"thunderwave": ["25", "thunderwave"],
+	"witch-bolt": ["15", "witch_bolt"],
+	"ceremony": ["465", "ceremony"],
+	"catapult": ["386", "catapult"],
+	"alter-self": ["323", "alter_self"],
+	"arcane-lock": ["29", "arcane_lock"],
+	"barkskin": ["74", "barkskin"],
+	"blindness-deafness": ["45", "blindness_deafness"],
+	"blur": ["295", "blur"],
+	"branding-smite": ["131", "branding_smite"],
+	"calm-emotions": ["102", "calm_emotions"],
+	"cloud-of-daggers": ["190", "cloud_of_daggers"],
+	"darkvision": ["368", "darkvision"],
+	"find-steed": ["246", "find_steed"],
+	"flaming-sphere": ["289", "flaming_sphere"],
+	"heat-metal": ["298", "heat_metal"],
+	"invisibility": ["183", "invisibility"],
+	"lesser-restoration": ["155", "lesser_restoration"],
+	"magic-weapon": ["153", "magic_weapon"],
+	"moonbeam": ["146", "moonbeam"],
+	"prayer-of-healing": ["173", "prayer_of_healing"],
+	"scorching-ray": ["225", "scorching_ray"],
+	"see-invisibility": ["20", "see_invisibility"],
+	"shatter": ["62", "shatter"],
+	"silence": ["349", "silence"],
+	"spike-growth": ["77", "spike_growth"],
+	"spiritual-weapon": ["11", "spiritual_weapon"],
+	"suggestion": ["23", "suggestion"],
+	"web": ["227", "web"],
+	"shadow-blade": ["470", "shadow_blade"],
+	"healing-spirit": ["468", "healing_spirit"],
+	"animate-dead": ["35", "animate_dead"],
+	"beacon-of-hope": ["158", "beacon_of_hope"],
+	"bestow-curse": ["285", "bestow_curse"],
+	"call-lightning": ["272", "call_lightning"],
+	"clairvoyance": ["238", "clairvoyance"],
+	"conjure-animals": ["267", "conjure_animals"],
+	"dispel-magic": ["301", "dispel_magic"],
+	"fear": ["109", "fear"],
+	"glyph-of-warding": ["219", "glyph_of_warding"],
+	"hypnotic-pattern": ["44", "hypnotic_pattern"],
+	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
+	"major-image": ["197", "major_image"],
+	"mass-healing-word": ["170", "mass_healing_word"],
+	"plant-growth": ["304", "plant_growth"],
+	"protection-from-energy": ["106", "protection_from_energy"],
+	"sleet-storm": ["162", "sleet_storm"],
+	"slow": ["83", "slow"],
+	"speak-with-dead": ["293", "speak_with_dead"],
+	"water-breathing": ["235", "water_breathing"],
+	"crusaders-mantle": ["156", "crusader_s_mantle"],
+	"aura-of-vitality": ["3", "aura_of_vitality"],
+	"arcane-eye": ["151", "arcane_eye"],
+	"blight": ["96", "blight"],
+	"confusion": ["325", "confusion"],
+	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
+	"death-ward": ["104", "death_ward"],
+	"divination": ["266", "divination"],
+	"dominate-beast": ["239", "dominate_beast"],
+	"freedom-of-movement": ["308", "freedom_of_movement"],
+	"guardian-of-faith": ["340", "guardian_of_faith"],
+	"ice-storm": ["49", "ice_storm"],
+	"stoneskin": ["129", "stoneskin"],
+	"wall-of-fire": ["202", "wall_of_fire"],
+	"animate-objects": ["364", "animate_objects"],
+	"circle-of-power": ["135", "circle_of_power"],
+	"cloudkill": ["191", "cloudkill"],
+	"commune": ["198", "commune"],
+	"conjure-elemental": ["275", "conjure_elemental"],
+	"contagion": ["92", "contagion"],
+	"dominate-person": ["240", "dominate_person"],
+	"flame-strike": ["181", "flame_strike"],
+	"hold-monster": ["110", "hold_monster"],
+	"mass-cure-wounds": ["171", "mass_cure_wounds"],
+	"raise-dead": ["208", "raise_dead"],
+	"scrying": ["176", "scrying"],
+	"telekinesis": ["344", "telekinesis"],
+	"synaptic-static": ["491", "synaptic_static"],
+	"chain-lightning": ["233", "chain_lightning"],
+	"heroes-feast": ["230", "heroes_feast"],
+	"globe-invulnerability": ["342", "globe_of_invulnerability"],
+	"sunbeam": ["329", "sunbeam"],
+	"true-seeing": ["126", "true_seeing"],
+	"divine-word": ["12", "divine_word"],
+	"etherealness": ["64", "etherealness"],
+	"finger-of-death": ["229", "finger_of_death"],
+	"resurrection": ["33", "resurrection"],
+	"simulacrum": ["237", "simulacrum"],
+	"teleport": ["367", "teleport"],
+	"antimagic-field": ["263", "antimagic_field"],
+	"dominate-monster": ["241", "dominate_monster"],
+	"holy-aura": ["6", "holy_aura"],
+	"sunburst": ["330", "sunburst"],
+	"gate": ["36", "gate"],
+	"mass-heal": ["172", "mass_heal"],
+	"power-word-kill": ["322", "power_word_kill"],
+	"shapechange": ["251", "shapechange"],
+	"time-stop": ["214", "time_stop"],
+	"arms-of-hadar": ["305", "arms_of_hadar"],
+	"guiding-bolt": ["178", "guiding_bolt"],
+	"ray-of-sickness": ["147", "ray_of_sickness"],
+	"searing-smite": ["224", "searing_smite"],
+	"shield-of-faith": ["69", "shield_of_faith"],
+	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
+	"wrathful-smite": ["46", "wrathful_smite"],
+	"blink": ["161", "blink"],
+	"detect-thoughts": ["196", "detect_thoughts"],
+	"gentle-repose": ["186", "gentle_repose"],
+	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
+	"mirror-image": ["218", "mirror_image"],
+	"phantasmal-force": ["31", "phantasmal_force"],
+	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
+	"rope-trick": ["350", "rope_trick"],
+	"warding-bond": ["220", "warding_bond"],
+	"zone-of-truth": ["192", "zone_of_truth"],
+	"conjure-barrage": ["268", "conjure_barrage"],
+	"elemental-weapon": ["339", "elemental_weapon"],
+	"gaseous-form": ["41", "gaseous_form"],
+	"nondetection": ["185", "nondetection"],
+	"sending": ["256", "sending"],
+	"stinking-cloud": ["113", "stinking_cloud"],
+	"vampiric-touch": ["277", "vampiric_touch"],
+	"wind-wall": ["337", "wind_wall"],
+	"fire-shield": ["206", "fire_shield"]
+};
+var helpmateSpellIds = verifiedHelpmateSpellIds;
+function helpmateSpellId(id) {
+	return helpmateSpellIds[id] || null;
+}
+function dndSpellUrl(id) {
+	const reference = dndSpellRefs[id];
+	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
+	return documentSpells.find((spell) => spell.id === id)?.url || null;
+}
+var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
+var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
+var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
+	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
+	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
+})));
+/**
+* LSS uses the public dnd.su page as the stable source reference for a spell.
+* Accept absolute/relative links and ignore the mutable transliterated suffix:
+* the numeric dnd.su page id is the canonical part shared with our catalog.
+*/
+function spellIdFromDndUrl(value) {
+	if (typeof value !== "string") return null;
+	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
+	if (match) return spellIdByDndNumber[match[1]] || null;
+	try {
+		const parsed = new URL(value, "https://dnd.su");
+		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
+		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
+	} catch {
+		return null;
+	}
+}
+/**
+* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
+* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
+* URL-bearing card objects never need this fallback.
+*/
+var lssCardDndNumbers = Object.freeze({
+	"65d3c169f3d820fa1add429e": "140",
+	"65d3c168f3d820fa1add425f": "204",
+	"65d3c170f3d820fa1add4759": "258",
+	"65d3c16af3d820fa1add434d": "60",
+	"65d3c16df3d820fa1add45f4": "221",
+	"65d3c16af3d820fa1add437e": "98",
+	"65d3c172f3d820fa1add48b7": "183",
+	"65d3c16ef3d820fa1add465d": "103",
+	"65d3c16df3d820fa1add4561": "44",
+	"65d3c171f3d820fa1add47ec": "109"
+});
+function spellIdFromLssCardId(cardId) {
+	const number = lssCardDndNumbers[cardId];
+	return number ? spellIdByDndNumber[number] || null : null;
+}
+var lssCardIdBySpellId = Object.freeze(Object.fromEntries(Object.entries(lssCardDndNumbers).map(([cardId, number]) => [spellIdByDndNumber[number], cardId]).filter((entry) => Boolean(entry[0]))));
+/** Return a private LSS card id only when the mapping was verified by fixture. */
+function lssCardIdForSpellId(spellId) {
+	return lssCardIdBySpellId[spellId] || null;
+}
+//#endregion
 //#region app/naturalAttacks.ts
 var naturalWeapons = {
 	aarakocra: {
@@ -26496,1077 +26441,6 @@ function lssWeaponAttacks(attacks) {
 		isProf: attack.proficient,
 		modBonus: { value: attack.attackBonusExtra }
 	}));
-}
-//#endregion
-//#region app/itemCatalog.ts
-var armorRows = String.raw`Стёганый доспех|5|8|11|full|0|1
-Кожаный доспех|10|10|11|full|0|0
-Проклёпанный кожаный доспех|45|13|12|full|0|0
-Шкурный доспех|10|12|12|max2|0|0
-Кольчужная рубаха|50|20|13|max2|0|0
-Чешуйчатый доспех|50|45|14|max2|0|1
-Кираса|400|20|14|max2|0|0
-Полулаты|750|40|15|max2|0|1
-Колечный доспех|30|40|14|none|0|1
-Кольчуга|75|55|16|none|13|1
-Наборный доспех|200|60|17|none|15|1
-Латы|1500|65|18|none|15|1`;
-var weaponRows = String.raw`Боевой посох|0.2|4|1к6 дробящий|универсальное 1к8|1
-Булава|5|4|1к6 дробящий||1
-Дубинка|0.1|2|1к4 дробящий|лёгкое|1
-Кинжал|2|1|1к4 колющий|лёгкое, метательное 20/60, фехтовальное|1
-Копьё|1|3|1к6 колющий|метательное 20/60, универсальное 1к8|1
-Лёгкий молот|2|2|1к4 дробящий|лёгкое, метательное 20/60|1
-Метательное копьё|0.5|2|1к6 колющий|метательное 30/120|1
-Палица|0.2|10|1к8 дробящий|двуручное|2
-Ручной топор|5|2|1к6 рубящий|лёгкое, метательное 20/60|1
-Серп|1|2|1к4 рубящий|лёгкое|1
-Арбалет, лёгкий|25|5|1к8 колющий|боеприпас 80/320, двуручное, перезарядка|2
-Дротик|0.05|0.25|1к4 колющий|метательное 20/60, фехтовальное|1
-Короткий лук|25|2|1к6 колющий|боеприпас 80/320, двуручное|2
-Праща|0.1|0|1к4 дробящий|боеприпас 30/120|1
-Алебарда|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
-Боевая кирка|5|2|1к8 колющий||1
-Боевой молот|15|2|1к8 дробящий|универсальное 1к10|1
-Боевой топор|10|4|1к8 рубящий|универсальное 1к10|1
-Глефа|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
-Двуручный меч|50|6|2к6 рубящий|двуручное, тяжёлое|2
-Длинное копьё|10|6|1к12 колющий|досягаемость, особое|1
-Длинный меч|15|3|1к8 рубящий|универсальное 1к10|1
-Кнут|2|3|1к4 рубящий|досягаемость, фехтовальное|1
-Короткий меч|10|2|1к6 колющий|лёгкое, фехтовальное|1
-Молот|10|10|2к6 дробящий|двуручное, тяжёлое|2
-Моргенштерн|15|4|1к8 колющий||1
-Пика|5|18|1к10 колющий|двуручное, досягаемость, тяжёлое|2
-Рапира|25|2|1к8 колющий|фехтовальное|1
-Секира|30|7|1к12 рубящий|двуручное, тяжёлое|2
-Скимитар|25|3|1к6 рубящий|лёгкое, фехтовальное|1
-Трезубец|5|4|1к6 колющий|метательное 20/60, универсальное 1к8|1
-Цеп|10|2|1к8 дробящий||1
-Арбалет, ручной|75|3|1к6 колющий|боеприпас 30/120, лёгкое, перезарядка|1
-Арбалет, тяжёлый|50|18|1к10 колющий|боеприпас 100/400, двуручное, перезарядка, тяжёлое|2
-Длинный лук|50|2|1к8 колющий|боеприпас 150/600, двуручное, тяжёлое|2
-Духовая трубка|10|1|1 колющий|боеприпас 25/100, перезарядка|1
-Сеть|1|3|—|метательное 5/15, особое|1`;
-var supplyRows = String.raw`Абак|2|2
-Алхимический огонь (фляга)|50|1|consumable
-Блок и лебёдка|1|5
-Арбалетные болты (20)|1|1.5|ammunition
-Иглы для трубки (50)|1|1|ammunition
-Снаряды для пращи (20)|0.04|1.5|ammunition
-Стрелы (20)|1|1|ammunition
-Бочка|2|70
-Бумага (один лист)|0.2|0
-Бурдюк|0.2|5
-Бутылка, стеклянная|2|2
-Ведро|0.05|2
-Верёвка пеньковая (50 футов)|1|10
-Верёвка, шёлковая (50 футов)|10|5
-Весы, торговые|5|3
-Воск|0.5|0
-Горшок, железный|2|10
-Духи (флакон)|5|0
-Замок|10|1
-Зелье лечения|50|0.5|consumable
-Зеркало, стальное|5|0.5
-Калтропы (20 штук в сумке)|1|2
-Кандалы|2|6
-Кирка, горняцкая|2|10
-Кислота (флакон)|25|1|consumable
-Книга|25|5
-Книга заклинаний|50|3
-Колокольчик|1|0
-Колчан|1|1
-Кольцо-печатка|5|0
-Комплект для лазания|25|12
-Комплект для рыбалки|1|4
-Комплект целителя|5|3
-Контейнер для арбалетных болтов|1|1
-Контейнер для карт и свитков|1|1
-Корзина|0.4|2
-Кошель|0.5|1
-Крюк-кошка|2|4
-Кувшин или графин|0.02|4
-Лампа|0.5|1
-Лестница (10 футов)|0.1|25
-Ломик|2|5
-Лопата|2|5
-Волшебная палочка|10|1|focus
-Жезл|10|2|focus
-Кристалл|10|1|focus
-Магическая фокусировка — посох|5|4|focus
-Сфера|20|3|focus
-Масло (фляга)|0.1|1|consumable
-Мел (1 кусочек)|0.01|0
-Металлические шарики (1000 шт. в сумке)|1|2
-Мешок|0.01|0.5
-Мешочек с компонентами|25|2
-Молот, кузнечный|2|10
-Молоток|1|3
-Мыло|0.02|0
-Одежда, дорожная|2|4
-Одежда, костюм|5|4
-Одежда, обычная|0.5|3
-Одежда, отличная|15|6
-Одеяло|0.5|3
-Охотничий капкан|5|25
-Палатка, двухместная|2|20
-Пергамент (один лист)|0.1|0
-Песочные часы|25|1
-Писчее перо|0.02|0
-Подзорная труба|1000|1
-Противоядие (флакон)|50|0|consumable
-Рационы (1 день)|0.5|2|consumable
-Рюкзак|2|5
-Ряса|1|4
-Свеча|0.01|0
-Святая вода (фляга)|25|1|consumable
-Священный символ — амулет|5|1|focus
-Священный символ — реликварий|5|2|focus
-Священный символ — эмблема|5|0|focus
-Сигнальный свисток|0.05|0
-Спальник|1|7
-Столовый набор|0.2|1
-Сундук|5|25
-Таран, портативный|4|35
-Точильный камень|0.01|1
-Трутница|0.5|1
-Увеличительное стекло|100|0
-Факел|0.01|1
-Флакон|1|0
-Фляга или большая кружка|0.02|1
-Фокусировка друидов — омела|1|0|focus
-Фокусировка друидов — посох|5|4|focus
-Фокусировка друидов — палочка|10|1|focus
-Фокусировка друидов — тотем|1|0|focus
-Фонарь, закрытый|5|2
-Фонарь, направленный|10|2
-Цепь (10 футов)|5|10
-Чернила (бутылочка 30 граммов)|10|0
-Шест (10 футов)|0.05|7
-Шипы, железные (10)|1|5
-Шлямбур|0.05|0.25
-Яд, простой (флакон)|100|0|consumable
-Воровские инструменты|25|1
-Драконьи шахматы|1|0.5
-Карты|0.5|0
-Кости|0.1|0
-Ставка трёх драконов|1|0
-Инструменты навигатора|25|2
-Инструменты отравителя|50|2
-Барабан|6|3
-Виола|30|1
-Волынка|30|6
-Лира|30|2
-Лютня|35|2
-Рожок|3|2
-Свирель|12|2
-Флейта|2|1
-Цимбалы|25|10
-Шалмей|2|1
-Набор для грима|25|3
-Набор для фальсификации|15|5
-Набор травника|5|3
-Инструменты алхимика|50|8
-Инструменты гончара|10|3
-Инструменты каллиграфа|10|5
-Инструменты каменщика|10|8
-Инструменты картографа|15|6
-Инструменты кожевника|5|5
-Инструменты кузнеца|20|8
-Инструменты пивовара|20|9
-Инструменты плотника|8|6
-Инструменты повара|1|8
-Инструменты резчика по дереву|1|5
-Инструменты ремонтника|50|10
-Инструменты сапожника|5|5
-Инструменты стеклодува|30|5
-Инструменты ткача|1|5
-Инструменты художника|10|5
-Инструменты ювелира|25|2
-Набор взломщика|16|0
-Набор дипломата|39|0
-Набор исследователя подземелий|12|0
-Набор путешественника|10|0
-Набор артиста|40|0
-Набор священника|19|0
-Набор учёного|40|0`;
-var rows = (raw) => raw.trim().split("\n").map((s) => s.split("|"));
-var handToolNames = new Set([
-	"Барабан",
-	"Виола",
-	"Волынка",
-	"Лира",
-	"Лютня",
-	"Рожок",
-	"Свирель",
-	"Флейта",
-	"Цимбалы",
-	"Шалмей",
-	"Воровские инструменты",
-	"Инструменты навигатора",
-	"Инструменты отравителя",
-	"Набор для грима",
-	"Набор для фальсификации",
-	"Набор травника",
-	"Набор для фальсификации",
-	"Инструменты алхимика",
-	"Инструменты гончара",
-	"Инструменты каллиграфа",
-	"Инструменты каменщика",
-	"Инструменты картографа",
-	"Инструменты кожевника",
-	"Инструменты кузнеца",
-	"Инструменты пивовара",
-	"Инструменты плотника",
-	"Инструменты повара",
-	"Инструменты резчика по дереву",
-	"Инструменты ремонтника",
-	"Инструменты сапожника",
-	"Инструменты стеклодува",
-	"Инструменты ткача",
-	"Инструменты художника",
-	"Инструменты ювелира"
-]);
-function isHandTool(name) {
-	return handToolNames.has(name) || /^(?:инструменты |набор (?:для грима|для фальсификации|травника))/i.test(name);
-}
-var packWeights = {
-	"Набор взломщика": 47.5,
-	"Набор дипломата": 40,
-	"Набор исследователя подземелий": 61.5,
-	"Набор путешественника": 59,
-	"Набор артиста": 38,
-	"Набор священника": 24,
-	"Набор учёного": 12
-};
-var itemCatalog = [
-	...rows(armorRows).map(([name, price, weight, base, dex, strength, stealth]) => ({
-		name,
-		category: "armor",
-		priceGp: Number(price),
-		weight: Number(weight),
-		armor: {
-			base: Number(base),
-			dex,
-			strength: Number(strength) || void 0,
-			stealth: stealth === "1"
-		}
-	})),
-	{
-		name: "Щит",
-		category: "armor",
-		priceGp: 10,
-		weight: 6,
-		hands: 1,
-		shield: true,
-		aliases: ["Деревянный щит"]
-	},
-	...rows(weaponRows).map(([name, price, weight, damage, properties, hands]) => ({
-		name,
-		category: "weapon",
-		priceGp: Number(price),
-		weight: Number(weight),
-		damage,
-		properties,
-		hands: Number(hands)
-	})),
-	...rows(supplyRows).map(([name, price, weight, category]) => ({
-		name,
-		category: category || "gear",
-		priceGp: Number(price),
-		weight: packWeights[name] ?? Number(weight),
-		...category === "focus" || isHandTool(name) ? { hands: 1 } : {}
-	})),
-	{
-		name: "Магическая фокусировка",
-		category: "focus",
-		weight: 1,
-		hands: 1
-	},
-	{
-		name: "Фокусировка друидов",
-		category: "focus",
-		weight: 1,
-		hands: 1
-	},
-	{
-		name: "Священный символ",
-		category: "focus",
-		weight: 1,
-		hands: 1
-	},
-	{
-		name: "Стрела",
-		category: "ammunition",
-		weight: .05,
-		priceGp: .05
-	},
-	{
-		name: "Болт",
-		category: "ammunition",
-		weight: .075,
-		priceGp: .05
-	}
-];
-var aliases$1 = {
-	"проклёпанная кожа": "Проклёпанный кожаный доспех",
-	"проклепанная кожа": "Проклёпанный кожаный доспех",
-	"кольчатый доспех": "Колечный доспех",
-	"нагрудник": "Кираса",
-	"лёгкий арбалет": "Арбалет, лёгкий",
-	"тяжёлый арбалет": "Арбалет, тяжёлый",
-	"ручной арбалет": "Арбалет, ручной",
-	"стрелы": "Стрелы (20)",
-	"болты": "Арбалетные болты (20)",
-	"кожаный доспех": "Кожаный доспех"
-};
-function normalizedItemName(name) {
-	return name.toLowerCase().replace(/ё/g, "е").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s*\+[123]\s*$/, "").replace(/\s*\((?:кд\b|[+]?\d+\s*к\s*кд)[^)]*\)/gi, "").trim();
-}
-function catalogItemFor(name) {
-	const key = normalizedItemName(name);
-	const redirected = aliases$1[key] ? normalizedItemName(aliases$1[key]) : key;
-	return itemCatalog.find((item) => normalizedItemName(item.name) === redirected || item.aliases?.some((a) => normalizedItemName(a) === redirected)) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
-}
-//#endregion
-//#region app/subclassRuntime.ts
-var O$1 = (id, name, description = "") => ({
-	id,
-	name,
-	description
-});
-var yesNo = [O$1("inactive", "Не активно"), O$1("active", "Активно")];
-var elements5 = [
-	O$1("acid", "Кислота"),
-	O$1("cold", "Холод"),
-	O$1("fire", "Огонь"),
-	O$1("lightning", "Электричество"),
-	O$1("poison", "Яд")
-];
-var giantElements = [
-	O$1("acid", "Кислота"),
-	O$1("cold", "Холод"),
-	O$1("fire", "Огонь"),
-	O$1("lightning", "Электричество"),
-	O$1("thunder", "Звук")
-];
-var skillsAndTools = [
-	...Object.keys(skillKeys),
-	...artisanTools,
-	...musicalInstruments,
-	...gamingSets
-].map((value) => O$1(value, value));
-var wildSurges = [
-	O$1("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
-	O$1("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
-	O$1("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
-	O$1("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
-	O$1("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
-	O$1("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
-	O$1("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
-	O$1("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
-];
-var spiritTales = Array.from({ length: 12 }, (_, index) => O$1(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
-function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
-	return {
-		classId,
-		subclassId,
-		minLevel,
-		key: `${classId}:${subclassId}:${key}`,
-		title,
-		description,
-		trigger,
-		options,
-		randomDie
-	};
-}
-var definitions = [
-	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
-	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
-		O$1("bite", "Укус"),
-		O$1("claws", "Когти"),
-		O$1("tail", "Хвост")
-	]),
-	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
-		O$1("swim", "Плавание и дыхание под водой"),
-		O$1("climb", "Лазание"),
-		O$1("jump", "Прыжок")
-	]),
-	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
-	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
-	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
-	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
-	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
-		O$1("inactive", "Нет двойника"),
-		O$1("1", "1 двойник"),
-		O$1("2", "2 двойника"),
-		O$1("3", "3 двойника"),
-		O$1("4", "4 двойника")
-	]),
-	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
-	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
-	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
-	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
-		O$1("0", "Нет эха"),
-		O$1("1", "1 эхо"),
-		O$1("2", "2 эха (только 18 уровень)")
-	]),
-	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
-		O$1("none", "Не проявлено"),
-		O$1("arms", "Руки"),
-		O$1("arms-visage", "Руки + облик"),
-		O$1("full", "Пробуждённое астральное тело")
-	]),
-	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
-	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O$1("cone", "Конус"), O$1("line", "Линия")]),
-	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O$1("resistance", "Стихийное сопротивление"), O$1("fear", "Пугающее присутствие")]),
-	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
-	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
-	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
-	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
-	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
-	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
-		O$1("1", "1 продолжительный отдых"),
-		O$1("2", "2 продолжительных отдыха"),
-		O$1("3", "3 продолжительных отдыха"),
-		O$1("4", "4 продолжительных отдыха")
-	], 4),
-	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
-	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
-		O$1("inactive", "Не активно"),
-		O$1("lighter", "Вес уменьшен вдвое"),
-		O$1("heavier", "Вес удвоен")
-	]),
-	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
-];
-function subclassRuntimeControls(character, spells = []) {
-	const classes = orderedCharacterClasses(character);
-	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
-		const entry = classes.find((item) => item.classId === control.classId);
-		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
-			...control,
-			options: control.options.filter((option) => option.id !== "2")
-		};
-		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
-			...control,
-			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
-		};
-		if (control.key === "monk:astral-self:astral-manifestation") {
-			const level = entry?.level || 0;
-			return {
-				...control,
-				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
-			};
-		}
-		return control;
-	});
-	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
-		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
-		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O$1(String(index + 1), String(index + 1))), void 0));
-		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O$1(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
-	}
-	return controls;
-}
-function subclassRuntimeValue(character, key) {
-	return character.subclassState?.[key];
-}
-function setSubclassRuntimeValue(character, key, value) {
-	return {
-		...character,
-		subclassState: {
-			...character.subclassState || {},
-			[key]: value
-		}
-	};
-}
-var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
-function necroticHuskCooldown(character) {
-	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
-}
-function applySubclassLongRest(character) {
-	const cooldown = necroticHuskCooldown(character);
-	const state = { ...character.subclassState || {} };
-	delete state["bard:spirits:spirit-session-spell"];
-	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
-	return {
-		...character,
-		subclassState: state
-	};
-}
-//#endregion
-//#region app/adventure.ts
-var playConditions = [
-	"Ослеплён",
-	"Очарован",
-	"Оглох",
-	"Испуган",
-	"Схвачен",
-	"Недееспособен",
-	"Невидим",
-	"Парализован",
-	"Окаменел",
-	"Отравлен",
-	"Сбит с ног",
-	"Опутан",
-	"Ошеломлён",
-	"Бессознателен"
-];
-var incapacitating = [
-	"Недееспособен",
-	"Парализован",
-	"Окаменел",
-	"Ошеломлён",
-	"Бессознателен"
-];
-var playId = () => crypto.randomUUID();
-var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
-function newPlayItem(name = "") {
-	const ref = catalogItemFor(name);
-	return {
-		id: playId(),
-		name,
-		category: ref?.category,
-		catalogName: ref?.name,
-		hands: ref?.hands,
-		quantity: 1,
-		weight: ref?.weight ?? 0,
-		equipped: false,
-		magical: false,
-		requiresAttunement: false,
-		attuned: false,
-		charges: 0,
-		maxCharges: 0,
-		recharge: "none",
-		notes: ref?.damage ? [ref.damage, ref.properties].filter(Boolean).join(" · ") : "",
-		container: "",
-		acBonus: 0,
-		attackBonus: 0,
-		damageBonus: 0
-	};
-}
-function isShieldItem(i) {
-	return !!catalogItemFor(i.catalogName || i.name)?.shield || /^(?:деревянный\s+)?щит(?:\s*\(|\s*\+[123]|$)/i.test(i.name);
-}
-function handCost(i) {
-	if (i.quantity <= 0 || !i.equipped) return 0;
-	if (i.hands !== void 0) return i.hands;
-	return catalogItemFor(i.catalogName || i.weaponBase || i.name)?.hands ?? (isShieldItem(i) || itemCategory(i) === "weapon" || itemCategory(i) === "focus" || isHandTool(i.name) ? 1 : 0);
-}
-function equippedHands(c) {
-	const held = (c.adventure?.inventory || []).filter((i) => handCost(i) > 0);
-	return {
-		held,
-		used: held.reduce((n, i) => n + handCost(i), 0),
-		free: Math.max(0, 2 - held.reduce((n, i) => n + handCost(i), 0))
-	};
-}
-function checkEquipmentCapacity(items) {
-	const held = items.filter((i) => i.quantity > 0 && i.equipped);
-	if (held.reduce((n, i) => n + handCost(i), 0) > 2) throw new Error("Заняты обе руки. Уберите оружие, щит или фокусировку, прежде чем брать новый предмет.");
-	if (held.filter((i) => isShieldItem(i)).length > 1) throw new Error("Нельзя использовать два щита одновременно.");
-	if (held.filter((i) => !isShieldItem(i) && !!catalogItemFor(i.catalogName || i.name)?.armor).length > 1) throw new Error("Можно носить только один комплект доспехов.");
-}
-function prepareStartingEquipment(items) {
-	const best = items.filter((i) => !!catalogItemFor(i.catalogName || i.name)?.armor).sort((a, b) => (catalogItemFor(b.catalogName || b.name)?.armor?.base || 0) - (catalogItemFor(a.catalogName || a.name)?.armor?.base || 0))[0];
-	if (best) best.equipped = true;
-	const shield = items.find(isShieldItem);
-	if (shield) shield.equipped = true;
-	const handsLeft = shield ? 1 : 2;
-	const weapon = items.find((i) => itemCategory(i) === "weapon" && (i.hands || 1) <= handsLeft);
-	const focus = items.find((i) => itemCategory(i) === "focus" && (i.hands || 1) <= handsLeft);
-	if (weapon) weapon.equipped = true;
-	if (!weapon && focus) focus.equipped = true;
-	if ((weapon ? handCost(weapon) : focus ? handCost(focus) : 0) + (shield ? 1 : 0) < 2) {
-		const extra = items.find((i) => !i.equipped && itemCategory(i) === "weapon" && handCost({
-			...i,
-			equipped: true
-		}) <= 1);
-		if (extra) extra.equipped = true;
-	}
-	return items;
-}
-function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
-	const c = structuredClone(source);
-	delete c.adventure;
-	if (c.homebrew) {
-		const library = c.homebrew.entities || [];
-		const ids = new Set([
-			...activeHomebrew(c).map((e) => e.id),
-			...c.feats || [],
-			...(c.advancements || []).map((e) => e.featId),
-			...c.spells
-		]);
-		const frozen = /* @__PURE__ */ new Map();
-		for (const root of library.filter((e) => ids.has(e.id))) for (const entry of homebrewExportClosure(root, library)) frozen.set(entry.id, entry);
-		c.homebrew = {
-			...c.homebrew,
-			entities: [...frozen.values()]
-		};
-	}
-	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
-		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
-		const item = newPlayItem(match?.[1] || line);
-		item.category = itemCategory(item);
-		item.quantity = match ? integer(match[2], 1) : 1;
-		return item;
-	});
-	prepareStartingEquipment(inventory);
-	c.adventure = {
-		version: 1,
-		name: name.trim() || "Новое приключение",
-		sourceId,
-		sourceUpdatedAt,
-		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
-		status: "active",
-		inventory,
-		inventoryCatalogVersion: 2,
-		effects: [],
-		concentrationChecks: [],
-		conditions: [],
-		exhaustion: 0,
-		journal: [],
-		notes: "",
-		round: 1,
-		turn: {
-			action: false,
-			bonus: false,
-			reaction: false
-		},
-		attunementLimit: 3,
-		elapsedMinutes: 0
-	};
-	c.currentHitPoints ??= estimatedHitPoints({
-		...c,
-		abilities: finalAbilityScores(c)
-	});
-	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
-}
-function logPlay(c, text, result) {
-	if (!c.adventure) return c;
-	const entry = {
-		id: playId(),
-		at: (/* @__PURE__ */ new Date()).toISOString(),
-		text,
-		...result ? {
-			formula: result.formula,
-			rolls: result.rolls,
-			total: result.total,
-			natural: result.natural,
-			critical: result.critical
-		} : {}
-	};
-	return {
-		...c,
-		adventure: {
-			...c.adventure,
-			journal: [entry, ...c.adventure.journal].slice(0, 150)
-		}
-	};
-}
-function playMaximum(c) {
-	return c.adventure?.hpMaximum ?? estimatedHitPoints({
-		...c,
-		abilities: finalAbilityScores(c)
-	});
-}
-function inventoryText(items) {
-	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
-}
-function playDerived(c) {
-	const items = c.adventure?.inventory;
-	return {
-		...c,
-		abilities: finalAbilityScores(c),
-		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped && i.quantity > 0).map((i) => ({
-			...i,
-			name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, "")
-		}))) } : {}
-	};
-}
-function activeItem(i) {
-	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
-}
-function itemBonus(c, key) {
-	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
-}
-var itemCategoryLabels = {
-	weapon: "Оружие",
-	focus: "Фокусировки",
-	armor: "Доспехи",
-	consumable: "Расходники",
-	ammunition: "Боеприпасы",
-	gear: "Снаряжение"
-};
-function itemCategory(i) {
-	if (i.category && !(i.category === "gear" && catalogItemFor(i.catalogName || i.name)?.category !== "gear")) return i.category;
-	const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
-	if (ref) return ref.category;
-	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
-	if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return "ammunition";
-	if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return "weapon";
-	if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return "armor";
-	return "gear";
-}
-function consumePlayItem(c, id) {
-	const i = c.adventure?.inventory.find((i) => i.id === id);
-	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
-	if (i.quantity <= 0) throw new Error("Предмет закончился.");
-	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
-		...x,
-		quantity: x.quantity - 1
-	} : x)), `Использован предмет: ${i.name}`);
-}
-function spellItemBonus(c, key, classId) {
-	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
-}
-function weaponItemBonus(c, attackName, key) {
-	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
-	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
-	return values.length ? Math.max(...values) : 0;
-}
-/** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
-function upgradeLegacyInventory(c) {
-	if (!c.adventure || c.adventure.inventoryCatalogVersion === 2) return c;
-	const upgrade = (item) => {
-		const ref = catalogItemFor(item.catalogName || item.name);
-		if (!ref) return item;
-		return {
-			...item,
-			catalogName: item.catalogName || ref.name,
-			category: item.category === "gear" && ref.category !== "gear" ? ref.category : item.category || ref.category,
-			weight: item.weight === 0 && ref.weight > 0 ? ref.weight : item.weight,
-			hands: item.hands ?? ref.hands
-		};
-	};
-	const inventory = c.adventure.inventory.map(upgrade);
-	const wasLegacy = c.adventure.inventory.some((i) => i.equipped && i.weight === 0);
-	const corrected = inventory.map((i) => wasLegacy && (isHandTool(i.name) || itemCategory(i) === "gear") ? {
-		...i,
-		equipped: false
-	} : i);
-	return {
-		...c,
-		adventure: {
-			...c.adventure,
-			inventory: corrected,
-			inventoryTrash: (c.adventure.inventoryTrash || []).map(upgrade),
-			inventoryCatalogVersion: 2
-		}
-	};
-}
-function updateInventory(c, items) {
-	if (!c.adventure) return {
-		...c,
-		inventoryOverride: inventoryText(items)
-	};
-	const inventory = items.filter((i) => i.quantity > 0);
-	if (inventory.some((i) => i.equipped && !c.adventure.inventory.find((old) => old.id === i.id)?.equipped)) checkEquipmentCapacity(inventory);
-	const activeIds = new Set(inventory.map((i) => i.id));
-	const removed = c.adventure.inventory.filter((i) => !items.some((next) => next.id === i.id));
-	const trash = new Map((c.adventure.inventoryTrash || []).map((i) => [i.id, i]));
-	for (const i of [...removed, ...items.filter((i) => i.quantity <= 0)]) trash.set(i.id, {
-		...i,
-		equipped: false,
-		attuned: false,
-		attunementPending: void 0
-	});
-	for (const id of activeIds) trash.delete(id);
-	return {
-		...c,
-		inventoryOverride: inventoryText(inventory),
-		adventure: {
-			...c.adventure,
-			inventory,
-			inventoryTrash: [...trash.values()]
-		}
-	};
-}
-function restorePlayItem(c, id) {
-	const item = c.adventure?.inventoryTrash?.find((i) => i.id === id);
-	if (!item) throw new Error("Предмет не найден в корзине.");
-	return logPlay(updateInventory(c, [...c.adventure.inventory, {
-		...item,
-		quantity: Math.max(1, item.quantity),
-		equipped: false,
-		attuned: false,
-		attunementPending: void 0
-	}]), `Возвращено из корзины: ${item.name}`);
-}
-function applyPlayDamage(c, amount, defense = "normal") {
-	if (!c.adventure) return c;
-	const raw = integer(amount);
-	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
-	const hp = c.currentHitPoints ?? playMaximum(c);
-	const temp = c.temporaryHitPoints || 0;
-	const lost = Math.max(0, damage - temp);
-	const nextHp = Math.max(0, hp - lost);
-	const conditions = [...c.adventure.conditions];
-	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
-	const checks = [...c.adventure.concentrationChecks];
-	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
-		const dc = Math.max(10, Math.floor(damage / 2));
-		checks.push({
-			id: playId(),
-			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
-			damage
-		});
-	}
-	let next = {
-		...c,
-		currentHitPoints: nextHp,
-		temporaryHitPoints: Math.max(0, temp - damage),
-		deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
-		deathSaveFailures: hp === 0 && damage > 0 ? Math.min(3, (c.deathSaveFailures || 0) + 1) : c.deathSaveFailures,
-		adventure: {
-			...c.adventure,
-			conditions,
-			concentrationChecks: nextHp === 0 ? [] : checks,
-			concentration: nextHp === 0 ? void 0 : c.adventure.concentration,
-			effects: nextHp === 0 ? c.adventure.effects.filter((e) => !e.concentration) : c.adventure.effects
-		}
-	};
-	next = logPlay(next, `Урон ${damage}${damage !== raw ? ` (исходный ${raw})` : ""}: HP ${hp} → ${nextHp}, временные ${temp} → ${Math.max(0, temp - damage)}.${lost >= hp + playMaximum(c) && damage > 0 ? " Массивный урон: проверьте мгновенную смерть с мастером." : ""}`);
-	return next;
-}
-function healPlay(c, amount) {
-	const hp = c.currentHitPoints ?? playMaximum(c);
-	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
-	return logPlay({
-		...c,
-		currentHitPoints: nextHp,
-		...nextHp > 0 ? {
-			deathSaveSuccesses: 0,
-			deathSaveFailures: 0,
-			adventure: c.adventure ? {
-				...c.adventure,
-				conditions: c.adventure.conditions.filter((s) => s !== "Бессознателен")
-			} : void 0
-		} : {}
-	}, `Лечение: HP ${hp} → ${nextHp}`);
-}
-function endConcentration(c) {
-	if (!c.adventure) return c;
-	return {
-		...c,
-		adventure: {
-			...c.adventure,
-			concentration: void 0,
-			concentrationChecks: [],
-			effects: c.adventure.effects.filter((e) => !e.concentration)
-		}
-	};
-}
-function toggleCondition(c, name) {
-	if (!c.adventure) return c;
-	const removing = c.adventure.conditions.includes(name);
-	let next = {
-		...c,
-		adventure: {
-			...c.adventure,
-			conditions: removing ? c.adventure.conditions.filter((s) => s !== name) : [...c.adventure.conditions, name]
-		}
-	};
-	if (!removing && incapacitating.includes(name)) next = endConcentration(next);
-	return logPlay(next, `${removing ? "Снято" : "Добавлено"} состояние: ${name}`);
-}
-function queueAttunement(c, id) {
-	if (!c.adventure) return c;
-	const item = c.adventure.inventory.find((i) => i.id === id);
-	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
-	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
-	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
-	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
-	if (!item.attuned && !item.attunementPending && c.adventure.inventory.filter((i) => i.attuned || i.attunementPending === "start").length >= c.adventure.attunementLimit) throw new Error("Лимит настройки занят. Сначала завершите прекращение другой настройки.");
-	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
-		...i,
-		attunementPending: i.attunementPending ? void 0 : i.attuned ? "end" : "start"
-	} : i));
-}
-function finishAttunement(c) {
-	if (!c.adventure) return c;
-	if (c.adventure.inventory.filter((i) => i.attunementPending).length > 1) throw new Error("На один короткий отдых выберите только один предмет для настройки или её прекращения.");
-	return updateInventory(c, c.adventure.inventory.map((i) => i.attunementPending ? {
-		...i,
-		attuned: i.attunementPending === "start",
-		attunementPending: void 0
-	} : i));
-}
-function randomDie(sides) {
-	const limit = Math.floor(4294967296 / sides) * sides;
-	const values = new Uint32Array(1);
-	do
-		crypto.getRandomValues(values);
-	while (values[0] >= limit);
-	return values[0] % sides + 1;
-}
-/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
-function rollDice(formula, die = randomDie, critical = false) {
-	const value = formula.toLowerCase().replace(/к/g, "d").replace(/\s/g, "").replace(/\+\-/g, "-").replace(/--/g, "+");
-	if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error("Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.");
-	const rolls = [];
-	let total = 0;
-	for (const term of value.match(/[+-]?[^+-]+/g) || []) {
-		const sign = term.startsWith("-") ? -1 : 1;
-		const part = term.replace(/^[+-]/, "");
-		if (part.includes("d")) {
-			const [count, sides] = part.split("d").map(Number);
-			const n = (count || 1) * (critical ? 2 : 1);
-			if (count === 0 && part.startsWith("0") || n < 1 || n > 200 || sides < 2 || sides > 1e3 || rolls.length + n > 200) throw new Error("Слишком много костей или недопустимый размер кости.");
-			for (let i = 0; i < n; i++) {
-				const rolled = die(sides);
-				rolls.push(rolled);
-				total += sign * rolled;
-			}
-		} else {
-			const n = Number(part);
-			if (!Number.isSafeInteger(n) || n > 1e6) throw new Error("Слишком большой модификатор.");
-			total += sign * n;
-		}
-	}
-	return {
-		formula: critical ? `${formula} (крит: кости ×2)` : formula,
-		rolls,
-		total
-	};
-}
-function rollD20(bonus, mode = "normal", die = randomDie) {
-	const rolls = [die(20)];
-	if (mode !== "normal") rolls.push(die(20));
-	const natural = mode === "advantage" ? Math.max(...rolls) : mode === "disadvantage" ? Math.min(...rolls) : rolls[0];
-	return {
-		formula: `${mode === "normal" ? "1d20" : "2d20" + (mode === "advantage" ? " (лучший)" : " (худший)")}${bonus >= 0 ? "+" : ""}${bonus}`,
-		rolls,
-		total: natural + bonus,
-		natural,
-		critical: natural === 20
-	};
-}
-function applyDeathSave(c, natural) {
-	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
-	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
-	const succeeds = natural >= 10;
-	return logPlay({
-		...c,
-		deathSaveSuccesses: integer((c.deathSaveSuccesses || 0) + (succeeds ? 1 : 0), 0, 3),
-		deathSaveFailures: integer((c.deathSaveFailures || 0) + (succeeds ? 0 : natural === 1 ? 2 : 1), 0, 3)
-	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
-}
-function playHitDicePools(c) {
-	return orderedCharacterClasses(c).map((entry) => ({
-		classId: entry.classId,
-		die: classRuleFor(c, entry.classId)?.hitDie || 8,
-		max: entry.level,
-		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
-	}));
-}
-function durationMinutes(text) {
-	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
-	if (!match) return void 0;
-	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
-}
-function restPlay(c, kind, selectedDice = {}, die = randomDie) {
-	if (!c.adventure) return c;
-	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
-	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
-	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
-	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
-	const derived = playDerived(c);
-	const pools = playHitDicePools(c);
-	const spent = Object.fromEntries(pools.map((p) => [p.classId, p.spent]));
-	let healing = 0;
-	if (kind === "short") for (const pool of pools) {
-		const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
-		for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier$1(derived.abilities.con));
-		spent[pool.classId] += count;
-	}
-	if (kind === "long") {
-		let recover = c.rulesetId === "5e-2024" ? characterLevel(c) : Math.max(1, Math.floor(characterLevel(c) / 2));
-		for (const pool of pools) {
-			const n = Math.min(recover, spent[pool.classId]);
-			spent[pool.classId] -= n;
-			recover -= n;
-		}
-	}
-	const resources = kind === "long" ? spentResourcesAfterLongRest(derived) : { ...c.resourceSpent };
-	if (kind === "short") characterResources(derived).filter((r) => r.isShortRest).forEach((r) => {
-		resources[r.key] = 0;
-	});
-	let next = {
-		...c,
-		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
-		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
-		hitDiceSpentByClass: spent,
-		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
-		resourceSpent: resources,
-		spellSlotsUsed: kind === "long" ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived),
-		pactSlotsUsed: 0,
-		adventure: {
-			...c.adventure,
-			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
-			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
-			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
-				...r,
-				current: r.max
-			} : r),
-			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
-				...i,
-				charges: i.maxCharges
-			} : i),
-			concentration: keepConcentration ? {
-				...c.adventure.concentration,
-				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
-			} : void 0,
-			concentrationChecks: [],
-			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
-				...e,
-				remaining: e.remaining - (kind === "long" ? 4800 : 600)
-			})
-		}
-	};
-	if (kind === "long") next = applySubclassLongRest(next);
-	if (kind === "short") next = finishAttunement(next);
-	if ((next.currentHitPoints || 0) > 0) next = {
-		...next,
-		deathSaveSuccesses: 0,
-		deathSaveFailures: 0,
-		adventure: {
-			...next.adventure,
-			conditions: next.adventure.conditions.filter((s) => s !== "Бессознателен")
-		}
-	};
-	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
-}
-function advancePlayTurn(c) {
-	if (!c.adventure) return c;
-	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
-	let next = {
-		...c,
-		adventure: {
-			...c.adventure,
-			round: c.adventure.round + 1,
-			turn: {
-				action: false,
-				bonus: false,
-				reaction: false
-			},
-			effects: c.adventure.effects.filter((e) => !ended.includes(e)).map((e) => e.remaining === void 0 ? e : {
-				...e,
-				remaining: e.remaining - 1
-			})
-		}
-	};
-	if (c.adventure.concentration?.remainingMinutes !== void 0) {
-		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
-		next.adventure.concentration = {
-			...c.adventure.concentration,
-			remainingMinutes
-		};
-		if (remainingMinutes < 1e-5) next = endConcentration(next);
-	}
-	if (ended.some((e) => e.concentration)) next = endConcentration(next);
-	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
 }
 //#endregion
 //#region app/armor.ts
@@ -28947,6 +27821,1316 @@ function createLongStoryShortExport(context, options = {}) {
 		version: "2",
 		wizard: {}
 	};
+}
+//#endregion
+//#region app/itemCatalog.ts
+var armorRows = String.raw`Стёганый доспех|5|8|11|full|0|1
+Кожаный доспех|10|10|11|full|0|0
+Проклёпанный кожаный доспех|45|13|12|full|0|0
+Шкурный доспех|10|12|12|max2|0|0
+Кольчужная рубаха|50|20|13|max2|0|0
+Чешуйчатый доспех|50|45|14|max2|0|1
+Кираса|400|20|14|max2|0|0
+Полулаты|750|40|15|max2|0|1
+Колечный доспех|30|40|14|none|0|1
+Кольчуга|75|55|16|none|13|1
+Наборный доспех|200|60|17|none|15|1
+Латы|1500|65|18|none|15|1`;
+var weaponRows = String.raw`Боевой посох|0.2|4|1к6 дробящий|универсальное 1к8|1
+Булава|5|4|1к6 дробящий||1
+Дубинка|0.1|2|1к4 дробящий|лёгкое|1
+Кинжал|2|1|1к4 колющий|лёгкое, метательное 20/60, фехтовальное|1
+Копьё|1|3|1к6 колющий|метательное 20/60, универсальное 1к8|1
+Лёгкий молот|2|2|1к4 дробящий|лёгкое, метательное 20/60|1
+Метательное копьё|0.5|2|1к6 колющий|метательное 30/120|1
+Палица|0.2|10|1к8 дробящий|двуручное|2
+Ручной топор|5|2|1к6 рубящий|лёгкое, метательное 20/60|1
+Серп|1|2|1к4 рубящий|лёгкое|1
+Арбалет, лёгкий|25|5|1к8 колющий|боеприпас 80/320, двуручное, перезарядка|2
+Дротик|0.05|0.25|1к4 колющий|метательное 20/60, фехтовальное|1
+Короткий лук|25|2|1к6 колющий|боеприпас 80/320, двуручное|2
+Праща|0.1|0|1к4 дробящий|боеприпас 30/120|1
+Алебарда|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
+Боевая кирка|5|2|1к8 колющий||1
+Боевой молот|15|2|1к8 дробящий|универсальное 1к10|1
+Боевой топор|10|4|1к8 рубящий|универсальное 1к10|1
+Глефа|20|6|1к10 рубящий|двуручное, досягаемость, тяжёлое|2
+Двуручный меч|50|6|2к6 рубящий|двуручное, тяжёлое|2
+Длинное копьё|10|6|1к12 колющий|досягаемость, особое|1
+Длинный меч|15|3|1к8 рубящий|универсальное 1к10|1
+Кнут|2|3|1к4 рубящий|досягаемость, фехтовальное|1
+Короткий меч|10|2|1к6 колющий|лёгкое, фехтовальное|1
+Молот|10|10|2к6 дробящий|двуручное, тяжёлое|2
+Моргенштерн|15|4|1к8 колющий||1
+Пика|5|18|1к10 колющий|двуручное, досягаемость, тяжёлое|2
+Рапира|25|2|1к8 колющий|фехтовальное|1
+Секира|30|7|1к12 рубящий|двуручное, тяжёлое|2
+Скимитар|25|3|1к6 рубящий|лёгкое, фехтовальное|1
+Трезубец|5|4|1к6 колющий|метательное 20/60, универсальное 1к8|1
+Цеп|10|2|1к8 дробящий||1
+Арбалет, ручной|75|3|1к6 колющий|боеприпас 30/120, лёгкое, перезарядка|1
+Арбалет, тяжёлый|50|18|1к10 колющий|боеприпас 100/400, двуручное, перезарядка, тяжёлое|2
+Длинный лук|50|2|1к8 колющий|боеприпас 150/600, двуручное, тяжёлое|2
+Духовая трубка|10|1|1 колющий|боеприпас 25/100, перезарядка|1
+Сеть|1|3|—|метательное 5/15, особое|1`;
+var supplyRows = String.raw`Абак|2|2
+Алхимический огонь (фляга)|50|1|consumable
+Блок и лебёдка|1|5
+Арбалетные болты (20)|1|1.5|ammunition
+Иглы для трубки (50)|1|1|ammunition
+Снаряды для пращи (20)|0.04|1.5|ammunition
+Стрелы (20)|1|1|ammunition
+Бочка|2|70
+Бумага (один лист)|0.2|0
+Бурдюк|0.2|5
+Бутылка, стеклянная|2|2
+Ведро|0.05|2
+Верёвка пеньковая (50 футов)|1|10
+Верёвка, шёлковая (50 футов)|10|5
+Весы, торговые|5|3
+Воск|0.5|0
+Горшок, железный|2|10
+Духи (флакон)|5|0
+Замок|10|1
+Зелье лечения|50|0.5|consumable
+Зеркало, стальное|5|0.5
+Калтропы (20 штук в сумке)|1|2
+Кандалы|2|6
+Кирка, горняцкая|2|10
+Кислота (флакон)|25|1|consumable
+Книга|25|5
+Книга заклинаний|50|3
+Колокольчик|1|0
+Колчан|1|1
+Кольцо-печатка|5|0
+Комплект для лазания|25|12
+Комплект для рыбалки|1|4
+Комплект целителя|5|3
+Контейнер для арбалетных болтов|1|1
+Контейнер для карт и свитков|1|1
+Корзина|0.4|2
+Кошель|0.5|1
+Крюк-кошка|2|4
+Кувшин или графин|0.02|4
+Лампа|0.5|1
+Лестница (10 футов)|0.1|25
+Ломик|2|5
+Лопата|2|5
+Волшебная палочка|10|1|focus
+Жезл|10|2|focus
+Кристалл|10|1|focus
+Магическая фокусировка — посох|5|4|focus
+Сфера|20|3|focus
+Масло (фляга)|0.1|1|consumable
+Мел (1 кусочек)|0.01|0
+Металлические шарики (1000 шт. в сумке)|1|2
+Мешок|0.01|0.5
+Мешочек с компонентами|25|2
+Молот, кузнечный|2|10
+Молоток|1|3
+Мыло|0.02|0
+Одежда, дорожная|2|4
+Одежда, костюм|5|4
+Одежда, обычная|0.5|3
+Одежда, отличная|15|6
+Одеяло|0.5|3
+Охотничий капкан|5|25
+Палатка, двухместная|2|20
+Пергамент (один лист)|0.1|0
+Песочные часы|25|1
+Писчее перо|0.02|0
+Подзорная труба|1000|1
+Противоядие (флакон)|50|0|consumable
+Рационы (1 день)|0.5|2|consumable
+Рюкзак|2|5
+Ряса|1|4
+Свеча|0.01|0
+Святая вода (фляга)|25|1|consumable
+Священный символ — амулет|5|1|focus
+Священный символ — реликварий|5|2|focus
+Священный символ — эмблема|5|0|focus
+Сигнальный свисток|0.05|0
+Спальник|1|7
+Столовый набор|0.2|1
+Сундук|5|25
+Таран, портативный|4|35
+Точильный камень|0.01|1
+Трутница|0.5|1
+Увеличительное стекло|100|0
+Факел|0.01|1
+Флакон|1|0
+Фляга или большая кружка|0.02|1
+Фокусировка друидов — омела|1|0|focus
+Фокусировка друидов — посох|5|4|focus
+Фокусировка друидов — палочка|10|1|focus
+Фокусировка друидов — тотем|1|0|focus
+Фонарь, закрытый|5|2
+Фонарь, направленный|10|2
+Цепь (10 футов)|5|10
+Чернила (бутылочка 30 граммов)|10|0
+Шест (10 футов)|0.05|7
+Шипы, железные (10)|1|5
+Шлямбур|0.05|0.25
+Яд, простой (флакон)|100|0|consumable
+Воровские инструменты|25|1
+Драконьи шахматы|1|0.5
+Карты|0.5|0
+Кости|0.1|0
+Ставка трёх драконов|1|0
+Инструменты навигатора|25|2
+Инструменты отравителя|50|2
+Барабан|6|3
+Виола|30|1
+Волынка|30|6
+Лира|30|2
+Лютня|35|2
+Рожок|3|2
+Свирель|12|2
+Флейта|2|1
+Цимбалы|25|10
+Шалмей|2|1
+Набор для грима|25|3
+Набор для фальсификации|15|5
+Набор травника|5|3
+Инструменты алхимика|50|8
+Инструменты гончара|10|3
+Инструменты каллиграфа|10|5
+Инструменты каменщика|10|8
+Инструменты картографа|15|6
+Инструменты кожевника|5|5
+Инструменты кузнеца|20|8
+Инструменты пивовара|20|9
+Инструменты плотника|8|6
+Инструменты повара|1|8
+Инструменты резчика по дереву|1|5
+Инструменты ремонтника|50|10
+Инструменты сапожника|5|5
+Инструменты стеклодува|30|5
+Инструменты ткача|1|5
+Инструменты художника|10|5
+Инструменты ювелира|25|2
+Набор взломщика|16|0
+Набор дипломата|39|0
+Набор исследователя подземелий|12|0
+Набор путешественника|10|0
+Набор артиста|40|0
+Набор священника|19|0
+Набор учёного|40|0`;
+var rows = (raw) => raw.trim().split("\n").map((s) => s.split("|"));
+var handToolNames = new Set([
+	"Барабан",
+	"Виола",
+	"Волынка",
+	"Лира",
+	"Лютня",
+	"Рожок",
+	"Свирель",
+	"Флейта",
+	"Цимбалы",
+	"Шалмей",
+	"Воровские инструменты",
+	"Инструменты навигатора",
+	"Инструменты отравителя",
+	"Набор для грима",
+	"Набор для фальсификации",
+	"Набор травника",
+	"Набор для фальсификации",
+	"Инструменты алхимика",
+	"Инструменты гончара",
+	"Инструменты каллиграфа",
+	"Инструменты каменщика",
+	"Инструменты картографа",
+	"Инструменты кожевника",
+	"Инструменты кузнеца",
+	"Инструменты пивовара",
+	"Инструменты плотника",
+	"Инструменты повара",
+	"Инструменты резчика по дереву",
+	"Инструменты ремонтника",
+	"Инструменты сапожника",
+	"Инструменты стеклодува",
+	"Инструменты ткача",
+	"Инструменты художника",
+	"Инструменты ювелира"
+]);
+function isMusicalInstrument(name) {
+	return /лютн|лир[аы]|арф|свирел|флейт|волынк|виол|барабан|рожок|цимбал|шалм|мандолин|музыкальн.{0,15}инструмент/i.test(name);
+}
+function isWoodenFocus(name, notes = "") {
+	return /посох|дубинк|палиц|деревян|древесин|кусок дерева|ветк|ветв|wooden|staff|club/i.test(`${name} ${notes}`);
+}
+function isHandTool(name) {
+	return handToolNames.has(name) || /^(?:инструменты |набор (?:для грима|для фальсификации|травника))/i.test(name);
+}
+var packWeights = {
+	"Набор взломщика": 47.5,
+	"Набор дипломата": 40,
+	"Набор исследователя подземелий": 61.5,
+	"Набор путешественника": 59,
+	"Набор артиста": 38,
+	"Набор священника": 24,
+	"Набор учёного": 12
+};
+var itemCatalog = [
+	...rows(armorRows).map(([name, price, weight, base, dex, strength, stealth]) => ({
+		name,
+		category: "armor",
+		priceGp: Number(price),
+		weight: Number(weight),
+		armor: {
+			base: Number(base),
+			dex,
+			strength: Number(strength) || void 0,
+			stealth: stealth === "1"
+		}
+	})),
+	{
+		name: "Щит",
+		category: "armor",
+		priceGp: 10,
+		weight: 6,
+		hands: 1,
+		shield: true,
+		aliases: ["Деревянный щит"]
+	},
+	...rows(weaponRows).map(([name, price, weight, damage, properties, hands]) => ({
+		name,
+		category: "weapon",
+		priceGp: Number(price),
+		weight: Number(weight),
+		damage,
+		properties,
+		hands: Number(hands)
+	})),
+	...rows(supplyRows).map(([name, price, weight, category]) => ({
+		name,
+		category: category || "gear",
+		priceGp: Number(price),
+		weight: packWeights[name] ?? Number(weight),
+		...category === "focus" || isHandTool(name) ? { hands: 1 } : {}
+	})),
+	{
+		name: "Магическая фокусировка",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Фокусировка друидов",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Священный символ",
+		category: "focus",
+		weight: 1,
+		hands: 1
+	},
+	{
+		name: "Стрела",
+		category: "ammunition",
+		weight: .05,
+		priceGp: .05
+	},
+	{
+		name: "Болт",
+		category: "ammunition",
+		weight: .075,
+		priceGp: .05
+	}
+];
+var aliases$1 = {
+	"проклёпанная кожа": "Проклёпанный кожаный доспех",
+	"проклепанная кожа": "Проклёпанный кожаный доспех",
+	"кольчатый доспех": "Колечный доспех",
+	"нагрудник": "Кираса",
+	"лёгкий арбалет": "Арбалет, лёгкий",
+	"тяжёлый арбалет": "Арбалет, тяжёлый",
+	"ручной арбалет": "Арбалет, ручной",
+	"стрелы": "Стрелы (20)",
+	"болты": "Арбалетные болты (20)",
+	"кожаный доспех": "Кожаный доспех"
+};
+function normalizedItemName(name) {
+	return name.toLowerCase().replace(/ё/g, "е").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s*\+[123]\s*$/, "").replace(/\s*\((?:кд\b|[+]?\d+\s*к\s*кд)[^)]*\)/gi, "").trim();
+}
+function catalogItemFor(name) {
+	const key = normalizedItemName(name);
+	const redirected = aliases$1[key] ? normalizedItemName(aliases$1[key]) : key;
+	return itemCatalog.find((item) => normalizedItemName(item.name) === redirected || item.aliases?.some((a) => normalizedItemName(a) === redirected)) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
+}
+//#endregion
+//#region app/subclassRuntime.ts
+var O$1 = (id, name, description = "") => ({
+	id,
+	name,
+	description
+});
+var yesNo = [O$1("inactive", "Не активно"), O$1("active", "Активно")];
+var elements5 = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("poison", "Яд")
+];
+var giantElements = [
+	O$1("acid", "Кислота"),
+	O$1("cold", "Холод"),
+	O$1("fire", "Огонь"),
+	O$1("lightning", "Электричество"),
+	O$1("thunder", "Звук")
+];
+var skillsAndTools = [
+	...Object.keys(skillKeys),
+	...artisanTools,
+	...musicalInstruments,
+	...gamingSets
+].map((value) => O$1(value, value));
+var wildSurges = [
+	O$1("1", "1 · Некротический всплеск", "Существа в 30 фт: спасбросок Телосложения, 1к12 некротического; временные хиты по нанесённому урону."),
+	O$1("2", "2 · Телепортация", "Бонусным действием телепортация до 30 фт во время ярости."),
+	O$1("3", "3 · Взрывной дух", "Появляется дух; бонусным действием можно взорвать его возле цели."),
+	O$1("4", "4 · Магическое метательное оружие", "Оружие наносит силовой урон, получает метательное 20/60 и возвращается."),
+	O$1("5", "5 · Ответ силой", "Попавшее по варвару существо получает 1к6 силового урона."),
+	O$1("6", "6 · Защитная магия", "Варвар и союзники в 10 фт получают +1 КД."),
+	O$1("7", "7 · Труднопроходимая аура", "15 фт вокруг варвара — труднопроходимая местность для врагов."),
+	O$1("8", "8 · Ослепляющий луч", "Бонусным действием: спасбросок Телосложения, 1к6 излучением и ослепление.")
+];
+var spiritTales = Array.from({ length: 12 }, (_, index) => O$1(String(index + 1), `История ${index + 1}`, "Сохранённый результат «Историй из-за грани»; одновременно хранится одна история."));
+function C(classId, subclassId, minLevel, key, title, description, trigger, options, randomDie) {
+	return {
+		classId,
+		subclassId,
+		minLevel,
+		key: `${classId}:${subclassId}:${key}`,
+		title,
+		description,
+		trigger,
+		options,
+		randomDie
+	};
+}
+var definitions = [
+	C("barbarian", "wildmagic", 3, "wild-surge", "Текущий всплеск дикой магии", "Бросается при входе в ярость; на 10-м может быть заменён реакцией, на 14-м выбирается из двух результатов.", "random", wildSurges, 8),
+	C("barbarian", "beast", 3, "beast-form", "Форма зверя", "Выбирается при каждом входе в ярость и создаёт только временную атаку.", "rage", [
+		O$1("bite", "Укус"),
+		O$1("claws", "Когти"),
+		O$1("tail", "Хвост")
+	]),
+	C("barbarian", "beast", 6, "beast-adaptation", "Звериная адаптация", "Можно менять после каждого короткого или продолжительного отдыха.", "short-rest", [
+		O$1("swim", "Плавание и дыхание под водой"),
+		O$1("climb", "Лазание"),
+		O$1("jump", "Прыжок")
+	]),
+	C("barbarian", "giant", 6, "elemental-cleaver", "Стихийный тесак", "Тип урона выбирается при каждой ярости и применяется только к текущему выбранному оружию.", "rage", giantElements),
+	C("bard", "creation", 6, "dancing-item", "Оживлённый предмет", "Временный Dancing Item существует до 1 часа; не попадает в постоянный инвентарь.", "activation", yesNo),
+	C("bard", "spirits", 3, "spirit-tale", "Сохранённая история духа", "Тратит Вдохновение барда, бросается кость и сохраняется один результат до применения.", "random", spiritTales, 12),
+	C("cleric", "knowledge", 2, "knowledge-of-ages", "Знание веков", "Временное владение одним навыком или инструментом на 10 минут; не экспортируется как постоянное.", "activation", skillsAndTools),
+	C("cleric", "trickery", 2, "invoke-duplicity", "Призыв двойника", "Иллюзорная позиция, не существо с хитами. На 17-м уровне одновременно до четырёх копий.", "activation", [
+		O$1("inactive", "Нет двойника"),
+		O$1("1", "1 двойник"),
+		O$1("2", "2 двойника"),
+		O$1("3", "3 двойника"),
+		O$1("4", "4 двойника")
+	]),
+	C("cleric", "peace", 1, "emboldening-bond", "Укрепляющая связь", "Групповое временное состояние на 10 минут; количество участников ограничено БМ.", "activation", yesNo),
+	C("druid", "spores", 2, "symbiotic-entity", "Симбиотическая сущность", "Расходует общий ресурс Дикого облика; активна до 10 минут, пока сохраняются её временные хиты.", "activation", yesNo),
+	C("druid", "spores", 10, "spreading-spores", "Распространение спор", "10-футовый куб спор на 1 минуту; пока он существует, обычная реакция Ореола спор недоступна.", "activation", yesNo),
+	C("fighter", "echo-knight", 3, "echo-count", "Проявленные эха", "Эхо — позиционный объект с КД 14 + БМ и 1 хитом, но не полноценное существо.", "activation", [
+		O$1("0", "Нет эха"),
+		O$1("1", "1 эхо"),
+		O$1("2", "2 эха (только 18 уровень)")
+	]),
+	C("monk", "astral-self", 3, "astral-manifestation", "Астральное проявление", "Хранится как временный уровень проявления; атаки рук используют Мудрость и силовой урон.", "activation", [
+		O$1("none", "Не проявлено"),
+		O$1("arms", "Руки"),
+		O$1("arms-visage", "Руки + облик"),
+		O$1("full", "Пробуждённое астральное тело")
+	]),
+	C("monk", "ascendant-dragon", 3, "dragon-strike-element", "Драконий удар: тип урона", "Выбирается на каждую безоружную атаку.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-element", "Дыхание дракона: стихия", "Тип урона выбирается при каждом выдохе.", "per-use", elements5),
+	C("monk", "ascendant-dragon", 3, "dragon-breath-shape", "Дыхание дракона: форма", "Форма выбирается при каждом выдохе.", "per-use", [O$1("cone", "Конус"), O$1("line", "Линия")]),
+	C("monk", "ascendant-dragon", 11, "wyrm-aura", "Облик змея", "При активации выбирается защитное сопротивление либо пугающее присутствие.", "activation", [O$1("resistance", "Стихийное сопротивление"), O$1("fear", "Пугающее присутствие")]),
+	C("ranger", "drakewarden", 3, "drake-essence", "Сущность дрейка", "Меняется при каждом новом призыве; определяет иммунитет, сопротивление и стихийный урон.", "summon", elements5),
+	C("ranger", "drakewarden", 3, "drake-active", "Дрейк-компаньон", "Временный призываемый спутник с динамическими КД, хитами и атакой.", "summon", yesNo),
+	C("rogue", "phantom", 3, "whispers-dead", "Шёпот мёртвых", "После короткого или продолжительного отдыха выберите временное владение навыком или инструментом.", "short-rest", skillsAndTools),
+	C("warlock", "fathomless", 1, "tentacle", "Щупальце глубин", "Временная позиция без собственных хитов; атака использует параметры колдуна.", "activation", yesNo),
+	C("warlock", "undead", 1, "form-of-dread", "Облик ужаса", "Временный режим на 1 минуту; ресурс применений ведётся отдельно.", "activation", yesNo),
+	C("warlock", "undead", 14, "necrotic-husk-cooldown", "Некротическая оболочка: восстановление", "После срабатывания бросьте к4. Результат — сколько продолжительных отдыхов осталось до нового применения.", "random", [
+		O$1("1", "1 продолжительный отдых"),
+		O$1("2", "2 продолжительных отдыха"),
+		O$1("3", "3 продолжительных отдыха"),
+		O$1("4", "4 продолжительных отдыха")
+	], 4),
+	C("warlock", "undead", 14, "spirit-projection", "Проекция духа", "Временный режим того же персонажа, не второй персонаж и не копия ресурсов.", "activation", yesNo),
+	C("wizard", "graviturgy", 2, "adjust-density", "Изменение плотности", "Временный эффект концентрации: уменьшить либо удвоить вес цели.", "activation", [
+		O$1("inactive", "Не активно"),
+		O$1("lighter", "Вес уменьшен вдвое"),
+		O$1("heavier", "Вес удвоен")
+	]),
+	C("wizard", "chronurgy", 10, "arcane-abeyance", "Тайный резерв", "Временная бусина с конкретным заклинанием до 1 часа; хранитель бусины поддерживает концентрацию.", "activation", yesNo)
+];
+function subclassRuntimeControls(character, spells = []) {
+	const classes = orderedCharacterClasses(character);
+	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
+		const entry = classes.find((item) => item.classId === control.classId);
+		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
+			...control,
+			options: control.options.filter((option) => option.id !== "2")
+		};
+		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
+			...control,
+			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
+		};
+		if (control.key === "monk:astral-self:astral-manifestation") {
+			const level = entry?.level || 0;
+			return {
+				...control,
+				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
+			};
+		}
+		return control;
+	});
+	if (classes.find((entry) => entry.classId === "bard" && entry.subclassId === "spirits" && entry.level >= 6)) {
+		const participants = Math.max(1, Math.min(proficiencyBonus(character.level), Number(subclassRuntimeValue(character, "bard:spirits:spirit-session-participants") || proficiencyBonus(character.level))));
+		controls.push(C("bard", "spirits", 6, "spirit-session-participants", "Духовный сеанс: участники", "Число добровольных участников определяет максимальный круг временно изученного заклинания.", "long-rest", Array.from({ length: proficiencyBonus(character.level) }, (_, index) => O$1(String(index + 1), String(index + 1))), void 0));
+		controls.push(C("bard", "spirits", 6, "spirit-session-spell", "Духовный сеанс: временное заклинание", `Заклинание школ Прорицания или Некромантии до ${participants}-го круга. Исчезает при начале следующего продолжительного отдыха.`, "long-rest", spells.filter((spell) => spell.level > 0 && spell.level <= participants && /прорицани|некроманти/i.test(spell.school)).map((spell) => O$1(spell.id, `${spell.name} · ${spell.level} круг`, spell.description))));
+	}
+	return controls;
+}
+function subclassRuntimeValue(character, key) {
+	return character.subclassState?.[key];
+}
+function setSubclassRuntimeValue(character, key, value) {
+	return {
+		...character,
+		subclassState: {
+			...character.subclassState || {},
+			[key]: value
+		}
+	};
+}
+var necroticHuskCooldownKey = "warlock:undead:necrotic-husk-cooldown";
+function necroticHuskCooldown(character) {
+	return Math.max(0, Number(subclassRuntimeValue(character, "warlock:undead:necrotic-husk-cooldown") || 0));
+}
+function applySubclassLongRest(character) {
+	const cooldown = necroticHuskCooldown(character);
+	const state = { ...character.subclassState || {} };
+	delete state["bard:spirits:spirit-session-spell"];
+	if (cooldown) state[necroticHuskCooldownKey] = Math.max(0, cooldown - 1);
+	return {
+		...character,
+		subclassState: state
+	};
+}
+//#endregion
+//#region app/adventure.ts
+var playConditions = [
+	"Ослеплён",
+	"Очарован",
+	"Оглох",
+	"Испуган",
+	"Схвачен",
+	"Недееспособен",
+	"Невидим",
+	"Парализован",
+	"Окаменел",
+	"Отравлен",
+	"Сбит с ног",
+	"Опутан",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var incapacitating = [
+	"Недееспособен",
+	"Парализован",
+	"Окаменел",
+	"Ошеломлён",
+	"Бессознателен"
+];
+var playId = () => crypto.randomUUID();
+var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
+function newPlayItem(name = "") {
+	const ref = catalogItemFor(name);
+	return {
+		id: playId(),
+		name,
+		category: ref?.category,
+		catalogName: ref?.name,
+		hands: ref?.hands,
+		quantity: 1,
+		weight: ref?.weight ?? 0,
+		equipped: false,
+		magical: false,
+		requiresAttunement: false,
+		attuned: false,
+		charges: 0,
+		maxCharges: 0,
+		recharge: "none",
+		notes: ref?.damage ? [ref.damage, ref.properties].filter(Boolean).join(" · ") : "",
+		container: "",
+		acBonus: 0,
+		attackBonus: 0,
+		damageBonus: 0
+	};
+}
+function isShieldItem(i) {
+	return !!catalogItemFor(i.catalogName || i.name)?.shield || /^(?:деревянный\s+)?щит(?:\s*\(|\s*\+[123]|$)/i.test(i.name);
+}
+function handCost(i) {
+	if (i.quantity <= 0 || !i.equipped) return 0;
+	if (i.hands !== void 0) return i.hands;
+	return catalogItemFor(i.catalogName || i.weaponBase || i.name)?.hands ?? (isShieldItem(i) || itemCategory(i) === "weapon" || itemCategory(i) === "focus" || isHandTool(i.name) || isWoodenFocus(i.name, i.notes) ? 1 : 0);
+}
+function equippedHands(c) {
+	const held = (c.adventure?.inventory || []).filter((i) => handCost(i) > 0);
+	return {
+		held,
+		used: held.reduce((n, i) => n + handCost(i), 0),
+		free: Math.max(0, 2 - held.reduce((n, i) => n + handCost(i), 0))
+	};
+}
+function checkEquipmentCapacity(items) {
+	const held = items.filter((i) => i.quantity > 0 && i.equipped);
+	if (held.reduce((n, i) => n + handCost(i), 0) > 2) throw new Error("Заняты обе руки. Уберите оружие, щит или фокусировку, прежде чем брать новый предмет.");
+	if (held.filter((i) => isShieldItem(i)).length > 1) throw new Error("Нельзя использовать два щита одновременно.");
+	if (held.filter((i) => !isShieldItem(i) && !!catalogItemFor(i.catalogName || i.name)?.armor).length > 1) throw new Error("Можно носить только один комплект доспехов.");
+}
+function prepareStartingEquipment(items) {
+	const best = items.filter((i) => !!catalogItemFor(i.catalogName || i.name)?.armor).sort((a, b) => (catalogItemFor(b.catalogName || b.name)?.armor?.base || 0) - (catalogItemFor(a.catalogName || a.name)?.armor?.base || 0))[0];
+	if (best) best.equipped = true;
+	const shield = items.find(isShieldItem);
+	if (shield) shield.equipped = true;
+	const handsLeft = shield ? 1 : 2;
+	const weapon = items.find((i) => itemCategory(i) === "weapon" && (i.hands || 1) <= handsLeft);
+	const focus = items.find((i) => itemCategory(i) === "focus" && (i.hands || 1) <= handsLeft);
+	if (weapon) weapon.equipped = true;
+	if (!weapon && focus) focus.equipped = true;
+	if ((weapon ? handCost(weapon) : focus ? handCost(focus) : 0) + (shield ? 1 : 0) < 2) {
+		const extra = items.find((i) => !i.equipped && itemCategory(i) === "weapon" && handCost({
+			...i,
+			equipped: true
+		}) <= 1);
+		if (extra) extra.equipped = true;
+	}
+	return items;
+}
+function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
+	const c = structuredClone(source);
+	delete c.adventure;
+	if (c.homebrew) {
+		const library = c.homebrew.entities || [];
+		const ids = new Set([
+			...activeHomebrew(c).map((e) => e.id),
+			...c.feats || [],
+			...(c.advancements || []).map((e) => e.featId),
+			...c.spells
+		]);
+		const frozen = /* @__PURE__ */ new Map();
+		for (const root of library.filter((e) => ids.has(e.id))) for (const entry of homebrewExportClosure(root, library)) frozen.set(entry.id, entry);
+		c.homebrew = {
+			...c.homebrew,
+			entities: [...frozen.values()]
+		};
+	}
+	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
+		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
+		const item = newPlayItem(match?.[1] || line);
+		item.category = itemCategory(item);
+		item.quantity = match ? integer(match[2], 1) : 1;
+		return item;
+	});
+	prepareStartingEquipment(inventory);
+	c.adventure = {
+		version: 1,
+		name: name.trim() || "Новое приключение",
+		sourceId,
+		sourceUpdatedAt,
+		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
+		status: "active",
+		inventory,
+		inventoryCatalogVersion: 2,
+		effects: [],
+		concentrationChecks: [],
+		conditions: [],
+		exhaustion: 0,
+		journal: [],
+		notes: "",
+		round: 1,
+		turn: {
+			action: false,
+			bonus: false,
+			reaction: false
+		},
+		attunementLimit: 3,
+		elapsedMinutes: 0
+	};
+	c.currentHitPoints ??= estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
+}
+function logPlay(c, text, result) {
+	if (!c.adventure) return c;
+	const entry = {
+		id: playId(),
+		at: (/* @__PURE__ */ new Date()).toISOString(),
+		text,
+		...result ? {
+			formula: result.formula,
+			rolls: result.rolls,
+			total: result.total,
+			natural: result.natural,
+			critical: result.critical
+		} : {}
+	};
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			journal: [entry, ...c.adventure.journal].slice(0, 150)
+		}
+	};
+}
+function playMaximum(c) {
+	return c.adventure?.hpMaximum ?? estimatedHitPoints({
+		...c,
+		abilities: finalAbilityScores(c)
+	});
+}
+function inventoryText(items) {
+	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
+}
+function playDerived(c) {
+	const items = c.adventure?.inventory;
+	return {
+		...c,
+		abilities: finalAbilityScores(c),
+		...items ? { inventoryOverride: inventoryText(items.filter((i) => i.equipped && i.quantity > 0).map((i) => ({
+			...i,
+			name: i.weaponBase || i.name.replace(/\s*\+[123]\s*$/, "")
+		}))) } : {}
+	};
+}
+function activeItem(i) {
+	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
+}
+function itemBonus(c, key) {
+	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+var itemCategoryLabels = {
+	weapon: "Оружие",
+	focus: "Фокусировки",
+	armor: "Доспехи",
+	consumable: "Расходники",
+	ammunition: "Боеприпасы",
+	gear: "Снаряжение"
+};
+function itemCategory(i) {
+	if (i.category && !(i.category === "gear" && catalogItemFor(i.catalogName || i.name)?.category !== "gear")) return i.category;
+	const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
+	if (ref) return ref.category;
+	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
+	if (/^(стрелы?|болты?|снаряды?)(?:\s|$)/i.test(i.name)) return "ammunition";
+	if (/рапира|меч|кинжал|топор|посох|булава|молот|арбалет|лук|копь[ёе]|дубинка|пика|глефа|алебарда|дротик|праща|цеп|серп|кнут/i.test(i.name)) return "weapon";
+	if (/доспех|кольчуга|латы|нагрудник|щит|кожан/i.test(i.name)) return "armor";
+	return "gear";
+}
+function consumePlayItem(c, id) {
+	const i = c.adventure?.inventory.find((i) => i.id === id);
+	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
+	if (i.quantity <= 0) throw new Error("Предмет закончился.");
+	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
+		...x,
+		quantity: x.quantity - 1
+	} : x)), `Использован предмет: ${i.name}`);
+}
+function spellItemBonus(c, key, classId) {
+	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+}
+function weaponItemBonus(c, attackName, key) {
+	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
+	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
+	return values.length ? Math.max(...values) : 0;
+}
+/** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
+function upgradeLegacyInventory(c) {
+	if (!c.adventure || c.adventure.inventoryCatalogVersion === 2) return c;
+	const upgrade = (item) => {
+		const ref = catalogItemFor(item.catalogName || item.name);
+		if (!ref) return item;
+		return {
+			...item,
+			catalogName: item.catalogName || ref.name,
+			category: item.category === "gear" && ref.category !== "gear" ? ref.category : item.category || ref.category,
+			weight: item.weight === 0 && ref.weight > 0 ? ref.weight : item.weight,
+			hands: item.hands ?? ref.hands
+		};
+	};
+	const inventory = c.adventure.inventory.map(upgrade);
+	const wasLegacy = c.adventure.inventory.some((i) => i.equipped && i.weight === 0);
+	const corrected = inventory.map((i) => wasLegacy && (isHandTool(i.name) || itemCategory(i) === "gear") ? {
+		...i,
+		equipped: false
+	} : i);
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			inventory: corrected,
+			inventoryTrash: (c.adventure.inventoryTrash || []).map(upgrade),
+			inventoryCatalogVersion: 2
+		}
+	};
+}
+function updateInventory(c, items) {
+	if (!c.adventure) return {
+		...c,
+		inventoryOverride: inventoryText(items)
+	};
+	const inventory = items.filter((i) => i.quantity > 0);
+	if (inventory.some((i) => i.equipped && !c.adventure.inventory.find((old) => old.id === i.id)?.equipped)) checkEquipmentCapacity(inventory);
+	const activeIds = new Set(inventory.map((i) => i.id));
+	const removed = c.adventure.inventory.filter((i) => !items.some((next) => next.id === i.id));
+	const trash = new Map((c.adventure.inventoryTrash || []).map((i) => [i.id, i]));
+	for (const i of [...removed, ...items.filter((i) => i.quantity <= 0)]) trash.set(i.id, {
+		...i,
+		equipped: false,
+		attuned: false,
+		attunementPending: void 0
+	});
+	for (const id of activeIds) trash.delete(id);
+	return {
+		...c,
+		inventoryOverride: inventoryText(inventory),
+		adventure: {
+			...c.adventure,
+			inventory,
+			inventoryTrash: [...trash.values()]
+		}
+	};
+}
+function restorePlayItem(c, id) {
+	const item = c.adventure?.inventoryTrash?.find((i) => i.id === id);
+	if (!item) throw new Error("Предмет не найден в корзине.");
+	return logPlay(updateInventory(c, [...c.adventure.inventory, {
+		...item,
+		quantity: Math.max(1, item.quantity),
+		equipped: false,
+		attuned: false,
+		attunementPending: void 0
+	}]), `Возвращено из корзины: ${item.name}`);
+}
+function applyPlayDamage(c, amount, defense = "normal") {
+	if (!c.adventure) return c;
+	const raw = integer(amount);
+	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const temp = c.temporaryHitPoints || 0;
+	const lost = Math.max(0, damage - temp);
+	const nextHp = Math.max(0, hp - lost);
+	const conditions = [...c.adventure.conditions];
+	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
+	const checks = [...c.adventure.concentrationChecks];
+	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
+		const dc = Math.max(10, Math.floor(damage / 2));
+		checks.push({
+			id: playId(),
+			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
+			damage
+		});
+	}
+	let next = {
+		...c,
+		currentHitPoints: nextHp,
+		temporaryHitPoints: Math.max(0, temp - damage),
+		deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
+		deathSaveFailures: hp === 0 && damage > 0 ? Math.min(3, (c.deathSaveFailures || 0) + 1) : c.deathSaveFailures,
+		adventure: {
+			...c.adventure,
+			conditions,
+			concentrationChecks: nextHp === 0 ? [] : checks,
+			concentration: nextHp === 0 ? void 0 : c.adventure.concentration,
+			effects: nextHp === 0 ? c.adventure.effects.filter((e) => !e.concentration) : c.adventure.effects
+		}
+	};
+	next = logPlay(next, `Урон ${damage}${damage !== raw ? ` (исходный ${raw})` : ""}: HP ${hp} → ${nextHp}, временные ${temp} → ${Math.max(0, temp - damage)}.${lost >= hp + playMaximum(c) && damage > 0 ? " Массивный урон: проверьте мгновенную смерть с мастером." : ""}`);
+	return next;
+}
+function healPlay(c, amount) {
+	const hp = c.currentHitPoints ?? playMaximum(c);
+	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
+	return logPlay({
+		...c,
+		currentHitPoints: nextHp,
+		...nextHp > 0 ? {
+			deathSaveSuccesses: 0,
+			deathSaveFailures: 0,
+			adventure: c.adventure ? {
+				...c.adventure,
+				conditions: c.adventure.conditions.filter((s) => s !== "Бессознателен")
+			} : void 0
+		} : {}
+	}, `Лечение: HP ${hp} → ${nextHp}`);
+}
+function endConcentration(c) {
+	if (!c.adventure) return c;
+	return {
+		...c,
+		adventure: {
+			...c.adventure,
+			concentration: void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration)
+		}
+	};
+}
+function toggleCondition(c, name) {
+	if (!c.adventure) return c;
+	const removing = c.adventure.conditions.includes(name);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			conditions: removing ? c.adventure.conditions.filter((s) => s !== name) : [...c.adventure.conditions, name]
+		}
+	};
+	if (!removing && incapacitating.includes(name)) next = endConcentration(next);
+	return logPlay(next, `${removing ? "Снято" : "Добавлено"} состояние: ${name}`);
+}
+function queueAttunement(c, id) {
+	if (!c.adventure) return c;
+	const item = c.adventure.inventory.find((i) => i.id === id);
+	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
+	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
+	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
+	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
+	if (!item.attuned && !item.attunementPending && c.adventure.inventory.filter((i) => i.attuned || i.attunementPending === "start").length >= c.adventure.attunementLimit) throw new Error("Лимит настройки занят. Сначала завершите прекращение другой настройки.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
+		...i,
+		attunementPending: i.attunementPending ? void 0 : i.attuned ? "end" : "start"
+	} : i));
+}
+function finishAttunement(c) {
+	if (!c.adventure) return c;
+	if (c.adventure.inventory.filter((i) => i.attunementPending).length > 1) throw new Error("На один короткий отдых выберите только один предмет для настройки или её прекращения.");
+	return updateInventory(c, c.adventure.inventory.map((i) => i.attunementPending ? {
+		...i,
+		attuned: i.attunementPending === "start",
+		attunementPending: void 0
+	} : i));
+}
+function randomDie(sides) {
+	const limit = Math.floor(4294967296 / sides) * sides;
+	const values = new Uint32Array(1);
+	do
+		crypto.getRandomValues(values);
+	while (values[0] >= limit);
+	return values[0] % sides + 1;
+}
+/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
+function rollDice(formula, die = randomDie, critical = false) {
+	const value = formula.toLowerCase().replace(/к/g, "d").replace(/\s/g, "").replace(/\+\-/g, "-").replace(/--/g, "+");
+	if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error("Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.");
+	const rolls = [];
+	let total = 0;
+	for (const term of value.match(/[+-]?[^+-]+/g) || []) {
+		const sign = term.startsWith("-") ? -1 : 1;
+		const part = term.replace(/^[+-]/, "");
+		if (part.includes("d")) {
+			const [count, sides] = part.split("d").map(Number);
+			const n = (count || 1) * (critical ? 2 : 1);
+			if (count === 0 && part.startsWith("0") || n < 1 || n > 200 || sides < 2 || sides > 1e3 || rolls.length + n > 200) throw new Error("Слишком много костей или недопустимый размер кости.");
+			for (let i = 0; i < n; i++) {
+				const rolled = die(sides);
+				rolls.push(rolled);
+				total += sign * rolled;
+			}
+		} else {
+			const n = Number(part);
+			if (!Number.isSafeInteger(n) || n > 1e6) throw new Error("Слишком большой модификатор.");
+			total += sign * n;
+		}
+	}
+	return {
+		formula: critical ? `${formula} (крит: кости ×2)` : formula,
+		rolls,
+		total
+	};
+}
+function rollD20(bonus, mode = "normal", die = randomDie) {
+	const rolls = [die(20)];
+	if (mode !== "normal") rolls.push(die(20));
+	const natural = mode === "advantage" ? Math.max(...rolls) : mode === "disadvantage" ? Math.min(...rolls) : rolls[0];
+	return {
+		formula: `${mode === "normal" ? "1d20" : "2d20" + (mode === "advantage" ? " (лучший)" : " (худший)")}${bonus >= 0 ? "+" : ""}${bonus}`,
+		rolls,
+		total: natural + bonus,
+		natural,
+		critical: natural === 20
+	};
+}
+function applyDeathSave(c, natural) {
+	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
+	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
+	const succeeds = natural >= 10;
+	return logPlay({
+		...c,
+		deathSaveSuccesses: integer((c.deathSaveSuccesses || 0) + (succeeds ? 1 : 0), 0, 3),
+		deathSaveFailures: integer((c.deathSaveFailures || 0) + (succeeds ? 0 : natural === 1 ? 2 : 1), 0, 3)
+	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
+}
+function playHitDicePools(c) {
+	return orderedCharacterClasses(c).map((entry) => ({
+		classId: entry.classId,
+		die: classRuleFor(c, entry.classId)?.hitDie || 8,
+		max: entry.level,
+		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
+	}));
+}
+function durationMinutes(text) {
+	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
+	if (!match) return void 0;
+	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
+}
+function restPlay(c, kind, selectedDice = {}, die = randomDie) {
+	if (!c.adventure) return c;
+	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
+	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
+	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
+	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
+	const derived = playDerived(c);
+	const pools = playHitDicePools(c);
+	const spent = Object.fromEntries(pools.map((p) => [p.classId, p.spent]));
+	let healing = 0;
+	if (kind === "short") for (const pool of pools) {
+		const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
+		for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier$1(derived.abilities.con));
+		spent[pool.classId] += count;
+	}
+	if (kind === "long") {
+		let recover = c.rulesetId === "5e-2024" ? characterLevel(c) : Math.max(1, Math.floor(characterLevel(c) / 2));
+		for (const pool of pools) {
+			const n = Math.min(recover, spent[pool.classId]);
+			spent[pool.classId] -= n;
+			recover -= n;
+		}
+	}
+	const resources = kind === "long" ? spentResourcesAfterLongRest(derived) : { ...c.resourceSpent };
+	if (kind === "short") characterResources(derived).filter((r) => r.isShortRest).forEach((r) => {
+		resources[r.key] = 0;
+	});
+	let next = {
+		...c,
+		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
+		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
+		hitDiceSpentByClass: spent,
+		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
+		resourceSpent: resources,
+		spellSlotsUsed: kind === "long" ? resolveSpellSlots(derived).map(() => 0) : shortRestSpellSlots(derived),
+		pactSlotsUsed: 0,
+		adventure: {
+			...c.adventure,
+			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
+			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
+			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
+				...r,
+				current: r.max
+			} : r),
+			inventory: c.adventure.inventory.map((i) => i.recharge === kind || kind === "long" && i.recharge === "short" ? {
+				...i,
+				charges: i.maxCharges
+			} : i),
+			concentration: keepConcentration ? {
+				...c.adventure.concentration,
+				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
+			} : void 0,
+			concentrationChecks: [],
+			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - (kind === "long" ? 4800 : 600)
+			})
+		}
+	};
+	if (kind === "long") next = applySubclassLongRest(next);
+	if (kind === "short") next = finishAttunement(next);
+	if ((next.currentHitPoints || 0) > 0) next = {
+		...next,
+		deathSaveSuccesses: 0,
+		deathSaveFailures: 0,
+		adventure: {
+			...next.adventure,
+			conditions: next.adventure.conditions.filter((s) => s !== "Бессознателен")
+		}
+	};
+	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
+}
+function advancePlayTurn(c) {
+	if (!c.adventure) return c;
+	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
+	let next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			round: c.adventure.round + 1,
+			turn: {
+				action: false,
+				bonus: false,
+				reaction: false
+			},
+			effects: c.adventure.effects.filter((e) => !ended.includes(e)).map((e) => e.remaining === void 0 ? e : {
+				...e,
+				remaining: e.remaining - 1
+			})
+		}
+	};
+	if (c.adventure.concentration?.remainingMinutes !== void 0) {
+		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
+		next.adventure.concentration = {
+			...c.adventure.concentration,
+			remainingMinutes
+		};
+		if (remainingMinutes < 1e-5) next = endConcentration(next);
+	}
+	if (ended.some((e) => e.concentration)) next = endConcentration(next);
+	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
+}
+//#endregion
+//#region app/featureActions.ts
+var actionTimingLabels = {
+	action: "Действие",
+	bonus: "Бонусное действие",
+	reaction: "Реакция"
+};
+var resourceActionTiming = {
+	"bardic-inspiration": "bonus",
+	rage: "bonus",
+	"second-wind": "bonus",
+	"wild-shape": "action",
+	"harness-divine-power": "bonus",
+	"lay-on-hands": "action",
+	"giants-might": "bonus",
+	"fighting-spirit": "bonus",
+	"wrath-of-storm": "reaction",
+	"healing-light": "bonus",
+	"tentacle-of-deeps": "bonus",
+	"defensive-field": "bonus",
+	"flash-of-genius": "reaction",
+	"chronal-shift": "reaction",
+	"momentary-stasis": "action"
+};
+function featureResourceTiming(c, key) {
+	if (key === "wild-shape" && (c.rulesetId === "5e-2024" || orderedCharacterClasses(c).some((entry) => entry.classId === "druid" && entry.subclassId === "moon"))) return "bonus";
+	if (key === "lay-on-hands" && c.rulesetId === "5e-2024") return "bonus";
+	return resourceActionTiming[key];
+}
+function spendFeatureResource(c, key, timing) {
+	const resource = characterResources(playDerived(c)).find((r) => r.key === key);
+	if (!c.adventure || !resource) throw new Error("Способность недоступна этому герою.");
+	const cost = resource.unit || 1;
+	if (resourceCurrent(c, resource) < cost) throw new Error("Ресурс способности закончился.");
+	const action = timing ?? featureResourceTiming(c, key);
+	let next = {
+		...c,
+		resourceSpent: {
+			...c.resourceSpent,
+			[key]: (c.resourceSpent?.[key] || 0) + cost
+		},
+		adventure: {
+			...c.adventure,
+			turn: {
+				...c.adventure.turn,
+				...action ? { [action]: true } : {}
+			}
+		}
+	};
+	if (key === "rage") {
+		next = endConcentration(next);
+		next.adventure = {
+			...next.adventure,
+			conditions: next.adventure.conditions.filter((n) => n !== "Ярость"),
+			effects: [...next.adventure.effects.filter((e) => e.name !== "Ярость"), {
+				id: playId(),
+				name: "Ярость",
+				remaining: 10
+			}]
+		};
+	}
+	const note = key === "bardic-inspiration" ? ` · передайте союзнику ${resource.die}; бросок делает союзник при использовании` : "";
+	return logPlay(next, `${resource.name}${resource.die ? " " + resource.die : ""}: потрачено ${cost}${action ? " · " + actionTimingLabels[action] : ""}${note}`);
+}
+function startManualConcentration(c, name, amount, unit = "minute") {
+	if (!c.adventure) return c;
+	if (amount !== void 0 && (!Number.isFinite(amount) || amount <= 0 || amount > 1e5)) throw new Error("Укажите положительную длительность или оставьте поле пустым.");
+	const minutes = amount === void 0 ? void 0 : amount * (unit === "round" ? .1 : unit === "hour" ? 60 : 1);
+	const duration = amount === void 0 ? "Без указанного срока" : `${amount} ${unit === "round" ? "раундов" : unit === "hour" ? "часов" : "минут"}`;
+	const next = endConcentration(c);
+	return logPlay({
+		...next,
+		adventure: {
+			...next.adventure,
+			concentration: {
+				name: name.trim() || "Концентрация",
+				duration,
+				remainingMinutes: minutes
+			}
+		}
+	}, `Начата концентрация: ${name.trim() || "Концентрация"} · ${duration}`);
+}
+//#endregion
+//#region app/FeatureActions.tsx
+function FeatureActions({ character: c, features, onChange, favoritesOnly = false, availableOnly = false }) {
+	const resources = characterResources(playDerived(c));
+	const pinned = (key) => !!c.adventure.favoriteActions?.includes(key);
+	const pin = (key) => onChange({
+		...c,
+		adventure: {
+			...c.adventure,
+			favoriteActions: pinned(key) ? c.adventure.favoriteActions.filter((x) => x !== key) : [...c.adventure.favoriteActions || [], key]
+		}
+	});
+	const resourceRows = resources.filter((r) => (!favoritesOnly || pinned(`resource:${r.key}`)) && (!availableOnly || resourceCurrent(c, r) >= (r.unit || 1)));
+	const remainingFeatures = features.filter((f) => !resources.some((r) => f.name.split(" · ").at(-1) === r.name));
+	const featureRow = (f) => {
+		const key = `feature:${f.name}`;
+		return /* @__PURE__ */ jsxs("div", {
+			className: "feature-action-row",
+			children: [/* @__PURE__ */ jsxs("details", { children: [
+				/* @__PURE__ */ jsx("summary", { children: f.name }),
+				/* @__PURE__ */ jsx("p", {
+					className: "play-description",
+					children: f.description
+				}),
+				/* @__PURE__ */ jsx("button", {
+					onClick: () => onChange(logPlay(c, `Применена особенность: ${f.name} · эффекты и стоимость по описанию`)),
+					children: "Отметить применение"
+				}),
+				/* @__PURE__ */ jsx("small", { children: "Стоимость действия и эффекты — по описанию особенности." })
+			] }), /* @__PURE__ */ jsx("button", {
+				"aria-label": `Закрепить способность: ${f.name}`,
+				"aria-pressed": pinned(key),
+				onClick: () => pin(key),
+				children: pinned(key) ? "★" : "☆"
+			})]
+		}, key);
+	};
+	const favorites = remainingFeatures.filter((f) => pinned(`feature:${f.name}`));
+	const otherFeatures = remainingFeatures.filter((f) => !pinned(`feature:${f.name}`));
+	return /* @__PURE__ */ jsxs("section", {
+		className: "play-card feature-actions",
+		"aria-label": "Способности героя",
+		children: [
+			/* @__PURE__ */ jsx("h2", { children: "Способности" }),
+			resourceRows.map((r) => {
+				const key = `resource:${r.key}`, timing = featureResourceTiming(c, r.key), left = resourceCurrent(c, r), feature = features.find((f) => f.name.split(" · ").at(-1) === r.name);
+				return /* @__PURE__ */ jsxs("div", {
+					className: "feature-action-row",
+					children: [
+						/* @__PURE__ */ jsxs("details", { children: [
+							/* @__PURE__ */ jsxs("summary", { children: [
+								r.name,
+								r.die ? " · " + r.die : "",
+								" ",
+								/* @__PURE__ */ jsxs("small", { children: [
+									left,
+									"/",
+									r.max,
+									" · ",
+									timing ? actionTimingLabels[timing] : "Стоимость по описанию"
+								] })
+							] }),
+							feature && /* @__PURE__ */ jsx("p", {
+								className: "play-description",
+								children: feature.description
+							}),
+							r.key === "bardic-inspiration" && /* @__PURE__ */ jsx("p", { children: "Передайте кость союзнику. Бросок делает союзник, когда использует вдохновение." }),
+							/* @__PURE__ */ jsxs("small", { children: [
+								"Кнопка списывает ресурс",
+								timing ? " и отмечает " + actionTimingLabels[timing].toLowerCase() : "",
+								". Остальные эффекты применяются по описанию."
+							] })
+						] }),
+						/* @__PURE__ */ jsx("button", {
+							disabled: left < (r.unit || 1),
+							onClick: () => onChange(spendFeatureResource(c, r.key)),
+							children: r.key === "bardic-inspiration" ? "Дать вдохновение" : timing ? "Использовать" : `Потратить ${r.unit || 1}`
+						}),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Закрепить способность: ${r.name}`,
+							"aria-pressed": pinned(key),
+							onClick: () => pin(key),
+							children: pinned(key) ? "★" : "☆"
+						})
+					]
+				}, key);
+			}),
+			favorites.map(featureRow),
+			!favoritesOnly && otherFeatures.length > 0 && /* @__PURE__ */ jsxs("details", {
+				className: "other-feature-actions",
+				children: [/* @__PURE__ */ jsxs("summary", { children: ["Другие особенности · ", otherFeatures.length] }), otherFeatures.map(featureRow)]
+			}),
+			favoritesOnly && !resourceRows.length && !favorites.length && /* @__PURE__ */ jsx("small", { children: "Закрепите нужные способности кнопкой ☆." })
+		]
+	});
+}
+//#endregion
+//#region app/NumberSlider.tsx
+/** The track previews while dragging; pointer/key release commits one change. Exact entry has no spinner. */
+function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) {
+	const [preview, setPreview] = useState();
+	const pending = useRef(void 0);
+	useEffect(() => {
+		if (pending.current === void 0) setPreview(void 0);
+	}, [value]);
+	function commit() {
+		const next = pending.current;
+		if (next === void 0) return;
+		pending.current = void 0;
+		setPreview(void 0);
+		if (Number(next) !== Number(value)) onChange(next);
+	}
+	const display = preview ?? String(value);
+	return /* @__PURE__ */ jsxs("span", {
+		className: "number-slider",
+		children: [/* @__PURE__ */ jsx("input", {
+			"aria-label": `${label}: ползунок`,
+			type: "range",
+			min,
+			max: Math.max(min, max),
+			step,
+			value: Math.min(Math.max(min, Number(display) || 0), Math.max(min, max)),
+			onChange: (e) => {
+				pending.current = e.target.value;
+				setPreview(e.target.value);
+			},
+			onPointerDown: (e) => e.currentTarget.setPointerCapture(e.pointerId),
+			onPointerUp: commit,
+			onPointerCancel: () => {
+				pending.current = void 0;
+				setPreview(void 0);
+			},
+			onKeyUp: commit,
+			onBlur: () => {
+				commit();
+				setPreview(void 0);
+			}
+		}), /* @__PURE__ */ jsx("input", {
+			"aria-label": label,
+			type: "text",
+			inputMode: step < 1 ? "decimal" : "numeric",
+			value: display,
+			onChange: (e) => {
+				pending.current = void 0;
+				const next = step < 1 ? e.target.value.replace(",", ".") : e.target.value;
+				setPreview(next);
+				if (next.trim() === "" || Number.isFinite(Number(next))) onChange(next);
+			}
+		})]
+	});
 }
 //#endregion
 //#region app/homebrewCatalog.ts
@@ -30531,17 +30715,16 @@ function SessionResources({ character: c, onChange }) {
 }
 //#endregion
 //#region app/spellCasting.ts
-function spellHandsWarning(c, spell) {
+function spellHandsWarning(c, spell, classId = c.className) {
 	const parts = (spell.components || "").split(/[,;\s]+/).map((s) => s.toUpperCase().replace(/[^ВСМVSM]/g, ""));
 	const somatic = parts.includes("С") || parts.includes("S");
 	const material = parts.includes("М") || parts.includes("M");
 	if (!somatic && !material) return;
 	const hands = equippedHands(c);
 	const warCaster = (c.feats || []).includes("war-caster") || (c.advancements || []).some((a) => a.featId === "war-caster");
-	const focus = hands.held.some((i) => itemCategory(i) === "focus" || /священный символ|фокусировк/i.test(i.name));
+	const focus = hands.held.some((i) => itemCategory(i) === "focus" || /священный символ|фокусировк/i.test(i.name) || classId === "bard" && isMusicalInstrument(i.name) || classId === "wizard" && isWoodenFocus(i.name, i.notes));
 	const pouch = (c.adventure?.inventory || []).some((i) => i.quantity > 0 && /мешочек с компонентами/i.test(i.name));
 	if (material && !focus && hands.free === 0) return "Для материального компонента нужна свободная рука, фокусировка или доступный мешочек с компонентами. Сначала освободите руку.";
-	if (material && !focus && hands.free === 0) return "Нет руки для материального компонента.";
 	if (somatic && !warCaster && !(focus && material) && hands.free === 0) return "Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.";
 	if (material && !focus && !pouch) return "Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).";
 }
@@ -30707,6 +30890,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	const [mode, setMode] = useState("normal");
 	const [amount, setAmount] = useState(1);
 	const [concentrationDamage, setConcentrationDamage] = useState(0);
+	const [concentrationName, setConcentrationName] = useState("");
+	const [concentrationLength, setConcentrationLength] = useState("");
+	const [concentrationUnit, setConcentrationUnit] = useState("minute");
 	const [defense, setDefense] = useState("normal");
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
@@ -30934,7 +31120,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 		const options = spellCastOptions(c, entry.spell, entry.classId);
 		const method = options.find((x) => x.id === castMethods[key])?.id || options[0]?.id || "";
 		const profile = spellPlayProfile(c, entry.spell, options.find((x) => x.id === method)?.level ?? entry.spell.level, entry.classId);
-		const handWarning = spellHandsWarning(c, entry.spell);
+		const handWarning = spellHandsWarning(c, entry.spell, entry.classId);
 		return /* @__PURE__ */ jsxs("article", {
 			className: "play-card play-spell-card",
 			children: [
@@ -31125,6 +31311,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 										children: [
 											"◎ ",
 											a.concentration.name,
+											a.concentration.remainingMinutes !== void 0 ? ` · ${Math.round(a.concentration.remainingMinutes * 10)} х.` : "",
 											" ×"
 										]
 									}),
@@ -31527,82 +31714,42 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 									onRoll: presentRoll
 								})
 							}),
-							/* @__PURE__ */ jsxs("section", {
-								className: "play-card session-command",
+							/* @__PURE__ */ jsxs("div", {
+								className: "session-check",
 								children: [
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row play-wrap",
-										children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Игровая панель" }), /* @__PURE__ */ jsx("h2", { children: "Быстрые действия" })] }), /* @__PURE__ */ jsxs("label", {
-											className: "play-check",
-											children: [/* @__PURE__ */ jsx("input", {
-												type: "checkbox",
-												checked: a.interfaceDensity !== "comfortable",
-												onChange: (e) => change({
-													...c,
-													adventure: {
-														...a,
-														interfaceDensity: e.target.checked ? "compact" : "comfortable"
-													}
-												})
-											}), "Компактный вид"]
+									/* @__PURE__ */ jsxs("select", {
+										"aria-label": "Быстрая проверка",
+										value: quickCheck,
+										onChange: (e) => setQuickCheck(e.target.value),
+										children: [/* @__PURE__ */ jsx("optgroup", {
+											label: "Навыки",
+											children: Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("option", {
+												value: `skill:${skill}`,
+												children: [
+													skill,
+													" ",
+													sign(skillBonusBreakdown(d, skill).value)
+												]
+											}, skill))
+										}), /* @__PURE__ */ jsx("optgroup", {
+											label: "Спасброски",
+											children: Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("option", {
+												value: `save:${key}`,
+												children: [
+													abilityLabels[key],
+													" ",
+													sign(saveBonus(key))
+												]
+											}, key))
 										})]
 									}),
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row play-wrap",
-										children: [/* @__PURE__ */ jsxs("label", {
-											className: "play-check",
-											children: [/* @__PURE__ */ jsx("input", {
-												type: "checkbox",
-												checked: favoritesOnly,
-												onChange: (e) => setFavoritesOnly(e.target.checked)
-											}), "Только избранные"]
-										}), /* @__PURE__ */ jsxs("label", {
-											className: "play-check",
-											children: [/* @__PURE__ */ jsx("input", {
-												type: "checkbox",
-												checked: availableOnly,
-												onChange: (e) => setAvailableOnly(e.target.checked)
-											}), "Доступно сейчас"]
-										})]
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+										children: "Проверка"
 									}),
-									/* @__PURE__ */ jsxs("div", {
-										className: "session-check",
-										children: [
-											/* @__PURE__ */ jsxs("select", {
-												"aria-label": "Быстрая проверка",
-												value: quickCheck,
-												onChange: (e) => setQuickCheck(e.target.value),
-												children: [/* @__PURE__ */ jsx("optgroup", {
-													label: "Навыки",
-													children: Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("option", {
-														value: `skill:${skill}`,
-														children: [
-															skill,
-															" ",
-															sign(skillBonusBreakdown(d, skill).value)
-														]
-													}, skill))
-												}), /* @__PURE__ */ jsx("optgroup", {
-													label: "Спасброски",
-													children: Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("option", {
-														value: `save:${key}`,
-														children: [
-															abilityLabels[key],
-															" ",
-															sign(saveBonus(key))
-														]
-													}, key))
-												})]
-											}),
-											/* @__PURE__ */ jsx("button", {
-												onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
-												children: "Проверка"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
-												children: "Поправки"
-											})
-										]
+									/* @__PURE__ */ jsx("button", {
+										onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+										children: "Поправки"
 									})
 								]
 							}),
@@ -31670,6 +31817,31 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 										}, name))
 									})
 								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "play-row play-wrap action-filters",
+								children: [/* @__PURE__ */ jsxs("label", {
+									className: "play-check",
+									children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: favoritesOnly,
+										onChange: (e) => setFavoritesOnly(e.target.checked)
+									}), "Только избранные"]
+								}), /* @__PURE__ */ jsxs("label", {
+									className: "play-check",
+									children: [/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: availableOnly,
+										onChange: (e) => setAvailableOnly(e.target.checked)
+									}), "Доступно сейчас"]
+								})]
+							}),
+							/* @__PURE__ */ jsx(FeatureActions, {
+								character: c,
+								features,
+								onChange: change,
+								favoritesOnly,
+								availableOnly
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-section-heading",
@@ -31813,7 +31985,60 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card concentration-save",
 								children: [
-									/* @__PURE__ */ jsx("h2", { children: "Проверка концентрации" }),
+									/* @__PURE__ */ jsx("h2", { children: "Концентрация" }),
+									/* @__PURE__ */ jsxs("form", {
+										className: "manual-concentration",
+										onSubmit: (e) => {
+											e.preventDefault();
+											change((prev) => startManualConcentration(prev, concentrationName, concentrationLength.trim() === "" ? void 0 : Number(concentrationLength), concentrationUnit));
+										},
+										children: [
+											/* @__PURE__ */ jsxs("label", { children: ["Название эффекта", /* @__PURE__ */ jsx("input", {
+												"aria-label": "Название концентрации",
+												placeholder: "Заклинание или эффект",
+												maxLength: 120,
+												value: concentrationName,
+												onChange: (e) => setConcentrationName(e.target.value)
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Длительность · необязательно", /* @__PURE__ */ jsx("input", {
+												"aria-label": "Длительность концентрации",
+												inputMode: "numeric",
+												placeholder: "Без срока",
+												value: concentrationLength,
+												onChange: (e) => setConcentrationLength(e.target.value.replace(/[^0-9]/g, ""))
+											})] }),
+											/* @__PURE__ */ jsxs("label", { children: ["Единица", /* @__PURE__ */ jsxs("select", {
+												"aria-label": "Единица длительности концентрации",
+												value: concentrationUnit,
+												onChange: (e) => setConcentrationUnit(e.target.value),
+												children: [
+													/* @__PURE__ */ jsx("option", {
+														value: "round",
+														children: "Ходы"
+													}),
+													/* @__PURE__ */ jsx("option", {
+														value: "minute",
+														children: "Минуты"
+													}),
+													/* @__PURE__ */ jsx("option", {
+														value: "hour",
+														children: "Часы"
+													})
+												]
+											})] }),
+											/* @__PURE__ */ jsx("button", {
+												type: "submit",
+												children: a.concentration ? "Заменить концентрацию" : "Начать концентрацию"
+											}),
+											a.concentration && /* @__PURE__ */ jsx("button", {
+												type: "button",
+												onClick: () => change(logPlay(endConcentration(c), "Концентрация прекращена")),
+												children: "Прекратить"
+											})
+										]
+									}),
+									/* @__PURE__ */ jsx("small", { children: "1 минута = 10 ходов. «Следующий ход» уменьшает оставшееся время." }),
+									/* @__PURE__ */ jsx("h3", { children: "Проверка от урона" }),
 									/* @__PURE__ */ jsxs("div", {
 										className: "play-row play-wrap",
 										children: [/* @__PURE__ */ jsxs("label", { children: ["Полученный урон", /* @__PURE__ */ jsx("input", {
@@ -32453,7 +32678,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 	});
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32465,7 +32690,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32484,7 +32709,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32504,7 +32729,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32522,7 +32747,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/settings.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/settings.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46778,7 +47003,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46808,7 +47033,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/axe.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46823,7 +47048,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bird.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46857,7 +47082,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bone.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46869,7 +47094,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46884,7 +47109,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46922,7 +47147,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/brain.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -46968,7 +47193,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bug.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47022,7 +47247,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cat.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47048,7 +47273,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47067,7 +47292,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/clover.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47089,7 +47314,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cog.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47155,7 +47380,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/compass.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47172,7 +47397,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/crown.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47187,7 +47412,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/drama.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47229,7 +47454,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47244,7 +47469,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47274,7 +47499,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/eye.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47291,7 +47516,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/feather.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47313,7 +47538,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47325,7 +47550,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flame.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47337,7 +47562,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47359,7 +47584,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47385,7 +47610,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/gem.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47407,7 +47632,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47429,7 +47654,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hand.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47455,7 +47680,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47485,7 +47710,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47507,7 +47732,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47522,7 +47747,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47537,7 +47762,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47555,7 +47780,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/moon.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47567,7 +47792,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47579,7 +47804,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47603,7 +47828,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/music.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47629,7 +47854,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47665,7 +47890,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47697,7 +47922,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47727,7 +47952,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rat.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47757,7 +47982,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47783,7 +48008,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47837,7 +48062,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shell.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47849,7 +48074,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47861,7 +48086,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47876,7 +48101,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47906,7 +48131,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47932,7 +48157,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sun.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47980,7 +48205,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sword.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48015,7 +48240,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/swords.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48075,7 +48300,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48115,7 +48340,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48130,7 +48355,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trees.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48156,7 +48381,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48173,7 +48398,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48195,7 +48420,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48237,7 +48462,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/waves.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48259,7 +48484,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wind.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -53278,7 +53503,7 @@ function sourceAvailableSpellCatalog(catalog, additionalUnlocked) {
 	return catalog.filter((spell) => additionalUnlocked || !isAdditionalSpell(spell));
 }
 //#endregion
-//#region node_modules/fflate/esm/index.mjs
+//#region ../list-geroya-5e/node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -54208,7 +54433,7 @@ function retainLevelState(before, after, catalog = spells) {
 	};
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/trending-up.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -54223,7 +54448,7 @@ var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
 	key: "kwv8wd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -54296,7 +54521,7 @@ var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+//#region ../list-geroya-5e/node_modules/lucide-react/dist/esm/icons/file-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *

@@ -323,6 +323,29 @@ async function saved(page) {
         assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
+        // Bard abilities are actions, not only counters in the health panel.
+        await page.evaluate(key=>{const v=JSON.parse(localStorage.getItem(key));const c=v.slots.find(s=>s.id===v.activeId).character;c.className='bard';c.startingClassId='bard';c.classes=[{classId:'bard',level:5,acquiredAtCharacterLevel:1}];c.levelHistory=Array.from({length:5},(_,i)=>({characterLevel:i+1,classId:'bard',classLevelAfter:i+1,hpMode:'average'}));c.abilities.cha=16;c.resourceSpent={};c.adventure.favoriteActions=[];c.adventure.turn={action:false,bonus:false,reaction:false};localStorage.setItem(key,JSON.stringify(v));},key);
+        await page.reload();await page.locator('.play-shell').waitFor();
+        assert.equal(await page.getByRole('heading',{name:'Быстрые действия',exact:true}).count(),0);
+        await page.getByLabel('Быстрая проверка',{exact:true}).waitFor();
+        const abilities=page.getByRole('region',{name:'Способности героя',exact:true});
+        await abilities.getByRole('button',{name:'Закрепить способность: Вдохновение барда',exact:true}).click();
+        await abilities.getByRole('button',{name:'Дать вдохновение',exact:true}).click();
+        await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));const c=v.slots.find(s=>s.id===v.activeId).character;return c.resourceSpent['bardic-inspiration']===1&&c.adventure.turn.bonus;},key);
+        assert.match(await abilities.innerText(),/2\/3/);
+        await page.getByRole('button',{name:'Магия',exact:true}).click();
+        await page.getByLabel('Название концентрации',{exact:true}).fill('Удержание');
+        await page.getByLabel('Длительность концентрации',{exact:true}).fill('1');
+        await page.getByLabel('Единица длительности концентрации',{exact:true}).selectOption('minute');
+        await page.getByRole('button',{name:'Начать концентрацию',exact:true}).click();
+        assert.match(await page.locator('.play-concentration').innerText(),/Удержание · 10 х/);
+        await page.getByRole('button',{name:'Действия',exact:true}).click();
+        await page.getByRole('button',{name:'Следующий ход',exact:true}).click();
+        assert.match(await page.locator('.play-concentration').innerText(),/Удержание · 9 х/);
+        await page.getByRole('button',{name:'Магия',exact:true}).click();
+        await page.getByRole('button',{name:'Прекратить',exact:true}).click();
+        assert.equal(await page.getByRole('button',{name:'Начать концентрацию',exact:true}).isVisible(),true);
+        assert.deepEqual(errors,[]);
         console.log(JSON.stringify({width,result:'passed',scenarios:['desktop HP','legacy average','responsive game','independent adventure','undo','reload','preserved vault']}));
       } finally { await context.close(); }
     }

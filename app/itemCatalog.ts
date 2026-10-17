@@ -211,6 +211,12 @@ const handToolNames = new Set([
   'Инструменты сапожника','Инструменты стеклодува','Инструменты ткача',
   'Инструменты художника','Инструменты ювелира',
 ]);
+export function isMusicalInstrument(name:string):boolean {
+ return /лютн|лир[аы]|арф|свирел|флейт|волынк|виол|барабан|рожок|цимбал|шалм|мандолин|музыкальн.{0,15}инструмент/i.test(name);
+}
+export function isWoodenFocus(name:string,notes=''):boolean {
+ return /посох|дубинк|палиц|деревян|древесин|кусок дерева|ветк|ветв|wooden|staff|club/i.test(`${name} ${notes}`);
+}
 export function isHandTool(name:string):boolean {
   return handToolNames.has(name) || /^(?:инструменты |набор (?:для грима|для фальсификации|травника))/i.test(name);
 }

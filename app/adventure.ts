@@ -2,7 +2,7 @@ import type { ExportCharacter } from './exportFormats';
 import { abilityModifier, estimatedHitPoints } from './exportFormats';
 import { finalAbilityScores } from './characterRules';
 import { selectedEquipment } from './equipment';
-import { catalogItemFor, isHandTool } from './itemCatalog';
+import { catalogItemFor, isHandTool, isWoodenFocus } from './itemCatalog';
 import { characterLevel, hitDicePools, orderedCharacterClasses, resolvePactMagic, resolveSpellSlots, shortRestSpellSlots } from './multiclass';
 import { characterResources, spentResourcesAfterLongRest } from './characterResources';
 import { activeHomebrew, classRuleFor, homebrewExportClosure } from './homebrewEngine';
@@ -40,7 +40,7 @@ export function handCost(i: PlayItem): number {
   if (i.quantity <= 0 || !i.equipped) return 0;
   if (i.hands !== undefined) return i.hands;
   const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
-  return ref?.hands ?? (isShieldItem(i) || itemCategory(i) === 'weapon' || itemCategory(i) === 'focus' || isHandTool(i.name) ? 1 : 0);
+  return ref?.hands ?? (isShieldItem(i) || itemCategory(i) === 'weapon' || itemCategory(i) === 'focus' || isHandTool(i.name) || isWoodenFocus(i.name,i.notes) ? 1 : 0);
 }
 export function equippedHands(c: ExportCharacter) {
   const held = (c.adventure?.inventory || []).filter(i => handCost(i) > 0);
