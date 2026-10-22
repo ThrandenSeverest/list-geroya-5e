@@ -28399,9 +28399,48 @@ function equippedHands(c) {
 		free: Math.max(0, 2 - held.reduce((n, i) => n + handCost(i), 0))
 	};
 }
+function handSlots(items) {
+	const held = items.filter((i) => handCost(i) > 0);
+	const two = held.find((i) => handCost(i) === 2);
+	if (two) return {
+		right: two,
+		left: two
+	};
+	const right = held.find((i) => i.hand === "right") || held.find((i) => i.hand !== "left");
+	return {
+		right,
+		left: held.find((i) => i.id !== right?.id && i.hand === "left") || held.find((i) => i.id !== right?.id)
+	};
+}
+function equipInHand(c, id, hand) {
+	if (!c.adventure) throw new Error("Откройте игровую копию героя.");
+	const item = c.adventure.inventory.find((i) => i.id === id && i.quantity > 0);
+	if (!item || handCost({
+		...item,
+		equipped: true
+	}) === 0) throw new Error("Этот предмет не занимает руку.");
+	const cost = handCost({
+		...item,
+		equipped: true
+	});
+	const other = hand === "right" ? "left" : "right";
+	const slots = handSlots(c.adventure.inventory.filter((i) => i.id !== id));
+	const displaced = new Set([slots[hand]?.id, ...cost === 2 ? [slots[other]?.id] : []]);
+	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
+		...i,
+		equipped: true,
+		hand
+	} : displaced.has(i.id) ? {
+		...i,
+		equipped: false,
+		hand: void 0
+	} : i));
+}
 function checkEquipmentCapacity(items) {
 	const held = items.filter((i) => i.quantity > 0 && i.equipped);
 	if (held.reduce((n, i) => n + handCost(i), 0) > 2) throw new Error("Заняты обе руки. Уберите оружие, щит или фокусировку, прежде чем брать новый предмет.");
+	const specified = held.filter((i) => handCost(i) === 1 && i.hand);
+	if (specified.some((i, n) => specified.some((j, m) => n !== m && j.hand === i.hand))) throw new Error("Два предмета не могут занимать одну руку.");
 	if (held.filter((i) => isShieldItem(i)).length > 1) throw new Error("Нельзя использовать два щита одновременно.");
 	if (held.filter((i) => !isShieldItem(i) && !!catalogItemFor(i.catalogName || i.name)?.armor).length > 1) throw new Error("Можно носить только один комплект доспехов.");
 }
@@ -28599,7 +28638,11 @@ function updateInventory(c, items) {
 		inventoryOverride: inventoryText(items)
 	};
 	const inventory = items.filter((i) => i.quantity > 0);
-	if (inventory.some((i) => i.equipped && !c.adventure.inventory.find((old) => old.id === i.id)?.equipped)) checkEquipmentCapacity(inventory);
+	checkEquipmentCapacity(inventory);
+	if (inventory.filter((i) => i.attuned).length > c.adventure.attunementLimit) throw new Error("Превышен лимит настройки на магические предметы.");
+	if (inventory.some((i) => i.attuned && !i.requiresAttunement)) throw new Error("Настройка возможна только на предмет, который её требует.");
+	const attunedNames = inventory.filter((i) => i.attuned).map((i) => i.name.trim().toLocaleLowerCase("ru"));
+	if (new Set(attunedNames).size !== attunedNames.length) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
 	const activeIds = new Set(inventory.map((i) => i.id));
 	const removed = c.adventure.inventory.filter((i) => !items.some((next) => next.id === i.id));
 	const trash = new Map((c.adventure.inventoryTrash || []).map((i) => [i.id, i]));
@@ -28642,14 +28685,11 @@ function applyPlayDamage(c, amount, defense = "normal") {
 	const conditions = [...c.adventure.conditions];
 	if (damage > 0 && nextHp === 0 && !conditions.includes("Бессознателен")) conditions.push("Бессознателен");
 	const checks = [...c.adventure.concentrationChecks];
-	if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
-		const dc = Math.max(10, Math.floor(damage / 2));
-		checks.push({
-			id: playId(),
-			dc: c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc,
-			damage
-		});
-	}
+	if (damage > 0 && nextHp > 0 && c.adventure.concentration) checks.push({
+		id: playId(),
+		dc: concentrationDc(c, damage),
+		damage
+	});
 	let next = {
 		...c,
 		currentHitPoints: nextHp,
@@ -28694,6 +28734,22 @@ function endConcentration(c) {
 			effects: c.adventure.effects.filter((e) => !e.concentration)
 		}
 	};
+}
+function concentrationDc(c, damage) {
+	const dc = Math.max(10, Math.floor(integer(damage) / 2));
+	return c.rulesetId === "5e-2024" ? Math.min(30, dc) : dc;
+}
+function resolveConcentrationCheck(c, id, success) {
+	if (!c.adventure) return c;
+	if (!c.adventure.concentrationChecks.find((x) => x.id === id)) throw new Error("Проверка концентрации уже разрешена.");
+	const next = {
+		...c,
+		adventure: {
+			...c.adventure,
+			concentrationChecks: c.adventure.concentrationChecks.filter((x) => x.id !== id)
+		}
+	};
+	return success ? next : endConcentration(next);
 }
 function toggleCondition(c, name) {
 	if (!c.adventure) return c;
@@ -28856,14 +28912,14 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie) {
 				remainingMinutes: remaining === void 0 ? void 0 : remaining - 60
 			} : void 0,
 			concentrationChecks: [],
-			effects: c.adventure.effects.filter((e) => !e.concentration && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
+			effects: c.adventure.effects.filter((e) => (!e.concentration || !!keepConcentration) && (e.remaining === void 0 || e.remaining > (kind === "long" ? 4800 : 600))).map((e) => e.remaining === void 0 ? e : {
 				...e,
 				remaining: e.remaining - (kind === "long" ? 4800 : 600)
 			})
 		}
 	};
 	if (kind === "long") next = applySubclassLongRest(next);
-	if (kind === "short") next = finishAttunement(next);
+	if (kind === "short" || kind === "long") next = finishAttunement(next);
 	if ((next.currentHitPoints || 0) > 0) next = {
 		...next,
 		deathSaveSuccesses: 0,
@@ -28877,6 +28933,7 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie) {
 }
 function advancePlayTurn(c) {
 	if (!c.adventure) return c;
+	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации от полученного урона.");
 	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
 	let next = {
 		...c,
@@ -29412,8 +29469,10 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 		try {
 			onChange(fn());
 			setError("");
+			return true;
 		} catch (e) {
 			setError(e.message);
+			return false;
 		}
 	}
 	function modify(i, fields, message) {
@@ -29455,7 +29514,9 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 					/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("h2", { children: "Инвентарь" }), /* @__PURE__ */ jsxs("small", { children: [
 						"Вес ",
 						items.reduce((n, i) => n + i.quantity * i.weight, 0).toFixed(1),
-						" фунт. · Настройка ",
+						" фунт. · Руки ",
+						equippedHands(c).used,
+						"/2 · Настройка ",
 						items.filter((i) => i.attuned).length,
 						"/",
 						c.adventure.attunementLimit
@@ -29678,13 +29739,22 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 									})
 								]
 							}),
+							handCost(i) > 0 && /* @__PURE__ */ jsxs("p", {
+								className: "inventory-badge",
+								children: [
+									"Занимает ",
+									handCost(i),
+									" ",
+									handCost(i) === 1 ? "руку" : "руки"
+								]
+							}),
 							i.attuned && /* @__PURE__ */ jsx("p", {
 								className: "inventory-badge",
 								children: "Настроен"
 							}),
-							i.attunementPending && /* @__PURE__ */ jsx("p", {
+							i.attunementPending && /* @__PURE__ */ jsxs("p", {
 								className: "inventory-badge",
-								children: "Настройка ожидает короткого отдыха"
+								children: [i.attunementPending === "start" ? "Настройка" : "Прекращение настройки", " ожидает отдыха"]
 							}),
 							(i.weaponAttackBonus || i.weaponDamageBonus || i.spellAttackBonus || i.spellSaveDcBonus) && /* @__PURE__ */ jsxs("p", {
 								className: "inventory-bonuses",
@@ -29869,8 +29939,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						charges: Math.min(draft.charges, draft.maxCharges),
 						attuned: draft.requiresAttunement && draft.attuned
 					};
-					mutate(() => logPlay(updateInventory(c, items.some((i) => i.id === draft.id) ? items.map((i) => i.id === draft.id ? clean : i) : [...items, clean]), `Сохранён предмет: ${clean.name}`));
-					setDraft(void 0);
+					if (mutate(() => logPlay(updateInventory(c, items.some((i) => i.id === draft.id) ? items.map((i) => i.id === draft.id ? clean : i) : [...items, clean]), `Сохранён предмет: ${clean.name}`))) setDraft(void 0);
 				},
 				children: [
 					/* @__PURE__ */ jsxs("header", {
@@ -29915,6 +29984,28 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 							value: n,
 							children: n
 						}, n))]
+					})] }),
+					(draft.category === "weapon" || draft.category === "focus" || draft.category === "armor" || draft.category === "gear") && /* @__PURE__ */ jsxs("label", { children: ["Занимает рук", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Занимает рук",
+						value: draft.hands ?? catalogItemFor(draft.catalogName || draft.weaponBase || draft.name)?.hands ?? (draft.category === "weapon" || draft.category === "focus" ? 1 : 0),
+						onChange: (e) => setDraft({
+							...draft,
+							hands: Number(e.target.value)
+						}),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: 0,
+								children: "0 · надето / при себе"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: 1,
+								children: "1 рука"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: 2,
+								children: "2 руки"
+							})
+						]
 					})] }),
 					(draft.category === "weapon" || draft.category === "focus") && /* @__PURE__ */ jsxs("div", {
 						className: "play-row play-wrap",
@@ -30817,7 +30908,7 @@ function spellHandsWarning(c, spell, classId = c.className) {
 	const warCaster = (c.feats || []).includes("war-caster") || (c.advancements || []).some((a) => a.featId === "war-caster");
 	const focus = hands.held.some((i) => itemCategory(i) === "focus" || /священный символ|фокусировк/i.test(i.name) || classId === "bard" && isMusicalInstrument(i.name) || classId === "wizard" && isWoodenFocus(i.name, i.notes));
 	const pouch = (c.adventure?.inventory || []).some((i) => i.quantity > 0 && /мешочек с компонентами/i.test(i.name));
-	if (material && !focus && hands.free === 0) return "Для материального компонента нужна свободная рука, фокусировка или доступный мешочек с компонентами. Сначала освободите руку.";
+	if (material && !focus && hands.free === 0) return "Для материального компонента нужна свободная рука, чтобы достать компонент или мешочек. Сначала освободите руку.";
 	if (somatic && !warCaster && !(focus && material) && hands.free === 0) return "Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.";
 	if (material && !focus && !pouch) return "Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).";
 }
@@ -30982,6 +31073,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [diceOpen, setDiceOpen] = useState(false);
 	const [mode, setMode] = useState("normal");
 	const [amount, setAmount] = useState(1);
+	const [handPicker, setHandPicker] = useState();
+	const [acDetails, setAcDetails] = useState(false);
 	const [concentrationDamage, setConcentrationDamage] = useState(0);
 	const [concentrationName, setConcentrationName] = useState("");
 	const [concentrationLength, setConcentrationLength] = useState("");
@@ -31106,6 +31199,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && (spellCastOptions(c, entry.spell, entry.classId).length > 0 || resolution?.spell.id === entry.spell.id && resolution.classId === entry.classId)) && (!favoritesOnly || isPinned(spellKey(entry)));
 	const baseAc = armorClassBreakdown(d);
 	const ac = a.acOverride ?? baseAc.value + itemBonus(c, "acBonus");
+	const heldSlots = handSlots(a.inventory);
 	const speed = speedBreakdown(d);
 	const pb = proficiencyBonus(characterLevel(c));
 	const saves = classRuleFor(c, getStartingClassId(c))?.saves || [];
@@ -31175,6 +31269,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	}
 	function performAttack(attack) {
 		try {
+			if (attack.id.endsWith("-two-hands") && equippedHands(c).used > 1) throw new Error("Для атаки универсальным оружием двумя руками освободите вторую руку.");
 			const action = resolvePlayAttack(c, attack.name, attack.attackBonus === void 0 ? void 0 : attack.attackBonus + attackBonusFor(attack), attack.damageFormula ? damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")) : "", mode);
 			onChange(commitPlayChange(c, action.character));
 			if (action.attack) presentRoll(`Атака: ${action.name}`, action.attack);
@@ -31383,11 +31478,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 							})
 						]
 					}),
-					/* @__PURE__ */ jsxs("div", { children: [
-						/* @__PURE__ */ jsx("small", { children: "Класс доспеха" }),
-						/* @__PURE__ */ jsx("strong", { children: ac }),
-						/* @__PURE__ */ jsx("small", { children: a.acOverride !== void 0 ? "Задан вручную" : baseAc.base })
-					] }),
+					/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Класс доспеха" }), /* @__PURE__ */ jsxs("button", {
+						className: "play-hud-stat",
+						"aria-expanded": acDetails,
+						onClick: () => setAcDetails(!acDetails),
+						children: [/* @__PURE__ */ jsx("strong", { children: ac }), /* @__PURE__ */ jsxs("small", { children: ["Источник КД: ", a.acOverride !== void 0 ? "вручную" : baseAc.base] })]
+					})] }),
 					/* @__PURE__ */ jsxs("div", { children: [
 						/* @__PURE__ */ jsx("small", { children: "Скорость" }),
 						/* @__PURE__ */ jsxs("strong", { children: [
@@ -31446,8 +31542,62 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								}, name))
 							})] })
 						]
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-hands",
+						children: [/* @__PURE__ */ jsx("small", { children: "Предметы в руках" }), ["right", "left"].map((hand) => /* @__PURE__ */ jsxs("button", {
+							className: "play-hud-stat",
+							"aria-expanded": handPicker === hand,
+							onClick: () => setHandPicker(handPicker === hand ? void 0 : hand),
+							children: [/* @__PURE__ */ jsx("span", { children: hand === "right" ? "Правая рука" : "Левая рука" }), /* @__PURE__ */ jsx("b", { children: heldSlots[hand]?.name || "Свободна" })]
+						}, hand))]
 					})
 				]
+			}),
+			(acDetails || handPicker) && /* @__PURE__ */ jsxs("section", {
+				className: "play-card play-hud-detail",
+				children: [acDetails && /* @__PURE__ */ jsxs("div", { children: [
+					/* @__PURE__ */ jsxs("h2", { children: ["Источник КД · ", ac] }),
+					/* @__PURE__ */ jsx("p", { children: a.acOverride !== void 0 ? `Ручное значение: ${a.acOverride}` : baseAc.base }),
+					a.acOverride === void 0 && /* @__PURE__ */ jsxs("p", { children: [baseAc.bonuses.join(" · ") || "Без дополнительных бонусов", itemBonus(c, "acBonus") ? ` · Магические предметы ${sign(itemBonus(c, "acBonus"))}` : ""] }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => setAcDetails(false),
+						children: "Закрыть"
+					})
+				] }), handPicker && /* @__PURE__ */ jsxs("div", { children: [
+					/* @__PURE__ */ jsx("h2", { children: handPicker === "right" ? "Правая рука" : "Левая рука" }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-row play-wrap",
+						children: [/* @__PURE__ */ jsx("button", {
+							onClick: () => {
+								const held = heldSlots[handPicker];
+								if (held) change(logPlay(updateInventory(c, a.inventory.map((i) => i.id === held.id ? {
+									...i,
+									equipped: false,
+									hand: void 0
+								} : i)), `Освобождена ${handPicker === "right" ? "правая" : "левая"} рука`));
+								setHandPicker(void 0);
+							},
+							children: "Освободить"
+						}), a.inventory.filter((i) => i.quantity > 0 && handCost({
+							...i,
+							equipped: true
+						}) > 0).map((i) => /* @__PURE__ */ jsxs("button", {
+							onClick: () => {
+								change(logPlay(equipInHand(c, i.id, handPicker), `Взято в ${handPicker === "right" ? "правую" : "левую"} руку: ${i.name}`));
+								setHandPicker(void 0);
+							},
+							children: [i.name, handCost({
+								...i,
+								equipped: true
+							}) === 2 ? " · две руки" : ""]
+						}, i.id))]
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => setHandPicker(void 0),
+						children: "Закрыть"
+					})
+				] })]
 			}),
 			/* @__PURE__ */ jsx("nav", {
 				className: "play-desktop-nav",
@@ -31647,30 +31797,16 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 						onClick: () => change((prev) => {
 							const r = rollD20(saveBonus("con"), mode);
 							presentRoll("Концентрация", r);
-							let next = {
-								...prev,
-								adventure: {
-									...prev.adventure,
-									concentrationChecks: prev.adventure.concentrationChecks.filter((x) => x.id !== check.id)
-								}
-							};
-							if (r.total < check.dc) next = endConcentration(next);
-							return logPlay(next, `Концентрация: ${r.total >= check.dc ? "сохранена" : "прервана"}, Сл ${check.dc}`, r);
+							return logPlay(resolveConcentrationCheck(prev, check.id, r.total >= check.dc), `Концентрация: ${r.total >= check.dc ? "сохранена" : "прервана"}, Сл ${check.dc}`, r);
 						}),
 						children: ["Бросить Телосложение ", sign(saveBonus("con"))]
 					}),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => change({
-							...c,
-							adventure: {
-								...a,
-								concentrationChecks: a.concentrationChecks.filter((x) => x.id !== check.id)
-							}
-						}),
+						onClick: () => change(logPlay(resolveConcentrationCheck(c, check.id, true), "Концентрация: успех вручную")),
 						children: "Успех вручную"
 					}),
 					/* @__PURE__ */ jsx("button", {
-						onClick: () => change(logPlay(endConcentration(c), "Концентрация: провал вручную")),
+						onClick: () => change(logPlay(resolveConcentrationCheck(c, check.id, false), "Концентрация: провал вручную")),
 						children: "Провал вручную"
 					})
 				]
@@ -31988,6 +32124,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 										] })] }),
 										/* @__PURE__ */ jsx("button", {
 											className: "play-primary",
+											disabled: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1,
+											title: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1 ? "Освободите вторую руку" : void 0,
 											onClick: () => performAttack(attack),
 											children: "Атаковать"
 										}),
@@ -32147,30 +32285,27 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 											value: concentrationDamage,
 											onChange: (e) => setConcentrationDamage(integer(e.target.value, 0))
 										})] }), /* @__PURE__ */ jsxs("button", {
-											disabled: !a.concentration,
+											disabled: !a.concentration || !concentrationDamage || !!a.concentrationChecks.length,
 											onClick: () => change((prev) => {
-												const dc = Math.max(10, Math.floor(concentrationDamage / 2));
+												const dc = concentrationDc(prev, concentrationDamage);
 												const r = rollD20(saveBonus("con"), mode);
 												presentRoll("Концентрация", r);
-												const pending = prev.adventure.concentrationChecks.find((x) => x.damage === concentrationDamage);
-												const resolved = {
-													...prev,
-													adventure: {
-														...prev.adventure,
-														concentrationChecks: prev.adventure.concentrationChecks.filter((x) => x.id !== pending?.id)
-													}
-												};
-												return logPlay(r.total >= dc ? resolved : endConcentration(resolved), `Концентрация: ${r.total >= dc ? "сохранена" : "прервана"}, Сл ${dc}`, r);
+												return logPlay(r.total >= dc ? prev : endConcentration(prev), `Концентрация: ${r.total >= dc ? "сохранена" : "прервана"}, Сл ${dc}`, r);
 											}),
 											children: [
 												"Телосложение ",
 												sign(saveBonus("con")),
 												" · Сл ",
-												Math.max(10, Math.floor(concentrationDamage / 2))
+												concentrationDc(c, concentrationDamage)
 											]
 										})]
 									}),
-									/* @__PURE__ */ jsxs("small", { children: [a.concentration ? `Концентрация: ${a.concentration.name}` : "Нет активной концентрации", " · Сл = половина урона с округлением вниз, минимум 10. HP не изменяются."] })
+									/* @__PURE__ */ jsxs("small", { children: [
+										a.concentration ? `Концентрация: ${a.concentration.name}` : "Нет активной концентрации",
+										" · Сл = половина урона с округлением вниз, минимум 10",
+										c.rulesetId === "5e-2024" ? ", максимум 30" : "",
+										". HP не изменяются; если HP уже изменены, используйте ожидающую проверку выше."
+									] })
 								]
 							}),
 							/* @__PURE__ */ jsxs("section", {
@@ -32739,7 +32874,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								children: "Закрыть"
 							})]
 						}),
-						/* @__PURE__ */ jsx("p", { children: rest === "short" ? "Один час. Выберите кости хитов; каждая лечит на бросок + Телосложение. Настройка завершится для одного отмеченного предмета." : "Восемь часов. Восстановятся HP, ячейки и подходящие ресурсы. Кости хитов восстанавливаются по редакции правил героя." }),
+						/* @__PURE__ */ jsx("p", { children: rest === "short" ? "Один час. Выберите кости хитов; каждая лечит на бросок + Телосложение. Настройка или её прекращение завершится для одного отмеченного предмета." : "Восемь часов. Восстановятся HP, ячейки и подходящие ресурсы; выбранная настройка также завершится. Кости хитов восстанавливаются по редакции правил героя." }),
 						rest === "short" && pools.map((p) => /* @__PURE__ */ jsxs("label", { children: [
 							spellSourceDisplayName(p.classId, d, classes),
 							" · d",
