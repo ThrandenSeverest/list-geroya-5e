@@ -19,7 +19,7 @@ export type AdventureState = {
   inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; requirePotionStock?: boolean; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
-  hpMaximum?: number; acOverride?: number; attunementLimit: number; elapsedMinutes: number;
+  hpMaximum?: number; acOverride?: number; acSource?: string; attunementLimit: number; elapsedMinutes: number;
 };
 export const playConditions = ['Ослеплён', 'Очарован', 'Оглох', 'Испуган', 'Схвачен', 'Недееспособен', 'Невидим', 'Парализован', 'Окаменел', 'Отравлен', 'Сбит с ног', 'Опутан', 'Ошеломлён', 'Бессознателен'];
 export const incapacitating = ['Недееспособен', 'Парализован', 'Окаменел', 'Ошеломлён', 'Бессознателен'];

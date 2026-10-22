@@ -19,6 +19,8 @@ export type ArmorClassBreakdown = {
   base: string;
   bonuses: string[];
   conditions: string[];
+  sources: Array<{ id: string; base: string; value: number }>;
+  selectedSource: string;
 };
 
 export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreakdown {
@@ -53,28 +55,30 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
   let wearingArmor = false;
 
-  const candidates: Array<{value:number;base:string;wearingArmor:boolean}> = [{value,base,wearingArmor:false}];
-  if (character.race === "tortle") candidates.push({value:17,base:"Природный панцирь: 17",wearingArmor:false});
-  if (character.race === "lizardfolk") candidates.push({value:13+dex,base:"Природный доспех: 13 + Ловкость",wearingArmor:false});
-  if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({value:13+dex,base:"Драконья устойчивость: 13 + Ловкость",wearingArmor:false});
+  const candidates: Array<{id:string;value:number;base:string;wearingArmor:boolean}> = [];
+  if (!worn) candidates.push({id:"unarmored",value,base,wearingArmor:false});
+  if (!worn && character.race === "tortle") candidates.push({id:"tortle",value:17,base:"Природный панцирь: 17",wearingArmor:false});
+  if (!worn && character.race === "lizardfolk") candidates.push({id:"lizardfolk",value:13+dex,base:"Природный доспех: 13 + Ловкость",wearingArmor:false});
+  if (!worn && getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({id:"draconic",value:13+dex,base:"Драконья устойчивость: 13 + Ловкость",wearingArmor:false});
   const unarmoredSource = normalizedLevelHistory(character).find(entry => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
-  if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk"))
-    candidates.push({value:10+dex+wis,base:"Защита без доспехов монаха: 10 + Ловкость + Мудрость",wearingArmor:false});
-  if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian"))
-    candidates.push({value:10+dex+con,base:"Защита без доспехов варвара: 10 + Ловкость + Телосложение",wearingArmor:false});
-  for (const row of hbEffects(character, "ac_formula"))
-    candidates.push({value:row.value,base:`${row.source.name}: формула КД ${row.value}`,wearingArmor:false});
+  if (!worn && unarmoredSource === "monk" && !shield && getClassLevel(character, "monk"))
+    candidates.push({id:"monk",value:10+dex+wis,base:"Защита без доспехов монаха: 10 + Ловкость + Мудрость",wearingArmor:false});
+  if (!worn && unarmoredSource === "barbarian" && getClassLevel(character, "barbarian"))
+    candidates.push({id:"barbarian",value:10+dex+con,base:"Защита без доспехов варвара: 10 + Ловкость + Телосложение",wearingArmor:false});
+  if (!worn) for (const row of hbEffects(character, "ac_formula"))
+    candidates.push({id:`homebrew:${row.source.id}`,value:row.value,base:`${row.source.name}: формула КД ${row.value}`,wearingArmor:false});
   if (worn) {
     const dexCap = mediumArmorMaster ? 3 : 2;
     const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap,dex) : 0;
-    candidates.push({value:worn.ac+dexBonus,base:`${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`,wearingArmor:true});
+    candidates.push({id:"armor",value:worn.ac+dexBonus,base:`${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`,wearingArmor:true});
   }
   const stylesForSelection = new Set([...(character.classChoices?.["fighting-style"] || []),...orderedCharacterClasses(character).flatMap(entry => entry.choiceValues?.["fighting-style"] || [])]);
   const optimal = candidates.reduce((best,next)=>{
     const score=(candidate:typeof next)=>candidate.value+(candidate.wearingArmor&&stylesForSelection.has("defense")?1:0)+(candidate.wearingArmor&&character.race==="warforged"?1:0);
     return score(next)>score(best)?next:best;
   });
-  value=optimal.value;base=optimal.base;wearingArmor=optimal.wearingArmor;
+  const selected = candidates.find(candidate=>candidate.id===character.adventure?.acSource) || optimal;
+  value=selected.value;base=selected.base;wearingArmor=selected.wearingArmor;
 
   const bonuses: string[] = [];
   if (shield) {
@@ -101,7 +105,7 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
   if (character.spells.includes("shield-of-faith")) conditions.push("Щит веры: +2 КД при действующем заклинании и концентрации.");
   if (character.spells.includes("haste")) conditions.push("Ускорение: +2 КД при действующем заклинании и концентрации.");
   for (const row of hbEffects(character, "ac_bonus")) { value += row.value; bonuses.push(`${row.source.name} ${row.value >= 0 ? "+" : ""}${row.value}`); }
-  return { value, base, bonuses, conditions };
+  return { value, base, bonuses, conditions, sources:candidates.map(({id,base,value})=>({id,base,value})), selectedSource:selected.id };
 }
 
 export function armorClass(character: ExportCharacter) {
