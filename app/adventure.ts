@@ -16,7 +16,7 @@ export type PlayEffect = { id: string; name: string; remaining?: number; concent
 export type PlayResource = { id: string; name: string; current: number; max: number; recharge: 'none' | 'short' | 'long' };
 export type AdventureState = {
   version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
-  inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
+  inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; requirePotionStock?: boolean; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
   hpMaximum?: number; acOverride?: number; attunementLimit: number; elapsedMinutes: number;

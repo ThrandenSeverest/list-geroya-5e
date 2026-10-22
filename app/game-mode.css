@@ -34,3 +34,13 @@
 @media(max-width:700px){.play-shell .play-hud{grid-template-columns:1.25fr .8fr .8fr;gap:10px}.play-hud>div:nth-child(2){grid-column:2;grid-row:1}.play-hud>div:nth-child(3){grid-column:3;grid-row:1}.play-hud .play-concentration{grid-column:1/-1;grid-row:2}.play-hud strong{font-size:24px}.play-hud small{font-size:11px}.play-shell .concentration-save label{max-width:140px;flex:0 1 140px}.concentration-save .play-row>button{flex:1 1 130px}.play-shell .spell-filters>select{flex-basis:calc(50% - 6px)}.play-shell .play-counter{width:100%;grid-template-columns:minmax(65px,1fr) auto 44px 44px}.play-counter>button{min-height:44px}}
 .manual-concentration{display:grid;grid-template-columns:minmax(150px,2fr) minmax(100px,1fr) 95px auto;gap:8px;align-items:end;margin-bottom:8px}.play-shell .manual-concentration label{max-width:none}.concentration-save h3{margin-top:16px}.feature-action-row{display:flex;align-items:start;gap:8px;padding:8px 0;border-top:1px solid var(--line)}.feature-action-row>details{flex:1;min-width:0}.feature-action-row>details>summary{font-weight:600;padding:3px 0}.feature-action-row summary small{display:block;font-weight:400;margin-top:3px}.feature-action-row>button{flex-shrink:0}.feature-action-row p{margin:8px 0}.feature-action-row details>small{display:block;margin-top:6px}.feature-actions .other-feature-actions{margin:8px 0 0}.action-filters{gap:12px}.play-content>.session-check{margin-top:0}
 @media(max-width:1100px){.manual-concentration{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.feature-action-row{flex-wrap:wrap}.feature-action-row>details{flex-basis:50%}}
+
+/* Adventure recovery: item catalogue and potion stock settings */
+.inventory-catalog{margin-block:1rem}
+.inventory-catalog-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,310px),1fr));gap:.5rem;max-height:32rem;overflow-y:auto;margin-top:.75rem}
+.inventory-catalog-row{display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.65rem;border:1px solid var(--play-border,rgba(128,128,128,.3));border-radius:.6rem}
+.inventory-catalog-row span{min-width:0;display:grid;gap:.2rem}
+.inventory-catalog-row small{opacity:.8}
+.inventory-catalog-row button{flex-shrink:0}
+.healing-potion-panel{display:grid;gap:.45rem;min-width:0}
+.potion-stock-toggle{display:inline-flex;align-items:center;gap:.4rem;width:fit-content}

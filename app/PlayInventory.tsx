@@ -7,7 +7,7 @@ import type { DiceResult, ItemCategory, PlayItem } from './adventure';
 import { orderedCharacterClasses } from './multiclass';
 import { classes } from './catalog';
 import { healingFormulaForItem } from './healingPotions';
-import { itemCatalog, currencyLabel, catalogItemFor } from './itemCatalog';
+import { itemCatalog, currencyLabel, catalogItemFor, type CatalogItem } from './itemCatalog';
 import { equippedHands, handCost } from './adventure';
 import { useQuickItem } from './playActions';
 const categories=Object.keys(itemCategoryLabels) as ItemCategory[];
@@ -23,9 +23,23 @@ export function PlayInventory({character:c,onChange,onRoll}:{character:ExportCha
  function mutate(fn:()=>ExportCharacter){try{onChange(fn());setError('');}catch(e){setError((e as Error).message);}}
  function modify(i:PlayItem,fields:Partial<PlayItem>,message:string){mutate(()=>logPlay(updateInventory(c,items.map(x=>x.id===i.id?{...x,...fields}:x)),message));}
  function add(category:ItemCategory='gear'){setError('');setDraft({...newPlayItem(),category});}
+ function addCatalogItem(entry:CatalogItem){
+  // Keep each new copy distinct. A renamed or enchanted copy is not a generic stack.
+  mutate(()=>logPlay(updateInventory(c,[...items,newPlayItem(entry.name)]),`Добавлен из каталога: ${entry.name}`));
+ }
+ const matchingCatalog=itemCatalog.filter(entry=>(catalogCategory==='all'||entry.category===catalogCategory)&&entry.name.toLocaleLowerCase('ru').includes(catalogSearch.trim().toLocaleLowerCase('ru')));
+
  function money(sign:number){mutate(()=>{const value=(c.currency?.[coin]||0)+coinAmount*sign;if(value<0)throw new Error('Недостаточно монет.');return logPlay({...c,currency:{...c.currency,[coin]:value}},`${sign>0?'Получено':'Потрачено'} ${coinAmount} ${coin.toUpperCase()}`);});}
  return <>
  <section className="play-card"><div className="play-row play-wrap"><div><h2>Инвентарь</h2><small>Вес {items.reduce((n,i)=>n+i.quantity*i.weight,0).toFixed(1)} фунт. · Настройка {items.filter(i=>i.attuned).length}/{c.adventure!.attunementLimit}</small></div><button className="play-primary" onClick={()=>setCatalogOpen(!catalogOpen)}>+ Из каталога</button><button onClick={()=>add()}>+ Свой предмет</button><button onClick={()=>add('consumable')}>+ Расходник</button></div><div className="inventory-filters"><input aria-label="Поиск предметов" placeholder="Найти предмет" value={search} onChange={e=>setSearch(e.target.value)}/><select aria-label="Категория предметов" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Все предметы</option>{categories.map(key=><option key={key} value={key}>{itemCategoryLabels[key]}</option>)}</select><label className="play-check"><input type="checkbox" checked={worn} onChange={e=>setWorn(e.target.checked)}/>Только надетое</label></div></section>
+ {catalogOpen&&<section className="play-card inventory-catalog" aria-label="Каталог предметов">
+   <div className="play-row play-wrap"><h2>Добавить из каталога</h2><button type="button" onClick={()=>setCatalogOpen(false)}>Закрыть</button></div>
+   <div className="inventory-filters"><input aria-label="Поиск в каталоге предметов" placeholder="Название предмета…" value={catalogSearch} onChange={e=>setCatalogSearch(e.target.value)}/><select aria-label="Категория каталога" value={catalogCategory} onChange={e=>setCatalogCategory(e.target.value)}><option value="all">Все категории</option>{categories.map(key=><option key={key} value={key}>{itemCategoryLabels[key]}</option>)}</select></div>
+   <small>Найдено: {matchingCatalog.length}. Обычные и изменённые экземпляры не смешиваются.</small>
+   <div className="inventory-catalog-list">{matchingCatalog.slice(0,80).map(entry=><div className="inventory-catalog-row" key={entry.name}><span><strong>{entry.name}</strong><small>{itemCategoryLabels[entry.category]} · {entry.weight} фунт. · {currencyLabel(entry.priceGp)}</small></span><button type="button" aria-label={`Добавить: ${entry.name}`} onClick={()=>addCatalogItem(entry)}>+ Добавить</button></div>)}</div>
+   {matchingCatalog.length>80&&<small>Показаны первые 80 предметов. Уточните поиск для остальных.</small>}
+   {!matchingCatalog.length&&<p>Предметы не найдены.</p>}
+ </section>}
  {error&&!draft&&<p className="play-error" role="alert">{error}</p>}
  {categories.filter(key=>filter==='all'||filter===key).map(key=>{
    const group=items.filter(i=>itemCategory(i)===key&&(!worn||i.equipped)&&i.name.toLowerCase().includes(search.toLowerCase()));
