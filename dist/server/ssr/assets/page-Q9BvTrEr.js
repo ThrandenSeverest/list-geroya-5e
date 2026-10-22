@@ -26543,38 +26543,46 @@ function armorClassBreakdown(character) {
 	let value = 10 + dex;
 	let base = `Без доспеха: 10 + Ловкость (${dex >= 0 ? "+" : ""}${dex})`;
 	let wearingArmor = false;
-	const candidates = [{
+	const candidates = [];
+	if (!worn) candidates.push({
+		id: "unarmored",
 		value,
 		base,
 		wearingArmor: false
-	}];
-	if (character.race === "tortle") candidates.push({
+	});
+	if (!worn && character.race === "tortle") candidates.push({
+		id: "tortle",
 		value: 17,
 		base: "Природный панцирь: 17",
 		wearingArmor: false
 	});
-	if (character.race === "lizardfolk") candidates.push({
+	if (!worn && character.race === "lizardfolk") candidates.push({
+		id: "lizardfolk",
 		value: 13 + dex,
 		base: "Природный доспех: 13 + Ловкость",
 		wearingArmor: false
 	});
-	if (getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({
+	if (!worn && getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({
+		id: "draconic",
 		value: 13 + dex,
 		base: "Драконья устойчивость: 13 + Ловкость",
 		wearingArmor: false
 	});
 	const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
-	if (unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) candidates.push({
+	if (!worn && unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) candidates.push({
+		id: "monk",
 		value: 10 + dex + wis,
 		base: "Защита без доспехов монаха: 10 + Ловкость + Мудрость",
 		wearingArmor: false
 	});
-	if (unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) candidates.push({
+	if (!worn && unarmoredSource === "barbarian" && getClassLevel(character, "barbarian")) candidates.push({
+		id: "barbarian",
 		value: 10 + dex + con,
 		base: "Защита без доспехов варвара: 10 + Ловкость + Телосложение",
 		wearingArmor: false
 	});
-	for (const row of hbEffects(character, "ac_formula")) candidates.push({
+	if (!worn) for (const row of hbEffects(character, "ac_formula")) candidates.push({
+		id: `homebrew:${row.source.id}`,
 		value: row.value,
 		base: `${row.source.name}: формула КД ${row.value}`,
 		wearingArmor: false
@@ -26583,6 +26591,7 @@ function armorClassBreakdown(character) {
 		const dexCap = mediumArmorMaster ? 3 : 2;
 		const dexBonus = worn.dex === "full" ? dex : worn.dex === "max2" ? Math.min(dexCap, dex) : 0;
 		candidates.push({
+			id: "armor",
 			value: worn.ac + dexBonus,
 			base: `${worn.name}: ${worn.ac}${worn.dex === "full" ? " + Ловкость" : worn.dex === "max2" ? ` + Ловкость (макс. +${dexCap})` : ""}`,
 			wearingArmor: true
@@ -26593,9 +26602,10 @@ function armorClassBreakdown(character) {
 		const score = (candidate) => candidate.value + (candidate.wearingArmor && stylesForSelection.has("defense") ? 1 : 0) + (candidate.wearingArmor && character.race === "warforged" ? 1 : 0);
 		return score(next) > score(best) ? next : best;
 	});
-	value = optimal.value;
-	base = optimal.base;
-	wearingArmor = optimal.wearingArmor;
+	const selected = candidates.find((candidate) => candidate.id === character.adventure?.acSource) || optimal;
+	value = selected.value;
+	base = selected.base;
+	wearingArmor = selected.wearingArmor;
 	const bonuses = [];
 	if (shield) {
 		value += 2;
@@ -26625,7 +26635,13 @@ function armorClassBreakdown(character) {
 		value,
 		base,
 		bonuses,
-		conditions
+		conditions,
+		sources: candidates.map(({ id, base, value }) => ({
+			id,
+			base,
+			value
+		})),
+		selectedSource: selected.id
 	};
 }
 function armorClass(character) {
@@ -31558,6 +31574,29 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				className: "play-card play-hud-detail",
 				children: [acDetails && /* @__PURE__ */ jsxs("div", { children: [
 					/* @__PURE__ */ jsxs("h2", { children: ["Источник КД · ", ac] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Формула КД", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Источник КД",
+						value: a.acSource && baseAc.sources.some((source) => source.id === a.acSource) ? a.acSource : "auto",
+						onChange: (e) => change({
+							...c,
+							adventure: {
+								...a,
+								acSource: e.target.value === "auto" ? void 0 : e.target.value,
+								acOverride: void 0
+							}
+						}),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "auto",
+							children: "Автоматически (максимальный доступный КД)"
+						}), baseAc.sources.map((source) => /* @__PURE__ */ jsxs("option", {
+							value: source.id,
+							children: [
+								source.base,
+								" = ",
+								source.value
+							]
+						}, source.id))]
+					})] }),
 					/* @__PURE__ */ jsx("p", { children: a.acOverride !== void 0 ? `Ручное значение: ${a.acOverride}` : baseAc.base }),
 					a.acOverride === void 0 && /* @__PURE__ */ jsxs("p", { children: [baseAc.bonuses.join(" · ") || "Без дополнительных бонусов", itemBonus(c, "acBonus") ? ` · Магические предметы ${sign(itemBonus(c, "acBonus"))}` : ""] }),
 					/* @__PURE__ */ jsx("button", {
