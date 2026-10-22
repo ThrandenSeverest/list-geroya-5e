@@ -28160,6 +28160,12 @@ function catalogItemFor(name) {
 	const redirected = aliases$1[key] ? normalizedItemName(aliases$1[key]) : key;
 	return itemCatalog.find((item) => normalizedItemName(item.name) === redirected || item.aliases?.some((a) => normalizedItemName(a) === redirected)) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
 }
+function currencyLabel(gp) {
+	if (gp === void 0) return "—";
+	if (gp >= 1) return gp + " зм";
+	if (gp >= .1) return Math.round(gp * 10) + " см";
+	return Math.round(gp * 100) + " мм";
+}
 //#endregion
 //#region app/subclassRuntime.ts
 var O$1 = (id, name, description = "") => ({
@@ -29423,6 +29429,10 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 			category
 		});
 	}
+	function addCatalogItem(entry) {
+		mutate(() => logPlay(updateInventory(c, [...items, newPlayItem(entry.name)]), `Добавлен из каталога: ${entry.name}`));
+	}
+	const matchingCatalog = itemCatalog.filter((entry) => (catalogCategory === "all" || entry.category === catalogCategory) && entry.name.toLocaleLowerCase("ru").includes(catalogSearch.trim().toLocaleLowerCase("ru")));
 	function money(sign) {
 		mutate(() => {
 			const value = (c.currency?.[coin] || 0) + coinAmount * sign;
@@ -29495,6 +29505,65 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 					})
 				]
 			})]
+		}),
+		catalogOpen && /* @__PURE__ */ jsxs("section", {
+			className: "play-card inventory-catalog",
+			"aria-label": "Каталог предметов",
+			children: [
+				/* @__PURE__ */ jsxs("div", {
+					className: "play-row play-wrap",
+					children: [/* @__PURE__ */ jsx("h2", { children: "Добавить из каталога" }), /* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => setCatalogOpen(false),
+						children: "Закрыть"
+					})]
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "inventory-filters",
+					children: [/* @__PURE__ */ jsx("input", {
+						"aria-label": "Поиск в каталоге предметов",
+						placeholder: "Название предмета…",
+						value: catalogSearch,
+						onChange: (e) => setCatalogSearch(e.target.value)
+					}), /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Категория каталога",
+						value: catalogCategory,
+						onChange: (e) => setCatalogCategory(e.target.value),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "all",
+							children: "Все категории"
+						}), categories.map((key) => /* @__PURE__ */ jsx("option", {
+							value: key,
+							children: itemCategoryLabels[key]
+						}, key))]
+					})]
+				}),
+				/* @__PURE__ */ jsxs("small", { children: [
+					"Найдено: ",
+					matchingCatalog.length,
+					". Обычные и изменённые экземпляры не смешиваются."
+				] }),
+				/* @__PURE__ */ jsx("div", {
+					className: "inventory-catalog-list",
+					children: matchingCatalog.slice(0, 80).map((entry) => /* @__PURE__ */ jsxs("div", {
+						className: "inventory-catalog-row",
+						children: [/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: entry.name }), /* @__PURE__ */ jsxs("small", { children: [
+							itemCategoryLabels[entry.category],
+							" · ",
+							entry.weight,
+							" фунт. · ",
+							currencyLabel(entry.priceGp)
+						] })] }), /* @__PURE__ */ jsx("button", {
+							type: "button",
+							"aria-label": `Добавить: ${entry.name}`,
+							onClick: () => addCatalogItem(entry),
+							children: "+ Добавить"
+						})]
+					}, entry.name))
+				}),
+				matchingCatalog.length > 80 && /* @__PURE__ */ jsx("small", { children: "Показаны первые 80 предметов. Уточните поиск для остальных." }),
+				!matchingCatalog.length && /* @__PURE__ */ jsx("p", { children: "Предметы не найдены." })
+			]
 		}),
 		error && !draft && /* @__PURE__ */ jsx("p", {
 			className: "play-error",
@@ -30481,46 +30550,70 @@ function SpellRollPanel({ spell, result, onClose }) {
 //#endregion
 //#region app/HealingPotions.tsx
 function HealingPotions({ character: c, onChange, onRoll }) {
-	return /* @__PURE__ */ jsx("div", {
-		className: "healing-potions",
-		"aria-label": "Автоматические зелья лечения",
-		children: healingPotions.map((p) => {
-			const items = c.adventure.inventory.filter((i) => potionPreset(i)?.id === p.id), count = items.reduce((n, i) => n + i.quantity, 0);
-			return /* @__PURE__ */ jsxs("button", {
-				className: "potion-button",
-				type: "button",
-				disabled: count <= 0,
-				title: `${p.name}: ${p.formula}. В наличии: ${count}`,
-				"aria-label": `Выпить: ${p.name}, ${count} шт.`,
-				onClick: () => {
-					const item = items.find((i) => i.quantity > 0);
-					if (!item) return;
-					const action = useQuickItem(c, item.id);
-					onChange(action.character);
-					if (action.roll) onRoll(p.name, action.roll);
-				},
-				children: [
-					/* @__PURE__ */ jsxs("svg", {
-						width: 20 + healingPotions.indexOf(p) * 3,
-						height: "32",
-						viewBox: "0 0 32 40",
-						"aria-hidden": "true",
-						children: [/* @__PURE__ */ jsx("path", {
-							d: "M11 2h10v5h-2v7l9 13c5 9-3 11-12 11S-1 36 4 27l9-13V7h-2Z",
-							fill: "none",
-							stroke: "currentColor",
-							strokeWidth: "2"
-						}), /* @__PURE__ */ jsx("path", {
-							d: "M7 26h18M16 27v8M12 31h8",
-							stroke: "currentColor",
-							strokeWidth: "2"
-						})]
-					}),
-					/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: p.label }), /* @__PURE__ */ jsx("small", { children: p.formula })] }),
-					/* @__PURE__ */ jsxs("strong", { children: ["×", count] })
-				]
-			}, p.id);
-		})
+	const requireStock = c.adventure.requirePotionStock !== false;
+	return /* @__PURE__ */ jsxs("div", {
+		className: "healing-potion-panel",
+		children: [/* @__PURE__ */ jsxs("label", {
+			className: "play-check potion-stock-toggle",
+			children: [/* @__PURE__ */ jsx("input", {
+				type: "checkbox",
+				"aria-label": "Учитывать наличие зелий",
+				checked: requireStock,
+				onChange: (event) => onChange({
+					...c,
+					adventure: {
+						...c.adventure,
+						requirePotionStock: event.target.checked
+					}
+				})
+			}), "Учитывать наличие"]
+		}), /* @__PURE__ */ jsx("div", {
+			className: "healing-potions",
+			"aria-label": "Автоматические зелья лечения",
+			children: healingPotions.map((p, index) => {
+				const items = c.adventure.inventory.filter((i) => i.quantity > 0 && potionPreset(i)?.id === p.id);
+				const count = items.reduce((n, i) => n + i.quantity, 0);
+				return /* @__PURE__ */ jsxs("button", {
+					className: "potion-button",
+					type: "button",
+					disabled: requireStock && count <= 0,
+					title: `${p.name}: ${p.formula}. ${requireStock ? `В наличии: ${count}` : "Наличие не проверяется"}`,
+					"aria-label": `Выпить: ${p.name}, ${requireStock ? `${count} шт.` : "без проверки наличия"}`,
+					onClick: () => {
+						const item = items[0];
+						if (item) {
+							const action = useQuickItem(c, item.id);
+							onChange(action.character);
+							if (action.roll) onRoll(p.name, action.roll);
+						} else if (!requireStock) {
+							const roll = rollDice(p.formula);
+							onChange(logPlay(healPlay(c, roll.total), `Лечение: ${p.name} (без расхода инвентаря)`, roll));
+							onRoll(p.name, roll);
+						}
+					},
+					children: [
+						/* @__PURE__ */ jsxs("svg", {
+							width: 20 + index * 3,
+							height: "32",
+							viewBox: "0 0 32 40",
+							"aria-hidden": "true",
+							children: [/* @__PURE__ */ jsx("path", {
+								d: "M11 2h10v5h-2v7l9 13c5 9-3 11-12 11S-1 36 4 27l9-13V7h-2Z",
+								fill: "none",
+								stroke: "currentColor",
+								strokeWidth: "2"
+							}), /* @__PURE__ */ jsx("path", {
+								d: "M7 26h18M16 27v8M12 31h8",
+								stroke: "currentColor",
+								strokeWidth: "2"
+							})]
+						}),
+						/* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("b", { children: p.label }), /* @__PURE__ */ jsx("small", { children: p.formula })] }),
+						/* @__PURE__ */ jsx("strong", { children: requireStock ? `×${count}` : count > 0 ? `×${count}` : "∞" })
+					]
+				}, p.id);
+			})
+		})]
 	});
 }
 //#endregion
@@ -30847,7 +30940,7 @@ var tabs = [
 	["journal", "Журнал"]
 ];
 var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
-function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
+function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
 	const a = c.adventure;
 	useEffect(() => {
 		if (a.inventoryCatalogVersion !== 2) onChange(upgradeLegacyInventory(c));
@@ -31259,6 +31352,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onExport, saveStatus
 							/* @__PURE__ */ jsx("button", {
 								onClick: onExport,
 								children: "Экспорт JSON"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: onLevelUp,
+								disabled: characterLevel(c) >= 20,
+								title: characterLevel(c) >= 20 ? "Достигнут 20-й уровень" : "Добавить уровень стартовому классу и открыть выбор новых способностей",
+								children: "↑ Повысить уровень"
 							}),
 							/* @__PURE__ */ jsx("button", {
 								onClick: onEdit,
@@ -67172,6 +67271,12 @@ function Builder({ adventureRoute = false } = {}) {
 		},
 		onEdit: () => {
 			setStep(10);
+			setView("builder");
+		},
+		onLevelUp: () => {
+			if (characterLevel(character) >= 20) return;
+			setCharacter((current) => changeClassLevelValue(current, current.startingClassId || current.className, 1));
+			setStep(6);
 			setView("builder");
 		},
 		onExport: () => download(createNativeCharacterFile(character), `${safeName(character.name)} — приключение.json`),
