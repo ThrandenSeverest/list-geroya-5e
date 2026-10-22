@@ -4,7 +4,7 @@ import type { ExportCharacter } from './exportFormats';
 import { resolvePactMagic, resolveSpellSlots } from './multiclass';
 import { resolvedRacialSpells } from './racialSpellcasting';
 import { durationMinutes, endConcentration, logPlay, rollD20, rollDice, type DiceResult, type RollMode } from './adventure';
-import { equippedHands, itemCategory, isShieldItem } from './adventure';
+import { equippedHands, itemCategory } from './adventure';
 import { spellPlayProfile, type SpellPlayProfile } from './playSpells';
 export function spellHandsWarning(c:ExportCharacter,spell:CatalogSpell,classId=c.className):string|undefined {
   const parts=(spell.components||'').split(/[,;\s]+/).map(s=>s.toUpperCase().replace(/[^ВСМVSM]/g,''));
@@ -17,7 +17,7 @@ export function spellHandsWarning(c:ExportCharacter,spell:CatalogSpell,classId=c
     ||classId==='bard'&&isMusicalInstrument(i.name)
     ||classId==='wizard'&&isWoodenFocus(i.name,i.notes));
   const pouch=(c.adventure?.inventory||[]).some(i=>i.quantity>0&&/мешочек с компонентами/i.test(i.name));
-  if(material&&!focus&&hands.free===0)return 'Для материального компонента нужна свободная рука, фокусировка или доступный мешочек с компонентами. Сначала освободите руку.';
+  if(material&&!focus&&hands.free===0)return 'Для материального компонента нужна свободная рука, чтобы достать компонент или мешочек. Сначала освободите руку.';
   if(somatic&&!warCaster&&!(focus&&material)&&hands.free===0)return 'Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.';
   if(material&&!focus&&!pouch)return 'Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).';
 }

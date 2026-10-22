@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { ExportCharacter } from '../app/exportFormats';
-import { applyDeathSave, applyPlayDamage, createAdventureCharacter, healPlay, itemBonus, newPlayItem, playMaximum, queueAttunement, restPlay, rollD20, rollDice, toggleCondition, updateInventory } from '../app/adventure';
+import { applyDeathSave, applyPlayDamage, concentrationDc, createAdventureCharacter, equipInHand, handSlots, healPlay, itemBonus, newPlayItem, playMaximum, queueAttunement, resolveConcentrationCheck, restPlay, rollD20, rollDice, toggleCondition, updateInventory, advancePlayTurn } from '../app/adventure';
 import { bindHomebrewLibrary, homebrewReferencesOnly } from '../app/homebrewEngine';
 import { createNativeCharacterFile, parseCharacterFile } from '../app/characterFiles';
 const hero = (): ExportCharacter => ({ name:'Эльрин', playerName:'', className:'wizard', level:4, race:'human', raceVariant:'standard', background:'sage', classSkills:[], backgroundSkills:[], spells:['shield'], abilities:{str:10,dex:14,con:14,int:16,wis:10,cha:10}, alignment:'', personality:{traits:'',ideals:'',bonds:'',flaws:''}, currency:{gp:10,sp:0,cp:0,pp:0}, inventoryOverride:'Кинжал ×2\nПосох', spellSlotsUsed:[2,1], resourceSpent:{}, currentHitPoints:20, rulesetId:'5e-2014' } as ExportCharacter);
@@ -68,4 +68,35 @@ test('short rest preserves long concentration and expires short concentration',(
  assert.equal(restPlay(c,'short').adventure!.concentration!.remainingMinutes,1380);
  c.adventure!.concentration={name:'Благословение',duration:'Концентрация, до 1 минуты'};
  assert.equal(restPlay(c,'short').adventure!.concentration,undefined);
+});
+test('hands can be assigned independently and two-handed equipment clears both slots',()=>{
+ let c=play();
+ const shield=newPlayItem('Щит'), dagger=newPlayItem('Кинжал'), sword=newPlayItem('Двуручный меч');
+ c=updateInventory(c,[shield,dagger,sword]);
+ c=equipInHand(c,shield.id,'left');c=equipInHand(c,dagger.id,'right');
+ assert.equal(handSlots(c.adventure!.inventory).left?.id,shield.id);
+ assert.equal(handSlots(c.adventure!.inventory).right?.id,dagger.id);
+ c=equipInHand(c,sword.id,'right');
+ assert.equal(handSlots(c.adventure!.inventory).left?.id,sword.id);
+ assert.equal(handSlots(c.adventure!.inventory).right?.id,sword.id);
+ assert.throws(()=>updateInventory(c,c.adventure!.inventory.map(i=>i.id===dagger.id?{...i,equipped:true}:i)));
+});
+test('concentration checks resolve individually and 2024 caps the DC',()=>{
+ let c=play();c.rulesetId='5e-2024';c.adventure!.concentration={name:'Сглаз',duration:'24 часа'};
+ assert.equal(concentrationDc(c,100),30);
+ c=applyPlayDamage(c,1);c=applyPlayDamage(c,2);
+ assert.throws(()=>advancePlayTurn(c));
+ const [first,second]=c.adventure!.concentrationChecks;
+ c=resolveConcentrationCheck(c,first.id,true);
+ assert.equal(c.adventure!.concentrationChecks[0].id,second.id);
+ c=resolveConcentrationCheck(c,second.id,false);
+ assert.equal(c.adventure!.concentration,undefined);
+});
+test('attunement cannot be forged by editing an item beyond the limit',()=>{
+ let c=play();c.adventure!.attunementLimit=1;
+ const first={...newPlayItem('Кольцо'),requiresAttunement:true,attuned:true};
+ const second={...newPlayItem('Амулет'),requiresAttunement:true,attuned:true};
+ assert.throws(()=>updateInventory(c,[first,second]));
+ c=updateInventory(c,[first]);
+ assert.throws(()=>updateInventory(c,[first,{...newPlayItem('Кольцо'),requiresAttunement:true,attuned:true}]));
 });

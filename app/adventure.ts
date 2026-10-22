@@ -9,7 +9,7 @@ import { activeHomebrew, classRuleFor, homebrewExportClosure } from './homebrewE
 import { applySubclassLongRest } from './subclassRuntime';
 
 export type ItemCategory = 'weapon' | 'focus' | 'armor' | 'consumable' | 'ammunition' | 'gear';
-export type PlayItem = { category?: ItemCategory; catalogName?: string; hands?: 0 | 1 | 2; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
+export type PlayItem = { category?: ItemCategory; catalogName?: string; hands?: 0 | 1 | 2; hand?: 'right' | 'left'; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
 import type { PlayTransaction } from './playTransactions';
 export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number; natural?: number; critical?: boolean };
 export type PlayEffect = { id: string; name: string; remaining?: number; concentration?: boolean };
@@ -46,10 +46,30 @@ export function equippedHands(c: ExportCharacter) {
   const held = (c.adventure?.inventory || []).filter(i => handCost(i) > 0);
   return { held, used: held.reduce((n,i) => n + handCost(i), 0), free: Math.max(0, 2 - held.reduce((n,i) => n + handCost(i), 0)) };
 }
+export function handSlots(items: PlayItem[]): { right?: PlayItem; left?: PlayItem } {
+  const held = items.filter(i => handCost(i)>0);
+  const two = held.find(i => handCost(i)===2);
+  if (two) return { right: two, left: two };
+  const right = held.find(i=>i.hand==='right') || held.find(i=>i.hand!=='left');
+  const left = held.find(i=>i.id!==right?.id && i.hand==='left') || held.find(i=>i.id!==right?.id);
+  return { right, left };
+}
+export function equipInHand(c: ExportCharacter, id: string, hand: 'right' | 'left'): ExportCharacter {
+  if (!c.adventure) throw new Error('Откройте игровую копию героя.');
+  const item = c.adventure.inventory.find(i=>i.id===id && i.quantity>0);
+  if (!item || handCost({...item,equipped:true})===0) throw new Error('Этот предмет не занимает руку.');
+  const cost = handCost({...item,equipped:true});
+  const other = hand==='right'?'left':'right';
+  const slots = handSlots(c.adventure.inventory.filter(i=>i.id!==id));
+  const displaced = new Set([slots[hand]?.id,...(cost===2?[slots[other]?.id]:[])]);
+  return updateInventory(c,c.adventure.inventory.map(i=>i.id===id?{...i,equipped:true,hand}:displaced.has(i.id)?{...i,equipped:false,hand:undefined}:i));
+}
 export function checkEquipmentCapacity(items: PlayItem[]) {
   const held = items.filter(i=>i.quantity>0&&i.equipped);
   const used = held.reduce((n,i)=>n+handCost(i),0);
   if (used > 2) throw new Error('Заняты обе руки. Уберите оружие, щит или фокусировку, прежде чем брать новый предмет.');
+  const specified=held.filter(i=>handCost(i)===1 && i.hand);
+  if (specified.some((i,n)=>specified.some((j,m)=>n!==m&&j.hand===i.hand))) throw new Error('Два предмета не могут занимать одну руку.');
   if (held.filter(i=>isShieldItem(i)).length>1)throw new Error('Нельзя использовать два щита одновременно.');
   if (held.filter(i=>!isShieldItem(i)&&!!catalogItemFor(i.catalogName||i.name)?.armor).length>1)throw new Error('Можно носить только один комплект доспехов.');
 }
@@ -157,8 +177,11 @@ export function upgradeLegacyInventory(c:ExportCharacter): ExportCharacter {
 export function updateInventory(c: ExportCharacter, items: PlayItem[]): ExportCharacter {
   if (!c.adventure) return { ...c, inventoryOverride: inventoryText(items) };
   const inventory = items.filter(i => i.quantity > 0);
-  const newlyEquipped=inventory.some(i=>i.equipped&&!c.adventure!.inventory.find(old=>old.id===i.id)?.equipped);
-  if(newlyEquipped)checkEquipmentCapacity(inventory);
+  checkEquipmentCapacity(inventory);
+  if (inventory.filter(i=>i.attuned).length > c.adventure.attunementLimit) throw new Error('Превышен лимит настройки на магические предметы.');
+  if (inventory.some(i=>i.attuned&&!i.requiresAttunement)) throw new Error('Настройка возможна только на предмет, который её требует.');
+  const attunedNames=inventory.filter(i=>i.attuned).map(i=>i.name.trim().toLocaleLowerCase('ru'));
+  if (new Set(attunedNames).size !== attunedNames.length) throw new Error('Нельзя настроиться на две копии одного магического предмета.');
   const activeIds = new Set(inventory.map(i => i.id));
   const removed = c.adventure.inventory.filter(i => !items.some(next => next.id === i.id));
   const trash = new Map((c.adventure.inventoryTrash || []).map(i => [i.id, i]));
@@ -184,8 +207,7 @@ export function applyPlayDamage(c: ExportCharacter, amount: number, defense: 'no
   if (damage > 0 && nextHp === 0 && !conditions.includes('Бессознателен')) conditions.push('Бессознателен');
   const checks = [...c.adventure.concentrationChecks];
   if (damage > 0 && nextHp > 0 && c.adventure.concentration) {
-    const dc = Math.max(10, Math.floor(damage / 2));
-    checks.push({ id: playId(), dc: c.rulesetId === '5e-2024' ? Math.min(30, dc) : dc, damage });
+    checks.push({ id: playId(), dc: concentrationDc(c, damage), damage });
   }
   let next: ExportCharacter = { ...c, currentHitPoints: nextHp, temporaryHitPoints: Math.max(0, temp - damage),
     deathSaveSuccesses: hp === 0 && damage > 0 ? 0 : c.deathSaveSuccesses,
@@ -203,6 +225,17 @@ export function healPlay(c: ExportCharacter, amount: number) {
 export function endConcentration(c: ExportCharacter) {
   if (!c.adventure) return c;
   return { ...c, adventure: { ...c.adventure, concentration: undefined, concentrationChecks: [], effects: c.adventure.effects.filter(e => !e.concentration) } };
+}
+export function concentrationDc(c: ExportCharacter, damage: number) {
+  const dc = Math.max(10, Math.floor(integer(damage) / 2));
+  return c.rulesetId === '5e-2024' ? Math.min(30, dc) : dc;
+}
+export function resolveConcentrationCheck(c: ExportCharacter, id: string, success: boolean): ExportCharacter {
+  if (!c.adventure) return c;
+  const check = c.adventure.concentrationChecks.find(x => x.id === id);
+  if (!check) throw new Error('Проверка концентрации уже разрешена.');
+  const next = { ...c, adventure: { ...c.adventure, concentrationChecks: c.adventure.concentrationChecks.filter(x => x.id !== id) } };
+  return success ? next : endConcentration(next);
 }
 export function toggleCondition(c: ExportCharacter, name: string) {
   if (!c.adventure) return c;
@@ -295,14 +328,15 @@ export function restPlay(c: ExportCharacter, kind: 'short' | 'long', selectedDic
     adventure: { ...c.adventure, elapsedMinutes: c.adventure.elapsedMinutes + (kind === 'long' ? 480 : 60), exhaustion: kind === 'long' ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
       customResources: c.adventure.customResources?.map(r => (r.recharge === kind || (kind === 'long' && r.recharge === 'short')) ? { ...r, current: r.max } : r),
       inventory: c.adventure.inventory.map(i => (i.recharge === kind || (kind === 'long' && i.recharge === 'short')) ? { ...i, charges: i.maxCharges } : i),
-      concentration: keepConcentration ? { ...c.adventure.concentration!, remainingMinutes: remaining === undefined ? undefined : remaining - 60 } : undefined, concentrationChecks: [], effects: c.adventure.effects.filter(e => !e.concentration && (e.remaining === undefined || e.remaining > (kind === 'long' ? 4800 : 600))).map(e => e.remaining === undefined ? e : { ...e, remaining: e.remaining - (kind === 'long' ? 4800 : 600) }) } };
+      concentration: keepConcentration ? { ...c.adventure.concentration!, remainingMinutes: remaining === undefined ? undefined : remaining - 60 } : undefined, concentrationChecks: [], effects: c.adventure.effects.filter(e => (!e.concentration || !!keepConcentration) && (e.remaining === undefined || e.remaining > (kind === 'long' ? 4800 : 600))).map(e => e.remaining === undefined ? e : { ...e, remaining: e.remaining - (kind === 'long' ? 4800 : 600) }) } };
   if (kind === 'long') next = applySubclassLongRest(next);
-  if (kind === 'short') next = finishAttunement(next);
+  if (kind === 'short' || kind === 'long') next = finishAttunement(next);
   if ((next.currentHitPoints || 0) > 0) next = { ...next, deathSaveSuccesses: 0, deathSaveFailures: 0, adventure: { ...next.adventure!, conditions: next.adventure!.conditions.filter(s => s !== 'Бессознателен') } };
   return logPlay(next, `${kind === 'long' ? 'Длинный' : 'Короткий'} отдых завершён${kind === 'short' && healing ? `: лечение ${healing}` : ''}. Другие состояния сохранены.`);
 }
 export function advancePlayTurn(c: ExportCharacter) {
   if (!c.adventure) return c;
+  if (c.adventure.concentrationChecks.length) throw new Error('Сначала разрешите проверки концентрации от полученного урона.');
   const ended = c.adventure.effects.filter(e => e.remaining !== undefined && e.remaining <= 1);
   let next: ExportCharacter = { ...c, adventure: { ...c.adventure, round: c.adventure.round + 1, turn: { action: false, bonus: false, reaction: false }, effects: c.adventure.effects.filter(e => !ended.includes(e)).map(e => e.remaining === undefined ? e : { ...e, remaining: e.remaining - 1 }) } };
   if (c.adventure.concentration?.remainingMinutes !== undefined) {
