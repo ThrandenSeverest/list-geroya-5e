@@ -777,6 +777,33 @@ export default function Home() {
   );
 }
 
+type TextEntryDialogState = { kind: "adventure" | "new-folder" | "rename-folder"; id?: string; value: string };
+
+function TextEntryDialog({ dialog, onValueChange, onCancel, onConfirm }: {
+  dialog: TextEntryDialogState;
+  onValueChange: (value: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const isAdventure = dialog.kind === "adventure";
+  const title = isAdventure ? "Название приключения" : dialog.kind === "new-folder" ? "Новая папка" : "Переименовать папку";
+  return <div className="modal-backdrop" role="presentation">
+    <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="text-entry-dialog-title">
+      <small>{isAdventure ? "Таверна и приключения" : "Библиотека героев"}</small>
+      <h2 id="text-entry-dialog-title">{title}</h2>
+      {isAdventure && <p>Будет создана независимая игровая копия персонажа. Оригинал останется в Таверне.</p>}
+      <form onSubmit={event => { event.preventDefault(); onConfirm(); }}>
+        <label className="folder-name-field">
+          {isAdventure ? "Название" : "Имя папки"}
+          <input autoFocus required maxLength={120} value={dialog.value} onChange={event => onValueChange(event.target.value)} />
+        </label>
+        <div><button type="button" onClick={onCancel}>Отмена</button>
+          <button type="submit" className="primary-action" disabled={!dialog.value.trim()}>{isAdventure ? "Начать приключение" : "Сохранить"}</button></div>
+      </form>
+    </section>
+  </div>;
+}
+
 function AccountAccess({account,cloudState,compact=false}:{account:AccountState|null;cloudState:"local"|"saving"|"saved"|"error";compact?:boolean}) {
   if(account && isStaticPages())return <span className="account-access">Локальные сохранения</span>;
   if(!account)return <span className="account-access is-loading">Проверяем вход…</span>;
@@ -832,6 +859,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   const [libraryExportTarget, setLibraryExportTarget] = useState<LibraryExportTarget | null>(null);
   const [pdfSheetEdition, setPdfSheetEdition] = useState<"2014" | "2024">("2014");
   const [account, setAccount] = useState<AccountState | null>(null);
+  const [textEntryDialog, setTextEntryDialog] = useState<TextEntryDialogState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
   const [importMessage, setImportMessage] = useState<{ source: CharacterFileSource; warnings: string[] } | null>(null);
   const [interactionError, setInteractionError] = useState<string | null>(null);
@@ -2295,17 +2323,31 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   function sendToAdventure(id: string) {
     const source = vault.slots.find(slot => slot.id === id);
     if (!source) return;
+    if (source.character.adventure) { selectSlot(id); return; }
+    // Browser prompt() is unsupported in Electron. Keep all platforms on
+    // the same in-app dialog, including Android WebView and the browser.
+    setTextEntryDialog({ kind: "adventure", id, value: "Новое приключение" });
+  }
+
+  function createNamedAdventure(id: string, name: string) {
+    const source = vault.slots.find(slot => slot.id === id);
+    if (!source || source.character.adventure) return;
     const hero = id === vault.activeId ? character : normalizeCharacter(source.character);
-    if (hero.adventure) { selectSlot(id); return; }
-    const name = window.prompt("Название приключения. Будет создана независимая игровая копия; герой останется в Таверне.", "Новое приключение");
-    if (name === null || !name.trim()) return;
-    const copy = createAdventureCharacter(bindHomebrewLibrary(hero, homebrew), source.id, id === vault.activeId ? new Date().toISOString() : source.updatedAt, name);
+    const copy = createAdventureCharacter(
+      bindHomebrewLibrary(hero, homebrew), source.id,
+      id === vault.activeId ? new Date().toISOString() : source.updatedAt, name,
+    );
     const slot = createSlot(copy);
-    const slots = vault.slots.map(item => item.id === vault.activeId ? { ...item, character, updatedAt: new Date().toISOString() } : item);
+    const slots = vault.slots.map(item => item.id === vault.activeId
+      ? { ...item, character, updatedAt: new Date().toISOString() } : item);
     persistVault({ ...vault, capacity: Math.max(vault.capacity, slots.length + 1), activeId: slot.id, slots: [...slots, slot] });
     setCharacter(copy); setVaultSection("adventures"); setActiveFolderId("all"); stopTutorial();
-    if (!adventureRoute) { window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`)); return; }
-    window.history.replaceState(null, "", assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`)); setView("game");
+    if (!adventureRoute) {
+      window.location.assign(assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`));
+      return;
+    }
+    window.history.replaceState(null, "", assetUrl(`adventure/?play=${encodeURIComponent(slot.id)}`));
+    setView("game");
   }
 
   function startCharacter(withTutorial: boolean) {
@@ -2423,20 +2465,40 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   }
 
   function createFolder() {
-    const name = prompt("Название новой папки:")?.trim();
-    if (!name) return;
-    const folder: CharacterFolder = { id: folderId(), name, createdAt: new Date().toISOString() };
-    persistVault({ ...vault, folders: [...vault.folders, folder] });
-    setActiveFolderId(folder.id);
+    setTextEntryDialog({ kind: "new-folder", value: "" });
   }
 
   function renameFolder(id: string) {
     const folder = vault.folders.find(item => item.id === id);
-    if (!folder) return;
-    const name = prompt("Новое название папки:", folder.name)?.trim();
-    if (!name || name === folder.name) return;
-    persistVault({ ...vault, folders: vault.folders.map(item => item.id === id ? { ...item, name } : item) });
+    if (folder) setTextEntryDialog({ kind: "rename-folder", id, value: folder.name });
   }
+
+  function submitTextEntryDialog() {
+    if (!textEntryDialog) return;
+    const name = textEntryDialog.value.trim();
+    if (!name) return;
+    const { kind, id } = textEntryDialog;
+    setTextEntryDialog(null);
+    if (kind === "adventure" && id) {
+      createNamedAdventure(id, name);
+    } else if (kind === "new-folder") {
+      const folder: CharacterFolder = { id: folderId(), name, createdAt: new Date().toISOString() };
+      persistVault({ ...vault, folders: [...vault.folders, folder] });
+      setActiveFolderId(folder.id);
+    } else if (kind === "rename-folder" && id) {
+      const folder = vault.folders.find(item => item.id === id);
+      if (folder && folder.name !== name) {
+        persistVault({ ...vault, folders: vault.folders.map(item => item.id === id ? { ...item, name } : item) });
+      }
+    }
+  }
+
+  const textEntryModal = textEntryDialog && <TextEntryDialog
+    dialog={textEntryDialog}
+    onValueChange={value => setTextEntryDialog(current => current ? { ...current, value } : null)}
+    onCancel={() => setTextEntryDialog(null)}
+    onConfirm={submitTextEntryDialog}
+  />;
 
   function deleteFolder(id: string) {
     const folder = vault.folders.find(item => item.id === id);
@@ -2745,6 +2807,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
           <footer className="slot-footer"><span>Занято {vault.slots.length} из {vault.capacity} · свободно {free}</span><button onClick={addFiveSlots}>Добавить ещё 5 слотов</button></footer>
         </section>
         </div>
+        {textEntryModal}
         {libraryExportTarget && <div className="modal-backdrop" role="presentation">
           <section className="warning-modal" role="dialog" aria-modal="true" aria-labelledby="library-export-title">
             <small>{libraryExportTarget.kind === "folder" ? "Экспорт папки" : "Экспорт персонажа"}</small>
@@ -3903,6 +3966,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
             : <><button className="primary-action" onClick={runCharacterCheck}>Проверить персонажа <span>✓</span></button><button className="back" onClick={scrollToExports}>Экспорт <span>↓</span></button></>}
         </aside>
       </div>
+      {textEntryModal}
       <footer>Неофициальный инструмент для личного некоммерческого использования. Dungeons &amp; Dragons и названия книг принадлежат правообладателям. Описания оригинально сформулированы для этого приложения.</footer>
       <UpdateHistory />
     </main>
