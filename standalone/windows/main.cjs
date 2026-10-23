@@ -1,4 +1,4 @@
-const { app, BrowserWindow, dialog, ipcMain, protocol } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, protocol, Menu, shell } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 
@@ -35,6 +35,21 @@ async function save(name, base64, filters) {
   return { saved:true };
 }
 app.whenReady().then(async () => {
+  // Electron localStorage belongs to the persistent userData profile, not the portable EXE.
+  // Give users an OS-native way to inspect and back up that directory.
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { label:'HeroList', submenu:[
+      { label:'Открыть папку сохранений', click:() => {
+        void shell.openPath(app.getPath('userData')).then(result => {
+          if (result) dialog.showErrorBox('Не удалось открыть папку', result);
+        });
+      }},
+      { type:'separator' },
+      { role:'quit', label:'Выход' },
+    ]},
+    { label:'Правка', submenu:[{role:'undo'},{role:'redo'},{type:'separator'},{role:'cut'},{role:'copy'},{role:'paste'},{role:'selectAll'}]},
+    { label:'Вид', submenu:[{role:'reload'},{role:'togglefullscreen'}]},
+  ]));
   protocol.handle('herolist', request => asset(request.url));
   ipcMain.handle('herolist:save', async (_event, {name, mime, base64}) => {
     const extension = path.extname(name || '').replace(/^\./, '') || 'json';
