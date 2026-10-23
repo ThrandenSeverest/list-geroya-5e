@@ -1,7 +1,7 @@
 package fun.superaistory.herolist;
 
 import android.app.Activity;
-import android.app.PrintManager;
+import android.print.PrintManager;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
