@@ -2,7 +2,13 @@ import vinext from "vinext";
 import { defineConfig } from "vite";
 
 export default defineConfig(() => ({
-  base: process.env.HEROLIST_PAGES === "1" ? `${process.env.NEXT_PUBLIC_BASE_PATH || "/list-geroya-5e"}/` : "/",
+  // Standalone apps serve their packaged assets from the application root.
+  // GitHub Pages keeps its project subpath; never reuse it for offline bundles.
+  base: process.env.HEROLIST_OFFLINE === "1"
+    ? "/"
+    : process.env.HEROLIST_PAGES === "1"
+      ? `${(process.env.NEXT_PUBLIC_BASE_PATH || "/list-geroya-5e").replace(/\/$/, "")}/`
+      : "/",
   server: {
     host: "0.0.0.0",
     allowedHosts: true as const,
