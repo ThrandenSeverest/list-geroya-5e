@@ -2324,7 +2324,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
     const source = vault.slots.find(slot => slot.id === id);
     if (!source) return;
     if (source.character.adventure) { selectSlot(id); return; }
-    // Browser prompt() is unsupported in Electron. Keep all platforms on
+    // Electron does not support the browser's native text-entry dialog. Keep all platforms on
     // the same in-app dialog, including Android WebView and the browser.
     setTextEntryDialog({ kind: "adventure", id, value: "Новое приключение" });
   }
