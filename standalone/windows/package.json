@@ -1,0 +1,38 @@
+{
+  "name": "herolist-standalone-windows",
+  "version": "1.7.2",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "build": "electron-builder --win portable"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "fun.superaistory.herolist",
+    "productName": "HeroList",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "site/**/*"
+    ],
+    "directories": {
+      "output": "../../release/windows"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "HeroList-Windows-Standalone-${version}-${arch}.${ext}"
+    }
+  }
+}
