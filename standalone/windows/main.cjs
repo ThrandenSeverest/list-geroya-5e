@@ -1,0 +1,59 @@
+const { app, BrowserWindow, dialog, ipcMain, protocol } = require('electron');
+const path = require('node:path');
+const fs = require('node:fs/promises');
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'herolist', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
+]);
+let mainWindow;
+const site = path.join(__dirname, 'site');
+const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.svg':'image/svg+xml', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.ico':'image/x-icon', '.woff2':'font/woff2', '.webp':'image/webp', '.txt':'text/plain' };
+
+function resourcePath(url) {
+  const { pathname } = new URL(url);
+  let request = decodeURIComponent(pathname);
+  if (!request || request.endsWith('/')) request += 'index.html';
+  const target = path.resolve(site, '.' + request);
+  if (target !== site && !target.startsWith(site + path.sep)) return null;
+  return target;
+}
+async function asset(url) {
+  let target = resourcePath(url);
+  if (!target) return new Response('Forbidden', {status:403});
+  try {
+    const stats = await fs.stat(target).catch(() => null);
+    if (stats?.isDirectory()) target = path.join(target, 'index.html');
+    const bytes = await fs.readFile(target);
+    return new Response(bytes, {headers:{ 'Content-Type': mime[path.extname(target).toLowerCase()] || 'application/octet-stream', 'Cache-Control':'no-store' }});
+  } catch { return new Response('Not found', {status:404}); }
+}
+async function save(name, base64, filters) {
+  const result = await dialog.showSaveDialog(mainWindow, { defaultPath: path.basename(name || 'HeroList.json'), filters });
+  if (result.canceled || !result.filePath) return { canceled:true };
+  await fs.writeFile(result.filePath, Buffer.from(base64,'base64'));
+  return { saved:true };
+}
+app.whenReady().then(async () => {
+  protocol.handle('herolist', request => asset(request.url));
+  ipcMain.handle('herolist:save', async (_event, {name, mime, base64}) => {
+    const extension = path.extname(name || '').replace(/^\./, '') || 'json';
+    return save(name, base64, [{name: mime || 'File', extensions:[extension]}]);
+  });
+  ipcMain.handle('herolist:pdf', async (_event, {name}) => {
+    const pdf = await mainWindow.webContents.printToPDF({ printBackground:true, preferCSSPageSize:true });
+    return save(name || 'HeroList.pdf', pdf.toString('base64'), [{name:'PDF', extensions:['pdf']}]);
+  });
+  mainWindow = new BrowserWindow({
+    width:1440,height:940,minWidth:960,minHeight:640,
+    webPreferences:{ preload:path.join(__dirname,'preload.cjs'), sandbox:false, contextIsolation:true, nodeIntegration:false, webSecurity:true }
+  });
+  await mainWindow.loadURL('herolist://app/');
+  mainWindow.webContents.setWindowOpenHandler(({url}) => {
+    if (url.startsWith('herolist://app/')) mainWindow.loadURL(url);
+    return {action:'deny'};
+  });
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('herolist://app/')) event.preventDefault();
+  });
+});
+app.on('window-all-closed', () => app.quit());
