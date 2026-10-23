@@ -65389,6 +65389,53 @@ function HitPointRollEditor({ character, onChange }) {
 function Home() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, {}) });
 }
+function TextEntryDialog({ dialog, onValueChange, onCancel, onConfirm }) {
+	const isAdventure = dialog.kind === "adventure";
+	const title = isAdventure ? "Название приключения" : dialog.kind === "new-folder" ? "Новая папка" : "Переименовать папку";
+	return /* @__PURE__ */ jsx("div", {
+		className: "modal-backdrop",
+		role: "presentation",
+		children: /* @__PURE__ */ jsxs("section", {
+			className: "warning-modal",
+			role: "dialog",
+			"aria-modal": "true",
+			"aria-labelledby": "text-entry-dialog-title",
+			children: [
+				/* @__PURE__ */ jsx("small", { children: isAdventure ? "Таверна и приключения" : "Библиотека героев" }),
+				/* @__PURE__ */ jsx("h2", {
+					id: "text-entry-dialog-title",
+					children: title
+				}),
+				isAdventure && /* @__PURE__ */ jsx("p", { children: "Будет создана независимая игровая копия персонажа. Оригинал останется в Таверне." }),
+				/* @__PURE__ */ jsxs("form", {
+					onSubmit: (event) => {
+						event.preventDefault();
+						onConfirm();
+					},
+					children: [/* @__PURE__ */ jsxs("label", {
+						className: "folder-name-field",
+						children: [isAdventure ? "Название" : "Имя папки", /* @__PURE__ */ jsx("input", {
+							autoFocus: true,
+							required: true,
+							maxLength: 120,
+							value: dialog.value,
+							onChange: (event) => onValueChange(event.target.value)
+						})]
+					}), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: onCancel,
+						children: "Отмена"
+					}), /* @__PURE__ */ jsx("button", {
+						type: "submit",
+						className: "primary-action",
+						disabled: !dialog.value.trim(),
+						children: isAdventure ? "Начать приключение" : "Сохранить"
+					})] })]
+				})
+			]
+		})
+	});
+}
 function AccountAccess({ account, cloudState, compact = false }) {
 	if (account && isStaticPages()) return /* @__PURE__ */ jsx("span", {
 		className: "account-access",
@@ -65467,6 +65514,7 @@ function Builder({ adventureRoute = false } = {}) {
 	const [libraryExportTarget, setLibraryExportTarget] = useState(null);
 	const [pdfSheetEdition, setPdfSheetEdition] = useState("2014");
 	const [account, setAccount] = useState(null);
+	const [textEntryDialog, setTextEntryDialog] = useState(null);
 	const [cloudState, setCloudState] = useState("local");
 	const [importMessage, setImportMessage] = useState(null);
 	const [interactionError, setInteractionError] = useState(null);
@@ -67046,14 +67094,20 @@ function Builder({ adventureRoute = false } = {}) {
 	function sendToAdventure(id) {
 		const source = vault.slots.find((slot) => slot.id === id);
 		if (!source) return;
-		const hero = id === vault.activeId ? character : normalizeCharacter(source.character);
-		if (hero.adventure) {
+		if (source.character.adventure) {
 			selectSlot(id);
 			return;
 		}
-		const name = window.prompt("Название приключения. Будет создана независимая игровая копия; герой останется в Таверне.", "Новое приключение");
-		if (name === null || !name.trim()) return;
-		const copy = createAdventureCharacter(bindHomebrewLibrary(hero, homebrew), source.id, id === vault.activeId ? (/* @__PURE__ */ new Date()).toISOString() : source.updatedAt, name);
+		setTextEntryDialog({
+			kind: "adventure",
+			id,
+			value: "Новое приключение"
+		});
+	}
+	function createNamedAdventure(id, name) {
+		const source = vault.slots.find((slot) => slot.id === id);
+		if (!source || source.character.adventure) return;
+		const copy = createAdventureCharacter(bindHomebrewLibrary(id === vault.activeId ? character : normalizeCharacter(source.character), homebrew), source.id, id === vault.activeId ? (/* @__PURE__ */ new Date()).toISOString() : source.updatedAt, name);
 		const slot = createSlot(copy);
 		const slots = vault.slots.map((item) => item.id === vault.activeId ? {
 			...item,
@@ -67200,32 +67254,57 @@ function Builder({ adventureRoute = false } = {}) {
 		if (id === vault.activeId) setCharacter(normalizeCharacter(slots[0].character));
 	}
 	function createFolder() {
-		const name = prompt("Название новой папки:")?.trim();
-		if (!name) return;
-		const folder = {
-			id: folderId(),
-			name,
-			createdAt: (/* @__PURE__ */ new Date()).toISOString()
-		};
-		persistVault({
-			...vault,
-			folders: [...vault.folders, folder]
+		setTextEntryDialog({
+			kind: "new-folder",
+			value: ""
 		});
-		setActiveFolderId(folder.id);
 	}
 	function renameFolder(id) {
 		const folder = vault.folders.find((item) => item.id === id);
-		if (!folder) return;
-		const name = prompt("Новое название папки:", folder.name)?.trim();
-		if (!name || name === folder.name) return;
-		persistVault({
-			...vault,
-			folders: vault.folders.map((item) => item.id === id ? {
-				...item,
-				name
-			} : item)
+		if (folder) setTextEntryDialog({
+			kind: "rename-folder",
+			id,
+			value: folder.name
 		});
 	}
+	function submitTextEntryDialog() {
+		if (!textEntryDialog) return;
+		const name = textEntryDialog.value.trim();
+		if (!name) return;
+		const { kind, id } = textEntryDialog;
+		setTextEntryDialog(null);
+		if (kind === "adventure" && id) createNamedAdventure(id, name);
+		else if (kind === "new-folder") {
+			const folder = {
+				id: folderId(),
+				name,
+				createdAt: (/* @__PURE__ */ new Date()).toISOString()
+			};
+			persistVault({
+				...vault,
+				folders: [...vault.folders, folder]
+			});
+			setActiveFolderId(folder.id);
+		} else if (kind === "rename-folder" && id) {
+			const folder = vault.folders.find((item) => item.id === id);
+			if (folder && folder.name !== name) persistVault({
+				...vault,
+				folders: vault.folders.map((item) => item.id === id ? {
+					...item,
+					name
+				} : item)
+			});
+		}
+	}
+	const textEntryModal = textEntryDialog && /* @__PURE__ */ jsx(TextEntryDialog, {
+		dialog: textEntryDialog,
+		onValueChange: (value) => setTextEntryDialog((current) => current ? {
+			...current,
+			value
+		} : null),
+		onCancel: () => setTextEntryDialog(null),
+		onConfirm: submitTextEntryDialog
+	});
 	function deleteFolder(id) {
 		const folder = vault.folders.find((item) => item.id === id);
 		if (!folder || !confirm(`Удалить папку «${folder.name}»? Персонажи останутся и перейдут в «Без папки».`)) return;
@@ -68103,6 +68182,7 @@ function Builder({ adventureRoute = false } = {}) {
 						]
 					})]
 				}),
+				textEntryModal,
 				libraryExportTarget && /* @__PURE__ */ jsx("div", {
 					className: "modal-backdrop",
 					role: "presentation",
@@ -71429,6 +71509,7 @@ function Builder({ adventureRoute = false } = {}) {
 					})
 				]
 			}),
+			textEntryModal,
 			/* @__PURE__ */ jsx("footer", { children: "Неофициальный инструмент для личного некоммерческого использования. Dungeons & Dragons и названия книг принадлежат правообладателям. Описания оригинально сформулированы для этого приложения." }),
 			/* @__PURE__ */ jsx(UpdateHistory, {})
 		]
