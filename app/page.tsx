@@ -7,6 +7,7 @@ import { createAdventureCharacter } from "./adventure";
 import { ThemeControls, useInterfacePreferences } from "./ThemeSettings";
 
 import { isStaticPages } from "./accountAvailability";
+import { printStandalonePdf, saveExport } from "./platformFiles";
 import { homebrewAsiLevels, homebrewTableFeatures } from "./homebrewTemplates";
 import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
 
@@ -508,12 +509,7 @@ function MissingChoiceNavigator({ signature }: { signature: string }) {
 }
 
 function download(payload: unknown, name: string) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = name;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  saveExport(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), name);
 }
 
 function safeName(value: string) {
@@ -2206,7 +2202,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
 
   function printPdf(sheetEdition: "2014" | "2024") {
     setPdfSheetEdition(sheetEdition);
-    window.setTimeout(() => window.print(), 0);
+    window.setTimeout(() => printStandalonePdf(`${safeName(character.name)} — Лист Героя ${sheetEdition}.pdf`), 150);
   }
 
   function persistVault(next: CharacterVault) {
@@ -2534,12 +2530,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
       }
       files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
     }
-    const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 }) as BlobPart], { type: "application/zip" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    saveExport(new Blob([zipSync(files, { level: 6 }) as BlobPart], { type: "application/zip" }),
+      `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`);
   }
 
   async function importFolderArchive(event: ChangeEvent<HTMLInputElement>) {
