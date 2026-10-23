@@ -1,0 +1,14 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'fun.superaistory.herolist'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'fun.superaistory.herolist'
+        minSdk 26
+        targetSdk 28
+        versionCode 172
+        versionName '1.7.2'
+    }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
