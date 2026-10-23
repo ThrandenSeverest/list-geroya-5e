@@ -1,0 +1,97 @@
+name: Build offline HeroList APK and Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'standalone/**'
+      - 'app/**'
+      - 'public/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'next.config.ts'
+      - '.github/workflows/build-standalone.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build static offline site
+        run: npm run build
+        env:
+          HEROLIST_PAGES: "1"
+      - name: Ensure app entry points exist
+        run: |
+          test -f dist/client/index.html
+          test -f dist/client/account/index.html
+          test -f dist/client/adventure/index.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: herolist-offline-static
+          path: dist/client/
+          retention-days: 7
+
+  android:
+    needs: site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: herolist-offline-static
+          path: standalone/android/app/src/main/assets/site
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK 35
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build sideloadable debug-signed APK
+        working-directory: standalone/android
+        run: gradle --no-daemon :app:assembleDebug
+      - name: Copy Android release candidate
+        run: |
+          mkdir -p release/android
+          cp standalone/android/app/build/outputs/apk/debug/app-debug.apk release/android/HeroList-Android-Offline.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HeroList-Android-Offline-APK
+          path: release/android/*.apk
+          if-no-files-found: error
+          retention-days: 30
+
+  windows:
+    needs: site
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: herolist-offline-static
+          path: standalone/windows/site
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install desktop packaging tool
+        working-directory: standalone/windows
+        run: npm install --no-audit --no-fund
+      - name: Build portable Windows EXE
+        working-directory: standalone/windows
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HeroList-Windows-Standalone-EXE
+          path: release/windows/*.exe
+          if-no-files-found: error
+          retention-days: 30
