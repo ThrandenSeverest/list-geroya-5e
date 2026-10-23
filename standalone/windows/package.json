@@ -18,6 +18,9 @@
     "files": [
       "main.cjs",
       "preload.cjs",
+      "icon.ico",
+      "splash.html",
+      "splash-desktop.png",
       "site/**/*"
     ],
     "directories": {
@@ -32,7 +35,8 @@
           ]
         }
       ],
-      "artifactName": "HeroList-Windows-Standalone-${version}-${arch}.${ext}"
+      "artifactName": "HeroList-Windows-Standalone-${version}-${arch}.${ext}",
+      "icon": "icon.ico"
     }
   }
 }

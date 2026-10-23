@@ -4,6 +4,11 @@ import android.app.Activity;
 import android.print.PrintManager;
 import android.content.Intent;
 import android.net.Uri;
+import android.graphics.Color;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.os.Bundle;
 import android.print.PrintAttributes;
 import android.webkit.JavascriptInterface;
@@ -24,13 +29,23 @@ public final class MainActivity extends Activity {
     private static final int EXPORT_FILE = 7;
     private static final int IMPORT_FILE = 8;
     private WebView web;
+    private ImageView loadingArtwork;
     private byte[] pendingBytes;
     private ValueCallback<Uri[]> importCallback;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        FrameLayout root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(6,26,53));
+        loadingArtwork = new ImageView(this);
+        loadingArtwork.setImageResource(R.drawable.herolist_splash);
+        loadingArtwork.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        root.addView(loadingArtwork, new FrameLayout.LayoutParams(-1,-1));
         web = new WebView(this);
-        setContentView(web);
+        web.setVisibility(View.INVISIBLE);
+        web.setBackgroundColor(Color.rgb(6,26,53));
+        root.addView(web, new FrameLayout.LayoutParams(-1,-1));
+        setContentView(root);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -51,6 +66,12 @@ public final class MainActivity extends Activity {
             }
         });
         web.setWebViewClient(new WebViewClient() {
+            @Override public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view,url);
+                if (url != null && url.startsWith("https://appassets.androidplatform.net/")) {
+                    web.post(() -> { web.setVisibility(View.VISIBLE); loadingArtwork.setVisibility(View.GONE); });
+                }
+            }
             @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 Uri url = request.getUrl();
                 if (!"appassets.androidplatform.net".equals(url.getHost()) || !"https".equals(url.getScheme())) {

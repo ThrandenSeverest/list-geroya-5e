@@ -6,6 +6,7 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'herolist', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
 ]);
 let mainWindow;
+let splashWindow;
 const site = path.join(__dirname, 'site');
 const mime = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json', '.svg':'image/svg+xml', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.ico':'image/x-icon', '.woff2':'font/woff2', '.webp':'image/webp', '.txt':'text/plain' };
 
@@ -43,11 +44,26 @@ app.whenReady().then(async () => {
     const pdf = await mainWindow.webContents.printToPDF({ printBackground:true, preferCSSPageSize:true });
     return save(name || 'HeroList.pdf', pdf.toString('base64'), [{name:'PDF', extensions:['pdf']}]);
   });
+  splashWindow = new BrowserWindow({
+    width:960,height:540,frame:false,resizable:false,center:true,show:false,
+    backgroundColor:'#061a35',icon:path.join(__dirname,'icon.ico'),
+    webPreferences:{contextIsolation:true,nodeIntegration:false,sandbox:true}
+  });
+  splashWindow.once('ready-to-show',()=>{if(splashWindow&&!splashWindow.isDestroyed())splashWindow.show();});
+  splashWindow.loadFile(path.join(__dirname,'splash.html')).catch(console.error);
   mainWindow = new BrowserWindow({
     width:1440,height:940,minWidth:960,minHeight:640,
+    show:false,backgroundColor:'#061a35',icon:path.join(__dirname,'icon.ico'),
     webPreferences:{ preload:path.join(__dirname,'preload.cjs'), sandbox:false, contextIsolation:true, nodeIntegration:false, webSecurity:true }
   });
-  await mainWindow.loadURL('herolist://app/');
+  const showMain=()=>{
+    if(mainWindow&&!mainWindow.isDestroyed())mainWindow.show();
+    if(splashWindow&&!splashWindow.isDestroyed())splashWindow.close();
+    splashWindow=null;
+  };
+  mainWindow.once('ready-to-show',showMain);
+  mainWindow.webContents.on('did-fail-load',(_e,code,msg)=>{if(code!==-3){console.error(msg);showMain();}});
+  await mainWindow.loadURL('herolist://app/').catch(e=>{console.error(e);showMain();});
   mainWindow.webContents.setWindowOpenHandler(({url}) => {
     if (url.startsWith('herolist://app/')) mainWindow.loadURL(url);
     return {action:'deny'};
