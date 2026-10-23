@@ -98,3 +98,25 @@ jobs:
           path: release/windows/*.exe
           if-no-files-found: error
           retention-days: 30
+
+  publish:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: HeroList-Android-Offline-APK
+          path: release/android
+      - uses: actions/download-artifact@v4
+        with:
+          name: HeroList-Windows-Standalone-EXE
+          path: release/windows
+      - name: Publish standalone APK and EXE as direct release downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view standalone-latest >/dev/null 2>&1 || gh release create standalone-latest --title "HeroList Offline (Android and Windows)" --notes "Standalone offline builds from GitHub Actions. APK is debug-signed for sideloading; Windows EXE is portable and unsigned. Both save characters locally." --prerelease --target "$GITHUB_SHA"
+          gh release upload standalone-latest release/android/*.apk release/windows/*.exe --clobber
