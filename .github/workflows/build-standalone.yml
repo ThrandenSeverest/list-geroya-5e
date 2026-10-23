@@ -11,6 +11,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'next.config.ts'
+      - 'vite.config.ts'
+      - 'scripts/verify-offline-assets.mjs'
       - '.github/workflows/build-standalone.yml'
 
 permissions:
@@ -30,6 +32,9 @@ jobs:
         run: npm run build
         env:
           HEROLIST_PAGES: "1"
+          HEROLIST_OFFLINE: "1"
+      - name: Verify all offline assets resolve from root
+        run: node scripts/verify-offline-assets.mjs
       - name: Ensure app entry points exist
         run: |
           test -f dist/client/index.html
