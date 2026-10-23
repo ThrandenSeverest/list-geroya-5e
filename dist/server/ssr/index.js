@@ -3124,7 +3124,7 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-Q9BvTrEr.js");
+		const m = await import("./assets/page-DzGh524z.js");
 		return {
 			get "AdventureApp"() {
 				return m["AdventureApp"];
@@ -3135,7 +3135,7 @@ var client_references_default = {
 		};
 	},
 	"724dcbd470a5": async () => {
-		const m = await import("./assets/page-CNL9_3ER.js");
+		const m = await import("./assets/page-D6uHrHSy.js");
 		return { get "default"() {
 			return m["default"];
 		} };

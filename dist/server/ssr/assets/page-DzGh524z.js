@@ -1,4 +1,4 @@
-import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
+import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
 import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
@@ -33760,6 +33760,45 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	});
 }
 //#endregion
+//#region app/platformFiles.ts
+function binaryToBase64(bytes) {
+	let out = "";
+	const chunkSize = 16384;
+	for (let i = 0; i < bytes.length; i += chunkSize) out += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+	return btoa(out);
+}
+async function saveStandaloneFile(blob, filename) {
+	const native = window.HeroListDesktop || window.HeroListNative;
+	if (native) {
+		const data = binaryToBase64(new Uint8Array(await blob.arrayBuffer()));
+		await native.saveFile(filename, blob.type || "application/octet-stream", data);
+		return;
+	}
+	const url = URL.createObjectURL(blob);
+	const anchor = document.createElement("a");
+	anchor.href = url;
+	anchor.download = filename;
+	document.body.appendChild(anchor);
+	anchor.click();
+	anchor.remove();
+	setTimeout(() => URL.revokeObjectURL(url), 3e4);
+}
+function saveExport(blob, filename) {
+	saveStandaloneFile(blob, filename).catch((error) => {
+		alert("Не удалось сохранить файл: " + (error instanceof Error ? error.message : String(error)));
+	});
+}
+function printStandalonePdf(filename) {
+	const native = window.HeroListDesktop || window.HeroListNative;
+	if (native?.printPdf) {
+		Promise.resolve(native.printPdf(filename)).catch((error) => {
+			alert("Не удалось создать PDF: " + (error instanceof Error ? error.message : String(error)));
+		});
+		return;
+	}
+	window.print();
+}
+//#endregion
 //#region app/homebrewTemplates.ts
 /** D&D 5e 2014 subclass feature progression (including cleric domain levels). */
 var subclassFeatureLevels = {
@@ -64974,12 +65013,7 @@ function MissingChoiceNavigator({ signature }) {
 	});
 }
 function download(payload, name) {
-	const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
-	const anchor = document.createElement("a");
-	anchor.href = url;
-	anchor.download = name;
-	anchor.click();
-	URL.revokeObjectURL(url);
+	saveExport(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }), name);
 }
 function safeName(value) {
 	return (value || "герой").replace(/[\\/:*?"<>|]+/g, "-").trim();
@@ -66930,7 +66964,7 @@ function Builder({ adventureRoute = false } = {}) {
 	}
 	function printPdf(sheetEdition) {
 		setPdfSheetEdition(sheetEdition);
-		window.setTimeout(() => window.print(), 0);
+		window.setTimeout(() => printStandalonePdf(`${safeName(character.name)} — Лист Героя ${sheetEdition}.pdf`), 150);
 	}
 	function persistVault(next) {
 		const normalized = normalizeVault(next);
@@ -67294,12 +67328,7 @@ function Builder({ adventureRoute = false } = {}) {
 			}
 			files[`${String(index + 1).padStart(2, "0")} — ${safeName(slot.character.name)} — ${suffix}.json`] = strToU8(JSON.stringify(payload, null, 2));
 		}
-		const url = URL.createObjectURL(new Blob([zipSync(files, { level: 6 })], { type: "application/zip" }));
-		const anchor = document.createElement("a");
-		anchor.href = url;
-		anchor.download = `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`;
-		anchor.click();
-		URL.revokeObjectURL(url);
+		saveExport(new Blob([zipSync(files, { level: 6 })], { type: "application/zip" }), `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`);
 	}
 	async function importFolderArchive(event) {
 		const file = event.target.files?.[0];

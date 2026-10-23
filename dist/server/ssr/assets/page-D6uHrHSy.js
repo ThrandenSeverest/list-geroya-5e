@@ -1,6 +1,6 @@
 import { _ as AppElementsWire, a as navigateClientSide, b as stripBasePath, f as resolveRelativeHref, g as isDangerousScheme, h as withBasePath, i as getPrefetchedUrls, l as createRscRequestHeaders, m as toSameOriginAppPath, o as prefetchRscResponse, p as toBrowserNavigationHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestUrl, v as VINEXT_MOUNTED_SLOTS_HEADER, y as hasBasePath } from "../index.js";
 import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-DGHsJKv-.js";
-import { n as isStaticPages, t as assetUrl } from "./assetUrl-CnBASKEV.js";
+import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
 import React, { createContext, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 //#region node_modules/vinext/dist/routing/utils.js

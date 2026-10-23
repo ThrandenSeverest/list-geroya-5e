@@ -1,1 +1,0 @@
-function e(e=typeof location>`u`?``:location.hostname){return e===`github.io`||e.endsWith(`.github.io`)}function t(e){return`${`/`.replace(/\/$/,``)}/${e.replace(/^\/+/,``)}`}export{e as n,t};
