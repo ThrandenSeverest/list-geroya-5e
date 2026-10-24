@@ -50374,6 +50374,127 @@ function featRequirementMet(character, requirement) {
 	};
 	return text.split(/\s*;\s*/).every((clause) => clause.split(/\s+(?:или|либо)\s+/).some((alternative) => alternative.split(/\s+и\s+/).every(atomMet)));
 }
+var gap = 8;
+var widths = [
+	6,
+	7,
+	8,
+	9,
+	10,
+	11,
+	12,
+	14,
+	16
+];
+/** All dimensions are measured at the requested font sizes, in CSS pixels.
+* A beam search compares whole-page layouts, rather than resizing the clicked card.
+* The three summary columns stay at the top; the other four panels fill their gaps.
+*/
+function fitSheet(measure, availableHeight) {
+	const score = (bottoms, area) => {
+		const height = Math.max(...bottoms);
+		const overflow = Math.max(0, height - availableHeight);
+		return overflow * overflow * 100 + height * 30 + (height * 24 - area) * .04;
+	};
+	function place(state, id, start, span) {
+		const top = Math.max(...state.bottoms.slice(start, start + span));
+		const height = Math.ceil(measure(id, span));
+		const bottoms = state.bottoms.slice();
+		for (let i = start; i < start + span; i++) bottoms[i] = top + height + gap;
+		const area = state.area + span * height;
+		return {
+			bottoms,
+			area,
+			placements: [...state.placements, {
+				id,
+				start,
+				span,
+				top,
+				height
+			}],
+			score: score(bottoms, area)
+		};
+	}
+	let beam = [];
+	for (const skills of [
+		7,
+		8,
+		9,
+		10,
+		11
+	]) for (const core of [
+		6,
+		7,
+		8
+	]) {
+		const attacks = 24 - skills - core;
+		if (attacks < 7) continue;
+		let state = {
+			bottoms: Array(24).fill(0),
+			placements: [],
+			area: 0,
+			score: 0
+		};
+		state = place(state, "skills", 0, skills);
+		state = place(state, "core", skills, core);
+		state = place(state, "attacks", skills + core, attacks);
+		beam.push(state);
+	}
+	for (const id of [
+		"inventory",
+		"features",
+		"saves",
+		"proficiencies"
+	]) {
+		const next = [];
+		for (const state of beam) for (const span of widths) {
+			const starts = new Set([0, 24 - span]);
+			for (let i = 1; i < 24; i++) if (state.bottoms[i] !== state.bottoms[i - 1]) {
+				starts.add(i);
+				starts.add(i - span);
+			}
+			for (const start of starts) if (start >= 0 && start + span <= 24) next.push(place(state, id, start, span));
+		}
+		next.sort((a, b) => a.score - b.score);
+		beam = next.slice(0, 36);
+	}
+	const best = beam[0];
+	return {
+		placements: best.placements,
+		height: Math.max(...best.placements.map((p) => p.top + p.height)),
+		score: best.score
+	};
+}
+function optimalSheetSizes(initial, evaluate, availableHeight) {
+	const groups = Object.keys(initial);
+	const uniform = (size) => Object.fromEntries(groups.map((key) => [key, size]));
+	let sizes = uniform(100);
+	while (evaluate(sizes) > availableHeight && Math.min(...Object.values(sizes)) > 70) sizes = uniform(sizes[groups[0]] - 10);
+	while (sizes[groups[0]] < 160) {
+		const next = uniform(sizes[groups[0]] + 10);
+		if (evaluate(next) > availableHeight) break;
+		sizes = next;
+	}
+	for (let pass = 0; pass < 16; pass++) {
+		let best, bestHeight = -1;
+		const smallest = Math.min(...Object.values(sizes));
+		for (const group of groups) {
+			if (sizes[group] >= 160 || sizes[group] > smallest + 20) continue;
+			const next = {
+				...sizes,
+				[group]: sizes[group] + 10
+			};
+			const height = evaluate(next);
+			if (height <= availableHeight && height > bestHeight) {
+				best = next;
+				bestHeight = height;
+			}
+		}
+		if (!best) break;
+		sizes = best;
+	}
+	return sizes;
+}
 //#endregion
 //#region app/sheetLayout.ts
 var sheetGroups = [
@@ -50412,29 +50533,6 @@ function normalizeSheetLayout(value) {
 		visible: Object.fromEntries(Object.entries(defaultSheetLayout.visible).map(([key, fallback]) => [key, typeof raw.visible?.[key] === "boolean" ? raw.visible[key] : fallback])),
 		hiddenAttacks: Array.isArray(raw.hiddenAttacks) ? [...new Set(raw.hiddenAttacks.filter((id) => typeof id === "string"))].slice(0, 500) : []
 	};
-}
-/** Place each card below the shortest contiguous set of columns it can occupy. */
-function packSheetPanels(panels, columns = 12, gap = 10) {
-	const bottoms = Array(columns).fill(0);
-	return panels.map((panel) => {
-		const span = Math.max(1, Math.min(columns, Math.round(panel.span)));
-		let start = 0, top = Infinity;
-		for (let i = 0; i <= columns - span; i++) {
-			const y = Math.max(...bottoms.slice(i, i + span));
-			if (y < top) {
-				start = i;
-				top = y;
-			}
-		}
-		const height = Math.max(1, Math.ceil(panel.height));
-		for (let i = start; i < start + span; i++) bottoms[i] = top + height + gap;
-		return {
-			column: start + 1,
-			row: Math.floor(top) + 1,
-			span,
-			height
-		};
-	});
 }
 //#endregion
 //#region app/spellComponents.generated.ts
@@ -53857,6 +53955,7 @@ function InventoryPanel({ equipment, currency, mode, onModeChange, size, onSize,
 		className: `pdf-panel pdf-inventory pdf-inventory--${mode}`,
 		style,
 		"data-sheet-group": "inventory",
+		"data-sheet-panel": "inventory",
 		children: [
 			/* @__PURE__ */ jsx(SheetPanelTitle, {
 				title: "Инвентарь и монеты",
@@ -53900,6 +53999,9 @@ function PdfCharacterSheet(props) {
 	const attackDialog = useRef(null);
 	const [layout, setLayout] = useState(defaultSheetLayout);
 	const [layoutReady, setLayoutReady] = useState(false);
+	const autoFitRequest = useRef(false);
+	const [fitRevision, setFitRevision] = useState(0);
+	const [fitStatus, setFitStatus] = useState("A4 · автоматическая компоновка");
 	useEffect(() => {
 		try {
 			setLayout(normalizeSheetLayout(JSON.parse(localStorage.getItem("list-geroya-sheet-layout-v1") || "null")));
@@ -53983,80 +54085,92 @@ function PdfCharacterSheet(props) {
 		const content = primaryContent.current;
 		if (!content) return;
 		const page = content.parentElement;
+		const documentElement = content.closest(".pdf-document");
 		const grid = content.querySelector(".pdf-primary-grid");
-		const cards = Array.from(grid.children);
-		let frame = 0, active = true;
-		const fit = () => {
-			if (window.matchMedia("screen and (max-width: 760px)").matches) {
-				delete grid.dataset.packed;
-				cards.forEach((card) => {
-					card.style.removeProperty("grid-column");
-					card.style.removeProperty("grid-row");
-				});
-				content.style.zoom = "1";
-				return;
-			}
-			grid.dataset.packed = "true";
-			const spans = cards.map((card) => {
+		const cards = new Map(Array.from(grid.children).map((el) => [el.dataset.sheetPanel, el]));
+		let active = true, frame = 0;
+		function fit() {
+			if (!active) return;
+			const printing = window.matchMedia("print").matches;
+			const parent = documentElement.parentElement;
+			const parentStyle = getComputedStyle(parent);
+			const previewWidth = parent.clientWidth - parseFloat(parentStyle.paddingLeft) - parseFloat(parentStyle.paddingRight);
+			documentElement.style.zoom = String(printing ? 1 : Math.min(1, previewWidth / (20160 / 25.4)));
+			const pageStyle = getComputedStyle(page);
+			const width = page.clientWidth - parseFloat(pageStyle.paddingLeft) - parseFloat(pageStyle.paddingRight);
+			content.style.width = `${width}px`;
+			content.style.transform = "none";
+			grid.dataset.fitted = "true";
+			const unit = (width + 8) / 24;
+			const available = page.clientHeight - parseFloat(pageStyle.paddingTop) - Math.max(parseFloat(pageStyle.paddingBottom), 1152 / 25.4);
+			const gridTop = grid.offsetTop;
+			const budget = available - gridTop;
+			const cache = /* @__PURE__ */ new Map();
+			const applySizes = (sizes) => cards.forEach((card) => {
 				const group = card.dataset.sheetGroup;
-				return Math.max(3, Math.min(8, Math.round((group === "skills" ? 4 : group === "inventory" ? 3 : group === "features" ? 5 : group === "attacks" ? 5 : 3) * (group ? layout.sizes[group] / 100 : 1))));
+				card.style.setProperty("--sheet-text-scale", String(group ? sizes[group] / 100 : 1));
 			});
-			const inventoryIndex = cards.findIndex((card) => card.dataset.sheetGroup === "inventory");
-			const featuresIndex = cards.findIndex((card) => card.dataset.sheetGroup === "features");
-			let best;
-			const inventoryWidths = [
-				spans[inventoryIndex],
-				Math.min(8, spans[inventoryIndex] + 1),
-				Math.min(8, spans[inventoryIndex] + 2)
-			];
-			const featureWidths = [Math.max(3, spans[featuresIndex] - 2), spans[featuresIndex]];
-			for (const inventoryWidth of inventoryWidths) for (const featureWidth of featureWidths) {
-				const widths = [...spans];
-				widths[inventoryIndex] = inventoryWidth;
-				widths[featuresIndex] = featureWidth;
-				cards.forEach((card, i) => {
-					card.style.gridColumn = `span ${widths[i]}`;
-				});
-				const positions = packSheetPanels(cards.map((card, i) => ({
-					span: widths[i],
-					height: card.offsetHeight
-				})), 12, 8);
-				const score = Math.max(...positions.map((p) => p.row + p.height)) * 1e4 + positions.reduce((area, p) => area + p.span * p.height, 0);
-				if (!best || score < best.score) best = {
-					score,
-					positions
-				};
+			const evaluate = (sizes) => fitSheet((id, span) => {
+				const card = cards.get(id);
+				const group = card.dataset.sheetGroup;
+				const scale = group ? sizes[group] / 100 : 1;
+				const key = `${id}:${span}:${scale}`;
+				const previous = cache.get(key);
+				if (previous !== void 0) return previous;
+				const cardWidth = span * unit - 8;
+				card.style.width = `${cardWidth}px`;
+				card.style.setProperty("--sheet-text-scale", String(scale));
+				card.style.setProperty("--save-columns", String(Math.max(1, Math.min(3, Math.floor((cardWidth - 22) / (110 * scale))))));
+				card.style.setProperty("--inventory-columns", cardWidth >= 260 * scale ? "2" : "1");
+				card.style.setProperty("--coin-columns", cardWidth >= 275 * scale ? "4" : "2");
+				const height = card.offsetHeight;
+				cache.set(key, height);
+				return height;
+			}, budget);
+			let sizes = layout.sizes;
+			if (autoFitRequest.current) {
+				sizes = optimalSheetSizes(sizes, (next) => evaluate(next).height, budget);
+				autoFitRequest.current = false;
+				setLayout((current) => ({
+					...current,
+					sizes
+				}));
 			}
-			cards.forEach((card, i) => {
-				const p = best.positions[i];
-				card.style.gridColumn = `${p.column} / span ${p.span}`;
-				card.style.gridRow = `${p.row} / span ${p.height}`;
-			});
-			if (window.matchMedia("print").matches) {
-				const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 1536 / 25.4;
-				content.style.zoom = String(Math.min(1, available / Math.max(1, content.scrollHeight)));
-			} else content.style.zoom = "1";
-		};
+			const result = evaluate(sizes);
+			applySizes(sizes);
+			for (const placement of result.placements) {
+				const card = cards.get(placement.id);
+				const cardWidth = placement.span * unit - 8;
+				const scale = card.dataset.sheetGroup ? sizes[card.dataset.sheetGroup] / 100 : 1;
+				Object.assign(card.style, {
+					left: `${placement.start * unit}px`,
+					top: `${placement.top}px`,
+					width: `${cardWidth}px`
+				});
+				card.style.setProperty("--save-columns", String(Math.max(1, Math.min(3, Math.floor((cardWidth - 22) / (110 * scale))))));
+				card.style.setProperty("--inventory-columns", cardWidth >= 260 * scale ? "2" : "1");
+				card.style.setProperty("--coin-columns", cardWidth >= 275 * scale ? "4" : "2");
+			}
+			grid.style.height = `${result.height}px`;
+			const scale = Math.min(1, available / Math.max(1, gridTop + result.height));
+			content.style.transform = `translateX(${width * (1 - scale) / 2}px) scale(${scale})`;
+			content.dataset.fitScale = String(scale);
+			setFitStatus(scale < .995 ? "A4 · блоки перераспределены, лист подогнан к странице" : "A4 · блоки перераспределены автоматически");
+		}
 		const schedule = () => {
 			cancelAnimationFrame(frame);
-			frame = requestAnimationFrame(() => {
-				if (active) fit();
-			});
+			frame = requestAnimationFrame(fit);
 		};
 		fit();
-		const observer = new ResizeObserver(schedule);
-		cards.forEach((card) => observer.observe(card));
-		observer.observe(content);
 		document.fonts.ready.then(() => {
 			if (active) fit();
 		});
+		window.addEventListener("resize", schedule);
 		window.addEventListener("beforeprint", fit);
 		window.addEventListener("afterprint", fit);
-		window.addEventListener("resize", schedule);
 		return () => {
 			active = false;
 			cancelAnimationFrame(frame);
-			observer.disconnect();
 			window.removeEventListener("resize", schedule);
 			window.removeEventListener("beforeprint", fit);
 			window.removeEventListener("afterprint", fit);
@@ -54064,97 +54178,268 @@ function PdfCharacterSheet(props) {
 	}, [
 		props,
 		inventoryMode,
-		layout
+		layout,
+		fitRevision
 	]);
 	const sheetEdition = props.sheetEdition || "2014";
 	return /* @__PURE__ */ jsxs("div", {
-		className: `pdf-document pdf-document--${sheetEdition}`,
-		"data-sheet-edition": sheetEdition,
-		children: [
-			/* @__PURE__ */ jsxs("section", {
-				className: "pdf-page pdf-primary-page",
-				children: [/* @__PURE__ */ jsxs("div", {
-					className: "pdf-primary-content",
-					ref: primaryContent,
-					children: [
-						/* @__PURE__ */ jsxs("div", {
-							className: "pdf-brand",
-							children: ["ЛИСТ ГЕРОЯ ", /* @__PURE__ */ jsxs("i", { children: ["5e · правила 2014 · лист ", sheetEdition] })]
-						}),
-						/* @__PURE__ */ jsxs("header", {
-							className: "pdf-hero-header",
-							children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "ИМЯ ПЕРСОНАЖА" }), /* @__PURE__ */ jsx("h1", { children: props.identity.name || "Безымянный герой" })] }), /* @__PURE__ */ jsxs("dl", { children: [
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Класс и уровень" }), /* @__PURE__ */ jsxs("dd", { children: [
-									props.identity.className,
-									" ",
-									props.identity.level,
-									props.identity.subclassName ? ` · ${props.identity.subclassName}` : ""
-								] })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Раса" }), /* @__PURE__ */ jsx("dd", { children: props.identity.raceName })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Предыстория" }), /* @__PURE__ */ jsx("dd", { children: props.identity.backgroundName })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Опыт" }), /* @__PURE__ */ jsx("dd", {})] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Мировоззрение" }), /* @__PURE__ */ jsx("dd", { children: props.identity.alignment || "—" })] }),
-								/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Вдохновение" }), /* @__PURE__ */ jsx("dd", { children: props.identity.inspiration ? "Есть" : "" })] })
-							] })]
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "pdf-ability-row",
-							children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("div", { children: [
-								/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
-								/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key])) }),
-								/* @__PURE__ */ jsx("span", { children: props.abilities[key] })
-							] }, key))
-						}),
-						/* @__PURE__ */ jsxs("div", {
-							className: "pdf-primary-grid",
-							children: [
-								/* @__PURE__ */ jsxs("section", {
-									className: "pdf-panel pdf-skills",
-									style: panelStyle("skills"),
-									"data-sheet-group": "skills",
-									children: [
-										/* @__PURE__ */ jsx(SheetPanelTitle, {
-											title: "Навыки и спасброски",
-											group: "навыки и владения",
-											size: layout.sizes.skills,
-											onSize: (delta) => resize("skills", delta)
-										}),
-										/* @__PURE__ */ jsxs("p", {
-											className: "pdf-inline-stats",
-											children: [/* @__PURE__ */ jsxs("b", { children: ["БМ ", signed(props.proficiency)] }), /* @__PURE__ */ jsxs("b", { children: ["Пассивная внимательность ", props.passivePerception] })]
-										}),
-										skills.map((skill) => {
-											const proficient = props.proficiencies.skills.includes(skill.name);
-											const expertise = props.proficiencies.expertise.includes(skill.name);
-											const bonus = abilityModifier(props.abilities[skill.stat]) + (expertise ? props.proficiency * 2 : proficient ? props.proficiency : 0);
-											return /* @__PURE__ */ jsxs("p", { children: [
-												/* @__PURE__ */ jsx("i", { children: expertise ? "◆" : proficient ? "●" : "○" }),
-												/* @__PURE__ */ jsx("b", { children: signed(bonus) }),
-												skill.name,
-												" ",
-												/* @__PURE__ */ jsxs("small", { children: [
-													"(",
-													abilityLabels[skill.stat].slice(0, 3),
-													")"
-												] })
-											] }, skill.key);
-										}),
-										/* @__PURE__ */ jsx("h3", {
-											className: "pdf-saves-title",
-											children: "Спасброски"
-										}),
-										/* @__PURE__ */ jsx("div", {
-											className: "pdf-save-row",
-											children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("span", { children: [
-												/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
-												/* @__PURE__ */ jsx("b", { children: abilityLabels[key].slice(0, 3) }),
-												/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0)) })
-											] }, key))
-										}),
-										/* @__PURE__ */ jsxs("div", {
+		className: "pdf-sheet-workspace",
+		children: [/* @__PURE__ */ jsxs("div", {
+			className: "pdf-sheet-toolbar",
+			children: [/* @__PURE__ */ jsx("button", {
+				type: "button",
+				disabled: !layoutReady,
+				onClick: () => {
+					autoFitRequest.current = true;
+					setFitRevision((value) => value + 1);
+				},
+				children: "Оптимальные настройки"
+			}), /* @__PURE__ */ jsx("span", {
+				role: "status",
+				children: fitStatus
+			})]
+		}), /* @__PURE__ */ jsxs("div", {
+			className: `pdf-document pdf-document--a4 pdf-document--${sheetEdition}`,
+			"data-sheet-edition": sheetEdition,
+			children: [
+				/* @__PURE__ */ jsxs("section", {
+					className: "pdf-page pdf-primary-page",
+					children: [/* @__PURE__ */ jsxs("div", {
+						className: "pdf-primary-content",
+						ref: primaryContent,
+						children: [
+							/* @__PURE__ */ jsxs("div", {
+								className: "pdf-brand",
+								children: ["ЛИСТ ГЕРОЯ ", /* @__PURE__ */ jsxs("i", { children: ["5e · правила 2014 · лист ", sheetEdition] })]
+							}),
+							/* @__PURE__ */ jsxs("header", {
+								className: "pdf-hero-header",
+								children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "ИМЯ ПЕРСОНАЖА" }), /* @__PURE__ */ jsx("h1", { children: props.identity.name || "Безымянный герой" })] }), /* @__PURE__ */ jsxs("dl", { children: [
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Класс и уровень" }), /* @__PURE__ */ jsxs("dd", { children: [
+										props.identity.className,
+										" ",
+										props.identity.level,
+										props.identity.subclassName ? ` · ${props.identity.subclassName}` : ""
+									] })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Раса" }), /* @__PURE__ */ jsx("dd", { children: props.identity.raceName })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Предыстория" }), /* @__PURE__ */ jsx("dd", { children: props.identity.backgroundName })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Опыт" }), /* @__PURE__ */ jsx("dd", {})] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Мировоззрение" }), /* @__PURE__ */ jsx("dd", { children: props.identity.alignment || "—" })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Вдохновение" }), /* @__PURE__ */ jsx("dd", { children: props.identity.inspiration ? "Есть" : "" })] })
+								] })]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "pdf-ability-row",
+								children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("div", { children: [
+									/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
+									/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key])) }),
+									/* @__PURE__ */ jsx("span", { children: props.abilities[key] })
+								] }, key))
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "pdf-primary-grid",
+								children: [
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-panel pdf-skills",
+										style: panelStyle("skills"),
+										"data-sheet-group": "skills",
+										"data-sheet-panel": "skills",
+										children: [
+											/* @__PURE__ */ jsx(SheetPanelTitle, {
+												title: "Навыки",
+												group: "навыки и владения",
+												size: layout.sizes.skills,
+												onSize: (delta) => resize("skills", delta)
+											}),
+											/* @__PURE__ */ jsxs("p", {
+												className: "pdf-inline-stats",
+												children: [/* @__PURE__ */ jsxs("b", { children: ["БМ ", signed(props.proficiency)] }), /* @__PURE__ */ jsxs("b", { children: ["Пассивная внимательность ", props.passivePerception] })]
+											}),
+											skills.map((skill) => {
+												const proficient = props.proficiencies.skills.includes(skill.name);
+												const expertise = props.proficiencies.expertise.includes(skill.name);
+												const bonus = abilityModifier(props.abilities[skill.stat]) + (expertise ? props.proficiency * 2 : proficient ? props.proficiency : 0);
+												return /* @__PURE__ */ jsxs("p", { children: [
+													/* @__PURE__ */ jsx("i", { children: expertise ? "◆" : proficient ? "●" : "○" }),
+													/* @__PURE__ */ jsx("b", { children: signed(bonus) }),
+													skill.name,
+													" ",
+													/* @__PURE__ */ jsxs("small", { children: [
+														"(",
+														abilityLabels[skill.stat].slice(0, 3),
+														")"
+													] })
+												] }, skill.key);
+											})
+										]
+									}),
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-core-column",
+										"data-sheet-panel": "core",
+										children: [
+											/* @__PURE__ */ jsxs("div", {
+												className: "pdf-combat-cards",
+												children: [
+													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: props.ac }), /* @__PURE__ */ jsx("span", { children: "КД" })] }),
+													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: signed(props.initiative) }), /* @__PURE__ */ jsx("span", { children: "Инициатива" })] }),
+													/* @__PURE__ */ jsxs("div", { children: [
+														/* @__PURE__ */ jsx("strong", { children: props.speed }),
+														/* @__PURE__ */ jsx("span", { children: "Скорость" }),
+														props.movement && /* @__PURE__ */ jsx("small", { children: [
+															props.movement.swim ? `плав. ${props.movement.swim}` : "",
+															props.movement.climb ? `лаз. ${props.movement.climb}` : "",
+															props.movement.fly ? `полёт ${props.movement.fly}` : ""
+														].filter(Boolean).join(" · ") })
+													] })
+												]
+											}),
+											!!props.initiativeNotes?.length && /* @__PURE__ */ jsxs("p", {
+												className: "pdf-inline-stats",
+												children: ["Инициатива: ", props.initiativeNotes.join("; ")]
+											}),
+											/* @__PURE__ */ jsxs("div", {
+												className: "pdf-panel pdf-hp",
+												children: [
+													/* @__PURE__ */ jsx("small", { children: "МАКСИМУМ ХИТОВ" }),
+													/* @__PURE__ */ jsx("strong", { children: props.hitPoints }),
+													/* @__PURE__ */ jsxs("span", { children: [
+														"Кости хитов: ",
+														props.hitDiceLabel || `к${props.hitDie}`,
+														" · ",
+														props.hitDiceRemaining ?? props.identity.level,
+														" / ",
+														props.identity.level
+													] })
+												]
+											}),
+											/* @__PURE__ */ jsxs("div", {
+												className: "pdf-panel pdf-current-hp",
+												children: [/* @__PURE__ */ jsxs("label", { children: ["ТЕКУЩИЕ ХИТЫ ", /* @__PURE__ */ jsx("b", { children: props.currentHitPoints || "" })] }), /* @__PURE__ */ jsxs("label", { children: ["ВРЕМЕННЫЕ ХИТЫ ", /* @__PURE__ */ jsx("b", { children: props.temporaryHitPoints || "" })] })]
+											}),
+											/* @__PURE__ */ jsxs("div", {
+												className: "pdf-panel pdf-resources",
+												children: [
+													/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
+													primaryResources.length ? /* @__PURE__ */ jsx(ResourceList, { resources: primaryResources }) : /* @__PURE__ */ jsx("p", { children: "Ограниченных ресурсов нет." }),
+													resourcePages.length > 0 && /* @__PURE__ */ jsxs("p", {
+														className: "pdf-resource-continuation",
+														children: ["Остальные ресурсы — стр. ", lifePageNumber + 1]
+													})
+												]
+											})
+										]
+									}),
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-panel pdf-attacks",
+										style: panelStyle("attacks"),
+										"data-sheet-group": "attacks",
+										"data-sheet-panel": "attacks",
+										children: [
+											/* @__PURE__ */ jsx(SheetPanelTitle, {
+												title: "Оружие и боевые заклинания",
+												group: "оружие и заклинания",
+												size: layout.sizes.attacks,
+												onSize: (delta) => resize("attacks", delta),
+												children: /* @__PURE__ */ jsx("button", {
+													type: "button",
+													"aria-label": "Настройки оружия и заклинаний",
+													title: "Что отображать на листе",
+													onClick: () => attackDialog.current?.showModal(),
+													children: /* @__PURE__ */ jsx(Settings, {
+														size: 14,
+														"aria-hidden": "true"
+													})
+												})
+											}),
+											layout.visible.notice && /* @__PURE__ */ jsx("p", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." }),
+											/* @__PURE__ */ jsxs("div", {
+												className: "pdf-attack-head pdf-attack-columns",
+												style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
+												children: [
+													/* @__PURE__ */ jsx("b", { children: "Название" }),
+													layout.visible.hit && /* @__PURE__ */ jsx("b", { children: "Атака / Сл" }),
+													layout.visible.damage && /* @__PURE__ */ jsx("b", { children: "Урон" })
+												]
+											}),
+											props.attacks.filter((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map((attack) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", {
+												className: "pdf-attack-columns",
+												style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
+												children: [
+													/* @__PURE__ */ jsx("b", { children: attack.name }),
+													layout.visible.hit && /* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
+													layout.visible.damage && /* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
+												]
+											}), layout.visible.notes && attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)),
+											!props.attacks.some((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)) && /* @__PURE__ */ jsx("p", { children: "Нет атак для отображения. Выберите их в настройках блока." }),
+											layout.visible.spellNumbers && (props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
+												className: "pdf-spell-numbers",
+												children: props.spellcastingSources.map((source) => /* @__PURE__ */ jsxs("span", { children: [
+													/* @__PURE__ */ jsx("b", { children: source.name }),
+													" · ",
+													source.ability,
+													" · Сл ",
+													source.dc,
+													" · атака ",
+													signed(source.attack)
+												] }, source.name))
+											}) : props.spellAbility && /* @__PURE__ */ jsxs("div", {
+												className: "pdf-spell-numbers",
+												children: [
+													/* @__PURE__ */ jsxs("span", { children: ["Базовая характеристика ", /* @__PURE__ */ jsx("b", { children: props.spellAbility })] }),
+													/* @__PURE__ */ jsxs("span", { children: ["Сл ", /* @__PURE__ */ jsx("b", { children: props.spellSaveDc })] }),
+													/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed(props.spellAttackBonus || 0) })] })
+												]
+											}))
+										]
+									}),
+									/* @__PURE__ */ jsx(InventoryPanel, {
+										equipment: props.equipment,
+										currency: props.currency,
+										mode: inventoryMode,
+										onModeChange: changeInventoryMode,
+										size: layout.sizes.inventory,
+										onSize: (delta) => resize("inventory", delta),
+										style: panelStyle("inventory")
+									}),
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-panel pdf-primary-features",
+										style: panelStyle("features"),
+										"data-sheet-group": "features",
+										"data-sheet-panel": "features",
+										children: [/* @__PURE__ */ jsx(SheetPanelTitle, {
+											title: "Расовые способности",
+											group: "способности",
+											size: layout.sizes.features,
+											onSize: (delta) => resize("features", delta)
+										}), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
+									}),
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-panel pdf-saving-throws",
+										style: panelStyle("skills"),
+										"data-sheet-group": "skills",
+										"data-sheet-panel": "saves",
+										children: [
+											"          ",
+											/* @__PURE__ */ jsx("h2", { children: "Спасброски" }),
+											/* @__PURE__ */ jsx("div", {
+												className: "pdf-save-row",
+												children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("span", { children: [
+													/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
+													/* @__PURE__ */ jsx("b", { children: abilityLabels[key] }),
+													/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0)) })
+												] }, key))
+											})
+										]
+									}),
+									/* @__PURE__ */ jsxs("section", {
+										className: "pdf-panel pdf-proficiency-panel",
+										style: panelStyle("skills"),
+										"data-sheet-group": "skills",
+										"data-sheet-panel": "proficiencies",
+										children: ["          ", /* @__PURE__ */ jsxs("div", {
 											className: "pdf-proficiencies",
 											children: [
-												/* @__PURE__ */ jsx("h3", { children: "Владения и защита" }),
+												/* @__PURE__ */ jsx("h2", { children: "Владения и защита" }),
 												proficiencyRows.map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
 													/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
 													" ",
@@ -54170,415 +54455,278 @@ function PdfCharacterSheet(props) {
 													values.join(", ")
 												] }, label))
 											]
-										})
-									]
-								}),
-								/* @__PURE__ */ jsxs("section", {
-									className: "pdf-core-column",
-									children: [
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-combat-cards",
-											children: [
-												/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: props.ac }), /* @__PURE__ */ jsx("span", { children: "КД" })] }),
-												/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: signed(props.initiative) }), /* @__PURE__ */ jsx("span", { children: "Инициатива" })] }),
-												/* @__PURE__ */ jsxs("div", { children: [
-													/* @__PURE__ */ jsx("strong", { children: props.speed }),
-													/* @__PURE__ */ jsx("span", { children: "Скорость" }),
-													props.movement && /* @__PURE__ */ jsx("small", { children: [
-														props.movement.swim ? `плав. ${props.movement.swim}` : "",
-														props.movement.climb ? `лаз. ${props.movement.climb}` : "",
-														props.movement.fly ? `полёт ${props.movement.fly}` : ""
-													].filter(Boolean).join(" · ") })
-												] })
-											]
-										}),
-										!!props.initiativeNotes?.length && /* @__PURE__ */ jsxs("p", {
-											className: "pdf-inline-stats",
-											children: ["Инициатива: ", props.initiativeNotes.join("; ")]
-										}),
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-panel pdf-hp",
-											children: [
-												/* @__PURE__ */ jsx("small", { children: "МАКСИМУМ ХИТОВ" }),
-												/* @__PURE__ */ jsx("strong", { children: props.hitPoints }),
-												/* @__PURE__ */ jsxs("span", { children: [
-													"Кости хитов: ",
-													props.hitDiceLabel || `к${props.hitDie}`,
-													" · ",
-													props.hitDiceRemaining ?? props.identity.level,
-													" / ",
-													props.identity.level
-												] })
-											]
-										}),
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-panel pdf-current-hp",
-											children: [/* @__PURE__ */ jsxs("label", { children: ["ТЕКУЩИЕ ХИТЫ ", /* @__PURE__ */ jsx("b", { children: props.currentHitPoints || "" })] }), /* @__PURE__ */ jsxs("label", { children: ["ВРЕМЕННЫЕ ХИТЫ ", /* @__PURE__ */ jsx("b", { children: props.temporaryHitPoints || "" })] })]
-										}),
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-panel pdf-resources",
-											children: [
-												/* @__PURE__ */ jsx("h2", { children: "Ресурсы" }),
-												primaryResources.length ? /* @__PURE__ */ jsx(ResourceList, { resources: primaryResources }) : /* @__PURE__ */ jsx("p", { children: "Ограниченных ресурсов нет." }),
-												resourcePages.length > 0 && /* @__PURE__ */ jsxs("p", {
-													className: "pdf-resource-continuation",
-													children: ["Остальные ресурсы — стр. ", lifePageNumber + 1]
-												})
-											]
-										})
-									]
-								}),
-								/* @__PURE__ */ jsxs("section", {
-									className: "pdf-panel pdf-attacks",
-									style: panelStyle("attacks"),
-									"data-sheet-group": "attacks",
-									children: [
-										/* @__PURE__ */ jsx(SheetPanelTitle, {
-											title: "Оружие и боевые заклинания",
-											group: "оружие и заклинания",
-											size: layout.sizes.attacks,
-											onSize: (delta) => resize("attacks", delta),
-											children: /* @__PURE__ */ jsx("button", {
-												type: "button",
-												"aria-label": "Настройки оружия и заклинаний",
-												title: "Что отображать на листе",
-												onClick: () => attackDialog.current?.showModal(),
-												children: /* @__PURE__ */ jsx(Settings, {
-													size: 14,
-													"aria-hidden": "true"
-												})
-											})
-										}),
-										layout.visible.notice && /* @__PURE__ */ jsx("p", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." }),
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-attack-head pdf-attack-columns",
-											style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
-											children: [
-												/* @__PURE__ */ jsx("b", { children: "Название" }),
-												layout.visible.hit && /* @__PURE__ */ jsx("b", { children: "Попадание / Сл" }),
-												layout.visible.damage && /* @__PURE__ */ jsx("b", { children: "Урон" })
-											]
-										}),
-										props.attacks.filter((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map((attack) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", {
-											className: "pdf-attack-columns",
-											style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
-											children: [
-												/* @__PURE__ */ jsx("b", { children: attack.name }),
-												layout.visible.hit && /* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
-												layout.visible.damage && /* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
-											]
-										}), layout.visible.notes && attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)),
-										!props.attacks.some((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)) && /* @__PURE__ */ jsx("p", { children: "Нет атак для отображения. Выберите их в настройках блока." }),
-										layout.visible.spellNumbers && (props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
-											className: "pdf-spell-numbers",
-											children: props.spellcastingSources.map((source) => /* @__PURE__ */ jsxs("span", { children: [
-												/* @__PURE__ */ jsx("b", { children: source.name }),
-												" · ",
-												source.ability,
-												" · Сл ",
-												source.dc,
-												" · атака ",
-												signed(source.attack)
-											] }, source.name))
-										}) : props.spellAbility && /* @__PURE__ */ jsxs("div", {
-											className: "pdf-spell-numbers",
-											children: [
-												/* @__PURE__ */ jsxs("span", { children: ["Базовая характеристика ", /* @__PURE__ */ jsx("b", { children: props.spellAbility })] }),
-												/* @__PURE__ */ jsxs("span", { children: ["Сл ", /* @__PURE__ */ jsx("b", { children: props.spellSaveDc })] }),
-												/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed(props.spellAttackBonus || 0) })] })
-											]
-										}))
-									]
-								}),
-								/* @__PURE__ */ jsx(InventoryPanel, {
-									equipment: props.equipment,
-									currency: props.currency,
-									mode: inventoryMode,
-									onModeChange: changeInventoryMode,
-									size: layout.sizes.inventory,
-									onSize: (delta) => resize("inventory", delta),
-									style: panelStyle("inventory")
-								}),
-								/* @__PURE__ */ jsxs("section", {
-									className: "pdf-panel pdf-primary-features",
-									style: panelStyle("features"),
-									"data-sheet-group": "features",
-									children: [/* @__PURE__ */ jsx(SheetPanelTitle, {
-										title: "Расовые способности",
-										group: "способности",
-										size: layout.sizes.features,
-										onSize: (delta) => resize("features", delta)
-									}), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
+										})]
+									})
+								]
+							})
+						]
+					}), /* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · Основной лист ", /* @__PURE__ */ jsxs("span", { children: ["1 / ", totalPages] })] })]
+				}),
+				classPages.map((pageColumns, pageIndex) => {
+					const pageNumber = pageIndex + 2;
+					return /* @__PURE__ */ jsxs("section", {
+						className: "pdf-page pdf-class-page",
+						style: panelStyle("features"),
+						children: [
+							/* @__PURE__ */ jsx(PageHeader, {
+								eyebrow: `${props.identity.className} · ${props.identity.level} уровень${pageIndex ? " · продолжение" : ""}`,
+								title: "Боевые и классовые способности",
+								page: pageNumber
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "pdf-feature-toolbar",
+								children: /* @__PURE__ */ jsx(SheetPanelTitle, {
+									title: "Размер текста способностей",
+									group: "классовые способности",
+									size: layout.sizes.features,
+									onSize: (delta) => resize("features", delta)
 								})
-							]
-						})
-					]
-				}), /* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · Основной лист ", /* @__PURE__ */ jsxs("span", { children: ["1 / ", totalPages] })] })]
-			}),
-			classPages.map((pageColumns, pageIndex) => {
-				const pageNumber = pageIndex + 2;
-				return /* @__PURE__ */ jsxs("section", {
-					className: "pdf-page pdf-class-page",
-					style: panelStyle("features"),
+							}),
+							pageIndex === 0 && /* @__PURE__ */ jsx("p", {
+								className: "pdf-section-note",
+								children: "Особые атаки и боевые приёмы собраны в начале раздела; далее идут классовые, расовые и полученные от черт особенности. Обычные атаки оружием находятся на основном листе."
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "pdf-two-columns",
+								children: [/* @__PURE__ */ jsx(FeatureList, { features: pageColumns[0] }), /* @__PURE__ */ jsx(FeatureList, { features: pageColumns[1] })]
+							}),
+							/* @__PURE__ */ jsxs("footer", { children: [
+								"Лист Героя 5e · Классовые способности",
+								pageIndex ? " · продолжение" : "",
+								" ",
+								/* @__PURE__ */ jsxs("span", { children: [
+									pageNumber,
+									" / ",
+									totalPages
+								] })
+							] })
+						]
+					}, `class-page-${pageIndex}`);
+				}),
+				/* @__PURE__ */ jsxs("section", {
+					className: "pdf-page",
 					children: [
 						/* @__PURE__ */ jsx(PageHeader, {
-							eyebrow: `${props.identity.className} · ${props.identity.level} уровень${pageIndex ? " · продолжение" : ""}`,
-							title: "Боевые и классовые способности",
-							page: pageNumber
+							eyebrow: "Снаряжение, история и заметки",
+							title: "Жизнь героя",
+							page: lifePageNumber
 						}),
 						/* @__PURE__ */ jsx("div", {
-							className: "pdf-feature-toolbar",
-							children: /* @__PURE__ */ jsx(SheetPanelTitle, {
-								title: "Размер текста способностей",
-								group: "классовые способности",
-								size: layout.sizes.features,
-								onSize: (delta) => resize("features", delta)
+							className: "pdf-life-grid",
+							children: /* @__PURE__ */ jsxs("section", {
+								className: "pdf-personality",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "pdf-panel",
+										children: [/* @__PURE__ */ jsx("h2", { children: "Черты характера" }), /* @__PURE__ */ jsx("p", { children: props.personality.traits || "—" })]
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "pdf-panel",
+										children: [/* @__PURE__ */ jsx("h2", { children: "Идеалы" }), /* @__PURE__ */ jsx("p", { children: props.personality.ideals || "—" })]
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "pdf-panel",
+										children: [/* @__PURE__ */ jsx("h2", { children: "Привязанности" }), /* @__PURE__ */ jsx("p", { children: props.personality.bonds || "—" })]
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "pdf-panel",
+										children: [/* @__PURE__ */ jsx("h2", { children: "Слабости" }), /* @__PURE__ */ jsx("p", { children: props.personality.flaws || "—" })]
+									})
+								]
 							})
 						}),
-						pageIndex === 0 && /* @__PURE__ */ jsx("p", {
-							className: "pdf-section-note",
-							children: "Особые атаки и боевые приёмы собраны в начале раздела; далее идут классовые, расовые и полученные от черт особенности. Обычные атаки оружием находятся на основном листе."
+						/* @__PURE__ */ jsxs("section", {
+							className: "pdf-panel pdf-notes",
+							children: [/* @__PURE__ */ jsx("h2", { children: "Заметки кампании" }), Array.from({ length: 18 }, (_, index) => /* @__PURE__ */ jsx("i", {}, index))]
 						}),
-						/* @__PURE__ */ jsxs("div", {
-							className: "pdf-two-columns",
-							children: [/* @__PURE__ */ jsx(FeatureList, { features: pageColumns[0] }), /* @__PURE__ */ jsx(FeatureList, { features: pageColumns[1] })]
-						}),
-						/* @__PURE__ */ jsxs("footer", { children: [
-							"Лист Героя 5e · Классовые способности",
-							pageIndex ? " · продолжение" : "",
-							" ",
-							/* @__PURE__ */ jsxs("span", { children: [
-								pageNumber,
-								" / ",
-								totalPages
-							] })
-						] })
+						/* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · История и заметки ", /* @__PURE__ */ jsxs("span", { children: [
+							lifePageNumber,
+							" / ",
+							totalPages
+						] })] })
 					]
-				}, `class-page-${pageIndex}`);
-			}),
-			/* @__PURE__ */ jsxs("section", {
-				className: "pdf-page",
-				children: [
-					/* @__PURE__ */ jsx(PageHeader, {
-						eyebrow: "Снаряжение, история и заметки",
-						title: "Жизнь героя",
-						page: lifePageNumber
-					}),
-					/* @__PURE__ */ jsx("div", {
-						className: "pdf-life-grid",
-						children: /* @__PURE__ */ jsxs("section", {
-							className: "pdf-personality",
-							children: [
-								/* @__PURE__ */ jsxs("div", {
-									className: "pdf-panel",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Черты характера" }), /* @__PURE__ */ jsx("p", { children: props.personality.traits || "—" })]
-								}),
-								/* @__PURE__ */ jsxs("div", {
-									className: "pdf-panel",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Идеалы" }), /* @__PURE__ */ jsx("p", { children: props.personality.ideals || "—" })]
-								}),
-								/* @__PURE__ */ jsxs("div", {
-									className: "pdf-panel",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Привязанности" }), /* @__PURE__ */ jsx("p", { children: props.personality.bonds || "—" })]
-								}),
-								/* @__PURE__ */ jsxs("div", {
-									className: "pdf-panel",
-									children: [/* @__PURE__ */ jsx("h2", { children: "Слабости" }), /* @__PURE__ */ jsx("p", { children: props.personality.flaws || "—" })]
-								})
-							]
+				}),
+				resourcePages.map((resources, index) => /* @__PURE__ */ jsxs("section", {
+					className: "pdf-page pdf-resource-page",
+					children: [
+						/* @__PURE__ */ jsx(PageHeader, {
+							eyebrow: "Расовые и классовые способности",
+							title: "Ресурсы · продолжение",
+							page: lifePageNumber + index + 1
+						}),
+						/* @__PURE__ */ jsx("div", {
+							className: "pdf-resource-page-grid",
+							children: /* @__PURE__ */ jsx(ResourceList, { resources })
+						}),
+						/* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · Ресурсы ", /* @__PURE__ */ jsxs("span", { children: [
+							lifePageNumber + index + 1,
+							" / ",
+							totalPages
+						] })] })
+					]
+				}, `resources-${index}`)),
+				spellPages.map((pageSpells, spellPageIndex) => {
+					const split = Math.ceil(pageSpells.length / 2);
+					const columns = [pageSpells.slice(0, split), pageSpells.slice(split)];
+					const pageNumber = firstSpellPageNumber + spellPageIndex;
+					return /* @__PURE__ */ jsxs("section", {
+						className: "pdf-page pdf-spell-page",
+						children: [
+							/* @__PURE__ */ jsx(PageHeader, {
+								eyebrow: `${props.identity.className} · заклинания${spellPageIndex ? " · продолжение" : ""}`,
+								title: "Книга заклинаний",
+								page: pageNumber
+							}),
+							spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
+								className: "pdf-slot-strip",
+								children: [props.spellSlots.map((slots, index) => /* @__PURE__ */ jsxs("div", { children: [
+									/* @__PURE__ */ jsxs("small", { children: [index + 1, " круг"] }),
+									/* @__PURE__ */ jsx("strong", { children: slots }),
+									/* @__PURE__ */ jsx("span", { children: Array.from({ length: slots }, (_, slot) => /* @__PURE__ */ jsx("i", {}, slot)) })
+								] }, index)), props.pactSlots && props.pactSlots.slots > 0 && /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [
+									"Договор · ",
+									props.pactSlots.level,
+									" круг"
+								] }), /* @__PURE__ */ jsx("strong", { children: props.pactSlots.slots })] })]
+							}),
+							wizardPrepared && spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
+								className: "pdf-prepared-summary",
+								children: [/* @__PURE__ */ jsxs("span", { children: ["Максимум подготовленных: ", /* @__PURE__ */ jsx("b", { children: props.preparedMaximum ?? 0 })] }), /* @__PURE__ */ jsx("button", {
+									type: "button",
+									onClick: () => setShowPreparedMarks((value) => !value),
+									children: showPreparedMarks ? "Очистить отметки для печати" : "Показать текущую подготовку"
+								})]
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: `pdf-spell-columns${wizardPrepared ? " wizard" : ""}`,
+								children: columns.map((column, columnIndex) => /* @__PURE__ */ jsxs("div", {
+									className: `pdf-spell-table${wizardPrepared ? " wizard" : ""}`,
+									children: [/* @__PURE__ */ jsxs("header", { children: [
+										/* @__PURE__ */ jsx("b", { children: "Кр." }),
+										/* @__PURE__ */ jsx("b", { children: "Заклинание" }),
+										/* @__PURE__ */ jsx("b", { children: "В/С/М" }),
+										wizardPrepared && /* @__PURE__ */ jsx("b", { children: "Подг." })
+									] }), column.map((spell) => /* @__PURE__ */ jsxs("div", { children: [
+										/* @__PURE__ */ jsx("span", { children: spell.level }),
+										/* @__PURE__ */ jsxs("strong", { children: [
+											spell.name,
+											" · ",
+											spell.classSource,
+											spell.grantSource ? ` (${spell.grantSource})` : "",
+											spell.ritual ? " Р" : "",
+											spell.alwaysPrepared ? " †" : ""
+										] }),
+										/* @__PURE__ */ jsx("span", { children: spellComponentLabel(spell) }),
+										wizardPrepared && /* @__PURE__ */ jsx("span", { children: spell.level === 0 || spell.classSource !== "Волшебник" ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○" })
+									] }, `${spell.classSource}-${spell.id}`))]
+								}, columnIndex))
+							}),
+							/* @__PURE__ */ jsxs("p", {
+								className: "pdf-spell-legend",
+								children: ["Р — ритуал. М* — компонент со стоимостью или расходуемый. † — всегда подготовлено и не занимает лимит.", wizardPrepared ? showPreparedMarks ? " ● Подготовлено сейчас; ○ находится в книге." : " ○ Пустая отметка для заполнения вручную." : ""]
+							}),
+							/* @__PURE__ */ jsxs("footer", { children: [
+								"Лист Героя 5e · Заклинания",
+								spellPageIndex ? " · продолжение" : "",
+								" ",
+								/* @__PURE__ */ jsxs("span", { children: [
+									pageNumber,
+									" / ",
+									totalPages
+								] })
+							] })
+						]
+					}, `spell-page-${spellPageIndex}`);
+				}),
+				spellCardPages.map((pageSpells, cardPageIndex) => {
+					const pageNumber = firstSpellCardPageNumber + cardPageIndex;
+					return /* @__PURE__ */ jsxs("section", {
+						className: "pdf-page pdf-spell-card-page",
+						children: [
+							/* @__PURE__ */ jsx(PageHeader, {
+								eyebrow: `${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`,
+								title: "Карточки заклинаний",
+								page: pageNumber
+							}),
+							/* @__PURE__ */ jsx("div", {
+								className: "pdf-spell-card-grid",
+								children: pageSpells.map((spell) => /* @__PURE__ */ jsx(PdfSpellCard, { spell }, `${spell.classSource}-${spell.id}`))
+							}),
+							/* @__PURE__ */ jsxs("footer", { children: [
+								"Лист Героя 5e · Карточки заклинаний",
+								cardPageIndex ? " · продолжение" : "",
+								" ",
+								/* @__PURE__ */ jsxs("span", { children: [
+									pageNumber,
+									" / ",
+									totalPages
+								] })
+							] })
+						]
+					}, `spell-card-page-${cardPageIndex}`);
+				}),
+				/* @__PURE__ */ jsxs("dialog", {
+					ref: attackDialog,
+					className: "pdf-display-settings",
+					"aria-labelledby": "pdf-attack-settings-title",
+					children: [
+						/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
+							id: "pdf-attack-settings-title",
+							children: "Оружие и заклинания на листе"
+						}), /* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => attackDialog.current?.close(),
+							"aria-label": "Закрыть настройки оружия",
+							children: "✕"
+						})] }),
+						/* @__PURE__ */ jsx("p", { children: "Меняется только отображение на листе. Оружие и заклинания остаются у персонажа." }),
+						/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Показывать" }), [
+							["weapon", "Оружие"],
+							["cantrip", "Заговоры"],
+							["spell", "Заклинания"],
+							["feature", "Атаки способностей"],
+							["hit", "Попадание и сложность спасброска"],
+							["damage", "Урон"],
+							["notes", "Описания и примечания"],
+							["spellNumbers", "Параметры заклинателя"],
+							["notice", "Пояснение об автоматическом списке атак"]
+						].map(([key, label]) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+							type: "checkbox",
+							checked: layout.visible[key],
+							onChange: (e) => setLayout((current) => ({
+								...current,
+								visible: {
+									...current.visible,
+									[key]: e.target.checked
+								}
+							}))
+						}), label] }, key))] }),
+						/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Отдельные атаки" }), props.attacks.length ? props.attacks.map((attack) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+							type: "checkbox",
+							checked: !layout.hiddenAttacks.includes(attack.id),
+							onChange: (e) => setLayout((current) => ({
+								...current,
+								hiddenAttacks: e.target.checked ? current.hiddenAttacks.filter((id) => id !== attack.id) : [...current.hiddenAttacks, attack.id]
+							}))
+						}), attack.name] }, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Атаки ещё не выбраны." })] }),
+						/* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => setLayout((current) => ({
+								...current,
+								visible: { ...defaultSheetLayout.visible },
+								hiddenAttacks: []
+							})),
+							children: "Вернуть стандартный состав"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							type: "button",
+							onClick: () => attackDialog.current?.close(),
+							children: "Готово"
 						})
-					}),
-					/* @__PURE__ */ jsxs("section", {
-						className: "pdf-panel pdf-notes",
-						children: [/* @__PURE__ */ jsx("h2", { children: "Заметки кампании" }), Array.from({ length: 18 }, (_, index) => /* @__PURE__ */ jsx("i", {}, index))]
-					}),
-					/* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · История и заметки ", /* @__PURE__ */ jsxs("span", { children: [
-						lifePageNumber,
-						" / ",
-						totalPages
-					] })] })
-				]
-			}),
-			resourcePages.map((resources, index) => /* @__PURE__ */ jsxs("section", {
-				className: "pdf-page pdf-resource-page",
-				children: [
-					/* @__PURE__ */ jsx(PageHeader, {
-						eyebrow: "Расовые и классовые способности",
-						title: "Ресурсы · продолжение",
-						page: lifePageNumber + index + 1
-					}),
-					/* @__PURE__ */ jsx("div", {
-						className: "pdf-resource-page-grid",
-						children: /* @__PURE__ */ jsx(ResourceList, { resources })
-					}),
-					/* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · Ресурсы ", /* @__PURE__ */ jsxs("span", { children: [
-						lifePageNumber + index + 1,
-						" / ",
-						totalPages
-					] })] })
-				]
-			}, `resources-${index}`)),
-			spellPages.map((pageSpells, spellPageIndex) => {
-				const split = Math.ceil(pageSpells.length / 2);
-				const columns = [pageSpells.slice(0, split), pageSpells.slice(split)];
-				const pageNumber = firstSpellPageNumber + spellPageIndex;
-				return /* @__PURE__ */ jsxs("section", {
-					className: "pdf-page pdf-spell-page",
-					children: [
-						/* @__PURE__ */ jsx(PageHeader, {
-							eyebrow: `${props.identity.className} · заклинания${spellPageIndex ? " · продолжение" : ""}`,
-							title: "Книга заклинаний",
-							page: pageNumber
-						}),
-						spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
-							className: "pdf-slot-strip",
-							children: [props.spellSlots.map((slots, index) => /* @__PURE__ */ jsxs("div", { children: [
-								/* @__PURE__ */ jsxs("small", { children: [index + 1, " круг"] }),
-								/* @__PURE__ */ jsx("strong", { children: slots }),
-								/* @__PURE__ */ jsx("span", { children: Array.from({ length: slots }, (_, slot) => /* @__PURE__ */ jsx("i", {}, slot)) })
-							] }, index)), props.pactSlots && props.pactSlots.slots > 0 && /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [
-								"Договор · ",
-								props.pactSlots.level,
-								" круг"
-							] }), /* @__PURE__ */ jsx("strong", { children: props.pactSlots.slots })] })]
-						}),
-						wizardPrepared && spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
-							className: "pdf-prepared-summary",
-							children: [/* @__PURE__ */ jsxs("span", { children: ["Максимум подготовленных: ", /* @__PURE__ */ jsx("b", { children: props.preparedMaximum ?? 0 })] }), /* @__PURE__ */ jsx("button", {
-								type: "button",
-								onClick: () => setShowPreparedMarks((value) => !value),
-								children: showPreparedMarks ? "Очистить отметки для печати" : "Показать текущую подготовку"
-							})]
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: `pdf-spell-columns${wizardPrepared ? " wizard" : ""}`,
-							children: columns.map((column, columnIndex) => /* @__PURE__ */ jsxs("div", {
-								className: `pdf-spell-table${wizardPrepared ? " wizard" : ""}`,
-								children: [/* @__PURE__ */ jsxs("header", { children: [
-									/* @__PURE__ */ jsx("b", { children: "Кр." }),
-									/* @__PURE__ */ jsx("b", { children: "Заклинание" }),
-									/* @__PURE__ */ jsx("b", { children: "В/С/М" }),
-									wizardPrepared && /* @__PURE__ */ jsx("b", { children: "Подг." })
-								] }), column.map((spell) => /* @__PURE__ */ jsxs("div", { children: [
-									/* @__PURE__ */ jsx("span", { children: spell.level }),
-									/* @__PURE__ */ jsxs("strong", { children: [
-										spell.name,
-										" · ",
-										spell.classSource,
-										spell.grantSource ? ` (${spell.grantSource})` : "",
-										spell.ritual ? " Р" : "",
-										spell.alwaysPrepared ? " †" : ""
-									] }),
-									/* @__PURE__ */ jsx("span", { children: spellComponentLabel(spell) }),
-									wizardPrepared && /* @__PURE__ */ jsx("span", { children: spell.level === 0 || spell.classSource !== "Волшебник" ? "—" : showPreparedMarks && (spell.prepared || spell.alwaysPrepared) ? "●" : "○" })
-								] }, `${spell.classSource}-${spell.id}`))]
-							}, columnIndex))
-						}),
-						/* @__PURE__ */ jsxs("p", {
-							className: "pdf-spell-legend",
-							children: ["Р — ритуал. М* — компонент со стоимостью или расходуемый. † — всегда подготовлено и не занимает лимит.", wizardPrepared ? showPreparedMarks ? " ● Подготовлено сейчас; ○ находится в книге." : " ○ Пустая отметка для заполнения вручную." : ""]
-						}),
-						/* @__PURE__ */ jsxs("footer", { children: [
-							"Лист Героя 5e · Заклинания",
-							spellPageIndex ? " · продолжение" : "",
-							" ",
-							/* @__PURE__ */ jsxs("span", { children: [
-								pageNumber,
-								" / ",
-								totalPages
-							] })
-						] })
 					]
-				}, `spell-page-${spellPageIndex}`);
-			}),
-			spellCardPages.map((pageSpells, cardPageIndex) => {
-				const pageNumber = firstSpellCardPageNumber + cardPageIndex;
-				return /* @__PURE__ */ jsxs("section", {
-					className: "pdf-page pdf-spell-card-page",
-					children: [
-						/* @__PURE__ */ jsx(PageHeader, {
-							eyebrow: `${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`,
-							title: "Карточки заклинаний",
-							page: pageNumber
-						}),
-						/* @__PURE__ */ jsx("div", {
-							className: "pdf-spell-card-grid",
-							children: pageSpells.map((spell) => /* @__PURE__ */ jsx(PdfSpellCard, { spell }, `${spell.classSource}-${spell.id}`))
-						}),
-						/* @__PURE__ */ jsxs("footer", { children: [
-							"Лист Героя 5e · Карточки заклинаний",
-							cardPageIndex ? " · продолжение" : "",
-							" ",
-							/* @__PURE__ */ jsxs("span", { children: [
-								pageNumber,
-								" / ",
-								totalPages
-							] })
-						] })
-					]
-				}, `spell-card-page-${cardPageIndex}`);
-			}),
-			/* @__PURE__ */ jsxs("dialog", {
-				ref: attackDialog,
-				className: "pdf-display-settings",
-				"aria-labelledby": "pdf-attack-settings-title",
-				children: [
-					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
-						id: "pdf-attack-settings-title",
-						children: "Оружие и заклинания на листе"
-					}), /* @__PURE__ */ jsx("button", {
-						type: "button",
-						onClick: () => attackDialog.current?.close(),
-						"aria-label": "Закрыть настройки оружия",
-						children: "✕"
-					})] }),
-					/* @__PURE__ */ jsx("p", { children: "Меняется только отображение на листе. Оружие и заклинания остаются у персонажа." }),
-					/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Показывать" }), [
-						["weapon", "Оружие"],
-						["cantrip", "Заговоры"],
-						["spell", "Заклинания"],
-						["feature", "Атаки способностей"],
-						["hit", "Попадание и сложность спасброска"],
-						["damage", "Урон"],
-						["notes", "Описания и примечания"],
-						["spellNumbers", "Параметры заклинателя"],
-						["notice", "Пояснение об автоматическом списке атак"]
-					].map(([key, label]) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-						type: "checkbox",
-						checked: layout.visible[key],
-						onChange: (e) => setLayout((current) => ({
-							...current,
-							visible: {
-								...current.visible,
-								[key]: e.target.checked
-							}
-						}))
-					}), label] }, key))] }),
-					/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Отдельные атаки" }), props.attacks.length ? props.attacks.map((attack) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-						type: "checkbox",
-						checked: !layout.hiddenAttacks.includes(attack.id),
-						onChange: (e) => setLayout((current) => ({
-							...current,
-							hiddenAttacks: e.target.checked ? current.hiddenAttacks.filter((id) => id !== attack.id) : [...current.hiddenAttacks, attack.id]
-						}))
-					}), attack.name] }, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Атаки ещё не выбраны." })] }),
-					/* @__PURE__ */ jsx("button", {
-						type: "button",
-						onClick: () => setLayout((current) => ({
-							...current,
-							visible: { ...defaultSheetLayout.visible },
-							hiddenAttacks: []
-						})),
-						children: "Вернуть стандартный состав"
-					}),
-					/* @__PURE__ */ jsx("button", {
-						type: "button",
-						onClick: () => attackDialog.current?.close(),
-						children: "Готово"
-					})
-				]
-			})
-		]
+				})
+			]
+		})]
 	});
 }
 //#endregion
