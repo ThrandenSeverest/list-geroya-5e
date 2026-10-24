@@ -1,14 +1,15 @@
 const assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 (async()=>{
- const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ const browser=await chromium.launch({headless:true,executablePath:process.env.HB_TEST_CHROMIUM,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{for(const width of [1440,390]){
   const context=await browser.newContext({viewport:{width,height:1000}}),page=await context.newPage();page.setDefaultTimeout(15000);
   const root={id:'hb:test:class:workshop',type:'class',name:'Класс мастерской',description:'',updatedAt:'2026-10-06',hitDie:'d8',features:[{id:'hb:test:ability:pool',name:'Вдохновение',level:1,description:'Помогает союзнику.',resources:[{id:'hb:test:resource:pool',name:'Вдохновение',max:3,restore:['long_rest']}]},{id:'hb:test:ability:action',name:'Ободрение',level:1,description:'Расходует общее вдохновение.'}]};
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('**/api/account',route=>route.fulfill({json:{authenticated:false}}));
   await page.addInitScript(root=>{if(!localStorage.getItem('herolist-homebrew-local-v2'))localStorage.setItem('herolist-homebrew-local-v2',JSON.stringify({version:2,elements:[root]}))},root);
-  await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3998');await page.waitForFunction(()=>!document.body.innerText.includes('Проверяем вход'));
+  await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true}));});
+await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3998');await page.waitForFunction(()=>!document.body.innerText.includes('Проверяем вход'));
   await page.getByRole('button',{name:/^Мой Homebrew/}).click();
   await page.locator('.hb-sidebar-package > button').filter({hasText:root.name}).click();
   assert.equal(await page.getByRole('button',{name:'Связи',exact:true}).isVisible(),false);

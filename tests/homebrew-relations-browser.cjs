@@ -27,7 +27,8 @@ const make=(type,name,id)=>({id:`hb:test:${type}:${id}`,type,name,description:''
     await hb.click();await page.locator('.hb-workspace-sidebar').waitFor({state:'visible'});
    };
    const openChoices=async()=>{if(type==='subclass'){await page.getByRole('button',{name:'Развитие и способности',exact:true}).click();await page.getByRole('button',{name:/^Уровень 1:/}).click();}else await page.getByRole('button',{name:'Механика',exact:true}).click();};
-   await page.goto(base);await openWorkshop();
+   await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true}));});
+await page.goto(base);await openWorkshop();
    await page.locator('.hb-sidebar-package > button').filter({hasText:root.name}).click();await openChoices();
    const choice=page.locator('.hb-unified-choice').first();
    await choice.getByRole('button',{name:'+ Создать вариант здесь',exact:true}).click();

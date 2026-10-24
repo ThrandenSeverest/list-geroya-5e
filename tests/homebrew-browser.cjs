@@ -63,7 +63,8 @@ const table = {
         },
         { shaman, table },
       );
-      await page.goto(process.env.HEROLIST_URL || "http://127.0.0.1:3997");
+      await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true}));});
+await page.goto(process.env.HEROLIST_URL || "http://127.0.0.1:3997");
       const myCharacters = page
           .getByRole("button", { name: "Таверна и приключения", exact: false })
           .first(),
