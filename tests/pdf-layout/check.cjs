@@ -50,6 +50,8 @@ function waitForServer(url, server, timeout=30000) {
    for(const edition of ['2014','2024']) for(const count of [0,1,2,3,5,6,12,24]) {
     await page.goto('http://127.0.0.1:5174/tests/pdf-layout/index.html?resources='+count+'&edition='+edition);
     await page.locator('.pdf-primary-grid').waitFor();
+    const coreText=await page.locator('.pdf-core-column').innerText();
+    if(/Условная КД|Доспехи мага|Щит \(заклинание\)/.test(coreText))throw Error('Conditional spell advice leaked into the AC/HP column');
     await page.evaluate(()=>document.fonts.ready);
     for(const media of ['screen','print']){
      await page.emulateMedia({media});

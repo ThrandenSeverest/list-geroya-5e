@@ -3861,7 +3861,6 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 proficiencies={{ ...proficiencies, tools: [...proficiencies.tools, ...customProficiencies], expertise }}
                 defenses={defenses}
                 ac={ac.value}
-                acNotes={ac.conditions}
                 initiative={initiative.value}
                 initiativeNotes={initiative.notes}
                 speed={speedBreakdown(exportCharacter).walk}
