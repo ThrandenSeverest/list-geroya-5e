@@ -20,3 +20,9 @@ test('sheet display preferences reject corrupt values without mutating the defau
   assert.deepEqual(normalized.hiddenAttacks,['dagger']);
   assert.equal(defaultSheetLayout.sizes.inventory,100);
 });
+
+test('layout choice persists and old saved preferences keep adaptive layout',()=>{
+ assert.equal(normalizeSheetLayout(null).mode,'adaptive');
+ assert.equal(normalizeSheetLayout({mode:'classic'}).mode,'classic');
+ assert.equal(normalizeSheetLayout({mode:'invalid'}).mode,'adaptive');
+});

@@ -340,6 +340,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const attackDialog=useRef<HTMLDialogElement>(null);
   const [layout,setLayout]=useState(defaultSheetLayout);
   const [layoutReady,setLayoutReady]=useState(false);
+  const classic=layout.mode==='classic';
   const autoFitRequest=useRef(false);
   const [fitRevision,setFitRevision]=useState(0);
   const [fitStatus,setFitStatus]=useState("A4 · автоматическая компоновка");
@@ -404,9 +405,19 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       const width=page.clientWidth-parseFloat(pageStyle.paddingLeft)-parseFloat(pageStyle.paddingRight);
       content!.style.width=`${width}px`;
       content!.style.transform='none';
+      const available=page.clientHeight-parseFloat(pageStyle.paddingTop)-Math.max(parseFloat(pageStyle.paddingBottom),12*96/25.4);
+      if(classic){
+        delete grid.dataset.fitted;
+        grid.style.removeProperty('height');
+        cards.forEach(card=>{for(const property of ['width','left','top','--inventory-columns','--coin-columns'])card.style.removeProperty(property);});
+        const scale=Math.min(1,available/Math.max(1,content!.scrollHeight));
+        content!.style.transform=`translateX(${width*(1-scale)/2}px) scale(${scale})`;
+        content!.dataset.fitScale=String(scale);
+        setFitStatus('A4 · старое расположение');
+        return;
+      }
       grid.dataset.fitted='true';
       const unit=(width+8)/sheetColumns;
-      const available=page.clientHeight-parseFloat(pageStyle.paddingTop)-Math.max(parseFloat(pageStyle.paddingBottom),12*96/25.4);
       const gridTop=grid.offsetTop;
       const budget=available-gridTop;
       const cache=new Map<string,number>();
@@ -465,7 +476,13 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
 
   const sheetEdition = props.sheetEdition || "2014";
 
-  return <div className="pdf-sheet-workspace"><div className="pdf-sheet-toolbar"><button type="button" disabled={!layoutReady} onClick={()=>{autoFitRequest.current=true;setFitRevision(value=>value+1);}}>Оптимальные настройки</button><span role="status">{fitStatus}</span></div><div className={`pdf-document pdf-document--a4 pdf-document--${sheetEdition}`} data-sheet-edition={sheetEdition}>
+  const racialPanel=(<section className="pdf-panel pdf-primary-features" style={panelStyle('features')} data-sheet-group="features" data-sheet-panel="features"><SheetPanelTitle title="Расовые способности" group="способности" size={layout.sizes.features} onSize={delta=>resize('features',delta)}/><RacialTraitList features={props.raceFeatures}/></section>);
+  const savesPanel=(<section className="pdf-panel pdf-saving-throws" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="saves">          <h2>Спасброски</h2>
+          <div className="pdf-save-row">{(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <span key={key}><i>{props.savingThrows.includes(key) ? "●" : "○"}</i><b>{classic?abilityLabels[key].slice(0,3):abilityLabels[key]}</b><strong>{signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0))}</strong></span>)}</div>
+</section>);
+  const proficiencyPanel=(<section className="pdf-panel pdf-proficiency-panel" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="proficiencies">          <div className="pdf-proficiencies"><h2>Владения и защита</h2>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}{props.defenses && ([ ["Сопротивления",props.defenses.resistances],["Иммунитеты к урону",props.defenses.immunities],["Уязвимости",props.defenses.vulnerabilities] ] as const).filter(([,values])=>values.length).map(([label,values])=><p key={label}><b>{label}:</b> {values.join(", ")}</p>)}</div></section>);
+
+  return <div className="pdf-sheet-workspace"><div className="pdf-sheet-toolbar"><button type="button" disabled={!layoutReady} aria-pressed={!classic} onClick={()=>{autoFitRequest.current=true;setLayout(current=>({...current,mode:'adaptive'}));setFitRevision(value=>value+1);}}>Оптимальные настройки</button><button type="button" disabled={!layoutReady} aria-pressed={classic} onClick={()=>{autoFitRequest.current=false;setLayout(current=>({...current,mode:'classic'}));}}>Старое расположение</button><span role="status">{fitStatus}</span></div><div className={`pdf-document pdf-document--a4 pdf-document--${sheetEdition}`} data-sheet-edition={sheetEdition}>
     <section className="pdf-page pdf-primary-page">
       <div className="pdf-primary-content" ref={primaryContent}>
       <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · правила 2014 · лист {sheetEdition}</i></div>
@@ -483,8 +500,8 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       <div className="pdf-ability-row">
         {(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{signed(abilityModifier(props.abilities[key]))}</strong><span>{props.abilities[key]}</span></div>)}
       </div>
-      <div className="pdf-primary-grid">
-        <section className="pdf-panel pdf-skills" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="skills"><SheetPanelTitle title="Навыки" group="навыки и владения" size={layout.sizes.skills} onSize={delta=>resize('skills',delta)}/>
+      <div className={`pdf-primary-grid${classic?" pdf-primary-grid--classic":""}`}>
+        <section className="pdf-panel pdf-skills" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="skills"><SheetPanelTitle title={classic?"Навыки и спасброски":"Навыки"} group="навыки и владения" size={layout.sizes.skills} onSize={delta=>resize('skills',delta)}/>
           <p className="pdf-inline-stats"><b>БМ {signed(props.proficiency)}</b><b>Пассивная внимательность {props.passivePerception}</b></p>
           {skills.map(skill => {
             const proficient = props.proficiencies.skills.includes(skill.name);
@@ -492,6 +509,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
             const bonus = abilityModifier(props.abilities[skill.stat as keyof AbilityScores]) + (expertise ? props.proficiency * 2 : proficient ? props.proficiency : 0);
             return <p key={skill.key}><i>{expertise ? "◆" : proficient ? "●" : "○"}</i><b>{signed(bonus)}</b>{skill.name} <small>({abilityLabels[skill.stat as keyof AbilityScores].slice(0, 3)})</small></p>;
           })}
+          {classic && <>{savesPanel}{proficiencyPanel}</>}
 
         </section>
         <section className="pdf-core-column" data-sheet-panel="core">
@@ -511,13 +529,12 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           {props.attacks.filter(attack=>layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map(attack => <article key={attack.id}><div className="pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>{attack.name}</b>{layout.visible.hit&&<span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span>}{layout.visible.damage&&<code>{attack.damageDisplay}</code>}</div>{layout.visible.notes && attack.note && <p>{attack.note}</p>}</article>)}
           {!props.attacks.some(attack=>layout.visible[attack.kind]&&!layout.hiddenAttacks.includes(attack.id)) && <p>Нет атак для отображения. Выберите их в настройках блока.</p>}
           {layout.visible.spellNumbers && (props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>)}
+          {classic && racialPanel}
         </section>
         <InventoryPanel equipment={props.equipment} currency={props.currency} mode={inventoryMode} onModeChange={changeInventoryMode} size={layout.sizes.inventory} onSize={delta=>resize('inventory',delta)} style={panelStyle('inventory')} />
-        <section className="pdf-panel pdf-primary-features" style={panelStyle('features')} data-sheet-group="features" data-sheet-panel="features"><SheetPanelTitle title="Расовые способности" group="способности" size={layout.sizes.features} onSize={delta=>resize('features',delta)}/><RacialTraitList features={props.raceFeatures}/></section>
-        <section className="pdf-panel pdf-saving-throws" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="saves">          <h2>Спасброски</h2>
-          <div className="pdf-save-row">{(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <span key={key}><i>{props.savingThrows.includes(key) ? "●" : "○"}</i><b>{abilityLabels[key]}</b><strong>{signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0))}</strong></span>)}</div>
-</section>
-        <section className="pdf-panel pdf-proficiency-panel" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="proficiencies">          <div className="pdf-proficiencies"><h2>Владения и защита</h2>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}{props.defenses && ([ ["Сопротивления",props.defenses.resistances],["Иммунитеты к урону",props.defenses.immunities],["Уязвимости",props.defenses.vulnerabilities] ] as const).filter(([,values])=>values.length).map(([label,values])=><p key={label}><b>{label}:</b> {values.join(", ")}</p>)}</div></section>
+        {!classic && racialPanel}
+        {!classic && savesPanel}
+        {!classic && proficiencyPanel}
       </div>
       </div>
       <footer>Лист Героя 5e · Основной лист <span>1 / {totalPages}</span></footer>

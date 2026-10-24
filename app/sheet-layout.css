@@ -4,6 +4,17 @@
 .pdf-sheet-toolbar { display:flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:210mm;margin:16px auto 0; }
 .pdf-sheet-toolbar button { padding:10px 16px;min-height:40px;border:1px solid var(--line,#8b9998);border-radius:6px;background:var(--panel,#fff);color:var(--ivory,#243b3d);font:inherit;cursor:pointer; }
 .pdf-sheet-toolbar span { color:var(--muted,#425957);font-size:13px; }
+.pdf-sheet-toolbar button[aria-pressed=true] { border-color:var(--copper-light,#456356);outline:1px solid var(--copper-light,#456356);font-weight:600; }
+.pdf-primary-grid.pdf-primary-grid--classic { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr) minmax(0,1.25fr);grid-template-rows:auto auto;gap:3mm;align-items:stretch; }
+.pdf-primary-grid--classic>.pdf-skills { grid-column:1;grid-row:1 / 3; }
+.pdf-primary-grid--classic>.pdf-core-column { grid-column:2;grid-row:1; }
+.pdf-primary-grid--classic>.pdf-attacks { grid-column:3;grid-row:1; }
+.pdf-primary-grid--classic>.pdf-inventory { grid-column:2 / 4;grid-row:2;--inventory-columns:2;--coin-columns:4; }
+.pdf-primary-grid--classic .pdf-skills>:is(.pdf-saving-throws,.pdf-proficiency-panel),.pdf-primary-grid--classic .pdf-attacks>.pdf-primary-features { margin:2mm 0 0;padding:2mm 0 0;border:0;border-top:.3mm solid #365b5e;background:transparent; }
+.pdf-document .pdf-primary-grid--classic .pdf-skills :is(.pdf-saving-throws,.pdf-proficiency-panel) h2 { margin:0 0 1mm;padding:0;border:0;font-size:7.5pt; }
+.pdf-document .pdf-primary-grid--classic .pdf-save-row { --save-columns:2; }
+.pdf-primary-grid--classic .pdf-primary-features>.pdf-panel-title-row { margin:0 0 1.5mm;padding:0;border:0; }
+.pdf-primary-grid--classic .pdf-primary-features>.pdf-panel-title-row h2 { padding:0;font-size:7.5pt; }
 .pdf-document--a4 { width:210mm;max-width:none; }
 .pdf-document--a4 .pdf-page { width:210mm;height:297mm;min-height:297mm;max-height:297mm;overflow:hidden; }
 .pdf-document .pdf-primary-content { position:relative;display:flow-root;transform-origin:top left;margin:0;max-width:none; }

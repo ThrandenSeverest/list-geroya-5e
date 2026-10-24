@@ -56,6 +56,26 @@ async function valid(page,label){const m=await metrics(page);
    console.log('extreme sizes OK',sizes);
   }
   await page.setViewportSize({width:390,height:900});await page.goto(base+'?scenario=adenon');await page.locator('[data-fitted=true]').waitFor();await valid(page,'phone');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.setViewportSize({width:1100,height:1400});
+  for(const edition of ['2014','2024']){
+   await page.evaluate(()=>localStorage.clear());
+   await page.goto(base+'?resources=3&scenario=adenon&edition='+edition);await page.locator('[data-fitted=true]').waitFor();
+   const sizesBefore=await page.evaluate(()=>JSON.parse(localStorage.getItem('list-geroya-sheet-layout-v1')).sizes);
+   await page.getByRole('button',{name:'Старое расположение',exact:true}).click();
+   await page.locator('.pdf-primary-grid--classic').waitFor();await valid(page,'classic');
+   assert.equal(await page.locator('.pdf-primary-grid > *').count(),4);
+   assert.equal(await page.locator('.pdf-skills .pdf-saving-throws').count(),1);
+   assert.equal(await page.locator('.pdf-skills .pdf-proficiency-panel').count(),1);
+   assert.equal(await page.locator('.pdf-attacks .pdf-primary-features').count(),1);
+   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('list-geroya-sheet-layout-v1')).sizes),sizesBefore);
+   await page.locator('.pdf-primary-page').screenshot({path:out+'/classic-'+edition+'.png'});
+   await page.emulateMedia({media:'print'});await page.evaluate(()=>dispatchEvent(new Event('beforeprint')));await valid(page,'classic print');await page.emulateMedia({media:'screen'});
+   await page.reload();await page.locator('.pdf-primary-grid--classic').waitFor();assert.equal(await page.getByRole('button',{name:'Старое расположение',exact:true}).getAttribute('aria-pressed'),'true');
+   await page.getByRole('button',{name:'Оптимальные настройки',exact:true}).click();await page.locator('[data-fitted=true]').waitFor();await valid(page,'classic to adaptive');
+   assert.equal(await page.locator('.pdf-primary-grid > *').count(),7);
+   await page.setViewportSize({width:390,height:900});await page.getByRole('button',{name:'Старое расположение',exact:true}).click();await valid(page,'phone classic');assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.setViewportSize({width:1100,height:1400});
+   console.log(edition,'classic grouping + A4 print + persistence + return to adaptive OK');
+  }
   assert.deepEqual(errors,[]);
  }finally{if(browser)await browser.close();server.kill();}
 })().catch(e=>{console.error(e);process.exit(1);});
