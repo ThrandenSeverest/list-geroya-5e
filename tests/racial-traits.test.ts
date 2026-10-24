@@ -42,5 +42,6 @@ assert(!resolvedRaceFeatures('yuanpure','legacy-vgm').some(f => f.name === 'Ст
 for (const [race, variants] of Object.entries(raceVariants)) for (const variant of variants) {
   const traits = resolvedRaceFeatures(race, variant.id);
   assert.equal(new Set(traits.map(f => racialTraitKey(f.name))).size, traits.length, `${race}/${variant.id}`);
+  assert(!traits.some(f => f.name === 'Подраса'), `${race}/${variant.id}: placeholder in final sheet`);
 }
 console.log('Racial regression checks passed: PB levels, multiclass, legacy separation, spent uses, all variant trait keys.');

@@ -98,6 +98,11 @@ export function armorClassBreakdown(character: ExportCharacter): ArmorClassBreak
     bonuses.push("встроенная защита кованого +1");
   }
   const conditions: string[] = [];
+  if (getClassLevel(character, "monk") && (worn || shield)) conditions.push(`Защита без доспехов монаха недоступна: ${[worn ? 'надет доспех' : '', shield ? 'используется щит' : ''].filter(Boolean).join(' и ')}.`);
+  if (getClassLevel(character, "barbarian") && worn) conditions.push('Защита без доспехов варвара недоступна: надет доспех.');
+  if (getClassLevel(character, "monk") && unarmoredSource !== 'monk') conditions.push('Защита без доспехов монаха недоступна: ранее получена защита без доспехов другого класса.');
+  if (getClassLevel(character, "barbarian") && unarmoredSource !== 'barbarian') conditions.push('Защита без доспехов варвара недоступна: ранее получена защита без доспехов другого класса.');
+  if (styles.has('defense') && !wearingArmor) conditions.push('Боевой стиль «Оборона» недоступен: требуется надетый доспех.');
   if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
   if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
   if (!wearingArmor && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);

@@ -1,3 +1,12 @@
 plugins {
     id 'com.android.application' version '8.7.3' apply false
 }
+
+// Version shared by this mobile-layout update; signing stays in the app module.
+// Apply after the app's existing configuration so APK upgrades have a newer code.
+gradle.projectsEvaluated {
+    project(':app').android.defaultConfig {
+        versionCode 175
+        versionName '1.7.5'
+    }
+}

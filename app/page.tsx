@@ -3495,6 +3495,33 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                   {!activeAdvancement.origin && <div className="feat-grid asi-option-grid">
                     <button className={activeAdvancement.featId === "asi" ? "selected" : ""} onClick={() => chooseAdvancementFeat(activeAdvancement.key, "asi")}><span>PHB</span><strong>Увеличение характеристик</strong><p>+2 к одной характеристике или +1 к двум (максимум 20).</p></button>
                   </div>}
+                  <div className="asi-stack">
+                    {advancements.filter(choice => choice.featId === "asi" && choice.key === activeAdvancement.key).map(choice => (
+                      <div className="asi-picker" key={choice.key} data-incomplete={choice.asiChoices.length < 2}>
+                        <div className="ability-editor-head">
+                          <div><small>Повышение характеристик</small><h2>Повышение характеристик {choice.level} уровень</h2></div>
+                          <span>{choice.asiChoices.length} / 2</span>
+                        </div>
+                        <p>Добавьте +2 к одной характеристике или +1 к двум. Выберите характеристики для этого повышения.</p>
+                        <div className="asi-grid">
+                          {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => {
+                            const count = choice.asiChoices.filter(item => item === key).length;
+                            const previousBonus = advancements.filter(item => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap(item => item.asiChoices).filter(item => item === key).length;
+                            const previousFeatBonus = featAbilityBonuses({
+                              ...rulesCharacter,
+                              advancements: advancements.filter(item => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level),
+                            })[key] || 0;
+                            const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
+                            return <section key={key}>
+                              <small>{abilityLabels[key]}</small>
+                              <div className="score-control"><button onClick={() => changeAsiAbility(choice.key, key, -1)} disabled={count === 0}>−</button><strong>+{count}</strong><button onClick={() => changeAsiAbility(choice.key, key, 1)} disabled={choice.asiChoices.length >= 2 || count >= 2 || beforeAsi + count >= 20}>+</button></div>
+                              <b>{beforeAsi} → {beforeAsi + count}</b>
+                            </section>;
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   {featsExpanded && featSourceGroups.map(group => {
                     const visible = group.feats.filter(feat => `${feat.name} ${feat.description} ${feat.requirement || ""}`.toLowerCase().includes(search.toLowerCase()));
                     if (!visible.length) return null;
@@ -3544,33 +3571,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                     </div>
                   )}
                   </>}
-                  <div className="asi-stack">
-                    {advancements.filter(choice => choice.featId === "asi").map(choice => (
-                      <div className="asi-picker" key={choice.key} data-incomplete={choice.asiChoices.length < 2}>
-                        <div className="ability-editor-head">
-                          <div><small>Повышение характеристик</small><h2>Повышение характеристик {choice.level} уровень</h2></div>
-                          <span>{choice.asiChoices.length} / 2</span>
-                        </div>
-                        <p>Добавьте +2 к одной характеристике или +1 к двум. Этот блок остаётся видимым независимо от выбора на следующих уровнях.</p>
-                        <div className="asi-grid">
-                          {(Object.keys(abilityLabels) as (keyof ExportCharacter["abilities"])[]).map(key => {
-                            const count = choice.asiChoices.filter(item => item === key).length;
-                            const previousBonus = advancements.filter(item => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap(item => item.asiChoices).filter(item => item === key).length;
-                            const previousFeatBonus = featAbilityBonuses({
-                              ...rulesCharacter,
-                              advancements: advancements.filter(item => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level),
-                            })[key] || 0;
-                            const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
-                            return <section key={key}>
-                              <small>{abilityLabels[key]}</small>
-                              <div className="score-control"><button onClick={() => changeAsiAbility(choice.key, key, -1)} disabled={count === 0}>−</button><strong>+{count}</strong><button onClick={() => changeAsiAbility(choice.key, key, 1)} disabled={choice.asiChoices.length >= 2 || count >= 2 || beforeAsi + count >= 20}>+</button></div>
-                              <b>{beforeAsi} → {beforeAsi + count}</b>
-                            </section>;
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+
                 </div>
               )}
               <HomebrewOnSheet character={exportCharacter} onChange={next => setCharacter(homebrewReferencesOnly({ ...next, abilities: character.abilities }))} />

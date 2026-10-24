@@ -5,7 +5,7 @@ import { applyDeathSave, applyPlayDamage, concentrationDc, createAdventureCharac
 import { bindHomebrewLibrary, homebrewReferencesOnly } from '../app/homebrewEngine';
 import { createNativeCharacterFile, parseCharacterFile } from '../app/characterFiles';
 const hero = (): ExportCharacter => ({ name:'Эльрин', playerName:'', className:'wizard', level:4, race:'human', raceVariant:'standard', background:'sage', classSkills:[], backgroundSkills:[], spells:['shield'], abilities:{str:10,dex:14,con:14,int:16,wis:10,cha:10}, alignment:'', personality:{traits:'',ideals:'',bonds:'',flaws:''}, currency:{gp:10,sp:0,cp:0,pp:0}, inventoryOverride:'Кинжал ×2\nПосох', spellSlotsUsed:[2,1], resourceSpent:{}, currentHitPoints:20, rulesetId:'5e-2014' } as ExportCharacter);
-const play = () => createAdventureCharacter(hero(),'original','2026-10-10','Поход');
+const play = (): ExportCharacter => ({...createAdventureCharacter(hero(),'original','2026-10-10','Поход'),currentHitPoints:20});
 test('adventure deep copy and native round trip preserve separate play state',()=>{
  const original=hero();const c=createAdventureCharacter(original,'original','date','Поход');
  c.currency.gp=0;c.adventure!.inventory[0].quantity=0;c.adventure!.notes='Записка';

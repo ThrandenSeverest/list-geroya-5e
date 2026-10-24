@@ -5,7 +5,7 @@ import { createAdventureCharacter, newPlayItem, restPlay, updateInventory } from
 import { useQuickItem, resolvePlayAttack } from '../app/playActions';
 import { commitPlayChange, undoPlayChange } from '../app/playTransactions';
 import { createNativeCharacterFile, parseCharacterFile } from '../app/characterFiles';
-const hero=()=>createAdventureCharacter({name:'Сессия',className:'fighter',level:3,startingClassId:'fighter',classes:[{classId:'fighter',level:3,acquiredAtCharacterLevel:1}],race:'human',raceVariant:'standard',abilities:{str:16,dex:12,con:14,int:10,wis:10,cha:10},background:'',classSkills:[],backgroundSkills:[],spells:[],alignment:'',playerName:'',currency:{gp:0,sp:0,cp:0,pp:0},personality:{traits:'',ideals:'',bonds:'',flaws:''},currentHitPoints:1} as ExportCharacter,'source','date','Тест');
+const hero=():ExportCharacter=>({...createAdventureCharacter({name:'Сессия',className:'fighter',level:3,startingClassId:'fighter',classes:[{classId:'fighter',level:3,acquiredAtCharacterLevel:1}],race:'human',raceVariant:'standard',abilities:{str:16,dex:12,con:14,int:10,wis:10,cha:10},background:'',classSkills:[],backgroundSkills:[],spells:[],alignment:'',playerName:'',currency:{gp:0,sp:0,cp:0,pp:0},personality:{traits:'',ideals:'',bonds:'',flaws:''},currentHitPoints:1} as ExportCharacter,'source','date','Тест'),currentHitPoints:1});
 test('quick potion and inventory use share one quantity/healing operation and one undo',()=>{
  const c=updateInventory(hero(),[{...newPlayItem('Зелье'),category:'consumable',quantity:2,healingFormula:'2d4+2'}]);
  const action=useQuickItem(c,c.adventure!.inventory[0].id,()=>3);

@@ -6,7 +6,7 @@ import { commitPlayChange, undoPlayChange } from '../app/playTransactions';
 import { composeD20 } from '../app/rollComposer';
 import { createNativeCharacterFile, parseCharacterFile } from '../app/characterFiles';
 const hero = (): ExportCharacter => ({name:'Герой',playerName:'',className:'wizard',level:4,race:'human',raceVariant:'standard',background:'sage',classSkills:[],backgroundSkills:[],spells:[],abilities:{str:10,dex:14,con:14,int:16,wis:10,cha:10},alignment:'',personality:{traits:'',ideals:'',bonds:'',flaws:''},currency:{gp:10,sp:0,cp:0,pp:0},inventoryOverride:'Кинжал',currentHitPoints:20} as ExportCharacter);
-const play = () => createAdventureCharacter(hero(),'original','date','Поход');
+const play = (): ExportCharacter => ({...createAdventureCharacter(hero(),'original','date','Поход'),currentHitPoints:20});
 test('persistent undo round trips native JSON, restores HP and concentration without changing original',()=>{
  const original=play();original.adventure!.concentration={name:'Щит',duration:'1 минута'};
  const damaged=commitPlayChange(original,applyPlayDamage(original,100));

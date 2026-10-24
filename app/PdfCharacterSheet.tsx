@@ -374,6 +374,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     if (!content) return;
     const page = content.parentElement!;
     const fit = () => {
+      if (window.matchMedia('screen and (max-width: 760px)').matches) { content.style.zoom = '1'; return; }
       const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 16 * 96 / 25.4;
       const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
       content.style.zoom = String(scale);

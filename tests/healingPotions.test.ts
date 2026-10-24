@@ -5,7 +5,7 @@ import { createAdventureCharacter, newPlayItem, updateInventory, restorePlayItem
 import { healingPotions, healingFormulaForItem, potionPreset } from '../app/healingPotions';
 import { useQuickItem } from '../app/playActions';
 import { commitPlayChange, undoPlayChange } from '../app/playTransactions';
-const hero=()=>createAdventureCharacter({name:'Герой',className:'fighter',level:10,race:'human',raceVariant:'standard',abilities:{str:14,dex:10,con:14,int:10,wis:10,cha:10},background:'',classSkills:[],backgroundSkills:[],spells:[],alignment:'',playerName:'',currency:{gp:0,sp:0,cp:0,pp:0},personality:{traits:'',ideals:'',bonds:'',flaws:''},currentHitPoints:1} as ExportCharacter,'source','date','Тест');
+const hero=():ExportCharacter=>({...createAdventureCharacter({name:'Герой',className:'fighter',level:10,race:'human',raceVariant:'standard',abilities:{str:14,dex:10,con:14,int:10,wis:10,cha:10},background:'',classSkills:[],backgroundSkills:[],spells:[],alignment:'',playerName:'',currency:{gp:0,sp:0,cp:0,pp:0},personality:{traits:'',ideals:'',bonds:'',flaws:''},currentHitPoints:1} as ExportCharacter,'source','date','Тест'),currentHitPoints:1});
 test('all four standard potions heal automatically even when an old inventory item lacks a formula',()=>{
  for(const [index,p] of healingPotions.entries()){
    const c=updateInventory(hero(),[{...newPlayItem(p.name),quantity:2}]);

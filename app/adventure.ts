@@ -1,3 +1,4 @@
+import { equipmentPacks } from './equipmentPacks';
 import type { ExportCharacter } from './exportFormats';
 import { abilityModifier, estimatedHitPoints } from './exportFormats';
 import { finalAbilityScores } from './characterRules';
@@ -9,13 +10,13 @@ import { activeHomebrew, classRuleFor, homebrewExportClosure } from './homebrewE
 import { applySubclassLongRest } from './subclassRuntime';
 
 export type ItemCategory = 'weapon' | 'focus' | 'armor' | 'consumable' | 'ammunition' | 'gear';
-export type PlayItem = { category?: ItemCategory; catalogName?: string; hands?: 0 | 1 | 2; hand?: 'right' | 'left'; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
+export type PlayItem = { packId?: string; packName?: string; category?: ItemCategory; catalogName?: string; hands?: 0 | 1 | 2; hand?: 'right' | 'left'; weaponBase?: string; weaponAttackBonus?: number; weaponDamageBonus?: number; spellAttackBonus?: number; spellSaveDcBonus?: number; bonusClassId?: string; healingFormula?: string; id: string; name: string; quantity: number; weight: number; equipped: boolean; magical: boolean; requiresAttunement: boolean; attuned: boolean; attunementPending?: 'start' | 'end'; cursed?: boolean; charges: number; maxCharges: number; recharge: 'none' | 'short' | 'long' | 'dawn'; notes: string; container: string; acBonus: number; attackBonus: number; damageBonus: number; requirement?: string };
 import type { PlayTransaction } from './playTransactions';
 export type PlayLog = { id: string; at: string; text: string; formula?: string; rolls?: number[]; total?: number; natural?: number; critical?: boolean };
 export type PlayEffect = { id: string; name: string; remaining?: number; concentration?: boolean };
 export type PlayResource = { id: string; name: string; current: number; max: number; recharge: 'none' | 'short' | 'long' };
 export type AdventureState = {
-  version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
+  version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; mobileLayout?: { tabOrder?: string[]; hiddenTabs?: string[]; navPosition?: 'top' | 'bottom'; diceSide?: 'left' | 'right'; hideDice?: boolean; hudPosition?: 'top' | 'bottom'; }; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
   inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; requirePotionStock?: boolean; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
   journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
@@ -108,9 +109,13 @@ export function createAdventureCharacter(source: ExportCharacter, sourceId: stri
     item.quantity = match ? integer(match[2], 1) : 1;
     return item;
   });
-  prepareStartingEquipment(inventory);
-  c.adventure = { version: 1, name: name.trim() || 'Новое приключение', sourceId, sourceUpdatedAt, startedAt: new Date().toISOString(), status: 'active', inventory, inventoryCatalogVersion: 2, effects: [], concentrationChecks: [], conditions: [], exhaustion: 0, journal: [], notes: '', round: 1, turn: { action: false, bonus: false, reaction: false }, attunementLimit: 3, elapsedMinutes: 0 };
-  c.currentHitPoints ??= estimatedHitPoints({ ...c, abilities: finalAbilityScores(c) });
+  const expandedInventory = inventory.flatMap(expandEquipmentPack);
+  prepareStartingEquipment(expandedInventory);
+  c.adventure = { version: 1, name: name.trim() || 'Новое приключение', sourceId, sourceUpdatedAt, startedAt: new Date().toISOString(), status: 'active', inventory: expandedInventory, inventoryCatalogVersion: 3, effects: [], concentrationChecks: [], conditions: [], exhaustion: 0, journal: [], notes: '', round: 1, turn: { action: false, bonus: false, reaction: false }, attunementLimit: 3, elapsedMinutes: 0 };
+  c.currentHitPoints = playMaximum(c);
+  c.temporaryHitPoints = 0;
+  c.deathSaveSuccesses = 0;
+  c.deathSaveFailures = 0;
   return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
 }
 export function logPlay(c: ExportCharacter, text: string, result?: DiceResult): ExportCharacter {
@@ -152,9 +157,21 @@ export function weaponItemBonus(c: ExportCharacter, attackName: string, key: 'we
   return values.length ? Math.max(...values) : 0;
 }
 
+export function expandEquipmentPack(item: PlayItem): PlayItem[] {
+  if (item.packId || item.quantity <= 0) return [item];
+  const name = (item.catalogName || item.name).split(' (')[0].trim().replace(/ё/g,'е').toLocaleLowerCase('ru');
+  const pack = Object.entries(equipmentPacks).find(([key]) => key.replace(/ё/g,'е').toLocaleLowerCase('ru') === name);
+  if (!pack) return [item];
+  const aliases: Record<string,string> = {'Рацион':'Рационы (1 день)','Фляга масла':'Масло (фляга)','Пеньковая верёвка (50 футов)':'Верёвка пеньковая (50 футов)', 'Научная книга':'Книга', 'Облачение':'Ряса', 'Футляр для карт и свитков':'Контейнер для карт и свитков', 'Комплект отличной одежды':'Одежда, отличная', 'Костюм':'Одежда, костюм', 'Чернила':'Чернила (бутылочка 30 граммов)', 'Перо':'Писчее перо', 'Лист бумаги':'Бумага (один лист)', 'Лист пергамента':'Пергамент (один лист)', 'Духи':'Духи (флакон)', 'Сургуч':'Воск', 'Закрытый фонарь':'Фонарь, закрытый'};
+  const weights: Record<string,number> = {'Шарики':0.002,'Кадило':1,'Коробка для пожертвований':1,'Мешочек песка':1,'Небольшой нож':1};
+  return pack[1].map(([name, quantity]) => ({ ...newPlayItem(aliases[name] || name), name, quantity: quantity * item.quantity,
+    ...(weights[name] !== undefined ? {weight:weights[name]} : {}),
+    packId: item.id, packName: pack[0], container: pack[0], notes: item.notes }));
+}
+
 /** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
 export function upgradeLegacyInventory(c:ExportCharacter): ExportCharacter {
-  if(!c.adventure || c.adventure.inventoryCatalogVersion === 2)return c;
+  if(!c.adventure || c.adventure.inventoryCatalogVersion === 3)return c;
   const upgrade=(item:PlayItem):PlayItem=>{
     const ref=catalogItemFor(item.catalogName||item.name);
     if(!ref)return item;
@@ -165,14 +182,14 @@ export function upgradeLegacyInventory(c:ExportCharacter): ExportCharacter {
       hands:item.hands??ref.hands,
     };
   };
-  const inventory=c.adventure.inventory.map(upgrade);
+  const inventory=c.adventure.inventory.map(upgrade).flatMap(expandEquipmentPack);
   // Legacy adventures incorrectly equipped all starting items. Release tools and
   // all mundane carried gear while keeping selected weapons, armor and foci.
-  const wasLegacy=c.adventure.inventory.some(i=>i.equipped&&i.weight===0);
+  const wasLegacy=(c.adventure.inventoryCatalogVersion || 0) < 2 && c.adventure.inventory.some(i=>i.equipped&&i.weight===0);
   const corrected=inventory.map(i=>wasLegacy && (isHandTool(i.name)||itemCategory(i)==='gear') ? {...i,equipped:false} : i);
   return {...c,adventure:{...c.adventure,inventory:corrected,
     inventoryTrash:(c.adventure.inventoryTrash||[]).map(upgrade),
-    inventoryCatalogVersion:2}};
+    inventoryCatalogVersion:3}};
 }
 export function updateInventory(c: ExportCharacter, items: PlayItem[]): ExportCharacter {
   if (!c.adventure) return { ...c, inventoryOverride: inventoryText(items) };
@@ -303,9 +320,9 @@ export function durationMinutes(text: string): number | undefined {
   return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? 0.1 : 1);
 }
 
-export function restPlay(c: ExportCharacter, kind: 'short' | 'long', selectedDice: Record<string, number> = {}, die: (sides: number) => number = randomDie) {
+export function restPlay(c: ExportCharacter, kind: 'short' | 'long', selectedDice: Record<string, number> = {}, die: (sides: number) => number = randomDie, consciousConfirmed = false) {
   if (!c.adventure) return c;
-  if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === 'long') throw new Error('Для начала длинного отдыха нужен хотя бы 1 HP.');
+  if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === 'long' && !consciousConfirmed) throw new Error('Подтвердите: персонаж в сознании?');
   if (c.adventure.concentrationChecks.length) throw new Error('Сначала разрешите проверки концентрации.');
   const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || '');
   const keepConcentration = kind === 'short' && c.adventure.concentration && (remaining === undefined || remaining > 60);
