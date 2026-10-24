@@ -53822,14 +53822,6 @@ function PdfCharacterSheet(props) {
 												] })
 											]
 										}),
-										!!props.acNotes?.length && /* @__PURE__ */ jsxs("p", {
-											className: "pdf-inline-stats",
-											children: [
-												/* @__PURE__ */ jsx("b", { children: "Условная КД:" }),
-												" ",
-												props.acNotes.join(" ")
-											]
-										}),
 										!!props.initiativeNotes?.length && /* @__PURE__ */ jsxs("p", {
 											className: "pdf-inline-stats",
 											children: ["Инициатива: ", props.initiativeNotes.join("; ")]
@@ -71527,7 +71519,6 @@ function Builder({ adventureRoute = false } = {}) {
 										},
 										defenses,
 										ac: ac.value,
-										acNotes: ac.conditions,
 										initiative: initiative.value,
 										initiativeNotes: initiative.notes,
 										speed: speedBreakdown(exportCharacter).walk,
