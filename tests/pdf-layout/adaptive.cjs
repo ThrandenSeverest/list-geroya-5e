@@ -31,7 +31,7 @@ async function valid(page,label){const m=await metrics(page);
     const savesBefore=await page.locator('.pdf-saving-throws .pdf-save-row').evaluate(el=>getComputedStyle(el).fontSize);
     await page.getByRole('button',{name:'Увеличить шрифт: навыки и владения',exact:true}).click();
     const after=await valid(page,'manual adjustment');
-    const otherMoved=after.cards.some(c=>c.id!=='skills'&&JSON.stringify(c)!==JSON.stringify(before.cards.find(b=>b.id===c.id)));
+    const otherMoved=after.cards.some(c=>!['skills','saves','proficiencies'].includes(c.id)&&JSON.stringify(c)!==JSON.stringify(before.cards.find(b=>b.id===c.id)));
     assert.ok(otherMoved,'A manual font change must reflow other panels');
     assert.notEqual(await page.locator('.pdf-saving-throws .pdf-save-row').evaluate(el=>getComputedStyle(el).fontSize),savesBefore,'Saving throws share the font adjustment');
    }
