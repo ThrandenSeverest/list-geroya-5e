@@ -59,9 +59,11 @@ function waitForServer(url, server, timeout=30000) {
      const result=await page.evaluate(()=>{
       const rect=element=>{const value=element.getBoundingClientRect();return {top:value.top,bottom:value.bottom,left:value.left,right:value.right,height:value.height}};
       const grid=document.querySelector('.pdf-primary-grid'),resources=document.querySelector('.pdf-resources'),inventory=document.querySelector('.pdf-inventory'),footer=document.querySelector('.pdf-primary-page footer');
-      return {grid:rect(grid),resources:rect(resources),inventory:rect(inventory),footer:rect(footer),zoom:document.querySelector('.pdf-primary-content').style.zoom,pages:document.querySelectorAll('.pdf-page').length,count:document.querySelectorAll('.pdf-resource').length,overflow:[...document.querySelectorAll('.pdf-resource-page-grid')].map(element=>rect(element).bottom>rect(element.parentElement.querySelector('footer')).top)};
+      const page=document.querySelector('.pdf-primary-page');const cards=[...grid.children].map(rect);return {paper:rect(page),cards,grid:rect(grid),resources:rect(resources),inventory:rect(inventory),footer:rect(footer),zoom:document.querySelector('.pdf-primary-content').dataset.fitScale,pages:document.querySelectorAll('.pdf-page').length,count:document.querySelectorAll('.pdf-resource').length,overflow:[...document.querySelectorAll('.pdf-resource-page-grid')].map(element=>rect(element).bottom>rect(element.parentElement.querySelector('footer')).top)};
      });
-     if(result.resources.bottom>result.inventory.top+.5 || result.grid.bottom>result.footer.top-2 || result.overflow.some(Boolean) || result.count!==count)throw Error(JSON.stringify({edition,count,media,result}));
+     const intersects=(a,b)=>a.left<b.right-.5&&b.left<a.right-.5&&a.top<b.bottom-.5&&b.top<a.bottom-.5;
+     const overlap=result.cards.some((a,i)=>result.cards.slice(i+1).some(b=>intersects(a,b)));
+     if(overlap || Math.abs(result.paper.height/(result.paper.right-result.paper.left)-297/210)>.002 || result.grid.bottom>result.footer.top-2 || result.overflow.some(Boolean) || result.count!==count)throw Error(JSON.stringify({edition,count,media,result}));
      if(pageErrors.length)throw Error('PDF runtime errors: '+pageErrors.join('; '));
      if(media==='print'){
       const pdf=await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});

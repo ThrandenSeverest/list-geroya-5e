@@ -18,18 +18,3 @@ export function normalizeSheetLayout(value:unknown):SheetLayout {
     hiddenAttacks:Array.isArray(raw.hiddenAttacks)?[...new Set(raw.hiddenAttacks.filter((id):id is string=>typeof id==='string'))].slice(0,500):[],
   };
 }
-/** Place each card below the shortest contiguous set of columns it can occupy. */
-export function packSheetPanels(panels:{span:number;height:number}[],columns=12,gap=10) {
-  const bottoms=Array(columns).fill(0) as number[];
-  return panels.map(panel=>{
-    const span=Math.max(1,Math.min(columns,Math.round(panel.span)));
-    let start=0,top=Infinity;
-    for(let i=0;i<=columns-span;i++) {
-      const y=Math.max(...bottoms.slice(i,i+span));
-      if(y<top){start=i;top=y;}
-    }
-    const height=Math.max(1,Math.ceil(panel.height));
-    for(let i=start;i<start+span;i++)bottoms[i]=top+height+gap;
-    return {column:start+1,row:Math.floor(top)+1,span,height};
-  });
-}

@@ -1,9 +1,24 @@
-/* Each primary panel has a natural height. Measured packing fills short columns. */
-.pdf-primary-grid { align-items:start; }
-.pdf-primary-grid > * { align-self:start;min-width:0; }
-.pdf-primary-grid[data-packed=true] { grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:1px;grid-template-rows:none;gap:0 2.2mm; }
-.pdf-primary-grid[data-packed=true] > * { height:auto;min-height:0; }
-.pdf-primary-grid:not([data-packed=true]) .pdf-primary-features { grid-column:3;grid-row:3; }
+/* A4 is a fixed canvas in both the preview and print. Panels are measured
+   independently and positioned by the whole-sheet solver. */
+.pdf-sheet-workspace { width:100%;min-width:0; }
+.pdf-sheet-toolbar { display:flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:210mm;margin:16px auto 0; }
+.pdf-sheet-toolbar button { padding:10px 16px;min-height:40px;border:1px solid var(--line,#8b9998);border-radius:6px;background:var(--panel,#fff);color:var(--ivory,#243b3d);font:inherit;cursor:pointer; }
+.pdf-sheet-toolbar span { color:var(--muted,#425957);font-size:13px; }
+.pdf-document--a4 { width:210mm;max-width:none; }
+.pdf-document--a4 .pdf-page { width:210mm;height:297mm;min-height:297mm;max-height:297mm;overflow:hidden; }
+.pdf-document .pdf-primary-content { position:relative;display:flow-root;transform-origin:top left;margin:0;max-width:none; }
+.pdf-primary-grid { position:relative;align-items:start; }
+.pdf-primary-grid[data-fitted=true] { display:block; }
+.pdf-primary-grid[data-fitted=true] > * { position:absolute;box-sizing:border-box;margin:0;height:auto;min-height:0; }
+.pdf-document .pdf-primary-page { padding:7mm 8mm 12mm; }
+.pdf-document .pdf-primary-page footer { left:8mm;right:8mm;bottom:5mm; }
+.pdf-document .pdf-primary-page::before { inset:3mm; }
+.pdf-document .pdf-brand { letter-spacing:.07em; }
+.pdf-document .pdf-hero-header { margin:3mm 0;gap:4mm; }
+.pdf-document .pdf-hero-header h1 { font-size:19pt; }
+.pdf-document .pdf-hero-header dl div { min-height:11mm; }
+.pdf-document .pdf-ability-row { margin-bottom:3mm; }
+.pdf-document .pdf-ability-row>div { min-height:19mm; }
 .pdf-document .pdf-panel-title-row { flex-wrap:wrap;gap:1mm;margin-bottom:1.8mm; }
 .pdf-document .pdf-panel-title-row h2 { min-width:0;flex:1 1 100px;padding:1.5mm 2mm;font-size:8.5pt;letter-spacing:.02em; }
 .pdf-panel-controls { display:inline-flex;align-items:center;justify-content:flex-end;gap:2px;margin-left:auto;padding:1mm;flex-wrap:wrap; }
@@ -44,33 +59,28 @@
 .pdf-display-settings label { display:flex;align-items:center;gap:10px;padding:6px 0;color:#24302b; }
 .pdf-display-settings input { width:18px;height:18px;accent-color:#456356; }
 .pdf-display-settings button { padding:8px 12px;margin:3px;border:1px solid #a3b1aa;border-radius:5px;background:#eef2ef;color:#24302b;font:inherit;cursor:pointer; }
-@media screen and (min-width:761px) {
-  .pdf-document .pdf-primary-page { height:auto;min-height:0;padding:7mm 8mm 12mm;overflow:visible; }
-  .pdf-document .pdf-primary-content { width:100%; }
-  .pdf-document .pdf-primary-page footer { left:8mm;right:8mm;bottom:5mm; }
-  .pdf-document .pdf-primary-page::before { inset:3mm; }
-  .pdf-document .pdf-brand { letter-spacing:.07em; }
-  .pdf-document .pdf-hero-header { margin:3mm 0;gap:4mm; }
-  .pdf-document .pdf-hero-header h1 { font-size:19pt; }
-  .pdf-document .pdf-hero-header dl div { min-height:11mm; }
-  .pdf-document .pdf-ability-row { margin-bottom:3mm; }
-  .pdf-document .pdf-ability-row>div { min-height:19mm; }
-}
-@media screen and (max-width:760px) {
-  .pdf-document .pdf-primary-grid { display:flex;flex-direction:column;gap:12px; }
-  .pdf-document .pdf-primary-grid > * { width:100%; }
-  .pdf-document .pdf-skills :is(p,.pdf-save-row),.pdf-document .pdf-skills .pdf-proficiencies p { font-size:calc(13px * var(--sheet-text-scale,1))!important; }
-  .pdf-document .pdf-inventory :is(p,.pdf-inventory-compact),.pdf-document .pdf-attacks :is(p,article>div,article code),.pdf-document .pdf-primary-features p,.pdf-document .pdf-class-page .pdf-feature-list p { font-size:calc(13px * var(--sheet-text-scale,1))!important; }
-  .pdf-document .pdf-skills small { font-size:.8em; }
-  .pdf-document .pdf-skills > p:not(.pdf-inline-stats) { grid-template-columns:12px 24px minmax(0,1fr) auto; }
-  .pdf-document .pdf-panel-controls button { width:32px;height:32px; }
-  .pdf-document .pdf-panel-controls output { font-size:12px; }
-}
+/* Savings and proficiencies are independent measured cards. Their text size
+   remains linked to the skills control, and their column count follows width. */
+.pdf-document .pdf-saving-throws .pdf-save-row { grid-template-columns:repeat(var(--save-columns,2),minmax(0,1fr));gap:1mm;font-size:calc(7.4pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-saving-throws .pdf-save-row span { min-height:0;padding:.8mm;grid-template-columns:2mm minmax(0,1fr) auto;gap:.8mm;line-height:1.25; }
+.pdf-document .pdf-saving-throws .pdf-save-row :is(b,strong) { font:inherit;overflow-wrap:anywhere; }
+.pdf-document .pdf-proficiency-panel .pdf-proficiencies { margin:0;padding:0;border:0; }
+.pdf-document .pdf-proficiency-panel h2 { margin:-3mm -3mm 2mm;padding:1.5mm 2mm;border-bottom:.3mm solid #365b5e;color:#173d43;font:700 8.5pt Georgia,serif;text-transform:uppercase; }
+.pdf-document .pdf-proficiency-panel p { padding:.7mm 0;font-size:calc(7pt * var(--sheet-text-scale,1));line-height:1.3;overflow-wrap:anywhere; }
+.pdf-document .pdf-inventory-list { columns:var(--inventory-columns,1); }
+.pdf-document .pdf-inventory .pdf-currency-grid { grid-template-columns:repeat(var(--coin-columns,2),minmax(0,1fr)); }
+.pdf-document .pdf-panel-title-row h2 { font-size:clamp(7pt,calc(8.5pt * var(--sheet-text-scale,1)),11pt); }
 @media print {
   dialog::backdrop { display:none!important;background:transparent!important; }
   .character-check-banner { display:none!important; }
-  .pdf-panel-controls,.pdf-feature-toolbar,.pdf-display-settings { display:none!important; }
+  .pdf-panel-controls,.pdf-feature-toolbar,.pdf-display-settings,.pdf-sheet-toolbar { display:none!important; }
+  .pdf-sheet-workspace { width:auto;margin:0;padding:0; }
+  .pdf-document--a4 { zoom:1!important; }
+  .pdf-document .pdf-primary-page { padding:7mm 8mm 12mm!important; }
   .pdf-document .pdf-panel-title-row { display:block; }
   .pdf-document .pdf-panel-title-row h2 { padding:1.5mm 2mm; }
-  .pdf-document .pdf-primary-content { width:186mm; }
+
 }
+
+.pdf-document .pdf-attack-head > b { overflow-wrap:normal;word-break:normal; }
+.pdf-document .pdf-skills > p { overflow-wrap:anywhere; }

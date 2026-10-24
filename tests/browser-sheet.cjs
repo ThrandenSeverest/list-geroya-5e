@@ -58,6 +58,9 @@ async function openSheet(page) {
   await page.locator('.pointbuy-grid').waitFor({state:'visible'});
   await page.locator('nav.steps button').filter({hasText:'Итог'}).click();
   await page.locator('.pdf-hp strong').waitFor();
+  await page.getByRole('button',{name:'Оптимальные настройки',exact:true}).waitFor();
+  const paper=await page.locator('.pdf-primary-page').boundingBox();
+  assert.ok(paper&&Math.abs(paper.width/paper.height-210/297)<.002,'Preview retains its A4 aspect ratio');
 }
 async function saved(page) {
   return page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
