@@ -5,6 +5,7 @@ import { GameMode } from "./GameMode";
 import { createAdventureCharacter } from "./adventure";
 
 import { ThemeControls, useInterfacePreferences } from "./ThemeSettings";
+import { designLayout } from "./designPresets";
 
 import { isStaticPages } from "./accountAvailability";
 import { printStandalonePdf, saveExport } from "./platformFiles";
@@ -1010,7 +1011,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   }, [account, character, ready, vault]);
 
   const usesOrnateIcons = true;
-  const shellThemeClass = (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
+  const calmLayout = designLayout(appearance.preferences.presets,appearance.preferences.activePreset);
+  const shellThemeClass = (calmLayout ? ` calm-design design-${calmLayout}` : "") + (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
 
   function cycleSiteTheme() {
     const next: SiteTheme = siteTheme === "classic" ? "parchment" : "classic";

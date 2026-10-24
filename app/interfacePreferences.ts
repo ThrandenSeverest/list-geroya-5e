@@ -1,14 +1,16 @@
 import colors from "./themeColors.json";
+import { calmPresets,findDesign } from './designPresets';
 export type BaseTheme = "classic" | "parchment";
-export type ThemePreset = { id:string; name:string; base:BaseTheme; colors:Record<string,string>; roles?:Record<string,string> };
-export type InterfacePreferences = { zoom:number; font:number; activePreset:string; presets:ThemePreset[] };
-export const defaultPreferences:InterfacePreferences = { zoom:125, font:100, activePreset:"", presets:[] };
+export type ThemePreset = { id:string; name:string; base:BaseTheme; colors:Record<string,string>; roles?:Record<string,string>; layout?:string };
+export type InterfacePreferences = { zoom:number; font:number; activePreset:string; presets:ThemePreset[]; rememberDesign?:boolean };
+export const defaultPreferences:InterfacePreferences = { zoom:125, font:100, activePreset:"", presets:[],rememberDesign:false };
 const limit = (value:unknown,min:number,max:number,fallback:number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max,Math.max(min,Math.round(value))) : fallback;
 export function normalizePreferences(value:unknown):InterfacePreferences {
   const raw = value && typeof value === "object" ? value as Partial<InterfacePreferences> : {};
   const seen = new Set<string>();
   const presets = (Array.isArray(raw.presets) ? raw.presets : []).filter(p => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map(p => ({ id:p.id, name:typeof p.name === "string" ? p.name.slice(0,80) : "Моя тема", base:p.base === "parchment" ? "parchment" as const : "classic" as const, roles:Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key,value])=>paletteRoles.some(role=>role.token===key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))), colors:Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key,value]) => colors.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))) }));
-  return { zoom:limit(raw.zoom,75,175,125),font:limit(raw.font,80,160,100),activePreset:presets.some(p=>p.id===raw.activePreset)?raw.activePreset!:"",presets };
+  const safePresets=presets.map(p=>({...p,layout:calmPresets.some(b=>b.id===(raw.presets?.find(r=>r?.id===p.id)?.layout))?raw.presets?.find(r=>r?.id===p.id)?.layout:undefined}));
+  return { zoom:limit(raw.zoom,75,175,125),font:limit(raw.font,80,160,100),activePreset:findDesign(safePresets,raw.activePreset || '')?raw.activePreset!:"",presets:safePresets,rememberDesign:raw.rememberDesign===true };
 }
 export const paletteRoles = [
   { label:"Фон страницы", token:"ink", classic:"050f14", parchment:"f2e3bd", aliases:[] },
@@ -32,7 +34,7 @@ export function changePaletteRole(preset:ThemePreset,index:number,color:string):
   return {...preset,roles:{...preset.roles,[role.token]:color},colors:{...preset.colors,...Object.fromEntries([role[preset.base],...(preset.base === "parchment" ? role.aliases : [])].map(key=>[key,color]))}};
 }
 export function themeStyle(preferences:InterfacePreferences,base:BaseTheme):Record<string,string|number> {
-  const preset=preferences.presets.find(p=>p.id===preferences.activePreset);
+  const preset=findDesign(preferences.presets,preferences.activePreset);
   const style:Record<string,string|number>={"--interface-font":preferences.font/100};
   if(!preset)return style;
   for(const role of paletteRoles)style[`--${role.token}`]=preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;

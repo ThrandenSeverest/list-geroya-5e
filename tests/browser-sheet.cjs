@@ -72,6 +72,7 @@ async function saved(page) {
         const errors=[];
         page.on('pageerror',error=>errors.push(error.message));
         await page.route('**/api/account',route=>route.fulfill({json:{authenticated:false}}));
+        await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true}));});
         await page.addInitScript(({key,character})=>{
           if(localStorage.getItem(key))return;
           const updatedAt='2026-09-24T00:00:00Z';
@@ -140,6 +141,7 @@ async function saved(page) {
           await settings.getByLabel('Рамки',{exact:true}).fill('#445566');
           await page.keyboard.press('Escape');
           await page.reload();
+          await page.locator('.theme-custom').waitFor();
           await page.getByRole('button',{name:'Настройки интерфейса',exact:true}).click();
           assert.equal(await settings.getByLabel('Название темы').inputValue(),'Тестовая тема');
           assert.equal(await settings.getByLabel('Размер интерфейса на ПК',{exact:true}).inputValue(),'150');

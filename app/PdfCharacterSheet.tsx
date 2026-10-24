@@ -1,6 +1,8 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Settings } from 'lucide-react';
+import { defaultSheetLayout,normalizeSheetLayout,packSheetPanels,type SheetGroup } from './sheetLayout';
 import type { CatalogSpell } from "./catalog";
 import { automaticAttacksNotice, type CharacterAttack } from "./combat";
 import type { AbilityScores, Currency } from "./exportFormats";
@@ -308,7 +310,11 @@ function PageHeader({ eyebrow, title, page }: { eyebrow: string; title: string; 
 
 type InventoryMode = "list" | "compact" | "blank";
 
-function InventoryPanel({ equipment, currency, mode, onModeChange }: Pick<PdfCharacterSheetProps, "equipment" | "currency"> & { mode: InventoryMode; onModeChange: (mode: InventoryMode) => void }) {
+function SheetPanelTitle({title,group,size,onSize,children}:{title:string;group:string;size:number;onSize:(delta:number)=>void;children?:ReactNode}) {
+  return <div className="pdf-panel-title-row"><h2>{title}</h2><span className="pdf-panel-controls"><button type="button" disabled={size<=70} onClick={()=>onSize(-10)} aria-label={`Уменьшить шрифт: ${group}`} title={`Уменьшить шрифт (${size}%)`}>−</button><output aria-label={`Размер шрифта: ${group}`}>{size}%</output><button type="button" disabled={size>=160} onClick={()=>onSize(10)} aria-label={`Увеличить шрифт: ${group}`} title={`Увеличить шрифт (${size}%)`}>+</button>{children}</span></div>;
+}
+
+function InventoryPanel({ equipment, currency, mode, onModeChange,size,onSize,style }: Pick<PdfCharacterSheetProps, "equipment" | "currency"> & { mode: InventoryMode; onModeChange: (mode: InventoryMode) => void;size:number;onSize:(delta:number)=>void;style:CSSProperties }) {
   const nextMode: Record<InventoryMode, InventoryMode> = { list: "compact", compact: "blank", blank: "list" };
   const modeLabel: Record<InventoryMode, string> = {
     list: "Свернуть инвентарь в строку",
@@ -317,8 +323,8 @@ function InventoryPanel({ equipment, currency, mode, onModeChange }: Pick<PdfCha
   };
   const coins = [['ЗМ', 'Золото', currency.gp], ['СМ', 'Серебро', currency.sp], ['ММ', 'Медь', currency.cp], ['ПМ', 'Платина', currency.pp]] as const;
 
-  return <section className={`pdf-panel pdf-inventory pdf-inventory--${mode}`}>
-    <div className="pdf-panel-title-row"><h2>Инвентарь и монеты</h2><button type="button" className="pdf-inventory-toggle" onClick={() => onModeChange(nextMode[mode])} aria-label={modeLabel[mode]} title={modeLabel[mode]}>↻</button></div>
+  return <section className={`pdf-panel pdf-inventory pdf-inventory--${mode}`} style={style} data-sheet-group="inventory">
+    <SheetPanelTitle title="Инвентарь и монеты" group="инвентарь" size={size} onSize={onSize}><button type="button" className="pdf-inventory-toggle" onClick={() => onModeChange(nextMode[mode])} aria-label={modeLabel[mode]} title={modeLabel[mode]}>↻</button></SheetPanelTitle>
     <div className="pdf-currency-grid">{coins.map(([short, label, amount]) => <div key={short}><b>{mode === "blank" ? "" : amount}</b><span>{short}</span><small>{label}</small></div>)}</div>
     {mode === "list" && <>
       <div className="pdf-inventory-list">{equipment.length ? equipment.map((item, index) => <p key={`${item}-${index}`}>□ {item}</p>) : <p>Снаряжение не выбрано.</p>}</div>
@@ -330,6 +336,13 @@ function InventoryPanel({ equipment, currency, mode, onModeChange }: Pick<PdfCha
 
 export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const primaryContent = useRef<HTMLDivElement>(null);
+  const attackDialog=useRef<HTMLDialogElement>(null);
+  const [layout,setLayout]=useState(defaultSheetLayout);
+  const [layoutReady,setLayoutReady]=useState(false);
+  useEffect(()=>{try{setLayout(normalizeSheetLayout(JSON.parse(localStorage.getItem('list-geroya-sheet-layout-v1') || 'null')));}catch{/* Invalid settings never touch character data. */}setLayoutReady(true);},[]);
+  useEffect(()=>{if(layoutReady)try{localStorage.setItem('list-geroya-sheet-layout-v1',JSON.stringify(layout));}catch{/* Session controls still work. */}},[layout,layoutReady]);
+  function resize(group:SheetGroup,delta:number){setLayout(current=>({...current,sizes:{...current.sizes,[group]:Math.max(70,Math.min(160,current.sizes[group]+delta))}}));}
+  function panelStyle(group:SheetGroup):CSSProperties {return {'--sheet-text-scale':layout.sizes[group]/100} as CSSProperties;}
   const [inventoryMode, setInventoryMode] = useState<InventoryMode>("list");
   const [showPreparedMarks, setShowPreparedMarks] = useState(true);
   function changeInventoryMode(mode: InventoryMode) {
@@ -344,7 +357,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     { ...props.backgroundFeature, name: `Предыстория · ${props.backgroundFeature.name}` },
     ...props.featFeatures.map(feature => ({ ...feature, name: `Черта · ${feature.name}` })),
   ];
-  const classPages = paginateFeatureColumns([...combatTechniques, ...ordinaryClassFeatures, ...originFeatures]);
+  const classPages = paginateFeatureColumns([...combatTechniques, ...ordinaryClassFeatures, ...originFeatures],1225 / Math.pow(layout.sizes.features/100,1.8));
   const abilityOrder = ["str", "dex", "con", "int", "wis", "cha"];
   const skills = Object.entries(skillKeys)
     .map(([name, detail]) => ({ name, ...detail }))
@@ -366,31 +379,58 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const firstSpellPageNumber = lifePageNumber + resourcePages.length + 1;
   const firstSpellCardPageNumber = firstSpellPageNumber + spellPages.length;
 
-  // Measure the natural layout, including wrapped identity text and resources.
-  // Use the same fitting for the preview and the browser's print rendering.
+  // Pack by measured card heights; never stretch a short panel to match its neighbour.
+  // Print keeps A4; screen preview grows naturally instead of reserving blank paper.
   useLayoutEffect(() => {
     const content = primaryContent.current;
     if (!content) return;
     const page = content.parentElement!;
+    const grid=content.querySelector<HTMLElement>('.pdf-primary-grid')!;
+    const cards=Array.from(grid.children) as HTMLElement[];
+    let frame=0,active=true;
     const fit = () => {
-      if (window.matchMedia('screen and (max-width: 760px)').matches) { content.style.zoom = '1'; return; }
-      const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 16 * 96 / 25.4;
-      const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
-      content.style.zoom = String(scale);
+      const mobile=window.matchMedia('screen and (max-width: 760px)').matches;
+      if(mobile){delete grid.dataset.packed;cards.forEach(card=>{card.style.removeProperty('grid-column');card.style.removeProperty('grid-row');});content.style.zoom='1';return;}
+      grid.dataset.packed='true';
+      const spans=cards.map(card=>{
+        const group=card.dataset.sheetGroup as SheetGroup|undefined;
+        const base=group==='skills'?4:group==='inventory'?3:group==='features'?5:group==='attacks'?5:3;
+        return Math.max(3,Math.min(8,Math.round(base*(group?layout.sizes[group]/100:1))));
+      });
+      const inventoryIndex=cards.findIndex(card=>card.dataset.sheetGroup==='inventory');
+      const featuresIndex=cards.findIndex(card=>card.dataset.sheetGroup==='features');
+      let best:{score:number;positions:ReturnType<typeof packSheetPanels>}|undefined;
+      // Try a few readable widths for the two flowing text blocks. Pick the
+      // smallest total height, then the smallest occupied area at that height.
+      const inventoryWidths=[spans[inventoryIndex],Math.min(8,spans[inventoryIndex]+1),Math.min(8,spans[inventoryIndex]+2)];
+      const featureWidths=[Math.max(3,spans[featuresIndex]-2),spans[featuresIndex]];
+      for(const inventoryWidth of inventoryWidths)for(const featureWidth of featureWidths){
+        const widths=[...spans];widths[inventoryIndex]=inventoryWidth;widths[featuresIndex]=featureWidth;
+        cards.forEach((card,i)=>{card.style.gridColumn=`span ${widths[i]}`;});
+        const positions=packSheetPanels(cards.map((card,i)=>({span:widths[i],height:card.offsetHeight})),12,8);
+        const score=Math.max(...positions.map(p=>p.row+p.height))*10000+positions.reduce((area,p)=>area+p.span*p.height,0);
+        if(!best || score<best.score)best={score,positions};
+      }
+      cards.forEach((card,i)=>{const p=best!.positions[i];card.style.gridColumn=`${p.column} / span ${p.span}`;card.style.gridRow=`${p.row} / span ${p.height}`;});
+      if(window.matchMedia('print').matches){
+        const available=page.clientHeight-parseFloat(getComputedStyle(page).paddingTop)-16*96/25.4;
+        content.style.zoom=String(Math.min(1,available/Math.max(1,content.scrollHeight)));
+      } else content.style.zoom='1';
     };
+    const schedule=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{if(active)fit();});};
     fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(content);
-    let active = true;
+    const observer = new ResizeObserver(schedule);
+    cards.forEach(card=>observer.observe(card));observer.observe(content);
     document.fonts.ready.then(() => { if (active) fit(); });
     window.addEventListener("beforeprint", fit);
     window.addEventListener("afterprint", fit);
-    return () => { active = false; observer.disconnect(); window.removeEventListener("beforeprint", fit); window.removeEventListener("afterprint", fit); };
-  }, [props, inventoryMode]);
+    window.addEventListener('resize',schedule);
+    return () => { active = false;cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener('resize',schedule); window.removeEventListener("beforeprint", fit); window.removeEventListener("afterprint", fit); };
+  }, [props, inventoryMode,layout]);
 
   const sheetEdition = props.sheetEdition || "2014";
 
-  return <div className={`pdf-document pdf-document--${sheetEdition}`} aria-hidden="true" data-sheet-edition={sheetEdition}>
+  return <div className={`pdf-document pdf-document--${sheetEdition}`} data-sheet-edition={sheetEdition}>
     <section className="pdf-page pdf-primary-page">
       <div className="pdf-primary-content" ref={primaryContent}>
       <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · правила 2014 · лист {sheetEdition}</i></div>
@@ -409,7 +449,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
         {(Object.keys(abilityLabels) as (keyof AbilityScores)[]).map(key => <div key={key}><small>{abilityLabels[key]}</small><strong>{signed(abilityModifier(props.abilities[key]))}</strong><span>{props.abilities[key]}</span></div>)}
       </div>
       <div className="pdf-primary-grid">
-        <section className="pdf-panel pdf-skills"><h2>Навыки и спасброски</h2>
+        <section className="pdf-panel pdf-skills" style={panelStyle('skills')} data-sheet-group="skills"><SheetPanelTitle title="Навыки и спасброски" group="навыки и владения" size={layout.sizes.skills} onSize={delta=>resize('skills',delta)}/>
           <p className="pdf-inline-stats"><b>БМ {signed(props.proficiency)}</b><b>Пассивная внимательность {props.passivePerception}</b></p>
           {skills.map(skill => {
             const proficient = props.proficiencies.skills.includes(skill.name);
@@ -431,14 +471,16 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
             {resourcePages.length > 0 && <p className="pdf-resource-continuation">Остальные ресурсы — стр. {lifePageNumber + 1}</p>}
           </div>
         </section>
-        <section className="pdf-panel pdf-attacks"><h2>Оружие и боевые заклинания</h2>
-          <p>{automaticAttacksNotice}</p>
-          <div className="pdf-attack-head"><b>Название</b><b>Попадание / Сл</b><b>Урон</b></div>
-          {props.attacks.length ? props.attacks.map(attack => <article key={attack.id}><div><b>{attack.name}</b><span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span><code>{attack.damageDisplay}</code></div>{attack.note && <p>{attack.note}</p>}</article>) : <p>Атаки ещё не выбраны.</p>}
-          {props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>}
-          <div className="pdf-racial-traits"><h3>Расовые способности</h3><RacialTraitList features={props.raceFeatures} /></div>
+        <section className="pdf-panel pdf-attacks" style={panelStyle('attacks')} data-sheet-group="attacks">
+          <SheetPanelTitle title="Оружие и боевые заклинания" group="оружие и заклинания" size={layout.sizes.attacks} onSize={delta=>resize('attacks',delta)}><button type="button" aria-label="Настройки оружия и заклинаний" title="Что отображать на листе" onClick={()=>attackDialog.current?.showModal()}><Settings size={14} aria-hidden="true"/></button></SheetPanelTitle>
+          {layout.visible.notice && <p>{automaticAttacksNotice}</p>}
+          <div className="pdf-attack-head pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>Название</b>{layout.visible.hit&&<b>Попадание / Сл</b>}{layout.visible.damage&&<b>Урон</b>}</div>
+          {props.attacks.filter(attack=>layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map(attack => <article key={attack.id}><div className="pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>{attack.name}</b>{layout.visible.hit&&<span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span>}{layout.visible.damage&&<code>{attack.damageDisplay}</code>}</div>{layout.visible.notes && attack.note && <p>{attack.note}</p>}</article>)}
+          {!props.attacks.some(attack=>layout.visible[attack.kind]&&!layout.hiddenAttacks.includes(attack.id)) && <p>Нет атак для отображения. Выберите их в настройках блока.</p>}
+          {layout.visible.spellNumbers && (props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>)}
         </section>
-        <InventoryPanel equipment={props.equipment} currency={props.currency} mode={inventoryMode} onModeChange={changeInventoryMode} />
+        <InventoryPanel equipment={props.equipment} currency={props.currency} mode={inventoryMode} onModeChange={changeInventoryMode} size={layout.sizes.inventory} onSize={delta=>resize('inventory',delta)} style={panelStyle('inventory')} />
+        <section className="pdf-panel pdf-primary-features" style={panelStyle('features')} data-sheet-group="features"><SheetPanelTitle title="Расовые способности" group="способности" size={layout.sizes.features} onSize={delta=>resize('features',delta)}/><RacialTraitList features={props.raceFeatures}/></section>
       </div>
       </div>
       <footer>Лист Героя 5e · Основной лист <span>1 / {totalPages}</span></footer>
@@ -446,8 +488,9 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
 
     {classPages.map((pageColumns, pageIndex) => {
       const pageNumber = pageIndex + 2;
-      return <section className="pdf-page pdf-class-page" key={`class-page-${pageIndex}`}>
+      return <section className="pdf-page pdf-class-page" key={`class-page-${pageIndex}`} style={panelStyle('features')}>
         <PageHeader eyebrow={`${props.identity.className} · ${props.identity.level} уровень${pageIndex ? " · продолжение" : ""}`} title="Боевые и классовые способности" page={pageNumber} />
+        <div className="pdf-feature-toolbar"><SheetPanelTitle title="Размер текста способностей" group="классовые способности" size={layout.sizes.features} onSize={delta=>resize('features',delta)}/></div>
         {pageIndex === 0 && <p className="pdf-section-note">Особые атаки и боевые приёмы собраны в начале раздела; далее идут классовые, расовые и полученные от черт особенности. Обычные атаки оружием находятся на основном листе.</p>}
         <div className="pdf-two-columns"><FeatureList features={pageColumns[0]} /><FeatureList features={pageColumns[1]} /></div>
         <footer>Лист Героя 5e · Классовые способности{pageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>
@@ -508,5 +551,10 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
         <footer>Лист Героя 5e · Карточки заклинаний{cardPageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>
       </section>;
     })}
+    <dialog ref={attackDialog} className="pdf-display-settings" aria-labelledby="pdf-attack-settings-title"><header><h2 id="pdf-attack-settings-title">Оружие и заклинания на листе</h2><button type="button" onClick={()=>attackDialog.current?.close()} aria-label="Закрыть настройки оружия">✕</button></header><p>Меняется только отображение на листе. Оружие и заклинания остаются у персонажа.</p>
+      <fieldset><legend>Показывать</legend>{([['weapon','Оружие'],['cantrip','Заговоры'],['spell','Заклинания'],['feature','Атаки способностей'],['hit','Попадание и сложность спасброска'],['damage','Урон'],['notes','Описания и примечания'],['spellNumbers','Параметры заклинателя'],['notice','Пояснение об автоматическом списке атак']] as const).map(([key,label])=><label key={key}><input type="checkbox" checked={layout.visible[key]} onChange={e=>setLayout(current=>({...current,visible:{...current.visible,[key]:e.target.checked}}))}/>{label}</label>)}</fieldset>
+      <fieldset><legend>Отдельные атаки</legend>{props.attacks.length?props.attacks.map(attack=><label key={attack.id}><input type="checkbox" checked={!layout.hiddenAttacks.includes(attack.id)} onChange={e=>setLayout(current=>({...current,hiddenAttacks:e.target.checked?current.hiddenAttacks.filter(id=>id!==attack.id):[...current.hiddenAttacks,attack.id]}))}/>{attack.name}</label>):<p>Атаки ещё не выбраны.</p>}</fieldset>
+      <button type="button" onClick={()=>setLayout(current=>({...current,visible:{...defaultSheetLayout.visible},hiddenAttacks:[]}))}>Вернуть стандартный состав</button><button type="button" onClick={()=>attackDialog.current?.close()}>Готово</button>
+    </dialog>
   </div>;
 }

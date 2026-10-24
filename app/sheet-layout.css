@@ -1,0 +1,76 @@
+/* Each primary panel has a natural height. Measured packing fills short columns. */
+.pdf-primary-grid { align-items:start; }
+.pdf-primary-grid > * { align-self:start;min-width:0; }
+.pdf-primary-grid[data-packed=true] { grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:1px;grid-template-rows:none;gap:0 2.2mm; }
+.pdf-primary-grid[data-packed=true] > * { height:auto;min-height:0; }
+.pdf-primary-grid:not([data-packed=true]) .pdf-primary-features { grid-column:3;grid-row:3; }
+.pdf-document .pdf-panel-title-row { flex-wrap:wrap;gap:1mm;margin-bottom:1.8mm; }
+.pdf-document .pdf-panel-title-row h2 { min-width:0;flex:1 1 100px;padding:1.5mm 2mm;font-size:8.5pt;letter-spacing:.02em; }
+.pdf-panel-controls { display:inline-flex;align-items:center;justify-content:flex-end;gap:2px;margin-left:auto;padding:1mm;flex-wrap:wrap; }
+.pdf-document .pdf-panel-controls button { display:inline-grid;place-items:center;width:23px;height:23px;min-width:23px;min-height:23px;padding:0;border:1px solid #8b9998;border-radius:4px;background:#fff;color:#243b3d;font:600 14px Arial,sans-serif;cursor:pointer; }
+.pdf-document .pdf-panel-controls button:disabled { opacity:.4;cursor:default; }
+.pdf-document .pdf-panel-controls output { color:#425957;min-width:30px;text-align:center;font:10px Arial,sans-serif; }
+.pdf-document .pdf-panel-controls button:focus-visible { outline:2px solid #315d56;outline-offset:2px; }
+.pdf-document .pdf-skills :is(p,.pdf-save-row) { font-size:calc(7.4pt * var(--sheet-text-scale,1));line-height:1.28; }
+.pdf-document .pdf-skills > p:not(.pdf-inline-stats) { padding:.45mm 0;grid-template-columns:3mm 6mm minmax(0,1fr) auto; }
+.pdf-document .pdf-skills small { font-size:.8em; }
+.pdf-document .pdf-skills .pdf-proficiencies p { font-size:calc(6.6pt * var(--sheet-text-scale,1));padding:.5mm 0; }
+.pdf-document .pdf-skills .pdf-save-row :is(b,strong) { font-size:inherit; }
+.pdf-document .pdf-skills .pdf-save-row span { min-height:0;padding:.7mm;grid-template-columns:2mm 1fr auto;gap:1mm; }
+.pdf-document .pdf-inline-stats { flex-wrap:wrap;gap:1mm;font-size:calc(6.8pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-inventory :is(p,.pdf-inventory-compact) { font-size:calc(7pt * var(--sheet-text-scale,1))!important;line-height:1.3!important;overflow-wrap:anywhere; }
+.pdf-document .pdf-inventory-list { columns:auto; }
+.pdf-document .pdf-inventory .pdf-currency-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:1mm; }
+.pdf-document .pdf-inventory .pdf-currency-grid b { font-size:calc(11pt * var(--sheet-text-scale,1));overflow-wrap:anywhere; }
+.pdf-document .pdf-inventory .pdf-currency-grid small { font-size:calc(5.5pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-attacks :is(p,article>div,article code) { font-size:calc(7.3pt * var(--sheet-text-scale,1));line-height:1.3; }
+.pdf-document .pdf-attacks article p { font-size:calc(6.4pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-attacks .pdf-attack-columns { grid-template-columns:var(--attack-columns);gap:1.4mm; }
+.pdf-document .pdf-attacks .pdf-attack-columns > * { min-width:0;overflow-wrap:anywhere; }
+.pdf-document .pdf-attack-head { font-size:calc(6pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-attacks article { padding:1.5mm 0; }
+.pdf-document .pdf-spell-numbers { grid-template-columns:minmax(0,1fr);font-size:calc(6.5pt * var(--sheet-text-scale,1));margin-top:2mm;padding-top:1.5mm; }
+.pdf-document .pdf-primary-features p { font-size:calc(7pt * var(--sheet-text-scale,1));line-height:1.3;overflow-wrap:anywhere; }
+.pdf-document .pdf-class-page .pdf-feature-list p { font-size:calc(7pt * var(--sheet-text-scale,1));line-height:1.3; }
+.pdf-document .pdf-class-page .pdf-feature-list h3 { font-size:calc(8.3pt * var(--sheet-text-scale,1)); }
+.pdf-document .pdf-class-page .pdf-feature-rules-table { font-size:calc(6.3pt * var(--sheet-text-scale,1)); }
+.pdf-feature-toolbar { display:flex;justify-content:flex-end;margin-bottom:3mm; }
+.pdf-feature-toolbar .pdf-panel-title-row { margin:0;border:0; }
+.pdf-display-settings { width:min(540px,calc(100vw - 30px));max-height:80dvh;overflow:auto;margin:auto;padding:24px;border:1px solid #88948f;border-radius:10px;background:#fafbf9;color:#24302b;font:15px/1.5 Arial,sans-serif; }
+.pdf-display-settings::backdrop { background:rgba(0,0,0,.6); }
+.pdf-display-settings header { display:flex;justify-content:space-between;align-items:start;gap:16px; }
+.pdf-document .pdf-display-settings h2 { margin:0;font:600 20px/1.3 Arial,sans-serif;color:#24302b; }
+.pdf-display-settings fieldset { margin:16px 0;border:1px solid #c5ceca;padding:12px; }
+.pdf-display-settings label { display:flex;align-items:center;gap:10px;padding:6px 0;color:#24302b; }
+.pdf-display-settings input { width:18px;height:18px;accent-color:#456356; }
+.pdf-display-settings button { padding:8px 12px;margin:3px;border:1px solid #a3b1aa;border-radius:5px;background:#eef2ef;color:#24302b;font:inherit;cursor:pointer; }
+@media screen and (min-width:761px) {
+  .pdf-document .pdf-primary-page { height:auto;min-height:0;padding:7mm 8mm 12mm;overflow:visible; }
+  .pdf-document .pdf-primary-content { width:100%; }
+  .pdf-document .pdf-primary-page footer { left:8mm;right:8mm;bottom:5mm; }
+  .pdf-document .pdf-primary-page::before { inset:3mm; }
+  .pdf-document .pdf-brand { letter-spacing:.07em; }
+  .pdf-document .pdf-hero-header { margin:3mm 0;gap:4mm; }
+  .pdf-document .pdf-hero-header h1 { font-size:19pt; }
+  .pdf-document .pdf-hero-header dl div { min-height:11mm; }
+  .pdf-document .pdf-ability-row { margin-bottom:3mm; }
+  .pdf-document .pdf-ability-row>div { min-height:19mm; }
+}
+@media screen and (max-width:760px) {
+  .pdf-document .pdf-primary-grid { display:flex;flex-direction:column;gap:12px; }
+  .pdf-document .pdf-primary-grid > * { width:100%; }
+  .pdf-document .pdf-skills :is(p,.pdf-save-row),.pdf-document .pdf-skills .pdf-proficiencies p { font-size:calc(13px * var(--sheet-text-scale,1))!important; }
+  .pdf-document .pdf-inventory :is(p,.pdf-inventory-compact),.pdf-document .pdf-attacks :is(p,article>div,article code),.pdf-document .pdf-primary-features p,.pdf-document .pdf-class-page .pdf-feature-list p { font-size:calc(13px * var(--sheet-text-scale,1))!important; }
+  .pdf-document .pdf-skills small { font-size:.8em; }
+  .pdf-document .pdf-skills > p:not(.pdf-inline-stats) { grid-template-columns:12px 24px minmax(0,1fr) auto; }
+  .pdf-document .pdf-panel-controls button { width:32px;height:32px; }
+  .pdf-document .pdf-panel-controls output { font-size:12px; }
+}
+@media print {
+  dialog::backdrop { display:none!important;background:transparent!important; }
+  .character-check-banner { display:none!important; }
+  .pdf-panel-controls,.pdf-feature-toolbar,.pdf-display-settings { display:none!important; }
+  .pdf-document .pdf-panel-title-row { display:block; }
+  .pdf-document .pdf-panel-title-row h2 { padding:1.5mm 2mm; }
+  .pdf-document .pdf-primary-content { width:186mm; }
+}
