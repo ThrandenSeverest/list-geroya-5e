@@ -1859,3 +1859,8 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(var(--
   .ability-editor-head h2 { font-size:25px;overflow-wrap:break-word; }
   .feat-picker,.spell-progression,.subclass-picker,.ability-editor { padding:16px; }
 }
+@media screen and (max-width:760px) {
+  /* Desktop artwork includes empty space for the heading. Crop that space on phones. */
+  .home-hero-art { height:min(380px,88vw);overflow:hidden; }
+  .home-hero-art img { width:145%;max-width:none;height:100%;left:-36%;right:auto;object-fit:contain;object-position:center; }
+}
