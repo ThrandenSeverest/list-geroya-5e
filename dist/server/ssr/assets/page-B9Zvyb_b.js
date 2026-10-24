@@ -50504,6 +50504,7 @@ var sheetGroups = [
 	"attacks"
 ];
 var defaultSheetLayout = {
+	mode: "adaptive",
 	sizes: {
 		skills: 100,
 		inventory: 100,
@@ -50526,6 +50527,7 @@ var defaultSheetLayout = {
 function normalizeSheetLayout(value) {
 	const raw = value && typeof value === "object" ? value : {};
 	return {
+		mode: raw.mode === "classic" ? "classic" : "adaptive",
 		sizes: Object.fromEntries(sheetGroups.map((key) => {
 			const n = raw.sizes?.[key];
 			return [key, typeof n === "number" && Number.isFinite(n) ? Math.max(70, Math.min(160, Math.round(n / 10) * 10)) : 100];
@@ -53999,6 +54001,7 @@ function PdfCharacterSheet(props) {
 	const attackDialog = useRef(null);
 	const [layout, setLayout] = useState(defaultSheetLayout);
 	const [layoutReady, setLayoutReady] = useState(false);
+	const classic = layout.mode === "classic";
 	const autoFitRequest = useRef(false);
 	const [fitRevision, setFitRevision] = useState(0);
 	const [fitStatus, setFitStatus] = useState("A4 · автоматическая компоновка");
@@ -54100,9 +54103,27 @@ function PdfCharacterSheet(props) {
 			const width = page.clientWidth - parseFloat(pageStyle.paddingLeft) - parseFloat(pageStyle.paddingRight);
 			content.style.width = `${width}px`;
 			content.style.transform = "none";
+			const available = page.clientHeight - parseFloat(pageStyle.paddingTop) - Math.max(parseFloat(pageStyle.paddingBottom), 1152 / 25.4);
+			if (classic) {
+				delete grid.dataset.fitted;
+				grid.style.removeProperty("height");
+				cards.forEach((card) => {
+					for (const property of [
+						"width",
+						"left",
+						"top",
+						"--inventory-columns",
+						"--coin-columns"
+					]) card.style.removeProperty(property);
+				});
+				const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
+				content.style.transform = `translateX(${width * (1 - scale) / 2}px) scale(${scale})`;
+				content.dataset.fitScale = String(scale);
+				setFitStatus("A4 · старое расположение");
+				return;
+			}
 			grid.dataset.fitted = "true";
 			const unit = (width + 8) / 24;
-			const available = page.clientHeight - parseFloat(pageStyle.paddingTop) - Math.max(parseFloat(pageStyle.paddingBottom), 1152 / 25.4);
 			const gridTop = grid.offsetTop;
 			const budget = available - gridTop;
 			const cache = /* @__PURE__ */ new Map();
@@ -54182,22 +54203,99 @@ function PdfCharacterSheet(props) {
 		fitRevision
 	]);
 	const sheetEdition = props.sheetEdition || "2014";
+	const racialPanel = /* @__PURE__ */ jsxs("section", {
+		className: "pdf-panel pdf-primary-features",
+		style: panelStyle("features"),
+		"data-sheet-group": "features",
+		"data-sheet-panel": "features",
+		children: [/* @__PURE__ */ jsx(SheetPanelTitle, {
+			title: "Расовые способности",
+			group: "способности",
+			size: layout.sizes.features,
+			onSize: (delta) => resize("features", delta)
+		}), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
+	});
+	const savesPanel = /* @__PURE__ */ jsxs("section", {
+		className: "pdf-panel pdf-saving-throws",
+		style: panelStyle("skills"),
+		"data-sheet-group": "skills",
+		"data-sheet-panel": "saves",
+		children: [
+			"          ",
+			/* @__PURE__ */ jsx("h2", { children: "Спасброски" }),
+			/* @__PURE__ */ jsx("div", {
+				className: "pdf-save-row",
+				children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("span", { children: [
+					/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
+					/* @__PURE__ */ jsx("b", { children: classic ? abilityLabels[key].slice(0, 3) : abilityLabels[key] }),
+					/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0)) })
+				] }, key))
+			})
+		]
+	});
+	const proficiencyPanel = /* @__PURE__ */ jsxs("section", {
+		className: "pdf-panel pdf-proficiency-panel",
+		style: panelStyle("skills"),
+		"data-sheet-group": "skills",
+		"data-sheet-panel": "proficiencies",
+		children: ["          ", /* @__PURE__ */ jsxs("div", {
+			className: "pdf-proficiencies",
+			children: [
+				/* @__PURE__ */ jsx("h2", { children: "Владения и защита" }),
+				proficiencyRows.map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
+					/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
+					" ",
+					values.join(", ") || "нет"
+				] }, label)),
+				props.defenses && [
+					["Сопротивления", props.defenses.resistances],
+					["Иммунитеты к урону", props.defenses.immunities],
+					["Уязвимости", props.defenses.vulnerabilities]
+				].filter(([, values]) => values.length).map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
+					/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
+					" ",
+					values.join(", ")
+				] }, label))
+			]
+		})]
+	});
 	return /* @__PURE__ */ jsxs("div", {
 		className: "pdf-sheet-workspace",
 		children: [/* @__PURE__ */ jsxs("div", {
 			className: "pdf-sheet-toolbar",
-			children: [/* @__PURE__ */ jsx("button", {
-				type: "button",
-				disabled: !layoutReady,
-				onClick: () => {
-					autoFitRequest.current = true;
-					setFitRevision((value) => value + 1);
-				},
-				children: "Оптимальные настройки"
-			}), /* @__PURE__ */ jsx("span", {
-				role: "status",
-				children: fitStatus
-			})]
+			children: [
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !layoutReady,
+					"aria-pressed": !classic,
+					onClick: () => {
+						autoFitRequest.current = true;
+						setLayout((current) => ({
+							...current,
+							mode: "adaptive"
+						}));
+						setFitRevision((value) => value + 1);
+					},
+					children: "Оптимальные настройки"
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !layoutReady,
+					"aria-pressed": classic,
+					onClick: () => {
+						autoFitRequest.current = false;
+						setLayout((current) => ({
+							...current,
+							mode: "classic"
+						}));
+					},
+					children: "Старое расположение"
+				}),
+				/* @__PURE__ */ jsx("span", {
+					role: "status",
+					children: fitStatus
+				})
+			]
 		}), /* @__PURE__ */ jsxs("div", {
 			className: `pdf-document pdf-document--a4 pdf-document--${sheetEdition}`,
 			"data-sheet-edition": sheetEdition,
@@ -54237,7 +54335,7 @@ function PdfCharacterSheet(props) {
 								] }, key))
 							}),
 							/* @__PURE__ */ jsxs("div", {
-								className: "pdf-primary-grid",
+								className: `pdf-primary-grid${classic ? " pdf-primary-grid--classic" : ""}`,
 								children: [
 									/* @__PURE__ */ jsxs("section", {
 										className: "pdf-panel pdf-skills",
@@ -54246,7 +54344,7 @@ function PdfCharacterSheet(props) {
 										"data-sheet-panel": "skills",
 										children: [
 											/* @__PURE__ */ jsx(SheetPanelTitle, {
-												title: "Навыки",
+												title: classic ? "Навыки и спасброски" : "Навыки",
 												group: "навыки и владения",
 												size: layout.sizes.skills,
 												onSize: (delta) => resize("skills", delta)
@@ -54270,7 +54368,8 @@ function PdfCharacterSheet(props) {
 														")"
 													] })
 												] }, skill.key);
-											})
+											}),
+											classic && /* @__PURE__ */ jsxs(Fragment$1, { children: [savesPanel, proficiencyPanel] })
 										]
 									}),
 									/* @__PURE__ */ jsxs("section", {
@@ -54389,7 +54488,8 @@ function PdfCharacterSheet(props) {
 													/* @__PURE__ */ jsxs("span", { children: ["Сл ", /* @__PURE__ */ jsx("b", { children: props.spellSaveDc })] }),
 													/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed(props.spellAttackBonus || 0) })] })
 												]
-											}))
+											})),
+											classic && racialPanel
 										]
 									}),
 									/* @__PURE__ */ jsx(InventoryPanel, {
@@ -54401,62 +54501,9 @@ function PdfCharacterSheet(props) {
 										onSize: (delta) => resize("inventory", delta),
 										style: panelStyle("inventory")
 									}),
-									/* @__PURE__ */ jsxs("section", {
-										className: "pdf-panel pdf-primary-features",
-										style: panelStyle("features"),
-										"data-sheet-group": "features",
-										"data-sheet-panel": "features",
-										children: [/* @__PURE__ */ jsx(SheetPanelTitle, {
-											title: "Расовые способности",
-											group: "способности",
-											size: layout.sizes.features,
-											onSize: (delta) => resize("features", delta)
-										}), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
-									}),
-									/* @__PURE__ */ jsxs("section", {
-										className: "pdf-panel pdf-saving-throws",
-										style: panelStyle("skills"),
-										"data-sheet-group": "skills",
-										"data-sheet-panel": "saves",
-										children: [
-											"          ",
-											/* @__PURE__ */ jsx("h2", { children: "Спасброски" }),
-											/* @__PURE__ */ jsx("div", {
-												className: "pdf-save-row",
-												children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("span", { children: [
-													/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
-													/* @__PURE__ */ jsx("b", { children: abilityLabels[key] }),
-													/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0)) })
-												] }, key))
-											})
-										]
-									}),
-									/* @__PURE__ */ jsxs("section", {
-										className: "pdf-panel pdf-proficiency-panel",
-										style: panelStyle("skills"),
-										"data-sheet-group": "skills",
-										"data-sheet-panel": "proficiencies",
-										children: ["          ", /* @__PURE__ */ jsxs("div", {
-											className: "pdf-proficiencies",
-											children: [
-												/* @__PURE__ */ jsx("h2", { children: "Владения и защита" }),
-												proficiencyRows.map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
-													/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
-													" ",
-													values.join(", ") || "нет"
-												] }, label)),
-												props.defenses && [
-													["Сопротивления", props.defenses.resistances],
-													["Иммунитеты к урону", props.defenses.immunities],
-													["Уязвимости", props.defenses.vulnerabilities]
-												].filter(([, values]) => values.length).map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
-													/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
-													" ",
-													values.join(", ")
-												] }, label))
-											]
-										})]
-									})
+									!classic && racialPanel,
+									!classic && savesPanel,
+									!classic && proficiencyPanel
 								]
 							})
 						]
