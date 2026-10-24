@@ -39,6 +39,155 @@ function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
 	});
 }
 //#endregion
+//#region app/PlayInterfaceSettings.tsx
+var playTabs = [
+	["actions", "Действия"],
+	["spells", "Магия"],
+	["inventory", "Рюкзак"],
+	["hero", "Герой"],
+	["journal", "Журнал"]
+];
+function orderedPlayTabs(c) {
+	const order = c.adventure?.mobileLayout?.tabOrder || [];
+	return [...playTabs].sort((a, b) => (order.includes(a[0]) ? order.indexOf(a[0]) : order.length + playTabs.findIndex((t) => t[0] === a[0])) - (order.includes(b[0]) ? order.indexOf(b[0]) : order.length + playTabs.findIndex((t) => t[0] === b[0])));
+}
+function PlayInterfaceSettings({ character: c, onChange }) {
+	const a = c.adventure, layout = a.mobileLayout || {};
+	const update = (patch) => onChange({
+		...c,
+		adventure: {
+			...a,
+			mobileLayout: {
+				...layout,
+				...patch
+			}
+		}
+	});
+	const rows = orderedPlayTabs(c);
+	function move(id, step) {
+		const ids = rows.map((t) => t[0]);
+		const index = ids.indexOf(id);
+		[ids[index], ids[index + step]] = [ids[index + step], ids[index]];
+		update({ tabOrder: ids });
+	}
+	return /* @__PURE__ */ jsxs("details", {
+		className: "play-card play-interface-settings",
+		children: [
+			/* @__PURE__ */ jsx("summary", { children: "Настроить интерфейс и расположение панелей" }),
+			/* @__PURE__ */ jsx("p", { children: "Настройки сохраняются для этого приключения. На телефоне можно менять порядок разделов и скрывать лишние кнопки." }),
+			/* @__PURE__ */ jsxs("div", {
+				className: "play-grid",
+				children: [
+					/* @__PURE__ */ jsxs("label", { children: ["Плотность", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Плотность",
+						value: a.interfaceDensity || "compact",
+						onChange: (e) => onChange({
+							...c,
+							adventure: {
+								...a,
+								interfaceDensity: e.target.value
+							}
+						}),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "compact",
+							children: "Компактная"
+						}), /* @__PURE__ */ jsx("option", {
+							value: "comfortable",
+							children: "Свободная"
+						})]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Навигация на телефоне", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Навигация на телефоне",
+						value: layout.navPosition || "bottom",
+						onChange: (e) => update({ navPosition: e.target.value }),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "bottom",
+							children: "Внизу экрана"
+						}), /* @__PURE__ */ jsx("option", {
+							value: "top",
+							children: "Над разделами"
+						})]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Панель здоровья и КД", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Панель здоровья и КД",
+						value: layout.hudPosition || "top",
+						onChange: (e) => update({ hudPosition: e.target.value }),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "top",
+							children: "Над содержимым"
+						}), /* @__PURE__ */ jsx("option", {
+							value: "bottom",
+							children: "Под содержимым"
+						})]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Кнопка кубов", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Кнопка кубов",
+						value: layout.hideDice ? "hidden" : layout.diceSide || "right",
+						onChange: (e) => update({
+							hideDice: e.target.value === "hidden",
+							diceSide: e.target.value === "left" ? "left" : "right"
+						}),
+						children: [
+							/* @__PURE__ */ jsx("option", {
+								value: "right",
+								children: "Справа"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "left",
+								children: "Слева"
+							}),
+							/* @__PURE__ */ jsx("option", {
+								value: "hidden",
+								children: "Скрыта"
+							})
+						]
+					})] })
+				]
+			}),
+			/* @__PURE__ */ jsx("div", {
+				className: "play-tab-settings",
+				children: rows.map(([id, label], index) => /* @__PURE__ */ jsxs("div", {
+					className: "play-row",
+					children: [
+						/* @__PURE__ */ jsxs("label", {
+							className: "play-check",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: !layout.hiddenTabs?.includes(id),
+								disabled: id === "actions",
+								onChange: (e) => update({ hiddenTabs: e.target.checked ? (layout.hiddenTabs || []).filter((t) => t !== id) : [...layout.hiddenTabs || [], id] })
+							}), label]
+						}),
+						/* @__PURE__ */ jsx("button", {
+							disabled: index === 0,
+							"aria-label": `Переместить выше: ${label}`,
+							onClick: () => move(id, -1),
+							children: "↑"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							disabled: index === rows.length - 1,
+							"aria-label": `Переместить ниже: ${label}`,
+							onClick: () => move(id, 1),
+							children: "↓"
+						})
+					]
+				}, id))
+			}),
+			/* @__PURE__ */ jsx("button", {
+				onClick: () => onChange({
+					...c,
+					adventure: {
+						...a,
+						mobileLayout: void 0,
+						interfaceDensity: "compact"
+					}
+				}),
+				children: "Сбросить расположение"
+			})
+		]
+	});
+}
+//#endregion
 //#region app/campaignRestrictions.ts
 var featureAliases = {
 	"выбранное оружие": "выделенное оружие",
@@ -1874,31 +2023,24 @@ var raceText = {
 	dwarf: [
 		"Тёмное зрение — видит в темноте в пределах 60 футов.",
 		"Дварфская стойкость — преимущество против яда и сопротивление урону ядом.",
-		"Каменное чутьё — экспертное знание происхождения каменной кладки.",
-		"Подраса — холмовой или горный дварф добавляет собственные умения."
+		"Каменное чутьё — экспертное знание происхождения каменной кладки."
 	],
 	elf: [
 		"Тёмное зрение — видит в темноте в пределах 60 футов.",
 		"Наследие фей — устойчив к очарованию и не усыпляется магией.",
-		"Транс — вместо сна медитирует четыре часа.",
-		"Подраса — высший, лесной эльф или дроу добавляет собственные умения."
+		"Транс — вместо сна медитирует четыре часа."
 	],
 	halfling: [
 		"Везучий — единицу на d20 можно перебросить.",
 		"Храбрый — преимущество против испуга.",
-		"Проворство полурослика — может проходить сквозь пространство более крупных существ.",
-		"Подраса — легконогий или коренастый полурослик добавляет собственные умения."
+		"Проворство полурослика — может проходить сквозь пространство более крупных существ."
 	],
 	dragonborn: [
 		"Драконье наследие — вид предка определяет тип урона.",
 		"Оружие дыхания — выдыхает поражающую область энергию.",
 		"Сопротивление — сопротивляется типу урона своего наследия."
 	],
-	gnome: [
-		"Тёмное зрение — видит в темноте в пределах 60 футов.",
-		"Гномья хитрость — преимущество на ментальные спасброски против магии.",
-		"Подраса — лесной или скальный гном добавляет собственные умения."
-	],
+	gnome: ["Тёмное зрение — видит в темноте в пределах 60 футов.", "Гномья хитрость — преимущество на ментальные спасброски против магии."],
 	halfelf: [
 		"Тёмное зрение — видит в темноте в пределах 60 футов.",
 		"Наследие фей — устойчив к очарованию и магическому сну.",
@@ -24867,6 +25009,91 @@ function spentResourcesAfterLongRest(character) {
 	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
 }
 //#endregion
+//#region app/equipmentPacks.ts
+/** Individual stacks in the seven standard starting equipment packs. */
+var equipmentPacks = {
+	"Набор путешественника": [
+		["Рюкзак", 1],
+		["Спальник", 1],
+		["Столовый набор", 1],
+		["Трутница", 1],
+		["Факел", 10],
+		["Рацион", 10],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	],
+	"Набор исследователя подземелий": [
+		["Рюкзак", 1],
+		["Ломик", 1],
+		["Молоток", 1],
+		["Шлямбур", 10],
+		["Факел", 10],
+		["Трутница", 1],
+		["Рацион", 10],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	],
+	"Набор священника": [
+		["Рюкзак", 1],
+		["Одеяло", 1],
+		["Свеча", 10],
+		["Трутница", 1],
+		["Коробка для пожертвований", 1],
+		["Блок благовоний", 2],
+		["Кадило", 1],
+		["Облачение", 1],
+		["Рацион", 2],
+		["Бурдюк", 1]
+	],
+	"Набор учёного": [
+		["Рюкзак", 1],
+		["Научная книга", 1],
+		["Чернила", 1],
+		["Перо", 1],
+		["Лист пергамента", 10],
+		["Мешочек песка", 1],
+		["Небольшой нож", 1]
+	],
+	"Набор артиста": [
+		["Рюкзак", 1],
+		["Спальник", 1],
+		["Костюм", 2],
+		["Свеча", 5],
+		["Рацион", 5],
+		["Бурдюк", 1],
+		["Набор для грима", 1]
+	],
+	"Набор дипломата": [
+		["Сундук", 1],
+		["Футляр для карт и свитков", 2],
+		["Комплект отличной одежды", 1],
+		["Чернила", 1],
+		["Перо", 1],
+		["Лампа", 1],
+		["Фляга масла", 2],
+		["Лист бумаги", 5],
+		["Духи", 1],
+		["Сургуч", 1],
+		["Мыло", 1]
+	],
+	"Набор взломщика": [
+		["Рюкзак", 1],
+		["Шарики", 1e3],
+		["Нить (10 футов)", 1],
+		["Колокольчик", 1],
+		["Свеча", 5],
+		["Ломик", 1],
+		["Молоток", 1],
+		["Шлямбур", 10],
+		["Закрытый фонарь", 1],
+		["Фляга масла", 2],
+		["Рацион", 5],
+		["Трутница", 1],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	]
+};
+//#endregion
 //#region app/spellPreparation.ts
 /** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
 function classPreparedSpellIds(character, classId) {
@@ -26621,6 +26848,11 @@ function armorClassBreakdown(character) {
 		bonuses.push("встроенная защита кованого +1");
 	}
 	const conditions = [];
+	if (getClassLevel(character, "monk") && (worn || shield)) conditions.push(`Защита без доспехов монаха недоступна: ${[worn ? "надет доспех" : "", shield ? "используется щит" : ""].filter(Boolean).join(" и ")}.`);
+	if (getClassLevel(character, "barbarian") && worn) conditions.push("Защита без доспехов варвара недоступна: надет доспех.");
+	if (getClassLevel(character, "monk") && unarmoredSource !== "monk") conditions.push("Защита без доспехов монаха недоступна: ранее получена защита без доспехов другого класса.");
+	if (getClassLevel(character, "barbarian") && unarmoredSource !== "barbarian") conditions.push("Защита без доспехов варвара недоступна: ранее получена защита без доспехов другого класса.");
+	if (styles.has("defense") && !wearingArmor) conditions.push("Боевой стиль «Оборона» недоступен: требуется надетый доспех.");
 	if (hasFeat(character, "dual-wielder")) conditions.push("Использование двух оружий: +1 КД, пока в каждой руке по отдельному рукопашному оружию.");
 	if (hasFeat(character, "defensive-duelist")) conditions.push(`Оборонительный дуэлянт: реакцией +${2 + Math.floor((characterLevel(character) - 1) / 4)} КД против одной рукопашной атаки при фехтовальном оружии.`);
 	if (!wearingArmor && character.spells.includes("mage-armor")) conditions.push(`Доспехи мага: если наложены, база КД 13 + Ловкость (${13 + dex}), вместо текущей базы без доспеха.`);
@@ -28497,14 +28729,14 @@ function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
 			entities: [...frozen.values()]
 		};
 	}
-	const inventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
+	const expandedInventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
 		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
 		const item = newPlayItem(match?.[1] || line);
 		item.category = itemCategory(item);
 		item.quantity = match ? integer(match[2], 1) : 1;
 		return item;
-	});
-	prepareStartingEquipment(inventory);
+	}).flatMap(expandEquipmentPack);
+	prepareStartingEquipment(expandedInventory);
 	c.adventure = {
 		version: 1,
 		name: name.trim() || "Новое приключение",
@@ -28512,8 +28744,8 @@ function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
 		sourceUpdatedAt,
 		startedAt: (/* @__PURE__ */ new Date()).toISOString(),
 		status: "active",
-		inventory,
-		inventoryCatalogVersion: 2,
+		inventory: expandedInventory,
+		inventoryCatalogVersion: 3,
 		effects: [],
 		concentrationChecks: [],
 		conditions: [],
@@ -28529,10 +28761,10 @@ function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
 		attunementLimit: 3,
 		elapsedMinutes: 0
 	};
-	c.currentHitPoints ??= estimatedHitPoints({
-		...c,
-		abilities: finalAbilityScores(c)
-	});
+	c.currentHitPoints = playMaximum(c);
+	c.temporaryHitPoints = 0;
+	c.deathSaveSuccesses = 0;
+	c.deathSaveFailures = 0;
 	return logPlay(c, `Начато приключение «${c.adventure.name}». Создана независимая копия героя.`);
 }
 function logPlay(c, text, result) {
@@ -28618,9 +28850,49 @@ function weaponItemBonus(c, attackName, key) {
 	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
 	return values.length ? Math.max(...values) : 0;
 }
+function expandEquipmentPack(item) {
+	if (item.packId || item.quantity <= 0) return [item];
+	const name = (item.catalogName || item.name).split(" (")[0].trim().replace(/ё/g, "е").toLocaleLowerCase("ru");
+	const pack = Object.entries(equipmentPacks).find(([key]) => key.replace(/ё/g, "е").toLocaleLowerCase("ru") === name);
+	if (!pack) return [item];
+	const aliases = {
+		"Рацион": "Рационы (1 день)",
+		"Фляга масла": "Масло (фляга)",
+		"Пеньковая верёвка (50 футов)": "Верёвка пеньковая (50 футов)",
+		"Научная книга": "Книга",
+		"Облачение": "Ряса",
+		"Футляр для карт и свитков": "Контейнер для карт и свитков",
+		"Комплект отличной одежды": "Одежда, отличная",
+		"Костюм": "Одежда, костюм",
+		"Чернила": "Чернила (бутылочка 30 граммов)",
+		"Перо": "Писчее перо",
+		"Лист бумаги": "Бумага (один лист)",
+		"Лист пергамента": "Пергамент (один лист)",
+		"Духи": "Духи (флакон)",
+		"Сургуч": "Воск",
+		"Закрытый фонарь": "Фонарь, закрытый"
+	};
+	const weights = {
+		"Шарики": .002,
+		"Кадило": 1,
+		"Коробка для пожертвований": 1,
+		"Мешочек песка": 1,
+		"Небольшой нож": 1
+	};
+	return pack[1].map(([name, quantity]) => ({
+		...newPlayItem(aliases[name] || name),
+		name,
+		quantity: quantity * item.quantity,
+		...weights[name] !== void 0 ? { weight: weights[name] } : {},
+		packId: item.id,
+		packName: pack[0],
+		container: pack[0],
+		notes: item.notes
+	}));
+}
 /** One-time migration for legacy adventure inventories; keep nonzero custom weights. */
 function upgradeLegacyInventory(c) {
-	if (!c.adventure || c.adventure.inventoryCatalogVersion === 2) return c;
+	if (!c.adventure || c.adventure.inventoryCatalogVersion === 3) return c;
 	const upgrade = (item) => {
 		const ref = catalogItemFor(item.catalogName || item.name);
 		if (!ref) return item;
@@ -28632,8 +28904,8 @@ function upgradeLegacyInventory(c) {
 			hands: item.hands ?? ref.hands
 		};
 	};
-	const inventory = c.adventure.inventory.map(upgrade);
-	const wasLegacy = c.adventure.inventory.some((i) => i.equipped && i.weight === 0);
+	const inventory = c.adventure.inventory.map(upgrade).flatMap(expandEquipmentPack);
+	const wasLegacy = (c.adventure.inventoryCatalogVersion || 0) < 2 && c.adventure.inventory.some((i) => i.equipped && i.weight === 0);
 	const corrected = inventory.map((i) => wasLegacy && (isHandTool(i.name) || itemCategory(i) === "gear") ? {
 		...i,
 		equipped: false
@@ -28644,7 +28916,7 @@ function upgradeLegacyInventory(c) {
 			...c.adventure,
 			inventory: corrected,
 			inventoryTrash: (c.adventure.inventoryTrash || []).map(upgrade),
-			inventoryCatalogVersion: 2
+			inventoryCatalogVersion: 3
 		}
 	};
 }
@@ -28875,9 +29147,9 @@ function durationMinutes(text) {
 	if (!match) return void 0;
 	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
 }
-function restPlay(c, kind, selectedDice = {}, die = randomDie) {
+function restPlay(c, kind, selectedDice = {}, die = randomDie, consciousConfirmed = false) {
 	if (!c.adventure) return c;
-	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long") throw new Error("Для начала длинного отдыха нужен хотя бы 1 HP.");
+	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long" && !consciousConfirmed) throw new Error("Подтвердите: персонаж в сознании?");
 	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
 	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
 	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
@@ -29505,7 +29777,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 		});
 	}
 	function addCatalogItem(entry) {
-		mutate(() => logPlay(updateInventory(c, [...items, newPlayItem(entry.name)]), `Добавлен из каталога: ${entry.name}`));
+		mutate(() => logPlay(updateInventory(c, [...items, ...expandEquipmentPack(newPlayItem(entry.name))]), `Добавлен из каталога: ${entry.name}`));
 	}
 	const matchingCatalog = itemCatalog.filter((entry) => (catalogCategory === "all" || entry.category === catalogCategory) && entry.name.toLocaleLowerCase("ru").includes(catalogSearch.trim().toLocaleLowerCase("ru")));
 	function money(sign) {
@@ -29521,9 +29793,180 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 			}, `${sign > 0 ? "Получено" : "Потрачено"} ${coinAmount} ${coin.toUpperCase()}`);
 		});
 	}
+	const renderItem = (i) => {
+		const key = itemCategory(i);
+		return /* @__PURE__ */ jsxs("article", {
+			className: `play-card inventory-item${i.quantity === 0 ? " inventory-empty" : ""}`,
+			children: [
+				/* @__PURE__ */ jsxs("header", {
+					className: "play-row",
+					children: [
+						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }),
+						key === "consumable" && /* @__PURE__ */ jsx("button", {
+							"aria-label": `Закрепить предмет: ${i.name}`,
+							"aria-pressed": !!c.adventure.favoriteActions?.includes(`item:${i.id}`),
+							onClick: () => onChange({
+								...c,
+								adventure: {
+									...c.adventure,
+									favoriteActions: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? c.adventure.favoriteActions.filter((key) => key !== `item:${i.id}`) : [...c.adventure.favoriteActions || [], `item:${i.id}`]
+								}
+							}),
+							children: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? "★" : "☆"
+						}),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Изменить ${i.name}`,
+							onClick: () => {
+								setError("");
+								setDraft({
+									...i,
+									category: itemCategory(i)
+								});
+							},
+							children: "Изменить"
+						})
+					]
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "inventory-quantity",
+					children: [
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Убавить количество: ${i.name}`,
+							disabled: !i.quantity,
+							onClick: () => modify(i, { quantity: i.quantity - 1 }, `Убрана единица: ${i.name}`),
+							children: "−"
+						}),
+						/* @__PURE__ */ jsxs("strong", { children: [i.quantity, " шт."] }),
+						/* @__PURE__ */ jsx(NumberSlider, {
+							label: `Количество: ${i.name}`,
+							min: 0,
+							max: Math.max(20, i.quantity),
+							value: i.quantity,
+							onChange: (value) => modify(i, { quantity: integer(value) }, `Количество: ${i.name} — ${integer(value)}`)
+						}),
+						/* @__PURE__ */ jsx("button", {
+							"aria-label": `Добавить количество: ${i.name}`,
+							onClick: () => modify(i, { quantity: i.quantity + 1 }, `Добавлена единица: ${i.name}`),
+							children: "+"
+						}),
+						/* @__PURE__ */ jsxs("span", { children: [i.weight * i.quantity, " фунт."] })
+					]
+				}),
+				/* @__PURE__ */ jsxs("div", {
+					className: "play-row play-wrap",
+					children: [
+						key !== "consumable" && key !== "ammunition" && /* @__PURE__ */ jsx("button", {
+							disabled: !i.quantity,
+							className: i.equipped ? "active" : "",
+							onClick: () => modify(i, { equipped: !i.equipped }, `${i.equipped ? "Убрано" : "Надето / взято в руки"}: ${i.name}`),
+							children: i.equipped ? "Надето / в руках" : "Надеть / взять"
+						}),
+						(key === "consumable" || key === "ammunition") && /* @__PURE__ */ jsx("button", {
+							disabled: !i.quantity,
+							onClick: () => mutate(() => consumePlayItem(c, i.id)),
+							children: "Использовать 1"
+						}),
+						key === "consumable" && healingFormulaForItem(i) && /* @__PURE__ */ jsxs("button", {
+							disabled: !i.quantity,
+							onClick: () => mutate(() => {
+								const action = useQuickItem(c, i.id);
+								if (action.roll) onRoll(`Лечение: ${i.name}`, action.roll);
+								return action.character;
+							}),
+							children: ["Выпить: ", healingFormulaForItem(i)]
+						}),
+						i.requiresAttunement && /* @__PURE__ */ jsx("button", {
+							onClick: () => mutate(() => queueAttunement(c, i.id)),
+							children: i.attunementPending ? "Отменить ожидание" : i.attuned ? "Прекратить настройку" : "Настроиться"
+						}),
+						i.maxCharges > 0 && /* @__PURE__ */ jsxs("button", {
+							disabled: !i.charges || !activeItem(i),
+							onClick: () => modify(i, { charges: i.charges - 1 }, `Использован заряд: ${i.name}`),
+							children: [
+								"Заряд ",
+								i.charges,
+								"/",
+								i.maxCharges,
+								" · использовать"
+							]
+						})
+					]
+				}),
+				handCost(i) > 0 && /* @__PURE__ */ jsxs("p", {
+					className: "inventory-badge",
+					children: [
+						"Занимает ",
+						handCost(i),
+						" ",
+						handCost(i) === 1 ? "руку" : "руки"
+					]
+				}),
+				i.attuned && /* @__PURE__ */ jsx("p", {
+					className: "inventory-badge",
+					children: "Настроен"
+				}),
+				i.attunementPending && /* @__PURE__ */ jsxs("p", {
+					className: "inventory-badge",
+					children: [i.attunementPending === "start" ? "Настройка" : "Прекращение настройки", " ожидает отдыха"]
+				}),
+				(i.weaponAttackBonus || i.weaponDamageBonus || i.spellAttackBonus || i.spellSaveDcBonus) && /* @__PURE__ */ jsxs("p", {
+					className: "inventory-bonuses",
+					children: [
+						i.weaponAttackBonus ? `Оружие: попадание +${i.weaponAttackBonus}. ` : "",
+						i.weaponDamageBonus ? `Урон +${i.weaponDamageBonus}. ` : "",
+						i.spellAttackBonus ? `Заклинания: попадание +${i.spellAttackBonus}. ` : "",
+						i.spellSaveDcBonus ? `Сл спаса +${i.spellSaveDcBonus}.` : ""
+					]
+				}),
+				/* @__PURE__ */ jsxs("details", { children: [
+					/* @__PURE__ */ jsx("summary", { children: "Описание и управление" }),
+					/* @__PURE__ */ jsx("p", { children: i.notes || "Описание не добавлено." }),
+					i.requirement && /* @__PURE__ */ jsxs("p", { children: ["Требование настройки: ", i.requirement] }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "play-row play-wrap",
+						children: [
+							/* @__PURE__ */ jsx("button", {
+								disabled: i.quantity < 2 || i.attuned || !!i.attunementPending,
+								onClick: () => mutate(() => {
+									const n = Math.floor(i.quantity / 2), split = {
+										...i,
+										id: playId(),
+										quantity: n,
+										attuned: false,
+										attunementPending: void 0
+									};
+									return logPlay(updateInventory(c, [...items.map((x) => x.id === i.id ? {
+										...x,
+										quantity: i.quantity - n
+									} : x), split]), `Разделена стопка: ${i.name}`);
+								}),
+								children: "Разделить стопку"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								disabled: !i.quantity,
+								onClick: () => modify(i, { quantity: i.quantity - 1 }, `Передана / оставлена единица: ${i.name}`),
+								children: "Передать / оставить 1"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => {
+									setDraft({
+										...i,
+										category: itemCategory(i)
+									});
+								},
+								children: "Переложить в контейнер"
+							})
+						]
+					})
+				] })
+			]
+		}, i.id);
+	};
+	const matchesItem = (i) => (filter === "all" || itemCategory(i) === filter) && (!worn || i.equipped) && i.name.toLowerCase().includes(search.toLowerCase());
+	const packIds = [...new Set(items.filter((i) => i.packId && matchesItem(i)).map((i) => i.packId))];
 	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
 		/* @__PURE__ */ jsxs("section", {
-			className: "play-card",
+			className: "play-card inventory-heading",
 			children: [/* @__PURE__ */ jsxs("div", {
 				className: "play-row play-wrap",
 				children: [
@@ -29647,8 +30090,24 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 			role: "alert",
 			children: error
 		}),
+		packIds.map((id) => {
+			const group = items.filter((i) => i.packId === id && matchesItem(i));
+			return /* @__PURE__ */ jsxs("details", {
+				className: "play-card inventory-pack",
+				open: search.trim() ? true : void 0,
+				children: [/* @__PURE__ */ jsxs("summary", { children: [
+					group[0].packName,
+					" · ",
+					group.length,
+					" позиций"
+				] }), /* @__PURE__ */ jsx("div", {
+					className: "play-grid",
+					children: group.map(renderItem)
+				})]
+			}, id);
+		}),
 		categories.filter((key) => filter === "all" || filter === key).map((key) => {
-			const group = items.filter((i) => itemCategory(i) === key && (!worn || i.equipped) && i.name.toLowerCase().includes(search.toLowerCase()));
+			const group = items.filter((i) => !i.packId && itemCategory(i) === key && (!worn || i.equipped) && i.name.toLowerCase().includes(search.toLowerCase()));
 			if (!group.length) return null;
 			return /* @__PURE__ */ jsxs("section", {
 				className: "inventory-group",
@@ -29658,172 +30117,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 					/* @__PURE__ */ jsx("small", { children: group.length })
 				] }), /* @__PURE__ */ jsx("div", {
 					className: "play-grid",
-					children: group.map((i) => /* @__PURE__ */ jsxs("article", {
-						className: `play-card inventory-item${i.quantity === 0 ? " inventory-empty" : ""}`,
-						children: [
-							/* @__PURE__ */ jsxs("header", {
-								className: "play-row",
-								children: [
-									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }),
-									key === "consumable" && /* @__PURE__ */ jsx("button", {
-										"aria-label": `Закрепить предмет: ${i.name}`,
-										"aria-pressed": !!c.adventure.favoriteActions?.includes(`item:${i.id}`),
-										onClick: () => onChange({
-											...c,
-											adventure: {
-												...c.adventure,
-												favoriteActions: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? c.adventure.favoriteActions.filter((key) => key !== `item:${i.id}`) : [...c.adventure.favoriteActions || [], `item:${i.id}`]
-											}
-										}),
-										children: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? "★" : "☆"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										"aria-label": `Изменить ${i.name}`,
-										onClick: () => {
-											setError("");
-											setDraft({
-												...i,
-												category: itemCategory(i)
-											});
-										},
-										children: "Изменить"
-									})
-								]
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "inventory-quantity",
-								children: [
-									/* @__PURE__ */ jsx("button", {
-										"aria-label": `Убавить количество: ${i.name}`,
-										disabled: !i.quantity,
-										onClick: () => modify(i, { quantity: i.quantity - 1 }, `Убрана единица: ${i.name}`),
-										children: "−"
-									}),
-									/* @__PURE__ */ jsxs("strong", { children: [i.quantity, " шт."] }),
-									/* @__PURE__ */ jsx(NumberSlider, {
-										label: `Количество: ${i.name}`,
-										min: 0,
-										max: Math.max(20, i.quantity),
-										value: i.quantity,
-										onChange: (value) => modify(i, { quantity: integer(value) }, `Количество: ${i.name} — ${integer(value)}`)
-									}),
-									/* @__PURE__ */ jsx("button", {
-										"aria-label": `Добавить количество: ${i.name}`,
-										onClick: () => modify(i, { quantity: i.quantity + 1 }, `Добавлена единица: ${i.name}`),
-										children: "+"
-									}),
-									/* @__PURE__ */ jsxs("span", { children: [i.weight * i.quantity, " фунт."] })
-								]
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "play-row play-wrap",
-								children: [
-									key !== "consumable" && key !== "ammunition" && /* @__PURE__ */ jsx("button", {
-										disabled: !i.quantity,
-										className: i.equipped ? "active" : "",
-										onClick: () => modify(i, { equipped: !i.equipped }, `${i.equipped ? "Убрано" : "Надето / взято в руки"}: ${i.name}`),
-										children: i.equipped ? "Надето / в руках" : "Надеть / взять"
-									}),
-									(key === "consumable" || key === "ammunition") && /* @__PURE__ */ jsx("button", {
-										disabled: !i.quantity,
-										onClick: () => mutate(() => consumePlayItem(c, i.id)),
-										children: "Использовать 1"
-									}),
-									key === "consumable" && healingFormulaForItem(i) && /* @__PURE__ */ jsxs("button", {
-										disabled: !i.quantity,
-										onClick: () => mutate(() => {
-											const action = useQuickItem(c, i.id);
-											if (action.roll) onRoll(`Лечение: ${i.name}`, action.roll);
-											return action.character;
-										}),
-										children: ["Выпить: ", healingFormulaForItem(i)]
-									}),
-									i.requiresAttunement && /* @__PURE__ */ jsx("button", {
-										onClick: () => mutate(() => queueAttunement(c, i.id)),
-										children: i.attunementPending ? "Отменить ожидание" : i.attuned ? "Прекратить настройку" : "Настроиться"
-									}),
-									i.maxCharges > 0 && /* @__PURE__ */ jsxs("button", {
-										disabled: !i.charges || !activeItem(i),
-										onClick: () => modify(i, { charges: i.charges - 1 }, `Использован заряд: ${i.name}`),
-										children: [
-											"Заряд ",
-											i.charges,
-											"/",
-											i.maxCharges,
-											" · использовать"
-										]
-									})
-								]
-							}),
-							handCost(i) > 0 && /* @__PURE__ */ jsxs("p", {
-								className: "inventory-badge",
-								children: [
-									"Занимает ",
-									handCost(i),
-									" ",
-									handCost(i) === 1 ? "руку" : "руки"
-								]
-							}),
-							i.attuned && /* @__PURE__ */ jsx("p", {
-								className: "inventory-badge",
-								children: "Настроен"
-							}),
-							i.attunementPending && /* @__PURE__ */ jsxs("p", {
-								className: "inventory-badge",
-								children: [i.attunementPending === "start" ? "Настройка" : "Прекращение настройки", " ожидает отдыха"]
-							}),
-							(i.weaponAttackBonus || i.weaponDamageBonus || i.spellAttackBonus || i.spellSaveDcBonus) && /* @__PURE__ */ jsxs("p", {
-								className: "inventory-bonuses",
-								children: [
-									i.weaponAttackBonus ? `Оружие: попадание +${i.weaponAttackBonus}. ` : "",
-									i.weaponDamageBonus ? `Урон +${i.weaponDamageBonus}. ` : "",
-									i.spellAttackBonus ? `Заклинания: попадание +${i.spellAttackBonus}. ` : "",
-									i.spellSaveDcBonus ? `Сл спаса +${i.spellSaveDcBonus}.` : ""
-								]
-							}),
-							/* @__PURE__ */ jsxs("details", { children: [
-								/* @__PURE__ */ jsx("summary", { children: "Описание и управление" }),
-								/* @__PURE__ */ jsx("p", { children: i.notes || "Описание не добавлено." }),
-								i.requirement && /* @__PURE__ */ jsxs("p", { children: ["Требование настройки: ", i.requirement] }),
-								/* @__PURE__ */ jsxs("div", {
-									className: "play-row play-wrap",
-									children: [
-										/* @__PURE__ */ jsx("button", {
-											disabled: i.quantity < 2 || i.attuned || !!i.attunementPending,
-											onClick: () => mutate(() => {
-												const n = Math.floor(i.quantity / 2), split = {
-													...i,
-													id: playId(),
-													quantity: n,
-													attuned: false,
-													attunementPending: void 0
-												};
-												return logPlay(updateInventory(c, [...items.map((x) => x.id === i.id ? {
-													...x,
-													quantity: i.quantity - n
-												} : x), split]), `Разделена стопка: ${i.name}`);
-											}),
-											children: "Разделить стопку"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											disabled: !i.quantity,
-											onClick: () => modify(i, { quantity: i.quantity - 1 }, `Передана / оставлена единица: ${i.name}`),
-											children: "Передать / оставить 1"
-										}),
-										/* @__PURE__ */ jsx("button", {
-											onClick: () => {
-												setDraft({
-													...i,
-													category: itemCategory(i)
-												});
-											},
-											children: "Переложить в контейнер"
-										})
-									]
-								})
-							] })
-						]
-					}, i.id))
+					children: group.map(renderItem)
 				})]
 			}, key);
 		}),
@@ -31039,18 +31333,11 @@ function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal
 }
 //#endregion
 //#region app/GameMode.tsx
-var tabs = [
-	["actions", "Действия"],
-	["spells", "Магия"],
-	["inventory", "Рюкзак"],
-	["hero", "Герой"],
-	["journal", "Журнал"]
-];
 var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
 function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
 	const a = c.adventure;
 	useEffect(() => {
-		if (a.inventoryCatalogVersion !== 2) onChange(upgradeLegacyInventory(c));
+		if (a.inventoryCatalogVersion !== 3) onChange(upgradeLegacyInventory(c));
 	}, [
 		a.inventoryCatalogVersion,
 		c,
@@ -31098,6 +31385,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [defense, setDefense] = useState("normal");
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
+	const [consciousConfirmed, setConsciousConfirmed] = useState(false);
 	const [dice, setDice] = useState({});
 	const [ignoredHandWarnings, setIgnoredHandWarnings] = useState({});
 	const [castMethods, setCastMethods] = useState({});
@@ -31310,7 +31598,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			setError(e instanceof Error ? e.message : String(e));
 		}
 	}
-	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: tabs.map(([id, label]) => /* @__PURE__ */ jsx("button", {
+	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: orderedPlayTabs(c).filter(([id]) => id === "actions" || !a.mobileLayout?.hiddenTabs?.includes(id)).map(([id, label]) => /* @__PURE__ */ jsx("button", {
 		"aria-current": tab === id ? "page" : void 0,
 		className: tab === id ? "active" : "",
 		onClick: () => {
@@ -31443,6 +31731,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		className: `app-shell play-shell${a.interfaceDensity === "comfortable" ? "" : " play-compact"}${shellClassName}`,
 		style: shellStyle,
 		"data-site-theme": siteTheme,
+		"data-nav-position": a.mobileLayout?.navPosition || "bottom",
+		"data-hud-position": a.mobileLayout?.hudPosition || "top",
+		"data-dice-side": a.mobileLayout?.diceSide || "right",
+		"data-hide-dice": !!a.mobileLayout?.hideDice,
 		children: [
 			/* @__PURE__ */ jsxs("header", {
 				className: "play-header",
@@ -31478,6 +31770,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					})
 				]
 			}),
+			/* @__PURE__ */ jsx(PlayInterfaceSettings, {
+				character: c,
+				onChange
+			}),
 			/* @__PURE__ */ jsxs("section", {
 				className: "play-hud",
 				"aria-label": "Состояние героя",
@@ -31498,7 +31794,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 						className: "play-hud-stat",
 						"aria-expanded": acDetails,
 						onClick: () => setAcDetails(!acDetails),
-						children: [/* @__PURE__ */ jsx("strong", { children: ac }), /* @__PURE__ */ jsxs("small", { children: ["Источник КД: ", a.acOverride !== void 0 ? "вручную" : baseAc.base] })]
+						children: [/* @__PURE__ */ jsx("strong", { children: ac }), /* @__PURE__ */ jsxs("small", { children: ["Источник КД: ", a.acOverride !== void 0 ? "вручную" : [baseAc.base, ...baseAc.bonuses].join(" · ")] })]
 					})] }),
 					/* @__PURE__ */ jsxs("div", { children: [
 						/* @__PURE__ */ jsx("small", { children: "Скорость" }),
@@ -31599,6 +31895,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					})] }),
 					/* @__PURE__ */ jsx("p", { children: a.acOverride !== void 0 ? `Ручное значение: ${a.acOverride}` : baseAc.base }),
 					a.acOverride === void 0 && /* @__PURE__ */ jsxs("p", { children: [baseAc.bonuses.join(" · ") || "Без дополнительных бонусов", itemBonus(c, "acBonus") ? ` · Магические предметы ${sign(itemBonus(c, "acBonus"))}` : ""] }),
+					/* @__PURE__ */ jsx("ul", {
+						className: "ac-notes",
+						children: baseAc.conditions.map((note) => /* @__PURE__ */ jsx("li", { children: note }, note))
+					}),
 					/* @__PURE__ */ jsx("button", {
 						onClick: () => setAcDetails(false),
 						children: "Закрыть"
@@ -31643,6 +31943,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				"aria-label": "Игровые разделы",
 				children: nav
 			}),
+			a.mobileLayout?.navPosition === "top" && /* @__PURE__ */ jsx("nav", {
+				className: "play-mobile-nav",
+				"aria-label": "Игровые разделы на телефоне",
+				children: nav
+			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "play-toolbar",
 				children: [
@@ -31674,6 +31979,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					/* @__PURE__ */ jsx("button", {
 						onClick: () => {
 							setDice({});
+							setConsciousConfirmed(false);
 							setRest("long");
 						},
 						children: "Длинный отдых"
@@ -32875,7 +33181,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				"aria-label": "Открыть кубы",
 				children: "◆ Кубы"
 			}),
-			/* @__PURE__ */ jsx("nav", {
+			a.mobileLayout?.navPosition !== "top" && /* @__PURE__ */ jsx("nav", {
 				className: "play-mobile-nav",
 				"aria-label": "Игровые разделы на телефоне",
 				children: nav
@@ -32932,18 +33238,26 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 							})
 						] }, p.classId)),
 						/* @__PURE__ */ jsx("p", { children: "Короткий отдых отсчитывает час длительности концентрации; длинный завершает её. Остальные состояния требуют отдельного решения. Заряды «на рассвете» восстанавливаются отдельной кнопкой." }),
-						/* @__PURE__ */ jsx("button", {
+						/* @__PURE__ */ jsxs(Fragment$1, { children: [rest === "long" && hp <= 0 && /* @__PURE__ */ jsxs("label", {
+							className: "play-check",
+							children: [/* @__PURE__ */ jsx("input", {
+								type: "checkbox",
+								checked: consciousConfirmed,
+								onChange: (e) => setConsciousConfirmed(e.target.checked)
+							}), "Персонаж в сознании?"]
+						}), /* @__PURE__ */ jsx("button", {
 							className: "play-primary",
+							disabled: rest === "long" && hp <= 0 && !consciousConfirmed,
 							onClick: () => {
 								try {
-									change(restPlay(c, rest, dice));
+									change(restPlay(c, rest, dice, void 0, consciousConfirmed));
 									setRest(void 0);
 								} catch (e) {
 									setError(e.message);
 								}
 							},
 							children: "Завершить отдых"
-						})
+						})] })
 					]
 				})
 			})
@@ -32951,7 +33265,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	});
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32963,7 +33277,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -32982,7 +33296,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33002,7 +33316,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33020,7 +33334,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/settings.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/settings.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47315,7 +47629,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47345,7 +47659,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/axe.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47360,7 +47674,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bird.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47394,7 +47708,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bone.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47406,7 +47720,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47421,7 +47735,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47459,7 +47773,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/brain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47505,7 +47819,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bug.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47559,7 +47873,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47585,7 +47899,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47604,7 +47918,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/clover.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47626,7 +47940,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cog.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47692,7 +48006,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/compass.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47709,7 +48023,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/crown.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47724,7 +48038,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/drama.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47766,7 +48080,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47781,7 +48095,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47811,7 +48125,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/eye.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47828,7 +48142,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/feather.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47850,7 +48164,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47862,7 +48176,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flame.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47874,7 +48188,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47896,7 +48210,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47922,7 +48236,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/gem.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47944,7 +48258,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47966,7 +48280,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hand.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47992,7 +48306,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48022,7 +48336,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48044,7 +48358,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48059,7 +48373,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48074,7 +48388,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48092,7 +48406,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/moon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48104,7 +48418,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48116,7 +48430,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48140,7 +48454,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/music.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48166,7 +48480,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48202,7 +48516,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48234,7 +48548,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48264,7 +48578,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48294,7 +48608,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48320,7 +48634,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48374,7 +48688,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48386,7 +48700,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48398,7 +48712,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48413,7 +48727,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48443,7 +48757,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48469,7 +48783,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sun.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48517,7 +48831,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sword.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48552,7 +48866,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/swords.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48612,7 +48926,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48652,7 +48966,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48667,7 +48981,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trees.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48693,7 +49007,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48710,7 +49024,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48732,7 +49046,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48774,7 +49088,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/waves.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48796,7 +49110,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wind.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -53364,6 +53678,10 @@ function PdfCharacterSheet(props) {
 		if (!content) return;
 		const page = content.parentElement;
 		const fit = () => {
+			if (window.matchMedia("screen and (max-width: 760px)").matches) {
+				content.style.zoom = "1";
+				return;
+			}
 			const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 1536 / 25.4;
 			const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
 			content.style.zoom = String(scale);
@@ -53815,7 +54133,7 @@ function sourceAvailableSpellCatalog(catalog, additionalUnlocked) {
 	return catalog.filter((spell) => additionalUnlocked || !isAdditionalSpell(spell));
 }
 //#endregion
-//#region node_modules/fflate/esm/index.mjs
+//#region ../../d37c18cc5beb/herolist/node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -54745,7 +55063,7 @@ function retainLevelState(before, after, catalog = spells) {
 	};
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trending-up.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -54760,7 +55078,7 @@ var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
 	key: "kwv8wd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -54833,7 +55151,7 @@ var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/file-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -70139,6 +70457,60 @@ function Builder({ adventureRoute = false } = {}) {
 														]
 													})
 												}),
+												/* @__PURE__ */ jsx("div", {
+													className: "asi-stack",
+													children: advancements.filter((choice) => choice.featId === "asi" && choice.key === activeAdvancement.key).map((choice) => /* @__PURE__ */ jsxs("div", {
+														className: "asi-picker",
+														"data-incomplete": choice.asiChoices.length < 2,
+														children: [
+															/* @__PURE__ */ jsxs("div", {
+																className: "ability-editor-head",
+																children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Повышение характеристик" }), /* @__PURE__ */ jsxs("h2", { children: [
+																	"Повышение характеристик ",
+																	choice.level,
+																	" уровень"
+																] })] }), /* @__PURE__ */ jsxs("span", { children: [choice.asiChoices.length, " / 2"] })]
+															}),
+															/* @__PURE__ */ jsx("p", { children: "Добавьте +2 к одной характеристике или +1 к двум. Выберите характеристики для этого повышения." }),
+															/* @__PURE__ */ jsx("div", {
+																className: "asi-grid",
+																children: Object.keys(abilityLabels).map((key) => {
+																	const count = choice.asiChoices.filter((item) => item === key).length;
+																	const previousBonus = advancements.filter((item) => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap((item) => item.asiChoices).filter((item) => item === key).length;
+																	const previousFeatBonus = featAbilityBonuses({
+																		...rulesCharacter,
+																		advancements: advancements.filter((item) => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level)
+																	})[key] || 0;
+																	const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
+																	return /* @__PURE__ */ jsxs("section", { children: [
+																		/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
+																		/* @__PURE__ */ jsxs("div", {
+																			className: "score-control",
+																			children: [
+																				/* @__PURE__ */ jsx("button", {
+																					onClick: () => changeAsiAbility(choice.key, key, -1),
+																					disabled: count === 0,
+																					children: "−"
+																				}),
+																				/* @__PURE__ */ jsxs("strong", { children: ["+", count] }),
+																				/* @__PURE__ */ jsx("button", {
+																					onClick: () => changeAsiAbility(choice.key, key, 1),
+																					disabled: choice.asiChoices.length >= 2 || count >= 2 || beforeAsi + count >= 20,
+																					children: "+"
+																				})
+																			]
+																		}),
+																		/* @__PURE__ */ jsxs("b", { children: [
+																			beforeAsi,
+																			" → ",
+																			beforeAsi + count
+																		] })
+																	] }, key);
+																})
+															})
+														]
+													}, choice.key))
+												}),
 												featsExpanded && featSourceGroups.map((group) => {
 													const visible = group.feats.filter((feat) => `${feat.name} ${feat.description} ${feat.requirement || ""}`.toLowerCase().includes(search.toLowerCase()));
 													if (!visible.length) return null;
@@ -70217,61 +70589,7 @@ function Builder({ adventureRoute = false } = {}) {
 														}, group.key);
 													})]
 												})
-											] }),
-											/* @__PURE__ */ jsx("div", {
-												className: "asi-stack",
-												children: advancements.filter((choice) => choice.featId === "asi").map((choice) => /* @__PURE__ */ jsxs("div", {
-													className: "asi-picker",
-													"data-incomplete": choice.asiChoices.length < 2,
-													children: [
-														/* @__PURE__ */ jsxs("div", {
-															className: "ability-editor-head",
-															children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Повышение характеристик" }), /* @__PURE__ */ jsxs("h2", { children: [
-																"Повышение характеристик ",
-																choice.level,
-																" уровень"
-															] })] }), /* @__PURE__ */ jsxs("span", { children: [choice.asiChoices.length, " / 2"] })]
-														}),
-														/* @__PURE__ */ jsx("p", { children: "Добавьте +2 к одной характеристике или +1 к двум. Этот блок остаётся видимым независимо от выбора на следующих уровнях." }),
-														/* @__PURE__ */ jsx("div", {
-															className: "asi-grid",
-															children: Object.keys(abilityLabels).map((key) => {
-																const count = choice.asiChoices.filter((item) => item === key).length;
-																const previousBonus = advancements.filter((item) => item.key !== choice.key && item.featId === "asi" && item.level <= choice.level).flatMap((item) => item.asiChoices).filter((item) => item === key).length;
-																const previousFeatBonus = featAbilityBonuses({
-																	...rulesCharacter,
-																	advancements: advancements.filter((item) => item.key !== choice.key && item.featId !== "asi" && item.level <= choice.level)
-																})[key] || 0;
-																const beforeAsi = character.abilities[key] + raceAbilityBonuses(character)[key] + previousBonus + previousFeatBonus;
-																return /* @__PURE__ */ jsxs("section", { children: [
-																	/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
-																	/* @__PURE__ */ jsxs("div", {
-																		className: "score-control",
-																		children: [
-																			/* @__PURE__ */ jsx("button", {
-																				onClick: () => changeAsiAbility(choice.key, key, -1),
-																				disabled: count === 0,
-																				children: "−"
-																			}),
-																			/* @__PURE__ */ jsxs("strong", { children: ["+", count] }),
-																			/* @__PURE__ */ jsx("button", {
-																				onClick: () => changeAsiAbility(choice.key, key, 1),
-																				disabled: choice.asiChoices.length >= 2 || count >= 2 || beforeAsi + count >= 20,
-																				children: "+"
-																			})
-																		]
-																	}),
-																	/* @__PURE__ */ jsxs("b", { children: [
-																		beforeAsi,
-																		" → ",
-																		beforeAsi + count
-																	] })
-																] }, key);
-															})
-														})
-													]
-												}, choice.key))
-											})
+											] })
 										]
 									}),
 									/* @__PURE__ */ jsx(HomebrewOnSheet, {
