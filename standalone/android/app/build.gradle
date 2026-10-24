@@ -33,9 +33,7 @@ android {
             manifestPlaceholders = [appLabel: 'Лист Героя 5e (тест)']
             // Some OEM installers are stricter about supported signature formats.
             // The package remains correctly signed and verifiable with apksigner.
-            v1SigningEnabled true
-            v2SigningEnabled true
-            v3SigningEnabled true
+            // AGP already enables v1 and v2 for the debug signing config.
         }
         release {
             minifyEnabled false
