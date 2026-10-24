@@ -5,9 +5,9 @@ android {
     defaultConfig {
         applicationId 'fun.superaistory.herolist'
         minSdk 26
-        targetSdk 28
-        versionCode 173
-        versionName '1.7.3'
+        targetSdk 34
+        versionCode 174
+        versionName '1.7.4'
         manifestPlaceholders = [appLabel: 'Лист Героя 5e']
     }
     // Release APKs must use the same private signing key across all builds.
@@ -31,6 +31,11 @@ android {
             applicationIdSuffix '.preview'
             versionNameSuffix '-preview'
             manifestPlaceholders = [appLabel: 'Лист Героя 5e (тест)']
+            // Some OEM installers are stricter about supported signature formats.
+            // The package remains correctly signed and verifiable with apksigner.
+            v1SigningEnabled true
+            v2SigningEnabled true
+            v3SigningEnabled true
         }
         release {
             minifyEnabled false

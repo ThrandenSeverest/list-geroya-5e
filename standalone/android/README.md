@@ -53,3 +53,8 @@ If none of the 4 signing secrets has been configured, GitHub Actions publishes *
 The preview has its **own empty local storage**. To continue playing an old character, export it as JSON / ZIP from the original HeroList and import it in the preview. The preview uses an ephemeral debug key and **is not an in-place updatable production APK**. Once a real persistent signing key is provided, the workflow switches automatically to a properly signed `HeroList-Android-Offline.apk` build.
 
 If only some (but not all) signing secrets exist, the workflow fails intentionally rather than publishing with a mismatched signing identity.
+
+
+### Installation smoke test
+
+The Android workflow now boots an Android 14 (API 34) emulator, installs the exact APK that will be uploaded via `adb install` (without `-t`) and starts the main activity. The workflow fails rather than publishes if installation or first launch fails. The debug preview enables v1/v2/v3 signatures and targets API 34 for modern Android compatibility. This emulator check does not guarantee every manufacturer's installer will accept a sideloaded file, so the user's actual device still matters.
