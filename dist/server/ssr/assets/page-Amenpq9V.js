@@ -33265,7 +33265,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	});
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33277,7 +33277,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33296,7 +33296,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33316,7 +33316,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33334,7 +33334,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/settings.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/settings.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33586,29 +33586,145 @@ var themeColors_default = [
 	"ffffff"
 ];
 //#endregion
+//#region app/designPresets.ts
+var palettes = {
+	paper: {
+		bg: "#f5f6f7",
+		panel: "#ffffff",
+		raised: "#eef1f3",
+		text: "#252b31",
+		muted: "#59636d",
+		border: "#cbd2d8",
+		accent: "#456356",
+		onAccent: "#ffffff"
+	},
+	graphite: {
+		bg: "#202427",
+		panel: "#292e32",
+		raised: "#343b40",
+		text: "#e6eaed",
+		muted: "#b1bbc3",
+		border: "#525d65",
+		accent: "#aec6b8",
+		onAccent: "#202925"
+	},
+	journal: {
+		bg: "#f1eee5",
+		panel: "#faf8f1",
+		raised: "#e9e4d8",
+		text: "#37382f",
+		muted: "#646252",
+		border: "#c9c2b2",
+		accent: "#6e6045",
+		onAccent: "#ffffff"
+	}
+};
+function preset(id, name) {
+	const p = palettes[id];
+	return {
+		id,
+		name,
+		base: "classic",
+		colors: Object.fromEntries(themeColors_default.map((key) => {
+			const [r, g, b] = [
+				0,
+				2,
+				4
+			].map((i) => parseInt(key.slice(i, i + 2), 16));
+			const l = (.2126 * r + .7152 * g + .0722 * b) / 255;
+			return [key, l < .18 ? p.bg : l < .32 ? p.raised : l < .53 ? p.muted : p.text];
+		})),
+		roles: {
+			ink: p.bg,
+			panel: p.panel,
+			"panel-2": p.raised,
+			surface: p.panel,
+			ivory: p.text,
+			muted: p.muted,
+			line: p.border,
+			selection: p.accent,
+			"copper-light": p.accent,
+			copper: p.accent,
+			"accent-text": p.onAccent,
+			teal: p.accent,
+			gold: p.accent,
+			"gold-bright": p.text,
+			"gold-deep": p.accent
+		}
+	};
+}
+var calmPresets = [
+	preset("paper", "Чистый лист"),
+	preset("graphite", "Тихий графит"),
+	preset("journal", "Полевой журнал")
+];
+var designChoices = [
+	{
+		id: "classic",
+		name: "Синий с золотом",
+		description: "Тёмный фэнтезийный интерфейс",
+		image: "classic"
+	},
+	{
+		id: "parchment",
+		name: "Пергамент",
+		description: "Светлый пергамент и красные акценты",
+		image: "parchment"
+	},
+	{
+		id: "paper",
+		name: "Чистый лист",
+		description: "Светлые панели, минимум украшений",
+		image: "paper"
+	},
+	{
+		id: "graphite",
+		name: "Тихий графит",
+		description: "Матовый тёмный фон и мягкий контраст",
+		image: "graphite"
+	},
+	{
+		id: "journal",
+		name: "Полевой журнал",
+		description: "Тёплая бумага и компактные строки",
+		image: "journal"
+	}
+];
+function findDesign(presets, id) {
+	return presets.find((p) => p.id === id) || calmPresets.find((p) => p.id === id);
+}
+function designLayout(presets, id) {
+	return findDesign(presets, id)?.layout || (palettes[id] ? id : "");
+}
+//#endregion
 //#region app/interfacePreferences.ts
 var defaultPreferences = {
 	zoom: 125,
 	font: 100,
 	activePreset: "",
-	presets: []
+	presets: [],
+	rememberDesign: false
 };
 var limit = (value, min, max, fallback) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, Math.round(value))) : fallback;
 function normalizePreferences(value) {
 	const raw = value && typeof value === "object" ? value : {};
 	const seen = /* @__PURE__ */ new Set();
-	const presets = (Array.isArray(raw.presets) ? raw.presets : []).filter((p) => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map((p) => ({
+	const safePresets = (Array.isArray(raw.presets) ? raw.presets : []).filter((p) => p && typeof p.id === "string" && !seen.has(p.id) && seen.add(p.id)).map((p) => ({
 		id: p.id,
 		name: typeof p.name === "string" ? p.name.slice(0, 80) : "Моя тема",
 		base: p.base === "parchment" ? "parchment" : "classic",
 		roles: Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key, value]) => paletteRoles.some((role) => role.token === key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))),
 		colors: Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key, value]) => themeColors_default.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value)))
+	})).map((p) => ({
+		...p,
+		layout: calmPresets.some((b) => b.id === raw.presets?.find((r) => r?.id === p.id)?.layout) ? raw.presets?.find((r) => r?.id === p.id)?.layout : void 0
 	}));
 	return {
 		zoom: limit(raw.zoom, 75, 175, 125),
 		font: limit(raw.font, 80, 160, 100),
-		activePreset: presets.some((p) => p.id === raw.activePreset) ? raw.activePreset : "",
-		presets
+		activePreset: findDesign(safePresets, raw.activePreset || "") ? raw.activePreset : "",
+		presets: safePresets,
+		rememberDesign: raw.rememberDesign === true
 	};
 }
 var paletteRoles = [
@@ -33748,7 +33864,7 @@ function changePaletteRole(preset, index, color) {
 	};
 }
 function themeStyle(preferences, base) {
-	const preset = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const preset = findDesign(preferences.presets, preferences.activePreset);
 	const style = { "--interface-font": preferences.font / 100 };
 	if (!preset) return style;
 	for (const role of paletteRoles) style[`--${role.token}`] = preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;
@@ -33768,10 +33884,14 @@ var storageKey$1 = "list-geroya-interface-v1";
 function useInterfacePreferences() {
 	const [preferences, setPreferences] = useState(defaultPreferences);
 	const [loaded, setLoaded] = useState(false);
+	const [showDesignPicker, setShowDesignPicker] = useState(false);
 	useEffect(() => {
+		let next = defaultPreferences;
 		try {
-			setPreferences(normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null")));
+			next = normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null"));
 		} catch {}
+		setPreferences(next);
+		setShowDesignPicker(!next.rememberDesign);
 		setLoaded(true);
 	}, []);
 	useEffect(() => {
@@ -33784,18 +33904,33 @@ function useInterfacePreferences() {
 	return {
 		preferences,
 		update: setPreferences,
-		style: themeStyle(preferences, preferences.presets.find((p) => p.id === preferences.activePreset)?.base || "classic")
+		showDesignPicker,
+		closeDesignPicker: () => setShowDesignPicker(false),
+		style: themeStyle(preferences, findDesign(preferences.presets, preferences.activePreset)?.base || "classic")
 	};
 }
 function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	const settingsId = useId();
 	const dialog = useRef(null);
 	const { preferences, update } = appearance;
-	const active = preferences.presets.find((p) => p.id === preferences.activePreset);
+	const active = findDesign(preferences.presets, preferences.activePreset);
 	const [draft, setDraft] = useState(null);
 	const [notice, setNotice] = useState("");
-	function open() {
-		setDraft(active ? {
+	const [gallery, setGallery] = useState(false);
+	const owner = useRef(null);
+	useEffect(() => {
+		if (appearance.showDesignPicker && document.querySelector(".theme-controls") === owner.current) {
+			setGallery(true);
+			dialog.current?.showModal();
+		}
+	}, [appearance.showDesignPicker]);
+	function close() {
+		dialog.current?.close();
+		appearance.closeDesignPicker();
+	}
+	function open(chooser = false) {
+		setGallery(chooser);
+		setDraft(active && !calmPresets.some((p) => p.id === active.id) ? {
 			...active,
 			colors: { ...active.colors }
 		} : null);
@@ -33803,13 +33938,13 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		dialog.current?.showModal();
 	}
 	function select(id) {
-		const preset = preferences.presets.find((p) => p.id === id);
+		const preset = findDesign(preferences.presets, id);
 		update({
 			...preferences,
-			activePreset: id
+			activePreset: preset ? id : ""
 		});
-		if (preset) onTheme(preset.base);
-		setDraft(preset ? {
+		onTheme(preset?.base || (id === "parchment" ? "parchment" : "classic"));
+		setDraft(preset && !calmPresets.some((p) => p.id === preset.id) ? {
 			...preset,
 			colors: { ...preset.colors }
 		} : null);
@@ -33819,10 +33954,13 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		const preset = {
 			id: crypto.randomUUID(),
 			name: "Моя тема",
-			base: theme,
-			colors: {}
+			base: active?.base || theme,
+			layout: active?.layout || (calmPresets.some((p) => p.id === active?.id) ? active?.id : void 0),
+			colors: { ...active?.colors },
+			roles: { ...active?.roles }
 		};
 		setDraft(preset);
+		setGallery(false);
 		update({
 			...preferences,
 			activePreset: preset.id,
@@ -33838,17 +33976,18 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		});
 	}
 	return /* @__PURE__ */ jsxs("span", {
+		ref: owner,
 		className: "theme-controls",
 		children: [
 			/* @__PURE__ */ jsx("button", {
 				className: `experimental-toggle theme-${theme}`,
-				onClick: onCycle,
-				title: `Включить ${theme === "classic" ? "пергаментный" : "синий с золотом"} дизайн`,
+				onClick: () => open(true),
+				title: "Выбрать оформление сайта",
 				children: label
 			}),
 			/* @__PURE__ */ jsx("button", {
 				className: "experimental-toggle theme-gear",
-				onClick: open,
+				onClick: () => open(false),
 				"aria-label": "Настройки интерфейса",
 				title: "Настройки интерфейса",
 				children: /* @__PURE__ */ jsx(Settings, {
@@ -33858,23 +33997,79 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 			}),
 			/* @__PURE__ */ jsxs("dialog", {
 				ref: dialog,
-				className: "interface-settings",
+				className: `interface-settings${gallery ? " design-gallery-dialog" : ""}`,
 				"aria-labelledby": settingsId,
+				onClose: appearance.closeDesignPicker,
 				onClick: (event) => {
 					if (event.target === dialog.current) {
 						const r = dialog.current.getBoundingClientRect();
-						if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) dialog.current.close();
+						if (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom) close();
 					}
 				},
-				children: [
-					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
-						id: settingsId,
-						children: "Настройки интерфейса"
-					}), /* @__PURE__ */ jsx("button", {
-						onClick: () => dialog.current?.close(),
-						"aria-label": "Закрыть настройки",
-						children: "✕"
-					})] }),
+				children: [/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
+					id: settingsId,
+					children: gallery ? "Выберите дизайн HeroList" : "Настройки интерфейса"
+				}), /* @__PURE__ */ jsx("button", {
+					onClick: close,
+					"aria-label": "Закрыть настройки",
+					children: "✕"
+				})] }), gallery ? /* @__PURE__ */ jsxs(Fragment$1, { children: [
+					/* @__PURE__ */ jsx("p", { children: "Пять вариантов оформления. Вы сможете сменить дизайн в любой момент." }),
+					/* @__PURE__ */ jsxs("div", {
+						className: "design-gallery",
+						children: [designChoices.map((choice) => /* @__PURE__ */ jsxs("button", {
+							className: "design-preview",
+							"aria-pressed": (preferences.activePreset || theme) === choice.id,
+							onClick: () => select(choice.id),
+							children: [
+								/* @__PURE__ */ jsx("img", {
+									src: assetUrl(`design-previews/${choice.image}.svg`),
+									alt: `Превью: ${choice.name}`,
+									width: "600",
+									height: "360"
+								}),
+								/* @__PURE__ */ jsx("strong", { children: choice.name }),
+								/* @__PURE__ */ jsx("span", { children: choice.description }),
+								/* @__PURE__ */ jsx("b", { children: (preferences.activePreset || theme) === choice.id ? "✓ Выбрано" : "Выбрать" })
+							]
+						}, choice.id)), preferences.presets.map((p) => /* @__PURE__ */ jsxs("button", {
+							className: "design-preview",
+							"aria-pressed": preferences.activePreset === p.id,
+							onClick: () => select(p.id),
+							children: [
+								/* @__PURE__ */ jsx("img", {
+									src: assetUrl(`design-previews/${p.layout || p.base}.svg`),
+									alt: `Основа пользовательской темы: ${p.name}`,
+									width: "600",
+									height: "360"
+								}),
+								/* @__PURE__ */ jsx("strong", { children: p.name }),
+								/* @__PURE__ */ jsx("span", { children: "Своя палитра" })
+							]
+						}, p.id))]
+					}),
+					/* @__PURE__ */ jsxs("label", {
+						className: "design-remember",
+						children: [/* @__PURE__ */ jsx("input", {
+							type: "checkbox",
+							checked: preferences.rememberDesign === true,
+							onChange: (e) => update({
+								...preferences,
+								rememberDesign: e.target.checked
+							})
+						}), "Запомнить выбор и не спрашивать при запуске"]
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "theme-preset-actions",
+						children: [/* @__PURE__ */ jsx("button", {
+							onClick: create,
+							children: "Создать свой дизайн"
+						}), /* @__PURE__ */ jsx("button", {
+							onClick: close,
+							children: "Использовать выбранный дизайн"
+						})]
+					})
+				] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
 					/* @__PURE__ */ jsxs("label", { children: [
 						"Размер интерфейса на ПК: ",
 						preferences.zoom,
@@ -33926,32 +34121,19 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 					}),
 					/* @__PURE__ */ jsxs("label", { children: ["Цветовая тема", /* @__PURE__ */ jsxs("select", {
 						value: preferences.activePreset || theme,
-						onChange: (e) => {
-							const value = e.target.value;
-							if (value === "classic" || value === "parchment") {
-								update({
-									...preferences,
-									activePreset: ""
-								});
-								onTheme(value);
-								setDraft(null);
-							} else select(value);
-						},
-						children: [
-							/* @__PURE__ */ jsx("option", {
-								value: "classic",
-								children: "Синий с золотом"
-							}),
-							/* @__PURE__ */ jsx("option", {
-								value: "parchment",
-								children: "Пергамент"
-							}),
-							preferences.presets.map((p) => /* @__PURE__ */ jsx("option", {
-								value: p.id,
-								children: p.name || "Моя тема"
-							}, p.id))
-						]
+						onChange: (e) => select(e.target.value),
+						children: [designChoices.map((p) => /* @__PURE__ */ jsx("option", {
+							value: p.id,
+							children: p.name
+						}, p.id)), preferences.presets.map((p) => /* @__PURE__ */ jsx("option", {
+							value: p.id,
+							children: p.name || "Моя тема"
+						}, p.id))]
 					})] }),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => setGallery(true),
+						children: "Превью всех дизайнов"
+					}),
 					/* @__PURE__ */ jsxs("div", {
 						className: "theme-preset-actions",
 						children: [/* @__PURE__ */ jsx("button", {
@@ -34068,7 +34250,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 						role: "status",
 						children: notice
 					})
-				]
+				] })]
 			})
 		]
 	});
@@ -47629,7 +47811,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47659,7 +47841,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/axe.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47674,7 +47856,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bird.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47708,7 +47890,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bone.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47720,7 +47902,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47735,7 +47917,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47773,7 +47955,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/brain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47819,7 +48001,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bug.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47873,7 +48055,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47899,7 +48081,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47918,7 +48100,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/clover.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47940,7 +48122,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cog.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48006,7 +48188,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/compass.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48023,7 +48205,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/crown.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48038,7 +48220,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/drama.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48080,7 +48262,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48095,7 +48277,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48125,7 +48307,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/eye.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48142,7 +48324,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/feather.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48164,7 +48346,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48176,7 +48358,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flame.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48188,7 +48370,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48210,7 +48392,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48236,7 +48418,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/gem.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48258,7 +48440,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48280,7 +48462,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hand.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48306,7 +48488,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48336,7 +48518,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48358,7 +48540,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48373,7 +48555,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48388,7 +48570,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48406,7 +48588,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/moon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48418,7 +48600,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48430,7 +48612,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48454,7 +48636,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/music.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48480,7 +48662,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48516,7 +48698,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48548,7 +48730,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48578,7 +48760,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48608,7 +48790,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48634,7 +48816,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48688,7 +48870,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48700,7 +48882,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48712,7 +48894,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48727,7 +48909,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48757,7 +48939,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48783,7 +48965,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sun.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48831,7 +49013,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sword.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48866,7 +49048,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/swords.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48926,7 +49108,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48966,7 +49148,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48981,7 +49163,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trees.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49007,7 +49189,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49024,7 +49206,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49046,7 +49228,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49088,7 +49270,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/waves.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49110,7 +49292,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wind.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -50191,6 +50373,68 @@ function featRequirementMet(character, requirement) {
 		return true;
 	};
 	return text.split(/\s*;\s*/).every((clause) => clause.split(/\s+(?:или|либо)\s+/).some((alternative) => alternative.split(/\s+и\s+/).every(atomMet)));
+}
+//#endregion
+//#region app/sheetLayout.ts
+var sheetGroups = [
+	"skills",
+	"inventory",
+	"features",
+	"attacks"
+];
+var defaultSheetLayout = {
+	sizes: {
+		skills: 100,
+		inventory: 100,
+		features: 100,
+		attacks: 100
+	},
+	visible: {
+		weapon: true,
+		cantrip: true,
+		spell: true,
+		feature: true,
+		notes: true,
+		hit: true,
+		damage: true,
+		spellNumbers: true,
+		notice: false
+	},
+	hiddenAttacks: []
+};
+function normalizeSheetLayout(value) {
+	const raw = value && typeof value === "object" ? value : {};
+	return {
+		sizes: Object.fromEntries(sheetGroups.map((key) => {
+			const n = raw.sizes?.[key];
+			return [key, typeof n === "number" && Number.isFinite(n) ? Math.max(70, Math.min(160, Math.round(n / 10) * 10)) : 100];
+		})),
+		visible: Object.fromEntries(Object.entries(defaultSheetLayout.visible).map(([key, fallback]) => [key, typeof raw.visible?.[key] === "boolean" ? raw.visible[key] : fallback])),
+		hiddenAttacks: Array.isArray(raw.hiddenAttacks) ? [...new Set(raw.hiddenAttacks.filter((id) => typeof id === "string"))].slice(0, 500) : []
+	};
+}
+/** Place each card below the shortest contiguous set of columns it can occupy. */
+function packSheetPanels(panels, columns = 12, gap = 10) {
+	const bottoms = Array(columns).fill(0);
+	return panels.map((panel) => {
+		const span = Math.max(1, Math.min(columns, Math.round(panel.span)));
+		let start = 0, top = Infinity;
+		for (let i = 0; i <= columns - span; i++) {
+			const y = Math.max(...bottoms.slice(i, i + span));
+			if (y < top) {
+				start = i;
+				top = y;
+			}
+		}
+		const height = Math.max(1, Math.ceil(panel.height));
+		for (let i = start; i < start + span; i++) bottoms[i] = top + height + gap;
+		return {
+			column: start + 1,
+			row: Math.floor(top) + 1,
+			span,
+			height
+		};
+	});
 }
 //#endregion
 //#region app/spellComponents.generated.ts
@@ -53545,7 +53789,38 @@ function PageHeader({ eyebrow, title, page }) {
 		children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: eyebrow }), /* @__PURE__ */ jsx("h2", { children: title })] }), /* @__PURE__ */ jsx("b", { children: page.toString().padStart(2, "0") })]
 	});
 }
-function InventoryPanel({ equipment, currency, mode, onModeChange }) {
+function SheetPanelTitle({ title, group, size, onSize, children }) {
+	return /* @__PURE__ */ jsxs("div", {
+		className: "pdf-panel-title-row",
+		children: [/* @__PURE__ */ jsx("h2", { children: title }), /* @__PURE__ */ jsxs("span", {
+			className: "pdf-panel-controls",
+			children: [
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: size <= 70,
+					onClick: () => onSize(-10),
+					"aria-label": `Уменьшить шрифт: ${group}`,
+					title: `Уменьшить шрифт (${size}%)`,
+					children: "−"
+				}),
+				/* @__PURE__ */ jsxs("output", {
+					"aria-label": `Размер шрифта: ${group}`,
+					children: [size, "%"]
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: size >= 160,
+					onClick: () => onSize(10),
+					"aria-label": `Увеличить шрифт: ${group}`,
+					title: `Увеличить шрифт (${size}%)`,
+					children: "+"
+				}),
+				children
+			]
+		})]
+	});
+}
+function InventoryPanel({ equipment, currency, mode, onModeChange, size, onSize, style }) {
 	const nextMode = {
 		list: "compact",
 		compact: "blank",
@@ -53580,17 +53855,22 @@ function InventoryPanel({ equipment, currency, mode, onModeChange }) {
 	];
 	return /* @__PURE__ */ jsxs("section", {
 		className: `pdf-panel pdf-inventory pdf-inventory--${mode}`,
+		style,
+		"data-sheet-group": "inventory",
 		children: [
-			/* @__PURE__ */ jsxs("div", {
-				className: "pdf-panel-title-row",
-				children: [/* @__PURE__ */ jsx("h2", { children: "Инвентарь и монеты" }), /* @__PURE__ */ jsx("button", {
+			/* @__PURE__ */ jsx(SheetPanelTitle, {
+				title: "Инвентарь и монеты",
+				group: "инвентарь",
+				size,
+				onSize,
+				children: /* @__PURE__ */ jsx("button", {
 					type: "button",
 					className: "pdf-inventory-toggle",
 					onClick: () => onModeChange(nextMode[mode]),
 					"aria-label": modeLabel[mode],
 					title: modeLabel[mode],
 					children: "↻"
-				})]
+				})
 			}),
 			/* @__PURE__ */ jsx("div", {
 				className: "pdf-currency-grid",
@@ -53617,6 +53897,32 @@ function InventoryPanel({ equipment, currency, mode, onModeChange }) {
 }
 function PdfCharacterSheet(props) {
 	const primaryContent = useRef(null);
+	const attackDialog = useRef(null);
+	const [layout, setLayout] = useState(defaultSheetLayout);
+	const [layoutReady, setLayoutReady] = useState(false);
+	useEffect(() => {
+		try {
+			setLayout(normalizeSheetLayout(JSON.parse(localStorage.getItem("list-geroya-sheet-layout-v1") || "null")));
+		} catch {}
+		setLayoutReady(true);
+	}, []);
+	useEffect(() => {
+		if (layoutReady) try {
+			localStorage.setItem("list-geroya-sheet-layout-v1", JSON.stringify(layout));
+		} catch {}
+	}, [layout, layoutReady]);
+	function resize(group, delta) {
+		setLayout((current) => ({
+			...current,
+			sizes: {
+				...current.sizes,
+				[group]: Math.max(70, Math.min(160, current.sizes[group] + delta))
+			}
+		}));
+	}
+	function panelStyle(group) {
+		return { "--sheet-text-scale": layout.sizes[group] / 100 };
+	}
 	const [inventoryMode, setInventoryMode] = useState("list");
 	const [showPreparedMarks, setShowPreparedMarks] = useState(true);
 	function changeInventoryMode(mode) {
@@ -53644,7 +53950,7 @@ function PdfCharacterSheet(props) {
 		...combatTechniques,
 		...ordinaryClassFeatures,
 		...originFeatures
-	]);
+	], 1225 / Math.pow(layout.sizes.features / 100, 1.8));
 	const abilityOrder = [
 		"str",
 		"dex",
@@ -53677,35 +53983,92 @@ function PdfCharacterSheet(props) {
 		const content = primaryContent.current;
 		if (!content) return;
 		const page = content.parentElement;
+		const grid = content.querySelector(".pdf-primary-grid");
+		const cards = Array.from(grid.children);
+		let frame = 0, active = true;
 		const fit = () => {
 			if (window.matchMedia("screen and (max-width: 760px)").matches) {
+				delete grid.dataset.packed;
+				cards.forEach((card) => {
+					card.style.removeProperty("grid-column");
+					card.style.removeProperty("grid-row");
+				});
 				content.style.zoom = "1";
 				return;
 			}
-			const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 1536 / 25.4;
-			const scale = Math.min(1, available / Math.max(1, content.scrollHeight));
-			content.style.zoom = String(scale);
+			grid.dataset.packed = "true";
+			const spans = cards.map((card) => {
+				const group = card.dataset.sheetGroup;
+				return Math.max(3, Math.min(8, Math.round((group === "skills" ? 4 : group === "inventory" ? 3 : group === "features" ? 5 : group === "attacks" ? 5 : 3) * (group ? layout.sizes[group] / 100 : 1))));
+			});
+			const inventoryIndex = cards.findIndex((card) => card.dataset.sheetGroup === "inventory");
+			const featuresIndex = cards.findIndex((card) => card.dataset.sheetGroup === "features");
+			let best;
+			const inventoryWidths = [
+				spans[inventoryIndex],
+				Math.min(8, spans[inventoryIndex] + 1),
+				Math.min(8, spans[inventoryIndex] + 2)
+			];
+			const featureWidths = [Math.max(3, spans[featuresIndex] - 2), spans[featuresIndex]];
+			for (const inventoryWidth of inventoryWidths) for (const featureWidth of featureWidths) {
+				const widths = [...spans];
+				widths[inventoryIndex] = inventoryWidth;
+				widths[featuresIndex] = featureWidth;
+				cards.forEach((card, i) => {
+					card.style.gridColumn = `span ${widths[i]}`;
+				});
+				const positions = packSheetPanels(cards.map((card, i) => ({
+					span: widths[i],
+					height: card.offsetHeight
+				})), 12, 8);
+				const score = Math.max(...positions.map((p) => p.row + p.height)) * 1e4 + positions.reduce((area, p) => area + p.span * p.height, 0);
+				if (!best || score < best.score) best = {
+					score,
+					positions
+				};
+			}
+			cards.forEach((card, i) => {
+				const p = best.positions[i];
+				card.style.gridColumn = `${p.column} / span ${p.span}`;
+				card.style.gridRow = `${p.row} / span ${p.height}`;
+			});
+			if (window.matchMedia("print").matches) {
+				const available = page.clientHeight - parseFloat(getComputedStyle(page).paddingTop) - 1536 / 25.4;
+				content.style.zoom = String(Math.min(1, available / Math.max(1, content.scrollHeight)));
+			} else content.style.zoom = "1";
+		};
+		const schedule = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(() => {
+				if (active) fit();
+			});
 		};
 		fit();
-		const observer = new ResizeObserver(fit);
+		const observer = new ResizeObserver(schedule);
+		cards.forEach((card) => observer.observe(card));
 		observer.observe(content);
-		let active = true;
 		document.fonts.ready.then(() => {
 			if (active) fit();
 		});
 		window.addEventListener("beforeprint", fit);
 		window.addEventListener("afterprint", fit);
+		window.addEventListener("resize", schedule);
 		return () => {
 			active = false;
+			cancelAnimationFrame(frame);
 			observer.disconnect();
+			window.removeEventListener("resize", schedule);
 			window.removeEventListener("beforeprint", fit);
 			window.removeEventListener("afterprint", fit);
 		};
-	}, [props, inventoryMode]);
+	}, [
+		props,
+		inventoryMode,
+		layout
+	]);
 	const sheetEdition = props.sheetEdition || "2014";
 	return /* @__PURE__ */ jsxs("div", {
 		className: `pdf-document pdf-document--${sheetEdition}`,
-		"aria-hidden": "true",
 		"data-sheet-edition": sheetEdition,
 		children: [
 			/* @__PURE__ */ jsxs("section", {
@@ -53747,8 +54110,15 @@ function PdfCharacterSheet(props) {
 							children: [
 								/* @__PURE__ */ jsxs("section", {
 									className: "pdf-panel pdf-skills",
+									style: panelStyle("skills"),
+									"data-sheet-group": "skills",
 									children: [
-										/* @__PURE__ */ jsx("h2", { children: "Навыки и спасброски" }),
+										/* @__PURE__ */ jsx(SheetPanelTitle, {
+											title: "Навыки и спасброски",
+											group: "навыки и владения",
+											size: layout.sizes.skills,
+											onSize: (delta) => resize("skills", delta)
+										}),
 										/* @__PURE__ */ jsxs("p", {
 											className: "pdf-inline-stats",
 											children: [/* @__PURE__ */ jsxs("b", { children: ["БМ ", signed(props.proficiency)] }), /* @__PURE__ */ jsxs("b", { children: ["Пассивная внимательность ", props.passivePerception] })]
@@ -53860,23 +54230,46 @@ function PdfCharacterSheet(props) {
 								}),
 								/* @__PURE__ */ jsxs("section", {
 									className: "pdf-panel pdf-attacks",
+									style: panelStyle("attacks"),
+									"data-sheet-group": "attacks",
 									children: [
-										/* @__PURE__ */ jsx("h2", { children: "Оружие и боевые заклинания" }),
-										/* @__PURE__ */ jsx("p", { children: automaticAttacksNotice }),
+										/* @__PURE__ */ jsx(SheetPanelTitle, {
+											title: "Оружие и боевые заклинания",
+											group: "оружие и заклинания",
+											size: layout.sizes.attacks,
+											onSize: (delta) => resize("attacks", delta),
+											children: /* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-label": "Настройки оружия и заклинаний",
+												title: "Что отображать на листе",
+												onClick: () => attackDialog.current?.showModal(),
+												children: /* @__PURE__ */ jsx(Settings, {
+													size: 14,
+													"aria-hidden": "true"
+												})
+											})
+										}),
+										layout.visible.notice && /* @__PURE__ */ jsx("p", { children: "Автоматический список атак может быть неполным: природное оружие, условные и пользовательские атаки сверяйте с особенностями персонажа." }),
 										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-attack-head",
+											className: "pdf-attack-head pdf-attack-columns",
+											style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
 											children: [
 												/* @__PURE__ */ jsx("b", { children: "Название" }),
-												/* @__PURE__ */ jsx("b", { children: "Попадание / Сл" }),
-												/* @__PURE__ */ jsx("b", { children: "Урон" })
+												layout.visible.hit && /* @__PURE__ */ jsx("b", { children: "Попадание / Сл" }),
+												layout.visible.damage && /* @__PURE__ */ jsx("b", { children: "Урон" })
 											]
 										}),
-										props.attacks.length ? props.attacks.map((attack) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", { children: [
-											/* @__PURE__ */ jsx("b", { children: attack.name }),
-											/* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
-											/* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
-										] }), attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Атаки ещё не выбраны." }),
-										props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
+										props.attacks.filter((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map((attack) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsxs("div", {
+											className: "pdf-attack-columns",
+											style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
+											children: [
+												/* @__PURE__ */ jsx("b", { children: attack.name }),
+												layout.visible.hit && /* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
+												layout.visible.damage && /* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
+											]
+										}), layout.visible.notes && attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)),
+										!props.attacks.some((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)) && /* @__PURE__ */ jsx("p", { children: "Нет атак для отображения. Выберите их в настройках блока." }),
+										layout.visible.spellNumbers && (props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
 											className: "pdf-spell-numbers",
 											children: props.spellcastingSources.map((source) => /* @__PURE__ */ jsxs("span", { children: [
 												/* @__PURE__ */ jsx("b", { children: source.name }),
@@ -53894,18 +54287,28 @@ function PdfCharacterSheet(props) {
 												/* @__PURE__ */ jsxs("span", { children: ["Сл ", /* @__PURE__ */ jsx("b", { children: props.spellSaveDc })] }),
 												/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed(props.spellAttackBonus || 0) })] })
 											]
-										}),
-										/* @__PURE__ */ jsxs("div", {
-											className: "pdf-racial-traits",
-											children: [/* @__PURE__ */ jsx("h3", { children: "Расовые способности" }), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
-										})
+										}))
 									]
 								}),
 								/* @__PURE__ */ jsx(InventoryPanel, {
 									equipment: props.equipment,
 									currency: props.currency,
 									mode: inventoryMode,
-									onModeChange: changeInventoryMode
+									onModeChange: changeInventoryMode,
+									size: layout.sizes.inventory,
+									onSize: (delta) => resize("inventory", delta),
+									style: panelStyle("inventory")
+								}),
+								/* @__PURE__ */ jsxs("section", {
+									className: "pdf-panel pdf-primary-features",
+									style: panelStyle("features"),
+									"data-sheet-group": "features",
+									children: [/* @__PURE__ */ jsx(SheetPanelTitle, {
+										title: "Расовые способности",
+										group: "способности",
+										size: layout.sizes.features,
+										onSize: (delta) => resize("features", delta)
+									}), /* @__PURE__ */ jsx(RacialTraitList, { features: props.raceFeatures })]
 								})
 							]
 						})
@@ -53916,11 +54319,21 @@ function PdfCharacterSheet(props) {
 				const pageNumber = pageIndex + 2;
 				return /* @__PURE__ */ jsxs("section", {
 					className: "pdf-page pdf-class-page",
+					style: panelStyle("features"),
 					children: [
 						/* @__PURE__ */ jsx(PageHeader, {
 							eyebrow: `${props.identity.className} · ${props.identity.level} уровень${pageIndex ? " · продолжение" : ""}`,
 							title: "Боевые и классовые способности",
 							page: pageNumber
+						}),
+						/* @__PURE__ */ jsx("div", {
+							className: "pdf-feature-toolbar",
+							children: /* @__PURE__ */ jsx(SheetPanelTitle, {
+								title: "Размер текста способностей",
+								group: "классовые способности",
+								size: layout.sizes.features,
+								onSize: (delta) => resize("features", delta)
+							})
 						}),
 						pageIndex === 0 && /* @__PURE__ */ jsx("p", {
 							className: "pdf-section-note",
@@ -54104,6 +54517,66 @@ function PdfCharacterSheet(props) {
 						] })
 					]
 				}, `spell-card-page-${cardPageIndex}`);
+			}),
+			/* @__PURE__ */ jsxs("dialog", {
+				ref: attackDialog,
+				className: "pdf-display-settings",
+				"aria-labelledby": "pdf-attack-settings-title",
+				children: [
+					/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", {
+						id: "pdf-attack-settings-title",
+						children: "Оружие и заклинания на листе"
+					}), /* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => attackDialog.current?.close(),
+						"aria-label": "Закрыть настройки оружия",
+						children: "✕"
+					})] }),
+					/* @__PURE__ */ jsx("p", { children: "Меняется только отображение на листе. Оружие и заклинания остаются у персонажа." }),
+					/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Показывать" }), [
+						["weapon", "Оружие"],
+						["cantrip", "Заговоры"],
+						["spell", "Заклинания"],
+						["feature", "Атаки способностей"],
+						["hit", "Попадание и сложность спасброска"],
+						["damage", "Урон"],
+						["notes", "Описания и примечания"],
+						["spellNumbers", "Параметры заклинателя"],
+						["notice", "Пояснение об автоматическом списке атак"]
+					].map(([key, label]) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+						type: "checkbox",
+						checked: layout.visible[key],
+						onChange: (e) => setLayout((current) => ({
+							...current,
+							visible: {
+								...current.visible,
+								[key]: e.target.checked
+							}
+						}))
+					}), label] }, key))] }),
+					/* @__PURE__ */ jsxs("fieldset", { children: [/* @__PURE__ */ jsx("legend", { children: "Отдельные атаки" }), props.attacks.length ? props.attacks.map((attack) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+						type: "checkbox",
+						checked: !layout.hiddenAttacks.includes(attack.id),
+						onChange: (e) => setLayout((current) => ({
+							...current,
+							hiddenAttacks: e.target.checked ? current.hiddenAttacks.filter((id) => id !== attack.id) : [...current.hiddenAttacks, attack.id]
+						}))
+					}), attack.name] }, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Атаки ещё не выбраны." })] }),
+					/* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => setLayout((current) => ({
+							...current,
+							visible: { ...defaultSheetLayout.visible },
+							hiddenAttacks: []
+						})),
+						children: "Вернуть стандартный состав"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => attackDialog.current?.close(),
+						children: "Готово"
+					})
+				]
 			})
 		]
 	});
@@ -54125,7 +54598,7 @@ function sourceAvailableSpellCatalog(catalog, additionalUnlocked) {
 	return catalog.filter((spell) => additionalUnlocked || !isAdditionalSpell(spell));
 }
 //#endregion
-//#region node_modules/fflate/esm/index.mjs
+//#region ../../d37c18cc5beb/herolist/node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -55055,7 +55528,7 @@ function retainLevelState(before, after, catalog = spells) {
 	};
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trending-up.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -55070,7 +55543,7 @@ var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
 	key: "kwv8wd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -55143,7 +55616,7 @@ var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/file-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -66022,7 +66495,8 @@ function Builder({ adventureRoute = false } = {}) {
 		vault
 	]);
 	const usesOrnateIcons = true;
-	const shellThemeClass = (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
+	const calmLayout = designLayout(appearance.preferences.presets, appearance.preferences.activePreset);
+	const shellThemeClass = (calmLayout ? ` calm-design design-${calmLayout}` : "") + (siteTheme === "parchment" ? " modern-design" : "") + (appearance.preferences.activePreset ? " theme-custom" : "");
 	function cycleSiteTheme() {
 		const next = siteTheme === "classic" ? "parchment" : "classic";
 		appearance.update({
