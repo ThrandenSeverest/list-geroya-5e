@@ -44,3 +44,12 @@ APK versions published on October 23, 2026 were signed by a fresh GitHub Actions
 
 **Uninstalling without an export deletes local WebView data.** This one-time migration is required to establish a stable signature for future updates.
 
+
+
+### Temporary preview builds when release-signing secrets are absent
+
+If none of the 4 signing secrets has been configured, GitHub Actions publishes **HeroList-Android-Preview.apk** instead of failing. This debug-signed preview uses Android package ID `fun.superaistory.herolist.preview`, and is visibly labeled **Лист Героя 5e (тест)**. It installs alongside the old `fun.superaistory.herolist` APK, preserving the old installation and its local character saves.
+
+The preview has its **own empty local storage**. To continue playing an old character, export it as JSON / ZIP from the original HeroList and import it in the preview. The preview uses an ephemeral debug key and **is not an in-place updatable production APK**. Once a real persistent signing key is provided, the workflow switches automatically to a properly signed `HeroList-Android-Offline.apk` build.
+
+If only some (but not all) signing secrets exist, the workflow fails intentionally rather than publishing with a mismatched signing identity.

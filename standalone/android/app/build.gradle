@@ -8,6 +8,7 @@ android {
         targetSdk 28
         versionCode 173
         versionName '1.7.3'
+        manifestPlaceholders = [appLabel: 'Лист Героя 5e']
     }
     // Release APKs must use the same private signing key across all builds.
     // The key is restored from GitHub Actions secrets, never committed to Git.
@@ -23,6 +24,14 @@ android {
         }
     }
     buildTypes {
+        // Unsigned release builds are not installable. Without a persistent
+        // signing secret, publish a clearly separated preview application.
+        // A fresh runner debug key must never overwrite the release package.
+        debug {
+            applicationIdSuffix '.preview'
+            versionNameSuffix '-preview'
+            manifestPlaceholders = [appLabel: 'Лист Героя 5e (тест)']
+        }
         release {
             minifyEnabled false
             signingConfig signingConfigs.release
