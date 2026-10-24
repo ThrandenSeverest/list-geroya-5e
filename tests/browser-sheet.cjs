@@ -157,8 +157,10 @@ async function saved(page) {
         // The game gets an independent vault slot on both desktop and phone.
         await page.reload();
         await openSheet(page);
-        page.once('dialog',dialog=>dialog.accept('Проверка приключения'));
         await page.getByRole('button',{name:'Отправить в приключение',exact:true}).click();
+        const adventureDialog=page.getByRole('dialog',{name:'Название приключения'});
+        await adventureDialog.getByRole('textbox',{name:'Название'}).fill('Проверка приключения');
+        await adventureDialog.getByRole('button',{name:'Начать приключение'}).click();
         await page.locator('.play-shell').waitFor();
         assert.equal(await page.locator(width<=700?'.play-mobile-nav':'.play-desktop-nav').isVisible(),true);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false,'Game stays within viewport');
