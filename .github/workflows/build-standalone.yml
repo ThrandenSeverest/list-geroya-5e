@@ -49,6 +49,10 @@ jobs:
   android:
     needs: site
     runs-on: ubuntu-latest
+    env:
+      HEROLIST_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.HEROLIST_ANDROID_KEYSTORE_PASSWORD }}
+      HEROLIST_ANDROID_KEY_ALIAS: ${{ secrets.HEROLIST_ANDROID_KEY_ALIAS }}
+      HEROLIST_ANDROID_KEY_PASSWORD: ${{ secrets.HEROLIST_ANDROID_KEY_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -78,13 +82,33 @@ jobs:
           fi
           test -x "$SDK_MANAGER"
           "$SDK_MANAGER" --sdk_root="$SDK_ROOT" "platforms;android-35" "build-tools;35.0.0"
-      - name: Build sideloadable debug-signed APK
+      - name: Restore persistent Android signing key
+        env:
+          HEROLIST_ANDROID_KEYSTORE_BASE64: ${{ secrets.HEROLIST_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          for variable in HEROLIST_ANDROID_KEYSTORE_BASE64 HEROLIST_ANDROID_KEYSTORE_PASSWORD HEROLIST_ANDROID_KEY_ALIAS HEROLIST_ANDROID_KEY_PASSWORD; do
+            if [ -z "${!variable:-}" ]; then
+              echo "::error::Missing repository Actions secret $variable. Refusing to publish an APK signed by an ephemeral debug key."
+              exit 1
+            fi
+          done
+          signing_file="$RUNNER_TEMP/herolist-release.jks"
+          printf '%s' "$HEROLIST_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$signing_file"
+          chmod 600 "$signing_file"
+          echo "HEROLIST_ANDROID_KEYSTORE_FILE=$signing_file" >> "$GITHUB_ENV"
+      - name: Build stable-signed Android release APK
         working-directory: standalone/android
-        run: gradle --no-daemon :app:assembleDebug
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Verify Android package signature
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs standalone/android/app/build/outputs/apk/release/app-release.apk
       - name: Copy Android release candidate
         run: |
           mkdir -p release/android
-          cp standalone/android/app/build/outputs/apk/debug/app-debug.apk release/android/HeroList-Android-Offline.apk
+          cp standalone/android/app/build/outputs/apk/release/app-release.apk release/android/HeroList-Android-Offline.apk
       - uses: actions/upload-artifact@v4
         with:
           name: HeroList-Android-Offline-APK
@@ -143,5 +167,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view standalone-latest >/dev/null 2>&1 || gh release create standalone-latest --title "HeroList Offline (Android and Windows)" --notes "Standalone offline builds from GitHub Actions. APK is debug-signed for sideloading; Windows EXE is portable and unsigned. Both save characters locally." --prerelease --target "$GITHUB_SHA"
+          gh release view standalone-latest >/dev/null 2>&1 || gh release create standalone-latest --title "HeroList Offline (Android and Windows)" --notes "Standalone offline builds from GitHub Actions. APK uses a persistent release key supplied through GitHub Actions secrets; Windows EXE is portable and unsigned. Both save characters locally." --prerelease --target "$GITHUB_SHA"
           gh release upload standalone-latest release/android/*.apk release/windows/*.exe --clobber
