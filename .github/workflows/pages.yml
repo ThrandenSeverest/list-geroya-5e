@@ -17,7 +17,7 @@ jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,7 +41,7 @@ jobs:
       - name: Verify static desktop and mobile flows
         run: |
           npm install --prefix /tmp/herolist-browser --no-save --package-lock=false playwright@1.51.1
-          /tmp/herolist-browser/node_modules/.bin/playwright install --with-deps chromium webkit
+          /tmp/herolist-browser/node_modules/.bin/playwright install chromium
           mkdir -p /tmp/herolist-pages-preview
           ln -s "$GITHUB_WORKSPACE/dist/client" /tmp/herolist-pages-preview/list-geroya-5e
           python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-pages-preview >/tmp/herolist-pages-preview.log 2>&1 &
@@ -52,7 +52,6 @@ jobs:
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/browser-sheet.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-layout.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-tavern.cjs
-              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright HB_TEST_BROWSER=webkit node tests/mobile-tavern.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-hydration.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-browser.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-relations-browser.cjs

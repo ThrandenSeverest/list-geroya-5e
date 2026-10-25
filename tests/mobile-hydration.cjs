@@ -8,14 +8,14 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
     const page = await context.newPage();
     await page.addInitScript(() => localStorage.setItem('list-geroya-interface-v1', JSON.stringify({rememberDesign:true})));
     // Reproduce stale HTML whose old hashed JavaScript files were removed.
-    await page.route(/\\/assets\\/.*\\.js(?:\\?.*)?$/, route => route.abort());
+    await page.route('**/assets/*.js', route => route.abort());
     await page.goto(url.href);
     await page.locator('.mobile-top-menu summary').tap();
     assert.equal(await page.locator('.mobile-top-menu').getAttribute('open'), '');
     await page.locator('#herolist-boot-warning').waitFor({timeout:12000});
     assert.match(await page.locator('#herolist-boot-warning').innerText(), /интерфейс не запустился/);
     assert.notEqual(await page.locator('html').getAttribute('data-herolist-hydrated'), '1');
-    await page.unroute(/\\/assets\\/.*\\.js(?:\\?.*)?$/);
+    await page.unroute('**/assets/*.js');
     await page.reload();
     await page.waitForFunction(() => document.documentElement.getAttribute('data-herolist-hydrated') === '1');
     await page.locator('.mode-signs').getByRole('button',{name:/Приключения/}).tap();

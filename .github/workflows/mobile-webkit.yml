@@ -1,0 +1,50 @@
+name: Mobile WebKit compatibility
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'tests/mobile-tavern.cjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/mobile-webkit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safari-touch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Browsers and their system libraries are preinstalled. Do not ask apt
+    # to download 100+ MB during the time-critical Pages publishing job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.51.1-noble
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build static Pages snapshot for WebKit
+        env:
+          HEROLIST_PAGES: "1"
+          NEXT_PUBLIC_BASE_PATH: /list-geroya-5e
+        run: npm run build
+      - name: Verify mobile touch interactions in WebKit
+        run: |
+          npm install --prefix /tmp/herolist-browser --no-save --package-lock=false playwright@1.51.1
+          mkdir -p /tmp/herolist-pages-preview
+          ln -s "$GITHUB_WORKSPACE/dist/client" /tmp/herolist-pages-preview/list-geroya-5e
+          python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-pages-preview > /tmp/herolist-pages-preview.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..20}; do
+            if curl -fsS http://127.0.0.1:3997/list-geroya-5e/ >/dev/null; then
+              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright HB_TEST_BROWSER=webkit node tests/mobile-tavern.cjs
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/herolist-pages-preview.log
+          exit 1
