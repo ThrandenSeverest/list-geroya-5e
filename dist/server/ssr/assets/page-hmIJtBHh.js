@@ -124,6 +124,7 @@ function PlayInterfaceSettings({ character: c, onChange, view, onViewChange }) {
 		update({ tabOrder: ids });
 	}
 	return /* @__PURE__ */ jsxs("details", {
+		open: true,
 		className: "play-card play-interface-settings",
 		children: [
 			/* @__PURE__ */ jsx("summary", { children: "Настроить интерфейс и расположение панелей" }),
@@ -29548,12 +29549,12 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 			/* @__PURE__ */ jsxs("div", {
 				className: "quick-health-actions",
 				children: [
-					/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
-						"aria-label": "Количество хитов",
-						inputMode: "numeric",
+					/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx(NumberSlider, {
+						label: "Количество хитов",
+						min: 0,
+						max: 100,
 						value: amount,
-						onChange: (e) => setAmount(e.target.value),
-						"aria-invalid": !!error
+						onChange: setAmount
 					})] }),
 					/* @__PURE__ */ jsx("button", {
 						className: "play-danger",
@@ -29564,6 +29565,10 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 						className: "play-primary",
 						onClick: () => apply("heal"),
 						children: "+ Лечение"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => apply("temporary"),
+						children: "+ Временные ХП"
 					})
 				]
 			}),
@@ -31808,14 +31813,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	useEffect(() => {
 		if (a.inventory.some((i) => i.quantity <= 0)) onChange(updateInventory(c, a.inventory));
 	}, [c, onChange]);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [tab, setTab] = useState("actions");
 	const shellRef = useRef(null);
-	const [wide, setWide] = useState(false);
-	useEffect(() => {
-		const observer = new ResizeObserver((entries) => setWide(entries[0].contentRect.width >= 1e3));
-		if (shellRef.current) observer.observe(shellRef.current);
-		return () => observer.disconnect();
-	}, []);
 	const [view, updateView] = usePlayViewPreferences();
 	const sessionPanels = view.sessionPanels;
 	const [editingAttack, setEditingAttack] = useState();
@@ -31864,9 +31864,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [effectName, setEffectName] = useState("");
 	const [effectRounds, setEffectRounds] = useState(0);
 	useEffect(() => {
-		if (!rest && !rollDraft) return;
+		if (!rest && !rollDraft && !settingsOpen) return;
 		const previous = document.activeElement;
-		const dialog = document.querySelector(".play-modal");
+		const dialog = document.querySelector(".play-modal,.play-settings-dialog");
 		const oldOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
 		dialog?.querySelector("button,input,select,textarea")?.focus({ preventScroll: true });
@@ -31874,6 +31874,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			if (event.key === "Escape") {
 				setRest(void 0);
 				setRollDraft(void 0);
+				setSettingsOpen(false);
 			}
 			if (event.key !== "Tab" || !dialog) return;
 			const controls = [...dialog.querySelectorAll("button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex=\"0\"]")];
@@ -31893,7 +31894,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			document.removeEventListener("keydown", keydown);
 			previous?.focus({ preventScroll: true });
 		};
-	}, [!!rest, !!rollDraft]);
+	}, [
+		!!rest,
+		!!rollDraft,
+		settingsOpen
+	]);
 	useEffect(() => {
 		if (!diceOpen) return;
 		const previous = document.activeElement;
@@ -32073,6 +32078,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			setError(e instanceof Error ? e.message : String(e));
 		}
 	}
+	useEffect(() => {
+		if (a.mobileLayout?.hiddenTabs?.includes(tab)) setTab("actions");
+	}, [a.mobileLayout?.hiddenTabs, tab]);
 	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: orderedPlayTabs(c).filter(([id]) => id === "actions" || !a.mobileLayout?.hiddenTabs?.includes(id)).map(([id, label]) => /* @__PURE__ */ jsx("button", {
 		"aria-current": tab === id ? "page" : void 0,
 		className: tab === id ? "active" : "",
@@ -32231,6 +32239,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								children: saveStatus
 							}),
 							/* @__PURE__ */ jsx("button", {
+								"aria-label": "Настройки игрового режима",
+								title: "Настройки игрового режима",
+								onClick: () => setSettingsOpen((v) => !v),
+								children: "⚙"
+							}),
+							/* @__PURE__ */ jsx("button", {
 								onClick: onExport,
 								children: "Экспорт JSON"
 							}),
@@ -32248,11 +32262,19 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					})
 				]
 			}),
-			/* @__PURE__ */ jsx(PlayInterfaceSettings, {
-				character: c,
-				onChange,
-				view,
-				onViewChange: updateView
+			settingsOpen && /* @__PURE__ */ jsxs("section", {
+				className: "play-settings-dialog",
+				role: "dialog",
+				"aria-label": "Настройки игрового режима",
+				children: [/* @__PURE__ */ jsx("button", {
+					onClick: () => setSettingsOpen(false),
+					children: "Закрыть настройки"
+				}), /* @__PURE__ */ jsx(PlayInterfaceSettings, {
+					character: c,
+					onChange,
+					view,
+					onViewChange: updateView
+				})]
 			}),
 			/* @__PURE__ */ jsxs("section", {
 				className: "play-hud",
@@ -32637,77 +32659,53 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				children: [/* @__PURE__ */ jsxs("div", {
 					className: `play-content play-tab-${tab}`,
 					children: [
-						/* @__PURE__ */ jsxs("details", {
-							className: "session-panel play-card",
-							open: hp === 0 || (sessionPanels[tab] ?? (tab === "hero" || wide && view.layout === "columns")),
-							children: [/* @__PURE__ */ jsxs("summary", {
-								onClick: (e) => {
-									e.preventDefault();
-									updateView({ sessionPanels: {
-										...sessionPanels,
-										[tab]: !(sessionPanels[tab] ?? (tab === "hero" || wide && view.layout === "columns"))
-									} });
-								},
-								children: ["Здоровье и ресурсы ", /* @__PURE__ */ jsxs("small", { children: [
-									"HP ",
-									hp,
-									"/",
-									max,
-									c.temporaryHitPoints ? ` · временные ${c.temporaryHitPoints}` : ""
-								] })]
-							}), /* @__PURE__ */ jsxs("div", {
-								className: "session-status",
-								children: [
-									"      ",
-									hp === 0 && /* @__PURE__ */ jsxs("section", {
-										className: "play-card",
-										children: [/* @__PURE__ */ jsx("h2", { children: "При 0 хитов" }), /* @__PURE__ */ jsxs("div", {
-											className: "play-notice",
-											children: [
-												/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
-												/* @__PURE__ */ jsxs("span", { children: [
-													"Успехи ",
-													c.deathSaveSuccesses || 0,
-													"/3 · Провалы ",
-													c.deathSaveFailures || 0,
-													"/3"
-												] }),
-												/* @__PURE__ */ jsx("button", {
-													disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
-													onClick: () => change((prev) => {
-														const r = rollD20(0, mode);
-														presentRoll("Спасбросок смерти", r);
-														return applyDeathSave(prev, r.natural);
-													}),
-													children: "Бросить d20"
-												}),
-												/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
-											]
-										})]
-									}),
-									/* @__PURE__ */ jsx(SessionResources, {
-										character: c,
-										onChange: change,
-										open: sessionPanels.resources ?? (wide && view.layout === "columns"),
-										onOpenChange: (open) => updateView({ sessionPanels: {
-											...sessionPanels,
-											resources: open
-										} })
-									})
-								]
+						/* @__PURE__ */ jsxs("section", {
+							className: "session-panel",
+							children: [hp === 0 && /* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsx("h2", { children: "При 0 хитов" }), /* @__PURE__ */ jsxs("div", {
+									className: "play-notice",
+									children: [
+										/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
+										/* @__PURE__ */ jsxs("span", { children: [
+											"Успехи ",
+											c.deathSaveSuccesses || 0,
+											"/3 · Провалы ",
+											c.deathSaveFailures || 0,
+											"/3"
+										] }),
+										/* @__PURE__ */ jsx("button", {
+											disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
+											onClick: () => change((prev) => {
+												const r = rollD20(0, mode);
+												presentRoll("Спасбросок смерти", r);
+												return applyDeathSave(prev, r.natural);
+											}),
+											children: "Бросить d20"
+										}),
+										/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+									]
+								})]
+							}), /* @__PURE__ */ jsx(SessionResources, {
+								character: c,
+								onChange: change,
+								open: sessionPanels.resources ?? false,
+								onOpenChange: (open) => updateView({ sessionPanels: {
+									...sessionPanels,
+									resources: open
+								} })
 							})]
 						}),
 						tab === "actions" && /* @__PURE__ */ jsxs("div", {
 							className: "session-action-main",
 							children: [
-								!view.hiddenBlocks.includes("potions") && /* @__PURE__ */ jsx("section", {
-									className: "quick-potions",
-									"aria-label": "Зелья лечения",
-									children: /* @__PURE__ */ jsx(HealingPotions, {
+								!view.hiddenBlocks.includes("potions") && /* @__PURE__ */ jsxs("details", {
+									className: "play-card quick-potions",
+									children: [/* @__PURE__ */ jsx("summary", { children: "Зелья лечения" }), /* @__PURE__ */ jsx(HealingPotions, {
 										character: c,
 										onChange: change,
 										onRoll: presentRoll
-									})
+									})]
 								}),
 								/* @__PURE__ */ jsxs("div", {
 									className: "session-check",
@@ -33579,46 +33577,118 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								]
 							})
 						] }),
-						tab === "journal" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [/* @__PURE__ */ jsx("h2", { children: "Заметки приключения" }), /* @__PURE__ */ jsx("textarea", {
-								rows: 6,
-								value: a.notes,
-								onChange: (e) => onChange({
-									...c,
-									adventure: {
-										...a,
-										notes: e.target.value
-									}
-								}),
-								placeholder: "Квесты, договорённости с мастером, добыча…"
-							})]
-						}), /* @__PURE__ */ jsxs("section", {
-							className: "play-card",
-							children: [
-								/* @__PURE__ */ jsx("h2", { children: "История действий" }),
-								/* @__PURE__ */ jsxs("small", { children: [
-									"Последние 150 записей. Прошло игрового времени: ",
-									a.elapsedMinutes,
-									" мин."
-								] }),
-								a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
-									className: "play-log",
-									children: [
-										/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
-										/* @__PURE__ */ jsx("p", { children: entry.text }),
-										entry.formula && /* @__PURE__ */ jsxs("p", { children: [
-											/* @__PURE__ */ jsx("b", { children: entry.total }),
-											" · ",
-											entry.formula,
-											" · кости [",
-											entry.rolls?.join(", "),
-											"]"
-										] })
-									]
-								}, entry.id))
-							]
-						})] })
+						tab === "journal" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsx("h2", { children: "Заметки приключения" }), /* @__PURE__ */ jsx("textarea", {
+									rows: 6,
+									value: a.notes,
+									onChange: (e) => onChange({
+										...c,
+										adventure: {
+											...a,
+											notes: e.target.value
+										}
+									}),
+									placeholder: "Квесты, договорённости с мастером, добыча…"
+								})]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [/* @__PURE__ */ jsxs("div", {
+									className: "play-row",
+									children: [/* @__PURE__ */ jsx("h2", { children: "Окна заметок" }), /* @__PURE__ */ jsx("button", {
+										onClick: () => onChange({
+											...c,
+											adventure: {
+												...a,
+												noteWindows: [...a.noteWindows || [], {
+													id: playId(),
+													title: "Новая заметка",
+													text: ""
+												}]
+											}
+										}),
+										children: "+ Новая заметка"
+									})]
+								}), /* @__PURE__ */ jsx("div", {
+									className: "play-grid",
+									children: (a.noteWindows || []).map((note) => /* @__PURE__ */ jsxs("details", {
+										open: true,
+										className: "play-card",
+										children: [
+											/* @__PURE__ */ jsx("summary", { children: note.title || "Заметка" }),
+											/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
+												value: note.title,
+												onChange: (e) => onChange({
+													...c,
+													adventure: {
+														...a,
+														noteWindows: a.noteWindows.map((n) => n.id === note.id ? {
+															...n,
+															title: e.target.value
+														} : n)
+													}
+												})
+											})] }),
+											/* @__PURE__ */ jsx("textarea", {
+												"aria-label": `Текст заметки: ${note.title}`,
+												rows: 6,
+												value: note.text,
+												onChange: (e) => onChange({
+													...c,
+													adventure: {
+														...a,
+														noteWindows: a.noteWindows.map((n) => n.id === note.id ? {
+															...n,
+															text: e.target.value
+														} : n)
+													}
+												})
+											}),
+											/* @__PURE__ */ jsx("button", {
+												onClick: () => {
+													if (window.confirm("Удалить эту заметку?")) onChange({
+														...c,
+														adventure: {
+															...a,
+															noteWindows: a.noteWindows.filter((n) => n.id !== note.id)
+														}
+													});
+												},
+												children: "Удалить заметку"
+											})
+										]
+									}, note.id))
+								})]
+							}),
+							/* @__PURE__ */ jsxs("section", {
+								className: "play-card",
+								children: [
+									/* @__PURE__ */ jsx("h2", { children: "История действий" }),
+									/* @__PURE__ */ jsxs("small", { children: [
+										"Последние 150 записей. Прошло игрового времени: ",
+										a.elapsedMinutes,
+										" мин."
+									] }),
+									a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
+										className: "play-log",
+										children: [
+											/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
+											/* @__PURE__ */ jsx("p", { children: entry.text }),
+											entry.formula && /* @__PURE__ */ jsxs("p", { children: [
+												/* @__PURE__ */ jsx("b", { children: entry.total }),
+												" · ",
+												entry.formula,
+												" · кости [",
+												entry.rolls?.join(", "),
+												"]"
+											] })
+										]
+									}, entry.id))
+								]
+							})
+						] })
 					]
 				}), /* @__PURE__ */ jsxs("div", {
 					className: `play-dice-sidebar${diceOpen ? " is-open" : ""}`,
@@ -34887,7 +34957,7 @@ function homebrewTableFeatures(entities) {
 /** Select home art for all app shells, including mobile, Android and Windows. */
 function selectHomeHeroArt(siteTheme, activePreset) {
 	if (!activePreset) return siteTheme === "classic" ? "home/hero-night.webp" : "home/hero-day.webp";
-	return "home/hero-universal.png";
+	return "home/hero-universal-v2.png";
 }
 //#endregion
 //#region app/featureHandling.ts

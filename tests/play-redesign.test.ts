@@ -30,3 +30,14 @@ test('attack customizations recompute with ability and proficiency and survive n
 test('invalid view settings recover without touching character data',()=>{
  assert.deepEqual(normalizePlayView({density:'huge',hiddenBlocks:['turn','unknown'],hints:'unknown',sessionPanels:{actions:true,spells:'bad'},layout:'bad'}),{density:undefined,hints:'brief',hiddenBlocks:['turn'],sessionPanels:{actions:true},layout:'columns'});
 });
+test('note windows and interface layout survive export and health undo',()=>{
+ const c=createAdventureCharacter(hero(),'source','date','Тест');
+ c.adventure!.noteWindows=[{id:'quest',title:'Квест',text:'Найти ключ'},{id:'loot',title:'Добыча',text:'Алмаз'}];
+ c.adventure!.mobileLayout={hideDice:true,diceSide:'left',hudPosition:'bottom',tabOrder:['journal','actions'],hiddenTabs:['spells']};
+ const imported=parseCharacterFile(JSON.parse(JSON.stringify(createNativeCharacterFile(c))),hero()).character;
+ assert.deepEqual(imported.adventure!.noteWindows,c.adventure!.noteWindows);
+ assert.deepEqual(imported.adventure!.mobileLayout,c.adventure!.mobileLayout);
+ const restored=undoPlayChange(commitPlayChange(imported,applyPlayDamage(imported,1)));
+ assert.deepEqual(restored.adventure!.noteWindows,c.adventure!.noteWindows);
+ assert.deepEqual(restored.adventure!.mobileLayout,c.adventure!.mobileLayout);
+});

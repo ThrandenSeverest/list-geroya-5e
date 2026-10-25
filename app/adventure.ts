@@ -19,7 +19,7 @@ export type AdventureState = {
   version: 1; customResources?: PlayResource[]; interfaceDensity?: 'comfortable' | 'compact'; mobileLayout?: { tabOrder?: string[]; hiddenTabs?: string[]; navPosition?: 'top' | 'bottom'; diceSide?: 'left' | 'right'; hideDice?: boolean; hudPosition?: 'top' | 'bottom'; }; undo?: PlayTransaction[]; favoriteActions?: string[]; name: string; sourceId: string; sourceUpdatedAt: string; startedAt: string; status: 'active' | 'archived';
   inventory: PlayItem[]; inventoryTrash?: PlayItem[]; inventoryCatalogVersion?: number; requirePotionStock?: boolean; effects: PlayEffect[]; concentration?: { name: string; duration: string; remainingMinutes?: number };
   concentrationChecks: { id: string; dc: number; damage: number }[]; conditions: string[]; exhaustion: number;
-  journal: PlayLog[]; notes: string; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
+  journal: PlayLog[]; notes: string; noteWindows?: {id:string;title:string;text:string}[]; round: number; turn: { action: boolean; bonus: boolean; reaction: boolean };
   hpMaximum?: number; acOverride?: number; acSource?: string; attunementLimit: number; elapsedMinutes: number;
 };
 export const playConditions = ['Ослеплён', 'Очарован', 'Оглох', 'Испуган', 'Схвачен', 'Недееспособен', 'Невидим', 'Парализован', 'Окаменел', 'Отравлен', 'Сбит с ног', 'Опутан', 'Ошеломлён', 'Бессознателен'];

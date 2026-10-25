@@ -220,3 +220,23 @@
 .play-shell .play-spell-card .play-error { flex-wrap:wrap; align-items:flex-start; }
 .play-shell .play-spell-card .play-error .play-check { flex:1 1 100%; min-width:0; overflow-wrap:anywhere; }
 .play-shell .play-check input { flex:0 0 20px; }
+
+/* Apply layout preferences consistently to desktop and embedded mobile shells. */
+.play-shell { display:flex;flex-direction:column; }
+.play-shell[data-hud-position=bottom]>.play-hud,.play-shell[data-hud-position=bottom]>.play-hud-detail { order:2; }
+.play-shell[data-hide-dice=true] .play-dice-sidebar,.play-shell[data-hide-dice=true] .dice-mobile-toggle { display:none!important; }
+.play-shell[data-hide-dice=true] .play-workspace { grid-template-columns:minmax(0,1fr)!important; }
+.play-shell[data-dice-side=left] .play-dice-sidebar { grid-column:1;grid-row:1; }
+.play-shell[data-dice-side=left] .play-content { grid-column:2;grid-row:1; }
+.play-shell .quick-health-actions { display:flex;flex-wrap:wrap;gap:8px;align-items:end; }
+.play-shell .quick-health-actions>label { flex:1 1 100%; }
+.play-shell .quick-health-actions .number-slider { width:100%;max-width:none;grid-template-columns:minmax(140px,1fr) 64px; }
+.play-shell .play-settings-dialog { position:fixed;inset:5vh max(12px,calc((100vw - 850px)/2));z-index:1200;overflow:auto;padding:16px;background:var(--panel);border:1px solid var(--line);box-shadow:0 0 0 100vmax #0009; }
+.play-shell .play-settings-dialog .play-interface-settings { margin-top:12px; }
+.play-shell .session-panel { min-width:0; }
+.play-shell[data-layout=classic] .play-tab-actions { display:block; }
+.play-shell[data-hints=brief] .session-turn>small,.play-shell[data-hints=brief] .play-notice>small { display:none; }
+@container(min-width:1000px){.play-shell[data-dice-side=left]:not([data-hide-dice=true]) .play-workspace{grid-template-columns:230px minmax(0,1fr);}}
+@container(max-width:999px){.play-shell[data-dice-side=left] .play-content{grid-column:1;}.play-shell[data-dice-side=left] .dice-mobile-toggle{left:12px;right:auto;}}
+.play-shell[data-hide-dice=true] .play-content { grid-column:1;grid-row:auto; }
+.play-shell .session-panel>.session-resources { padding:12px;border:1px solid var(--line);background:var(--panel); }

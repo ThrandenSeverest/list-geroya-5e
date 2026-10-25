@@ -9,7 +9,7 @@ test('original blue and gold and parchment artwork stays untouched', () => {
 
 test('all other design presets and personalized themes use universal PNG', () => {
   for (const theme of ['paper','graphite','journal','custom-uuid']) {
-    assert.equal(selectHomeHeroArt('classic',theme),'home/hero-universal.png');
-    assert.equal(selectHomeHeroArt('parchment',theme),'home/hero-universal.png');
+    assert.equal(selectHomeHeroArt('classic',theme),'home/hero-universal-v2.png');
+    assert.equal(selectHomeHeroArt('parchment',theme),'home/hero-universal-v2.png');
   }
 });
