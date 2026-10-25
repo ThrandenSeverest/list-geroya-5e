@@ -69045,11 +69045,13 @@ function Builder({ adventureRoute = false } = {}) {
 										}, folder.id))]
 									}),
 									/* @__PURE__ */ jsx("button", {
+										type: "button",
 										disabled: !selectedSlotIds.length,
 										onClick: moveSelectedSlots,
 										children: "Перенести"
 									}),
 									/* @__PURE__ */ jsx("button", {
+										type: "button",
 										disabled: !selectedSlotIds.length,
 										onClick: deleteSelectedSlots,
 										children: "Удалить выбранных"
@@ -69100,14 +69102,17 @@ function Builder({ adventureRoute = false } = {}) {
 												className: "character-card-actions",
 												children: [
 													/* @__PURE__ */ jsx("button", {
+														type: "button",
 														onClick: () => selectSlot(slot.id),
-														children: slot.id === vault.activeId ? "Открыть" : "Открыть"
+														children: "Открыть"
 													}),
 													/* @__PURE__ */ jsx("button", {
+														type: "button",
 														onClick: () => duplicateSlot(slot.id),
 														children: "Копировать"
 													}),
 													!slot.character.adventure && /* @__PURE__ */ jsx("button", {
+														type: "button",
 														className: "primary-action",
 														onClick: () => sendToAdventure(slot.id),
 														children: "Отправить в приключение"
@@ -69127,10 +69132,12 @@ function Builder({ adventureRoute = false } = {}) {
 														})]
 													}),
 													/* @__PURE__ */ jsx("button", {
+														type: "button",
 														onClick: () => openCharacterExport(slot.id),
 														children: "Экспорт"
 													}),
 													/* @__PURE__ */ jsx("button", {
+														type: "button",
 														onClick: () => deleteSlot(slot.id),
 														children: "Удалить"
 													})
