@@ -231,7 +231,19 @@
 .play-shell .quick-health-actions { display:flex;flex-wrap:wrap;gap:8px;align-items:end; }
 .play-shell .quick-health-actions>label { flex:1 1 100%; }
 .play-shell .quick-health-actions .number-slider { width:100%;max-width:none;grid-template-columns:minmax(140px,1fr) 64px; }
-.play-shell .play-settings-dialog { position:fixed;inset:5vh max(12px,calc((100vw - 850px)/2));z-index:1200;overflow:auto;padding:16px;background:var(--panel);border:1px solid var(--line);box-shadow:0 0 0 100vmax #0009; }
+.play-shell .play-settings-dialog {
+ position:fixed;inset:0;margin:auto;
+ width:min(850px,calc((100vw - 32px)/var(--applied-interface-zoom,1)));
+ max-width:calc((100vw - 32px)/var(--applied-interface-zoom,1));
+ max-height:calc((100dvh - 32px)/var(--applied-interface-zoom,1));
+ height:fit-content;min-height:0;overflow:auto;overscroll-behavior:contain;
+ padding:16px;background:var(--panel);color:var(--ivory);border:1px solid var(--line);border-radius:8px;
+}
+.play-shell .play-settings-dialog::backdrop {background:rgba(0,0,0,.55);}
+.play-shell .play-settings-dialog .play-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+@media(max-width:760px) {
+ .play-shell .play-settings-dialog .play-grid {grid-template-columns:minmax(0,1fr);}
+}
 .play-shell .play-settings-dialog .play-interface-settings { margin-top:12px; }
 .play-shell .session-panel { min-width:0; }
 .play-shell[data-layout=classic] .play-tab-actions { display:block; }

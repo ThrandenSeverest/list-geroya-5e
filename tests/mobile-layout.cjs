@@ -27,7 +27,18 @@ assert.ok(healthButtons.every(b=>b.width<b.parent*.6),'Health buttons do not fil
 
 const nav=page.locator(width<500?'.play-mobile-nav':'.play-desktop-nav');await nav.getByRole('button',{name:'Рюкзак',exact:true}).click();await page.locator('.inventory-heading').waitFor();await fits('inventory');const title=await page.locator('.inventory-heading h2').boundingBox();assert.ok(title.width>100);await page.locator('.inventory-pack > summary').click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'10');await page.getByRole('button',{name:'Использовать 1',exact:true}).first().click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'9');await fits('pack');
 
-await page.getByRole('button',{name:'Настройки игрового режима',exact:true}).click();await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('top');await fits('settings');await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('bottom');await page.getByRole('button',{name:'Закрыть настройки',exact:true}).click();
+await page.getByRole('button',{name:'Настройки игрового режима',exact:true}).click();
+const settingsDialog=page.getByRole('dialog',{name:'Настройки игрового режима',exact:true});
+for(const testZoom of (width>=1000?[1,1.25,2]:[1])){
+ await page.evaluate(zoom=>document.documentElement.style.setProperty('--interface-zoom',String(zoom)),testZoom);
+ const bounds=await settingsDialog.boundingBox();
+ assert.ok(bounds.width>=Math.min(600,width-40),'Settings must have usable window width at zoom '+testZoom);
+ assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,'Settings stays inside viewport at zoom '+testZoom);
+ assert.ok(bounds.y>=0&&bounds.y+bounds.height<=900+1,'Settings scrolls inside viewport at zoom '+testZoom);
+ assert.equal(await settingsDialog.evaluate(dialog=>dialog.matches(':modal')),true,'Settings escapes ancestor containment through native modal top layer');
+}
+await page.evaluate(()=>document.documentElement.style.removeProperty('--interface-zoom'));
+await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('top');await fits('settings');await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('bottom');await page.getByRole('button',{name:'Закрыть настройки',exact:true}).click();
 await nav.getByRole('button',{name:'Магия',exact:true}).click();await fits('magic');
 await nav.getByRole('button',{name:'Герой',exact:true}).click();await page.getByText('Ручные значения и завершение приключения',{exact:true}).click();await page.getByLabel('Текущие HP вручную',{exact:true}).fill('0');await page.getByRole('button',{name:'Длинный отдых',exact:true}).click();const finish=page.getByRole('button',{name:'Завершить отдых',exact:true});assert.ok(await finish.isDisabled());await page.getByLabel('Персонаж в сознании?',{exact:true}).check();await finish.click();assert.match(await page.locator('.play-hp strong').innerText(),/36.*36/);
 
