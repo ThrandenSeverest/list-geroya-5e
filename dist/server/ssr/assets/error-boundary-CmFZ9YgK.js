@@ -1,4 +1,4 @@
-import { c as useRouter, s as usePathname } from "../index.js";
+import { c as useRouter, l as _defineProperty, s as usePathname } from "../index.js";
 import React from "react";
 import { jsx } from "react/jsx-runtime";
 //#region node_modules/vinext/dist/utils/navigation-signal.js
@@ -103,6 +103,9 @@ function RedirectBoundary({ children }) {
 var ErrorBoundaryInner = class extends React.Component {
 	constructor(props) {
 		super(props);
+		_defineProperty(this, "reset", () => {
+			this.setState({ error: null });
+		});
 		this.state = {
 			error: null,
 			...readBoundaryResetState(props)
@@ -123,9 +126,6 @@ var ErrorBoundaryInner = class extends React.Component {
 		if (isNavigationSignalError(error)) throw error;
 		return { error: { thrownValue: error } };
 	}
-	reset = () => {
-		this.setState({ error: null });
-	};
 	render() {
 		if (this.state.error) {
 			const FallbackComponent = this.props.fallback;

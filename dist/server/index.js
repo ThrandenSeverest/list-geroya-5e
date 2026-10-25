@@ -2557,9 +2557,9 @@ function setRequireModule(options) {
 			id = removeReferenceCacheTag(id);
 			const target = {};
 			const getOrCreateClientReference = (name) => {
-				return target[name] ??= import_server_edge.registerClientReference(() => {
+				return target[name] ?? (target[name] = import_server_edge.registerClientReference(() => {
 					throw new Error(`Unexpectedly client reference export '${name}' is called on server`);
-				}, id, name);
+				}, id, name));
 			};
 			return new Proxy(target, { getOwnPropertyDescriptor(_target, name) {
 				if (typeof name !== "string" || name === "then") return Reflect.getOwnPropertyDescriptor(target, name);
@@ -3517,6 +3517,44 @@ async function resolveInvalidRscCacheBustingRequest(options) {
 	});
 }
 //#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/typeof.js
+function _typeof(o) {
+	"@babel/helpers - typeof";
+	return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
+		return typeof o;
+	} : function(o) {
+		return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+	}, _typeof(o);
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/toPrimitive.js
+function toPrimitive(t, r) {
+	if ("object" != _typeof(t) || !t) return t;
+	var e = t[Symbol.toPrimitive];
+	if (void 0 !== e) {
+		var i = e.call(t, r || "default");
+		if ("object" != _typeof(i)) return i;
+		throw new TypeError("@@toPrimitive must return a primitive value.");
+	}
+	return ("string" === r ? String : Number)(t);
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/toPropertyKey.js
+function toPropertyKey(t) {
+	var i = toPrimitive(t, "string");
+	return "symbol" == _typeof(i) ? i : i + "";
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/defineProperty.js
+function _defineProperty(e, r, t) {
+	return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+		value: t,
+		enumerable: !0,
+		configurable: !0,
+		writable: !0
+	}) : e[r] = t, e;
+}
+//#endregion
 //#region node_modules/vinext/dist/shims/navigation.js
 var _SERVER_INSERTED_HTML_CTX_KEY = Symbol.for("vinext.serverInsertedHTMLContext");
 function getServerInsertedHTMLContext() {
@@ -3588,7 +3626,7 @@ var _CLIENT_NAV_STATE_KEY = Symbol.for("vinext.clientNavigationState");
 function getClientNavigationState() {
 	if (isServer) return null;
 	const globalState = window;
-	globalState[_CLIENT_NAV_STATE_KEY] ??= {
+	globalState[_CLIENT_NAV_STATE_KEY] ?? (globalState[_CLIENT_NAV_STATE_KEY] = {
 		listeners: /* @__PURE__ */ new Set(),
 		cachedSearch: window.location.search,
 		cachedReadonlySearchParams: new ReadonlyURLSearchParams(window.location.search),
@@ -3605,7 +3643,7 @@ function getClientNavigationState() {
 		hasPendingNavigationUpdate: false,
 		suppressUrlNotifyCount: 0,
 		navigationSnapshotActiveCount: 0
-	};
+	});
 	return globalState[_CLIENT_NAV_STATE_KEY];
 }
 function notifyNavigationListeners() {
@@ -3771,7 +3809,7 @@ var _g$8 = globalThis;
 */
 function getOrCreateAls(key) {
 	const sym = Symbol.for(key);
-	return _g$8[sym] ??= new AsyncLocalStorage$1();
+	return _g$8[sym] ?? (_g$8[sym] = new AsyncLocalStorage$1());
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/unified-request-context.js
@@ -3947,19 +3985,17 @@ function parseCookieHeader(cookieHeader) {
 	}
 	return cookies;
 }
-//#endregion
-//#region node_modules/vinext/dist/shims/headers.js
 var _FALLBACK_KEY$4 = Symbol.for("vinext.nextHeadersShim.fallback");
 var _g$6 = globalThis;
 var _als$3 = getOrCreateAls("vinext.nextHeadersShim.als");
-var _fallbackState$3 = _g$6[_FALLBACK_KEY$4] ??= {
+var _fallbackState$3 = _g$6[_FALLBACK_KEY$4] ?? (_g$6[_FALLBACK_KEY$4] = {
 	headersContext: null,
 	dynamicUsageDetected: false,
 	invalidDynamicUsageError: null,
 	pendingSetCookies: [],
 	draftModeCookieHeader: null,
 	phase: "render"
-};
+});
 (/* @__PURE__ */ new Date(0)).toUTCString();
 function splitMiddlewareSetCookieHeader(value) {
 	const cookies = [];
@@ -6284,8 +6320,10 @@ function readStringArrayField(ctx, field) {
 	return value.filter((item) => typeof item === "string");
 }
 var MemoryCacheHandler = class {
-	store = /* @__PURE__ */ new Map();
-	tagRevalidatedAt = /* @__PURE__ */ new Map();
+	constructor() {
+		_defineProperty(this, "store", /* @__PURE__ */ new Map());
+		_defineProperty(this, "tagRevalidatedAt", /* @__PURE__ */ new Map());
+	}
 	async get(key, _ctx) {
 		const entry = this.store.get(key);
 		if (!entry) return null;
@@ -6374,11 +6412,11 @@ _resolvedIOPromise.value = void 0;
 var _FALLBACK_KEY$3 = Symbol.for("vinext.cache.fallback");
 var _g$5 = globalThis;
 var _cacheAls = getOrCreateAls("vinext.cache.als");
-var _cacheFallbackState = _g$5[_FALLBACK_KEY$3] ??= {
+var _cacheFallbackState = _g$5[_FALLBACK_KEY$3] ?? (_g$5[_FALLBACK_KEY$3] = {
 	actionRevalidationKind: 0,
 	requestScopedCacheLife: null,
 	unstableCacheRevalidation: "foreground"
-};
+});
 var ACTION_DID_NOT_REVALIDATE$1 = 0;
 function _getCacheState() {
 	if (isInsideUnifiedScope()) return getRequestContext();
@@ -6678,11 +6716,11 @@ async function buildFetchCacheKey(input, init) {
 }
 var _PENDING_KEY = Symbol.for("vinext.fetchCache.pendingRefetches");
 var _gPending = globalThis;
-var pendingRefetches = _gPending[_PENDING_KEY] ??= /* @__PURE__ */ new Map();
+var pendingRefetches = _gPending[_PENDING_KEY] ?? (_gPending[_PENDING_KEY] = /* @__PURE__ */ new Map());
 var DEDUP_TIMEOUT_MS = 6e4;
 var _ORIG_FETCH_KEY = Symbol.for("vinext.fetchCache.originalFetch");
 var _gFetch = globalThis;
-var originalFetch = _gFetch[_ORIG_FETCH_KEY] ??= globalThis.fetch;
+var originalFetch = _gFetch[_ORIG_FETCH_KEY] ?? (_gFetch[_ORIG_FETCH_KEY] = globalThis.fetch);
 var _FALLBACK_KEY$2 = Symbol.for("vinext.fetchCache.fallback");
 var _g$4 = globalThis;
 var _als$1 = getOrCreateAls("vinext.fetchCache.als");
@@ -6692,13 +6730,13 @@ if (globalThis.FinalizationRegistry) _responseBodyRegistry = new FinalizationReg
 	const stream = weakRef.deref();
 	if (stream && !stream.locked) stream.cancel("Response object has been garbage collected").then(_noop, _noop);
 });
-var _fallbackState$2 = _g$4[_FALLBACK_KEY$2] ??= {
+var _fallbackState$2 = _g$4[_FALLBACK_KEY$2] ?? (_g$4[_FALLBACK_KEY$2] = {
 	currentRequestTags: [],
 	currentFetchSoftTags: [],
 	currentFetchCacheMode: null,
 	isFetchDedupeActive: false,
 	currentFetchDedupeEntries: /* @__PURE__ */ new Map()
-};
+});
 function _getState$1() {
 	if (isInsideUnifiedScope()) return getRequestContext();
 	return _als$1.getStore() ?? _fallbackState$2;
@@ -7138,16 +7176,13 @@ function decodeMatchedParams(params) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/server.js
+var _Symbol$iterator;
 var NextRequest = class extends Request {
-	_nextUrl;
-	_url;
-	_cookies;
 	constructor(input, init) {
+		var _super = (..._args) => (super(..._args), _defineProperty(this, "_nextUrl", void 0), _defineProperty(this, "_url", void 0), _defineProperty(this, "_cookies", void 0), this);
 		const { nextConfig: _nextConfig, ...requestInit } = init ?? {};
-		if (input instanceof Request) {
-			const requestInput = requestInit.body === void 0 && input.body && !input.bodyUsed ? input.clone() : input;
-			super(requestInput, requestInit);
-		} else super(input, requestInit);
+		if (input instanceof Request) _super(requestInit.body === void 0 && input.body && !input.bodyUsed ? input.clone() : input, requestInit);
+		else _super(input, requestInit);
 		const url = typeof input === "string" ? new URL(input, "http://localhost") : input instanceof URL ? input : new URL(input.url, "http://localhost");
 		const urlConfig = _nextConfig ? {
 			basePath: _nextConfig.basePath,
@@ -7198,13 +7233,17 @@ var NextRequest = class extends Request {
 	}
 };
 var NextURL = class NextURL {
-	/** Internal URL stores the pathname WITHOUT basePath or locale prefix. */
-	_url;
-	_basePath;
-	_locale;
-	_defaultLocale;
-	_locales;
 	constructor(input, base, config) {
+		_defineProperty(
+			this,
+			/** Internal URL stores the pathname WITHOUT basePath or locale prefix. */
+			"_url",
+			void 0
+		);
+		_defineProperty(this, "_basePath", void 0);
+		_defineProperty(this, "_locale", void 0);
+		_defineProperty(this, "_defaultLocale", void 0);
+		_defineProperty(this, "_locales", void 0);
 		this._url = new URL(input.toString(), base);
 		this._basePath = config?.basePath ?? "";
 		this._stripBasePath();
@@ -7359,13 +7398,13 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "c0590d2d-fc4e-4aae-af26-2aa8ffc4755e";
+		return "098321c6-a342-4380-a77c-358f854a50fb";
 	}
 };
-var RequestCookies = class {
-	_headers;
-	_parsed;
+var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
 	constructor(headers) {
+		_defineProperty(this, "_headers", void 0);
+		_defineProperty(this, "_parsed", void 0);
 		this._headers = headers;
 		this._parsed = parseCookieHeader(headers.get("cookie") ?? "");
 	}
@@ -7433,10 +7472,10 @@ var RequestCookies = class {
 		if (this._parsed.size === 0) this._headers.delete("cookie");
 		else this._headers.set("cookie", this._serialize());
 	}
-	[Symbol.iterator]() {
+	[_Symbol$iterator]() {
 		return this.getAll().map((c) => [c.name, c])[Symbol.iterator]();
 	}
-};
+});
 var ReadonlyRequestCookiesError = class ReadonlyRequestCookiesError extends Error {
 	constructor() {
 		super("Cookies can only be modified in a Server Action or Route Handler. Read more: https://nextjs.org/docs/app/api-reference/functions/cookies#options");
@@ -7477,9 +7516,9 @@ function sealRequestCookies(cookies) {
 * otherwise provides the waitUntil pattern standalone.
 */
 var NextFetchEvent = class {
-	sourcePage;
-	_waitUntilPromises = [];
 	constructor(params) {
+		_defineProperty(this, "sourcePage", void 0);
+		_defineProperty(this, "_waitUntilPromises", []);
 		this.sourcePage = params.page;
 	}
 	waitUntil(promise) {
@@ -8089,7 +8128,7 @@ function buildPostMwRequestContext(request) {
 //#region node_modules/vinext/dist/shims/root-params.js
 var _FALLBACK_KEY$1 = Symbol.for("vinext.rootParams.fallback");
 var _g$3 = globalThis;
-var _fallbackState$1 = _g$3[_FALLBACK_KEY$1] ??= { rootParams: null };
+var _fallbackState$1 = _g$3[_FALLBACK_KEY$1] ?? (_g$3[_FALLBACK_KEY$1] = { rootParams: null });
 function getState() {
 	if (isInsideUnifiedScope()) return getRequestContext();
 	return _fallbackState$1;
@@ -9054,7 +9093,7 @@ function buildRouteHandlerAllowHeader(exportedMethods) {
 }
 var _KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY = Symbol.for("vinext.appRouteHandlerRuntime.knownDynamicHandlers");
 var _g$2 = globalThis;
-var knownDynamicAppRouteHandlers = _g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] ??= /* @__PURE__ */ new Set();
+var knownDynamicAppRouteHandlers = _g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] ?? (_g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] = /* @__PURE__ */ new Set());
 function isKnownDynamicAppRoute(pattern) {
 	return knownDynamicAppRouteHandlers.has(pattern);
 }
@@ -9189,13 +9228,13 @@ function createTrackedAppRouteRequest(request, options = {}) {
 		return new Proxy(nextRequest, { get(target, prop) {
 			if (requestMode === "force-static") switch (prop) {
 				case "nextUrl":
-					forceStaticNextUrl ??= wrapForceStaticNextUrl(target.nextUrl);
+					forceStaticNextUrl ?? (forceStaticNextUrl = wrapForceStaticNextUrl(target.nextUrl));
 					return forceStaticNextUrl;
 				case "headers":
-					forceStaticHeaders ??= sealRequestHeaders(new Headers());
+					forceStaticHeaders ?? (forceStaticHeaders = sealRequestHeaders(new Headers()));
 					return forceStaticHeaders;
 				case "cookies":
-					forceStaticCookies ??= sealRequestCookies(new RequestCookies(new Headers()));
+					forceStaticCookies ?? (forceStaticCookies = sealRequestCookies(new RequestCookies(new Headers())));
 					return forceStaticCookies;
 				case "url": return cleanStaticUrl(target.nextUrl.href);
 				case "ip":
@@ -9211,7 +9250,7 @@ function createTrackedAppRouteRequest(request, options = {}) {
 			}
 			if (requestMode === "error") switch (prop) {
 				case "nextUrl":
-					requireStaticNextUrl ??= wrapRequireStaticNextUrl(target.nextUrl);
+					requireStaticNextUrl ?? (requireStaticNextUrl = wrapRequireStaticNextUrl(target.nextUrl));
 					return requireStaticNextUrl;
 				case "headers":
 				case "cookies":
@@ -9229,7 +9268,7 @@ function createTrackedAppRouteRequest(request, options = {}) {
 			}
 			switch (prop) {
 				case "nextUrl":
-					proxiedNextUrl ??= wrapNextUrl(target.nextUrl);
+					proxiedNextUrl ?? (proxiedNextUrl = wrapNextUrl(target.nextUrl));
 					return proxiedNextUrl;
 				case "headers":
 				case "cookies":
@@ -12416,7 +12455,7 @@ async function isrSet(key, data, revalidateSeconds, tags, expireSeconds) {
 }
 var _PENDING_REGEN_KEY = Symbol.for("vinext.isrCache.pendingRegenerations");
 var _g$1 = globalThis;
-var pendingRegenerations = _g$1[_PENDING_REGEN_KEY] ??= /* @__PURE__ */ new Map();
+var pendingRegenerations = _g$1[_PENDING_REGEN_KEY] ?? (_g$1[_PENDING_REGEN_KEY] = /* @__PURE__ */ new Map());
 /**
 * Trigger a background regeneration for a cache key.
 *
@@ -12481,7 +12520,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "c0590d2d-fc4e-4aae-af26-2aa8ffc4755e") {
+function appIsrCacheKey(pathname, suffix, buildId = "098321c6-a342-4380-a77c-358f854a50fb") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12504,7 +12543,7 @@ function appIsrRouteKey(pathname) {
 	return appIsrCacheKey(pathname, "route");
 }
 var _REVALIDATE_KEY = Symbol.for("vinext.isrCache.revalidateDurations");
-_g$1[_REVALIDATE_KEY] ??= /* @__PURE__ */ new Map();
+_g$1[_REVALIDATE_KEY] ?? (_g$1[_REVALIDATE_KEY] = /* @__PURE__ */ new Map());
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-cache.js
 var NO_STORE_CACHE_CONTROL = "no-store, must-revalidate";
@@ -12810,7 +12849,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "c0590d2d-fc4e-4aae-af26-2aa8ffc4755e",
+		deploymentVersion: "098321c6-a342-4380-a77c-358f854a50fb",
 		rootBoundaryId
 	});
 }
@@ -13749,10 +13788,10 @@ function mergeMatchedParams(sourceParams, targetParams) {
 var _FALLBACK_KEY = Symbol.for("vinext.navigation.fallback");
 var _g = globalThis;
 var _als = getOrCreateAls("vinext.navigation.als");
-var _fallbackState = _g[_FALLBACK_KEY] ??= {
+var _fallbackState = _g[_FALLBACK_KEY] ?? (_g[_FALLBACK_KEY] = {
 	serverContext: null,
 	serverInsertedHTMLCallbacks: []
-};
+});
 function _getState() {
 	if (isInsideUnifiedScope()) return getRequestContext();
 	return _als.getStore() ?? _fallbackState;
@@ -14341,6 +14380,47 @@ var storageGuardScript = String.raw`
 })();
 `;
 //#endregion
+//#region app/hydrationWatch.ts
+/** Inline, ES5-compatible watchdog for cached HTML / missing client bundles. */
+var hydrationWatchScript = String.raw`
+(function () {
+  var assetFailed = false;
+  window.addEventListener('error', function (event) {
+    var node = event.target;
+    if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
+  }, true);
+  window.setTimeout(function () {
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
+    if (!document.querySelector('.character-library-layout')) return;
+    if (document.getElementById('herolist-boot-warning')) return;
+    var panel = document.createElement('section');
+    panel.id = 'herolist-boot-warning';
+    panel.setAttribute('role', 'alert');
+    panel.style.cssText = 'position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;padding:16px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:15px/1.5 Arial,sans-serif';
+    var title = document.createElement('strong');
+    title.textContent = 'HeroList: интерфейс не запустился';
+    var body = document.createElement('p');
+    body.style.cssText = 'margin:8px 0';
+    body.textContent = assetFailed
+      ? 'Не загрузились файлы приложения. Старый кеш страницы может ссылаться на удалённые скрипты.'
+      : 'Кнопка меню ☰ может работать без JavaScript, но действия с героями требуют загрузки приложения. Возможно, браузер устарел или загрузка прервалась.';
+    var help = document.createElement('p');
+    help.style.cssText = 'margin:8px 0';
+    help.textContent = 'Перезагрузка не удалит сохранённых персонажей.';
+    var link = document.createElement('a');
+    link.textContent = 'Перезагрузить сайт без старого HTML';
+    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none';
+    var href = window.location.href.split('#')[0];
+    link.href = href + (href.indexOf('?') === -1 ? '?' : '&') + 'hl_reload=' + Date.now() + window.location.hash;
+    panel.appendChild(title);
+    panel.appendChild(body);
+    panel.appendChild(help);
+    panel.appendChild(link);
+    document.body.appendChild(panel);
+  }, 8000);
+})();
+`;
+//#endregion
 //#region app/layout.tsx
 var layout_exports = /* @__PURE__ */ __exportAll({
 	default: () => $$wrap_RootLayout,
@@ -14358,7 +14438,7 @@ var metadata$1 = {
 function RootLayout({ children }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsxs)("html", {
 		lang: "ru",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: storageGuardScript } }) }), /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("body", {
+		children: [/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsxs)("head", { children: [/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: storageGuardScript } }), /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: hydrationWatchScript } })] }), /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("body", {
 			className: "antialiased",
 			children
 		})]

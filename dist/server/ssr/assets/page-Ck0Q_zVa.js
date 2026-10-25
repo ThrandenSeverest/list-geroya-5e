@@ -67077,6 +67077,10 @@ function Builder({ adventureRoute = false } = {}) {
 		}
 	}
 	useEffect(() => {
+		document.documentElement.setAttribute("data-herolist-hydrated", "1");
+		return () => document.documentElement.removeAttribute("data-herolist-hydrated");
+	}, []);
+	useEffect(() => {
 		let loadedVault;
 		try {
 			const storedVault = localStorage.getItem("list-geroya-character-vault-v1");

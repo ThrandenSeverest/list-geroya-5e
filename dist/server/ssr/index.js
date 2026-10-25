@@ -644,6 +644,44 @@ var ReadonlyURLSearchParams = class extends URLSearchParams {
 	}
 };
 //#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/typeof.js
+function _typeof(o) {
+	"@babel/helpers - typeof";
+	return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o) {
+		return typeof o;
+	} : function(o) {
+		return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o;
+	}, _typeof(o);
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/toPrimitive.js
+function toPrimitive(t, r) {
+	if ("object" != _typeof(t) || !t) return t;
+	var e = t[Symbol.toPrimitive];
+	if (void 0 !== e) {
+		var i = e.call(t, r || "default");
+		if ("object" != _typeof(i)) return i;
+		throw new TypeError("@@toPrimitive must return a primitive value.");
+	}
+	return ("string" === r ? String : Number)(t);
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/toPropertyKey.js
+function toPropertyKey(t) {
+	var i = toPrimitive(t, "string");
+	return "symbol" == _typeof(i) ? i : i + "";
+}
+//#endregion
+//#region \0@oxc-project+runtime@0.130.0/helpers/defineProperty.js
+function _defineProperty(e, r, t) {
+	return (r = toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+		value: t,
+		enumerable: !0,
+		configurable: !0,
+		writable: !0
+	}) : e[r] = t, e;
+}
+//#endregion
 //#region node_modules/vinext/dist/shims/navigation.js
 /**
 * next/navigation shim
@@ -827,7 +865,7 @@ function getMountedSlotsHeader() {
 function getClientNavigationState() {
 	if (isServer) return null;
 	const globalState = window;
-	globalState[_CLIENT_NAV_STATE_KEY] ??= {
+	globalState[_CLIENT_NAV_STATE_KEY] ?? (globalState[_CLIENT_NAV_STATE_KEY] = {
 		listeners: /* @__PURE__ */ new Set(),
 		cachedSearch: window.location.search,
 		cachedReadonlySearchParams: new ReadonlyURLSearchParams(window.location.search),
@@ -844,7 +882,7 @@ function getClientNavigationState() {
 		hasPendingNavigationUpdate: false,
 		suppressUrlNotifyCount: 0,
 		navigationSnapshotActiveCount: 0
-	};
+	});
 	return globalState[_CLIENT_NAV_STATE_KEY];
 }
 function notifyNavigationListeners() {
@@ -1211,9 +1249,9 @@ var HTTP_ERROR_FALLBACK_ERROR_CODE = "NEXT_HTTP_ERROR_FALLBACK";
 * framework's error boundary and server-side request handlers.
 */
 var VinextNavigationError = class extends Error {
-	digest;
 	constructor(message, digest) {
 		super(message);
+		_defineProperty(this, "digest", void 0);
 		this.digest = digest;
 	}
 };
@@ -1292,7 +1330,7 @@ var _g$2 = globalThis;
 */
 function getOrCreateAls(key) {
 	const sym = Symbol.for(key);
-	return _g$2[sym] ??= new AsyncLocalStorage();
+	return _g$2[sym] ?? (_g$2[sym] = new AsyncLocalStorage());
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/unified-request-context.js
@@ -1385,10 +1423,10 @@ function isInsideUnifiedScope() {
 var _FALLBACK_KEY = Symbol.for("vinext.navigation.fallback");
 var _g = globalThis;
 var _als = getOrCreateAls("vinext.navigation.als");
-var _fallbackState = _g[_FALLBACK_KEY] ??= {
+var _fallbackState = _g[_FALLBACK_KEY] ?? (_g[_FALLBACK_KEY] = {
 	serverContext: null,
 	serverInsertedHTMLCallbacks: []
-};
+});
 function _getState() {
 	if (isInsideUnifiedScope()) return getRequestContext();
 	return _als.getStore() ?? _fallbackState;
@@ -3104,7 +3142,7 @@ var client_references_default = {
 		} };
 	},
 	"593f344dc510": async () => {
-		const m = await import("./assets/error-boundary-LmCEBP5B.js");
+		const m = await import("./assets/error-boundary-CmFZ9YgK.js");
 		return {
 			get "ErrorBoundary"() {
 				return m["ErrorBoundary"];
@@ -3124,7 +3162,7 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-C1hYX9I6.js");
+		const m = await import("./assets/page-Ck0Q_zVa.js");
 		return {
 			get "AdventureApp"() {
 				return m["AdventureApp"];
@@ -3135,7 +3173,7 @@ var client_references_default = {
 		};
 	},
 	"724dcbd470a5": async () => {
-		const m = await import("./assets/page-D6uHrHSy.js");
+		const m = await import("./assets/page-BkMcS5HK.js");
 		return { get "default"() {
 			return m["default"];
 		} };
@@ -3316,4 +3354,4 @@ var app_ssr_entry_default = { async fetch(request) {
 	return new Response(String(result), { status: 200 });
 } };
 //#endregion
-export { AppElementsWire as _, navigateClientSide as a, stripBasePath as b, useRouter as c, isHashOnlyBrowserUrlChange as d, app_ssr_entry_default as default, resolveRelativeHref as f, isDangerousScheme as g, withBasePath as h, handleSsr, getPrefetchedUrls as i, createRscRequestHeaders as l, toSameOriginAppPath as m, getLayoutSegmentContext as n, prefetchRscResponse as o, toBrowserNavigationHref as p, getMountedSlotsHeader as r, usePathname as s, getCurrentInterceptionContext as t, createRscRequestUrl as u, VINEXT_MOUNTED_SLOTS_HEADER as v, hasBasePath as y };
+export { isDangerousScheme as _, navigateClientSide as a, hasBasePath as b, useRouter as c, createRscRequestUrl as d, app_ssr_entry_default as default, isHashOnlyBrowserUrlChange as f, withBasePath as g, toSameOriginAppPath as h, handleSsr, getPrefetchedUrls as i, _defineProperty as l, toBrowserNavigationHref as m, getLayoutSegmentContext as n, prefetchRscResponse as o, resolveRelativeHref as p, getMountedSlotsHeader as r, usePathname as s, getCurrentInterceptionContext as t, createRscRequestHeaders as u, AppElementsWire as v, stripBasePath as x, VINEXT_MOUNTED_SLOTS_HEADER as y };

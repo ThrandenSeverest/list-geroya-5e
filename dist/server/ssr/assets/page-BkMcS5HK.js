@@ -1,4 +1,4 @@
-import { _ as AppElementsWire, a as navigateClientSide, b as stripBasePath, f as resolveRelativeHref, g as isDangerousScheme, h as withBasePath, i as getPrefetchedUrls, l as createRscRequestHeaders, m as toSameOriginAppPath, o as prefetchRscResponse, p as toBrowserNavigationHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestUrl, v as VINEXT_MOUNTED_SLOTS_HEADER, y as hasBasePath } from "../index.js";
+import { _ as isDangerousScheme, a as navigateClientSide, b as hasBasePath, d as createRscRequestUrl, g as withBasePath, h as toSameOriginAppPath, i as getPrefetchedUrls, m as toBrowserNavigationHref, o as prefetchRscResponse, p as resolveRelativeHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestHeaders, v as AppElementsWire, x as stripBasePath, y as VINEXT_MOUNTED_SLOTS_HEADER } from "../index.js";
 import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-DGHsJKv-.js";
 import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
 import React, { createContext, forwardRef, useCallback, useEffect, useRef, useState } from "react";
@@ -530,7 +530,7 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 			});
 			return;
 		} else try {
-			const Router = (await import("./router-PQwN1yt3.js")).default;
+			const Router = (await import("./router-D_IdNyDo.js")).default;
 			if (replace) await Router.replace(absoluteHref, void 0, { scroll });
 			else await Router.push(absoluteHref, void 0, { scroll });
 		} catch {

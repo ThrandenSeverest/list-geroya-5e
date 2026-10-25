@@ -1,4 +1,4 @@
-import { b as stripBasePath, d as isHashOnlyBrowserUrlChange, m as toSameOriginAppPath, p as toBrowserNavigationHref } from "../index.js";
+import { f as isHashOnlyBrowserUrlChange, h as toSameOriginAppPath, l as _defineProperty, m as toBrowserNavigationHref, x as stripBasePath } from "../index.js";
 import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams, t as addQueryParam } from "./query-DGHsJKv-.js";
 import { createContext, createElement } from "react";
 //#region node_modules/vinext/dist/shims/internal/router-context.js
@@ -257,9 +257,9 @@ function getPathnameAndQuery() {
 * Matches Next.js's convention of an Error with `.cancelled = true`.
 */
 var NavigationCancelledError = class extends Error {
-	cancelled = true;
 	constructor(route) {
 		super(`Abort fetching component for route: "${route}"`);
+		_defineProperty(this, "cancelled", true);
 		this.name = "NavigationCancelledError";
 	}
 };
@@ -268,9 +268,9 @@ var NavigationCancelledError = class extends Error {
 * mode. Callers can use this to avoid scheduling the same hard navigation twice.
 */
 var HardNavigationScheduledError = class extends Error {
-	hardNavigationScheduled = true;
 	constructor(message) {
 		super(message);
+		_defineProperty(this, "hardNavigationScheduled", true);
 		this.name = "HardNavigationScheduledError";
 	}
 };
