@@ -31818,6 +31818,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		if (a.inventory.some((i) => i.quantity <= 0)) onChange(updateInventory(c, a.inventory));
 	}, [c, onChange]);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const settingsRef = useRef(null);
+	useEffect(() => {
+		if (settingsOpen && !settingsRef.current?.open) settingsRef.current?.showModal();
+	}, [settingsOpen]);
 	const [tab, setTab] = useState("actions");
 	const shellRef = useRef(null);
 	const [view, updateView] = usePlayViewPreferences();
@@ -32266,10 +32270,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					})
 				]
 			}),
-			settingsOpen && /* @__PURE__ */ jsxs("section", {
+			settingsOpen && /* @__PURE__ */ jsxs("dialog", {
+				ref: settingsRef,
 				className: "play-settings-dialog",
-				role: "dialog",
+				"aria-modal": "true",
 				"aria-label": "Настройки игрового режима",
+				onCancel: () => setSettingsOpen(false),
 				children: [/* @__PURE__ */ jsx("button", {
 					onClick: () => setSettingsOpen(false),
 					children: "Закрыть настройки"
