@@ -1,5 +1,5 @@
 import type { ExportCharacter } from './exportFormats';
-import { consumePlayItem, healPlay, logPlay, rollD20, rollDice, type DiceResult, type RollMode } from './adventure';
+import { consumePlayItem, healPlay, logPlay, rollD20, rollDice, rollDamage, type DiceResult, type RollMode } from './adventure';
 import { healingFormulaForItem } from './healingPotions';
 export function useQuickItem(c:ExportCharacter,id:string,die?:(sides:number)=>number):{character:ExportCharacter;roll?:DiceResult;name:string} {
  const item=c.adventure?.inventory.find(i=>i.id===id);
@@ -14,7 +14,7 @@ export function useQuickItem(c:ExportCharacter,id:string,die?:(sides:number)=>nu
 export function resolvePlayAttack(c:ExportCharacter,name:string,bonus:number|undefined,formula:string,mode:RollMode,die?:(sides:number)=>number){
  if(formula)rollDice(formula,()=>1);
  const attack=bonus!==undefined?rollD20(bonus,mode,die):undefined;
- const damage=formula&&attack?.natural!==1?rollDice(formula,die,attack?.natural===20):undefined;
+ const damage=formula&&attack?.natural!==1?rollDamage(formula,die,attack?.natural===20):undefined;
  let next=c;
  if(attack)next=logPlay(next,`Атака: ${name}`,attack);
  if(damage)next=logPlay(next,`Урон: ${name}`,damage);

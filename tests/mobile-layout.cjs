@@ -19,6 +19,12 @@ const art=await page.locator('.home-art-selected').evaluate(async image=>{
 assert.ok(Math.abs(art.ratio-art.natural)<.01,'Complete artwork keeps its original aspect ratio');
 assert.equal(art.overlap,false,'Text must not cover the left-hand characters');
 await page.getByRole('button',{name:'Продолжить текущего персонажа',exact:true}).click();await page.locator('.play-shell').waitFor();await fits('adventure');
+const healthActions=page.locator('.quick-health-actions > button');
+assert.equal(await healthActions.count(),2,'Only damage and healing are shown above parameters');
+const healthButtons=await healthActions.evaluateAll(buttons=>buttons.map(b=>{const r=b.getBoundingClientRect();return {top:r.top,width:r.width,parent:b.parentElement.clientWidth};}));
+assert.ok(Math.abs(healthButtons[0].top-healthButtons[1].top)<1,'Health actions share one compact row');
+assert.ok(healthButtons.every(b=>b.width<b.parent*.6),'Health buttons do not fill whole rows');
+
 const nav=page.locator(width<500?'.play-mobile-nav':'.play-desktop-nav');await nav.getByRole('button',{name:'Рюкзак',exact:true}).click();await page.locator('.inventory-heading').waitFor();await fits('inventory');const title=await page.locator('.inventory-heading h2').boundingBox();assert.ok(title.width>100);await page.locator('.inventory-pack > summary').click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'10');await page.getByRole('button',{name:'Использовать 1',exact:true}).first().click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'9');await fits('pack');
 
 await page.getByRole('button',{name:'Настройки игрового режима',exact:true}).click();await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('top');await fits('settings');await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('bottom');await page.getByRole('button',{name:'Закрыть настройки',exact:true}).click();

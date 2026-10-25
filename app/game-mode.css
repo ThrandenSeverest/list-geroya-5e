@@ -240,3 +240,12 @@
 @container(max-width:999px){.play-shell[data-dice-side=left] .play-content{grid-column:1;}.play-shell[data-dice-side=left] .dice-mobile-toggle{left:12px;right:auto;}}
 .play-shell[data-hide-dice=true] .play-content { grid-column:1;grid-row:auto; }
 .play-shell .session-panel>.session-resources { padding:12px;border:1px solid var(--line);background:var(--panel); }
+
+/* Quick health has one amount control and two compact actions; temp HP stays in details. */
+.play-shell .quick-health-actions>button {
+ width:auto;flex:0 0 auto;min-width:88px;min-height:36px;padding:6px 12px;
+}
+.play-shell .quick-health-actions .number-slider {max-width:380px;}
+@media(max-width:760px) {
+ .play-shell .quick-health-actions>button {min-height:44px;}
+}

@@ -3,7 +3,7 @@ import type { CatalogSpell } from './catalog';
 import type { ExportCharacter } from './exportFormats';
 import { resolvePactMagic, resolveSpellSlots } from './multiclass';
 import { resolvedRacialSpells } from './racialSpellcasting';
-import { durationMinutes, endConcentration, logPlay, rollD20, rollDice, type DiceResult, type RollMode } from './adventure';
+import { durationMinutes, endConcentration, logPlay, rollD20, rollDice, rollDamage, type DiceResult, type RollMode } from './adventure';
 import { equippedHands, itemCategory } from './adventure';
 import { spellPlayProfile, type SpellPlayProfile } from './playSpells';
 export function spellHandsWarning(c:ExportCharacter,spell:CatalogSpell,classId=c.className):string|undefined {
@@ -50,7 +50,7 @@ export function castPlaySpell(c:ExportCharacter,spell:CatalogSpell,methodId:stri
    const part:CastPart={},suffix=profile.projectiles>1?` · снаряд ${i+1}`:'';
    if(profile.attackBonus!==undefined){part.attack=rollD20(profile.attackBonus,mode,die);events.push({name:`${spell.name}: атака${suffix}`,result:part.attack});}
    // Natural 1 is a guaranteed miss. Other damage is potential until target AC is checked.
-   if(profile.damageFormula && part.attack?.natural!==1){part.damage=rollDice(profile.damageFormula,die,profile.criticalAllowed && part.attack?.natural===20);events.push({name:`${spell.name}: ${profile.delivery==='effect'?'эффект':'урон'}${suffix}${part.attack?.natural===20 && profile.criticalAllowed?' · крит':''}`,result:part.damage});}
+   if(profile.damageFormula && part.attack?.natural!==1){part.damage=rollDamage(profile.damageFormula,die,profile.criticalAllowed && part.attack?.natural===20);events.push({name:`${spell.name}: ${profile.delivery==='effect'?'эффект':'урон'}${suffix}${part.attack?.natural===20 && profile.criticalAllowed?' · крит':''}`,result:part.damage});}
    if(profile.healingFormula){part.healing=rollDice(profile.healingFormula,die);events.push({name:`${spell.name}: лечение${suffix}`,result:part.healing});}
    parts.push(part);
  }

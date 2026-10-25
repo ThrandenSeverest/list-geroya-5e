@@ -26,3 +26,14 @@ test('session pins, density and custom resources survive native import and resto
  assert.deepEqual(restPlay(restored,'short').adventure!.customResources!.map(r=>r.current),[2,1,0]);
  const rested=commitPlayChange(restored,restPlay(restored,'long'));assert.deepEqual(rested.adventure!.customResources!.map(r=>r.current),[2,3,0]);assert.deepEqual(undoPlayChange(rested).adventure!.customResources!.map(r=>r.current),[0,1,0]);
 });
+
+test('attack damage has a minimum of one after negative modifiers, including critical hits',()=>{
+ const c=hero();
+ for(const formula of ['1d4-1','1d4-10','0','-3']){
+  const hit=resolvePlayAttack(c,'Минимум',0,formula,'normal',s=>s===20?10:1);
+  assert.equal(hit.damage!.total,1);
+  const crit=resolvePlayAttack(c,'Минимум',0,formula,'normal',s=>s===20?20:1);
+  assert.ok(crit.damage!.total>=1);
+ }
+ assert.equal(resolvePlayAttack(c,'Промах',0,'1d4-10','normal',()=>1).damage,undefined);
+});
