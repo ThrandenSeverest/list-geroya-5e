@@ -39,7 +39,7 @@ jobs:
           python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-pages-preview > /tmp/herolist-pages-preview.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-          for attempt in {1..20}; do
+          for attempt in $(seq 1 20); do
             if curl -fsS http://127.0.0.1:3997/list-geroya-5e/ >/dev/null; then
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright HB_TEST_BROWSER=webkit node tests/mobile-tavern.cjs
               exit 0
