@@ -18,3 +18,17 @@ HEROLIST_URL=http://127.0.0.1:3998/ node tests/mobile-layout.cjs
 ```
 
 It checks 320, 390, 430 and 1440 px layouts, inventory and coin fields, the complete final sheet, immediate ASI controls, individual rations inside collapsible packs, layout settings, and consciousness confirmation for a long rest at zero HP. `HB_TEST_CHROMIUM` selects a local browser; `HB_TEST_CHROMIUM_ARGS` accepts a JSON array of launch arguments. The same test runs before GitHub Pages publication.
+
+The play-interface regression checks cover quick damage/healing and undo,
+concentration, independent attack editing/formula/roll actions, saved view
+preferences, and the landing illustration in all five built-in designs:
+
+```sh
+node --import tsx --test tests/play-redesign.test.ts
+HEROLIST_URL=http://127.0.0.1:3998/ node tests/play-redesign-browser.cjs
+```
+
+The browser check uses synthetic local characters at 320, 360, 390, 768, 1024,
+1280 and 1920 px, plus 125–200% magnification on tablet/desktop widths. It also
+checks native JSON round trips in the rules suite. `HB_TEST_CHROMIUM` and
+`PLAYWRIGHT_MODULE` select the local browser and Playwright installation.

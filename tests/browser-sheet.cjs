@@ -170,10 +170,12 @@ async function saved(page) {
         await page.locator('.play-shell').waitFor();
         assert.equal(await page.locator(width<=700?'.play-mobile-nav':'.play-desktop-nav').isVisible(),true);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false,'Game stays within viewport');
-        assert.equal(await page.locator('.session-panel').getAttribute('open'),null);
-        await page.locator('.session-panel > summary').click();
-        await page.getByLabel('Количество',{exact:true}).fill('4');
-        await page.getByRole('button',{name:'Получить урон',exact:true}).click();
+        // Ordinary damage is now available directly in the HUD. Resources may
+        // start expanded on desktop, independently of the quick-health controls.
+        const quickHealth=page.getByRole('region',{name:'Быстрые хиты'});
+        assert.equal(await quickHealth.isVisible(),true);
+        await quickHealth.getByLabel('Количество хитов',{exact:true}).fill('4');
+        await quickHealth.getByRole('button',{name:'− Урон',exact:true}).click();
         await page.waitForFunction(key=>{const v=JSON.parse(localStorage.getItem(key));return v.slots.find(s=>s.id===v.activeId).character.currentHitPoints===23;},key);
         const gameVault=await saved(page);
         assert.equal(gameVault.slots.find(s=>s.id==='hp-active').character.currentHitPoints,27,'Original stays unchanged');
@@ -260,18 +262,16 @@ async function saved(page) {
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.spellSlotsUsed?.[2]===1),key);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
-        // Integrated session controls remain available while viewing magic.
-        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
-        await page.locator('.session-panel > summary').click();
-        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),true);
+        // Quick health stays available while viewing magic, without opening resources.
+        assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true);
         await fireball.getByRole('button',{name:'Закрепить заклинание: Огненный шар',exact:true}).click();
         await page.getByRole('button',{name:'Действия',exact:true}).click();
         const quickSpell=page.locator('.session-quick .play-spell-card').filter({has:page.getByRole('heading',{name:'Огненный шар',exact:true})});
         await quickSpell.waitFor();
         assert.equal(await page.getByLabel('Поиск быстрых действий',{exact:true}).count(),0,'Actions search has been removed');
         assert.equal(await page.locator('.session-quick .play-spell-card').count(),1);
-        await page.locator('.session-panel > summary').click();
-        await page.locator('.session-resources > summary').click();
+        if(await page.locator('.session-panel').getAttribute('open')===null) await page.locator('.session-panel > summary').click();
+        if(await page.locator('.session-resources').getAttribute('open')===null) await page.locator('.session-resources > summary').click();
         await page.getByText('Добавить свой ресурс',{exact:true}).click();
         await page.getByLabel('Название ресурса',{exact:true}).fill('Запас решимости');
         await page.getByLabel('Максимум ресурса',{exact:true}).fill('2');
@@ -286,16 +286,17 @@ async function saved(page) {
         const savedRapier=page.locator('.inventory-item').filter({has:page.getByRole('heading',{name:'Рапира +1',exact:true})});
         await savedRapier.getByRole('button',{name:'Надеть / взять',exact:true}).click();
         await page.getByRole('button',{name:'Действия',exact:true}).click();
-        await page.getByRole('button',{name:'Атаковать',exact:true}).first().waitFor();
-        assert.equal(await page.getByRole('button',{name:'Атаковать',exact:true}).count()>0,true,'Equipped weapons have an integrated action');
-        await page.getByRole('button',{name:'Атаковать',exact:true}).first().click();
+        await page.getByRole('button',{name:/^Бросить атаку:/}).first().waitFor();
+        assert.equal(await page.getByRole('button',{name:/^Бросить атаку:/}).count()>0,true,'Equipped weapons have an integrated action');
+        await page.getByRole('button',{name:/^Бросить атаку:/}).first().click();
         await page.getByRole('region',{name:'Результат атаки',exact:true}).waitFor();
         assert.match(await page.getByRole('region',{name:'Результат атаки',exact:true}).innerText(),/Попадание|Урон/);
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
         assert.equal(await page.locator('.play-shell input[type=number]').count(),0,'Game uses sliders and exact text entry without spin buttons');
-        await page.locator('.session-panel > summary').click();
-        const hpControl=page.getByRole('slider',{name:'Текущие HP: ползунок',exact:true});
+        const healthSettings=page.locator('.quick-health > details');
+        if(await healthSettings.getAttribute('open')===null) await healthSettings.locator('summary').click();
+        const hpControl=page.getByRole('slider',{name:'Текущие хиты вручную: ползунок',exact:true});
         await hpControl.focus();
         const sliderBefore=await saved(page);
         const activeBefore=sliderBefore.slots.find(s=>s.id===sliderBefore.activeId).character;
@@ -324,11 +325,11 @@ async function saved(page) {
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventory?.some(i=>i.name==='Зелье лечения'&&i.quantity===1)),key);
         await page.reload();await page.locator('.play-shell').waitFor();
         await page.getByRole('button',{name:'Герой',exact:true}).click();
-        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),true);
+        assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true);
         await page.locator('.session-panel > summary').click();
-        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
+        assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true,'Quick health remains available when resources are collapsed or tabs change');
         await page.getByRole('button',{name:'Магия',exact:true}).click();
-        assert.equal(await page.getByRole('button',{name:'Получить урон',exact:true}).isVisible(),false);
+        assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true,'Quick health remains available when resources are collapsed or tabs change');
         assert.equal(await page.locator('.play-shell').evaluate(e=>e.scrollWidth>innerWidth),false);
         assert.deepEqual(errors,[]);
         // Bard abilities are actions, not only counters in the health panel.
