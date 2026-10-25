@@ -1,5 +1,5 @@
 import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
-import { Component, createContext, createElement, forwardRef, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Component, createContext, createElement, forwardRef, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createRequire } from "module";
 //#region app/ModeSigns.tsx
@@ -39,6 +39,59 @@ function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
 	});
 }
 //#endregion
+//#region app/playViewPreferences.ts
+var defaultPlayView = {
+	hints: "brief",
+	hiddenBlocks: [],
+	sessionPanels: {},
+	layout: "columns"
+};
+var key = "herolist-play-view-v1";
+var blockIds = [
+	"potions",
+	"quickSpells",
+	"turn",
+	"features"
+];
+function normalizePlayView(value) {
+	const v = value && typeof value === "object" ? value : {};
+	return {
+		density: v.density === "compact" || v.density === "comfortable" ? v.density : void 0,
+		hints: v.hints === "detailed" ? "detailed" : "brief",
+		hiddenBlocks: Array.isArray(v.hiddenBlocks) ? v.hiddenBlocks.filter((id) => blockIds.includes(id)) : [],
+		sessionPanels: Object.fromEntries(Object.entries(v.sessionPanels || {}).filter(([k, v]) => [
+			"actions",
+			"hero",
+			"spells",
+			"inventory",
+			"journal",
+			"resources"
+		].includes(k) && typeof v === "boolean")),
+		layout: v.layout === "classic" ? "classic" : "columns"
+	};
+}
+function usePlayViewPreferences() {
+	const [view, setView] = useState(defaultPlayView);
+	useEffect(() => {
+		try {
+			setView(normalizePlayView(JSON.parse(localStorage.getItem(key) || "null")));
+		} catch {}
+	}, []);
+	function update(patch) {
+		setView((previous) => {
+			const next = normalizePlayView({
+				...previous,
+				...patch
+			});
+			try {
+				localStorage.setItem(key, JSON.stringify(next));
+			} catch {}
+			return next;
+		});
+	}
+	return [view, update];
+}
+//#endregion
 //#region app/PlayInterfaceSettings.tsx
 var playTabs = [
 	["actions", "Действия"],
@@ -51,7 +104,7 @@ function orderedPlayTabs(c) {
 	const order = c.adventure?.mobileLayout?.tabOrder || [];
 	return [...playTabs].sort((a, b) => (order.includes(a[0]) ? order.indexOf(a[0]) : order.length + playTabs.findIndex((t) => t[0] === a[0])) - (order.includes(b[0]) ? order.indexOf(b[0]) : order.length + playTabs.findIndex((t) => t[0] === b[0])));
 }
-function PlayInterfaceSettings({ character: c, onChange }) {
+function PlayInterfaceSettings({ character: c, onChange, view, onViewChange }) {
 	const a = c.adventure, layout = a.mobileLayout || {};
 	const update = (patch) => onChange({
 		...c,
@@ -74,26 +127,44 @@ function PlayInterfaceSettings({ character: c, onChange }) {
 		className: "play-card play-interface-settings",
 		children: [
 			/* @__PURE__ */ jsx("summary", { children: "Настроить интерфейс и расположение панелей" }),
-			/* @__PURE__ */ jsx("p", { children: "Настройки сохраняются для этого приключения. На телефоне можно менять порядок разделов и скрывать лишние кнопки." }),
+			/* @__PURE__ */ jsx("p", { children: "Внешний вид сохраняется на этом устройстве. Порядок разделов и мобильные панели — в приключении. Скрытие блоков не удаляет данные." }),
 			/* @__PURE__ */ jsxs("div", {
 				className: "play-grid",
 				children: [
 					/* @__PURE__ */ jsxs("label", { children: ["Плотность", /* @__PURE__ */ jsxs("select", {
 						"aria-label": "Плотность",
-						value: a.interfaceDensity || "compact",
-						onChange: (e) => onChange({
-							...c,
-							adventure: {
-								...a,
-								interfaceDensity: e.target.value
-							}
-						}),
+						value: view.density || a.interfaceDensity || "compact",
+						onChange: (e) => onViewChange({ density: e.target.value }),
 						children: [/* @__PURE__ */ jsx("option", {
 							value: "compact",
 							children: "Компактная"
 						}), /* @__PURE__ */ jsx("option", {
 							value: "comfortable",
 							children: "Свободная"
+						})]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Компоновка на ПК", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Компоновка на ПК",
+						value: view.layout,
+						onChange: (e) => onViewChange({ layout: e.target.value }),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "columns",
+							children: "Игровой стол · колонки"
+						}), /* @__PURE__ */ jsx("option", {
+							value: "classic",
+							children: "Привычная · один поток"
+						})]
+					})] }),
+					/* @__PURE__ */ jsxs("label", { children: ["Подсказки", /* @__PURE__ */ jsxs("select", {
+						"aria-label": "Подсказки",
+						value: view.hints,
+						onChange: (e) => onViewChange({ hints: e.target.value }),
+						children: [/* @__PURE__ */ jsx("option", {
+							value: "brief",
+							children: "Краткие"
+						}), /* @__PURE__ */ jsx("option", {
+							value: "detailed",
+							children: "Подробные"
 						})]
 					})] }),
 					/* @__PURE__ */ jsxs("label", { children: ["Навигация на телефоне", /* @__PURE__ */ jsxs("select", {
@@ -144,6 +215,22 @@ function PlayInterfaceSettings({ character: c, onChange }) {
 					})] })
 				]
 			}),
+			/* @__PURE__ */ jsxs("fieldset", {
+				className: "play-block-settings",
+				children: [/* @__PURE__ */ jsx("legend", { children: "Блоки основного экрана" }), [
+					["potions", "Зелья лечения"],
+					["turn", "Действия хода"],
+					["features", "Способности"],
+					["quickSpells", "Магия и расходники"]
+				].map(([id, label]) => /* @__PURE__ */ jsxs("label", {
+					className: "play-check",
+					children: [/* @__PURE__ */ jsx("input", {
+						type: "checkbox",
+						checked: !view.hiddenBlocks.includes(id),
+						onChange: (e) => onViewChange({ hiddenBlocks: e.target.checked ? view.hiddenBlocks.filter((x) => x !== id) : [...view.hiddenBlocks, id] })
+					}), label]
+				}, id))]
+			}),
 			/* @__PURE__ */ jsx("div", {
 				className: "play-tab-settings",
 				children: rows.map(([id, label], index) => /* @__PURE__ */ jsxs("div", {
@@ -174,78 +261,110 @@ function PlayInterfaceSettings({ character: c, onChange }) {
 				}, id))
 			}),
 			/* @__PURE__ */ jsx("button", {
-				onClick: () => onChange({
-					...c,
-					adventure: {
-						...a,
-						mobileLayout: void 0,
-						interfaceDensity: "compact"
-					}
-				}),
+				onClick: () => {
+					onViewChange({
+						...defaultPlayView,
+						density: "compact"
+					});
+					onChange({
+						...c,
+						adventure: {
+							...a,
+							mobileLayout: void 0,
+							interfaceDensity: "compact"
+						}
+					});
+				},
 				children: "Сбросить расположение"
 			})
 		]
 	});
 }
 //#endregion
-//#region app/campaignRestrictions.ts
-var featureAliases = {
-	"выбранное оружие": "выделенное оружие",
-	"атака, наделённая ци": "атака, подпитанная ци",
-	"фокусировка на цели": "сосредоточенное прицеливание",
-	"универсальность воина": "воинская универсальность",
-	"многогранность воина": "воинская универсальность",
-	"природная завеса": "покров природы",
-	"точное прицеливание": "верный прицел",
-	"направление божественной силы": "праведное восстановление"
+//#region app/equipmentPacks.ts
+/** Individual stacks in the seven standard starting equipment packs. */
+var equipmentPacks = {
+	"Набор путешественника": [
+		["Рюкзак", 1],
+		["Спальник", 1],
+		["Столовый набор", 1],
+		["Трутница", 1],
+		["Факел", 10],
+		["Рацион", 10],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	],
+	"Набор исследователя подземелий": [
+		["Рюкзак", 1],
+		["Ломик", 1],
+		["Молоток", 1],
+		["Шлямбур", 10],
+		["Факел", 10],
+		["Трутница", 1],
+		["Рацион", 10],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	],
+	"Набор священника": [
+		["Рюкзак", 1],
+		["Одеяло", 1],
+		["Свеча", 10],
+		["Трутница", 1],
+		["Коробка для пожертвований", 1],
+		["Блок благовоний", 2],
+		["Кадило", 1],
+		["Облачение", 1],
+		["Рацион", 2],
+		["Бурдюк", 1]
+	],
+	"Набор учёного": [
+		["Рюкзак", 1],
+		["Научная книга", 1],
+		["Чернила", 1],
+		["Перо", 1],
+		["Лист пергамента", 10],
+		["Мешочек песка", 1],
+		["Небольшой нож", 1]
+	],
+	"Набор артиста": [
+		["Рюкзак", 1],
+		["Спальник", 1],
+		["Костюм", 2],
+		["Свеча", 5],
+		["Рацион", 5],
+		["Бурдюк", 1],
+		["Набор для грима", 1]
+	],
+	"Набор дипломата": [
+		["Сундук", 1],
+		["Футляр для карт и свитков", 2],
+		["Комплект отличной одежды", 1],
+		["Чернила", 1],
+		["Перо", 1],
+		["Лампа", 1],
+		["Фляга масла", 2],
+		["Лист бумаги", 5],
+		["Духи", 1],
+		["Сургуч", 1],
+		["Мыло", 1]
+	],
+	"Набор взломщика": [
+		["Рюкзак", 1],
+		["Шарики", 1e3],
+		["Нить (10 футов)", 1],
+		["Колокольчик", 1],
+		["Свеча", 5],
+		["Ломик", 1],
+		["Молоток", 1],
+		["Шлямбур", 10],
+		["Закрытый фонарь", 1],
+		["Фляга масла", 2],
+		["Рацион", 5],
+		["Трутница", 1],
+		["Бурдюк", 1],
+		["Пеньковая верёвка (50 футов)", 1]
+	]
 };
-var optionalFeatureId = (classId, name) => {
-	const clean = name.toLowerCase().replace(/ё/g, "е").replace(/\s*\(tco?e\)/g, "").trim();
-	return `${classId}:${Object.fromEntries(Object.entries(featureAliases).map(([key, value]) => [key.replace(/ё/g, "е"), value.replace(/ё/g, "е")]))[clean] || clean}`;
-};
-var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
-function optionalFeatureAllowed(character, classId, name) {
-	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
-}
-var choiceFeatures = {
-	"tce-primal-knowledge": "Первобытное знание",
-	"tce-dedicated-weapon": "Выделенное оружие (TCE)",
-	"tce-favored-foe": "Предпочтительный противник",
-	"tce-deft-explorer": "Искусный исследователь",
-	"tce-deft-explorer-skill": "Искусный исследователь",
-	"tce-primal-awareness": "Изначальная осведомлённость",
-	"tce-natures-veil": "Покров природы",
-	"tce-blessed-strikes": "Благословлённые удары"
-};
-function optionalChoiceAllowed(character, key) {
-	const name = choiceFeatures[key];
-	return !name || optionalFeatureAllowed(character, character.className, name);
-}
-/** A derived view: restrictions never erase a saved character's choices. */
-function restrictedCharacter(character) {
-	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
-		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
-		return optionalChoiceAllowed({
-			...character,
-			className: classId
-		}, localKey);
-	}).map(([key, ids]) => {
-		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
-		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
-	}));
-	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
-		const classId = key.includes(":") ? key.split(":")[0] : character.className;
-		return Object.entries(choicesFor(classId, { [key]: ids }));
-	}));
-	return {
-		...character,
-		classChoices,
-		classes: character.classes?.map((entry) => ({
-			...entry,
-			choiceValues: choicesFor(entry.classId, entry.choiceValues)
-		}))
-	};
-}
 //#endregion
 //#region app/documentBackgrounds.ts
 var documentBackgrounds = [
@@ -23969,6 +24088,877 @@ function homebrewExportWarning(c) {
 	return entries.length ? "Внимание, персонаж содержит Homebrew:\n" + [...new Set(entries)].join("\n") + "\n\nПолная поддержка пользовательских правил доступна в HeroList при подключённой библиотеке Homebrew. LSS и Helpmate могут перенести только часть данных; автоматизация и таблицы могут не сохраниться. Продолжить экспорт?" : "";
 }
 //#endregion
+//#region app/spellPreparation.ts
+/** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
+function classPreparedSpellIds(character, classId) {
+	const explicit = character.preparedSpellsByClass?.[classId];
+	if (Array.isArray(explicit)) return [...new Set(explicit.filter((id) => typeof id === "string"))];
+	const entry = character.classes?.find((entry) => entry.classId === classId);
+	const ids = character.spellGrants?.length ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
+	const rule = spellSelectionRuleForClass(character, classId, entry?.level || character.level);
+	const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
+	if (rule.mode === "prepared" && !character.mobilePreparedConfigured) return leveled.slice(0, rule.prepared || leveled.length);
+	return (character.preparedSpells || []).filter((id) => ids.includes(id));
+}
+function migrateSpellPreparation(character) {
+	const classIds = character.classes?.length ? character.classes.map((entry) => entry.classId) : [character.className];
+	const preparedSpellsByClass = Object.fromEntries(classIds.filter(Boolean).map((id) => [id, classPreparedSpellIds(character, id)]));
+	return {
+		...character,
+		preparationVersion: 1,
+		preparedSpellsByClass,
+		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
+	};
+}
+function setClassPreparedSpells(character, classId, ids) {
+	const migrated = migrateSpellPreparation(character);
+	const preparedSpellsByClass = {
+		...migrated.preparedSpellsByClass,
+		[classId]: [...new Set(ids)]
+	};
+	return {
+		...migrated,
+		preparedSpellsByClass,
+		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
+	};
+}
+function preparedSpellIds(character) {
+	return migrateSpellPreparation(character).preparedSpells || [];
+}
+//#endregion
+//#region app/helpmateSpellMap.ts
+var verifiedHelpmateSpellIds = Object.freeze({
+	"absorb": "502",
+	"acid-splash": "13",
+	"aid": "236",
+	"alarm": "313",
+	"alter-self": "323",
+	"animate-dead": "35",
+	"animate-objects": "364",
+	"antimagic-field": "263",
+	"arcane-eye": "151",
+	"arcane-lock": "29",
+	"armoragathys": "59",
+	"arms-of-hadar": "305",
+	"aura-of-vitality": "3",
+	"bane": "254",
+	"banishment": "116",
+	"barkskin": "74",
+	"beacon-of-hope": "158",
+	"bestow-curse": "285",
+	"bless": "9",
+	"blight": "96",
+	"blindness-deafness": "45",
+	"blink": "161",
+	"blur": "295",
+	"booming": "TCoE_1",
+	"branding-smite": "131",
+	"burning-hands": "203",
+	"call-lightning": "272",
+	"calm-emotions": "102",
+	"catapult": "472",
+	"ceremony": "541",
+	"chain-lightning": "233",
+	"charm-person": "221",
+	"chill-touch": "140",
+	"chromatic-orb": "86",
+	"circle-of-power": "135",
+	"clairvoyance": "238",
+	"cloud-of-daggers": "190",
+	"cloudkill": "191",
+	"command": "276",
+	"commune": "198",
+	"comprehend-languages": "252",
+	"coneofcold": "133",
+	"confusion": "325",
+	"conjure-animals": "267",
+	"conjure-barrage": "268",
+	"conjure-elemental": "275",
+	"conjure-minor-elementals": "271",
+	"contagion": "92",
+	"counterspell": "132",
+	"crusaders-mantle": "156",
+	"curewounds": "145",
+	"darkness": "353",
+	"darkvision": "368",
+	"death-ward": "104",
+	"demiplane": "55",
+	"detect-thoughts": "196",
+	"detectmagic": "195",
+	"dimensiondoor": "228",
+	"disguise-self": "157",
+	"disintegrate": "299",
+	"dispel-magic": "301",
+	"dissonant-whispers": "56",
+	"divination": "266",
+	"divine-favor": "10",
+	"divine-word": "12",
+	"dominate-beast": "239",
+	"dominate-monster": "241",
+	"dominate-person": "240",
+	"eldritch": "168",
+	"elemental-weapon": "339",
+	"enhanceability": "103",
+	"ensnaring-strike": "212",
+	"entangle": "211",
+	"etherealness": "64",
+	"faerie-fire": "207",
+	"false-life": "287",
+	"fear": "109",
+	"feather-fall": "223",
+	"find-steed": "246",
+	"findfamiliar": "248",
+	"finger-of-death": "229",
+	"fire-shield": "206",
+	"fireball": "205",
+	"firebolt": "204",
+	"flame-strike": "181",
+	"flaming-sphere": "289",
+	"fly": "249",
+	"fog-cloud": "351",
+	"forcecage": "107",
+	"foresight": "264",
+	"freedom-of-movement": "308",
+	"gaseous-form": "41",
+	"gate": "36",
+	"gentle-repose": "186",
+	"globe-invulnerability": "342",
+	"glyph-of-warding": "219",
+	"goodberry": "78",
+	"grease": "315",
+	"greaterinvisibility": "38",
+	"greaterrestoration": "39",
+	"greenflame": "TCoE_2",
+	"guardian-of-faith": "340",
+	"guidance": "105",
+	"guiding-bolt": "178",
+	"hail-of-thorns": "50",
+	"haste": "100",
+	"heal": "250",
+	"healing-spirit": "471",
+	"healingword": "144",
+	"heat-metal": "298",
+	"heroes-feast": "230",
+	"heroism": "42",
+	"hex": "312",
+	"hold-monster": "110",
+	"holdperson": "356",
+	"holy-aura": "6",
+	"hunters-mark": "164",
+	"hypnotic-pattern": "44",
+	"ice-storm": "49",
+	"identify": "210",
+	"inflict-wounds": "177",
+	"invisibility": "183",
+	"leomunds-tiny-hut": "143",
+	"lesser-restoration": "155",
+	"levitate": "139",
+	"light": "307",
+	"lightningbolt": "175",
+	"longstrider": "316",
+	"mage-armor": "60",
+	"mage-hand": "26",
+	"magic-missile": "27",
+	"magic-weapon": "153",
+	"major-image": "197",
+	"mass-cure-wounds": "171",
+	"mass-heal": "172",
+	"mass-healing-word": "170",
+	"masssuggestion": "169",
+	"maze": "138",
+	"melfs-acid-arrow": "159",
+	"mending": "258",
+	"message": "331",
+	"meteor": "163",
+	"mind-sliver": "TCoE_4",
+	"mindwhip": "TCoE_9",
+	"minorillusion": "154",
+	"mirror-image": "218",
+	"mistystep": "352",
+	"moonbeam": "146",
+	"nondetection": "185",
+	"pass": "8",
+	"phantasmal-force": "31",
+	"planeShift": "95",
+	"plant-growth": "304",
+	"polymorph": "260",
+	"power-word-kill": "322",
+	"powerstun": "321",
+	"prayer-of-healing": "173",
+	"prestidigitation": "91",
+	"produce-flame": "336",
+	"protection-evil-good": "99",
+	"protection-from-energy": "106",
+	"raise-dead": "208",
+	"ray-of-enfeeblement": "148",
+	"ray-of-frost": "149",
+	"ray-of-sickness": "147",
+	"resurrection": "33",
+	"revivify": "24",
+	"rope-trick": "350",
+	"sacred-flame": "311",
+	"sanctuary": "354",
+	"scorching-ray": "225",
+	"scrying": "176",
+	"searing-smite": "224",
+	"see-invisibility": "20",
+	"sending": "256",
+	"shadow-blade": "532",
+	"shadowmoil": "491",
+	"shape-water": "539",
+	"shapechange": "251",
+	"shatter": "62",
+	"shield": "70",
+	"shield-of-faith": "69",
+	"shocking-grasp": "66",
+	"silence": "349",
+	"simulacrum": "237",
+	"sleep": "98",
+	"sleet-storm": "162",
+	"slow": "83",
+	"spare-the-dying": "94",
+	"speak-with-animals": "292",
+	"speak-with-dead": "293",
+	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
+	"spell-doc-aganazzar_s_scorcher": "495",
+	"spell-doc-animal_friendship": "72",
+	"spell-doc-animal_messenger": "259",
+	"spell-doc-animal_shapes": "261",
+	"spell-doc-antilife_shell": "262",
+	"spell-doc-antipathy_sympathy": "2",
+	"spell-doc-arcane_gate": "150",
+	"spell-doc-astral_projection": "284",
+	"spell-doc-augury": "40",
+	"spell-doc-aura_of_life": "4",
+	"spell-doc-aura_of_purity": "5",
+	"spell-doc-awaken": "282",
+	"spell-doc-banishing_smite": "117",
+	"spell-doc-beast_bond": "464",
+	"spell-doc-beast_sense": "76",
+	"spell-doc-bigby_s_hand": "57",
+	"spell-doc-blade_barrier": "338",
+	"spell-doc-blade_of_disaster": "TCoE_22",
+	"spell-doc-blade_ward": "101",
+	"spell-doc-blinding_smite": "213",
+	"spell-doc-bones_of_the_earth": "475",
+	"spell-doc-catnap": "459",
+	"spell-doc-cause_fear": "455",
+	"spell-doc-chaos_bolt": "525",
+	"spell-doc-charm_monster": "494",
+	"spell-doc-circle_of_death": "136",
+	"spell-doc-clone": "54",
+	"spell-doc-color_spray": "306",
+	"spell-doc-commune_with_nature": "199",
+	"spell-doc-compelled_duel": "37",
+	"spell-doc-compulsion": "278",
+	"spell-doc-conjure_celestial": "273",
+	"spell-doc-conjure_fey": "274",
+	"spell-doc-conjure_volley": "269",
+	"spell-doc-conjure_woodland_beings": "270",
+	"spell-doc-contact_other_plane": "309",
+	"spell-doc-contingency": "265",
+	"spell-doc-continual_flame": "18",
+	"spell-doc-control_flames": "450",
+	"spell-doc-control_water": "21",
+	"spell-doc-control_weather": "22",
+	"spell-doc-control_winds": "449",
+	"spell-doc-cordon_of_arrows": "81",
+	"spell-doc-create_bonfire": "528",
+	"spell-doc-create_food_and_water": "335",
+	"spell-doc-create_homunculus": "527",
+	"spell-doc-create_or_destroy_water": "333",
+	"spell-doc-create_undead": "334",
+	"spell-doc-creation": "366",
+	"spell-doc-crown_of_madness": "134",
+	"spell-doc-crown_of_stars": "474",
+	"spell-doc-dancing_lights": "234",
+	"spell-doc-danse_macabre": "501",
+	"spell-doc-dawn": "517",
+	"spell-doc-daylight": "58",
+	"spell-doc-delayed_blast_fireball": "87",
+	"spell-doc-destructive_wave": "296",
+	"spell-doc-detect_evil_and_good": "194",
+	"spell-doc-detect_poison_and_disease": "193",
+	"spell-doc-dispel_evil_and_good": "300",
+	"spell-doc-dragon_s_breath": "461",
+	"spell-doc-drawmij_s_instant_summons": "68",
+	"spell-doc-dream": "19",
+	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
+	"spell-doc-druid_grove": "518",
+	"spell-doc-druidcraft": "123",
+	"spell-doc-dust_devil": "514",
+	"spell-doc-earth_tremor": "460",
+	"spell-doc-earthbind": "537",
+	"spell-doc-earthquake": "111",
+	"spell-doc-elemental_bane": "510",
+	"spell-doc-enemies_abound": "467",
+	"spell-doc-enervation": "486",
+	"spell-doc-enlarge_reduce": "355",
+	"spell-doc-enthrall": "303",
+	"spell-doc-erupting_earth": "466",
+	"spell-doc-evard_s_black_tentacles": "67",
+	"spell-doc-expeditious_retreat": "257",
+	"spell-doc-eyebite": "297",
+	"spell-doc-fabricate": "118",
+	"spell-doc-far_step": "458",
+	"spell-doc-feeblemind": "317",
+	"spell-doc-feign_death": "280",
+	"spell-doc-find_greater_steed": "504",
+	"spell-doc-find_the_path": "245",
+	"spell-doc-find_traps": "243",
+	"spell-doc-fire_storm": "201",
+	"spell-doc-flame_arrows": "513",
+	"spell-doc-flame_blade": "48",
+	"spell-doc-flesh_to_stone": "209",
+	"spell-doc-forbiddance": "89",
+	"spell-doc-friends": "71",
+	"spell-doc-frostbite": "492",
+	"spell-doc-geas": "189",
+	"spell-doc-giant_insect": "43",
+	"spell-doc-glibness": "179",
+	"spell-doc-grasping_vine": "85",
+	"spell-doc-guardian_of_nature": "530",
+	"spell-doc-guards_and_wards": "341",
+	"spell-doc-gust": "542",
+	"spell-doc-gust_of_wind": "255",
+	"spell-doc-hallow": "310",
+	"spell-doc-hallucinatory_terrain": "167",
+	"spell-doc-harm": "253",
+	"spell-doc-hellish_rebuke": "1",
+	"spell-doc-holy_weapon": "519",
+	"spell-doc-hunger_of_hadar": "47",
+	"spell-doc-ice_knife": "477",
+	"spell-doc-illusory_dragon": "468",
+	"spell-doc-illusory_script": "182",
+	"spell-doc-immolation": "470",
+	"spell-doc-imprisonment": "97",
+	"spell-doc-incendiary_cloud": "34",
+	"spell-doc-infernal_calling": "469",
+	"spell-doc-infestation": "483",
+	"spell-doc-insect_plague": "180",
+	"spell-doc-intellect_fortress": "TCoE_10",
+	"spell-doc-investiture_of_flame": "490",
+	"spell-doc-investiture_of_ice": "489",
+	"spell-doc-investiture_of_stone": "488",
+	"spell-doc-investiture_of_wind": "487",
+	"spell-doc-invulnerability": "485",
+	"spell-doc-jump": "286",
+	"spell-doc-knock": "217",
+	"spell-doc-legend_lore": "115",
+	"spell-doc-leomund_s_secret_chest": "142",
+	"spell-doc-life_transference": "498",
+	"spell-doc-lightning_arrow": "174",
+	"spell-doc-lightning_lure": "TCoE_3",
+	"spell-doc-locate_animals_or_plants": "242",
+	"spell-doc-locate_creature": "247",
+	"spell-doc-locate_object": "244",
+	"spell-doc-maddening_darkness": "493",
+	"spell-doc-maelstrom": "451",
+	"spell-doc-magic_circle": "152",
+	"spell-doc-magic_jar": "30",
+	"spell-doc-magic_mouth": "28",
+	"spell-doc-magic_stone": "454",
+	"spell-doc-mass_polymorph": "481",
+	"spell-doc-maximilian_s_earthen_grasp": "465",
+	"spell-doc-meld_into_stone": "318",
+	"spell-doc-melf_s_minute_meteors": "479",
+	"spell-doc-mental_prison": "480",
+	"spell-doc-mighty_fortress": "482",
+	"spell-doc-mind_blank": "328",
+	"spell-doc-mind_spike": "511",
+	"spell-doc-mirage_arcane": "343",
+	"spell-doc-mislead": "93",
+	"spell-doc-modify_memory": "119",
+	"spell-doc-mold_earth": "478",
+	"spell-doc-mordenkainen_s_faithful_hound": "17",
+	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
+	"spell-doc-mordenkainen_s_private_sanctum": "128",
+	"spell-doc-mordenkainen_s_sword": "166",
+	"spell-doc-move_earth": "53",
+	"spell-doc-negative_energy_flood": "505",
+	"spell-doc-nystul_s_magic_aura": "188",
+	"spell-doc-otiluke_s_freezing_sphere": "215",
+	"spell-doc-otiluke_s_resilient_sphere": "216",
+	"spell-doc-otto_s_irresistible_dance": "187",
+	"spell-doc-passwall": "327",
+	"spell-doc-phantasmal_killer": "32",
+	"spell-doc-phantom_steed": "279",
+	"spell-doc-planar_ally": "232",
+	"spell-doc-planar_binding": "231",
+	"spell-doc-poison_spray": "63",
+	"spell-doc-power_word_heal": "320",
+	"spell-doc-power_word_pain": "522",
+	"spell-doc-primal_savagery": "496",
+	"spell-doc-primordial_ward": "497",
+	"spell-doc-prismatic_spray": "291",
+	"spell-doc-prismatic_wall": "290",
+	"spell-doc-programmed_illusion": "82",
+	"spell-doc-project_image": "283",
+	"spell-doc-protection_from_poison": "108",
+	"spell-doc-psychic_scream": "512",
+	"spell-doc-purify_food_and_drink": "222",
+	"spell-doc-pyrotechnics": "500",
+	"spell-doc-rary_s_telepathic_bond": "160",
+	"spell-doc-regenerate": "302",
+	"spell-doc-reincarnate": "365",
+	"spell-doc-remove_curse": "326",
+	"spell-doc-resistance": "332",
+	"spell-doc-reverse_gravity": "120",
+	"spell-doc-scatter": "516",
+	"spell-doc-seeming": "281",
+	"spell-doc-sequester": "122",
+	"spell-doc-shillelagh": "73",
+	"spell-doc-sickening_radiance": "448",
+	"spell-doc-silent_image": "7",
+	"spell-doc-skill_empowerment": "538",
+	"spell-doc-skywrite": "484",
+	"spell-doc-snare": "520",
+	"spell-doc-snilloc_s_snowball_swarm": "526",
+	"spell-doc-soul_cage": "473",
+	"spell-doc-speak_with_plants": "294",
+	"spell-doc-spider_climb": "226",
+	"spell-doc-spirit_shroud": "TCoE_11",
+	"spell-doc-staggering_smite": "200",
+	"spell-doc-stone_shape": "121",
+	"spell-doc-storm_of_vengeance": "51",
+	"spell-doc-storm_sphere": "531",
+	"spell-doc-summon_aberration": "TCoE_15",
+	"spell-doc-summon_beast": "TCoE_7",
+	"spell-doc-summon_celestial": "TCoE_18",
+	"spell-doc-summon_construct": "TCoE_16",
+	"spell-doc-summon_elemental": "TCoE_17",
+	"spell-doc-summon_fiend": "TCoE_19",
+	"spell-doc-summon_greater_demon": "507",
+	"spell-doc-summon_lesser_demons": "508",
+	"spell-doc-summon_shadowspawn": "TCoE_13",
+	"spell-doc-summon_undead": "TCoE_14",
+	"spell-doc-swift_quiver": "14",
+	"spell-doc-sword_burst": "TCoE_5",
+	"spell-doc-symbol": "114",
+	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
+	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
+	"spell-doc-telepathy": "345",
+	"spell-doc-teleportation_circle": "137",
+	"spell-doc-temple_of_the_gods": "540",
+	"spell-doc-tenser_s_floating_disk": "346",
+	"spell-doc-tenser_s_transformation": "533",
+	"spell-doc-thunder_step": "457",
+	"spell-doc-thunderclap": "515",
+	"spell-doc-thunderous_smite": "52",
+	"spell-doc-tidal_wave": "509",
+	"spell-doc-tiny_servant": "476",
+	"spell-doc-tongues": "61",
+	"spell-doc-transmute_rock": "506",
+	"spell-doc-transport_via_plants": "288",
+	"spell-doc-tree_stride": "65",
+	"spell-doc-true_polymorph": "127",
+	"spell-doc-true_strike": "165",
+	"spell-doc-tsunami": "84",
+	"spell-doc-unseen_servant": "184",
+	"spell-doc-vitriolic_sphere": "462",
+	"spell-doc-wall_of_ice": "141",
+	"spell-doc-wall_of_light": "529",
+	"spell-doc-wall_of_sand": "499",
+	"spell-doc-wall_of_stone": "130",
+	"spell-doc-wall_of_thorns": "347",
+	"spell-doc-wall_of_water": "452",
+	"spell-doc-warding_wind": "463",
+	"spell-doc-water_walk": "88",
+	"spell-doc-watery_sphere": "453",
+	"spell-doc-weird": "324",
+	"spell-doc-whirlwind": "524",
+	"spell-doc-wind_walk": "90",
+	"spell-doc-word_of_recall": "319",
+	"spell-doc-wrath_of_nature": "456",
+	"spell-doc-zephyr_strike": "534",
+	"spike-growth": "77",
+	"spiritguardians": "75",
+	"spiritual-weapon": "11",
+	"steelwind": "535",
+	"stinking-cloud": "113",
+	"stoneskin": "129",
+	"suggestion": "23",
+	"summonfey": "TCoE_12",
+	"sunbeam": "329",
+	"sunburst": "330",
+	"synaptic-static": "521",
+	"tashas-hideous-laughter": "79",
+	"telekinesis": "344",
+	"teleport": "367",
+	"thaumaturgy": "80",
+	"thorn-whip": "348",
+	"thunderwave": "25",
+	"time-stop": "214",
+	"toll-the-dead": "503",
+	"true-seeing": "126",
+	"trueResurrection": "125",
+	"vampiric-touch": "277",
+	"vicious": "112",
+	"wall-of-fire": "202",
+	"wallforce": "314",
+	"warding-bond": "220",
+	"water-breathing": "235",
+	"web": "227",
+	"wind-wall": "337",
+	"wish": "124",
+	"witch-bolt": "15",
+	"word-radiance": "523",
+	"wrathful-smite": "46",
+	"zone-of-truth": "192"
+});
+//#endregion
+//#region app/exportIds.ts
+/**
+* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
+* LSS text blocks also need a stable public URL for every selected spell.
+*/
+var dndSpellRefs = {
+	"acid-splash": ["13", "acid_splash"],
+	"chill-touch": ["140", "chill_touch"],
+	"firebolt": ["204", "fire_bolt"],
+	"guidance": ["105", "guidance"],
+	"minorillusion": ["154", "minor_illusion"],
+	"vicious": ["112", "vicious_mockery"],
+	"eldritch": ["168", "eldritch_blast"],
+	"booming": ["458", "booming_blade"],
+	"greenflame": ["459", "green_flame_blade"],
+	"absorb": ["401", "absorb_elements"],
+	"armoragathys": ["59", "armor_of_agathys"],
+	"bless": ["9", "bless"],
+	"curewounds": ["145", "cure_wounds"],
+	"detectmagic": ["195", "detect_magic"],
+	"findfamiliar": ["248", "find_familiar"],
+	"goodberry": ["78", "goodberry"],
+	"healingword": ["144", "healing_word"],
+	"hex": ["312", "hex"],
+	"shield": ["70", "shield"],
+	"silvery": ["3946", "silvery_barbs"],
+	"aid": ["236", "aid"],
+	"darkness": ["353", "darkness"],
+	"enhanceability": ["103", "enhance_ability"],
+	"holdperson": ["356", "hold_person"],
+	"levitate": ["139", "levitate"],
+	"mistystep": ["352", "misty_step"],
+	"pass": ["8", "pass_without_trace"],
+	"mindwhip": ["3053", "tasha_s_mind_whip"],
+	"counterspell": ["132", "counterspell"],
+	"fireball": ["205", "fireball"],
+	"fly": ["249", "fly"],
+	"haste": ["100", "haste"],
+	"lightningbolt": ["175", "lightning_bolt"],
+	"revivify": ["24", "revivify"],
+	"spiritguardians": ["75", "spirit_guardians"],
+	"summonfey": ["3070", "summon_fey"],
+	"banishment": ["116", "banishment"],
+	"dimensiondoor": ["228", "dimension_door"],
+	"greaterinvisibility": ["38", "greater_invisibility"],
+	"polymorph": ["260", "polymorph"],
+	"shadowmoil": ["478", "shadow_of_moil"],
+	"coneofcold": ["133", "cone_of_cold"],
+	"greaterrestoration": ["39", "greater_restoration"],
+	"steelwind": ["493", "steel_wind_strike"],
+	"wallforce": ["314", "wall_of_force"],
+	"heal": ["250", "heal"],
+	"masssuggestion": ["169", "mass_suggestion"],
+	"disintegrate": ["299", "disintegrate"],
+	"forcecage": ["107", "forcecage"],
+	"planeShift": ["95", "plane_shift"],
+	"draconic": ["3814", "draconic_transformation"],
+	"demiplane": ["55", "demiplane"],
+	"maze": ["138", "maze"],
+	"powerstun": ["321", "power_word_stun"],
+	"foresight": ["264", "foresight"],
+	"meteor": ["163", "meteor_swarm"],
+	"trueResurrection": ["125", "true_resurrection"],
+	"wish": ["124", "wish"],
+	"light": ["307", "light"],
+	"mage-hand": ["26", "mage_hand"],
+	"mending": ["258", "mending"],
+	"message": ["331", "message"],
+	"prestidigitation": ["91", "prestidigitation"],
+	"ray-of-frost": ["149", "ray_of_frost"],
+	"sacred-flame": ["311", "sacred_flame"],
+	"shocking-grasp": ["66", "shocking_grasp"],
+	"spare-the-dying": ["94", "spare_the_dying"],
+	"thaumaturgy": ["80", "thaumaturgy"],
+	"thorn-whip": ["348", "thorn_whip"],
+	"produce-flame": ["336", "produce_flame"],
+	"shape-water": ["414", "shape_water"],
+	"toll-the-dead": ["457", "toll_the_dead"],
+	"mind-sliver": ["3050", "mind_sliver"],
+	"word-radiance": ["455", "word_of_radiance"],
+	"alarm": ["313", "alarm"],
+	"bane": ["254", "bane"],
+	"burning-hands": ["203", "burning_hands"],
+	"charm-person": ["221", "charm_person"],
+	"chromatic-orb": ["86", "chromatic_orb"],
+	"command": ["276", "command"],
+	"comprehend-languages": ["252", "comprehend_languages"],
+	"disguise-self": ["157", "disguise_self"],
+	"dissonant-whispers": ["56", "dissonant_whispers"],
+	"divine-favor": ["10", "divine_favor"],
+	"ensnaring-strike": ["212", "ensnaring_strike"],
+	"entangle": ["211", "entangle"],
+	"faerie-fire": ["207", "faerie_fire"],
+	"false-life": ["287", "false_life"],
+	"feather-fall": ["223", "feather_fall"],
+	"fog-cloud": ["351", "fog_cloud"],
+	"grease": ["315", "grease"],
+	"hail-of-thorns": ["50", "hail_of_thorns"],
+	"heroism": ["42", "heroism"],
+	"hunters-mark": ["164", "hunter_s_mark"],
+	"identify": ["210", "identify"],
+	"inflict-wounds": ["177", "inflict_wounds"],
+	"longstrider": ["316", "longstrider"],
+	"mage-armor": ["60", "mage_armor"],
+	"magic-missile": ["27", "magic_missile"],
+	"protection-evil-good": ["99", "protection_from_evil_and_good"],
+	"sanctuary": ["354", "sanctuary"],
+	"sleep": ["98", "sleep"],
+	"speak-with-animals": ["292", "speak_with_animals"],
+	"thunderwave": ["25", "thunderwave"],
+	"witch-bolt": ["15", "witch_bolt"],
+	"ceremony": ["465", "ceremony"],
+	"catapult": ["386", "catapult"],
+	"alter-self": ["323", "alter_self"],
+	"arcane-lock": ["29", "arcane_lock"],
+	"barkskin": ["74", "barkskin"],
+	"blindness-deafness": ["45", "blindness_deafness"],
+	"blur": ["295", "blur"],
+	"branding-smite": ["131", "branding_smite"],
+	"calm-emotions": ["102", "calm_emotions"],
+	"cloud-of-daggers": ["190", "cloud_of_daggers"],
+	"darkvision": ["368", "darkvision"],
+	"find-steed": ["246", "find_steed"],
+	"flaming-sphere": ["289", "flaming_sphere"],
+	"heat-metal": ["298", "heat_metal"],
+	"invisibility": ["183", "invisibility"],
+	"lesser-restoration": ["155", "lesser_restoration"],
+	"magic-weapon": ["153", "magic_weapon"],
+	"moonbeam": ["146", "moonbeam"],
+	"prayer-of-healing": ["173", "prayer_of_healing"],
+	"scorching-ray": ["225", "scorching_ray"],
+	"see-invisibility": ["20", "see_invisibility"],
+	"shatter": ["62", "shatter"],
+	"silence": ["349", "silence"],
+	"spike-growth": ["77", "spike_growth"],
+	"spiritual-weapon": ["11", "spiritual_weapon"],
+	"suggestion": ["23", "suggestion"],
+	"web": ["227", "web"],
+	"shadow-blade": ["470", "shadow_blade"],
+	"healing-spirit": ["468", "healing_spirit"],
+	"animate-dead": ["35", "animate_dead"],
+	"beacon-of-hope": ["158", "beacon_of_hope"],
+	"bestow-curse": ["285", "bestow_curse"],
+	"call-lightning": ["272", "call_lightning"],
+	"clairvoyance": ["238", "clairvoyance"],
+	"conjure-animals": ["267", "conjure_animals"],
+	"dispel-magic": ["301", "dispel_magic"],
+	"fear": ["109", "fear"],
+	"glyph-of-warding": ["219", "glyph_of_warding"],
+	"hypnotic-pattern": ["44", "hypnotic_pattern"],
+	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
+	"major-image": ["197", "major_image"],
+	"mass-healing-word": ["170", "mass_healing_word"],
+	"plant-growth": ["304", "plant_growth"],
+	"protection-from-energy": ["106", "protection_from_energy"],
+	"sleet-storm": ["162", "sleet_storm"],
+	"slow": ["83", "slow"],
+	"speak-with-dead": ["293", "speak_with_dead"],
+	"water-breathing": ["235", "water_breathing"],
+	"crusaders-mantle": ["156", "crusader_s_mantle"],
+	"aura-of-vitality": ["3", "aura_of_vitality"],
+	"arcane-eye": ["151", "arcane_eye"],
+	"blight": ["96", "blight"],
+	"confusion": ["325", "confusion"],
+	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
+	"death-ward": ["104", "death_ward"],
+	"divination": ["266", "divination"],
+	"dominate-beast": ["239", "dominate_beast"],
+	"freedom-of-movement": ["308", "freedom_of_movement"],
+	"guardian-of-faith": ["340", "guardian_of_faith"],
+	"ice-storm": ["49", "ice_storm"],
+	"stoneskin": ["129", "stoneskin"],
+	"wall-of-fire": ["202", "wall_of_fire"],
+	"animate-objects": ["364", "animate_objects"],
+	"circle-of-power": ["135", "circle_of_power"],
+	"cloudkill": ["191", "cloudkill"],
+	"commune": ["198", "commune"],
+	"conjure-elemental": ["275", "conjure_elemental"],
+	"contagion": ["92", "contagion"],
+	"dominate-person": ["240", "dominate_person"],
+	"flame-strike": ["181", "flame_strike"],
+	"hold-monster": ["110", "hold_monster"],
+	"mass-cure-wounds": ["171", "mass_cure_wounds"],
+	"raise-dead": ["208", "raise_dead"],
+	"scrying": ["176", "scrying"],
+	"telekinesis": ["344", "telekinesis"],
+	"synaptic-static": ["491", "synaptic_static"],
+	"chain-lightning": ["233", "chain_lightning"],
+	"heroes-feast": ["230", "heroes_feast"],
+	"globe-invulnerability": ["342", "globe_of_invulnerability"],
+	"sunbeam": ["329", "sunbeam"],
+	"true-seeing": ["126", "true_seeing"],
+	"divine-word": ["12", "divine_word"],
+	"etherealness": ["64", "etherealness"],
+	"finger-of-death": ["229", "finger_of_death"],
+	"resurrection": ["33", "resurrection"],
+	"simulacrum": ["237", "simulacrum"],
+	"teleport": ["367", "teleport"],
+	"antimagic-field": ["263", "antimagic_field"],
+	"dominate-monster": ["241", "dominate_monster"],
+	"holy-aura": ["6", "holy_aura"],
+	"sunburst": ["330", "sunburst"],
+	"gate": ["36", "gate"],
+	"mass-heal": ["172", "mass_heal"],
+	"power-word-kill": ["322", "power_word_kill"],
+	"shapechange": ["251", "shapechange"],
+	"time-stop": ["214", "time_stop"],
+	"arms-of-hadar": ["305", "arms_of_hadar"],
+	"guiding-bolt": ["178", "guiding_bolt"],
+	"ray-of-sickness": ["147", "ray_of_sickness"],
+	"searing-smite": ["224", "searing_smite"],
+	"shield-of-faith": ["69", "shield_of_faith"],
+	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
+	"wrathful-smite": ["46", "wrathful_smite"],
+	"blink": ["161", "blink"],
+	"detect-thoughts": ["196", "detect_thoughts"],
+	"gentle-repose": ["186", "gentle_repose"],
+	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
+	"mirror-image": ["218", "mirror_image"],
+	"phantasmal-force": ["31", "phantasmal_force"],
+	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
+	"rope-trick": ["350", "rope_trick"],
+	"warding-bond": ["220", "warding_bond"],
+	"zone-of-truth": ["192", "zone_of_truth"],
+	"conjure-barrage": ["268", "conjure_barrage"],
+	"elemental-weapon": ["339", "elemental_weapon"],
+	"gaseous-form": ["41", "gaseous_form"],
+	"nondetection": ["185", "nondetection"],
+	"sending": ["256", "sending"],
+	"stinking-cloud": ["113", "stinking_cloud"],
+	"vampiric-touch": ["277", "vampiric_touch"],
+	"wind-wall": ["337", "wind_wall"],
+	"fire-shield": ["206", "fire_shield"]
+};
+var helpmateSpellIds = verifiedHelpmateSpellIds;
+function helpmateSpellId(id) {
+	return helpmateSpellIds[id] || null;
+}
+function dndSpellUrl(id) {
+	const reference = dndSpellRefs[id];
+	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
+	return documentSpells.find((spell) => spell.id === id)?.url || null;
+}
+var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
+var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
+var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
+	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
+	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
+})));
+/**
+* LSS uses the public dnd.su page as the stable source reference for a spell.
+* Accept absolute/relative links and ignore the mutable transliterated suffix:
+* the numeric dnd.su page id is the canonical part shared with our catalog.
+*/
+function spellIdFromDndUrl(value) {
+	if (typeof value !== "string") return null;
+	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
+	if (match) return spellIdByDndNumber[match[1]] || null;
+	try {
+		const parsed = new URL(value, "https://dnd.su");
+		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
+		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
+	} catch {
+		return null;
+	}
+}
+/**
+* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
+* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
+* URL-bearing card objects never need this fallback.
+*/
+var lssCardDndNumbers = Object.freeze({
+	"65d3c169f3d820fa1add429e": "140",
+	"65d3c168f3d820fa1add425f": "204",
+	"65d3c170f3d820fa1add4759": "258",
+	"65d3c16af3d820fa1add434d": "60",
+	"65d3c16df3d820fa1add45f4": "221",
+	"65d3c16af3d820fa1add437e": "98",
+	"65d3c172f3d820fa1add48b7": "183",
+	"65d3c16ef3d820fa1add465d": "103",
+	"65d3c16df3d820fa1add4561": "44",
+	"65d3c171f3d820fa1add47ec": "109"
+});
+function spellIdFromLssCardId(cardId) {
+	const number = lssCardDndNumbers[cardId];
+	return number ? spellIdByDndNumber[number] || null : null;
+}
+var lssCardIdBySpellId = Object.freeze(Object.fromEntries(Object.entries(lssCardDndNumbers).map(([cardId, number]) => [spellIdByDndNumber[number], cardId]).filter((entry) => Boolean(entry[0]))));
+/** Return a private LSS card id only when the mapping was verified by fixture. */
+function lssCardIdForSpellId(spellId) {
+	return lssCardIdBySpellId[spellId] || null;
+}
+//#endregion
+//#region app/campaignRestrictions.ts
+var featureAliases = {
+	"выбранное оружие": "выделенное оружие",
+	"атака, наделённая ци": "атака, подпитанная ци",
+	"фокусировка на цели": "сосредоточенное прицеливание",
+	"универсальность воина": "воинская универсальность",
+	"многогранность воина": "воинская универсальность",
+	"природная завеса": "покров природы",
+	"точное прицеливание": "верный прицел",
+	"направление божественной силы": "праведное восстановление"
+};
+var optionalFeatureId = (classId, name) => {
+	const clean = name.toLowerCase().replace(/ё/g, "е").replace(/\s*\(tco?e\)/g, "").trim();
+	return `${classId}:${Object.fromEntries(Object.entries(featureAliases).map(([key, value]) => [key.replace(/ё/g, "е"), value.replace(/ё/g, "е")]))[clean] || clean}`;
+};
+var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
+function optionalFeatureAllowed(character, classId, name) {
+	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
+}
+var choiceFeatures = {
+	"tce-primal-knowledge": "Первобытное знание",
+	"tce-dedicated-weapon": "Выделенное оружие (TCE)",
+	"tce-favored-foe": "Предпочтительный противник",
+	"tce-deft-explorer": "Искусный исследователь",
+	"tce-deft-explorer-skill": "Искусный исследователь",
+	"tce-primal-awareness": "Изначальная осведомлённость",
+	"tce-natures-veil": "Покров природы",
+	"tce-blessed-strikes": "Благословлённые удары"
+};
+function optionalChoiceAllowed(character, key) {
+	const name = choiceFeatures[key];
+	return !name || optionalFeatureAllowed(character, character.className, name);
+}
+/** A derived view: restrictions never erase a saved character's choices. */
+function restrictedCharacter(character) {
+	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return optionalChoiceAllowed({
+			...character,
+			className: classId
+		}, localKey);
+	}).map(([key, ids]) => {
+		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
+		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
+	}));
+	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
+		const classId = key.includes(":") ? key.split(":")[0] : character.className;
+		return Object.entries(choicesFor(classId, { [key]: ids }));
+	}));
+	return {
+		...character,
+		classChoices,
+		classes: character.classes?.map((entry) => ({
+			...entry,
+			choiceValues: choicesFor(entry.classId, entry.choiceValues)
+		}))
+	};
+}
+//#endregion
 //#region app/racialSpellcasting.ts
 var S = (spellId, unlockLevel = 1, extra = {}) => ({
 	spellId,
@@ -25009,901 +25999,26 @@ function spentResourcesAfterLongRest(character) {
 	return Object.fromEntries(Object.entries(character.resourceSpent || {}).filter(([key]) => persistentKeys.has(key)));
 }
 //#endregion
-//#region app/equipmentPacks.ts
-/** Individual stacks in the seven standard starting equipment packs. */
-var equipmentPacks = {
-	"Набор путешественника": [
-		["Рюкзак", 1],
-		["Спальник", 1],
-		["Столовый набор", 1],
-		["Трутница", 1],
-		["Факел", 10],
-		["Рацион", 10],
-		["Бурдюк", 1],
-		["Пеньковая верёвка (50 футов)", 1]
-	],
-	"Набор исследователя подземелий": [
-		["Рюкзак", 1],
-		["Ломик", 1],
-		["Молоток", 1],
-		["Шлямбур", 10],
-		["Факел", 10],
-		["Трутница", 1],
-		["Рацион", 10],
-		["Бурдюк", 1],
-		["Пеньковая верёвка (50 футов)", 1]
-	],
-	"Набор священника": [
-		["Рюкзак", 1],
-		["Одеяло", 1],
-		["Свеча", 10],
-		["Трутница", 1],
-		["Коробка для пожертвований", 1],
-		["Блок благовоний", 2],
-		["Кадило", 1],
-		["Облачение", 1],
-		["Рацион", 2],
-		["Бурдюк", 1]
-	],
-	"Набор учёного": [
-		["Рюкзак", 1],
-		["Научная книга", 1],
-		["Чернила", 1],
-		["Перо", 1],
-		["Лист пергамента", 10],
-		["Мешочек песка", 1],
-		["Небольшой нож", 1]
-	],
-	"Набор артиста": [
-		["Рюкзак", 1],
-		["Спальник", 1],
-		["Костюм", 2],
-		["Свеча", 5],
-		["Рацион", 5],
-		["Бурдюк", 1],
-		["Набор для грима", 1]
-	],
-	"Набор дипломата": [
-		["Сундук", 1],
-		["Футляр для карт и свитков", 2],
-		["Комплект отличной одежды", 1],
-		["Чернила", 1],
-		["Перо", 1],
-		["Лампа", 1],
-		["Фляга масла", 2],
-		["Лист бумаги", 5],
-		["Духи", 1],
-		["Сургуч", 1],
-		["Мыло", 1]
-	],
-	"Набор взломщика": [
-		["Рюкзак", 1],
-		["Шарики", 1e3],
-		["Нить (10 футов)", 1],
-		["Колокольчик", 1],
-		["Свеча", 5],
-		["Ломик", 1],
-		["Молоток", 1],
-		["Шлямбур", 10],
-		["Закрытый фонарь", 1],
-		["Фляга масла", 2],
-		["Рацион", 5],
-		["Трутница", 1],
-		["Бурдюк", 1],
-		["Пеньковая верёвка (50 футов)", 1]
-	]
-};
-//#endregion
-//#region app/spellPreparation.ts
-/** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
-function classPreparedSpellIds(character, classId) {
-	const explicit = character.preparedSpellsByClass?.[classId];
-	if (Array.isArray(explicit)) return [...new Set(explicit.filter((id) => typeof id === "string"))];
-	const entry = character.classes?.find((entry) => entry.classId === classId);
-	const ids = character.spellGrants?.length ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
-	const rule = spellSelectionRuleForClass(character, classId, entry?.level || character.level);
-	const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
-	if (rule.mode === "prepared" && !character.mobilePreparedConfigured) return leveled.slice(0, rule.prepared || leveled.length);
-	return (character.preparedSpells || []).filter((id) => ids.includes(id));
-}
-function migrateSpellPreparation(character) {
-	const classIds = character.classes?.length ? character.classes.map((entry) => entry.classId) : [character.className];
-	const preparedSpellsByClass = Object.fromEntries(classIds.filter(Boolean).map((id) => [id, classPreparedSpellIds(character, id)]));
+//#region app/attackCustomization.ts
+function customizeAttack(attack, c, patch) {
+	if (!patch) return attack;
+	const pb = proficiencyBonus(characterLevel(c));
+	const ability = patch.ability ?? attack.ability, proficient = patch.proficient ?? attack.proficient;
+	const attackBonus = attack.attackBonus === void 0 ? void 0 : attack.attackBonus + abilityModifier$1(c.abilities[ability]) - abilityModifier$1(c.abilities[attack.ability]) + (Number(proficient) - Number(attack.proficient)) * pb + (patch.bonus ?? 0);
+	const damageFormula = patch.damageFormula ?? attack.damageFormula;
+	const damageDisplay = patch.damageFormula !== void 0 ? damageFormula.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(c.abilities[key.toLowerCase()]))).replace(/\[PB\]/g, String(pb)) : attack.damageDisplay;
 	return {
-		...character,
-		preparationVersion: 1,
-		preparedSpellsByClass,
-		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
+		...attack,
+		sourceName: attack.sourceName || attack.name,
+		name: patch.name ?? attack.name,
+		ability,
+		proficient,
+		attackBonus,
+		attackBonusExtra: attack.attackBonusExtra + (patch.bonus ?? 0),
+		damageFormula,
+		damageDisplay: damageDisplay + (patch.damageType ? ` · ${patch.damageType}` : ""),
+		note: patch.note ?? attack.note
 	};
-}
-function setClassPreparedSpells(character, classId, ids) {
-	const migrated = migrateSpellPreparation(character);
-	const preparedSpellsByClass = {
-		...migrated.preparedSpellsByClass,
-		[classId]: [...new Set(ids)]
-	};
-	return {
-		...migrated,
-		preparedSpellsByClass,
-		preparedSpells: [...new Set(Object.values(preparedSpellsByClass).flat())]
-	};
-}
-function preparedSpellIds(character) {
-	return migrateSpellPreparation(character).preparedSpells || [];
-}
-//#endregion
-//#region app/helpmateSpellMap.ts
-var verifiedHelpmateSpellIds = Object.freeze({
-	"absorb": "502",
-	"acid-splash": "13",
-	"aid": "236",
-	"alarm": "313",
-	"alter-self": "323",
-	"animate-dead": "35",
-	"animate-objects": "364",
-	"antimagic-field": "263",
-	"arcane-eye": "151",
-	"arcane-lock": "29",
-	"armoragathys": "59",
-	"arms-of-hadar": "305",
-	"aura-of-vitality": "3",
-	"bane": "254",
-	"banishment": "116",
-	"barkskin": "74",
-	"beacon-of-hope": "158",
-	"bestow-curse": "285",
-	"bless": "9",
-	"blight": "96",
-	"blindness-deafness": "45",
-	"blink": "161",
-	"blur": "295",
-	"booming": "TCoE_1",
-	"branding-smite": "131",
-	"burning-hands": "203",
-	"call-lightning": "272",
-	"calm-emotions": "102",
-	"catapult": "472",
-	"ceremony": "541",
-	"chain-lightning": "233",
-	"charm-person": "221",
-	"chill-touch": "140",
-	"chromatic-orb": "86",
-	"circle-of-power": "135",
-	"clairvoyance": "238",
-	"cloud-of-daggers": "190",
-	"cloudkill": "191",
-	"command": "276",
-	"commune": "198",
-	"comprehend-languages": "252",
-	"coneofcold": "133",
-	"confusion": "325",
-	"conjure-animals": "267",
-	"conjure-barrage": "268",
-	"conjure-elemental": "275",
-	"conjure-minor-elementals": "271",
-	"contagion": "92",
-	"counterspell": "132",
-	"crusaders-mantle": "156",
-	"curewounds": "145",
-	"darkness": "353",
-	"darkvision": "368",
-	"death-ward": "104",
-	"demiplane": "55",
-	"detect-thoughts": "196",
-	"detectmagic": "195",
-	"dimensiondoor": "228",
-	"disguise-self": "157",
-	"disintegrate": "299",
-	"dispel-magic": "301",
-	"dissonant-whispers": "56",
-	"divination": "266",
-	"divine-favor": "10",
-	"divine-word": "12",
-	"dominate-beast": "239",
-	"dominate-monster": "241",
-	"dominate-person": "240",
-	"eldritch": "168",
-	"elemental-weapon": "339",
-	"enhanceability": "103",
-	"ensnaring-strike": "212",
-	"entangle": "211",
-	"etherealness": "64",
-	"faerie-fire": "207",
-	"false-life": "287",
-	"fear": "109",
-	"feather-fall": "223",
-	"find-steed": "246",
-	"findfamiliar": "248",
-	"finger-of-death": "229",
-	"fire-shield": "206",
-	"fireball": "205",
-	"firebolt": "204",
-	"flame-strike": "181",
-	"flaming-sphere": "289",
-	"fly": "249",
-	"fog-cloud": "351",
-	"forcecage": "107",
-	"foresight": "264",
-	"freedom-of-movement": "308",
-	"gaseous-form": "41",
-	"gate": "36",
-	"gentle-repose": "186",
-	"globe-invulnerability": "342",
-	"glyph-of-warding": "219",
-	"goodberry": "78",
-	"grease": "315",
-	"greaterinvisibility": "38",
-	"greaterrestoration": "39",
-	"greenflame": "TCoE_2",
-	"guardian-of-faith": "340",
-	"guidance": "105",
-	"guiding-bolt": "178",
-	"hail-of-thorns": "50",
-	"haste": "100",
-	"heal": "250",
-	"healing-spirit": "471",
-	"healingword": "144",
-	"heat-metal": "298",
-	"heroes-feast": "230",
-	"heroism": "42",
-	"hex": "312",
-	"hold-monster": "110",
-	"holdperson": "356",
-	"holy-aura": "6",
-	"hunters-mark": "164",
-	"hypnotic-pattern": "44",
-	"ice-storm": "49",
-	"identify": "210",
-	"inflict-wounds": "177",
-	"invisibility": "183",
-	"leomunds-tiny-hut": "143",
-	"lesser-restoration": "155",
-	"levitate": "139",
-	"light": "307",
-	"lightningbolt": "175",
-	"longstrider": "316",
-	"mage-armor": "60",
-	"mage-hand": "26",
-	"magic-missile": "27",
-	"magic-weapon": "153",
-	"major-image": "197",
-	"mass-cure-wounds": "171",
-	"mass-heal": "172",
-	"mass-healing-word": "170",
-	"masssuggestion": "169",
-	"maze": "138",
-	"melfs-acid-arrow": "159",
-	"mending": "258",
-	"message": "331",
-	"meteor": "163",
-	"mind-sliver": "TCoE_4",
-	"mindwhip": "TCoE_9",
-	"minorillusion": "154",
-	"mirror-image": "218",
-	"mistystep": "352",
-	"moonbeam": "146",
-	"nondetection": "185",
-	"pass": "8",
-	"phantasmal-force": "31",
-	"planeShift": "95",
-	"plant-growth": "304",
-	"polymorph": "260",
-	"power-word-kill": "322",
-	"powerstun": "321",
-	"prayer-of-healing": "173",
-	"prestidigitation": "91",
-	"produce-flame": "336",
-	"protection-evil-good": "99",
-	"protection-from-energy": "106",
-	"raise-dead": "208",
-	"ray-of-enfeeblement": "148",
-	"ray-of-frost": "149",
-	"ray-of-sickness": "147",
-	"resurrection": "33",
-	"revivify": "24",
-	"rope-trick": "350",
-	"sacred-flame": "311",
-	"sanctuary": "354",
-	"scorching-ray": "225",
-	"scrying": "176",
-	"searing-smite": "224",
-	"see-invisibility": "20",
-	"sending": "256",
-	"shadow-blade": "532",
-	"shadowmoil": "491",
-	"shape-water": "539",
-	"shapechange": "251",
-	"shatter": "62",
-	"shield": "70",
-	"shield-of-faith": "69",
-	"shocking-grasp": "66",
-	"silence": "349",
-	"simulacrum": "237",
-	"sleep": "98",
-	"sleet-storm": "162",
-	"slow": "83",
-	"spare-the-dying": "94",
-	"speak-with-animals": "292",
-	"speak-with-dead": "293",
-	"spell-doc-abi_dalzim_s_horrid_wilting": "536",
-	"spell-doc-aganazzar_s_scorcher": "495",
-	"spell-doc-animal_friendship": "72",
-	"spell-doc-animal_messenger": "259",
-	"spell-doc-animal_shapes": "261",
-	"spell-doc-antilife_shell": "262",
-	"spell-doc-antipathy_sympathy": "2",
-	"spell-doc-arcane_gate": "150",
-	"spell-doc-astral_projection": "284",
-	"spell-doc-augury": "40",
-	"spell-doc-aura_of_life": "4",
-	"spell-doc-aura_of_purity": "5",
-	"spell-doc-awaken": "282",
-	"spell-doc-banishing_smite": "117",
-	"spell-doc-beast_bond": "464",
-	"spell-doc-beast_sense": "76",
-	"spell-doc-bigby_s_hand": "57",
-	"spell-doc-blade_barrier": "338",
-	"spell-doc-blade_of_disaster": "TCoE_22",
-	"spell-doc-blade_ward": "101",
-	"spell-doc-blinding_smite": "213",
-	"spell-doc-bones_of_the_earth": "475",
-	"spell-doc-catnap": "459",
-	"spell-doc-cause_fear": "455",
-	"spell-doc-chaos_bolt": "525",
-	"spell-doc-charm_monster": "494",
-	"spell-doc-circle_of_death": "136",
-	"spell-doc-clone": "54",
-	"spell-doc-color_spray": "306",
-	"spell-doc-commune_with_nature": "199",
-	"spell-doc-compelled_duel": "37",
-	"spell-doc-compulsion": "278",
-	"spell-doc-conjure_celestial": "273",
-	"spell-doc-conjure_fey": "274",
-	"spell-doc-conjure_volley": "269",
-	"spell-doc-conjure_woodland_beings": "270",
-	"spell-doc-contact_other_plane": "309",
-	"spell-doc-contingency": "265",
-	"spell-doc-continual_flame": "18",
-	"spell-doc-control_flames": "450",
-	"spell-doc-control_water": "21",
-	"spell-doc-control_weather": "22",
-	"spell-doc-control_winds": "449",
-	"spell-doc-cordon_of_arrows": "81",
-	"spell-doc-create_bonfire": "528",
-	"spell-doc-create_food_and_water": "335",
-	"spell-doc-create_homunculus": "527",
-	"spell-doc-create_or_destroy_water": "333",
-	"spell-doc-create_undead": "334",
-	"spell-doc-creation": "366",
-	"spell-doc-crown_of_madness": "134",
-	"spell-doc-crown_of_stars": "474",
-	"spell-doc-dancing_lights": "234",
-	"spell-doc-danse_macabre": "501",
-	"spell-doc-dawn": "517",
-	"spell-doc-daylight": "58",
-	"spell-doc-delayed_blast_fireball": "87",
-	"spell-doc-destructive_wave": "296",
-	"spell-doc-detect_evil_and_good": "194",
-	"spell-doc-detect_poison_and_disease": "193",
-	"spell-doc-dispel_evil_and_good": "300",
-	"spell-doc-dragon_s_breath": "461",
-	"spell-doc-drawmij_s_instant_summons": "68",
-	"spell-doc-dream": "19",
-	"spell-doc-dream_of_the_blue_veil": "TCoE_21",
-	"spell-doc-druid_grove": "518",
-	"spell-doc-druidcraft": "123",
-	"spell-doc-dust_devil": "514",
-	"spell-doc-earth_tremor": "460",
-	"spell-doc-earthbind": "537",
-	"spell-doc-earthquake": "111",
-	"spell-doc-elemental_bane": "510",
-	"spell-doc-enemies_abound": "467",
-	"spell-doc-enervation": "486",
-	"spell-doc-enlarge_reduce": "355",
-	"spell-doc-enthrall": "303",
-	"spell-doc-erupting_earth": "466",
-	"spell-doc-evard_s_black_tentacles": "67",
-	"spell-doc-expeditious_retreat": "257",
-	"spell-doc-eyebite": "297",
-	"spell-doc-fabricate": "118",
-	"spell-doc-far_step": "458",
-	"spell-doc-feeblemind": "317",
-	"spell-doc-feign_death": "280",
-	"spell-doc-find_greater_steed": "504",
-	"spell-doc-find_the_path": "245",
-	"spell-doc-find_traps": "243",
-	"spell-doc-fire_storm": "201",
-	"spell-doc-flame_arrows": "513",
-	"spell-doc-flame_blade": "48",
-	"spell-doc-flesh_to_stone": "209",
-	"spell-doc-forbiddance": "89",
-	"spell-doc-friends": "71",
-	"spell-doc-frostbite": "492",
-	"spell-doc-geas": "189",
-	"spell-doc-giant_insect": "43",
-	"spell-doc-glibness": "179",
-	"spell-doc-grasping_vine": "85",
-	"spell-doc-guardian_of_nature": "530",
-	"spell-doc-guards_and_wards": "341",
-	"spell-doc-gust": "542",
-	"spell-doc-gust_of_wind": "255",
-	"spell-doc-hallow": "310",
-	"spell-doc-hallucinatory_terrain": "167",
-	"spell-doc-harm": "253",
-	"spell-doc-hellish_rebuke": "1",
-	"spell-doc-holy_weapon": "519",
-	"spell-doc-hunger_of_hadar": "47",
-	"spell-doc-ice_knife": "477",
-	"spell-doc-illusory_dragon": "468",
-	"spell-doc-illusory_script": "182",
-	"spell-doc-immolation": "470",
-	"spell-doc-imprisonment": "97",
-	"spell-doc-incendiary_cloud": "34",
-	"spell-doc-infernal_calling": "469",
-	"spell-doc-infestation": "483",
-	"spell-doc-insect_plague": "180",
-	"spell-doc-intellect_fortress": "TCoE_10",
-	"spell-doc-investiture_of_flame": "490",
-	"spell-doc-investiture_of_ice": "489",
-	"spell-doc-investiture_of_stone": "488",
-	"spell-doc-investiture_of_wind": "487",
-	"spell-doc-invulnerability": "485",
-	"spell-doc-jump": "286",
-	"spell-doc-knock": "217",
-	"spell-doc-legend_lore": "115",
-	"spell-doc-leomund_s_secret_chest": "142",
-	"spell-doc-life_transference": "498",
-	"spell-doc-lightning_arrow": "174",
-	"spell-doc-lightning_lure": "TCoE_3",
-	"spell-doc-locate_animals_or_plants": "242",
-	"spell-doc-locate_creature": "247",
-	"spell-doc-locate_object": "244",
-	"spell-doc-maddening_darkness": "493",
-	"spell-doc-maelstrom": "451",
-	"spell-doc-magic_circle": "152",
-	"spell-doc-magic_jar": "30",
-	"spell-doc-magic_mouth": "28",
-	"spell-doc-magic_stone": "454",
-	"spell-doc-mass_polymorph": "481",
-	"spell-doc-maximilian_s_earthen_grasp": "465",
-	"spell-doc-meld_into_stone": "318",
-	"spell-doc-melf_s_minute_meteors": "479",
-	"spell-doc-mental_prison": "480",
-	"spell-doc-mighty_fortress": "482",
-	"spell-doc-mind_blank": "328",
-	"spell-doc-mind_spike": "511",
-	"spell-doc-mirage_arcane": "343",
-	"spell-doc-mislead": "93",
-	"spell-doc-modify_memory": "119",
-	"spell-doc-mold_earth": "478",
-	"spell-doc-mordenkainen_s_faithful_hound": "17",
-	"spell-doc-mordenkainen_s_magnificent_mansion": "16",
-	"spell-doc-mordenkainen_s_private_sanctum": "128",
-	"spell-doc-mordenkainen_s_sword": "166",
-	"spell-doc-move_earth": "53",
-	"spell-doc-negative_energy_flood": "505",
-	"spell-doc-nystul_s_magic_aura": "188",
-	"spell-doc-otiluke_s_freezing_sphere": "215",
-	"spell-doc-otiluke_s_resilient_sphere": "216",
-	"spell-doc-otto_s_irresistible_dance": "187",
-	"spell-doc-passwall": "327",
-	"spell-doc-phantasmal_killer": "32",
-	"spell-doc-phantom_steed": "279",
-	"spell-doc-planar_ally": "232",
-	"spell-doc-planar_binding": "231",
-	"spell-doc-poison_spray": "63",
-	"spell-doc-power_word_heal": "320",
-	"spell-doc-power_word_pain": "522",
-	"spell-doc-primal_savagery": "496",
-	"spell-doc-primordial_ward": "497",
-	"spell-doc-prismatic_spray": "291",
-	"spell-doc-prismatic_wall": "290",
-	"spell-doc-programmed_illusion": "82",
-	"spell-doc-project_image": "283",
-	"spell-doc-protection_from_poison": "108",
-	"spell-doc-psychic_scream": "512",
-	"spell-doc-purify_food_and_drink": "222",
-	"spell-doc-pyrotechnics": "500",
-	"spell-doc-rary_s_telepathic_bond": "160",
-	"spell-doc-regenerate": "302",
-	"spell-doc-reincarnate": "365",
-	"spell-doc-remove_curse": "326",
-	"spell-doc-resistance": "332",
-	"spell-doc-reverse_gravity": "120",
-	"spell-doc-scatter": "516",
-	"spell-doc-seeming": "281",
-	"spell-doc-sequester": "122",
-	"spell-doc-shillelagh": "73",
-	"spell-doc-sickening_radiance": "448",
-	"spell-doc-silent_image": "7",
-	"spell-doc-skill_empowerment": "538",
-	"spell-doc-skywrite": "484",
-	"spell-doc-snare": "520",
-	"spell-doc-snilloc_s_snowball_swarm": "526",
-	"spell-doc-soul_cage": "473",
-	"spell-doc-speak_with_plants": "294",
-	"spell-doc-spider_climb": "226",
-	"spell-doc-spirit_shroud": "TCoE_11",
-	"spell-doc-staggering_smite": "200",
-	"spell-doc-stone_shape": "121",
-	"spell-doc-storm_of_vengeance": "51",
-	"spell-doc-storm_sphere": "531",
-	"spell-doc-summon_aberration": "TCoE_15",
-	"spell-doc-summon_beast": "TCoE_7",
-	"spell-doc-summon_celestial": "TCoE_18",
-	"spell-doc-summon_construct": "TCoE_16",
-	"spell-doc-summon_elemental": "TCoE_17",
-	"spell-doc-summon_fiend": "TCoE_19",
-	"spell-doc-summon_greater_demon": "507",
-	"spell-doc-summon_lesser_demons": "508",
-	"spell-doc-summon_shadowspawn": "TCoE_13",
-	"spell-doc-summon_undead": "TCoE_14",
-	"spell-doc-swift_quiver": "14",
-	"spell-doc-sword_burst": "TCoE_5",
-	"spell-doc-symbol": "114",
-	"spell-doc-tasha_s_caustic_brew": "TCoE_6",
-	"spell-doc-tasha_s_otherworldly_guise": "TCoE_20",
-	"spell-doc-telepathy": "345",
-	"spell-doc-teleportation_circle": "137",
-	"spell-doc-temple_of_the_gods": "540",
-	"spell-doc-tenser_s_floating_disk": "346",
-	"spell-doc-tenser_s_transformation": "533",
-	"spell-doc-thunder_step": "457",
-	"spell-doc-thunderclap": "515",
-	"spell-doc-thunderous_smite": "52",
-	"spell-doc-tidal_wave": "509",
-	"spell-doc-tiny_servant": "476",
-	"spell-doc-tongues": "61",
-	"spell-doc-transmute_rock": "506",
-	"spell-doc-transport_via_plants": "288",
-	"spell-doc-tree_stride": "65",
-	"spell-doc-true_polymorph": "127",
-	"spell-doc-true_strike": "165",
-	"spell-doc-tsunami": "84",
-	"spell-doc-unseen_servant": "184",
-	"spell-doc-vitriolic_sphere": "462",
-	"spell-doc-wall_of_ice": "141",
-	"spell-doc-wall_of_light": "529",
-	"spell-doc-wall_of_sand": "499",
-	"spell-doc-wall_of_stone": "130",
-	"spell-doc-wall_of_thorns": "347",
-	"spell-doc-wall_of_water": "452",
-	"spell-doc-warding_wind": "463",
-	"spell-doc-water_walk": "88",
-	"spell-doc-watery_sphere": "453",
-	"spell-doc-weird": "324",
-	"spell-doc-whirlwind": "524",
-	"spell-doc-wind_walk": "90",
-	"spell-doc-word_of_recall": "319",
-	"spell-doc-wrath_of_nature": "456",
-	"spell-doc-zephyr_strike": "534",
-	"spike-growth": "77",
-	"spiritguardians": "75",
-	"spiritual-weapon": "11",
-	"steelwind": "535",
-	"stinking-cloud": "113",
-	"stoneskin": "129",
-	"suggestion": "23",
-	"summonfey": "TCoE_12",
-	"sunbeam": "329",
-	"sunburst": "330",
-	"synaptic-static": "521",
-	"tashas-hideous-laughter": "79",
-	"telekinesis": "344",
-	"teleport": "367",
-	"thaumaturgy": "80",
-	"thorn-whip": "348",
-	"thunderwave": "25",
-	"time-stop": "214",
-	"toll-the-dead": "503",
-	"true-seeing": "126",
-	"trueResurrection": "125",
-	"vampiric-touch": "277",
-	"vicious": "112",
-	"wall-of-fire": "202",
-	"wallforce": "314",
-	"warding-bond": "220",
-	"water-breathing": "235",
-	"web": "227",
-	"wind-wall": "337",
-	"wish": "124",
-	"witch-bolt": "15",
-	"word-radiance": "523",
-	"wrathful-smite": "46",
-	"zone-of-truth": "192"
-});
-//#endregion
-//#region app/exportIds.ts
-/**
-* DM Helpmate stores dnd.su spell page ids, not the ids used by this app.
-* LSS text blocks also need a stable public URL for every selected spell.
-*/
-var dndSpellRefs = {
-	"acid-splash": ["13", "acid_splash"],
-	"chill-touch": ["140", "chill_touch"],
-	"firebolt": ["204", "fire_bolt"],
-	"guidance": ["105", "guidance"],
-	"minorillusion": ["154", "minor_illusion"],
-	"vicious": ["112", "vicious_mockery"],
-	"eldritch": ["168", "eldritch_blast"],
-	"booming": ["458", "booming_blade"],
-	"greenflame": ["459", "green_flame_blade"],
-	"absorb": ["401", "absorb_elements"],
-	"armoragathys": ["59", "armor_of_agathys"],
-	"bless": ["9", "bless"],
-	"curewounds": ["145", "cure_wounds"],
-	"detectmagic": ["195", "detect_magic"],
-	"findfamiliar": ["248", "find_familiar"],
-	"goodberry": ["78", "goodberry"],
-	"healingword": ["144", "healing_word"],
-	"hex": ["312", "hex"],
-	"shield": ["70", "shield"],
-	"silvery": ["3946", "silvery_barbs"],
-	"aid": ["236", "aid"],
-	"darkness": ["353", "darkness"],
-	"enhanceability": ["103", "enhance_ability"],
-	"holdperson": ["356", "hold_person"],
-	"levitate": ["139", "levitate"],
-	"mistystep": ["352", "misty_step"],
-	"pass": ["8", "pass_without_trace"],
-	"mindwhip": ["3053", "tasha_s_mind_whip"],
-	"counterspell": ["132", "counterspell"],
-	"fireball": ["205", "fireball"],
-	"fly": ["249", "fly"],
-	"haste": ["100", "haste"],
-	"lightningbolt": ["175", "lightning_bolt"],
-	"revivify": ["24", "revivify"],
-	"spiritguardians": ["75", "spirit_guardians"],
-	"summonfey": ["3070", "summon_fey"],
-	"banishment": ["116", "banishment"],
-	"dimensiondoor": ["228", "dimension_door"],
-	"greaterinvisibility": ["38", "greater_invisibility"],
-	"polymorph": ["260", "polymorph"],
-	"shadowmoil": ["478", "shadow_of_moil"],
-	"coneofcold": ["133", "cone_of_cold"],
-	"greaterrestoration": ["39", "greater_restoration"],
-	"steelwind": ["493", "steel_wind_strike"],
-	"wallforce": ["314", "wall_of_force"],
-	"heal": ["250", "heal"],
-	"masssuggestion": ["169", "mass_suggestion"],
-	"disintegrate": ["299", "disintegrate"],
-	"forcecage": ["107", "forcecage"],
-	"planeShift": ["95", "plane_shift"],
-	"draconic": ["3814", "draconic_transformation"],
-	"demiplane": ["55", "demiplane"],
-	"maze": ["138", "maze"],
-	"powerstun": ["321", "power_word_stun"],
-	"foresight": ["264", "foresight"],
-	"meteor": ["163", "meteor_swarm"],
-	"trueResurrection": ["125", "true_resurrection"],
-	"wish": ["124", "wish"],
-	"light": ["307", "light"],
-	"mage-hand": ["26", "mage_hand"],
-	"mending": ["258", "mending"],
-	"message": ["331", "message"],
-	"prestidigitation": ["91", "prestidigitation"],
-	"ray-of-frost": ["149", "ray_of_frost"],
-	"sacred-flame": ["311", "sacred_flame"],
-	"shocking-grasp": ["66", "shocking_grasp"],
-	"spare-the-dying": ["94", "spare_the_dying"],
-	"thaumaturgy": ["80", "thaumaturgy"],
-	"thorn-whip": ["348", "thorn_whip"],
-	"produce-flame": ["336", "produce_flame"],
-	"shape-water": ["414", "shape_water"],
-	"toll-the-dead": ["457", "toll_the_dead"],
-	"mind-sliver": ["3050", "mind_sliver"],
-	"word-radiance": ["455", "word_of_radiance"],
-	"alarm": ["313", "alarm"],
-	"bane": ["254", "bane"],
-	"burning-hands": ["203", "burning_hands"],
-	"charm-person": ["221", "charm_person"],
-	"chromatic-orb": ["86", "chromatic_orb"],
-	"command": ["276", "command"],
-	"comprehend-languages": ["252", "comprehend_languages"],
-	"disguise-self": ["157", "disguise_self"],
-	"dissonant-whispers": ["56", "dissonant_whispers"],
-	"divine-favor": ["10", "divine_favor"],
-	"ensnaring-strike": ["212", "ensnaring_strike"],
-	"entangle": ["211", "entangle"],
-	"faerie-fire": ["207", "faerie_fire"],
-	"false-life": ["287", "false_life"],
-	"feather-fall": ["223", "feather_fall"],
-	"fog-cloud": ["351", "fog_cloud"],
-	"grease": ["315", "grease"],
-	"hail-of-thorns": ["50", "hail_of_thorns"],
-	"heroism": ["42", "heroism"],
-	"hunters-mark": ["164", "hunter_s_mark"],
-	"identify": ["210", "identify"],
-	"inflict-wounds": ["177", "inflict_wounds"],
-	"longstrider": ["316", "longstrider"],
-	"mage-armor": ["60", "mage_armor"],
-	"magic-missile": ["27", "magic_missile"],
-	"protection-evil-good": ["99", "protection_from_evil_and_good"],
-	"sanctuary": ["354", "sanctuary"],
-	"sleep": ["98", "sleep"],
-	"speak-with-animals": ["292", "speak_with_animals"],
-	"thunderwave": ["25", "thunderwave"],
-	"witch-bolt": ["15", "witch_bolt"],
-	"ceremony": ["465", "ceremony"],
-	"catapult": ["386", "catapult"],
-	"alter-self": ["323", "alter_self"],
-	"arcane-lock": ["29", "arcane_lock"],
-	"barkskin": ["74", "barkskin"],
-	"blindness-deafness": ["45", "blindness_deafness"],
-	"blur": ["295", "blur"],
-	"branding-smite": ["131", "branding_smite"],
-	"calm-emotions": ["102", "calm_emotions"],
-	"cloud-of-daggers": ["190", "cloud_of_daggers"],
-	"darkvision": ["368", "darkvision"],
-	"find-steed": ["246", "find_steed"],
-	"flaming-sphere": ["289", "flaming_sphere"],
-	"heat-metal": ["298", "heat_metal"],
-	"invisibility": ["183", "invisibility"],
-	"lesser-restoration": ["155", "lesser_restoration"],
-	"magic-weapon": ["153", "magic_weapon"],
-	"moonbeam": ["146", "moonbeam"],
-	"prayer-of-healing": ["173", "prayer_of_healing"],
-	"scorching-ray": ["225", "scorching_ray"],
-	"see-invisibility": ["20", "see_invisibility"],
-	"shatter": ["62", "shatter"],
-	"silence": ["349", "silence"],
-	"spike-growth": ["77", "spike_growth"],
-	"spiritual-weapon": ["11", "spiritual_weapon"],
-	"suggestion": ["23", "suggestion"],
-	"web": ["227", "web"],
-	"shadow-blade": ["470", "shadow_blade"],
-	"healing-spirit": ["468", "healing_spirit"],
-	"animate-dead": ["35", "animate_dead"],
-	"beacon-of-hope": ["158", "beacon_of_hope"],
-	"bestow-curse": ["285", "bestow_curse"],
-	"call-lightning": ["272", "call_lightning"],
-	"clairvoyance": ["238", "clairvoyance"],
-	"conjure-animals": ["267", "conjure_animals"],
-	"dispel-magic": ["301", "dispel_magic"],
-	"fear": ["109", "fear"],
-	"glyph-of-warding": ["219", "glyph_of_warding"],
-	"hypnotic-pattern": ["44", "hypnotic_pattern"],
-	"leomunds-tiny-hut": ["143", "leomund_s_tiny_hut"],
-	"major-image": ["197", "major_image"],
-	"mass-healing-word": ["170", "mass_healing_word"],
-	"plant-growth": ["304", "plant_growth"],
-	"protection-from-energy": ["106", "protection_from_energy"],
-	"sleet-storm": ["162", "sleet_storm"],
-	"slow": ["83", "slow"],
-	"speak-with-dead": ["293", "speak_with_dead"],
-	"water-breathing": ["235", "water_breathing"],
-	"crusaders-mantle": ["156", "crusader_s_mantle"],
-	"aura-of-vitality": ["3", "aura_of_vitality"],
-	"arcane-eye": ["151", "arcane_eye"],
-	"blight": ["96", "blight"],
-	"confusion": ["325", "confusion"],
-	"conjure-minor-elementals": ["271", "conjure_minor_elementals"],
-	"death-ward": ["104", "death_ward"],
-	"divination": ["266", "divination"],
-	"dominate-beast": ["239", "dominate_beast"],
-	"freedom-of-movement": ["308", "freedom_of_movement"],
-	"guardian-of-faith": ["340", "guardian_of_faith"],
-	"ice-storm": ["49", "ice_storm"],
-	"stoneskin": ["129", "stoneskin"],
-	"wall-of-fire": ["202", "wall_of_fire"],
-	"animate-objects": ["364", "animate_objects"],
-	"circle-of-power": ["135", "circle_of_power"],
-	"cloudkill": ["191", "cloudkill"],
-	"commune": ["198", "commune"],
-	"conjure-elemental": ["275", "conjure_elemental"],
-	"contagion": ["92", "contagion"],
-	"dominate-person": ["240", "dominate_person"],
-	"flame-strike": ["181", "flame_strike"],
-	"hold-monster": ["110", "hold_monster"],
-	"mass-cure-wounds": ["171", "mass_cure_wounds"],
-	"raise-dead": ["208", "raise_dead"],
-	"scrying": ["176", "scrying"],
-	"telekinesis": ["344", "telekinesis"],
-	"synaptic-static": ["491", "synaptic_static"],
-	"chain-lightning": ["233", "chain_lightning"],
-	"heroes-feast": ["230", "heroes_feast"],
-	"globe-invulnerability": ["342", "globe_of_invulnerability"],
-	"sunbeam": ["329", "sunbeam"],
-	"true-seeing": ["126", "true_seeing"],
-	"divine-word": ["12", "divine_word"],
-	"etherealness": ["64", "etherealness"],
-	"finger-of-death": ["229", "finger_of_death"],
-	"resurrection": ["33", "resurrection"],
-	"simulacrum": ["237", "simulacrum"],
-	"teleport": ["367", "teleport"],
-	"antimagic-field": ["263", "antimagic_field"],
-	"dominate-monster": ["241", "dominate_monster"],
-	"holy-aura": ["6", "holy_aura"],
-	"sunburst": ["330", "sunburst"],
-	"gate": ["36", "gate"],
-	"mass-heal": ["172", "mass_heal"],
-	"power-word-kill": ["322", "power_word_kill"],
-	"shapechange": ["251", "shapechange"],
-	"time-stop": ["214", "time_stop"],
-	"arms-of-hadar": ["305", "arms_of_hadar"],
-	"guiding-bolt": ["178", "guiding_bolt"],
-	"ray-of-sickness": ["147", "ray_of_sickness"],
-	"searing-smite": ["224", "searing_smite"],
-	"shield-of-faith": ["69", "shield_of_faith"],
-	"tashas-hideous-laughter": ["79", "tasha_s_hideous_laughter"],
-	"wrathful-smite": ["46", "wrathful_smite"],
-	"blink": ["161", "blink"],
-	"detect-thoughts": ["196", "detect_thoughts"],
-	"gentle-repose": ["186", "gentle_repose"],
-	"melfs-acid-arrow": ["159", "melf_s_acid_arrow"],
-	"mirror-image": ["218", "mirror_image"],
-	"phantasmal-force": ["31", "phantasmal_force"],
-	"ray-of-enfeeblement": ["148", "ray_of_enfeeblement"],
-	"rope-trick": ["350", "rope_trick"],
-	"warding-bond": ["220", "warding_bond"],
-	"zone-of-truth": ["192", "zone_of_truth"],
-	"conjure-barrage": ["268", "conjure_barrage"],
-	"elemental-weapon": ["339", "elemental_weapon"],
-	"gaseous-form": ["41", "gaseous_form"],
-	"nondetection": ["185", "nondetection"],
-	"sending": ["256", "sending"],
-	"stinking-cloud": ["113", "stinking_cloud"],
-	"vampiric-touch": ["277", "vampiric_touch"],
-	"wind-wall": ["337", "wind_wall"],
-	"fire-shield": ["206", "fire_shield"]
-};
-var helpmateSpellIds = verifiedHelpmateSpellIds;
-function helpmateSpellId(id) {
-	return helpmateSpellIds[id] || null;
-}
-function dndSpellUrl(id) {
-	const reference = dndSpellRefs[id];
-	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
-	return documentSpells.find((spell) => spell.id === id)?.url || null;
-}
-var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
-var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
-var documentSpellIdByName = Object.freeze(Object.fromEntries(documentSpells.flatMap((spell) => {
-	const searchName = spell.url ? new URL(spell.url).searchParams.get("search") : null;
-	return [spell.name, searchName].filter(Boolean).map((name) => [normalizeSpellName(name), spell.id]);
-})));
-/**
-* LSS uses the public dnd.su page as the stable source reference for a spell.
-* Accept absolute/relative links and ignore the mutable transliterated suffix:
-* the numeric dnd.su page id is the canonical part shared with our catalog.
-*/
-function spellIdFromDndUrl(value) {
-	if (typeof value !== "string") return null;
-	const match = value.match(/(?:https?:\/\/)?(?:www\.)?dnd\.su\/spells\/(\d+)(?:[-_/]|$)/i);
-	if (match) return spellIdByDndNumber[match[1]] || null;
-	try {
-		const parsed = new URL(value, "https://dnd.su");
-		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
-		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
-	} catch {
-		return null;
-	}
-}
-/**
-* Compact LSS exports keep only private card ObjectIds. This cache is keyed to
-* the same dnd.su references and is extended from verified LSS JSON/PDF pairs.
-* URL-bearing card objects never need this fallback.
-*/
-var lssCardDndNumbers = Object.freeze({
-	"65d3c169f3d820fa1add429e": "140",
-	"65d3c168f3d820fa1add425f": "204",
-	"65d3c170f3d820fa1add4759": "258",
-	"65d3c16af3d820fa1add434d": "60",
-	"65d3c16df3d820fa1add45f4": "221",
-	"65d3c16af3d820fa1add437e": "98",
-	"65d3c172f3d820fa1add48b7": "183",
-	"65d3c16ef3d820fa1add465d": "103",
-	"65d3c16df3d820fa1add4561": "44",
-	"65d3c171f3d820fa1add47ec": "109"
-});
-function spellIdFromLssCardId(cardId) {
-	const number = lssCardDndNumbers[cardId];
-	return number ? spellIdByDndNumber[number] || null : null;
-}
-var lssCardIdBySpellId = Object.freeze(Object.fromEntries(Object.entries(lssCardDndNumbers).map(([cardId, number]) => [spellIdByDndNumber[number], cardId]).filter((entry) => Boolean(entry[0]))));
-/** Return a private LSS card id only when the mapping was verified by fixture. */
-function lssCardIdForSpellId(spellId) {
-	return lssCardIdBySpellId[spellId] || null;
 }
 //#endregion
 //#region app/naturalAttacks.ts
@@ -26657,7 +26772,7 @@ function characterAttacks(character, spells) {
 		...featureAttacks,
 		...cantripAttacks,
 		...homebrewSpellAttacks
-	];
+	].map((attack) => customizeAttack(attack, character, character.attackCustomizations?.[attack.id]));
 }
 function lssWeaponAttacks(attacks) {
 	return attacks.filter((attack) => attack.kind === "weapon" || attack.attackBonus !== void 0).map((attack, index) => ({
@@ -29251,6 +29366,460 @@ function advancePlayTurn(c) {
 	return logPlay(next, `Начат собственный ход ${next.adventure.round}${ended.length ? `. Завершены: ${ended.map((e) => e.name).join(", ")}` : ""}`);
 }
 //#endregion
+//#region app/playTransactions.ts
+var limit$1 = 20;
+var byteLimit = 512e3;
+function patch(before, after, omit = []) {
+	const a = before, b = after;
+	const result = {
+		values: {},
+		absent: []
+	};
+	for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+		if (omit.includes(key) || JSON.stringify(a[key]) === JSON.stringify(b[key])) continue;
+		if (a[key] === void 0) result.absent.push(key);
+		else result.values[key] = structuredClone(a[key]);
+	}
+	return result;
+}
+function restore(state, delta) {
+	const result = { ...state };
+	for (const key of delta.absent) delete result[key];
+	return {
+		...result,
+		...structuredClone(delta.values)
+	};
+}
+/** Persist only changed fields; never embed another undo history in a snapshot. */
+function commitPlayChange(before, after) {
+	if (!before.adventure || !after.adventure) return after;
+	const character = patch(before, after, ["adventure"]);
+	const adventure = patch(before.adventure, after.adventure, ["undo"]);
+	if (!Object.keys(character.values).length && !character.absent.length && !Object.keys(adventure.values).length && !adventure.absent.length) return before;
+	const label = after.adventure.journal[0]?.id !== before.adventure.journal[0]?.id ? after.adventure.journal[0]?.text || "Изменение героя" : "Изменение героя";
+	const entry = {
+		id: playId(),
+		at: (/* @__PURE__ */ new Date()).toISOString(),
+		label,
+		character,
+		adventure
+	};
+	const undo = [...before.adventure.undo || [], entry].slice(-limit$1);
+	while (undo.length && new TextEncoder().encode(JSON.stringify(undo)).length > byteLimit) undo.shift();
+	return {
+		...after,
+		adventure: {
+			...after.adventure,
+			undo
+		}
+	};
+}
+function undoPlayChange(c) {
+	const entry = c.adventure?.undo?.at(-1);
+	if (!entry || !c.adventure) return c;
+	const previous = restore(c, entry.character);
+	previous.adventure = {
+		...restore(c.adventure, entry.adventure),
+		undo: c.adventure.undo.slice(0, -1)
+	};
+	return logPlay(previous, `Отменено: ${entry.label}`);
+}
+//#endregion
+//#region app/NumberSlider.tsx
+/** The track previews while dragging; pointer/key release commits one change. Exact entry has no spinner. */
+function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) {
+	const [preview, setPreview] = useState();
+	const pending = useRef(void 0);
+	useEffect(() => {
+		if (pending.current === void 0) setPreview(void 0);
+	}, [value]);
+	function commit() {
+		const next = pending.current;
+		if (next === void 0) return;
+		pending.current = void 0;
+		setPreview(void 0);
+		if (Number(next) !== Number(value)) onChange(next);
+	}
+	const display = preview ?? String(value);
+	return /* @__PURE__ */ jsxs("span", {
+		className: "number-slider",
+		children: [/* @__PURE__ */ jsx("input", {
+			"aria-label": `${label}: ползунок`,
+			type: "range",
+			min,
+			max: Math.max(min, max),
+			step,
+			value: Math.min(Math.max(min, Number(display) || 0), Math.max(min, max)),
+			onChange: (e) => {
+				pending.current = e.target.value;
+				setPreview(e.target.value);
+			},
+			onPointerDown: (e) => e.currentTarget.setPointerCapture(e.pointerId),
+			onPointerUp: commit,
+			onPointerCancel: () => {
+				pending.current = void 0;
+				setPreview(void 0);
+			},
+			onKeyUp: commit,
+			onBlur: () => {
+				commit();
+				setPreview(void 0);
+			}
+		}), /* @__PURE__ */ jsx("input", {
+			"aria-label": label,
+			type: "text",
+			inputMode: step < 1 ? "decimal" : "numeric",
+			value: display,
+			onChange: (e) => {
+				pending.current = void 0;
+				const next = step < 1 ? e.target.value.replace(",", ".") : e.target.value;
+				setPreview(next);
+				if (next.trim() === "" || Number.isFinite(Number(next))) onChange(next);
+			}
+		})]
+	});
+}
+//#endregion
+//#region app/QuickHealth.tsx
+function healthAmount(input) {
+	if (!/^\d+$/.test(input.trim()) || !Number.isSafeInteger(Number(input)) || Number(input) < 1 || Number(input) > 999999) throw new Error("Введите целое число от 1 до 999999.");
+	return Number(input);
+}
+function QuickHealth({ character: c, onChange, onUndo }) {
+	const [amount, setAmount] = useState("5");
+	const [defense, setDefense] = useState("normal");
+	const [error, setError] = useState("");
+	const [last, setLast] = useState();
+	const lock = useRef({
+		at: 0,
+		signature: ""
+	});
+	const max = playMaximum(c), hp = c.currentHitPoints ?? max;
+	function apply(kind) {
+		try {
+			const value = healthAmount(amount);
+			const signature = `${kind}:${value}:${defense}`;
+			if (Date.now() - lock.current.at < 450 && lock.current.signature === signature) return;
+			const next = kind === "damage" ? applyPlayDamage(c, value, defense) : kind === "heal" ? healPlay(c, value) : logPlay({
+				...c,
+				temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, value)
+			}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, value)} (не складываются)`);
+			lock.current = {
+				at: Date.now(),
+				signature
+			};
+			onChange(next);
+			setLast({
+				text: next.adventure.journal[0]?.text || "Здоровье изменено",
+				transaction: c.adventure?.undo?.at(-1)?.id
+			});
+			setError("");
+		} catch (e) {
+			setError(e.message);
+		}
+	}
+	const latest = c.adventure?.undo?.at(-1);
+	const canUndo = !!last && !!latest && latest.id !== last.transaction && latest.label === last.text;
+	return /* @__PURE__ */ jsxs("section", {
+		className: "quick-health",
+		"aria-label": "Быстрые хиты",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "quick-health-heading",
+				children: [
+					/* @__PURE__ */ jsx("h2", { children: "Хиты" }),
+					/* @__PURE__ */ jsxs("strong", {
+						"aria-live": "polite",
+						children: [
+							hp,
+							" / ",
+							max
+						]
+					}),
+					/* @__PURE__ */ jsxs("span", { children: ["Временные: +", c.temporaryHitPoints || 0] }),
+					defense !== "normal" && /* @__PURE__ */ jsx("span", { children: defense === "resistance" ? "Сопротивление ×½" : defense === "vulnerability" ? "Уязвимость ×2" : "Иммунитет" })
+				]
+			}),
+			/* @__PURE__ */ jsx("progress", {
+				"aria-label": "Здоровье",
+				value: hp,
+				max: Math.max(1, max)
+			}),
+			/* @__PURE__ */ jsxs("div", {
+				className: "quick-health-actions",
+				children: [
+					/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx("input", {
+						"aria-label": "Количество хитов",
+						inputMode: "numeric",
+						value: amount,
+						onChange: (e) => setAmount(e.target.value),
+						"aria-invalid": !!error
+					})] }),
+					/* @__PURE__ */ jsx("button", {
+						className: "play-danger",
+						onClick: () => apply("damage"),
+						children: "− Урон"
+					}),
+					/* @__PURE__ */ jsx("button", {
+						className: "play-primary",
+						onClick: () => apply("heal"),
+						children: "+ Лечение"
+					})
+				]
+			}),
+			error && /* @__PURE__ */ jsx("p", {
+				role: "alert",
+				children: error
+			}),
+			last && /* @__PURE__ */ jsxs("div", {
+				className: "health-last",
+				role: "status",
+				children: [/* @__PURE__ */ jsx("span", { children: last.text }), canUndo && /* @__PURE__ */ jsx("button", {
+					onClick: () => {
+						onUndo(undoPlayChange(c));
+						setLast(void 0);
+					},
+					children: "Отменить"
+				})]
+			}),
+			/* @__PURE__ */ jsxs("details", { children: [
+				/* @__PURE__ */ jsx("summary", { children: "Временные хиты и параметры" }),
+				/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
+					"aria-label": "Получаемый урон",
+					value: defense,
+					onChange: (e) => setDefense(e.target.value),
+					children: [
+						/* @__PURE__ */ jsx("option", {
+							value: "normal",
+							children: "Обычный"
+						}),
+						/* @__PURE__ */ jsx("option", {
+							value: "resistance",
+							children: "Сопротивление ×½"
+						}),
+						/* @__PURE__ */ jsx("option", {
+							value: "vulnerability",
+							children: "Уязвимость ×2"
+						}),
+						/* @__PURE__ */ jsx("option", {
+							value: "immune",
+							children: "Иммунитет"
+						})
+					]
+				})] }),
+				/* @__PURE__ */ jsx("button", {
+					onClick: () => apply("temporary"),
+					children: "Выдать временные хиты"
+				}),
+				/* @__PURE__ */ jsx("small", { children: "Берётся большее значение; временные хиты не складываются." }),
+				/* @__PURE__ */ jsxs("label", { children: ["Текущие хиты вручную", /* @__PURE__ */ jsx(NumberSlider, {
+					label: "Текущие хиты вручную",
+					min: 0,
+					max,
+					value: hp,
+					onChange: (value) => onChange({
+						...c,
+						currentHitPoints: integer(value, 0, max)
+					})
+				})] }),
+				/* @__PURE__ */ jsxs("label", { children: ["Временные хиты вручную", /* @__PURE__ */ jsx(NumberSlider, {
+					label: "Временные хиты вручную",
+					min: 0,
+					max: Math.max(100, c.temporaryHitPoints || 0),
+					value: c.temporaryHitPoints || 0,
+					onChange: (value) => onChange({
+						...c,
+						temporaryHitPoints: integer(value)
+					})
+				})] }),
+				/* @__PURE__ */ jsxs("label", { children: ["Максимум хитов", /* @__PURE__ */ jsx(NumberSlider, {
+					label: "Максимум хитов",
+					min: 1,
+					max: Math.max(200, max),
+					value: max,
+					onChange: (value) => onChange({
+						...c,
+						adventure: {
+							...c.adventure,
+							hpMaximum: integer(value, 1)
+						}
+					})
+				})] })
+			] })
+		]
+	});
+}
+//#endregion
+//#region app/AttackCustomizationEditor.tsx
+function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave, onClose }) {
+	const [draft, setDraft] = useState({ ...c.attackCustomizations?.[base.id] });
+	const [error, setError] = useState("");
+	const form = useRef(null);
+	const preview = customizeAttack(base, c, draft);
+	const pb = proficiencyBonus(characterLevel(c));
+	useEffect(() => {
+		const previous = document.activeElement;
+		const overflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+		form.current?.querySelector("input")?.focus();
+		function key(e) {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				onClose();
+			}
+			if (e.key === "Tab") {
+				const controls = [...form.current.querySelectorAll("input,select,textarea,button,summary")].filter((x) => x.getClientRects().length);
+				const first = controls[0], last = controls.at(-1);
+				if (e.shiftKey && document.activeElement === first) {
+					e.preventDefault();
+					last?.focus();
+				} else if (!e.shiftKey && document.activeElement === last) {
+					e.preventDefault();
+					first?.focus();
+				}
+			}
+		}
+		document.addEventListener("keydown", key);
+		return () => {
+			document.body.style.overflow = overflow;
+			document.removeEventListener("keydown", key);
+			previous?.focus({ preventScroll: true });
+		};
+	}, [onClose]);
+	function set(patch) {
+		setDraft({
+			...draft,
+			...patch
+		});
+	}
+	return /* @__PURE__ */ jsx("div", {
+		className: "play-backdrop",
+		children: /* @__PURE__ */ jsxs("form", {
+			ref: form,
+			className: "play-modal attack-editor",
+			role: "dialog",
+			"aria-modal": "true",
+			"aria-label": "Параметры атаки",
+			onSubmit: (e) => {
+				e.preventDefault();
+				try {
+					if (!(draft.name ?? base.name).trim()) throw new Error("Укажите название атаки.");
+					const formula = draft.damageFormula ?? base.damageFormula;
+					if (formula) rollDice(formula.replace(/\[(STR|DEX|CON|INT|WIS|CHA|PB)\]/gi, "1"), () => .5);
+					onSave(draft);
+				} catch (e) {
+					setError(e.message);
+				}
+			},
+			children: [
+				/* @__PURE__ */ jsxs("header", { children: [/* @__PURE__ */ jsx("h2", { children: "Параметры атаки" }), /* @__PURE__ */ jsx("small", { children: base.kind === "weapon" ? "Оружие" : base.kind === "feature" ? "Способность" : "Магия" })] }),
+				/* @__PURE__ */ jsxs("div", {
+					className: "attack-editor-fields",
+					children: [
+						/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
+							value: draft.name ?? base.name,
+							maxLength: 150,
+							onChange: (e) => set({ name: e.target.value })
+						})] }),
+						base.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+							/* @__PURE__ */ jsxs("label", { children: ["Характеристика попадания", /* @__PURE__ */ jsx("select", {
+								"aria-label": "Характеристика попадания",
+								value: draft.ability ?? base.ability,
+								onChange: (e) => set({ ability: e.target.value }),
+								children: Object.entries(abilityLabels).map(([id, label]) => /* @__PURE__ */ jsx("option", {
+									value: id,
+									children: label
+								}, id))
+							})] }),
+							/* @__PURE__ */ jsxs("label", {
+								className: "play-check",
+								children: [
+									/* @__PURE__ */ jsx("input", {
+										type: "checkbox",
+										checked: draft.proficient ?? base.proficient,
+										onChange: (e) => set({ proficient: e.target.checked })
+									}),
+									"Владение · бонус мастерства ",
+									pb
+								]
+							}),
+							/* @__PURE__ */ jsxs("output", {
+								className: "attack-editor-total",
+								children: [
+									"Попадание: ",
+									preview.attackBonus + equipmentBonus >= 0 ? "+" : "",
+									preview.attackBonus + equipmentBonus,
+									/* @__PURE__ */ jsxs("small", { children: [
+										abilityLabels[preview.ability],
+										" ",
+										abilityModifier$1(c.abilities[preview.ability]),
+										" · мастерство ",
+										preview.proficient ? pb : 0,
+										" · особенности ",
+										preview.attackBonus - abilityModifier$1(c.abilities[preview.ability]) - (preview.proficient ? pb : 0) - (draft.bonus ?? 0),
+										" · ручная поправка ",
+										draft.bonus ?? 0,
+										" · предметы ",
+										equipmentBonus
+									] })
+								]
+							})
+						] }),
+						/* @__PURE__ */ jsxs("label", { children: [
+							"Формула урона",
+							/* @__PURE__ */ jsx("input", {
+								"aria-label": "Формула урона",
+								value: draft.damageFormula ?? base.damageFormula,
+								onChange: (e) => set({ damageFormula: e.target.value })
+							}),
+							/* @__PURE__ */ jsx("small", { children: "Например, 1d8+[STR]. [PB] — мастерство." })
+						] }),
+						/* @__PURE__ */ jsxs("label", { children: ["Тип урона", /* @__PURE__ */ jsx("input", {
+							value: draft.damageType ?? "",
+							placeholder: "Из описания оружия / способности",
+							onChange: (e) => set({ damageType: e.target.value })
+						})] }),
+						/* @__PURE__ */ jsxs("details", { children: [
+							/* @__PURE__ */ jsx("summary", { children: "Дополнительные параметры" }),
+							/* @__PURE__ */ jsxs("label", { children: ["Дополнительный бонус попадания", /* @__PURE__ */ jsx("input", {
+								type: "number",
+								min: -100,
+								max: 100,
+								value: draft.bonus ?? 0,
+								onChange: (e) => set({ bonus: Number(e.target.value) })
+							})] }),
+							/* @__PURE__ */ jsx("small", { children: "Магические предметы в экипировке уже учитываются автоматически. Здесь добавляется только отдельная поправка." }),
+							/* @__PURE__ */ jsxs("label", { children: ["Описание и особые правила", /* @__PURE__ */ jsx("textarea", {
+								rows: 4,
+								value: draft.note ?? base.note ?? "",
+								onChange: (e) => set({ note: e.target.value })
+							})] }),
+							/* @__PURE__ */ jsx("button", {
+								type: "button",
+								onClick: () => onSave(void 0),
+								children: "Вернуть автоматический расчёт"
+							})
+						] }),
+						error && /* @__PURE__ */ jsx("p", {
+							role: "alert",
+							children: error
+						})
+					]
+				}),
+				/* @__PURE__ */ jsxs("footer", { children: [/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: onClose,
+					children: "Отмена"
+				}), /* @__PURE__ */ jsx("button", {
+					type: "submit",
+					className: "play-primary",
+					children: "Сохранить"
+				})] })
+			]
+		})
+	});
+}
+//#endregion
 //#region app/featureActions.ts
 var actionTimingLabels = {
 	action: "Действие",
@@ -29426,61 +29995,6 @@ function FeatureActions({ character: c, features, onChange, favoritesOnly = fals
 			}),
 			favoritesOnly && !resourceRows.length && !favorites.length && /* @__PURE__ */ jsx("small", { children: "Закрепите нужные способности кнопкой ☆." })
 		]
-	});
-}
-//#endregion
-//#region app/NumberSlider.tsx
-/** The track previews while dragging; pointer/key release commits one change. Exact entry has no spinner. */
-function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) {
-	const [preview, setPreview] = useState();
-	const pending = useRef(void 0);
-	useEffect(() => {
-		if (pending.current === void 0) setPreview(void 0);
-	}, [value]);
-	function commit() {
-		const next = pending.current;
-		if (next === void 0) return;
-		pending.current = void 0;
-		setPreview(void 0);
-		if (Number(next) !== Number(value)) onChange(next);
-	}
-	const display = preview ?? String(value);
-	return /* @__PURE__ */ jsxs("span", {
-		className: "number-slider",
-		children: [/* @__PURE__ */ jsx("input", {
-			"aria-label": `${label}: ползунок`,
-			type: "range",
-			min,
-			max: Math.max(min, max),
-			step,
-			value: Math.min(Math.max(min, Number(display) || 0), Math.max(min, max)),
-			onChange: (e) => {
-				pending.current = e.target.value;
-				setPreview(e.target.value);
-			},
-			onPointerDown: (e) => e.currentTarget.setPointerCapture(e.pointerId),
-			onPointerUp: commit,
-			onPointerCancel: () => {
-				pending.current = void 0;
-				setPreview(void 0);
-			},
-			onKeyUp: commit,
-			onBlur: () => {
-				commit();
-				setPreview(void 0);
-			}
-		}), /* @__PURE__ */ jsx("input", {
-			"aria-label": label,
-			type: "text",
-			inputMode: step < 1 ? "decimal" : "numeric",
-			value: display,
-			onChange: (e) => {
-				pending.current = void 0;
-				const next = step < 1 ? e.target.value.replace(",", ".") : e.target.value;
-				setPreview(next);
-				if (next.trim() === "" || Number.isFinite(Number(next))) onChange(next);
-			}
-		})]
 	});
 }
 //#endregion
@@ -30794,65 +31308,6 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 	};
 }
 //#endregion
-//#region app/playTransactions.ts
-var limit$1 = 20;
-var byteLimit = 512e3;
-function patch(before, after, omit = []) {
-	const a = before, b = after;
-	const result = {
-		values: {},
-		absent: []
-	};
-	for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
-		if (omit.includes(key) || JSON.stringify(a[key]) === JSON.stringify(b[key])) continue;
-		if (a[key] === void 0) result.absent.push(key);
-		else result.values[key] = structuredClone(a[key]);
-	}
-	return result;
-}
-function restore(state, delta) {
-	const result = { ...state };
-	for (const key of delta.absent) delete result[key];
-	return {
-		...result,
-		...structuredClone(delta.values)
-	};
-}
-/** Persist only changed fields; never embed another undo history in a snapshot. */
-function commitPlayChange(before, after) {
-	if (!before.adventure || !after.adventure) return after;
-	const character = patch(before, after, ["adventure"]);
-	const adventure = patch(before.adventure, after.adventure, ["undo"]);
-	if (!Object.keys(character.values).length && !character.absent.length && !Object.keys(adventure.values).length && !adventure.absent.length) return before;
-	const label = after.adventure.journal[0]?.id !== before.adventure.journal[0]?.id ? after.adventure.journal[0]?.text || "Изменение героя" : "Изменение героя";
-	const entry = {
-		id: playId(),
-		at: (/* @__PURE__ */ new Date()).toISOString(),
-		label,
-		character,
-		adventure
-	};
-	const undo = [...before.adventure.undo || [], entry].slice(-limit$1);
-	while (undo.length && new TextEncoder().encode(JSON.stringify(undo)).length > byteLimit) undo.shift();
-	return {
-		...after,
-		adventure: {
-			...after.adventure,
-			undo
-		}
-	};
-}
-function undoPlayChange(c) {
-	const entry = c.adventure?.undo?.at(-1);
-	if (!entry || !c.adventure) return c;
-	const previous = restore(c, entry.character);
-	previous.adventure = {
-		...restore(c.adventure, entry.adventure),
-		undo: c.adventure.undo.slice(0, -1)
-	};
-	return logPlay(previous, `Отменено: ${entry.label}`);
-}
-//#endregion
 //#region app/rollComposer.ts
 /** One-shot extras never alter the underlying character. Natural d20 is preserved. */
 function composeD20(options, die) {
@@ -31019,13 +31474,20 @@ function HealingPotions({ character: c, onChange, onRoll }) {
 }
 //#endregion
 //#region app/SessionResources.tsx
-function SessionResources({ character: c, onChange }) {
+function SessionResources({ character: c, onChange, open, onOpenChange }) {
 	const d = playDerived(c), resources = characterResources(d), a = c.adventure;
 	const [name, setName] = useState(""), [maximum, setMaximum] = useState(3), [recharge, setRecharge] = useState("long");
 	return /* @__PURE__ */ jsxs("details", {
 		className: "play-card session-resources",
+		open,
 		children: [
-			/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы ", /* @__PURE__ */ jsx("small", { children: resources.length + (a.customResources?.length || 0) })] }),
+			/* @__PURE__ */ jsxs("summary", {
+				onClick: onOpenChange ? (e) => {
+					e.preventDefault();
+					onOpenChange(!open);
+				} : void 0,
+				children: ["Ресурсы ", /* @__PURE__ */ jsx("small", { children: resources.length + (a.customResources?.length || 0) })]
+			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "session-resource-grid",
 				children: [resources.map((r) => /* @__PURE__ */ jsxs("div", {
@@ -31347,7 +31809,17 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		if (a.inventory.some((i) => i.quantity <= 0)) onChange(updateInventory(c, a.inventory));
 	}, [c, onChange]);
 	const [tab, setTab] = useState("actions");
-	const [sessionPanels, setSessionPanels] = useState({});
+	const shellRef = useRef(null);
+	const [wide, setWide] = useState(false);
+	useEffect(() => {
+		const observer = new ResizeObserver((entries) => setWide(entries[0].contentRect.width >= 1e3));
+		if (shellRef.current) observer.observe(shellRef.current);
+		return () => observer.disconnect();
+	}, []);
+	const [view, updateView] = usePlayViewPreferences();
+	const sessionPanels = view.sessionPanels;
+	const [editingAttack, setEditingAttack] = useState();
+	const closeAttackEditor = useCallback(() => setEditingAttack(void 0), []);
 	const [error, setError] = useState("");
 	const [rollDraft, setRollDraft] = useState();
 	const [rollAdjustment, setRollAdjustment] = useState(0);
@@ -31375,14 +31847,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [resolution, setResolution] = useState();
 	const [diceOpen, setDiceOpen] = useState(false);
 	const [mode, setMode] = useState("normal");
-	const [amount, setAmount] = useState(1);
 	const [handPicker, setHandPicker] = useState();
 	const [acDetails, setAcDetails] = useState(false);
 	const [concentrationDamage, setConcentrationDamage] = useState(0);
 	const [concentrationName, setConcentrationName] = useState("");
 	const [concentrationLength, setConcentrationLength] = useState("");
 	const [concentrationUnit, setConcentrationUnit] = useState("minute");
-	const [defense, setDefense] = useState("normal");
 	const [search, setSearch] = useState("");
 	const [rest, setRest] = useState();
 	const [consciousConfirmed, setConsciousConfirmed] = useState(false);
@@ -31455,6 +31925,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const hp = c.currentHitPoints ?? playMaximum(c);
 	const max = playMaximum(c);
 	const catalog = [...spells, ...homebrewSpells(c.homebrew?.entities || [])];
+	const baseAttacks = characterAttacks({
+		...d,
+		attackCustomizations: void 0,
+		spells: [...new Set([...d.spells, ...featGrantedSpellIds(d)])]
+	}, catalog);
 	const attacks = characterAttacks({
 		...d,
 		spells: [...new Set([...d.spells, ...featGrantedSpellIds(d)])]
@@ -31552,7 +32027,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()]))).replace(/\[PB\]/g, String(pb)) + sign(itemBonus(c, "damageBonus") + bonus);
 	}
 	function attackBonusFor(attack) {
-		return itemBonus(c, "attackBonus") + (attack.kind === "weapon" || attack.id.includes("weapon-") ? weaponItemBonus(c, attack.name, "weaponAttackBonus") : attack.kind === "spell" || attack.kind === "cantrip" ? spellItemBonus(c, "spellAttackBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className) : 0);
+		return itemBonus(c, "attackBonus") + (attack.kind === "weapon" || attack.id.includes("weapon-") ? weaponItemBonus(c, attack.sourceName || attack.name, "weaponAttackBonus") : attack.kind === "spell" || attack.kind === "cantrip" ? spellItemBonus(c, "spellAttackBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className) : 0);
 	}
 	function commitCast(spell, classId, method, formula) {
 		try {
@@ -31574,7 +32049,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	function performAttack(attack) {
 		try {
 			if (attack.id.endsWith("-two-hands") && equippedHands(c).used > 1) throw new Error("Для атаки универсальным оружием двумя руками освободите вторую руку.");
-			const action = resolvePlayAttack(c, attack.name, attack.attackBonus === void 0 ? void 0 : attack.attackBonus + attackBonusFor(attack), attack.damageFormula ? damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")) : "", mode);
+			const action = resolvePlayAttack(c, attack.name, attack.attackBonus === void 0 ? void 0 : attack.attackBonus + attackBonusFor(attack), attack.damageFormula ? damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")) : "", mode);
 			onChange(commitPlayChange(c, action.character));
 			if (action.attack) presentRoll(`Атака: ${action.name}`, action.attack);
 			if (action.damage) presentRoll(`Урон: ${action.name}`, action.damage);
@@ -31728,8 +32203,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		}, `${entry.classId}-${entry.source}-${entry.spell.id}`);
 	};
 	return /* @__PURE__ */ jsxs("main", {
-		className: `app-shell play-shell${a.interfaceDensity === "comfortable" ? "" : " play-compact"}${shellClassName}`,
+		ref: shellRef,
+		className: `app-shell play-shell${(view.density || a.interfaceDensity) === "comfortable" ? "" : " play-compact"}${shellClassName}`,
 		style: shellStyle,
+		"data-layout": view.layout,
+		"data-hints": view.hints,
 		"data-site-theme": siteTheme,
 		"data-nav-position": a.mobileLayout?.navPosition || "bottom",
 		"data-hud-position": a.mobileLayout?.hudPosition || "top",
@@ -31772,23 +32250,21 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			}),
 			/* @__PURE__ */ jsx(PlayInterfaceSettings, {
 				character: c,
-				onChange
+				onChange,
+				view,
+				onViewChange: updateView
 			}),
 			/* @__PURE__ */ jsxs("section", {
 				className: "play-hud",
 				"aria-label": "Состояние героя",
 				children: [
-					/* @__PURE__ */ jsxs("div", {
+					/* @__PURE__ */ jsx("div", {
 						className: "play-hp",
-						children: [
-							/* @__PURE__ */ jsx("small", { children: "Здоровье" }),
-							/* @__PURE__ */ jsxs("strong", { children: [hp, /* @__PURE__ */ jsxs("span", { children: [" / ", max] })] }),
-							/* @__PURE__ */ jsxs("small", { children: ["Временные: ", c.temporaryHitPoints || 0] }),
-							/* @__PURE__ */ jsx("progress", {
-								value: hp,
-								max: Math.max(1, max)
-							})
-						]
+						children: /* @__PURE__ */ jsx(QuickHealth, {
+							character: c,
+							onChange: change,
+							onUndo: onChange
+						})
 					}),
 					/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Класс доспеха" }), /* @__PURE__ */ jsxs("button", {
 						className: "play-hud-stat",
@@ -32159,18 +32635,18 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			/* @__PURE__ */ jsxs("div", {
 				className: "play-workspace",
 				children: [/* @__PURE__ */ jsxs("div", {
-					className: "play-content",
+					className: `play-content play-tab-${tab}`,
 					children: [
 						/* @__PURE__ */ jsxs("details", {
 							className: "session-panel play-card",
-							open: sessionPanels[tab] ?? tab === "hero",
+							open: hp === 0 || (sessionPanels[tab] ?? (tab === "hero" || wide && view.layout === "columns")),
 							children: [/* @__PURE__ */ jsxs("summary", {
 								onClick: (e) => {
 									e.preventDefault();
-									setSessionPanels((prev) => ({
-										...prev,
-										[tab]: !(prev[tab] ?? tab === "hero")
-									}));
+									updateView({ sessionPanels: {
+										...sessionPanels,
+										[tab]: !(sessionPanels[tab] ?? (tab === "hero" || wide && view.layout === "columns"))
+									} });
 								},
 								children: ["Здоровье и ресурсы ", /* @__PURE__ */ jsxs("small", { children: [
 									"HP ",
@@ -32183,386 +32659,373 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								className: "session-status",
 								children: [
 									"      ",
-									/* @__PURE__ */ jsxs("section", {
+									hp === 0 && /* @__PURE__ */ jsxs("section", {
 										className: "play-card",
-										children: [
-											/* @__PURE__ */ jsx("h2", { children: "Здоровье" }),
-											/* @__PURE__ */ jsxs("label", { children: ["Текущие HP", /* @__PURE__ */ jsx(NumberSlider, {
-												label: "Текущие HP",
-												min: 0,
-												max,
-												value: hp,
-												onChange: (value) => change({
-													...c,
-													currentHitPoints: integer(value, 0, max)
-												})
-											})] }),
-											/* @__PURE__ */ jsxs("div", {
-												className: "play-row play-wrap",
-												children: [
-													/* @__PURE__ */ jsxs("label", { children: ["Количество", /* @__PURE__ */ jsx(NumberSlider, {
-														label: "Количество",
-														min: 0,
-														value: amount,
-														onChange: (value) => setAmount(integer(value)),
-														max: 100
-													})] }),
-													/* @__PURE__ */ jsxs("label", { children: ["Получаемый урон", /* @__PURE__ */ jsxs("select", {
-														value: defense,
-														onChange: (e) => setDefense(e.target.value),
-														children: [
-															/* @__PURE__ */ jsx("option", {
-																value: "normal",
-																children: "Обычный"
-															}),
-															/* @__PURE__ */ jsx("option", {
-																value: "resistance",
-																children: "Сопротивление ×½"
-															}),
-															/* @__PURE__ */ jsx("option", {
-																value: "vulnerability",
-																children: "Уязвимость ×2"
-															}),
-															/* @__PURE__ */ jsx("option", {
-																value: "immune",
-																children: "Иммунитет"
-															})
-														]
-													})] }),
-													/* @__PURE__ */ jsx("button", {
-														className: "play-danger",
-														onClick: () => change((prev) => applyPlayDamage(prev, amount, defense)),
-														children: "Получить урон"
+										children: [/* @__PURE__ */ jsx("h2", { children: "При 0 хитов" }), /* @__PURE__ */ jsxs("div", {
+											className: "play-notice",
+											children: [
+												/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
+												/* @__PURE__ */ jsxs("span", { children: [
+													"Успехи ",
+													c.deathSaveSuccesses || 0,
+													"/3 · Провалы ",
+													c.deathSaveFailures || 0,
+													"/3"
+												] }),
+												/* @__PURE__ */ jsx("button", {
+													disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
+													onClick: () => change((prev) => {
+														const r = rollD20(0, mode);
+														presentRoll("Спасбросок смерти", r);
+														return applyDeathSave(prev, r.natural);
 													}),
-													/* @__PURE__ */ jsx("button", {
-														onClick: () => change(healPlay(c, amount)),
-														children: "Лечение"
-													}),
-													/* @__PURE__ */ jsx("button", {
-														onClick: () => change(logPlay({
-															...c,
-															temporaryHitPoints: Math.max(c.temporaryHitPoints || 0, amount)
-														}, `Временные HP: ${Math.max(c.temporaryHitPoints || 0, amount)} (не складываются)`)),
-														children: "Временные HP"
-													})
-												]
-											}),
-											/* @__PURE__ */ jsx(HealingPotions, {
-												character: c,
-												onChange: change,
-												onRoll: presentRoll
-											}),
-											hp === 0 && /* @__PURE__ */ jsxs("div", {
-												className: "play-notice",
-												children: [
-													/* @__PURE__ */ jsx("strong", { children: (c.deathSaveFailures || 0) >= 3 ? "Три провала — смерть" : (c.deathSaveSuccesses || 0) >= 3 ? "Стабилен" : "Спасброски смерти" }),
-													/* @__PURE__ */ jsxs("span", { children: [
-														"Успехи ",
-														c.deathSaveSuccesses || 0,
-														"/3 · Провалы ",
-														c.deathSaveFailures || 0,
-														"/3"
-													] }),
-													/* @__PURE__ */ jsx("button", {
-														disabled: (c.deathSaveSuccesses || 0) >= 3 || (c.deathSaveFailures || 0) >= 3,
-														onClick: () => change((prev) => {
-															const r = rollD20(0, mode);
-															presentRoll("Спасбросок смерти", r);
-															return applyDeathSave(prev, r.natural);
-														}),
-														children: "Бросить d20"
-													}),
-													/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
-												]
-											})
-										]
+													children: "Бросить d20"
+												}),
+												/* @__PURE__ */ jsx("small", { children: "Дополнительные модификаторы и урон критическим попаданием при 0 HP отметьте вручную в разделе «Герой»." })
+											]
+										})]
 									}),
 									/* @__PURE__ */ jsx(SessionResources, {
 										character: c,
-										onChange: change
+										onChange: change,
+										open: sessionPanels.resources ?? (wide && view.layout === "columns"),
+										onOpenChange: (open) => updateView({ sessionPanels: {
+											...sessionPanels,
+											resources: open
+										} })
 									})
 								]
 							})]
 						}),
-						tab === "actions" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
-							/* @__PURE__ */ jsx("section", {
-								className: "quick-potions",
-								"aria-label": "Зелья лечения",
-								children: /* @__PURE__ */ jsx(HealingPotions, {
-									character: c,
-									onChange: change,
-									onRoll: presentRoll
-								})
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "session-check",
-								children: [
-									/* @__PURE__ */ jsxs("select", {
-										"aria-label": "Быстрая проверка",
-										value: quickCheck,
-										onChange: (e) => setQuickCheck(e.target.value),
-										children: [/* @__PURE__ */ jsx("optgroup", {
-											label: "Навыки",
-											children: Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("option", {
-												value: `skill:${skill}`,
-												children: [
-													skill,
-													" ",
-													sign(skillBonusBreakdown(d, skill).value)
-												]
-											}, skill))
-										}), /* @__PURE__ */ jsx("optgroup", {
-											label: "Спасброски",
-											children: Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("option", {
-												value: `save:${key}`,
-												children: [
-													abilityLabels[key],
-													" ",
-													sign(saveBonus(key))
-												]
-											}, key))
-										})]
-									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
-										children: "Проверка"
-									}),
-									/* @__PURE__ */ jsx("button", {
-										onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
-										children: "Поправки"
+						tab === "actions" && /* @__PURE__ */ jsxs("div", {
+							className: "session-action-main",
+							children: [
+								!view.hiddenBlocks.includes("potions") && /* @__PURE__ */ jsx("section", {
+									className: "quick-potions",
+									"aria-label": "Зелья лечения",
+									children: /* @__PURE__ */ jsx(HealingPotions, {
+										character: c,
+										onChange: change,
+										onRoll: presentRoll
 									})
-								]
-							}),
-							/* @__PURE__ */ jsxs("section", {
-								className: "play-card",
-								children: [
-									/* @__PURE__ */ jsxs("div", {
-										className: "play-row",
-										children: [/* @__PURE__ */ jsxs("h2", { children: ["Собственный ход ", a.round] }), /* @__PURE__ */ jsx("button", {
-											onClick: () => change(advancePlayTurn(c)),
-											children: "Следующий ход"
-										})]
-									}),
-									/* @__PURE__ */ jsx("div", {
-										className: "play-row play-wrap",
-										children: [
-											"action",
-											"bonus",
-											"reaction"
-										].map((key, i) => /* @__PURE__ */ jsxs("label", {
-											className: "play-check",
-											children: [/* @__PURE__ */ jsx("input", {
-												type: "checkbox",
-												checked: a.turn[key],
-												onChange: () => change({
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "session-check",
+									children: [
+										/* @__PURE__ */ jsxs("select", {
+											"aria-label": "Быстрая проверка",
+											value: quickCheck,
+											onChange: (e) => setQuickCheck(e.target.value),
+											children: [/* @__PURE__ */ jsx("optgroup", {
+												label: "Навыки",
+												children: Object.keys(skillKeys).map((skill) => /* @__PURE__ */ jsxs("option", {
+													value: `skill:${skill}`,
+													children: [
+														skill,
+														" ",
+														sign(skillBonusBreakdown(d, skill).value)
+													]
+												}, skill))
+											}), /* @__PURE__ */ jsx("optgroup", {
+												label: "Спасброски",
+												children: Object.keys(d.abilities).map((key) => /* @__PURE__ */ jsxs("option", {
+													value: `save:${key}`,
+													children: [
+														abilityLabels[key],
+														" ",
+														sign(saveBonus(key))
+													]
+												}, key))
+											})]
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+											children: "Проверка"
+										}),
+										/* @__PURE__ */ jsx("button", {
+											onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+											children: "Поправки"
+										})
+									]
+								}),
+								!view.hiddenBlocks.includes("turn") && /* @__PURE__ */ jsxs("section", {
+									className: "play-card session-turn",
+									children: [
+										/* @__PURE__ */ jsxs("div", {
+											className: "play-row",
+											children: [/* @__PURE__ */ jsxs("h2", { children: ["Собственный ход ", a.round] }), /* @__PURE__ */ jsx("button", {
+												onClick: () => change(advancePlayTurn(c)),
+												children: "Следующий ход"
+											})]
+										}),
+										/* @__PURE__ */ jsx("div", {
+											className: "play-row play-wrap",
+											children: [
+												"action",
+												"bonus",
+												"reaction"
+											].map((key, i) => /* @__PURE__ */ jsxs("label", {
+												className: "play-check",
+												children: [/* @__PURE__ */ jsx("input", {
+													type: "checkbox",
+													checked: a.turn[key],
+													onChange: () => change({
+														...c,
+														adventure: {
+															...a,
+															turn: {
+																...a.turn,
+																[key]: !a.turn[key]
+															}
+														}
+													})
+												}), [
+													"Действие потрачено",
+													"Бонусное потрачено",
+													"Реакция потрачена"
+												][i]]
+											}, key))
+										}),
+										/* @__PURE__ */ jsx("small", { children: "Отметки помогают учитывать ход. Броски сами не тратят действие." }),
+										/* @__PURE__ */ jsx("div", {
+											className: "play-row play-wrap",
+											children: [
+												"Рывок",
+												"Отход",
+												"Уклонение",
+												"Помощь",
+												"Засада",
+												"Поиск",
+												"Подготовка"
+											].map((name) => /* @__PURE__ */ jsx("button", {
+												onClick: () => change(logPlay({
 													...c,
 													adventure: {
 														...a,
 														turn: {
 															...a.turn,
-															[key]: !a.turn[key]
+															action: true
 														}
 													}
-												})
-											}), [
-												"Действие потрачено",
-												"Бонусное потрачено",
-												"Реакция потрачена"
-											][i]]
-										}, key))
-									}),
-									/* @__PURE__ */ jsx("small", { children: "Отметки помогают учитывать ход. Броски сами не тратят действие." }),
-									/* @__PURE__ */ jsx("div", {
-										className: "play-row play-wrap",
-										children: [
-											"Рывок",
-											"Отход",
-											"Уклонение",
-											"Помощь",
-											"Засада",
-											"Поиск",
-											"Подготовка"
-										].map((name) => /* @__PURE__ */ jsx("button", {
-											onClick: () => change(logPlay({
-												...c,
-												adventure: {
-													...a,
-													turn: {
-														...a.turn,
-														action: true
-													}
-												}
-											}, `Действие: ${name}`)),
-											children: name
-										}, name))
-									})
-								]
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "play-row play-wrap action-filters",
-								children: [/* @__PURE__ */ jsxs("label", {
-									className: "play-check",
-									children: [/* @__PURE__ */ jsx("input", {
-										type: "checkbox",
-										checked: favoritesOnly,
-										onChange: (e) => setFavoritesOnly(e.target.checked)
-									}), "Только избранные"]
-								}), /* @__PURE__ */ jsxs("label", {
-									className: "play-check",
-									children: [/* @__PURE__ */ jsx("input", {
-										type: "checkbox",
-										checked: availableOnly,
-										onChange: (e) => setAvailableOnly(e.target.checked)
-									}), "Доступно сейчас"]
-								})]
-							}),
-							/* @__PURE__ */ jsx(FeatureActions, {
-								character: c,
-								features,
-								onChange: change,
-								favoritesOnly,
-								availableOnly
-							}),
-							/* @__PURE__ */ jsxs("section", {
-								className: "play-section-heading",
-								children: [/* @__PURE__ */ jsx("h2", { children: "Атаки" }), favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })]
-							}),
-							/* @__PURE__ */ jsx("div", {
-								className: "play-grid",
-								children: visibleAttacks.map((attack) => /* @__PURE__ */ jsxs("article", {
-									className: "play-card play-attack-card",
-									children: [
-										/* @__PURE__ */ jsxs("div", {
-											className: "play-row",
-											children: [/* @__PURE__ */ jsx("h3", { children: attack.name }), /* @__PURE__ */ jsx("button", {
-												"aria-label": `Избранное: ${attack.name}`,
-												"aria-pressed": !!a.favoriteActions?.includes(attack.id),
-												onClick: () => change({
-													...c,
-													adventure: {
-														...a,
-														favoriteActions: a.favoriteActions?.includes(attack.id) ? a.favoriteActions.filter((id) => id !== attack.id) : [...a.favoriteActions || [], attack.id]
-													}
-												}),
-												children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
-											})]
-										}),
-										/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
-										/* @__PURE__ */ jsx("p", { children: attack.note }),
-										attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsxs("summary", { children: [
-											"Почему ",
-											sign(attack.attackBonus + attackBonusFor(attack)),
-											"?"
-										] }), /* @__PURE__ */ jsxs("p", { children: [
-											abilityLabels[attack.ability],
-											": ",
-											sign(abilityModifier$1(d.abilities[attack.ability])),
-											/* @__PURE__ */ jsx("br", {}),
-											"Мастерство: ",
-											sign(attack.proficient ? pb : 0),
-											/* @__PURE__ */ jsx("br", {}),
-											"Особенности и остальные бонусы листа: ",
-											sign(attack.attackBonus - abilityModifier$1(d.abilities[attack.ability]) - (attack.proficient ? pb : 0)),
-											/* @__PURE__ */ jsx("br", {}),
-											"Активные предметы игрового режима: ",
-											sign(attackBonusFor(attack))
-										] })] }),
-										/* @__PURE__ */ jsx("button", {
-											className: "play-primary",
-											disabled: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1,
-											title: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1 ? "Освободите вторую руку" : void 0,
-											onClick: () => performAttack(attack),
-											children: "Атаковать"
-										}),
-										attackResolution?.attackId === attack.id && /* @__PURE__ */ jsxs("section", {
-											className: "play-card play-resolution",
-											"aria-label": "Результат атаки",
-											children: [
-												/* @__PURE__ */ jsxs("div", {
-													className: "play-row",
-													children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
-														onClick: () => setAttackResolution(void 0),
-														children: "Закрыть атаку"
-													})]
-												}),
-												attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
-													"Попадание: ",
-													/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
-													" · d20: ",
-													attackResolution.attack.natural,
-													attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
-												] }),
-												/* @__PURE__ */ jsxs("p", { children: [
-													"Урон",
-													attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
-													": ",
-													/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
-													" · ",
-													attackResolution.damage?.formula || "Промах"
-												] })
-											]
-										}),
-										/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
-											className: "play-row play-wrap",
-											children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
-												onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
-												children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
-											}), /* @__PURE__ */ jsx("button", {
-												onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
-												children: "Настроить бросок"
-											})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
-												onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")))),
-												children: "Урон"
-											}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
-												onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.name, "weaponDamageBonus")), void 0, true)),
-												children: "Крит"
-											})] })]
-										})] })
+												}, `Действие: ${name}`)),
+												children: name
+											}, name))
+										})
 									]
-								}, attack.id))
-							}),
-							(quickSpells.length > 0 || quickItems.length > 0) && /* @__PURE__ */ jsxs("section", {
-								className: "session-quick",
-								children: [/* @__PURE__ */ jsx("h2", { children: "Магия и расходники под рукой" }), /* @__PURE__ */ jsxs("div", {
-									className: "play-grid",
-									children: [quickSpells.map((e) => spellCard(e)), quickItems.map((i) => /* @__PURE__ */ jsxs("article", {
-										className: "play-card session-item",
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap action-filters",
+									children: [/* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: favoritesOnly,
+											onChange: (e) => setFavoritesOnly(e.target.checked)
+										}), "Только избранные"]
+									}), /* @__PURE__ */ jsxs("label", {
+										className: "play-check",
+										children: [/* @__PURE__ */ jsx("input", {
+											type: "checkbox",
+											checked: availableOnly,
+											onChange: (e) => setAvailableOnly(e.target.checked)
+										}), "Доступно сейчас"]
+									})]
+								}),
+								!view.hiddenBlocks.includes("features") && /* @__PURE__ */ jsx("div", {
+									className: "session-features",
+									children: /* @__PURE__ */ jsx(FeatureActions, {
+										character: c,
+										features,
+										onChange: change,
+										favoritesOnly,
+										availableOnly
+									})
+								}),
+								/* @__PURE__ */ jsxs("section", {
+									className: "play-section-heading",
+									children: [
+										/* @__PURE__ */ jsx("h2", { children: "Атаки" }),
+										/* @__PURE__ */ jsx("small", {
+											className: "play-help",
+											children: "Название — параметры; бонус — расчёт; «Атаковать» — бросок."
+										}),
+										favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })
+									]
+								}),
+								/* @__PURE__ */ jsx("div", {
+									className: "play-grid session-attacks",
+									children: visibleAttacks.map((attack) => /* @__PURE__ */ jsxs("article", {
+										className: "play-card play-attack-card",
 										children: [
 											/* @__PURE__ */ jsxs("div", {
 												className: "play-row",
-												children: [/* @__PURE__ */ jsx("h3", { children: i.name }), /* @__PURE__ */ jsx("button", {
-													"aria-label": `Закрепить предмет: ${i.name}`,
-													"aria-pressed": isPinned(`item:${i.id}`),
-													onClick: () => togglePin(`item:${i.id}`),
-													children: isPinned(`item:${i.id}`) ? "★" : "☆"
+												children: [/* @__PURE__ */ jsx("h3", { children: /* @__PURE__ */ jsxs("button", {
+													className: "attack-title",
+													onClick: () => setEditingAttack(attack.id),
+													"aria-label": `Изменить атаку: ${attack.name}`,
+													children: [
+														attack.name,
+														" ",
+														/* @__PURE__ */ jsx("span", {
+															"aria-hidden": "true",
+															children: "✎"
+														})
+													]
+												}) }), /* @__PURE__ */ jsx("button", {
+													"aria-label": `Избранное: ${attack.name}`,
+													"aria-pressed": !!a.favoriteActions?.includes(attack.id),
+													onClick: () => change({
+														...c,
+														adventure: {
+															...a,
+															favoriteActions: a.favoriteActions?.includes(attack.id) ? a.favoriteActions.filter((id) => id !== attack.id) : [...a.favoriteActions || [], attack.id]
+														}
+													}),
+													children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
 												})]
 											}),
-											/* @__PURE__ */ jsxs("p", { children: [
-												i.quantity,
-												" шт.",
-												healingFormulaForItem(i) ? ` · лечение ${healingFormulaForItem(i)}` : ""
-											] }),
+											/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
+											/* @__PURE__ */ jsxs("details", {
+												className: "attack-notes",
+												children: [/* @__PURE__ */ jsx("summary", { children: "Описание и условия" }), /* @__PURE__ */ jsx("p", { children: attack.note || "Без дополнительных условий." })]
+											}),
+											attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("details", {
+												className: "attack-bonus",
+												children: [
+													/* @__PURE__ */ jsxs("summary", {
+														"aria-label": `Бонус попадания: ${attack.name}`,
+														children: [
+															/* @__PURE__ */ jsx("b", { children: sign(attack.attackBonus + attackBonusFor(attack)) }),
+															" ",
+															/* @__PURE__ */ jsx("span", {
+																"aria-hidden": "true",
+																children: "⌄"
+															})
+														]
+													}),
+													/* @__PURE__ */ jsxs("p", { children: [
+														abilityLabels[attack.ability],
+														": ",
+														sign(abilityModifier$1(d.abilities[attack.ability])),
+														/* @__PURE__ */ jsx("br", {}),
+														"Мастерство: ",
+														sign(attack.proficient ? pb : 0),
+														/* @__PURE__ */ jsx("br", {}),
+														"Особенности и остальные бонусы листа: ",
+														sign(attack.attackBonus - abilityModifier$1(d.abilities[attack.ability]) - (attack.proficient ? pb : 0) - (c.attackCustomizations?.[attack.id]?.bonus || 0)),
+														/* @__PURE__ */ jsx("br", {}),
+														"Ручная поправка: ",
+														sign(c.attackCustomizations?.[attack.id]?.bonus || 0),
+														/* @__PURE__ */ jsx("br", {}),
+														"Активные предметы игрового режима: ",
+														sign(attackBonusFor(attack)),
+														/* @__PURE__ */ jsx("br", {}),
+														/* @__PURE__ */ jsxs("strong", { children: ["Итого: ", sign(attack.attackBonus + attackBonusFor(attack))] })
+													] }),
+													/* @__PURE__ */ jsx("button", {
+														onClick: () => setEditingAttack(attack.id),
+														children: "Изменить параметры"
+													})
+												]
+											}),
 											/* @__PURE__ */ jsx("button", {
 												className: "play-primary",
-												disabled: !i.quantity,
-												onClick: () => consumeQuick(i.id),
-												children: healingFormulaForItem(i) ? "Выпить и восстановить HP" : "Использовать 1"
-											})
+												"aria-label": `Бросить атаку: ${attack.name}`,
+												disabled: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1,
+												title: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1 ? "Освободите вторую руку" : void 0,
+												onClick: () => performAttack(attack),
+												children: "Атаковать"
+											}),
+											attackResolution?.attackId === attack.id && /* @__PURE__ */ jsxs("section", {
+												className: "play-card play-resolution",
+												"aria-label": "Результат атаки",
+												children: [
+													/* @__PURE__ */ jsxs("div", {
+														className: "play-row",
+														children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
+															onClick: () => setAttackResolution(void 0),
+															children: "Закрыть атаку"
+														})]
+													}),
+													attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
+														"Попадание: ",
+														/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
+														" · d20: ",
+														attackResolution.attack.natural,
+														attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
+													] }),
+													/* @__PURE__ */ jsxs("p", { children: [
+														"Урон",
+														attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
+														": ",
+														/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
+														" · ",
+														attackResolution.damage?.formula || "Промах"
+													] })
+												]
+											}),
+											/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
+												className: "play-row play-wrap",
+												children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
+													onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+													children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
+												}), /* @__PURE__ */ jsx("button", {
+													onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+													children: "Настроить бросок"
+												})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+													onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")))),
+													children: "Урон"
+												}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
+													onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")), void 0, true)),
+													children: "Крит"
+												})] })]
+											})] })
 										]
-									}, i.id))]
-								})]
-							}),
-							/* @__PURE__ */ jsxs("div", {
-								className: "play-row play-wrap",
-								children: [/* @__PURE__ */ jsxs("button", {
-									onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
-									children: ["Бросить инициативу ", sign(initiativeBreakdown(d).value)]
-								}), /* @__PURE__ */ jsx("button", {
-									onClick: () => beginRoll("Инициатива", initiativeBreakdown(d).value),
-									children: "Настроить бросок инициативы"
-								})]
-							})
-						] }),
+									}, attack.id))
+								}),
+								!view.hiddenBlocks.includes("quickSpells") && (quickSpells.length > 0 || quickItems.length > 0) && /* @__PURE__ */ jsxs("section", {
+									className: "session-quick",
+									children: [/* @__PURE__ */ jsx("h2", { children: "Магия и расходники под рукой" }), /* @__PURE__ */ jsxs("div", {
+										className: "play-grid",
+										children: [quickSpells.map((e) => spellCard(e)), quickItems.map((i) => /* @__PURE__ */ jsxs("article", {
+											className: "play-card session-item",
+											children: [
+												/* @__PURE__ */ jsxs("div", {
+													className: "play-row",
+													children: [/* @__PURE__ */ jsx("h3", { children: i.name }), /* @__PURE__ */ jsx("button", {
+														"aria-label": `Закрепить предмет: ${i.name}`,
+														"aria-pressed": isPinned(`item:${i.id}`),
+														onClick: () => togglePin(`item:${i.id}`),
+														children: isPinned(`item:${i.id}`) ? "★" : "☆"
+													})]
+												}),
+												/* @__PURE__ */ jsxs("p", { children: [
+													i.quantity,
+													" шт.",
+													healingFormulaForItem(i) ? ` · лечение ${healingFormulaForItem(i)}` : ""
+												] }),
+												/* @__PURE__ */ jsx("button", {
+													className: "play-primary",
+													disabled: !i.quantity,
+													onClick: () => consumeQuick(i.id),
+													children: healingFormulaForItem(i) ? "Выпить и восстановить HP" : "Использовать 1"
+												})
+											]
+										}, i.id))]
+									})]
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "play-row play-wrap session-initiative",
+									children: [/* @__PURE__ */ jsxs("button", {
+										onClick: () => d20("Инициатива", initiativeBreakdown(d).value),
+										children: ["Бросить инициативу ", sign(initiativeBreakdown(d).value)]
+									}), /* @__PURE__ */ jsx("button", {
+										onClick: () => beginRoll("Инициатива", initiativeBreakdown(d).value),
+										children: "Настроить бросок инициативы"
+									})]
+								})
+							]
+						}),
 						tab === "spells" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card concentration-save",
@@ -33204,6 +33667,22 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					})
 				]
 			}),
+			editingAttack && baseAttacks.find((x) => x.id === editingAttack) && /* @__PURE__ */ jsx(AttackCustomizationEditor, {
+				base: baseAttacks.find((x) => x.id === editingAttack),
+				character: d,
+				equipmentBonus: attackBonusFor(baseAttacks.find((x) => x.id === editingAttack)),
+				onClose: closeAttackEditor,
+				onSave: (patch) => {
+					const customizations = { ...c.attackCustomizations };
+					if (patch) customizations[editingAttack] = patch;
+					else delete customizations[editingAttack];
+					change(logPlay({
+						...c,
+						attackCustomizations: customizations
+					}, `Изменена атака: ${baseAttacks.find((x) => x.id === editingAttack).name}`));
+					setEditingAttack(void 0);
+				}
+			}),
 			rest && /* @__PURE__ */ jsx("div", {
 				className: "play-backdrop",
 				children: /* @__PURE__ */ jsxs("section", {
@@ -33265,7 +33744,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	});
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/shared/src/utils.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/shared/src/utils.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33277,7 +33756,7 @@ var mergeClasses = (...classes) => classes.filter((className, index, array) => {
 	return Boolean(className) && className.trim() !== "" && array.indexOf(className) === index;
 }).join(" ").trim();
 //#endregion
-//#region node_modules/lucide-react/dist/esm/defaultAttributes.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/defaultAttributes.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33296,7 +33775,7 @@ var defaultAttributes = {
 	strokeLinejoin: "round"
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/Icon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/Icon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33316,7 +33795,7 @@ var Icon = forwardRef(({ color = "currentColor", size = 24, strokeWidth = 2, abs
 	}, [...iconNode.map(([tag, attrs]) => createElement(tag, attrs)), ...Array.isArray(children) ? children : [children]]);
 });
 //#endregion
-//#region node_modules/lucide-react/dist/esm/createLucideIcon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/createLucideIcon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -33334,7 +33813,7 @@ var createLucideIcon = (iconName, iconNode) => {
 	return Component;
 };
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/settings.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/settings.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47811,7 +48290,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	return [...merged.values()].filter(usefulFinalRaceFeature);
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/anvil.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/anvil.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47841,7 +48320,7 @@ var Anvil = createLucideIcon("Anvil", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/axe.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/axe.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47856,7 +48335,7 @@ var Axe = createLucideIcon("Axe", [["path", {
 	key: "113wfo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bird.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bird.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47890,7 +48369,7 @@ var Bird = createLucideIcon("Bird", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bone.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bone.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47902,7 +48381,7 @@ var Bone = createLucideIcon("Bone", [["path", {
 	key: "w610uw"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/book-open.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/book-open.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47917,7 +48396,7 @@ var BookOpen = createLucideIcon("BookOpen", [["path", {
 	key: "ruj8y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/building-2.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/building-2.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -47955,7 +48434,7 @@ var Building2 = createLucideIcon("Building2", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/brain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/brain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48001,7 +48480,7 @@ var Brain = createLucideIcon("Brain", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/bug.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/bug.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48055,7 +48534,7 @@ var Bug = createLucideIcon("Bug", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48081,7 +48560,7 @@ var Cat = createLucideIcon("Cat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/circle-dot.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/circle-dot.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48100,7 +48579,7 @@ var CircleDot = createLucideIcon("CircleDot", [["circle", {
 	key: "41hilf"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/clover.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/clover.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48122,7 +48601,7 @@ var Clover = createLucideIcon("Clover", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/cog.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/cog.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48188,7 +48667,7 @@ var Cog = createLucideIcon("Cog", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/compass.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/compass.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48205,7 +48684,7 @@ var Compass = createLucideIcon("Compass", [["path", {
 	key: "1mglay"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/crown.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/crown.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48220,7 +48699,7 @@ var Crown = createLucideIcon("Crown", [["path", {
 	key: "11awu3"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/drama.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/drama.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48262,7 +48741,7 @@ var Drama = createLucideIcon("Drama", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/droplets.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/droplets.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48277,7 +48756,7 @@ var Droplets = createLucideIcon("Droplets", [["path", {
 	key: "1sl1rz"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/dumbbell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/dumbbell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48307,7 +48786,7 @@ var Dumbbell = createLucideIcon("Dumbbell", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/eye.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/eye.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48324,7 +48803,7 @@ var Eye = createLucideIcon("Eye", [["path", {
 	key: "1v7zrd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/feather.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/feather.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48346,7 +48825,7 @@ var Feather = createLucideIcon("Feather", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/fish-symbol.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/fish-symbol.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48358,7 +48837,7 @@ var FishSymbol = createLucideIcon("FishSymbol", [["path", {
 	key: "h4oh4o"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flame.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flame.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48370,7 +48849,7 @@ var Flame = createLucideIcon("Flame", [["path", {
 	key: "96xj49"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/flask-conical.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/flask-conical.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48392,7 +48871,7 @@ var FlaskConical = createLucideIcon("FlaskConical", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/footprints.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/footprints.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48418,7 +48897,7 @@ var Footprints = createLucideIcon("Footprints", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/gem.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/gem.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48440,7 +48919,7 @@ var Gem = createLucideIcon("Gem", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ghost.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ghost.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48462,7 +48941,7 @@ var Ghost = createLucideIcon("Ghost", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hand.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hand.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48488,7 +48967,7 @@ var Hand = createLucideIcon("Hand", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/handshake.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/handshake.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48518,7 +48997,7 @@ var Handshake = createLucideIcon("Handshake", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/hammer.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/hammer.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48540,7 +49019,7 @@ var Hammer = createLucideIcon("Hammer", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/heart-pulse.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/heart-pulse.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48555,7 +49034,7 @@ var HeartPulse = createLucideIcon("HeartPulse", [["path", {
 	key: "1uw2ng"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/leaf.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/leaf.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48570,7 +49049,7 @@ var Leaf = createLucideIcon("Leaf", [["path", {
 	key: "mt58a7"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/key-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/key-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48588,7 +49067,7 @@ var KeyRound = createLucideIcon("KeyRound", [["path", {
 	key: "w0ekpg"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/moon.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/moon.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48600,7 +49079,7 @@ var Moon = createLucideIcon("Moon", [["path", {
 	key: "a7tn18"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/mountain.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/mountain.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48612,7 +49091,7 @@ var Mountain = createLucideIcon("Mountain", [["path", {
 	key: "otkl63"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/map-pinned.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/map-pinned.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48636,7 +49115,7 @@ var MapPinned = createLucideIcon("MapPinned", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/music.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/music.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48662,7 +49141,7 @@ var Music = createLucideIcon("Music", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/orbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/orbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48698,7 +49177,7 @@ var Orbit = createLucideIcon("Orbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/paw-print.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/paw-print.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48730,7 +49209,7 @@ var PawPrint = createLucideIcon("PawPrint", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rabbit.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rabbit.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48760,7 +49239,7 @@ var Rabbit = createLucideIcon("Rabbit", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/rat.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/rat.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48790,7 +49269,7 @@ var Rat = createLucideIcon("Rat", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/scroll-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/scroll-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48816,7 +49295,7 @@ var ScrollText = createLucideIcon("ScrollText", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/ship-wheel.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/ship-wheel.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48870,7 +49349,7 @@ var ShipWheel = createLucideIcon("ShipWheel", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shell.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shell.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48882,7 +49361,7 @@ var Shell = createLucideIcon("Shell", [["path", {
 	key: "1cn552"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48894,7 +49373,7 @@ var Shield = createLucideIcon("Shield", [["path", {
 	key: "oel41y"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/shield-check.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/shield-check.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48909,7 +49388,7 @@ var ShieldCheck = createLucideIcon("ShieldCheck", [["path", {
 	key: "dzmm74"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48939,7 +49418,7 @@ var Sparkles = createLucideIcon("Sparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sprout.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sprout.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -48965,7 +49444,7 @@ var Sprout = createLucideIcon("Sprout", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sun.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sun.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49013,7 +49492,7 @@ var Sun = createLucideIcon("Sun", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sword.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sword.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49048,7 +49527,7 @@ var Sword = createLucideIcon("Sword", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/swords.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/swords.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49108,7 +49587,7 @@ var Swords = createLucideIcon("Swords", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tent-tree.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tent-tree.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49148,7 +49627,7 @@ var TentTree = createLucideIcon("TentTree", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/tree-pine.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/tree-pine.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49163,7 +49642,7 @@ var TreePine = createLucideIcon("TreePine", [["path", {
 	key: "kmzjlo"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trees.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trees.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49189,7 +49668,7 @@ var Trees = createLucideIcon("Trees", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/user-round.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/user-round.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49206,7 +49685,7 @@ var UserRound = createLucideIcon("UserRound", [["circle", {
 	key: "rfgkzh"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/venetian-mask.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/venetian-mask.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49228,7 +49707,7 @@ var VenetianMask = createLucideIcon("VenetianMask", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wand-sparkles.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49270,7 +49749,7 @@ var WandSparkles = createLucideIcon("WandSparkles", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/waves.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/waves.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -49292,7 +49771,7 @@ var Waves = createLucideIcon("Waves", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/wind.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/wind.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -54793,7 +55272,7 @@ function sourceAvailableSpellCatalog(catalog, additionalUnlocked) {
 	return catalog.filter((spell) => additionalUnlocked || !isAdditionalSpell(spell));
 }
 //#endregion
-//#region node_modules/fflate/esm/index.mjs
+//#region ../../d37c18cc5beb/herolist/node_modules/fflate/esm/index.mjs
 var require = createRequire("/");
 try {
 	require("worker_threads").Worker;
@@ -55723,7 +56202,7 @@ function retainLevelState(before, after, catalog = spells) {
 	};
 }
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/trending-up.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/trending-up.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -55738,7 +56217,7 @@ var TrendingUp = createLucideIcon("TrendingUp", [["polyline", {
 	key: "kwv8wd"
 }]]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/sliders-horizontal.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -55811,7 +56290,7 @@ var SlidersHorizontal = createLucideIcon("SlidersHorizontal", [
 	}]
 ]);
 //#endregion
-//#region node_modules/lucide-react/dist/esm/icons/file-text.js
+//#region ../../d37c18cc5beb/herolist/node_modules/lucide-react/dist/esm/icons/file-text.js
 /**
 * @license lucide-react v0.468.0 - ISC
 *
@@ -68661,18 +69140,14 @@ function Builder({ adventureRoute = false } = {}) {
 								]
 							})
 						]
-					}), /* @__PURE__ */ jsxs("div", {
+					}), /* @__PURE__ */ jsx("div", {
 						className: "home-hero-art",
 						"aria-hidden": "true",
-						children: [/* @__PURE__ */ jsx("img", {
-							className: "home-art-day",
-							src: assetUrl("home/hero-day.webp"),
+						children: /* @__PURE__ */ jsx("img", {
+							className: "home-art-selected",
+							src: assetUrl(siteTheme === "classic" && !appearance.preferences.activePreset ? "home/hero-night.webp" : "home/hero-day.webp"),
 							alt: ""
-						}), /* @__PURE__ */ jsx("img", {
-							className: "home-art-night",
-							src: assetUrl("home/hero-night.webp"),
-							alt: ""
-						})]
+						})
 					})]
 				}),
 				/* @__PURE__ */ jsxs("section", {
