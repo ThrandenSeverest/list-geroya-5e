@@ -30,6 +30,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ ! -d asset-import/jobs ]; then
+            echo 'No image manifests to import'
+            exit 0
+          fi
           find asset-import/jobs -maxdepth 1 -name '*.json' -print0 | xargs -0 -r python scripts/import_assets_manifest.py
       - name: Commit newly imported images
         shell: bash
