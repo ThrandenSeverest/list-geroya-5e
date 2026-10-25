@@ -1,4 +1,4 @@
-:HL["/list-geroya-5e/assets/index-C2FcohXa.css","style"]
+:HL["/list-geroya-5e/assets/index-DXsb-7rR.css","style"]
 2:T102b,
 (() => {
   const VAULT_KEY = "list-geroya-character-vault-v1";
@@ -108,15 +108,53 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-C2FcohXa.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-C2FcohXa.css","data-rsc-css-href":"/list-geroya-5e/assets/index-C2FcohXa.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}]}],"$L3"]}]],"$L4"],"route:/account/":"$L5","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"424c4443-60eb-4000-af2e-598541647814","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
-6:I["8c0f216c4604",[],"Children",1]
-7:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
-8:I["8c0f216c4604",[],"Slot",1]
-9:I["593f344dc510",[],"RedirectBoundary",1]
-3:["$","body",null,{"className":"antialiased","children":["$","$L6",null,{}]}]
-4:null
-5:[[["$","meta",null,{"charSet":"utf-8"}],[["$","title","0",{"children":"Лист Героя 5e — создание персонажа D&D 2014"}],["$","meta","1",{"name":"description","content":"Пошаговый конструктор персонажа D&D 5e в редакции 2014 года."}],["$","link","2",{"rel":"shortcut icon","href":"/favicon.ico"}],["$","link","3",{"rel":"icon","href":"/favicon.ico"}],["$","meta","4",{"name":"codex-preview","content":"development"}]],[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]],["$","$L7",null,{"segmentMap":{"children":["account"]},"children":["$","$L8",null,{"id":"layout:/","parallelSlots":"$undefined","children":["$","$L9",null,{"children":["$","$L7",null,{"segmentMap":{"children":[]},"children":["$","$L8",null,{"id":"page:/account/"}]}]}]}]}]]
-a:I["724dcbd470a5",[],"default",1]
-1:["$","$La",null,{"params":"$@b","searchParams":"$@c"}]
-b:{}
-c:{}
+0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-DXsb-7rR.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-DXsb-7rR.css","data-rsc-css-href":"/list-geroya-5e/assets/index-DXsb-7rR.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3"]}],"$L4"]}]],"$L5"],"route:/account/":"$L6","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"b21b9fcc-8f2d-42e7-a1c5-b98093bb77e7","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+8:I["8c0f216c4604",[],"Children",1]
+9:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
+a:I["8c0f216c4604",[],"Slot",1]
+b:I["593f344dc510",[],"RedirectBoundary",1]
+7:T974,
+(function () {
+  var assetFailed = false;
+  window.addEventListener('error', function (event) {
+    var node = event.target;
+    if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
+  }, true);
+  window.setTimeout(function () {
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
+    if (!document.querySelector('.character-library-layout')) return;
+    if (document.getElementById('herolist-boot-warning')) return;
+    var panel = document.createElement('section');
+    panel.id = 'herolist-boot-warning';
+    panel.setAttribute('role', 'alert');
+    panel.style.cssText = 'position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;padding:16px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:15px/1.5 Arial,sans-serif';
+    var title = document.createElement('strong');
+    title.textContent = 'HeroList: интерфейс не запустился';
+    var body = document.createElement('p');
+    body.style.cssText = 'margin:8px 0';
+    body.textContent = assetFailed
+      ? 'Не загрузились файлы приложения. Старый кеш страницы может ссылаться на удалённые скрипты.'
+      : 'Кнопка меню ☰ может работать без JavaScript, но действия с героями требуют загрузки приложения. Возможно, браузер устарел или загрузка прервалась.';
+    var help = document.createElement('p');
+    help.style.cssText = 'margin:8px 0';
+    help.textContent = 'Перезагрузка не удалит сохранённых персонажей.';
+    var link = document.createElement('a');
+    link.textContent = 'Перезагрузить сайт без старого HTML';
+    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none';
+    var href = window.location.href.split('#')[0];
+    link.href = href + (href.indexOf('?') === -1 ? '?' : '&') + 'hl_reload=' + Date.now() + window.location.hash;
+    panel.appendChild(title);
+    panel.appendChild(body);
+    panel.appendChild(help);
+    panel.appendChild(link);
+    document.body.appendChild(panel);
+  }, 8000);
+})();
+3:["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$7"}}]
+4:["$","body",null,{"className":"antialiased","children":["$","$L8",null,{}]}]
+5:null
+6:[[["$","meta",null,{"charSet":"utf-8"}],[["$","title","0",{"children":"Лист Героя 5e — создание персонажа D&D 2014"}],["$","meta","1",{"name":"description","content":"Пошаговый конструктор персонажа D&D 5e в редакции 2014 года."}],["$","link","2",{"rel":"shortcut icon","href":"/favicon.ico"}],["$","link","3",{"rel":"icon","href":"/favicon.ico"}],["$","meta","4",{"name":"codex-preview","content":"development"}]],[["$","meta","0",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]],["$","$L9",null,{"segmentMap":{"children":["account"]},"children":["$","$La",null,{"id":"layout:/","parallelSlots":"$undefined","children":["$","$Lb",null,{"children":["$","$L9",null,{"segmentMap":{"children":[]},"children":["$","$La",null,{"id":"page:/account/"}]}]}]}]}]]
+c:I["724dcbd470a5",[],"default",1]
+1:["$","$Lc",null,{"params":"$@d","searchParams":"$@e"}]
+d:{}
+e:{}
