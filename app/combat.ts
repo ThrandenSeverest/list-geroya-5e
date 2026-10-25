@@ -1,3 +1,4 @@
+import { customizeAttack } from "./attackCustomization";
 import { classRuleFor, hbAttacks } from "./homebrewEngine";
 import { naturalAttacks } from "./naturalAttacks";
 import type { CatalogSpell } from "./catalog";
@@ -15,6 +16,7 @@ const abilityModifier = (score: number) => Math.floor((score - 10) / 2);
 const proficiencyBonus = (level: number) => 2 + Math.floor((Math.max(1, level) - 1) / 4);
 
 export type CharacterAttack = {
+  sourceName?: string;
   id: string;
   name: string;
   kind: "weapon" | "cantrip" | "spell" | "feature";
@@ -408,7 +410,7 @@ export function characterAttacks(character: ExportCharacter, spells: CatalogSpel
       damageFormula:formula,damageDisplay:display,note:notes}];
   });
 
-  return [...weaponAttacks, ...featureAttacks, ...cantripAttacks, ...homebrewSpellAttacks];
+  return [...weaponAttacks, ...featureAttacks, ...cantripAttacks, ...homebrewSpellAttacks].map(attack => customizeAttack(attack, character, character.attackCustomizations?.[attack.id]));
 }
 
 export function lssWeaponAttacks(attacks: CharacterAttack[]) {

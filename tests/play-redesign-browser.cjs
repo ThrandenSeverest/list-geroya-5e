@@ -1,0 +1,38 @@
+const assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+require('tsx/cjs');
+const {createAdventureCharacter}=require('../app/adventure.ts');
+const character={name:'Проверка игрового стола',playerName:'',className:'fighter',startingClassId:'fighter',level:4,race:'human',raceVariant:'standard',background:'sage',classSkills:[],backgroundSkills:[],spells:[],abilities:{str:16,dex:12,con:14,int:10,wis:10,cha:8},personality:{traits:'',ideals:'',bonds:'',flaws:''},currency:{gp:5,sp:0,cp:0,pp:0},inventoryOverride:'Длинный меч',rulesetId:'5e-2014'};
+const adventure=createAdventureCharacter(character,'source','date','Тест');adventure.currentHitPoints=27;adventure.temporaryHitPoints=5;adventure.adventure.hpMaximum=38;adventure.adventure.concentration={name:'Проверочная концентрация',duration:'1 минута'};
+(async()=>{const browser=await chromium.launch({executablePath:process.env.HB_TEST_CHROMIUM,headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+try{
+ for(const width of [320,360,390,768,1024,1280,1920]){
+  const context=await browser.newContext({viewport:{width,height:1000},isMobile:width<500,hasTouch:width<500});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false}}));
+  await page.addInitScript(({character,adventure})=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true,zoom:100}));if(!localStorage.getItem('list-geroya-character-vault-v1'))localStorage.setItem('list-geroya-character-vault-v1',JSON.stringify({version:1,capacity:5,activeId:'play',folders:[],slots:[{id:'play',updatedAt:'2026-10-25',character:adventure},{id:'source',updatedAt:'2026-10-25',character}]}));},{character,adventure});
+  await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3999/');
+  await page.getByRole('button',{name:'Продолжить текущего персонажа',exact:true}).click();
+  const health=page.getByRole('region',{name:'Быстрые хиты'});await health.waitFor();
+  async function fits(label){const scroll=await page.evaluate(()=>document.documentElement.scrollWidth);if(scroll>width+1){console.log(await page.evaluate(()=>[...document.querySelectorAll('.play-shell *')].filter(el=>el.getBoundingClientRect().right>innerWidth+1&&el.getClientRects().length).slice(0,18).map(el=>({tag:el.tagName,cls:el.className,text:el.textContent.slice(0,45),width:el.getBoundingClientRect().width,right:el.getBoundingClientRect().right}))));await page.screenshot({path:'/tmp/herolist-overflow-768.png',fullPage:true});}assert.ok(scroll<=width+1,`${label}: ${scroll}>${width}`);}
+  await fits('initial');await health.getByLabel('Количество хитов',{exact:true}).fill('8');await health.getByRole('button',{name:'− Урон',exact:true}).dblclick();
+  assert.equal(await health.locator('.quick-health-heading strong').innerText(),'24 / 38');assert.ok(await health.getByText('Временные: +0',{exact:true}).isVisible());
+  assert.ok(await page.getByText('Проверка концентрации: Сл 10',{exact:true}).isVisible());
+  await health.getByRole('button',{name:'Отменить',exact:true}).click();assert.equal(await health.locator('.quick-health-heading strong').innerText(),'27 / 38');assert.equal(await page.getByText('Проверка концентрации: Сл 10',{exact:true}).count(),0);
+  await health.getByLabel('Количество хитов',{exact:true}).fill('-8');await health.getByRole('button',{name:'− Урон',exact:true}).click();assert.ok(await health.getByRole('alert').isVisible());assert.equal(await health.locator('.quick-health-heading strong').innerText(),'27 / 38');
+  await health.getByLabel('Количество хитов',{exact:true}).fill('100');await health.getByRole('button',{name:'+ Лечение',exact:true}).click();assert.equal(await health.locator('.quick-health-heading strong').innerText(),'38 / 38');
+  const card=page.locator('.play-attack-card').first();const bonus=card.locator('.attack-bonus summary');assert.ok(await bonus.isVisible());const before=await bonus.innerText();await bonus.click();assert.match(await card.locator('.attack-bonus').innerText(),/Итого:/);assert.equal(await card.locator('.play-resolution').count(),0);
+  await card.getByRole('button',{name:/Изменить атаку:/}).click();const editor=page.getByRole('dialog',{name:'Параметры атаки'});await editor.waitFor();await editor.getByLabel('Название',{exact:true}).fill('Отменённое имя');await editor.getByRole('button',{name:'Отмена',exact:true}).click();assert.equal(await card.getByText('Отменённое имя').count(),0);
+  await card.getByRole('button',{name:/Изменить атаку:/}).click();await editor.getByText('Дополнительные параметры',{exact:true}).click();await editor.getByLabel('Дополнительный бонус попадания',{exact:true}).fill('2');await editor.getByLabel('Описание и особые правила',{exact:true}).fill('Сохранённая заметка');await editor.getByRole('button',{name:'Сохранить',exact:true}).click();assert.equal(parseInt(await bonus.innerText()),parseInt(before)+2);
+  await card.getByRole('button',{name:/Бросить атаку:/}).click();await card.locator('.play-resolution').waitFor();
+  await page.getByText('Настроить интерфейс и расположение панелей',{exact:true}).click();await page.getByLabel('Действия хода',{exact:true}).uncheck();assert.equal(await page.locator('.session-turn').count(),0);await page.getByLabel('Плотность',{exact:true}).selectOption('comfortable');
+  await page.reload();await health.waitFor();assert.equal(await health.locator('.quick-health-heading strong').innerText(),'38 / 38');assert.equal(await page.locator('.session-turn').count(),0);assert.equal(await page.locator('.play-shell.play-compact').count(),0);assert.equal(parseInt(await page.locator('.attack-bonus summary').first().innerText()),parseInt(before)+2);
+  await fits('persisted');
+  for(const zoom of (width>=768?[1.25,2]:[])){await page.locator('.play-shell').evaluate((el,zoom)=>el.style.zoom=String(zoom),zoom);await fits('zoom '+zoom);}
+  await page.locator('.play-shell').evaluate(el=>el.style.zoom='1');
+  if([390,1920].includes(width))await page.screenshot({path:`/tmp/herolist-play-${width}.png`,fullPage:true});
+  assert.deepEqual(errors,[]);console.log('play redesign',width,'passed');await context.close();
+ }
+ // Every built-in design chooses the requested landing art, without two stacked images.
+ for(const design of ['classic','parchment','paper','graphite','journal']){
+  const context=await browser.newContext({viewport:{width:1280,height:900}});const page=await context.newPage();await page.route('**/api/**',r=>r.fulfill({json:{authenticated:false}}));await page.addInitScript(design=>{localStorage.setItem('list-geroya-site-theme',design==='parchment'?'parchment':'classic');localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true,zoom:100,activePreset:['paper','graphite','journal'].includes(design)?design:''}));},design);await page.goto(process.env.HEROLIST_URL||'http://127.0.0.1:3999/');await page.locator('.home-art-selected').waitFor();await page.waitForFunction(expected=>document.querySelector('.home-art-selected')?.getAttribute('src')?.includes(expected),design==='classic'?'hero-night':'hero-day');assert.match(await page.locator('.home-art-selected').getAttribute('src'),design==='classic'?/hero-night/:/hero-day/);assert.equal(await page.locator('.home-hero-art img').count(),1);await context.close();console.log('landing art',design,'passed');
+ }
+}finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1);});

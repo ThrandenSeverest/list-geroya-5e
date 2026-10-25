@@ -59,6 +59,7 @@ export type SpellGrant = {
 };
 
 export type ExportCharacter = {
+  attackCustomizations?: Record<string, import("./attackCustomization").AttackCustomization>;
   /** Independent play copy; absent on original heroes in the Tavern. */
   adventure?: import('./adventure').AdventureState;
   homebrew?: import("./homebrewEngine").HBCharacterData;

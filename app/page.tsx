@@ -2701,8 +2701,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
       </div>
     </div>
     <div className="home-hero-art" aria-hidden="true">
-      <img className="home-art-day" src={assetUrl("home/hero-day.webp")} alt="" />
-      <img className="home-art-night" src={assetUrl("home/hero-night.webp")} alt="" />
+      <img className="home-art-selected" src={assetUrl(siteTheme === "classic" && !appearance.preferences.activePreset ? "home/hero-night.webp" : "home/hero-day.webp")} alt="" />
     </div>
   </section>
   <section className="home-recent" aria-labelledby="home-recent-title">

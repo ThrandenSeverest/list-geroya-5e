@@ -90,3 +90,129 @@
   .play-shell .play-header-tools { max-width:100%; }
   .play-shell[data-nav-position=top] .dice-mobile-toggle { bottom:calc(12px + env(safe-area-inset-bottom)); }
 }
+
+/* Play workspace: results first, explanations on demand. */
+.play-shell { container-type:inline-size; }
+.play-shell .play-hud { position:static; grid-template-columns:minmax(260px,1.8fr) minmax(100px,.75fr) minmax(90px,.65fr) minmax(150px,1fr) minmax(140px,1fr); }
+.quick-health { display:grid; gap:8px; min-width:0; }
+.quick-health-heading { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.quick-health-heading h2 { margin:0; }
+.play-shell .quick-health-heading strong { font:700 24px Georgia,serif; white-space:nowrap; }
+.quick-health-heading>span { font-size:12px; color:var(--muted); }
+.quick-health-actions { display:grid; grid-template-columns:minmax(65px,.7fr) minmax(0,1fr) minmax(0,1fr); gap:6px; align-items:end; }
+.play-shell .quick-health-actions button,.play-shell .quick-health-actions input { min-height:44px; padding:8px 5px; width:100%; }
+.play-shell .quick-health-actions label { font-size:12px; gap:4px; }
+.play-shell .quick-health>details>summary { font-size:12px; min-height:44px; }
+.quick-health details[open] { display:grid; gap:8px; }
+.quick-health details label { margin:8px 0; }
+.quick-health details>small { display:block; }
+.health-last { display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:12px; }
+.health-last>span { flex:1; min-width:120px; overflow-wrap:anywhere; }
+.play-shell .health-last button { min-height:44px; }
+.play-shell .play-attack-card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 10px; align-content:start; }
+.play-attack-card>.play-row { grid-column:1; min-width:0; }
+.play-shell .attack-title { padding:0; background:transparent; border:0; text-align:left; color:var(--gold-bright); font:inherit; overflow-wrap:anywhere; min-height:44px; }
+.attack-title span { color:var(--muted); font-size:14px; }
+.play-attack-card>p { grid-column:1; margin:0; overflow-wrap:anywhere; }
+.play-attack-card>.attack-bonus { grid-column:2; grid-row:1/3; margin:0; }
+.play-shell .attack-bonus>summary { min-width:64px; min-height:44px; padding:10px; text-align:center; border:1px solid var(--copper-light); border-radius:5px; list-style:none; color:var(--gold-bright); background:var(--panel-2); font-size:19px; }
+.attack-bonus>summary::-webkit-details-marker { display:none; }
+.play-attack-card:has(.attack-bonus[open])>.attack-bonus { grid-column:1/-1; grid-row:auto; }
+.attack-bonus[open]>summary { width:fit-content; }
+.play-attack-card>.attack-notes,.play-attack-card>.play-primary,.play-attack-card>.play-resolution,.play-attack-card>details:not(.attack-bonus) { grid-column:1/-1; }
+.play-shell .play-attack-card>.play-primary { min-height:44px; }
+.play-block-settings { border:1px solid var(--line); display:flex; gap:8px 18px; flex-wrap:wrap; margin:14px 0; }
+.play-block-settings legend { color:var(--muted); }
+.play-shell[data-hints=brief] .play-help { display:none; }
+.attack-editor { padding:0; gap:0; overflow:hidden; max-width:580px; }
+.attack-editor>header,.attack-editor>footer { padding:16px 20px; background:var(--panel); }
+.attack-editor>header { border-bottom:1px solid var(--line); }
+.attack-editor>footer { border-top:1px solid var(--line); display:flex; justify-content:flex-end; gap:10px; }
+.attack-editor-fields { overflow:auto; overscroll-behavior:contain; padding:16px 20px; display:grid; gap:12px; }
+.attack-editor-total { border:1px solid var(--teal); padding:12px; font-weight:700; }
+.attack-editor-total small { display:block; margin-top:6px; font-weight:400; }
+.play-shell .attack-editor input[type=number] { max-width:none; }
+.play-shell:not(.play-compact) .play-card { padding:22px; }
+.play-shell:not(.play-compact) .play-card p { font-size:15px; line-height:1.6; }
+.play-shell:not(.play-compact) .play-content { gap:20px; }
+@container (min-width:1000px) {
+ .play-shell[data-layout=columns] .play-workspace { grid-template-columns:minmax(0,1fr) 230px; gap:16px; }
+ .play-shell[data-layout=columns] .play-tab-actions { grid-template-columns:minmax(220px,.8fr) minmax(0,1.7fr); gap:12px 18px; }
+ .play-shell[data-layout=columns] .play-tab-actions>* { grid-column:2; }
+ .play-shell[data-layout=columns] .play-tab-actions>.session-panel { grid-column:1; grid-row:1/span 20; }
+ .play-shell[data-layout=columns] .session-panel .session-status { grid-template-columns:1fr; }
+ .play-shell[data-layout=columns] .play-tab-actions>.session-attacks { grid-template-columns:1fr; }
+ .play-shell[data-layout=columns] .session-panel:not([open]) { align-self:start; }
+}
+@container (max-width:999px) {
+ .play-shell .play-hud { grid-template-columns:minmax(240px,2fr) minmax(100px,1fr) minmax(90px,1fr); }
+ .play-shell .play-concentration { grid-column:1/3; grid-row:auto; }
+ .play-shell .play-hands { grid-column:3; grid-row:auto; }
+ .play-workspace { grid-template-columns:minmax(0,1fr); }
+ .play-dice-sidebar { display:none; }
+ .play-shell .dice-mobile-toggle { display:block!important; position:fixed; right:12px; bottom:calc(82px + env(safe-area-inset-bottom)); z-index:910; background:var(--panel); }
+ .play-dice-sidebar.is-open { display:block; position:fixed; inset:0; max-height:none; z-index:1150; padding:16px; overflow:auto; background:var(--ink); }
+ .play-shell .is-open .dice-mobile-close { display:block!important; }
+}
+@container (max-width:600px) {
+ .play-shell .play-hud { grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; }
+ .play-hud>.play-hp { grid-column:1/-1; }
+ .play-shell .play-hud>div:nth-child(2) { grid-column:1; grid-row:auto; }
+ .play-shell .play-hud>div:nth-child(3) { grid-column:2; grid-row:auto; }
+ .play-shell .play-hud .play-concentration { grid-column:1/-1; grid-row:auto; }
+ .play-shell .play-hud .play-hands { grid-column:1/-1; grid-row:auto; }
+ .play-grid,.session-status { grid-template-columns:minmax(0,1fr); }
+ .play-shell .play-row { flex-wrap:wrap; }
+ .play-shell .play-attack-card>.play-row { flex-wrap:nowrap; }
+ .play-shell .attack-title { font-size:17px; }
+ .play-shell .play-modal.attack-editor { padding:0; max-height:94dvh; }
+ .attack-editor-fields { padding:16px; }
+ .play-shell .play-check,.play-shell .play-interface-settings button { min-height:44px; }
+}
+.session-action-main { display:grid; gap:12px; min-width:0; }
+@container (min-width:1000px) {
+ .play-shell[data-layout=columns] .play-tab-actions>.session-panel { grid-row:auto; }
+ .play-shell[data-layout=columns] .play-tab-actions>.session-action-main { grid-column:2; grid-row:1; }
+ .play-shell[data-layout=columns] .session-action-main>.session-attacks { grid-template-columns:1fr; }
+}
+@container (max-width:340px) {
+ .play-shell .play-hud { grid-template-columns:minmax(0,1fr); padding:10px; }
+ .play-shell .play-hud>div:nth-child(2),.play-shell .play-hud>div:nth-child(3),.play-shell .play-hud .play-hands { grid-column:1/-1; }
+ .quick-health-actions { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+ .quick-health-actions>label { grid-column:1/-1; }
+ .play-shell .play-toolbar,.play-shell .session-check { grid-template-columns:minmax(0,1fr); }
+ .play-shell button { overflow-wrap:anywhere; min-width:0; max-width:100%; }
+ .play-shell .session-resource-grid .play-counter { grid-template-columns:minmax(0,1fr) auto; }
+ .play-shell .play-counter>small { white-space:normal; overflow-wrap:anywhere; }
+ .play-shell .play-counter>button { grid-column:auto!important; grid-row:auto!important; }
+ .play-shell .play-counter>.number-slider { grid-column:1/-1; grid-row:auto; }
+ .play-shell .play-mobile-nav { display:flex; overflow-x:auto; }
+ .play-shell .play-mobile-nav button { flex:1 0 48px; }
+ .play-shell .play-hands { grid-template-columns:minmax(0,1fr); }
+ .play-shell .play-header-tools { min-width:0; }
+ .play-shell .play-header-tools>button { max-width:100%; }
+ .play-shell .play-attack-card { grid-template-columns:minmax(0,1fr); }
+ .play-shell .play-attack-card>.attack-bonus { grid-column:1; grid-row:auto; }
+}
+/* Closed native details must not contribute invisible child overflow. */
+.play-shell details:not([open])>:not(summary) { display:none!important; }
+.play-shell summary { overflow-wrap:anywhere; }
+.play-shell .play-desktop-nav { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); }
+.play-shell .play-desktop-nav button { min-width:0; overflow-wrap:anywhere; }
+@container (max-width:600px) {
+ .play-shell .play-desktop-nav { display:none; }
+ .play-shell .play-mobile-nav { position:fixed; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:8px 8px calc(8px + env(safe-area-inset-bottom)); background:var(--panel); border-top:1px solid var(--copper); gap:4px; z-index:900; }
+ .play-shell .play-mobile-nav button { min-width:0; padding:9px 2px; font-size:12px; min-height:48px; overflow-wrap:anywhere; }
+ .play-shell[data-nav-position=top] .play-mobile-nav { position:static; margin:8px 0; padding:8px; }
+}
+.play-tab-actions { align-items:start; }
+.play-shell .session-panel .session-resources { border:0; padding:0; background:transparent; }
+.session-status:not(:has(>section)) { grid-template-columns:minmax(0,1fr); }
+/* Resource controls adapt to the sidebar instead of reserving four wide columns. */
+.play-shell .session-resource-grid .play-counter { grid-template-columns:minmax(0,1fr) auto; }
+.play-shell .session-resource-grid .play-counter>strong { overflow-wrap:anywhere; }
+.play-shell .session-resource-grid .play-counter>.number-slider { grid-column:1/-1; grid-row:2; max-width:none; }
+.play-shell .session-resource-grid .play-counter:has(>.number-slider)>button:nth-of-type(1) { grid-column:1; grid-row:3; }
+.play-shell .session-resource-grid .play-counter:has(>.number-slider)>button:nth-of-type(2) { grid-column:2; grid-row:3; }
+.play-shell .session-resource-grid .play-counter>small { grid-row:4; }
+.play-shell .session-resource-grid .play-counter>button:nth-of-type(3) { grid-column:1/-1; grid-row:5; }
