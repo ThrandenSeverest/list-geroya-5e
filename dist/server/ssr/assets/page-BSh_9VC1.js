@@ -29233,8 +29233,7 @@ function rollDamage(formula, die, critical = false) {
 	const result = rollDice(formula, die, critical);
 	return result.total < 1 ? {
 		...result,
-		total: 1,
-		formula: result.formula + " (минимум 1)"
+		total: 1
 	} : result;
 }
 function rollD20(bonus, mode = "normal", die = randomDie) {
@@ -32887,11 +32886,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 													children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
 												})]
 											}),
-											/* @__PURE__ */ jsxs("p", { children: [
-												attack.damageDisplay,
-												attack.damageFormula ? " · минимум 1" : "",
-												attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""
-											] }),
+											/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
 											/* @__PURE__ */ jsxs("details", {
 												className: "attack-notes",
 												children: [/* @__PURE__ */ jsx("summary", { children: "Описание и условия" }), /* @__PURE__ */ jsx("p", { children: attack.note || "Без дополнительных условий." })]
