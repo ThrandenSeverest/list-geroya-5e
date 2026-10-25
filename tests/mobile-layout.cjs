@@ -6,14 +6,22 @@ const fixture={character,adventure:createAdventureCharacter(character,'synthetic
 (async()=>{const browser=await chromium.launch({executablePath:process.env.HB_TEST_CHROMIUM,headless:true,args:JSON.parse(process.env.HB_TEST_CHROMIUM_ARGS || '["--no-sandbox","--disable-dev-shm-usage"]')});
 try{for(const width of [320,390,430,1440]){
 const context=await browser.newContext({viewport:{width,height:900},isMobile:width<500,deviceScaleFactor:1});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/api/account',r=>r.fulfill({json:{authenticated:false}}));
-await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true}));});
+await page.addInitScript(()=>{if(!localStorage.getItem('list-geroya-interface-v1'))localStorage.setItem('list-geroya-interface-v1',JSON.stringify({rememberDesign:true,activePreset:'paper'}));});
 await page.addInitScript(({character,adventure})=>{localStorage.setItem('list-geroya-character-vault-v1',JSON.stringify({version:1,capacity:5,activeId:'play',folders:[],slots:[{id:'original',updatedAt:'2026-10-24',character},{id:'play',updatedAt:'2026-10-24',character:adventure}]}));},fixture);
 await page.goto(process.env.HEROLIST_URL || 'http://127.0.0.1:3998/');await page.getByRole('button',{name:'Лист Героя — главная',exact:true}).waitFor();
 async function fits(label){const out=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,wide:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.right>window.visualViewport.width+2&&getComputedStyle(el).position!=='fixed';}).slice(0,8).map(el=>el.className)}));assert.ok(out.scroll<=width+1,label+JSON.stringify(out));console.log(width,label,out.scroll);}
-await fits('home');await page.getByRole('button',{name:'Продолжить текущего персонажа',exact:true}).click();await page.locator('.play-shell').waitFor();await fits('adventure');
+await fits('home');
+await page.waitForFunction(()=>document.querySelector('.home-art-selected')?.getAttribute('src')?.includes('hero-universal'));
+const art=await page.locator('.home-art-selected').evaluate(async image=>{
+ await image.decode();const r=image.getBoundingClientRect(),c=document.querySelector('.home-hero-copy').getBoundingClientRect();
+ return {ratio:r.width/r.height,natural:image.naturalWidth/image.naturalHeight,overlap:r.left<c.right-1&&r.right>c.left+1&&r.top<c.bottom-1&&r.bottom>c.top+1};
+});
+assert.ok(Math.abs(art.ratio-art.natural)<.01,'Complete artwork keeps its original aspect ratio');
+assert.equal(art.overlap,false,'Text must not cover the left-hand characters');
+await page.getByRole('button',{name:'Продолжить текущего персонажа',exact:true}).click();await page.locator('.play-shell').waitFor();await fits('adventure');
 const nav=page.locator(width<500?'.play-mobile-nav':'.play-desktop-nav');await nav.getByRole('button',{name:'Рюкзак',exact:true}).click();await page.locator('.inventory-heading').waitFor();await fits('inventory');const title=await page.locator('.inventory-heading h2').boundingBox();assert.ok(title.width>100);await page.locator('.inventory-pack > summary').click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'10');await page.getByRole('button',{name:'Использовать 1',exact:true}).first().click();assert.equal(await page.getByLabel('Количество: Рацион',{exact:true}).inputValue(),'9');await fits('pack');
 
-await page.getByText('Настроить интерфейс и расположение панелей',{exact:true}).click();await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('top');await fits('settings');await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('bottom');await page.getByText('Настроить интерфейс и расположение панелей',{exact:true}).click();
+await page.getByRole('button',{name:'Настройки игрового режима',exact:true}).click();await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('top');await fits('settings');await page.getByLabel('Навигация на телефоне',{exact:true}).selectOption('bottom');await page.getByRole('button',{name:'Закрыть настройки',exact:true}).click();
 await nav.getByRole('button',{name:'Магия',exact:true}).click();await fits('magic');
 await nav.getByRole('button',{name:'Герой',exact:true}).click();await page.getByText('Ручные значения и завершение приключения',{exact:true}).click();await page.getByLabel('Текущие HP вручную',{exact:true}).fill('0');await page.getByRole('button',{name:'Длинный отдых',exact:true}).click();const finish=page.getByRole('button',{name:'Завершить отдых',exact:true});assert.ok(await finish.isDisabled());await page.getByLabel('Персонаж в сознании?',{exact:true}).check();await finish.click();assert.match(await page.locator('.play-hp strong').innerText(),/36.*36/);
 

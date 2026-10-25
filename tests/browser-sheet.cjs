@@ -270,7 +270,6 @@ async function saved(page) {
         await quickSpell.waitFor();
         assert.equal(await page.getByLabel('Поиск быстрых действий',{exact:true}).count(),0,'Actions search has been removed');
         assert.equal(await page.locator('.session-quick .play-spell-card').count(),1);
-        if(await page.locator('.session-panel').getAttribute('open')===null) await page.locator('.session-panel > summary').click();
         if(await page.locator('.session-resources').getAttribute('open')===null) await page.locator('.session-resources > summary').click();
         await page.getByText('Добавить свой ресурс',{exact:true}).click();
         await page.getByLabel('Название ресурса',{exact:true}).fill('Запас решимости');
@@ -313,6 +312,7 @@ async function saved(page) {
         await itemEditor.getByLabel('Формула лечения при выпивании',{exact:true}).fill('2d4+2');
         await itemEditor.getByRole('button',{name:'Сохранить предмет',exact:true}).click();
         await page.getByRole('button',{name:'Действия',exact:true}).click();
+        await page.locator('.quick-potions > summary').click();
         await page.getByRole('button',{name:'Выпить: Зелье лечения, 1 шт.',exact:true}).first().click();
         await page.waitForFunction(key=>JSON.parse(localStorage.getItem(key)).slots.some(s=>s.character.adventure?.inventoryTrash?.some(i=>i.name==='Зелье лечения'&&i.quantity===0)),key);
         const potionVault=await saved(page),potionHero=potionVault.slots.find(s=>s.id===potionVault.activeId).character;
@@ -326,7 +326,7 @@ async function saved(page) {
         await page.reload();await page.locator('.play-shell').waitFor();
         await page.getByRole('button',{name:'Герой',exact:true}).click();
         assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true);
-        await page.locator('.session-panel > summary').click();
+        if(await page.locator('.session-resources').getAttribute('open')!==null) await page.locator('.session-resources > summary').click();
         assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true,'Quick health remains available when resources are collapsed or tabs change');
         await page.getByRole('button',{name:'Магия',exact:true}).click();
         assert.equal(await page.getByRole('button',{name:'− Урон',exact:true}).isVisible(),true,'Quick health remains available when resources are collapsed or tabs change');
