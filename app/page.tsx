@@ -13,6 +13,7 @@ import { homebrewAsiLevels, homebrewTableFeatures } from "./homebrewTemplates";
 import { homebrewOptions, homebrewSpells, homebrewSpellAvailable, homebrewSubclassOptions } from "./homebrewCatalog";
 
 import { assetUrl } from "./assetUrl";
+import { selectHomeHeroArt } from "./homeHeroArt";
 
 import { markFeature } from "./featureHandling";
 import { setHitPointRoll } from "./hpProgress";
@@ -2701,7 +2702,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
       </div>
     </div>
     <div className="home-hero-art" aria-hidden="true">
-      <img className="home-art-selected" src={assetUrl(siteTheme === "classic" && !appearance.preferences.activePreset ? "home/hero-night.webp" : "home/hero-day.webp")} alt="" />
+      <img className="home-art-selected" src={assetUrl(selectHomeHeroArt(siteTheme, appearance.preferences.activePreset))} onError={event => { const image=event.currentTarget; const fallback=assetUrl("home/hero-day.webp"); if (!image.src.endsWith(fallback)) image.src=fallback; }} alt="" />
     </div>
   </section>
   <section className="home-recent" aria-labelledby="home-recent-title">
