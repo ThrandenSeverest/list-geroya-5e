@@ -29228,6 +29228,15 @@ function rollDice(formula, die = randomDie, critical = false) {
 		total
 	};
 }
+/** Attack damage is at least one after dice and modifiers; generic rolls remain signed. */
+function rollDamage(formula, die, critical = false) {
+	const result = rollDice(formula, die, critical);
+	return result.total < 1 ? {
+		...result,
+		total: 1,
+		formula: result.formula + " (минимум 1)"
+	} : result;
+}
 function rollD20(bonus, mode = "normal", die = randomDie) {
 	const rolls = [die(20)];
 	if (mode !== "normal") rolls.push(die(20));
@@ -29565,10 +29574,6 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 						className: "play-primary",
 						onClick: () => apply("heal"),
 						children: "+ Лечение"
-					}),
-					/* @__PURE__ */ jsx("button", {
-						onClick: () => apply("temporary"),
-						children: "+ Временные ХП"
 					})
 				]
 			}),
@@ -30210,7 +30215,7 @@ function useQuickItem(c, id, die) {
 function resolvePlayAttack(c, name, bonus, formula, mode, die) {
 	if (formula) rollDice(formula, () => 1);
 	const attack = bonus !== void 0 ? rollD20(bonus, mode, die) : void 0;
-	const damage = formula && attack?.natural !== 1 ? rollDice(formula, die, attack?.natural === 20) : void 0;
+	const damage = formula && attack?.natural !== 1 ? rollDamage(formula, die, attack?.natural === 20) : void 0;
 	let next = c;
 	if (attack) next = logPlay(next, `Атака: ${name}`, attack);
 	if (damage) next = logPlay(next, `Урон: ${name}`, damage);
@@ -31748,7 +31753,7 @@ function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal
 			});
 		}
 		if (profile.damageFormula && part.attack?.natural !== 1) {
-			part.damage = rollDice(profile.damageFormula, die, profile.criticalAllowed && part.attack?.natural === 20);
+			part.damage = rollDamage(profile.damageFormula, die, profile.criticalAllowed && part.attack?.natural === 20);
 			events.push({
 				name: `${spell.name}: ${profile.delivery === "effect" ? "эффект" : "урон"}${suffix}${part.attack?.natural === 20 && profile.criticalAllowed ? " · крит" : ""}`,
 				result: part.damage
@@ -32882,7 +32887,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 													children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
 												})]
 											}),
-											/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
+											/* @__PURE__ */ jsxs("p", { children: [
+												attack.damageDisplay,
+												attack.damageFormula ? " · минимум 1" : "",
+												attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""
+											] }),
 											/* @__PURE__ */ jsxs("details", {
 												className: "attack-notes",
 												children: [/* @__PURE__ */ jsx("summary", { children: "Описание и условия" }), /* @__PURE__ */ jsx("p", { children: attack.note || "Без дополнительных условий." })]
@@ -32971,10 +32980,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 													onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
 													children: "Настроить бросок"
 												})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
-													onClick: () => rolled(`Урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")))),
+													onClick: () => rolled(`Урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")))),
 													children: "Урон"
 												}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
-													onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDice(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")), void 0, true)),
+													onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")), void 0, true)),
 													children: "Крит"
 												})] })]
 											})] })
