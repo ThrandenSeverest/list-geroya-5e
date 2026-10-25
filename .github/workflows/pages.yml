@@ -41,7 +41,7 @@ jobs:
       - name: Verify static desktop and mobile flows
         run: |
           npm install --prefix /tmp/herolist-browser --no-save --package-lock=false playwright@1.51.1
-          /tmp/herolist-browser/node_modules/.bin/playwright install --with-deps chromium
+          /tmp/herolist-browser/node_modules/.bin/playwright install --with-deps chromium webkit
           mkdir -p /tmp/herolist-pages-preview
           ln -s "$GITHUB_WORKSPACE/dist/client" /tmp/herolist-pages-preview/list-geroya-5e
           python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-pages-preview >/tmp/herolist-pages-preview.log 2>&1 &
@@ -52,6 +52,8 @@ jobs:
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/browser-sheet.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-layout.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-tavern.cjs
+              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright HB_TEST_BROWSER=webkit node tests/mobile-tavern.cjs
+              HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/mobile-hydration.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-browser.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-relations-browser.cjs
               HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/ PLAYWRIGHT_MODULE=/tmp/herolist-browser/node_modules/playwright node tests/homebrew-magic-browser.cjs
@@ -67,7 +69,12 @@ jobs:
         run: |
           git fetch origin gh-pages
           git worktree add /tmp/herolist-pages origin/gh-pages
-          rsync -a --delete --exclude=.git dist/client/ /tmp/herolist-pages/
+          # Mobile browsers may cache an older HTML shell after a deployment.
+          # Never delete its content-hashed JS/CSS chunks: otherwise the native
+          # hamburger still opens but every React-controlled button is dead.
+          # Keep the assets directory across releases, replacing only changed files.
+          rsync -a --delete --exclude=.git --exclude=/assets/ dist/client/ /tmp/herolist-pages/
+          rsync -a dist/client/assets/ /tmp/herolist-pages/assets/
           cd /tmp/herolist-pages
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

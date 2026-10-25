@@ -4,6 +4,7 @@ import "./game-mode.css";
 import "./calm-design.css";
 import "./sheet-layout.css";
 import { storageGuardScript } from "./storageGuard";
+import { hydrationWatchScript } from "./hydrationWatch";
 
 export const metadata: Metadata = {
   title: "Лист Героя 5e — создание персонажа D&D 2014",
@@ -26,6 +27,7 @@ export default function RootLayout({
     <html lang="ru">
       <head>
         <script dangerouslySetInnerHTML={{ __html: storageGuardScript }} />
+        <script dangerouslySetInnerHTML={{ __html: hydrationWatchScript }} />
       </head>
       <body className="antialiased">
         {children}

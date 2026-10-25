@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { chromium, webkit } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 // Synthetic profile only. No real user storage is read or changed.
 const character = {
   name: 'Проверка касаний', playerName: '', className: 'fighter',
@@ -11,11 +11,13 @@ const character = {
 };
 const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:3998/');
 (async () => {
-  const browser = await chromium.launch({
-    executablePath: process.env.HB_TEST_CHROMIUM,
-    headless: true,
-    args: JSON.parse(process.env.HB_TEST_CHROMIUM_ARGS || '["--no-sandbox","--disable-dev-shm-usage"]')
-  });
+  const browser = process.env.HB_TEST_BROWSER === 'webkit'
+    ? await webkit.launch({headless:true})
+    : await chromium.launch({
+        executablePath: process.env.HB_TEST_CHROMIUM,
+        headless: true,
+        args: JSON.parse(process.env.HB_TEST_CHROMIUM_ARGS || '["--no-sandbox","--disable-dev-shm-usage"]')
+      });
   try {
     for (const width of [320, 360, 390, 430]) {
       const context = await browser.newContext({
@@ -35,6 +37,18 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
       await page.goto(url.href);
       const cards = page.locator('.character-grid article');
       await cards.first().waitFor();
+      assert.equal(await page.locator('html').getAttribute('data-herolist-hydrated'), '1', 'React did not hydrate');
+      const modes = page.locator('.mode-signs');
+      await modes.getByRole('button', {name:/Приключения/}).tap();
+      assert.equal(await page.locator('.library-head h1').innerText(), 'Приключения');
+      await modes.getByRole('button', {name:/Таверна/}).tap();
+      assert.equal(await page.locator('.library-head h1').innerText(), 'Таверна');
+      await page.locator('.folder-actions').getByRole('button', {name:'+ Новая папка'}).tap();
+      const folderDialog = page.getByRole('dialog', {name:'Новая папка'});
+      await folderDialog.getByLabel('Имя папки').fill('Тест касаний');
+      await folderDialog.getByRole('button', {name:'Сохранить'}).tap();
+      assert.ok(await page.locator('.folder-list').getByRole('button', {name:/Тест касаний/}).isVisible());
+      await page.locator('.folder-list').getByRole('button', {name:/Все/}).tap();
       const actions = cards.first().locator('.character-card-actions');
       const hitTargets = await actions.locator('button').evaluateAll(buttons => buttons.map(button => {
         const rect = button.getBoundingClientRect();

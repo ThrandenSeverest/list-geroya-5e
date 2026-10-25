@@ -9,6 +9,9 @@ export default defineConfig(() => ({
     : process.env.HEROLIST_PAGES === "1"
       ? `${(process.env.NEXT_PUBLIC_BASE_PATH || "/list-geroya-5e").replace(/\/$/, "")}/`
       : "/",
+  // Older Safari and Android WebViews must be able to parse the client bundle.
+  // Vite 8 defaults to a newer browser baseline than many players use.
+  build: { target: "es2020" },
   server: {
     host: "0.0.0.0",
     allowedHosts: true as const,

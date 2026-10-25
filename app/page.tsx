@@ -941,6 +941,13 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
     }
   }
 
+  // The native hamburger works even without React; this flag tells the
+  // mobile boot watchdog that interactive event handlers actually mounted.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-herolist-hydrated", "1");
+    return () => document.documentElement.removeAttribute("data-herolist-hydrated");
+  }, []);
+
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let loadedVault: CharacterVault;
