@@ -2784,8 +2784,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
               <option value="unfiled">Без папки</option>
               {vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
             </select>
-            <button disabled={!selectedSlotIds.length} onClick={moveSelectedSlots}>Перенести</button>
-            <button disabled={!selectedSlotIds.length} onClick={deleteSelectedSlots}>Удалить выбранных</button>
+            <button type="button" disabled={!selectedSlotIds.length} onClick={moveSelectedSlots}>Перенести</button>
+            <button type="button" disabled={!selectedSlotIds.length} onClick={deleteSelectedSlots}>Удалить выбранных</button>
           </div>
           <div className="character-grid">
             {visibleSlots.map(slot => {
@@ -2796,11 +2796,11 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===(itemClass?.id||itemRace?.id))?.icon} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2>{slot.character.adventure && <p><b>{slot.character.adventure.name}</b> · {slot.character.adventure.status === "archived" ? "Завершено" : "В игре"}</p>}<p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
                 <div className="character-card-actions">
-                  <button onClick={() => selectSlot(slot.id)}>{slot.id === vault.activeId ? "Открыть" : "Открыть"}</button>
-                  <button onClick={() => duplicateSlot(slot.id)}>Копировать</button>{!slot.character.adventure && <button className="primary-action" onClick={() => sendToAdventure(slot.id)}>Отправить в приключение</button>}
+                  <button type="button" onClick={() => selectSlot(slot.id)}>Открыть</button>
+                  <button type="button" onClick={() => duplicateSlot(slot.id)}>Копировать</button>{!slot.character.adventure && <button type="button" className="primary-action" onClick={() => sendToAdventure(slot.id)}>Отправить в приключение</button>}
                   <details className="character-move-menu"><summary>Переместить</summary><select value={slot.folderId || "unfiled"} onChange={event => moveSlot(slot.id, event.target.value)}><option value="unfiled">Без папки</option>{vault.folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}</select></details>
-                  <button onClick={() => openCharacterExport(slot.id)}>Экспорт</button>
-                  <button onClick={() => deleteSlot(slot.id)}>Удалить</button>
+                  <button type="button" onClick={() => openCharacterExport(slot.id)}>Экспорт</button>
+                  <button type="button" onClick={() => deleteSlot(slot.id)}>Удалить</button>
                 </div>
               </article>;
             })}

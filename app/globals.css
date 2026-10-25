@@ -1864,3 +1864,65 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(var(--
   .home-hero-art { height:min(380px,88vw);overflow:hidden; }
   .home-hero-art img { width:145%;max-width:none;height:100%;left:-36%;right:auto;object-fit:contain;object-position:center; }
 }
+
+/* Mobile Tavern: keep every card action in its own touch target.
+   The original grid-column:2 squeezed all controls into the narrow text column. */
+@media screen and (max-width: 760px) {
+  /* Explicitly hide closed mobile navigation content, even with author display:grid. */
+  .mobile-top-menu:not([open]) > div { display: none !important; }
+  .character-grid article {
+    grid-template-columns: minmax(0, 84px) minmax(0, 1fr);
+    gap: 14px 12px;
+    padding: 18px 14px;
+    isolation: isolate;
+  }
+  .character-grid article > .catalog-icon {
+    width: 84px;
+    max-width: 100%;
+    justify-self: center;
+    pointer-events: none;
+  }
+  .character-grid article > div:not(.character-card-actions) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .character-grid .character-select { z-index: 2; }
+  .character-card-actions {
+    grid-column: 1 / -1;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    min-width: 0;
+  }
+  .character-card-actions > button,
+  .character-card-actions .character-move-menu > summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 9px;
+    line-height: 1.3;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(200, 161, 94, .2);
+  }
+  .character-card-actions > .primary-action {
+    grid-column: 1 / -1;
+    border-color: var(--gold);
+    color: var(--gold-bright);
+    background: rgba(var(--theme-rgb-c9a557,201,165,87),.1);
+  }
+  .character-move-menu { min-width: 0; }
+  .character-move-menu[open] { z-index: 3; }
+  .character-move-menu select { max-width: min(240px, calc(100vw - 42px)); }
+  .character-library button,
+  .character-library input,
+  .character-library select,
+  .mode-signs button { touch-action: manipulation; }
+}
