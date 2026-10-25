@@ -34883,6 +34883,13 @@ function homebrewTableFeatures(entities) {
 	});
 }
 //#endregion
+//#region app/homeHeroArt.ts
+/** Select home art for all app shells, including mobile, Android and Windows. */
+function selectHomeHeroArt(siteTheme, activePreset) {
+	if (!activePreset) return siteTheme === "classic" ? "home/hero-night.webp" : "home/hero-day.webp";
+	return "home/hero-universal.png";
+}
+//#endregion
 //#region app/featureHandling.ts
 var classHandling = {
 	barbarian: {
@@ -69145,7 +69152,12 @@ function Builder({ adventureRoute = false } = {}) {
 						"aria-hidden": "true",
 						children: /* @__PURE__ */ jsx("img", {
 							className: "home-art-selected",
-							src: assetUrl(siteTheme === "classic" && !appearance.preferences.activePreset ? "home/hero-night.webp" : "home/hero-day.webp"),
+							src: assetUrl(selectHomeHeroArt(siteTheme, appearance.preferences.activePreset)),
+							onError: (event) => {
+								const image = event.currentTarget;
+								const fallback = assetUrl("home/hero-day.webp");
+								if (!image.src.endsWith(fallback)) image.src = fallback;
+							},
 							alt: ""
 						})
 					})]
