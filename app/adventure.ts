@@ -303,7 +303,7 @@ export function rollDice(formula: string, die: (sides: number) => number = rando
 /** Attack damage is at least one after dice and modifiers; generic rolls remain signed. */
 export function rollDamage(formula: string, die?: (sides: number) => number, critical = false): DiceResult {
  const result=rollDice(formula,die,critical);
- return result.total<1?{...result,total:1,formula:result.formula+' (минимум 1)'}:result;
+ return result.total<1?{...result,total:1}:result;
 }
 export function rollD20(bonus: number, mode: RollMode = 'normal', die: (sides: number) => number = randomDie): DiceResult {
   const rolls = [die(20)]; if (mode !== 'normal') rolls.push(die(20));
