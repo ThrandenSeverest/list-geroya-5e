@@ -21,7 +21,7 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
   try {
     for (const width of [320, 360, 390, 430]) {
       const context = await browser.newContext({
-        viewport: {width, height: 850}, isMobile: true, hasTouch: true, deviceScaleFactor: 1
+        viewport: {width, height: 850}, isMobile: true, hasTouch: true, deviceScaleFactor: width === 320 ? 2 : width === 390 ? 3 : 4
       });
       const page = await context.newPage();
       const errors = [];
@@ -89,5 +89,31 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
       console.log('mobile Tavern touch targets: '+width+'px OK');
       await context.close();
     }
+    // A fresh phone has no remembered theme and opens its design chooser.
+    // Check Safari/WebKit as well as Chromium: invisible native dialogs can
+    // block *all* taps, including the otherwise native hamburger <summary>.
+    const firstContext = await browser.newContext({
+      viewport: {width:390,height:850}, isMobile:true, hasTouch:true, deviceScaleFactor:3
+    });
+    const firstPage = await firstContext.newPage();
+    const firstErrors = [];
+    firstPage.on('pageerror',e=>firstErrors.push(e.message));
+    await firstPage.route('**/api/**', route => route.fulfill({json:{authenticated:false}}));
+    await firstPage.goto(url.href);
+    await firstPage.waitForFunction(() => document.documentElement.getAttribute('data-herolist-hydrated')==='1');
+    const modal = firstPage.locator('dialog.interface-settings[open]');
+    await modal.waitFor({state:'visible'});
+    const frame = await modal.boundingBox();
+    assert.ok(frame && frame.width>150 && frame.x>=0 && frame.x+frame.width<=390,'Design chooser visible on physical mobile viewport');
+    await modal.getByRole('button',{name:'Использовать выбранный дизайн'}).tap();
+    assert.equal(await firstPage.locator('dialog.interface-settings[open]').count(),0,'Modal closes and releases touch lock');
+    const hamburger = firstPage.locator('.mobile-top-menu summary');
+    await hamburger.tap();
+    assert.equal(await firstPage.locator('.mobile-top-menu').getAttribute('open'),'');
+    await hamburger.tap();
+    await firstPage.locator('.mode-signs').getByRole('button',{name:/Приключения/}).tap();
+    assert.equal(await firstPage.locator('.library-head h1').innerText(),'Приключения');
+    assert.deepEqual(firstErrors,[],'First-run mobile JS errors');
+    await firstContext.close();
   } finally { await browser.close(); }
 })().catch(error => {console.error(error);process.exitCode = 1;});
