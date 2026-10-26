@@ -34,6 +34,9 @@ export const hydrationWatchScript = String.raw`
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
+    // Opt-in diagnostics has its own full report. Do not cover it with this
+    // fixed-position warning: users on broken phones must be able to copy it.
+    if (window.location.search.indexOf('herolist_diag=1') !== -1) return;
     if (document.getElementById('herolist-boot-warning')) return;
     var panel = document.createElement('section');
     panel.id = 'herolist-boot-warning';
