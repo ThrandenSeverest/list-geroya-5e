@@ -165,3 +165,4 @@ export const touchDiagnosticsScript = String.raw`
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(mount,1600);});
   else setTimeout(mount,1600);
 })();
+`;
