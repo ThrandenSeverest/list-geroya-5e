@@ -50,7 +50,7 @@ export const touchDiagnosticsScript = String.raw`
       'DPR: '+devicePixelRatio+', maxTouchPoints: '+(navigator.maxTouchPoints||0),
       'viewport: '+(window.visualViewport ? window.visualViewport.width+'x'+window.visualViewport.height : 'unavailable'),
       'pointer: coarse='+matchMedia('(pointer: coarse)').matches+', fine='+matchMedia('(pointer: fine)').matches,
-      'features: dialog='+!!HTMLDialogElement.prototype.showModal+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
+      'features: dialog='+!!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal)+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
       'hydrated: '+document.documentElement.getAttribute('data-herolist-hydrated')+', elapsed='+Math.round((Date.now()-bootTime)/1000)+'s',
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
       hit('.mobile-top-menu summary'),
