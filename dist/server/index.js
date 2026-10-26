@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _Fd533e2740b46d;
-		return (_Fd533e2740b46d = "4fd533e2-740b-46d7-88a0-7a6d7a688328") !== null && _Fd533e2740b46d !== void 0 ? _Fd533e2740b46d : void 0;
+		var _F3df04b3f7049c;
+		return (_F3df04b3f7049c = "1f3df04b-3f70-49c1-97a2-6ae5eddca1a5") !== null && _F3df04b3f7049c !== void 0 ? _F3df04b3f7049c : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "4fd533e2-740b-46d7-88a0-7a6d7a688328") {
+function appIsrCacheKey(pathname, suffix, buildId = "1f3df04b-3f70-49c1-97a2-6ae5eddca1a5") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _Fd533e2740b46d;
+	var _F3df04b3f7049c;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_Fd533e2740b46d = "4fd533e2-740b-46d7-88a0-7a6d7a688328") !== null && _Fd533e2740b46d !== void 0 ? _Fd533e2740b46d : null,
+		deploymentVersion: (_F3df04b3f7049c = "1f3df04b-3f70-49c1-97a2-6ae5eddca1a5") !== null && _F3df04b3f7049c !== void 0 ? _F3df04b3f7049c : null,
 		rootBoundaryId
 	});
 }
@@ -14608,6 +14608,20 @@ var storageGuardScript = String.raw`
 var hydrationWatchScript = String.raw`
 (function () {
   var assetFailed = false;
+  var warningPanel = null;
+  function clearWarning() {
+    if (warningPanel && warningPanel.parentNode) warningPanel.parentNode.removeChild(warningPanel);
+    warningPanel = null;
+  }
+  function onBoot() {
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') clearWarning();
+  }
+  // Loading large rule catalogs can take longer on low-memory devices.
+  // Remove an already displayed warning immediately when React finally mounts.
+  if (window.MutationObserver) {
+    var observer = new MutationObserver(onBoot);
+    observer.observe(document.documentElement, {attributes:true,attributeFilter:['data-herolist-hydrated']});
+  }
   window.addEventListener('error', function (event) {
     var node = event.target;
     if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
@@ -14638,7 +14652,7 @@ var hydrationWatchScript = String.raw`
   }
   window.setTimeout(recoverHiddenDialog, 1500);
   window.setTimeout(function () {
-    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') { clearWarning(); return; }
     if (!document.querySelector('.character-library-layout')) return;
     // Opt-in diagnostics has its own full report. Do not cover it with this
     // fixed-position warning: users on broken phones must be able to copy it.
@@ -14647,7 +14661,7 @@ var hydrationWatchScript = String.raw`
     var panel = document.createElement('section');
     panel.id = 'herolist-boot-warning';
     panel.setAttribute('role', 'alert');
-    panel.style.cssText = 'position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;padding:16px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:15px/1.5 Arial,sans-serif';
+    panel.style.cssText = 'position:fixed;z-index:2147483646;left:12px;right:12px;top:12px;bottom:auto;max-width:540px;max-height:45vh;overflow:auto;margin:0 auto;padding:12px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:13px/1.35 Arial,sans-serif;pointer-events:none';
     var title = document.createElement('strong');
     title.textContent = 'HeroList: интерфейс не запустился';
     var body = document.createElement('p');
@@ -14660,7 +14674,7 @@ var hydrationWatchScript = String.raw`
     help.textContent = 'Перезагрузка не удалит сохранённых персонажей.';
     var link = document.createElement('a');
     link.textContent = 'Перезагрузить сайт без старого HTML';
-    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none';
+    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none;pointer-events:auto';
     var href = window.location.href.split('#')[0];
     link.href = href + (href.indexOf('?') === -1 ? '?' : '&') + 'hl_reload=' + Date.now() + window.location.hash;
     panel.appendChild(title);
@@ -14668,7 +14682,8 @@ var hydrationWatchScript = String.raw`
     panel.appendChild(help);
     panel.appendChild(link);
     document.body.appendChild(panel);
-  }, 8000);
+    warningPanel = panel;
+  }, 20000);
 })();
 `;
 //#endregion
