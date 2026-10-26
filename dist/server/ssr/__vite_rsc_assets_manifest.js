@@ -1,10 +1,10 @@
 export default {
-  "bootstrapScriptContent": "import(\"/assets/index-CKJayz7o.js\")",
+  "bootstrapScriptContent": "import(\"/assets/index-uhA7IIkA.js\")",
   "clientReferenceDeps": {
     "724dcbd470a5": {
       "js": [
-        "/assets/page-DDD4qzuO.js",
-        "/assets/index-CKJayz7o.js",
+        "/assets/page-D1j_GN10.js",
+        "/assets/index-uhA7IIkA.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-BdWPhpd4.js",
         "/assets/assetUrl-wDRmmXdz.js",
@@ -14,11 +14,11 @@ export default {
     },
     "6efdf509a785": {
       "js": [
-        "/assets/page-ax3rd6X7.js",
+        "/assets/page-D_5A4WqZ.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/assetUrl-wDRmmXdz.js",
         "/assets/framework-BdWPhpd4.js",
-        "/assets/index-CKJayz7o.js"
+        "/assets/index-uhA7IIkA.js"
       ],
       "css": [
         "/assets/page-JjTFi22x.css"
@@ -26,7 +26,7 @@ export default {
     },
     "593f344dc510": {
       "js": [
-        "/assets/index-CKJayz7o.js",
+        "/assets/index-uhA7IIkA.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-BdWPhpd4.js"
       ],
@@ -34,8 +34,8 @@ export default {
     },
     "15c18cfaeeff": {
       "js": [
-        "/assets/layout-segment-context-wA8MdtVd.js",
-        "/assets/index-CKJayz7o.js",
+        "/assets/layout-segment-context-1BINLoms.js",
+        "/assets/index-uhA7IIkA.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-BdWPhpd4.js"
       ],
@@ -43,7 +43,7 @@ export default {
     },
     "8c0f216c4604": {
       "js": [
-        "/assets/index-CKJayz7o.js",
+        "/assets/index-uhA7IIkA.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-BdWPhpd4.js"
       ],

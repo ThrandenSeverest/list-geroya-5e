@@ -34482,13 +34482,23 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	useEffect(() => {
 		setDialogHost(document.body);
 	}, []);
+	function showDialog() {
+		const el = dialog.current;
+		if (!el || el.open) return;
+		if (typeof el.showModal === "function") try {
+			el.showModal();
+			return;
+		} catch {}
+		el.setAttribute("open", "");
+	}
 	useEffect(() => {
 		if (!dialogHost || !appearance.showDesignPicker || document.querySelector(".theme-controls") !== owner.current) return;
 		setGallery(true);
-		if (!dialog.current?.open) dialog.current?.showModal();
+		showDialog();
 	}, [appearance.showDesignPicker, dialogHost]);
 	function close() {
-		dialog.current?.close();
+		if (dialog.current?.open) if (typeof dialog.current.close === "function") dialog.current.close();
+		else dialog.current.removeAttribute("open");
 		appearance.closeDesignPicker();
 	}
 	function open(chooser = false) {
@@ -34498,7 +34508,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 			colors: { ...active.colors }
 		} : null);
 		setNotice("");
-		dialog.current?.showModal();
+		showDialog();
 	}
 	function select(id) {
 		const preset = findDesign(preferences.presets, id);
