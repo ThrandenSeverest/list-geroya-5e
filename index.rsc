@@ -1,4 +1,4 @@
-:HL["/list-geroya-5e/assets/index-DUD8UwGV.css","style"]
+:HL["/list-geroya-5e/assets/index-CR4KreGw.css","style"]
 2:T102b,
 (() => {
   const VAULT_KEY = "list-geroya-character-vault-v1";
@@ -108,18 +108,43 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-DUD8UwGV.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-DUD8UwGV.css","data-rsc-css-href":"/list-geroya-5e/assets/index-DUD8UwGV.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:4uhn5s1wvoptc","deploymentVersion":"c59ffa6e-6913-405b-9df8-af6dc0b6bd62","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+0:{"__route":"route:/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:4uhn5s1wvoptc","deploymentVersion":"d166858b-685d-485b-ac45-256b642da109","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
 a:I["8c0f216c4604",[],"Children",1]
 b:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
 c:I["8c0f216c4604",[],"Slot",1]
 d:I["593f344dc510",[],"RedirectBoundary",1]
-8:T974,
+8:Tdf8,
 (function () {
   var assetFailed = false;
   window.addEventListener('error', function (event) {
     var node = event.target;
     if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
   }, true);
+  // Some mobile WebViews keep a native modal backdrop active even when
+  // its dialog is clipped or invisible. Recover only demonstrably invisible
+  // design dialogs; leave intentionally visible dialogs untouched.
+  var checks = 0;
+  function recoverHiddenDialog() {
+    checks++;
+    var modals = document.querySelectorAll('dialog.interface-settings[open]');
+    for (var i=0;i<modals.length;i++) {
+      var dialog = modals[i];
+      var rect = dialog.getBoundingClientRect();
+      var style = window.getComputedStyle(dialog);
+      if (style.display === 'none' || style.visibility === 'hidden'
+          || rect.width < 80 || rect.height < 40
+          || rect.right <= 0 || rect.left >= window.innerWidth
+          || rect.bottom <= 0 || rect.top >= window.innerHeight) {
+        try {
+          if (typeof dialog.close === 'function') dialog.close();
+          else dialog.removeAttribute('open');
+          document.documentElement.setAttribute('data-herolist-recovered-dialog', '1');
+        } catch (ignore) {}
+      }
+    }
+    if (checks < 10) window.setTimeout(recoverHiddenDialog, 1500);
+  }
+  window.setTimeout(recoverHiddenDialog, 1500);
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
