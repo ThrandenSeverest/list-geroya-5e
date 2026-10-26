@@ -108,7 +108,7 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/account/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"2ba1b58d-f284-4826-af95-6c59e3c771d2","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/account/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"0d861c1a-0578-45ba-b1e0-c31cba4f55bd","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
 a:I["8c0f216c4604",[],"Children",1]
 b:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
 c:I["8c0f216c4604",[],"Slot",1]
@@ -194,10 +194,34 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
   }, 20000);
 })();
 3:["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$8"}}]
-9:T18df,
+9:T250b,
 (function () {
   if (window.location.search.indexOf('herolist_diag=1') < 0) return;
-  var recent = [], faults = [], resourcesFailed = [], bootTime = Date.now();
+  var recent = [], faults = [], resourcesFailed = [], interactions = [], bootTime = Date.now();
+  var nativeTapCount = 0;
+  function viewName() {
+    if (document.querySelector('nav.steps')) return 'character-editor';
+    if (document.querySelector('.character-library-layout')) return 'character-library';
+    if (document.querySelector('.play-shell')) return 'game';
+    return 'other';
+  }
+  function buttonName(node) {
+    if (!node) return '';
+    var btn = node.closest ? node.closest('button') : null;
+    return btn ? (btn.getAttribute('aria-label') || btn.textContent || '').trim().replace(/\\s+/g,' ').slice(0,65) : '';
+  }
+  function reactHandler(node) {
+    if (!node) return 'n/a';
+    var keys = Object.keys(node), key, props;
+    for (var i=0; i<keys.length; i++) {
+      key=keys[i];
+      if (key.indexOf('__reactProps') === 0) {
+        props=node[key];
+        return props && typeof props.onClick === 'function' ? 'present' : 'absent';
+      }
+    }
+    return 'not-mounted';
+  }
   function excerpt(url) {
     if (!url) return '';
     var parts = String(url).split('/');
@@ -211,8 +235,16 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     return tag + (cls ? '.' + cls.trim().replace(/\s+/g, '.').slice(0,100) : '');
   }
   function record(kind, event) {
-    recent.push(kind + ' -> ' + brief(event.target));
-    if (recent.length > 8) recent.shift();
+    var node=event.target, btn=node && node.closest ? node.closest('button') : null;
+    recent.push(kind + ' -> ' + brief(node) + (btn ? ' ['+buttonName(node)+']' : ''));
+    if (recent.length > 12) recent.shift();
+    if (kind==='click' && btn && !btn.closest('#herolist-device-diagnostics')) {
+      var before=viewName(), name=buttonName(btn), disabled=btn.disabled, handler=reactHandler(btn);
+      window.setTimeout(function(){
+        interactions.push(name + ': disabled='+disabled+', reactOnClick='+handler+', view='+before+' -> '+viewName());
+        if(interactions.length>8) interactions.shift();
+      },600);
+    }
   }
   function fault(value) {
     faults.push(String(value).slice(0,220));
@@ -261,6 +293,9 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
       'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\.js(\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
       'resource errors: '+(resourcesFailed.join(' | ')||'none'),
+      'current view: '+viewName(),
+      'native diagnostic taps: '+nativeTapCount,
+      'React click follow-up: '+(interactions.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
       hit('.character-card-actions button'),
@@ -276,19 +311,49 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     [].forEach.call(document.querySelectorAll('dialog.interface-settings[open]'),function(d){try{d.close();}catch(e){}});
     var panel = document.createElement('section');
     panel.id = 'herolist-device-diagnostics';
-    panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:48vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
+    panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:42vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
     var title=document.createElement('strong');title.textContent='Диагностика запуска и касаний HeroList';
+    var status=document.createElement('div');
+    status.setAttribute('role','status');
+    status.style.cssText='padding:7px 0;font-weight:bold;color:#e9d39a';
+    status.textContent='Диагностика активна. Нажмите «Проверка», затем кнопки сайта.';
     var detail=document.createElement('textarea');
-    detail.readOnly=true;detail.style.cssText='box-sizing:border-box;width:100%;height:160px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
+    detail.readOnly=true;
+    detail.style.cssText='box-sizing:border-box;width:100%;height:125px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
     detail.value=snapshot;
+    var test=document.createElement('button');test.textContent='Проверка касания';
     var copy=document.createElement('button');copy.textContent='Скопировать отчёт';
     var update=document.createElement('button');update.textContent='Обновить показатели';
-    var close=document.createElement('button');close.textContent='Скрыть диагностику';
-    [copy,update,close].forEach(function(b){b.style.cssText='padding:9px;margin:4px;border:1px solid #e1a071;background:#253644;color:white'});
-    copy.onclick=function(){detail.focus();detail.select();try{document.execCommand('copy');}catch(e){}};
-    update.onclick=function(){detail.value=report();};
-    close.onclick=function(){panel.parentNode.removeChild(panel);};
-    panel.appendChild(title);panel.appendChild(detail);panel.appendChild(copy);panel.appendChild(update);panel.appendChild(close);
+    var close=document.createElement('button');close.textContent='Свернуть';
+    [test,copy,update,close].forEach(function(b){b.type='button';b.style.cssText='padding:9px;margin:3px;border:1px solid #e1a071;background:#253644;color:white;min-height:44px;touch-action:manipulation'});
+    var refreshCount=0;
+    function updateReport(){
+      detail.value=report();
+      refreshCount++;
+      status.textContent='Отчёт обновлён ('+refreshCount+'): '+new Date().toLocaleTimeString();
+    }
+    test.addEventListener('click',function(){
+      nativeTapCount++;
+      status.textContent='Нативные нажатия работают: '+nativeTapCount;
+      detail.value=report();
+    });
+    update.addEventListener('click',updateReport);
+    copy.addEventListener('click',function(){
+      detail.value=report();
+      function copied(ok){
+        if(ok)status.textContent='Отчёт скопирован в буфер обмена';
+        else status.textContent='Автокопирование запрещено браузером. Выделите текст отчёта вручную.';
+      }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(detail.value).then(function(){copied(true);},function(){copied(false);});
+      }else{
+        detail.focus();detail.select();
+        try{copied(!!document.execCommand('copy'));}catch(e){copied(false);}
+      }
+    });
+    close.addEventListener('click',function(){panel.style.display='none';});
+    panel.appendChild(title);panel.appendChild(status);panel.appendChild(detail);
+    panel.appendChild(test);panel.appendChild(update);panel.appendChild(copy);panel.appendChild(close);
     document.body.appendChild(panel);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(mount,1600);});
