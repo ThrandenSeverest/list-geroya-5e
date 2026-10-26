@@ -43,6 +43,15 @@ export function ThemeControls({label,theme,onCycle,onTheme,appearance}:{label:st
   }
   useEffect(()=>{
     if(!dialogHost || !appearance.showDesignPicker || document.querySelector('.theme-controls')!==owner.current)return;
+    // The first ThemeControls is hidden by mobile CSS on the character-library
+    // screen. Native showModal() nonetheless puts its dialog in the browser top
+    // layer and makes every underlying button inert. On some Android browsers
+    // the dialog itself is invisible, so *all* Tavern controls stop responding.
+    // Only auto-open a chooser whose owning control is genuinely visible.
+    const control=owner.current;
+    if(!control || !control.getClientRects().length || control.closest('details:not([open])'))return;
+    if(window.matchMedia('(max-width: 760px)').matches &&
+       document.querySelector('.character-library-layout'))return;
     setGallery(true);
     showDialog();
   },[appearance.showDesignPicker,dialogHost]);
