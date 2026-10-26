@@ -28,7 +28,7 @@ def normalize(root: Path) -> None:
     if server_entry.exists():
         entry = server_entry.read_text(encoding="utf-8")
         for match in re.finditer(
-            r'get buildId\(\)\s*\{\s*var (_[0-9a-f]+);\s*return \(\1 = "([0-9a-f-]{36})"',
+            r'get buildId\(\)\s*\{\s*var (_[0-9A-Fa-f]+);\s*return \(\1 = "([0-9a-f-]{36})"',
             entry,
         ):
             build_id_aliases.add(match.group(1))
