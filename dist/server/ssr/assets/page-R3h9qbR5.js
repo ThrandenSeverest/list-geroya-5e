@@ -66843,23 +66843,30 @@ Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map((option
 	id: `${classId}:${option.id}`
 })));
 var featCatalog = feats.filter((feat) => feat.id !== "asi");
-catalogs.classOptions = [...new Map(classes.flatMap((classOption) => {
-	var _subclasses$classOpti;
-	return ["", ...((_subclasses$classOpti = subclasses[classOption.id]) === null || _subclasses$classOpti === void 0 ? void 0 : _subclasses$classOpti.options.map((option) => option.id)) || []].flatMap((subclass) => classChoiceGroups({
-		...initial,
-		className: classOption.id,
-		subclass,
-		level: 20,
-		useTasha: true
-	}, []).flatMap((group) => group.options.filter((option) => !group.key.startsWith("tce-")).map((option) => ({
-		...option,
-		id: classOptionId(classOption.id, group.key, option.id),
-		classId: classOption.id,
-		group: group.title,
-		level: group.level,
-		tags: []
-	}))));
-}).map((option) => [option.id, option])).values()];
+var classOptionCatalogReady = false;
+function ensureClassOptionsCatalog() {
+	if (!classOptionCatalogReady) {
+		catalogs.classOptions = [...new Map(classes.flatMap((classOption) => {
+			var _subclasses$classOpti;
+			return ["", ...((_subclasses$classOpti = subclasses[classOption.id]) === null || _subclasses$classOpti === void 0 ? void 0 : _subclasses$classOpti.options.map((option) => option.id)) || []].flatMap((subclass) => classChoiceGroups({
+				...initial,
+				className: classOption.id,
+				subclass,
+				level: 20,
+				useTasha: true
+			}, []).flatMap((group) => group.options.filter((option) => !group.key.startsWith("tce-")).map((option) => ({
+				...option,
+				id: classOptionId(classOption.id, group.key, option.id),
+				classId: classOption.id,
+				group: group.title,
+				level: group.level,
+				tags: []
+			}))));
+		}).map((option) => [option.id, option])).values()];
+		classOptionCatalogReady = true;
+	}
+	return catalogs.classOptions;
+}
 var personalityNames = {
 	traits: "Черты характера",
 	ideals: "Идеалы",
@@ -67569,7 +67576,7 @@ function savedCharacterExportContext(value, activeBan = null) {
 		useTasha: !!character.useTasha && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		tceFullBanned: !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
-		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
+		bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id) : []
 	});
 	const abilities = finalAbilityScores(rulesCharacter);
 	const exportCharacter = {
@@ -68074,7 +68081,7 @@ function Builder({ adventureRoute = false } = {}) {
 		useTasha: !!character.useTasha && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		tceFullBanned: !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
-		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
+		bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id) : []
 	});
 	const finalAbilities = finalAbilityScores(rulesCharacter);
 	const choiceGroups = classChoiceGroups(rulesCharacter, spells);
@@ -70704,6 +70711,7 @@ function Builder({ adventureRoute = false } = {}) {
 		});
 	}
 	if (view === "banlist") {
+		ensureClassOptionsCatalog();
 		const allBookSources = [...new Set(Object.values(catalogs).flatMap((options) => options.flatMap((option) => sourceTokens(option.source))))].sort();
 		const banSources = ["Все", ...new Set(catalogs[banCategory].flatMap((option) => sourceTokens(option.source)))];
 		const list = catalogs[banCategory].filter((option) => (banSource === "Все" || sourceTokens(option.source).includes(banSource)) && (banClass === "all" || option.classId === banClass || banCategory === "spells" && option.classes.includes(banClass)) && (banLevel === "all" || option.level === Number(banLevel)) && (banStatus === "all" || banStatus === "banned" === !allowed(banDraft, banCategory, option.id)) && `${option.name} ${option.description} ${option.source} ${option.group || ""}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.name.localeCompare(b.name, "ru"));
