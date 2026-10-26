@@ -159,7 +159,16 @@ const initial: ExportCharacter = {
 const subclassCatalog: CatalogOption[] = Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map(option => ({ ...option, id: `${classId}:${option.id}` })));
 const featCatalog: CatalogOption[] = feats.filter(feat => feat.id !== "asi");
 // Include permanent class choices (styles, invocations, metamagic, etc.) from every subclass.
-catalogs.classOptions = [...new Map(classes.flatMap(classOption => ["", ...(subclasses[classOption.id]?.options.map(option => option.id) || [])].flatMap(subclass => classChoiceGroups({ ...initial, className: classOption.id, subclass, level: 20, useTasha: true }, []).flatMap(group => group.options.filter(option => !group.key.startsWith('tce-')).map(option => ({ ...option, id: classOptionId(classOption.id, group.key, option.id), classId: classOption.id, group: group.title, level: group.level, tags: [] }))))).map(option => [option.id, option])).values()];
+let classOptionCatalogReady = false;
+// Computing every class/subclass option is expensive on slower phone CPUs.
+// The Tavern does not need this catalogue until bans are edited or enforced.
+function ensureClassOptionsCatalog(): typeof catalogs.classOptions {
+  if (!classOptionCatalogReady) {
+    catalogs.classOptions = [...new Map(classes.flatMap(classOption => ["", ...(subclasses[classOption.id]?.options.map(option => option.id) || [])].flatMap(subclass => classChoiceGroups({ ...initial, className: classOption.id, subclass, level: 20, useTasha: true }, []).flatMap(group => group.options.filter(option => !group.key.startsWith('tce-')).map(option => ({ ...option, id: classOptionId(classOption.id, group.key, option.id), classId: classOption.id, group: group.title, level: group.level, tags: [] }))))).map(option => [option.id, option])).values()];
+    classOptionCatalogReady = true;
+  }
+  return catalogs.classOptions;
+}
 const personalityNames: Record<PersonalityKey, string> = {
   traits: "Черты характера",
   ideals: "Идеалы",
@@ -693,7 +702,7 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
 function savedCharacterExportContext(value: ExportCharacter, activeBan: BanList | null = null) {
   const character = normalizeCharacter(value);
   const advancementFields = deriveLegacyAdvancementFields(character.advancements || []);
-  const rulesCharacter = restrictedCharacter({ ...character, ...advancementFields, useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned, tceFullBanned: !!activeBan?.tceFullBanned, bannedOptionalFeatures: catalogs.optionalFeatures.filter(option => !allowed(activeBan, "optionalFeatures", option.id)).map(option => option.id), bannedClassOptions: catalogs.classOptions.filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id) });
+  const rulesCharacter = restrictedCharacter({ ...character, ...advancementFields, useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned, tceFullBanned: !!activeBan?.tceFullBanned, bannedOptionalFeatures: catalogs.optionalFeatures.filter(option => !allowed(activeBan, "optionalFeatures", option.id)).map(option => option.id) : [], bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id) });
   const abilities = finalAbilityScores(rulesCharacter);
   const exportCharacter = { ...rulesCharacter, abilities };
   const race = races.find(option => option.id === exportCharacter.race);
@@ -1052,7 +1061,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
     useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
     tceFullBanned: !!activeBan?.tceFullBanned,
     bannedOptionalFeatures: catalogs.optionalFeatures.filter(option => !allowed(activeBan, "optionalFeatures", option.id)).map(option => option.id),
-    bannedClassOptions: catalogs.classOptions.filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id),
+    bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id) : [],
   });
   const finalAbilities = finalAbilityScores(rulesCharacter);
   const choiceGroups = classChoiceGroups(rulesCharacter, spells);
@@ -2849,6 +2858,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   }
 
   if (view === "banlist") {
+    ensureClassOptionsCatalog();
     const allBookSources = [...new Set(Object.values(catalogs).flatMap(options => options.flatMap(option => sourceTokens(option.source))))].sort();
     const banSources = ["Все", ...new Set(catalogs[banCategory].flatMap(option => sourceTokens(option.source)))];
     const list = catalogs[banCategory].filter(option =>
