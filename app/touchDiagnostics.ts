@@ -65,7 +65,7 @@ export const touchDiagnosticsScript = String.raw`
       'features: dialog='+!!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal)+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
       'hydrated: '+document.documentElement.getAttribute('data-herolist-hydrated')+', elapsed='+Math.round((Date.now()-bootTime)/1000)+'s',
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
-      'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\\.js(\\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
+      'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\.js(\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
       'resource errors: '+(resourcesFailed.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
