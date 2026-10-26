@@ -6,6 +6,31 @@ export const hydrationWatchScript = String.raw`
     var node = event.target;
     if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
   }, true);
+  // Some mobile WebViews keep a native modal backdrop active even when
+  // its dialog is clipped or invisible. Recover only demonstrably invisible
+  // design dialogs; leave intentionally visible dialogs untouched.
+  var checks = 0;
+  function recoverHiddenDialog() {
+    checks++;
+    var modals = document.querySelectorAll('dialog.interface-settings[open]');
+    for (var i=0;i<modals.length;i++) {
+      var dialog = modals[i];
+      var rect = dialog.getBoundingClientRect();
+      var style = window.getComputedStyle(dialog);
+      if (style.display === 'none' || style.visibility === 'hidden'
+          || rect.width < 80 || rect.height < 40
+          || rect.right <= 0 || rect.left >= window.innerWidth
+          || rect.bottom <= 0 || rect.top >= window.innerHeight) {
+        try {
+          if (typeof dialog.close === 'function') dialog.close();
+          else dialog.removeAttribute('open');
+          document.documentElement.setAttribute('data-herolist-recovered-dialog', '1');
+        } catch (ignore) {}
+      }
+    }
+    if (checks < 10) window.setTimeout(recoverHiddenDialog, 1500);
+  }
+  window.setTimeout(recoverHiddenDialog, 1500);
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
