@@ -1,6 +1,7 @@
 import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
 import { Component, createContext, createElement, forwardRef, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
+import { createPortal } from "react-dom";
 import { createRequire } from "module";
 //#region app/ModeSigns.tsx
 function ModeSigns({ value, tavernCount, adventureCount, onChange }) {
@@ -34477,12 +34478,15 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	const [notice, setNotice] = useState("");
 	const [gallery, setGallery] = useState(false);
 	const owner = useRef(null);
+	const [dialogHost, setDialogHost] = useState(null);
 	useEffect(() => {
-		if (appearance.showDesignPicker && document.querySelector(".theme-controls") === owner.current) {
-			setGallery(true);
-			dialog.current?.showModal();
-		}
-	}, [appearance.showDesignPicker]);
+		setDialogHost(document.body);
+	}, []);
+	useEffect(() => {
+		if (!dialogHost || !appearance.showDesignPicker || document.querySelector(".theme-controls") !== owner.current) return;
+		setGallery(true);
+		if (!dialog.current?.open) dialog.current?.showModal();
+	}, [appearance.showDesignPicker, dialogHost]);
 	function close() {
 		dialog.current?.close();
 		appearance.closeDesignPicker();
@@ -34554,7 +34558,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 					"aria-hidden": "true"
 				})
 			}),
-			/* @__PURE__ */ jsxs("dialog", {
+			dialogHost && createPortal(/* @__PURE__ */ jsxs("dialog", {
 				ref: dialog,
 				className: `interface-settings${gallery ? " design-gallery-dialog" : ""}`,
 				"aria-labelledby": settingsId,
@@ -34810,7 +34814,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 						children: notice
 					})
 				] })]
-			})
+			}), dialogHost)
 		]
 	});
 }
