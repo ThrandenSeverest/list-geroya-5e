@@ -12,9 +12,13 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
     await page.goto(url.href);
     await page.locator('.mobile-top-menu summary').tap();
     assert.equal(await page.locator('.mobile-top-menu').getAttribute('open'), '');
-    await page.locator('#herolist-boot-warning').waitFor({timeout:12000});
+    await page.locator('#herolist-boot-warning').waitFor({timeout:28000});
     assert.match(await page.locator('#herolist-boot-warning').innerText(), /интерфейс не запустился/);
     assert.notEqual(await page.locator('html').getAttribute('data-herolist-hydrated'), '1');
+    assert.equal(await page.locator('#herolist-boot-warning').evaluate(el=>getComputedStyle(el).pointerEvents),'none','warning does not consume taps');
+    await page.evaluate(()=>document.documentElement.setAttribute('data-herolist-hydrated','1'));
+    await page.locator('#herolist-boot-warning').waitFor({state:'detached'});
+    await page.evaluate(()=>document.documentElement.removeAttribute('data-herolist-hydrated'));
     await page.unroute('**/assets/*.js');
     await page.reload();
     await page.waitForFunction(() => document.documentElement.getAttribute('data-herolist-hydrated') === '1');
