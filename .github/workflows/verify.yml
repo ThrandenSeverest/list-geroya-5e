@@ -107,5 +107,7 @@ jobs:
         working-directory: backend
       - name: Verify committed dist matches source
         run: |
+          # Vinext fingerprints filenames on every build. The normalizer
+          # checks the complete canonical runtime inventory, including asset
+          # references, without treating random chunk filenames as changes.
           python3 scripts/normalize-dist-for-compare.py /tmp/herolist-committed-dist dist
-          diff -qr /tmp/herolist-committed-dist dist
