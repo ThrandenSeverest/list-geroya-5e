@@ -108,14 +108,28 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/account/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"55db3be4-f858-4336-9ea6-35448e4a91d2","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+0:{"__route":"route:/account/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/account/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/account/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:qe30xgp2gxqw","deploymentVersion":"63894106-682e-4f71-b95c-2924e47889f5","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
 a:I["8c0f216c4604",[],"Children",1]
 b:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
 c:I["8c0f216c4604",[],"Slot",1]
 d:I["593f344dc510",[],"RedirectBoundary",1]
-8:Tede,
+8:T11ec,
 (function () {
   var assetFailed = false;
+  var warningPanel = null;
+  function clearWarning() {
+    if (warningPanel && warningPanel.parentNode) warningPanel.parentNode.removeChild(warningPanel);
+    warningPanel = null;
+  }
+  function onBoot() {
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') clearWarning();
+  }
+  // Loading large rule catalogs can take longer on low-memory devices.
+  // Remove an already displayed warning immediately when React finally mounts.
+  if (window.MutationObserver) {
+    var observer = new MutationObserver(onBoot);
+    observer.observe(document.documentElement, {attributes:true,attributeFilter:['data-herolist-hydrated']});
+  }
   window.addEventListener('error', function (event) {
     var node = event.target;
     if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
@@ -146,7 +160,7 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
   }
   window.setTimeout(recoverHiddenDialog, 1500);
   window.setTimeout(function () {
-    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
+    if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') { clearWarning(); return; }
     if (!document.querySelector('.character-library-layout')) return;
     // Opt-in diagnostics has its own full report. Do not cover it with this
     // fixed-position warning: users on broken phones must be able to copy it.
@@ -155,7 +169,7 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     var panel = document.createElement('section');
     panel.id = 'herolist-boot-warning';
     panel.setAttribute('role', 'alert');
-    panel.style.cssText = 'position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;max-width:540px;margin:0 auto;padding:16px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:15px/1.5 Arial,sans-serif';
+    panel.style.cssText = 'position:fixed;z-index:2147483646;left:12px;right:12px;top:12px;bottom:auto;max-width:540px;max-height:45vh;overflow:auto;margin:0 auto;padding:12px;background:#172126;color:#fff;border:2px solid #f0d39a;border-radius:8px;box-shadow:0 8px 30px #0009;font:13px/1.35 Arial,sans-serif;pointer-events:none';
     var title = document.createElement('strong');
     title.textContent = 'HeroList: интерфейс не запустился';
     var body = document.createElement('p');
@@ -168,7 +182,7 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     help.textContent = 'Перезагрузка не удалит сохранённых персонажей.';
     var link = document.createElement('a');
     link.textContent = 'Перезагрузить сайт без старого HTML';
-    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none';
+    link.style.cssText = 'display:inline-block;padding:10px 12px;background:#f0d39a;color:#17120e;border-radius:4px;font-weight:bold;text-decoration:none;pointer-events:auto';
     var href = window.location.href.split('#')[0];
     link.href = href + (href.indexOf('?') === -1 ? '?' : '&') + 'hl_reload=' + Date.now() + window.location.hash;
     panel.appendChild(title);
@@ -176,13 +190,19 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     panel.appendChild(help);
     panel.appendChild(link);
     document.body.appendChild(panel);
-  }, 8000);
+    warningPanel = panel;
+  }, 20000);
 })();
 3:["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$8"}}]
-9:T1551,
+9:T18df,
 (function () {
   if (window.location.search.indexOf('herolist_diag=1') < 0) return;
-  var recent = [], faults = [], bootTime = Date.now();
+  var recent = [], faults = [], resourcesFailed = [], bootTime = Date.now();
+  function excerpt(url) {
+    if (!url) return '';
+    var parts = String(url).split('/');
+    return parts.slice(-2).join('/').slice(0,130);
+  }
   function brief(node) {
     if (!node) return 'none';
     var tag = (node.tagName || '').toLowerCase();
@@ -202,7 +222,14 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     document.addEventListener(kind, function (event) { record(kind,event); }, true);
   });
   window.addEventListener('error', function (event) {
-    fault(event.message || ((event.target && event.target.tagName) || 'resource error'));
+    var node = event.target;
+    if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK' || node.tagName === 'IMG')) {
+      var resource = node.src || node.href || '';
+      resourcesFailed.push(node.tagName + ': ' + excerpt(resource));
+      if (resourcesFailed.length > 8) resourcesFailed.shift();
+      return;
+    }
+    fault((event.message || 'script error') + ' @ ' + excerpt(event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0));
   }, true);
   window.addEventListener('unhandledrejection', function (event) {
     fault('rejection: ' + (event.reason && event.reason.message || event.reason || 'unknown'));
@@ -232,6 +259,8 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
       'features: dialog='+!!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal)+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
       'hydrated: '+document.documentElement.getAttribute('data-herolist-hydrated')+', elapsed='+Math.round((Date.now()-bootTime)/1000)+'s',
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
+      'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\.js(\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
+      'resource errors: '+(resourcesFailed.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
       hit('.character-card-actions button'),
@@ -248,7 +277,7 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
     var panel = document.createElement('section');
     panel.id = 'herolist-device-diagnostics';
     panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:48vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
-    var title=document.createElement('strong');title.textContent='Диагностика касаний HeroList';
+    var title=document.createElement('strong');title.textContent='Диагностика запуска и касаний HeroList';
     var detail=document.createElement('textarea');
     detail.readOnly=true;detail.style.cssText='box-sizing:border-box;width:100%;height:160px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
     detail.value=snapshot;
