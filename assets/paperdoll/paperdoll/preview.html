@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HeroList · Paperdoll</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui;background:#171b20;color:#ede8df}body{margin:0;padding:24px;max-width:1500px;margin:auto}h1{font-size:24px;margin:0 0 16px}header{position:sticky;top:0;background:#171b20ee;padding:12px 0;z-index:2;display:flex;gap:12px;align-items:center;flex-wrap:wrap}select,button{font:inherit;background:#292f37;color:inherit;border:1px solid #77705f;border-radius:8px;padding:9px}label{display:flex;align-items:center;gap:7px}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-top:20px}.card{padding:10px;border:1px solid #41434a;border-radius:12px;text-align:center;background:#22272e}.doll{position:relative;aspect-ratio:1;background:radial-gradient(ellipse at 50% 75%,#8b704d44,transparent 72%)}.doll img{position:absolute;inset:0;width:100%;height:100%}.card b{display:block;margin:6px 0}.card small{color:#c2b398}.guides .doll:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent calc(50% - .5px),#6bd7d880 50%,transparent calc(50% + .5px)),linear-gradient(transparent 47.2%,#6bd7d880 47.3%,transparent 47.6%);pointer-events:none}button.active{border-color:#efc67f}#error{color:#ffb2a3}
+</style>
+<h1>HeroList · Paperdoll</h1>
+<header>
+<label>Класс <select id="outfit"><option value="">Только основа расы</option></select></label>
+<label>Основа <select id="body"><option value="">Все</option><option value="large">Большая</option><option value="regular">Обычная</option><option value="small">Маленькая</option></select></label>
+<label><input type="checkbox" id="guides">Направляющие</label>
+<label><input type="checkbox" id="armorOnly">Только одежда</label>
+</header>
+<p id="error" hidden>Не удалось загрузить набор.</p><main class="grid" id="grid"></main>
+<script type="module">
+const names={barbarian:'Варвар',bard:'Бард',cleric:'Жрец',druid:'Друид',fighter:'Воин',monk:'Монах',paladin:'Паладин',ranger:'Следопыт',rogue:'Плут',sorcerer:'Чародей',warlock:'Колдун',wizard:'Волшебник',artificer:'Изобретатель'};
+const outfit=document.querySelector('#outfit'),body=document.querySelector('#body'),grid=document.querySelector('#grid'),armorOnly=document.querySelector('#armorOnly');
+try{
+const manifest=await fetch('./manifest.json').then(r=>{if(!r.ok)throw Error(r.status);return r.json()});
+for(const id of manifest.classes){const o=document.createElement('option');o.value=id;o.textContent=names[id]||id;outfit.append(o)}
+function render(){grid.replaceChildren();for(const [race,data]of Object.entries(manifest.races)){
+if(body.value&&data.body!==body.value)continue;
+const card=document.createElement('article');card.className='card';const doll=document.createElement('div');doll.className='doll';
+const paths=[];if(!armorOnly.checked)paths.push(`bases/${race}.png`);if(outfit.value){paths.push(`overlays/${data.body}/${outfit.value}.png`);if(!armorOnly.checked)paths.push(`heads/${race}.png`)}
+for(const path of paths){const img=new Image();img.src='./'+path;img.alt='';doll.append(img)}
+const title=document.createElement('b');title.textContent=race;const sub=document.createElement('small');sub.textContent={large:'Большая',regular:'Обычная',small:'Маленькая'}[data.body];card.append(doll,title,sub);grid.append(card)
+}}
+outfit.onchange=body.onchange=armorOnly.onchange=render;document.querySelector('#guides').onchange=e=>grid.classList.toggle('guides',e.target.checked);render();
+}catch(e){document.querySelector('#error').hidden=false;console.error(e)}
+</script></html>
