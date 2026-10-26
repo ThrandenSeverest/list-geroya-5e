@@ -50,7 +50,7 @@ var __require = /* @__PURE__ */ createRequire(import.meta.url);
 function notFoundResponse(init) {
 	return new Response("Not Found", {
 		status: 404,
-		headers: init?.headers
+		headers: init === null || init === void 0 ? void 0 : init.headers
 	});
 }
 //#endregion
@@ -129,14 +129,15 @@ function isOpenRedirectShaped(rawPathname) {
 //#endregion
 //#region node_modules/vinext/dist/server/artifact-compatibility.js
 function createArtifactCompatibilityEnvelope(input = {}) {
+	var _input$graphVersion, _input$deploymentVers, _input$rootBoundaryId, _input$renderEpoch;
 	return {
 		schemaVersion: 1,
-		graphVersion: input.graphVersion ?? null,
-		deploymentVersion: input.deploymentVersion ?? null,
+		graphVersion: (_input$graphVersion = input.graphVersion) !== null && _input$graphVersion !== void 0 ? _input$graphVersion : null,
+		deploymentVersion: (_input$deploymentVers = input.deploymentVersion) !== null && _input$deploymentVers !== void 0 ? _input$deploymentVers : null,
 		appElementsSchemaVersion: 1,
 		rscPayloadSchemaVersion: 1,
-		rootBoundaryId: input.rootBoundaryId ?? null,
-		renderEpoch: input.renderEpoch ?? null
+		rootBoundaryId: (_input$rootBoundaryId = input.rootBoundaryId) !== null && _input$rootBoundaryId !== void 0 ? _input$rootBoundaryId : null,
+		renderEpoch: (_input$renderEpoch = input.renderEpoch) !== null && _input$renderEpoch !== void 0 ? _input$renderEpoch : null
 	};
 }
 function isRecord(value) {
@@ -267,10 +268,11 @@ function isAppElementsWireSlotId(key) {
 	return separatorIndex > 0 && body.charCodeAt(separatorIndex + 1) === 47;
 }
 function createAppElementsWireMetadataEntries(input) {
+	var _input$layoutIds;
 	return {
 		[APP_ROUTE_KEY]: input.routeId,
 		[APP_INTERCEPTION_CONTEXT_KEY]: input.interceptionContext,
-		[APP_LAYOUT_IDS_KEY]: [...input.layoutIds ?? []],
+		[APP_LAYOUT_IDS_KEY]: [...(_input$layoutIds = input.layoutIds) !== null && _input$layoutIds !== void 0 ? _input$layoutIds : []],
 		[APP_ROOT_LAYOUT_KEY]: input.rootLayoutTreePath
 	};
 }
@@ -299,8 +301,9 @@ function parseLayoutIds(value) {
 	if (!Array.isArray(value)) throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout id string[]");
 	const layoutIds = [];
 	for (const entry of value) {
+		var _parseAppElementsWire;
 		if (typeof entry !== "string") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout id string[]");
-		if (parseAppElementsWireElementKey(entry)?.kind !== "layout") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout ids");
+		if (((_parseAppElementsWire = parseAppElementsWireElementKey(entry)) === null || _parseAppElementsWire === void 0 ? void 0 : _parseAppElementsWire.kind) !== "layout") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout ids");
 		layoutIds.push(entry);
 	}
 	return layoutIds;
@@ -327,16 +330,18 @@ function withLayoutFlags(elements, layoutFlags) {
 	};
 }
 function buildOutgoingAppPayload(input) {
+	var _input$artifactCompat;
 	if (!isAppElementsRecord(input.element)) return input.element;
 	return {
 		...input.element,
 		[APP_LAYOUT_FLAGS_KEY]: input.layoutFlags,
-		[APP_ARTIFACT_COMPATIBILITY_KEY]: input.artifactCompatibility ?? createArtifactCompatibilityEnvelope()
+		[APP_ARTIFACT_COMPATIBILITY_KEY]: (_input$artifactCompat = input.artifactCompatibility) !== null && _input$artifactCompat !== void 0 ? _input$artifactCompat : createArtifactCompatibilityEnvelope()
 	};
 }
 function readArtifactCompatibilityMetadata(value) {
+	var _parseArtifactCompati;
 	if (value === void 0) return createArtifactCompatibilityEnvelope();
-	return parseArtifactCompatibilityEnvelope(value) ?? createArtifactCompatibilityEnvelope();
+	return (_parseArtifactCompati = parseArtifactCompatibilityEnvelope(value)) !== null && _parseArtifactCompati !== void 0 ? _parseArtifactCompati : createArtifactCompatibilityEnvelope();
 }
 function readAppElementsMetadata(elements) {
 	const routeId = elements[APP_ROUTE_KEY];
@@ -350,7 +355,7 @@ function readAppElementsMetadata(elements) {
 	const layoutIds = parseLayoutIds(elements[APP_LAYOUT_IDS_KEY]);
 	return {
 		artifactCompatibility: readArtifactCompatibilityMetadata(elements[APP_ARTIFACT_COMPATIBILITY_KEY]),
-		interceptionContext: interceptionContext ?? null,
+		interceptionContext: interceptionContext !== null && interceptionContext !== void 0 ? interceptionContext : null,
 		layoutIds,
 		layoutFlags,
 		routeId,
@@ -441,7 +446,7 @@ function toSameOriginPath(url) {
 	try {
 		const parsed = url.startsWith("//") ? new URL(url, window.location.origin) : new URL(url);
 		if (parsed.origin === window.location.origin) return parsed.pathname + parsed.search + parsed.hash;
-	} catch {}
+	} catch (_unused) {}
 	return null;
 }
 /**
@@ -456,7 +461,7 @@ function toSameOriginAppPath(url, basePath) {
 		const parsed = new URL(localPath, "http://vinext.local");
 		if (!hasBasePath(parsed.pathname, basePath)) return null;
 		return stripBasePath(parsed.pathname, basePath) + parsed.search + parsed.hash;
-	} catch {
+	} catch (_unused2) {
 		return localPath;
 	}
 }
@@ -472,13 +477,13 @@ function withBasePath(path, basePath) {
 * Handles: "#hash", "?query", "?query#hash", and relative paths.
 */
 function resolveRelativeHref(href, currentUrl, basePath = "") {
-	const base = currentUrl ?? (typeof window !== "undefined" ? window.location.href : void 0);
+	const base = currentUrl !== null && currentUrl !== void 0 ? currentUrl : typeof window !== "undefined" ? window.location.href : void 0;
 	if (!base) return href;
 	if (href.startsWith("/") || href.startsWith("http://") || href.startsWith("https://") || href.startsWith("//")) return href;
 	try {
 		const resolved = new URL(href, base);
 		return (basePath && resolved.pathname === basePath ? "" : basePath ? stripBasePath(resolved.pathname, basePath) : resolved.pathname) + resolved.search + resolved.hash;
-	} catch {
+	} catch (_unused3) {
 		return href;
 	}
 }
@@ -498,7 +503,7 @@ function isHashOnlyBrowserUrlChange(href, currentHref, basePath = "") {
 		const current = new URL(currentHref);
 		const next = new URL(href, currentHref);
 		return stripBasePath(current.pathname, basePath) === stripBasePath(next.pathname, basePath) && current.search === next.search && next.hash !== "";
-	} catch {
+	} catch (_unused4) {
 		return false;
 	}
 }
@@ -506,7 +511,8 @@ function isHashOnlyBrowserUrlChange(href, currentHref, basePath = "") {
 //#region node_modules/vinext/dist/client/instrumentation-client-state.js
 var clientInstrumentationHooks = null;
 function notifyAppRouterTransitionStart(href, navigationType) {
-	clientInstrumentationHooks?.onRouterTransitionStart?.(href, navigationType);
+	var _clientInstrumentatio;
+	clientInstrumentationHooks === null || clientInstrumentationHooks === void 0 || (_clientInstrumentatio = clientInstrumentationHooks.onRouterTransitionStart) === null || _clientInstrumentatio === void 0 || _clientInstrumentatio.call(clientInstrumentationHooks, href, navigationType);
 }
 //#endregion
 //#region node_modules/vinext/dist/server/app-rsc-render-mode.js
@@ -549,7 +555,7 @@ function encodeBase64Url(bytes) {
 	return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 function normalizeHeaderValue(value) {
-	return value ?? "0";
+	return value !== null && value !== void 0 ? value : "0";
 }
 function normalizeRenderModeHeaderValue(value) {
 	const renderMode = parseAppRscRenderMode(value);
@@ -580,7 +586,7 @@ function isRscCacheBustingSearchPair(pair) {
 	const rawKey = separatorIndex === -1 ? pair : pair.slice(0, separatorIndex);
 	try {
 		return decodeURIComponent(rawKey.replaceAll("+", " ")) === VINEXT_RSC_CACHE_BUSTING_SEARCH_PARAM;
-	} catch {
+	} catch (_unused) {
 		return rawKey === VINEXT_RSC_CACHE_BUSTING_SEARCH_PARAM;
 	}
 }
@@ -595,13 +601,14 @@ function setRscCacheBustingSearchParam(url, hash) {
 	url.search = `?${pairs.join("&")}`;
 }
 function createRscRequestHeaders(options = {}) {
+	var _options$renderMode;
 	const headers = new Headers({
 		Accept: VINEXT_RSC_CONTENT_TYPE,
 		["RSC"]: "1"
 	});
 	if (options.interceptionContext !== void 0 && options.interceptionContext !== null) headers.set(VINEXT_INTERCEPTION_CONTEXT_HEADER, options.interceptionContext);
 	if (options.mountedSlotsHeader !== void 0 && options.mountedSlotsHeader !== null) headers.set(VINEXT_MOUNTED_SLOTS_HEADER, options.mountedSlotsHeader);
-	const renderMode = options.renderMode ?? "navigation";
+	const renderMode = (_options$renderMode = options.renderMode) !== null && _options$renderMode !== void 0 ? _options$renderMode : "navigation";
 	if (renderMode !== "navigation") headers.set(VINEXT_RSC_RENDER_MODE_HEADER, renderMode);
 	return headers;
 }
@@ -683,6 +690,7 @@ function _defineProperty(e, r, t) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/navigation.js
+var _ref;
 /**
 * next/navigation shim
 *
@@ -693,10 +701,11 @@ function _defineProperty(e, r, t) {
 var _LAYOUT_SEGMENT_CTX_KEY = Symbol.for("vinext.layoutSegmentContext");
 var _SERVER_INSERTED_HTML_CTX_KEY = Symbol.for("vinext.serverInsertedHTMLContext");
 function getServerInsertedHTMLContext() {
+	var _globalState$_SERVER_;
 	if (typeof React$1.createContext !== "function") return null;
 	const globalState = globalThis;
 	if (!globalState[_SERVER_INSERTED_HTML_CTX_KEY]) globalState[_SERVER_INSERTED_HTML_CTX_KEY] = React$1.createContext(null);
-	return globalState[_SERVER_INSERTED_HTML_CTX_KEY] ?? null;
+	return (_globalState$_SERVER_ = globalState[_SERVER_INSERTED_HTML_CTX_KEY]) !== null && _globalState$_SERVER_ !== void 0 ? _globalState$_SERVER_ : null;
 }
 var ServerInsertedHTMLContext = getServerInsertedHTMLContext();
 /**
@@ -704,10 +713,11 @@ var ServerInsertedHTMLContext = getServerInsertedHTMLContext();
 * Returns null in the RSC environment (createContext unavailable).
 */
 function getLayoutSegmentContext() {
+	var _globalState$_LAYOUT_;
 	if (typeof React$1.createContext !== "function") return null;
 	const globalState = globalThis;
 	if (!globalState[_LAYOUT_SEGMENT_CTX_KEY]) globalState[_LAYOUT_SEGMENT_CTX_KEY] = React$1.createContext({ children: [] });
-	return globalState[_LAYOUT_SEGMENT_CTX_KEY] ?? null;
+	return (_globalState$_LAYOUT_ = globalState[_LAYOUT_SEGMENT_CTX_KEY]) !== null && _globalState$_LAYOUT_ !== void 0 ? _globalState$_LAYOUT_ : null;
 }
 var GLOBAL_ACCESSORS_KEY = Symbol.for("vinext.navigation.globalAccessors");
 var _GLOBAL_ACCESSORS_KEY = GLOBAL_ACCESSORS_KEY;
@@ -716,8 +726,9 @@ function _getGlobalAccessors() {
 	return globalThis[_GLOBAL_ACCESSORS_KEY];
 }
 function _getClientHydrationContext() {
+	var _globalState$_GLOBAL_;
 	const globalState = globalThis;
-	if (Object.prototype.hasOwnProperty.call(globalState, _GLOBAL_HYDRATION_CONTEXT_KEY)) return globalState[_GLOBAL_HYDRATION_CONTEXT_KEY] ?? null;
+	if (Object.prototype.hasOwnProperty.call(globalState, _GLOBAL_HYDRATION_CONTEXT_KEY)) return (_globalState$_GLOBAL_ = globalState[_GLOBAL_HYDRATION_CONTEXT_KEY]) !== null && _globalState$_GLOBAL_ !== void 0 ? _globalState$_GLOBAL_ : null;
 }
 function _setClientHydrationContext(ctx) {
 	globalThis[_GLOBAL_HYDRATION_CONTEXT_KEY] = ctx;
@@ -769,9 +780,11 @@ function setNavigationContext(ctx) {
 	_setServerContext(ctx);
 }
 var isServer = typeof window === "undefined";
+/** basePath from next.config.js, injected by the plugin at build time */
+var __basePath = (_ref = "") !== null && _ref !== void 0 ? _ref : "";
 function getCurrentInterceptionContext() {
 	if (isServer) return null;
-	return stripBasePath(window.location.pathname, "");
+	return stripBasePath(window.location.pathname, __basePath);
 }
 /** Get or create the shared in-memory RSC prefetch cache on window. */
 function getPrefetchCache() {
@@ -814,9 +827,10 @@ function evictPrefetchCacheIfNeeded() {
 * Consumes the response body and stores it with content-type and URL metadata.
 */
 async function snapshotRscResponse(response) {
+	var _response$headers$get;
 	return {
 		buffer: await response.arrayBuffer(),
-		contentType: response.headers.get("content-type") ?? "text/x-component",
+		contentType: (_response$headers$get = response.headers.get("content-type")) !== null && _response$headers$get !== void 0 ? _response$headers$get : "text/x-component",
 		mountedSlotsHeader: response.headers.get(VINEXT_MOUNTED_SLOTS_HEADER),
 		paramsHeader: response.headers.get(VINEXT_PARAMS_HEADER),
 		url: response.url
@@ -859,17 +873,19 @@ function prefetchRscResponse(rscUrl, fetchPromise, interceptionContext = null, m
 var _CLIENT_NAV_STATE_KEY = Symbol.for("vinext.clientNavigationState");
 var _MOUNTED_SLOTS_HEADER_KEY = Symbol.for("vinext.mountedSlotsHeader");
 function getMountedSlotsHeader() {
+	var _window$_MOUNTED_SLOT;
 	if (isServer) return null;
-	return window[_MOUNTED_SLOTS_HEADER_KEY] ?? null;
+	return (_window$_MOUNTED_SLOT = window[_MOUNTED_SLOTS_HEADER_KEY]) !== null && _window$_MOUNTED_SLOT !== void 0 ? _window$_MOUNTED_SLOT : null;
 }
 function getClientNavigationState() {
+	var _globalState$_CLIENT_;
 	if (isServer) return null;
 	const globalState = window;
-	globalState[_CLIENT_NAV_STATE_KEY] ?? (globalState[_CLIENT_NAV_STATE_KEY] = {
+	(_globalState$_CLIENT_ = globalState[_CLIENT_NAV_STATE_KEY]) !== null && _globalState$_CLIENT_ !== void 0 || (globalState[_CLIENT_NAV_STATE_KEY] = {
 		listeners: /* @__PURE__ */ new Set(),
 		cachedSearch: window.location.search,
 		cachedReadonlySearchParams: new ReadonlyURLSearchParams(window.location.search),
-		cachedPathname: stripBasePath(window.location.pathname, ""),
+		cachedPathname: stripBasePath(window.location.pathname, __basePath),
 		clientParams: {},
 		clientParamsJson: "{}",
 		pendingClientParams: null,
@@ -899,13 +915,14 @@ function notifyNavigationListeners() {
 * be visible until the next commit.
 */
 function getPathnameSnapshot() {
-	return getClientNavigationState()?.cachedPathname ?? "/";
+	var _getClientNavigationS, _getClientNavigationS2;
+	return (_getClientNavigationS = (_getClientNavigationS2 = getClientNavigationState()) === null || _getClientNavigationS2 === void 0 ? void 0 : _getClientNavigationS2.cachedPathname) !== null && _getClientNavigationS !== void 0 ? _getClientNavigationS : "/";
 }
 function syncCommittedUrlStateFromLocation() {
 	const state = getClientNavigationState();
 	if (!state) return false;
 	let changed = false;
-	const pathname = stripBasePath(window.location.pathname, "");
+	const pathname = stripBasePath(window.location.pathname, __basePath);
 	if (pathname !== state.cachedPathname) {
 		state.cachedPathname = pathname;
 		changed = true;
@@ -920,17 +937,18 @@ function syncCommittedUrlStateFromLocation() {
 }
 var _CLIENT_NAV_RENDER_CTX_KEY = Symbol.for("vinext.clientNavigationRenderContext");
 function getClientNavigationRenderContext() {
+	var _globalState$_CLIENT_2;
 	if (typeof React$1.createContext !== "function") return null;
 	const globalState = globalThis;
 	if (!globalState[_CLIENT_NAV_RENDER_CTX_KEY]) globalState[_CLIENT_NAV_RENDER_CTX_KEY] = React$1.createContext(null);
-	return globalState[_CLIENT_NAV_RENDER_CTX_KEY] ?? null;
+	return (_globalState$_CLIENT_2 = globalState[_CLIENT_NAV_RENDER_CTX_KEY]) !== null && _globalState$_CLIENT_2 !== void 0 ? _globalState$_CLIENT_2 : null;
 }
 function useClientNavigationRenderSnapshot() {
 	const ctx = getClientNavigationRenderContext();
 	if (!ctx || typeof React$1.useContext !== "function") return null;
 	try {
 		return React$1.useContext(ctx);
-	} catch {
+	} catch (_unused2) {
 		return null;
 	}
 }
@@ -947,10 +965,14 @@ function subscribeToNavigation(cb) {
 * Server: from request context. Client: from window.location.
 */
 function usePathname() {
-	if (isServer) return _getServerContext()?.pathname ?? "/";
+	var _getServerContext$pat, _getServerContext3, _getClientNavigationS8, _getClientNavigationS9;
+	if (isServer) return (_getServerContext$pat = (_getServerContext3 = _getServerContext()) === null || _getServerContext3 === void 0 ? void 0 : _getServerContext3.pathname) !== null && _getServerContext$pat !== void 0 ? _getServerContext$pat : "/";
 	const renderSnapshot = useClientNavigationRenderSnapshot();
-	const pathname = React$1.useSyncExternalStore(subscribeToNavigation, getPathnameSnapshot, () => _getServerContext()?.pathname ?? "/");
-	if (renderSnapshot && (getClientNavigationState()?.navigationSnapshotActiveCount ?? 0) > 0) return renderSnapshot.pathname;
+	const pathname = React$1.useSyncExternalStore(subscribeToNavigation, getPathnameSnapshot, () => {
+		var _getServerContext$pat2, _getServerContext4;
+		return (_getServerContext$pat2 = (_getServerContext4 = _getServerContext()) === null || _getServerContext4 === void 0 ? void 0 : _getServerContext4.pathname) !== null && _getServerContext$pat2 !== void 0 ? _getServerContext$pat2 : "/";
+	});
+	if (renderSnapshot && ((_getClientNavigationS8 = (_getClientNavigationS9 = getClientNavigationState()) === null || _getClientNavigationS9 === void 0 ? void 0 : _getClientNavigationS9.navigationSnapshotActiveCount) !== null && _getClientNavigationS8 !== void 0 ? _getClientNavigationS8 : 0) > 0) return renderSnapshot.pathname;
 	return pathname;
 }
 /**
@@ -965,7 +987,7 @@ function isExternalUrl(href) {
 function isHashOnlyChange(href) {
 	if (typeof window === "undefined") return false;
 	if (href.startsWith("#")) return true;
-	return isHashOnlyBrowserUrlChange(href, window.location.href, "");
+	return isHashOnlyBrowserUrlChange(href, window.location.href, __basePath);
 }
 /**
 * Scroll to a hash target element, or to the top if no hash.
@@ -1001,7 +1023,7 @@ function commitClientNavigationState(navId, options) {
 	if (isServer) return;
 	const state = getClientNavigationState();
 	if (!state) return;
-	if ((navId !== void 0 || options?.releaseSnapshot === true) && state.navigationSnapshotActiveCount > 0) state.navigationSnapshotActiveCount -= 1;
+	if ((navId !== void 0 || (options === null || options === void 0 ? void 0 : options.releaseSnapshot) === true) && state.navigationSnapshotActiveCount > 0) state.navigationSnapshotActiveCount -= 1;
 	const urlChanged = syncCommittedUrlStateFromLocation();
 	if (state.pendingClientParams !== null && state.pendingClientParamsJson !== null) {
 		state.clientParams = state.pendingClientParams;
@@ -1019,12 +1041,14 @@ function commitClientNavigationState(navId, options) {
 }
 function pushHistoryStateWithoutNotify(data, unused, url) {
 	withSuppressedUrlNotifications(() => {
-		getClientNavigationState()?.originalPushState.call(window.history, data, unused, url);
+		var _getClientNavigationS14;
+		(_getClientNavigationS14 = getClientNavigationState()) === null || _getClientNavigationS14 === void 0 || _getClientNavigationS14.originalPushState.call(window.history, data, unused, url);
 	});
 }
 function replaceHistoryStateWithoutNotify(data, unused, url) {
 	withSuppressedUrlNotifications(() => {
-		getClientNavigationState()?.originalReplaceState.call(window.history, data, unused, url);
+		var _getClientNavigationS15;
+		(_getClientNavigationS15 = getClientNavigationState()) === null || _getClientNavigationS15 === void 0 || _getClientNavigationS15.originalReplaceState.call(window.history, data, unused, url);
 	});
 }
 /**
@@ -1035,8 +1059,9 @@ function replaceHistoryStateWithoutNotify(data, unused, url) {
 * history.replaceState interception (which would cause spurious re-renders).
 */
 function saveScrollPosition() {
+	var _window$history$state;
 	replaceHistoryStateWithoutNotify({
-		...window.history.state ?? {},
+		...(_window$history$state = window.history.state) !== null && _window$history$state !== void 0 ? _window$history$state : {},
 		__vinext_scrollX: window.scrollX,
 		__vinext_scrollY: window.scrollY
 	}, "");
@@ -1060,7 +1085,8 @@ function restoreScrollPosition(state) {
 	if (state && typeof state === "object" && "__vinext_scrollY" in state) {
 		const { __vinext_scrollX: x, __vinext_scrollY: y } = state;
 		Promise.resolve().then(() => {
-			const pending = window.__VINEXT_RSC_PENDING__ ?? null;
+			var _window$__VINEXT_RSC_;
+			const pending = (_window$__VINEXT_RSC_ = window.__VINEXT_RSC_PENDING__) !== null && _window$__VINEXT_RSC_ !== void 0 ? _window$__VINEXT_RSC_ : null;
 			if (pending) pending.then(() => {
 				requestAnimationFrame(() => {
 					window.scrollTo(x, y);
@@ -1078,7 +1104,7 @@ function restoreScrollPosition(state) {
 async function navigateClientSide(href, mode, scroll, programmaticTransition = false) {
 	let normalizedHref = href;
 	if (isExternalUrl(href)) {
-		const localPath = toSameOriginAppPath(href, "");
+		const localPath = toSameOriginAppPath(href, __basePath);
 		if (localPath == null) {
 			if (mode === "replace") window.location.replace(href);
 			else window.location.assign(href);
@@ -1086,7 +1112,7 @@ async function navigateClientSide(href, mode, scroll, programmaticTransition = f
 		}
 		normalizedHref = localPath;
 	}
-	const fullHref = toBrowserNavigationHref(normalizedHref, window.location.href, "");
+	const fullHref = toBrowserNavigationHref(normalizedHref, window.location.href, __basePath);
 	notifyAppRouterTransitionStart(fullHref, mode);
 	if (mode === "push") saveScrollPosition();
 	if (isHashOnlyChange(fullHref)) {
@@ -1123,14 +1149,14 @@ var _appRouter = {
 		assertSafeNavigationUrl(href);
 		if (isServer) return;
 		React$1.startTransition(() => {
-			navigateClientSide(href, "push", options?.scroll !== false, true);
+			navigateClientSide(href, "push", (options === null || options === void 0 ? void 0 : options.scroll) !== false, true);
 		});
 	},
 	replace(href, options) {
 		assertSafeNavigationUrl(href);
 		if (isServer) return;
 		React$1.startTransition(() => {
-			navigateClientSide(href, "replace", options?.scroll !== false, true);
+			navigateClientSide(href, "replace", (options === null || options === void 0 ? void 0 : options.scroll) !== false, true);
 		});
 	},
 	back() {
@@ -1159,11 +1185,11 @@ var _appRouter = {
 		(async () => {
 			let prefetchHref = href;
 			if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("//")) {
-				const localPath = toSameOriginAppPath(href, "");
+				const localPath = toSameOriginAppPath(href, __basePath);
 				if (localPath == null) return;
 				prefetchHref = localPath;
 			}
-			const fullHref = toBrowserNavigationHref(prefetchHref, window.location.href, "");
+			const fullHref = toBrowserNavigationHref(prefetchHref, window.location.href, __basePath);
 			const interceptionContext = getCurrentInterceptionContext();
 			const mountedSlotsHeader = getMountedSlotsHeader();
 			const headers = createRscRequestHeaders({ interceptionContext });
@@ -1228,7 +1254,7 @@ function renderServerInsertedHTML() {
 	for (const cb of callbacks) try {
 		const result = cb();
 		if (result != null) results.push(result);
-	} catch {}
+	} catch (_unused4) {}
 	return results;
 }
 /**
@@ -1329,8 +1355,9 @@ var _g$2 = globalThis;
 *   shims use a dotted namespace such as `"vinext.cache.als"`.
 */
 function getOrCreateAls(key) {
+	var _g$sym;
 	const sym = Symbol.for(key);
-	return _g$2[sym] ?? (_g$2[sym] = new AsyncLocalStorage());
+	return (_g$sym = _g$2[sym]) !== null && _g$sym !== void 0 ? _g$sym : _g$2[sym] = new AsyncLocalStorage();
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/unified-request-context.js
@@ -1338,9 +1365,10 @@ var _REQUEST_CONTEXT_ALS_KEY = Symbol.for("vinext.requestContext.als");
 var _g$1 = globalThis;
 var _als$1 = getOrCreateAls("vinext.unifiedRequestContext.als");
 function _getInheritedExecutionContext() {
+	var _g$_REQUEST_CONTEXT_A, _g$_REQUEST_CONTEXT_A2;
 	const unifiedStore = _als$1.getStore();
 	if (unifiedStore) return unifiedStore.executionContext;
-	return _g$1[_REQUEST_CONTEXT_ALS_KEY]?.getStore() ?? null;
+	return (_g$_REQUEST_CONTEXT_A = (_g$_REQUEST_CONTEXT_A2 = _g$1[_REQUEST_CONTEXT_ALS_KEY]) === null || _g$_REQUEST_CONTEXT_A2 === void 0 ? void 0 : _g$_REQUEST_CONTEXT_A2.getStore()) !== null && _g$_REQUEST_CONTEXT_A !== void 0 ? _g$_REQUEST_CONTEXT_A : null;
 }
 /**
 * Create a fresh `UnifiedRequestContext` with defaults for all fields.
@@ -1396,7 +1424,8 @@ function runWithUnifiedStateMutation(mutate, fn) {
 * detached context still reflects that inherited `executionContext`.
 */
 function getRequestContext() {
-	return _als$1.getStore() ?? createRequestContext();
+	var _als$getStore;
+	return (_als$getStore = _als$1.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : createRequestContext();
 }
 /**
 * Check whether the current execution is inside a `runWithRequestContext()` scope.
@@ -1408,6 +1437,7 @@ function isInsideUnifiedScope() {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/navigation-state.js
+var _g$_FALLBACK_KEY;
 /**
 * Server-only navigation state backed by AsyncLocalStorage.
 *
@@ -1423,13 +1453,14 @@ function isInsideUnifiedScope() {
 var _FALLBACK_KEY = Symbol.for("vinext.navigation.fallback");
 var _g = globalThis;
 var _als = getOrCreateAls("vinext.navigation.als");
-var _fallbackState = _g[_FALLBACK_KEY] ?? (_g[_FALLBACK_KEY] = {
+var _fallbackState = (_g$_FALLBACK_KEY = _g[_FALLBACK_KEY]) !== null && _g$_FALLBACK_KEY !== void 0 ? _g$_FALLBACK_KEY : _g[_FALLBACK_KEY] = {
 	serverContext: null,
 	serverInsertedHTMLCallbacks: []
-});
+};
 function _getState() {
+	var _als$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext();
-	return _als.getStore() ?? _fallbackState;
+	return (_als$getStore = _als.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : _fallbackState;
 }
 function runWithNavigationContext(fn) {
 	if (isInsideUnifiedScope()) return runWithUnifiedStateMutation((uCtx) => {
@@ -1528,9 +1559,9 @@ function Slot({ id, children, parallelSlots }) {
 	const element = elements[id];
 	if (element === UNMATCHED_SLOT) notFound();
 	return /* @__PURE__ */ jsx(ParallelSlotsContext.Provider, {
-		value: parallelSlots ?? null,
+		value: parallelSlots !== null && parallelSlots !== void 0 ? parallelSlots : null,
 		children: /* @__PURE__ */ jsx(ChildrenContext.Provider, {
-			value: children ?? null,
+			value: children !== null && children !== void 0 ? children : null,
 			children: element
 		})
 	});
@@ -1539,7 +1570,8 @@ function Children() {
 	return React$1.useContext(ChildrenContext);
 }
 function ParallelSlot({ name }) {
-	return React$1.useContext(ParallelSlotsContext)?.[name] ?? null;
+	var _React$1$useContext$n, _React$1$useContext;
+	return (_React$1$useContext$n = (_React$1$useContext = React$1.useContext(ParallelSlotsContext)) === null || _React$1$useContext === void 0 ? void 0 : _React$1$useContext[name]) !== null && _React$1$useContext$n !== void 0 ? _React$1$useContext$n : null;
 }
 //#endregion
 //#region node_modules/vinext/dist/server/app-browser-hydration.js
@@ -1557,7 +1589,8 @@ function createClientReferencePreloader(options) {
 		const existing = referencePreloadPromises.get(id);
 		if (existing) return existing;
 		const preloadPromise = clientRequire(id).catch((error) => {
-			options.onPreloadError?.(id, error);
+			var _options$onPreloadErr;
+			(_options$onPreloadErr = options.onPreloadError) === null || _options$onPreloadErr === void 0 || _options$onPreloadErr.call(options, id, error);
 		}).then(() => {
 			preloadedReferences.add(id);
 		}).finally(() => {
@@ -1743,7 +1776,7 @@ function createTickBufferedTransform(rscEmbed, injectHTML = "") {
 					flushBuffered(controller);
 					const rscScripts = rscEmbed.flush();
 					if (rscScripts) controller.enqueue(encoder.encode(rscScripts));
-				} catch {}
+				} catch (_unused) {}
 				timeoutId = null;
 			}, 0);
 		},
@@ -1768,8 +1801,9 @@ function safeFunctionCast(f) {
 	return f;
 }
 function memoize(f, options) {
-	const keyFn = options?.keyFn ?? ((...args) => args[0]);
-	const cache = options?.cache ?? /* @__PURE__ */ new Map();
+	var _options$keyFn, _options$cache;
+	const keyFn = (_options$keyFn = options === null || options === void 0 ? void 0 : options.keyFn) !== null && _options$keyFn !== void 0 ? _options$keyFn : ((...args) => args[0]);
+	const cache = (_options$cache = options === null || options === void 0 ? void 0 : options.cache) !== null && _options$cache !== void 0 ? _options$cache : /* @__PURE__ */ new Map();
 	return safeFunctionCast(function(...args) {
 		const key = keyFn(...args);
 		const value = cache.get(key);
@@ -3142,7 +3176,7 @@ var client_references_default = {
 		} };
 	},
 	"593f344dc510": async () => {
-		const m = await import("./assets/error-boundary-CmFZ9YgK.js");
+		const m = await import("./assets/error-boundary-ALkiZBsX.js");
 		return {
 			get "ErrorBoundary"() {
 				return m["ErrorBoundary"];
@@ -3162,7 +3196,7 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-DMGDO_xV.js");
+		const m = await import("./assets/page-DzJttTl4.js");
 		return {
 			get "AdventureApp"() {
 				return m["AdventureApp"];
@@ -3173,7 +3207,7 @@ var client_references_default = {
 		};
 	},
 	"724dcbd470a5": async () => {
-		const m = await import("./assets/page-BkMcS5HK.js");
+		const m = await import("./assets/page-DD3xneat.js");
 		return { get "default"() {
 			return m["default"];
 		} };
@@ -3200,14 +3234,15 @@ initialize();
 function initialize() {
 	setRequireModule({ load: async (id) => {
 		{
+			var _assetsManifest$clien;
 			const import_ = client_references_default[id];
 			if (!import_) throw new Error(`client reference not found '${id}'`);
-			const deps = __vite_rsc_assets_manifest.clientReferenceDeps[id] ?? {
+			const deps = (_assetsManifest$clien = __vite_rsc_assets_manifest.clientReferenceDeps[id]) !== null && _assetsManifest$clien !== void 0 ? _assetsManifest$clien : {
 				js: [],
 				css: []
 			};
 			preloadDeps(deps);
-			onClientReference?.({
+			onClientReference === null || onClientReference === void 0 || onClientReference({
 				id,
 				deps
 			});
@@ -3219,7 +3254,7 @@ function wrapResourceProxy(mod, id, deps) {
 	return new Proxy(mod, { get(target, p, receiver) {
 		if (p in mod) {
 			preloadDeps(deps);
-			onClientReference?.({
+			onClientReference === null || onClientReference === void 0 || onClientReference({
 				id,
 				deps
 			});
@@ -3262,29 +3297,31 @@ function renderInsertedHtml(insertedElements) {
 	let insertedHTML = "";
 	for (const element of insertedElements) try {
 		insertedHTML += renderToStaticMarkup(createElement(Fragment, null, element));
-	} catch {}
+	} catch (_unused) {}
 	return insertedHTML;
 }
 function renderFontHtml(fontData, nonce) {
+	var _fontData$links, _fontData$preloads;
 	if (!fontData) return "";
 	let fontHTML = "";
 	const nonceAttr = createNonceAttribute(nonce);
-	for (const url of fontData.links ?? []) fontHTML += `<link rel="stylesheet"${nonceAttr} href="${escapeHtmlAttr(url)}" />\n`;
-	for (const preload of fontData.preloads ?? []) fontHTML += `<link rel="preload"${nonceAttr} href="${escapeHtmlAttr(preload.href)}" as="font" type="${escapeHtmlAttr(preload.type)}" crossorigin />\n`;
+	for (const url of (_fontData$links = fontData.links) !== null && _fontData$links !== void 0 ? _fontData$links : []) fontHTML += `<link rel="stylesheet"${nonceAttr} href="${escapeHtmlAttr(url)}" />\n`;
+	for (const preload of (_fontData$preloads = fontData.preloads) !== null && _fontData$preloads !== void 0 ? _fontData$preloads : []) fontHTML += `<link rel="preload"${nonceAttr} href="${escapeHtmlAttr(preload.href)}" as="font" type="${escapeHtmlAttr(preload.type)}" crossorigin />\n`;
 	if (fontData.styles && fontData.styles.length > 0) fontHTML += `<style data-vinext-fonts${nonceAttr}>${fontData.styles.join("\n")}</style>\n`;
 	return fontHTML;
 }
 function extractModulePreloadHtml(bootstrapScriptContent, nonce) {
 	if (!bootstrapScriptContent) return "";
 	const match = bootstrapScriptContent.match(/import\("([^"]+)"\)/);
-	if (!match?.[1]) return "";
+	if (!(match === null || match === void 0 ? void 0 : match[1])) return "";
 	return `<link rel="modulepreload"${createNonceAttribute(nonce)} href="${escapeHtmlAttr(match[1])}" />\n`;
 }
 function buildHeadInjectionHtml(navContext, bootstrapScriptContent, formState, insertedHTML, fontHTML, scriptNonce) {
-	const paramsScript = createInlineScriptTag("self.__VINEXT_RSC_PARAMS__=" + safeJsonStringify(navContext?.params ?? {}), scriptNonce);
+	var _navContext$params, _navContext$pathname;
+	const paramsScript = createInlineScriptTag("self.__VINEXT_RSC_PARAMS__=" + safeJsonStringify((_navContext$params = navContext === null || navContext === void 0 ? void 0 : navContext.params) !== null && _navContext$params !== void 0 ? _navContext$params : {}), scriptNonce);
 	const navScript = createInlineScriptTag("self.__VINEXT_RSC_NAV__=" + safeJsonStringify({
-		pathname: navContext?.pathname ?? "/",
-		searchParams: navContext?.searchParams ? [...navContext.searchParams.entries()] : []
+		pathname: (_navContext$pathname = navContext === null || navContext === void 0 ? void 0 : navContext.pathname) !== null && _navContext$pathname !== void 0 ? _navContext$pathname : "/",
+		searchParams: (navContext === null || navContext === void 0 ? void 0 : navContext.searchParams) ? [...navContext.searchParams.entries()] : []
 	}), scriptNonce);
 	const formStateScript = formState === null ? "" : createInlineScriptTag("self[" + safeJsonStringify(RSC_FORM_STATE_GLOBAL) + "]=" + safeJsonStringify(formState), scriptNonce);
 	return paramsScript + navScript + formStateScript + extractModulePreloadHtml(bootstrapScriptContent, scriptNonce) + insertedHTML + fontHTML;
@@ -3299,16 +3336,17 @@ async function handleSsr(rscStream, navContext, fontData, options) {
 			clearServerInsertedHTML();
 		};
 		try {
+			var _options$formState;
 			let ssrStream;
 			let rscEmbed;
-			if (options?.sideStream) {
+			if (options === null || options === void 0 ? void 0 : options.sideStream) {
 				ssrStream = rscStream;
-				rscEmbed = createRscEmbedTransform(options.sideStream, options?.scriptNonce);
+				rscEmbed = createRscEmbedTransform(options.sideStream, options === null || options === void 0 ? void 0 : options.scriptNonce);
 				if (options.capturedRscDataRef) options.capturedRscDataRef.value = rscEmbed.getRawBuffer();
 			} else {
 				const [s1, s2] = rscStream.tee();
 				ssrStream = s1;
-				rscEmbed = createRscEmbedTransform(s2, options?.scriptNonce);
+				rscEmbed = createRscEmbedTransform(s2, options === null || options === void 0 ? void 0 : options.scriptNonce);
 			}
 			let flightRoot = null;
 			function VinextFlightRoot() {
@@ -3319,25 +3357,27 @@ async function handleSsr(rscStream, navContext, fontData, options) {
 				return createElement(ElementsContext.Provider, { value: elements }, createElement(Slot, { id: metadata.routeId }));
 			}
 			const root = createElement(VinextFlightRoot);
-			const ssrRoot = withScriptNonce(ServerInsertedHTMLContext ? createElement(ServerInsertedHTMLContext.Provider, { value: useServerInsertedHTML }, root) : root, options?.scriptNonce);
+			const ssrRoot = withScriptNonce(ServerInsertedHTMLContext ? createElement(ServerInsertedHTMLContext.Provider, { value: useServerInsertedHTML }, root) : root, options === null || options === void 0 ? void 0 : options.scriptNonce);
 			const bootstrapScriptContent = await Promise.resolve(__vite_rsc_assets_manifest.bootstrapScriptContent);
 			const htmlStream = await renderToReadableStream(ssrRoot, {
 				bootstrapScriptContent,
-				formState: options?.formState ?? null,
-				nonce: options?.scriptNonce,
+				formState: (_options$formState = options === null || options === void 0 ? void 0 : options.formState) !== null && _options$formState !== void 0 ? _options$formState : null,
+				nonce: options === null || options === void 0 ? void 0 : options.scriptNonce,
 				onError(error) {
+					var _error$stack;
 					if (error && typeof error === "object" && "digest" in error) return String(error.digest);
-					if (error) return ssrErrorDigest(getErrorMessage(error) + (error instanceof Error ? error.stack ?? "" : ""));
+					if (error) return ssrErrorDigest(getErrorMessage(error) + (error instanceof Error ? (_error$stack = error.stack) !== null && _error$stack !== void 0 ? _error$stack : "" : ""));
 				}
 			});
-			if (options?.waitForAllReady === true) await htmlStream.allReady;
-			const fontHTML = renderFontHtml(fontData, options?.scriptNonce);
+			if ((options === null || options === void 0 ? void 0 : options.waitForAllReady) === true) await htmlStream.allReady;
+			const fontHTML = renderFontHtml(fontData, options === null || options === void 0 ? void 0 : options.scriptNonce);
 			let didInjectHeadHTML = false;
 			const getInsertedHTML = () => {
+				var _options$formState2;
 				const insertedHTML = renderInsertedHtml(renderServerInsertedHTML());
 				if (didInjectHeadHTML) return insertedHTML;
 				didInjectHeadHTML = true;
-				return buildHeadInjectionHtml(navContext, bootstrapScriptContent, options?.formState ?? null, insertedHTML, fontHTML, options?.scriptNonce);
+				return buildHeadInjectionHtml(navContext, bootstrapScriptContent, (_options$formState2 = options === null || options === void 0 ? void 0 : options.formState) !== null && _options$formState2 !== void 0 ? _options$formState2 : null, insertedHTML, fontHTML, options === null || options === void 0 ? void 0 : options.scriptNonce);
 			};
 			return deferUntilStreamConsumed(htmlStream.pipeThrough(createTickBufferedTransform(rscEmbed, getInsertedHTML)), cleanup);
 		} catch (error) {

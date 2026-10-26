@@ -76,7 +76,7 @@ function usePlayViewPreferences() {
 	useEffect(() => {
 		try {
 			setView(normalizePlayView(JSON.parse(localStorage.getItem(key) || "null")));
-		} catch {}
+		} catch (_unused) {}
 	}, []);
 	function update(patch) {
 		setView((previous) => {
@@ -86,7 +86,7 @@ function usePlayViewPreferences() {
 			});
 			try {
 				localStorage.setItem(key, JSON.stringify(next));
-			} catch {}
+			} catch (_unused2) {}
 			return next;
 		});
 	}
@@ -102,7 +102,8 @@ var playTabs = [
 	["journal", "Журнал"]
 ];
 function orderedPlayTabs(c) {
-	const order = c.adventure?.mobileLayout?.tabOrder || [];
+	var _c$adventure;
+	const order = ((_c$adventure = c.adventure) === null || _c$adventure === void 0 || (_c$adventure = _c$adventure.mobileLayout) === null || _c$adventure === void 0 ? void 0 : _c$adventure.tabOrder) || [];
 	return [...playTabs].sort((a, b) => (order.includes(a[0]) ? order.indexOf(a[0]) : order.length + playTabs.findIndex((t) => t[0] === a[0])) - (order.includes(b[0]) ? order.indexOf(b[0]) : order.length + playTabs.findIndex((t) => t[0] === b[0])));
 }
 function PlayInterfaceSettings({ character: c, onChange, view, onViewChange }) {
@@ -235,32 +236,35 @@ function PlayInterfaceSettings({ character: c, onChange, view, onViewChange }) {
 			}),
 			/* @__PURE__ */ jsx("div", {
 				className: "play-tab-settings",
-				children: rows.map(([id, label], index) => /* @__PURE__ */ jsxs("div", {
-					className: "play-row",
-					children: [
-						/* @__PURE__ */ jsxs("label", {
-							className: "play-check",
-							children: [/* @__PURE__ */ jsx("input", {
-								type: "checkbox",
-								checked: !layout.hiddenTabs?.includes(id),
-								disabled: id === "actions",
-								onChange: (e) => update({ hiddenTabs: e.target.checked ? (layout.hiddenTabs || []).filter((t) => t !== id) : [...layout.hiddenTabs || [], id] })
-							}), label]
-						}),
-						/* @__PURE__ */ jsx("button", {
-							disabled: index === 0,
-							"aria-label": `Переместить выше: ${label}`,
-							onClick: () => move(id, -1),
-							children: "↑"
-						}),
-						/* @__PURE__ */ jsx("button", {
-							disabled: index === rows.length - 1,
-							"aria-label": `Переместить ниже: ${label}`,
-							onClick: () => move(id, 1),
-							children: "↓"
-						})
-					]
-				}, id))
+				children: rows.map(([id, label], index) => {
+					var _layout$hiddenTabs;
+					return /* @__PURE__ */ jsxs("div", {
+						className: "play-row",
+						children: [
+							/* @__PURE__ */ jsxs("label", {
+								className: "play-check",
+								children: [/* @__PURE__ */ jsx("input", {
+									type: "checkbox",
+									checked: !((_layout$hiddenTabs = layout.hiddenTabs) === null || _layout$hiddenTabs === void 0 ? void 0 : _layout$hiddenTabs.includes(id)),
+									disabled: id === "actions",
+									onChange: (e) => update({ hiddenTabs: e.target.checked ? (layout.hiddenTabs || []).filter((t) => t !== id) : [...layout.hiddenTabs || [], id] })
+								}), label]
+							}),
+							/* @__PURE__ */ jsx("button", {
+								disabled: index === 0,
+								"aria-label": `Переместить выше: ${label}`,
+								onClick: () => move(id, -1),
+								children: "↑"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								disabled: index === rows.length - 1,
+								"aria-label": `Переместить ниже: ${label}`,
+								onClick: () => move(id, 1),
+								children: "↓"
+							})
+						]
+					}, id);
+				})
 			}),
 			/* @__PURE__ */ jsx("button", {
 				onClick: () => {
@@ -1410,19 +1414,22 @@ var B = (skills, tools, languageChoices, equipment, name, description) => ({
 	}
 });
 var normaliseSkill = (skill) => skill === "Восприятие" ? "Внимательность" : skill;
-var documentRules = Object.fromEntries(documentBackgrounds.map((background) => [background.id, {
-	skills: background.skills.map(normaliseSkill),
-	skillChoice: background.skillChoice || void 0,
-	tools: background.tools,
-	toolChoice: background.toolChoice || void 0,
-	languageChoices: background.languageChoices,
-	languageNote: background.languageNote || void 0,
-	equipment: [],
-	feature: {
-		name: background.feature.match(/«([^»]+)»/)?.[1] || "Особенность предыстории",
-		description: background.feature
-	}
-}]));
+var documentRules = Object.fromEntries(documentBackgrounds.map((background) => {
+	var _background$feature$m;
+	return [background.id, {
+		skills: background.skills.map(normaliseSkill),
+		skillChoice: background.skillChoice || void 0,
+		tools: background.tools,
+		toolChoice: background.toolChoice || void 0,
+		languageChoices: background.languageChoices,
+		languageNote: background.languageNote || void 0,
+		equipment: [],
+		feature: {
+			name: ((_background$feature$m = background.feature.match(/«([^»]+)»/)) === null || _background$feature$m === void 0 ? void 0 : _background$feature$m[1]) || "Особенность предыстории",
+			description: background.feature
+		}
+	}];
+}));
 var backgroundRules = {
 	acolyte: B(["Проницательность", "Религия"], [], 2, [
 		"Священный символ",
@@ -1514,7 +1521,7 @@ var backgroundRules = {
 	], "Городские тайны", "Вы знаете тайные проходы и ритм городских улиц. Вне боя вы проводите себя и спутников между двумя точками города вдвое быстрее обычного.")
 };
 function backgroundRule(id, fallback) {
-	return backgroundRules[id] || documentRules[id] || B((fallback?.tags || []).filter((tag) => !tag.includes("списка") && !tag.startsWith("один ") && !tag.startsWith("по ")), [], 0, [], "Особенность предыстории", fallback?.description || "Согласуйте особенность и снаряжение этой предыстории с Мастером.");
+	return backgroundRules[id] || documentRules[id] || B(((fallback === null || fallback === void 0 ? void 0 : fallback.tags) || []).filter((tag) => !tag.includes("списка") && !tag.startsWith("один ") && !tag.startsWith("по ")), [], 0, [], "Особенность предыстории", (fallback === null || fallback === void 0 ? void 0 : fallback.description) || "Согласуйте особенность и снаряжение этой предыстории с Мастером.");
 }
 //#endregion
 //#region app/equipment.ts
@@ -1763,7 +1770,11 @@ function defaultEquipmentSelections(classId, homebrew = []) {
 	}));
 }
 function equipmentComplete(character) {
-	return equipmentRule(character.className, character.homebrew?.entities || []).groups.every((group) => (character.equipmentSelections?.[group.key] || []).length === group.count);
+	var _character$homebrew;
+	return equipmentRule(character.className, ((_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.entities) || []).groups.every((group) => {
+		var _character$equipmentS;
+		return (((_character$equipmentS = character.equipmentSelections) === null || _character$equipmentS === void 0 ? void 0 : _character$equipmentS[group.key]) || []).length === group.count;
+	});
 }
 var finesseWeapons = new Set([
 	"dagger",
@@ -1854,7 +1865,8 @@ function conditionalProficiencyPenalty(classId, subclass, option) {
 	return 0;
 }
 function optionScore(classId, option, abilities, context) {
-	const styles = new Set(context.classChoices?.["fighting-style"] || []);
+	var _context$classChoices;
+	const styles = new Set(((_context$classChoices = context.classChoices) === null || _context$classChoices === void 0 ? void 0 : _context$classChoices["fighting-style"]) || []);
 	const strength = modifier$3(abilities.str);
 	const dexterity = modifier$3(abilities.dex);
 	const proficiencyPenalty = conditionalProficiencyPenalty(classId, context.subclass || "", option);
@@ -1865,8 +1877,9 @@ function optionScore(classId, option, abilities, context) {
 		return 90 + (styles.has("protection") || styles.has("dueling") ? 18 : 0);
 	}
 	if (heavyWeapons.has(option.id)) {
+		var _context$feats;
 		if (abilities.str < 13) return -500;
-		const greatWeaponMaster = context.feats?.includes("great-weapon-master");
+		const greatWeaponMaster = (_context$feats = context.feats) === null || _context$feats === void 0 ? void 0 : _context$feats.includes("great-weapon-master");
 		const highestDamageHeavy = option.id === "greatsword" || option.id === "maul";
 		return 55 + strength * 12 + (styles.has("great-weapon") ? 24 : 0) + (greatWeaponMaster && highestDamageHeavy ? 80 : 0) + (option.recommended ? 1 : 0);
 	}
@@ -1876,11 +1889,12 @@ function optionScore(classId, option, abilities, context) {
 	return option.recommended ? 20 : 10;
 }
 function recommendedForGroup(classId, group, abilities, context) {
+	var _context$classChoices2, _context$feats2;
 	const ranked = [...group.options].sort((left, right) => optionScore(classId, right, abilities, context) - optionScore(classId, left, abilities, context));
 	if (group.count !== 2 || !group.options.some((option) => option.id === "shield")) return ranked.slice(0, group.count);
-	const styles = new Set(context.classChoices?.["fighting-style"] || []);
+	const styles = new Set(((_context$classChoices2 = context.classChoices) === null || _context$classChoices2 === void 0 ? void 0 : _context$classChoices2["fighting-style"]) || []);
 	if (styles.has("great-weapon") && abilities.str >= 13) return ranked.filter((option) => option.id !== "shield").slice(0, 2);
-	if (context.feats?.includes("great-weapon-master") && abilities.str >= 13) {
+	if (((_context$feats2 = context.feats) === null || _context$feats2 === void 0 ? void 0 : _context$feats2.includes("great-weapon-master")) && abilities.str >= 13) {
 		const best = ranked.filter((option) => option.id === "greatsword" || option.id === "maul");
 		if (best.length) return best.slice(0, group.count);
 	}
@@ -1899,9 +1913,16 @@ function equipmentOptionAdvice(option, abilities) {
 	return "";
 }
 function selectedEquipment(character) {
-	const rule = equipmentRule(character.className, character.homebrew?.entities || []);
-	const chosen = rule.groups.flatMap((group) => (character.equipmentSelections?.[group.key] || []).flatMap((id) => group.options.find((option) => option.id === id)?.items || []));
-	const backgroundKit = (character.homebrew?.entities || []).find((entity) => entity.id === character.background && entity.type === "background")?.equipment || [];
+	var _character$homebrew2, _character$homebrew3, _custom$find;
+	const rule = equipmentRule(character.className, ((_character$homebrew2 = character.homebrew) === null || _character$homebrew2 === void 0 ? void 0 : _character$homebrew2.entities) || []);
+	const chosen = rule.groups.flatMap((group) => {
+		var _character$equipmentS2;
+		return (((_character$equipmentS2 = character.equipmentSelections) === null || _character$equipmentS2 === void 0 ? void 0 : _character$equipmentS2[group.key]) || []).flatMap((id) => {
+			var _group$options$find;
+			return ((_group$options$find = group.options.find((option) => option.id === id)) === null || _group$options$find === void 0 ? void 0 : _group$options$find.items) || [];
+		});
+	});
+	const backgroundKit = ((_custom$find = (((_character$homebrew3 = character.homebrew) === null || _character$homebrew3 === void 0 ? void 0 : _character$homebrew3.entities) || []).find((entity) => entity.id === character.background && entity.type === "background")) === null || _custom$find === void 0 ? void 0 : _custom$find.equipment) || [];
 	return [
 		...rule.fixed,
 		...chosen,
@@ -13398,8 +13419,9 @@ var shamanSpellFeatureIds = new Set([
 	"hb:shaman:ability:wild-heart-spells"
 ]);
 function upgradeKnownHomebrew(element) {
+	var _element$features;
 	if (!element.id.startsWith("hb:shaman:")) return element;
-	const features = element.features?.map((feature) => ({
+	const features = (_element$features = element.features) === null || _element$features === void 0 ? void 0 : _element$features.map((feature) => ({
 		...feature,
 		...shamanOrganizationalFeatureIds.has(feature.id) ? { showOnSheet: false } : {},
 		description: shamanSpellFeatureIds.has(feature.id) ? feature.description.replace("Всегда известны и не считаются в лимит:", "Всегда подготовлены и не занимают лимит:") : feature.description
@@ -13417,7 +13439,7 @@ function upgradeKnownHomebrew(element) {
 }
 function normalizeHomebrewLibrary(value) {
 	const types = new Set(Object.keys(homebrewTypeLabels));
-	const normalized = (Array.isArray(value?.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => upgradeKnownHomebrew({
+	const normalized = (Array.isArray(value === null || value === void 0 ? void 0 : value.elements) ? value.elements : []).filter((e) => e && typeof e.id === "string" && types.has(e.type) && typeof e.name === "string" && typeof e.description === "string").map((e) => upgradeKnownHomebrew({
 		...e,
 		schemaVersion: 2,
 		uid: e.uid || e.id,
@@ -13435,7 +13457,8 @@ function normalizeHomebrewLibrary(value) {
 	};
 }
 function newHomebrew(type, name = "") {
-	const uid = globalThis.crypto?.randomUUID?.() || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+	var _globalThis$crypto, _globalThis$crypto$ra;
+	const uid = ((_globalThis$crypto = globalThis.crypto) === null || _globalThis$crypto === void 0 || (_globalThis$crypto$ra = _globalThis$crypto.randomUUID) === null || _globalThis$crypto$ra === void 0 ? void 0 : _globalThis$crypto$ra.call(_globalThis$crypto)) || `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 	return {
 		schemaVersion: 2,
 		uid,
@@ -13574,10 +13597,14 @@ function evaluateFormula(input, context) {
 		if (tokens.length > 200) throw Error("Слишком сложная формула");
 	}
 	let pos = 0, depth = 0;
-	const peek = () => tokens[pos]?.value;
+	const peek = () => {
+		var _tokens$pos;
+		return (_tokens$pos = tokens[pos]) === null || _tokens$pos === void 0 ? void 0 : _tokens$pos.value;
+	};
 	const take = () => tokens[pos++];
 	const expect = (v) => {
-		if (take()?.value !== v) throw Error(`Ожидалось ${v}`);
+		var _take;
+		if (((_take = take()) === null || _take === void 0 ? void 0 : _take.value) !== v) throw Error(`Ожидалось ${v}`);
 	};
 	const ops = {
 		"||": 1,
@@ -13631,18 +13658,20 @@ function evaluateFormula(input, context) {
 					"hasFeature",
 					"hasArmor"
 				].includes(t.value)) {
+					var _context$classLevel, _context$predicate;
 					const arg = take();
 					if (!arg || !(arg.kind === "string" || arg.value === "@source")) throw Error("Нужен ID в кавычках");
 					const id = arg.value === "@source" ? context.source || "" : arg.value.slice(1, -1);
 					expect(")");
-					if (t.value === "@classLevel") return context.classLevel?.(id) || 0;
+					if (t.value === "@classLevel") return ((_context$classLevel = context.classLevel) === null || _context$classLevel === void 0 ? void 0 : _context$classLevel.call(context, id)) || 0;
 					if (t.value === "@resource") {
+						var _take2, _context$resource;
 						expect(".");
-						const field = take()?.value || "";
+						const field = ((_take2 = take()) === null || _take2 === void 0 ? void 0 : _take2.value) || "";
 						if (!["max", "current"].includes(field)) throw Error("Ожидалось current или max");
-						return context.resource?.(id, field) || 0;
+						return ((_context$resource = context.resource) === null || _context$resource === void 0 ? void 0 : _context$resource.call(context, id, field)) || 0;
 					}
-					return Number(context.predicate?.(t.value, id) || false);
+					return Number(((_context$predicate = context.predicate) === null || _context$predicate === void 0 ? void 0 : _context$predicate.call(context, t.value, id)) || false);
 				}
 				const args = [];
 				if (peek() !== ")") {
@@ -13752,10 +13781,12 @@ function getClassProgress(character, classId) {
 	return classProgresses(character).find((entry) => entry.classId === classId);
 }
 function getClassLevel(character, classId) {
-	return getClassProgress(character, classId)?.level || 0;
+	var _getClassProgress;
+	return ((_getClassProgress = getClassProgress(character, classId)) === null || _getClassProgress === void 0 ? void 0 : _getClassProgress.level) || 0;
 }
 function getStartingClassId(character) {
-	return character.startingClassId || classProgresses(character)[0]?.classId || character.className;
+	var _classProgresses$;
+	return character.startingClassId || ((_classProgresses$ = classProgresses(character)[0]) === null || _classProgresses$ === void 0 ? void 0 : _classProgresses$.classId) || character.className;
 }
 function orderedCharacterClasses(character) {
 	const starting = getStartingClassId(character);
@@ -13794,8 +13825,9 @@ function migratedChoiceValues(character, classId, startingClassId, existing) {
 	return choices;
 }
 function migrateMulticlassCharacter(character) {
+	var _rawClasses$;
 	const rawClasses = orderedCharacterClasses(character);
-	const startingClassId = character.startingClassId || rawClasses[0]?.classId || character.className;
+	const startingClassId = character.startingClassId || ((_rawClasses$ = rawClasses[0]) === null || _rawClasses$ === void 0 ? void 0 : _rawClasses$.classId) || character.className;
 	const classes = rawClasses.map((entry) => ({
 		...entry,
 		subclassId: entry.subclassId || (entry.classId === startingClassId ? character.subclass || "" : ""),
@@ -13815,8 +13847,8 @@ function migrateMulticlassCharacter(character) {
 		startingClassId,
 		classes,
 		levelHistory,
-		className: starting?.classId || character.className,
-		subclass: starting?.subclassId || character.subclass,
+		className: (starting === null || starting === void 0 ? void 0 : starting.classId) || character.className,
+		subclass: (starting === null || starting === void 0 ? void 0 : starting.subclassId) || character.subclass,
 		level: totalLevel,
 		hitDiceSpentByClass: character.hitDiceSpentByClass || (starting ? { [starting.classId]: character.hitDiceSpent || 0 } : {})
 	};
@@ -13850,6 +13882,7 @@ var prerequisites = {
 	artificer: ["int"]
 };
 function singleClassRequirement(character, classId) {
+	var _character$homebrew;
 	const labels = {
 		str: "Сила",
 		dex: "Ловкость",
@@ -13858,10 +13891,11 @@ function singleClassRequirement(character, classId) {
 		wis: "Мудрость",
 		cha: "Харизма"
 	};
-	const custom = character.homebrew?.entities.find((entity) => entity.id === classId && entity.type === "class");
+	const custom = (_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.entities.find((entity) => entity.id === classId && entity.type === "class");
 	if (custom) {
-		const requirements = custom.multiclass?.requirements || [];
-		const mode = custom.multiclass?.requirementMode || "all";
+		var _custom$multiclass, _custom$multiclass2;
+		const requirements = ((_custom$multiclass = custom.multiclass) === null || _custom$multiclass === void 0 ? void 0 : _custom$multiclass.requirements) || [];
+		const mode = ((_custom$multiclass2 = custom.multiclass) === null || _custom$multiclass2 === void 0 ? void 0 : _custom$multiclass2.requirementMode) || "all";
 		const checks = requirements.map((requirement) => ({
 			...requirement,
 			passed: character.abilities[requirement.ability] >= requirement.min
@@ -13892,7 +13926,10 @@ function multiclassRequirement(character, classId) {
 	return {
 		...target,
 		passed: target.passed && !existing.length,
-		missing: [...target.missing, ...existing.flatMap((entry) => entry.result.missing.map((message) => `${character.homebrew?.entities.find((entity) => entity.id === entry.id)?.name || entry.id}: ${message}`))]
+		missing: [...target.missing, ...existing.flatMap((entry) => entry.result.missing.map((message) => {
+			var _character$homebrew2;
+			return `${((_character$homebrew2 = character.homebrew) === null || _character$homebrew2 === void 0 || (_character$homebrew2 = _character$homebrew2.entities.find((entity) => entity.id === entry.id)) === null || _character$homebrew2 === void 0 ? void 0 : _character$homebrew2.name) || entry.id}: ${message}`;
+		}))]
 	};
 }
 var fullCasterSlots$1 = [
@@ -14037,11 +14074,12 @@ var fullCasterSlots$1 = [
 	]
 ];
 function spellcastingContribution(character, entry) {
+	var _character$homebrew3;
 	const level = entry.level;
-	const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
-	if (custom?.mode === "full") return level;
-	if (custom?.mode === "half") return Math.floor(level / 2);
-	if (custom?.mode === "third") return Math.floor(level / 3);
+	const custom = (_character$homebrew3 = character.homebrew) === null || _character$homebrew3 === void 0 || (_character$homebrew3 = _character$homebrew3.entities.find((e) => e.id === entry.classId && e.type === "class")) === null || _character$homebrew3 === void 0 ? void 0 : _character$homebrew3.spellcasting;
+	if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "full") return level;
+	if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "half") return Math.floor(level / 2);
+	if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "third") return Math.floor(level / 3);
 	if ([
 		"bard",
 		"cleric",
@@ -14059,22 +14097,30 @@ function multiclassCasterLevel(character) {
 	return orderedCharacterClasses(character).reduce((sum, entry) => sum + spellcastingContribution(character, entry), 0);
 }
 function resolveSpellSlots(character) {
+	var _customPools$0$castin;
 	const entries = orderedCharacterClasses(character);
-	const customPools = entries.map((entry) => ({
-		entry,
-		casting: character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting
-	})).filter((x) => x.casting?.mode === "custom");
-	if (customPools.length === 1 && entries.every((entry) => entry.classId === customPools[0].entry.classId || spellcastingContribution(character, entry) === 0)) return customPools[0].casting?.slots?.[String(customPools[0].entry.level)] || [];
+	const customPools = entries.map((entry) => {
+		var _character$homebrew4;
+		return {
+			entry,
+			casting: (_character$homebrew4 = character.homebrew) === null || _character$homebrew4 === void 0 || (_character$homebrew4 = _character$homebrew4.entities.find((e) => e.id === entry.classId && e.type === "class")) === null || _character$homebrew4 === void 0 ? void 0 : _character$homebrew4.spellcasting
+		};
+	}).filter((x) => {
+		var _x$casting;
+		return ((_x$casting = x.casting) === null || _x$casting === void 0 ? void 0 : _x$casting.mode) === "custom";
+	});
+	if (customPools.length === 1 && entries.every((entry) => entry.classId === customPools[0].entry.classId || spellcastingContribution(character, entry) === 0)) return ((_customPools$0$castin = customPools[0].casting) === null || _customPools$0$castin === void 0 || (_customPools$0$castin = _customPools$0$castin.slots) === null || _customPools$0$castin === void 0 ? void 0 : _customPools$0$castin[String(customPools[0].entry.level)]) || [];
 	const regularCasters = entries.filter((entry) => spellcastingContribution(character, entry) > 0);
 	if (!regularCasters.length) return [];
 	if (regularCasters.length === 1) {
+		var _character$homebrew5, _custom$slots;
 		const entry = regularCasters[0];
 		const level = entry.level;
-		const custom = character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting;
-		if (custom?.mode === "custom") return custom.slots?.[String(level)] || [];
-		if (custom?.mode === "full") return fullCasterSlots$1[level] || [];
-		if (custom?.mode === "half") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
-		if (custom?.mode === "third") return fullCasterSlots$1[Math.ceil(level / 3)] || [];
+		const custom = (_character$homebrew5 = character.homebrew) === null || _character$homebrew5 === void 0 || (_character$homebrew5 = _character$homebrew5.entities.find((e) => e.id === entry.classId && e.type === "class")) === null || _character$homebrew5 === void 0 ? void 0 : _character$homebrew5.spellcasting;
+		if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "custom") return ((_custom$slots = custom.slots) === null || _custom$slots === void 0 ? void 0 : _custom$slots[String(level)]) || [];
+		if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "full") return fullCasterSlots$1[level] || [];
+		if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "half") return fullCasterSlots$1[Math.ceil(level / 2)] || [];
+		if ((custom === null || custom === void 0 ? void 0 : custom.mode) === "third") return fullCasterSlots$1[Math.ceil(level / 3)] || [];
 		if ([
 			"bard",
 			"cleric",
@@ -14089,13 +14135,21 @@ function resolveSpellSlots(character) {
 	return fullCasterSlots$1[multiclassCasterLevel(character)] || [];
 }
 function shortRestSpellSlots(character) {
+	var _character$homebrew7;
 	const entries = orderedCharacterClasses(character);
-	const eligible = entries.filter((entry) => character.homebrew?.entities.find((e) => e.id === entry.classId && e.type === "class")?.spellcasting?.mode === "custom");
+	const eligible = entries.filter((entry) => {
+		var _character$homebrew6;
+		return ((_character$homebrew6 = character.homebrew) === null || _character$homebrew6 === void 0 || (_character$homebrew6 = _character$homebrew6.entities.find((e) => e.id === entry.classId && e.type === "class")) === null || _character$homebrew6 === void 0 || (_character$homebrew6 = _character$homebrew6.spellcasting) === null || _character$homebrew6 === void 0 ? void 0 : _character$homebrew6.mode) === "custom";
+	});
 	if (eligible.length !== 1 || entries.some((entry) => entry.classId !== eligible[0].classId && spellcastingContribution(character, entry) > 0)) return character.spellSlotsUsed || [];
-	return (character.homebrew?.entities.find((e) => e.id === eligible[0].classId)?.spellcasting)?.recovery === "short_or_long" ? (character.spellSlotsUsed || []).map(() => 0) : character.spellSlotsUsed || [];
+	const casting = (_character$homebrew7 = character.homebrew) === null || _character$homebrew7 === void 0 || (_character$homebrew7 = _character$homebrew7.entities.find((e) => e.id === eligible[0].classId)) === null || _character$homebrew7 === void 0 ? void 0 : _character$homebrew7.spellcasting;
+	return (casting === null || casting === void 0 ? void 0 : casting.recovery) === "short_or_long" ? (character.spellSlotsUsed || []).map(() => 0) : character.spellSlotsUsed || [];
 }
 function resolvePactMagic(character) {
-	const pact = orderedCharacterClasses(character).find((entry) => entry.classId === "warlock" || character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class")?.spellcasting?.mode === "pact");
+	const pact = orderedCharacterClasses(character).find((entry) => {
+		var _character$homebrew8;
+		return entry.classId === "warlock" || ((_character$homebrew8 = character.homebrew) === null || _character$homebrew8 === void 0 || (_character$homebrew8 = _character$homebrew8.entities.find((entity) => entity.id === entry.classId && entity.type === "class")) === null || _character$homebrew8 === void 0 || (_character$homebrew8 = _character$homebrew8.spellcasting) === null || _character$homebrew8 === void 0 ? void 0 : _character$homebrew8.mode) === "pact";
+	});
 	if (!pact) return {
 		slots: 0,
 		level: 0
@@ -14110,7 +14164,8 @@ function hitDicePools(character) {
 	const spent = character.hitDiceSpentByClass || {};
 	const pools = /* @__PURE__ */ new Map();
 	for (const entry of orderedCharacterClasses(character)) {
-		const die = classRuleFor(character, entry.classId)?.hitDie || 8;
+		var _classRuleFor;
+		const die = ((_classRuleFor = classRuleFor(character, entry.classId)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.hitDie) || 8;
 		const pool = pools.get(die) || {
 			die,
 			max: 0,
@@ -14147,9 +14202,10 @@ function choiceTitle(value) {
 	].includes(word) && !/^\d+$/.test(word)).join(" ");
 }
 function choiceMatchesClassFeature(feature, choice) {
+	var _feature$id$split$pop;
 	const name = choiceTitle(feature.name), title = choiceTitle(choice.name);
 	if (name && title && (title === name || title.startsWith(name + " ") || name.startsWith(title + " "))) return true;
-	const key = feature.id.split(":").pop()?.toLowerCase() || "";
+	const key = ((_feature$id$split$pop = feature.id.split(":").pop()) === null || _feature$id$split$pop === void 0 ? void 0 : _feature$id$split$pop.toLowerCase()) || "";
 	const group = (choice.choiceGroup || choice.id).toLowerCase();
 	return key.length >= 4 && (group === key || group.endsWith(":" + key) || group.includes("-" + key + "-") || group.endsWith("-" + key));
 }
@@ -14166,7 +14222,8 @@ function choicesForFeature(root, feature) {
 }
 function inferredMagicFeatureIds(root) {
 	return (root.features || []).filter((feature) => {
-		if (root.references?.includes(feature.id)) return true;
+		var _root$references;
+		if ((_root$references = root.references) === null || _root$references === void 0 ? void 0 : _root$references.includes(feature.id)) return true;
 		const title = words(feature.name).join(" ");
 		return /^(?:(?:первобытная|природная|тайная|божественная|мистическая|ритуальная|врожденная|договорная) )?магия(?: договора|пакта)?$/.test(title) || /^(?:использование|сотворение|накладывание|наложение) заклинаний$/.test(title) || /^(?:колдовство|заклинания|spellcasting|pact magic|primal magic|innate spellcasting)$/.test(title);
 	}).map((feature) => feature.id);
@@ -14179,13 +14236,20 @@ function magicFeatureIds(root) {
 }
 function magicSpellList(root, entities) {
 	const explicit = new Set((root.spellList || []).map((id) => id.replace("official:spell:", "")));
-	return [...spells.filter((spell) => explicit.has(spell.id) || root.spellListSources?.some((source) => spell.classes.includes(source))), ...entities.filter((e) => e.type === "spell" && (explicit.has(e.id) || e.spellClasses?.includes(root.id)))].map((spell) => ({
+	return [...spells.filter((spell) => {
+		var _root$spellListSource;
+		return explicit.has(spell.id) || ((_root$spellListSource = root.spellListSources) === null || _root$spellListSource === void 0 ? void 0 : _root$spellListSource.some((source) => spell.classes.includes(source)));
+	}), ...entities.filter((e) => {
+		var _e$spellClasses;
+		return e.type === "spell" && (explicit.has(e.id) || ((_e$spellClasses = e.spellClasses) === null || _e$spellClasses === void 0 ? void 0 : _e$spellClasses.includes(root.id)));
+	})].map((spell) => ({
 		id: spell.id,
 		name: spell.name,
 		level: spell.level || 0
 	}));
 }
 function magicLevel(root, level, modifier = 3) {
+	var _casting$cantrips, _casting$known;
 	const casting = root.spellcasting;
 	const character = {
 		level,
@@ -14210,8 +14274,8 @@ function magicLevel(root, level, modifier = 3) {
 		}
 	};
 	const pact = resolvePactMagic(character);
-	const slots = casting?.mode === "pact" ? Array.from({ length: pact.level }, (_, i) => i === pact.level - 1 ? pact.slots : 0) : resolveSpellSlots(character);
-	const prepared = casting?.selection === "prepared" ? Math.max(0, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
+	const slots = (casting === null || casting === void 0 ? void 0 : casting.mode) === "pact" ? Array.from({ length: pact.level }, (_, i) => i === pact.level - 1 ? pact.slots : 0) : resolveSpellSlots(character);
+	const prepared = (casting === null || casting === void 0 ? void 0 : casting.selection) === "prepared" ? Math.max(0, Math.floor(evaluateFormula(casting.preparedFormula || "@level + @mod." + casting.ability, { values: {
 		"@level": level,
 		"@classLevel": level,
 		"@pb": 2 + Math.floor((level - 1) / 4),
@@ -14226,8 +14290,8 @@ function magicLevel(root, level, modifier = 3) {
 	} }))) : void 0;
 	return {
 		level,
-		cantrips: casting?.cantrips?.[level] || 0,
-		known: casting?.known?.[level] || 0,
+		cantrips: (casting === null || casting === void 0 || (_casting$cantrips = casting.cantrips) === null || _casting$cantrips === void 0 ? void 0 : _casting$cantrips[level]) || 0,
+		known: (casting === null || casting === void 0 || (_casting$known = casting.known) === null || _casting$known === void 0 ? void 0 : _casting$known[level]) || 0,
 		prepared,
 		slots
 	};
@@ -19423,6 +19487,7 @@ function grantOrAlternative(fixed, language) {
 	return 0;
 }
 function languageRule(character) {
+	var _character$classChoic;
 	const racial = raceLanguages[character.race] || {
 		fixed: ["Общий"],
 		choices: 1
@@ -19445,7 +19510,10 @@ function languageRule(character) {
 		const selected = entry.choiceValues || {};
 		if (character.useTasha && entry.classId === "ranger" && (selected["tce-deft-explorer"] || []).includes("deft-explorer")) choices += 2;
 	}
-	if (character.useTasha && character.className === "ranger" && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") && !classes.some((entry) => (entry.choiceValues?.["tce-deft-explorer"] || []).includes("deft-explorer"))) choices += 2;
+	if (character.useTasha && character.className === "ranger" && (((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic["tce-deft-explorer"]) || []).includes("deft-explorer") && !classes.some((entry) => {
+		var _entry$choiceValues;
+		return (((_entry$choiceValues = entry.choiceValues) === null || _entry$choiceValues === void 0 ? void 0 : _entry$choiceValues["tce-deft-explorer"]) || []).includes("deft-explorer");
+	})) choices += 2;
 	return {
 		fixed: [...new Set(fixed)],
 		choices
@@ -19453,7 +19521,10 @@ function languageRule(character) {
 }
 function characterLanguages(character) {
 	const rule = languageRule(character);
-	const featLanguages = (character.advancements || []).flatMap((choice) => choice.featChoices?.languages || []);
+	const featLanguages = (character.advancements || []).flatMap((choice) => {
+		var _choice$featChoices;
+		return ((_choice$featChoices = choice.featChoices) === null || _choice$featChoices === void 0 ? void 0 : _choice$featChoices.languages) || [];
+	});
 	return [...new Set([
 		...rule.fixed,
 		...(character.languages || []).slice(0, rule.choices),
@@ -19520,7 +19591,10 @@ function directSkillSources(character, excludedClassId = "") {
 	return new Set([
 		...character.raceSkills || [],
 		...character.backgroundSkills,
-		...classes.flatMap((entry) => entry.classId === excludedClassId ? [] : entry.classSkills?.length ? entry.classSkills : entry.classId === startingClassId ? character.classSkills : [])
+		...classes.flatMap((entry) => {
+			var _entry$classSkills;
+			return entry.classId === excludedClassId ? [] : ((_entry$classSkills = entry.classSkills) === null || _entry$classSkills === void 0 ? void 0 : _entry$classSkills.length) ? entry.classSkills : entry.classId === startingClassId ? character.classSkills : [];
+		})
 	].filter((skill) => skillNames$1.includes(skill)));
 }
 function subclassChoiceRequirements(character, entry) {
@@ -19601,7 +19675,8 @@ function proficiencyChoiceRequirements(character) {
 function proficiencyChoicesComplete(character) {
 	const selectedTools = [];
 	return proficiencyChoiceRequirements(character).every((requirement) => {
-		const selected = character.proficiencyChoices?.[requirement.key] || [];
+		var _character$proficienc;
+		const selected = ((_character$proficienc = character.proficiencyChoices) === null || _character$proficienc === void 0 ? void 0 : _character$proficienc[requirement.key]) || [];
 		if (requirement.kind !== "weapon") selectedTools.push(...selected.filter((value) => !skillNames$1.includes(value)));
 		const withoutCurrent = {
 			...character,
@@ -19696,6 +19771,7 @@ function isGenericChoice(value) {
 	return /один|одну|выбор|ремесленн|музыкальн|игровой набор/i.test(value);
 }
 function characterProficiencies(character) {
+	var _classRuleFor, _classRuleFor2, _character$background, _character$classChoic, _character$classChoic2;
 	const racialSkills = {
 		halforc: ["Запугивание"],
 		goliath: ["Атлетика"],
@@ -19709,10 +19785,13 @@ function characterProficiencies(character) {
 		...racialSkills[character.race] || [],
 		...character.raceSkills || [],
 		...character.backgroundSkills,
-		...classes.flatMap((entry) => entry.classSkills?.length ? entry.classSkills : entry.classId === startingClassId ? character.classSkills : [])
+		...classes.flatMap((entry) => {
+			var _entry$classSkills2;
+			return ((_entry$classSkills2 = entry.classSkills) === null || _entry$classSkills2 === void 0 ? void 0 : _entry$classSkills2.length) ? entry.classSkills : entry.classId === startingClassId ? character.classSkills : [];
+		})
 	].filter((skill) => skillNames$1.includes(skill));
-	const armor = (classRuleFor(character, startingClassId)?.armor || "").split(/\s*,\s*/).filter(Boolean);
-	const weapons = (classRuleFor(character, startingClassId)?.weapons || "").split(/\s*,\s*/).filter(Boolean);
+	const armor = (((_classRuleFor = classRuleFor(character, startingClassId)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.armor) || "").split(/\s*,\s*/).filter(Boolean);
+	const weapons = (((_classRuleFor2 = classRuleFor(character, startingClassId)) === null || _classRuleFor2 === void 0 ? void 0 : _classRuleFor2.weapons) || "").split(/\s*,\s*/).filter(Boolean);
 	const tools = [...fixedClassTools[startingClassId] || []];
 	const multiclassTraining = {
 		barbarian: {
@@ -19773,10 +19852,12 @@ function characterProficiencies(character) {
 		}
 	};
 	for (const entry of classes) {
-		if (entry.classId === starting?.classId) continue;
-		const custom = character.homebrew?.entities.find((entity) => entity.id === entry.classId && entity.type === "class");
+		var _character$homebrew;
+		if (entry.classId === (starting === null || starting === void 0 ? void 0 : starting.classId)) continue;
+		const custom = (_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.entities.find((entity) => entity.id === entry.classId && entity.type === "class");
 		if (custom) {
-			for (const effect of custom.multiclass?.effects || []) {
+			var _custom$multiclass;
+			for (const effect of ((_custom$multiclass = custom.multiclass) === null || _custom$multiclass === void 0 ? void 0 : _custom$multiclass.effects) || []) {
 				if (effect.type === "skill_proficiency" && effect.skill) skills.push(hbSkillName(effect.skill));
 				if (effect.type === "weapon_proficiency" && effect.id) weapons.push(effect.id);
 				if (effect.type === "weapon_group_proficiency") weapons.push(effect.group === "martial" ? "Воинское оружие" : "Простое оружие");
@@ -19791,12 +19872,12 @@ function characterProficiencies(character) {
 			continue;
 		}
 		const training = multiclassTraining[entry.classId];
-		armor.push(...training?.armor || []);
-		weapons.push(...training?.weapons || []);
-		tools.push(...training?.tools || []);
+		armor.push(...(training === null || training === void 0 ? void 0 : training.armor) || []);
+		weapons.push(...(training === null || training === void 0 ? void 0 : training.weapons) || []);
+		tools.push(...(training === null || training === void 0 ? void 0 : training.tools) || []);
 	}
 	const variant = selectedRaceVariant(character.race, character.raceVariant);
-	for (const value of variant?.proficiencies || []) {
+	for (const value of (variant === null || variant === void 0 ? void 0 : variant.proficiencies) || []) {
 		if (isGenericChoice(value) || skillNames$1.includes(value)) continue;
 		if (/доспех|щит/i.test(value)) armor.push(value);
 		else if (/инструмент|набор|транспорт/i.test(value)) tools.push(value);
@@ -19805,7 +19886,7 @@ function characterProficiencies(character) {
 	if (character.race === "dwarf") weapons.push("Боевой топор", "Ручной топор", "Лёгкий молот", "Боевой молот");
 	if (character.race === "giff") weapons.push("Огнестрельное оружие");
 	for (const value of backgroundRule(character.background).tools) if (!isGenericChoice(value)) tools.push(value);
-	tools.push(...character.backgroundChoices?.tool || []);
+	tools.push(...((_character$background = character.backgroundChoices) === null || _character$background === void 0 ? void 0 : _character$background.tool) || []);
 	for (const entry of classes) {
 		const subclass = subclassProficiencies[`${entry.classId}:${entry.subclassId || ""}`];
 		if (!subclass || entry.level < 1) continue;
@@ -19814,17 +19895,27 @@ function characterProficiencies(character) {
 		weapons.push(...subclass.weapons || []);
 		tools.push(...subclass.tools || []);
 	}
-	for (const requirement of proficiencyChoiceRequirements(character)) for (const value of (character.proficiencyChoices?.[requirement.key] || []).slice(0, requirement.count)) if (requirement.kind === "weapon") weapons.push(value);
-	else if (requirement.kind === "skill-or-tool" && skillNames$1.includes(value)) skills.push(value);
-	else tools.push(value);
-	for (const value of character.classChoices?.["kensei-weapons"] || []) weapons.push(value.replace(/^weapon-/, ""));
-	for (const value of character.classChoices?.["tce-primal-knowledge"] || []) skills.push(value);
-	for (const entry of classes) for (const value of entry.choiceValues?.["tce-primal-knowledge"] || []) skills.push(value);
+	for (const requirement of proficiencyChoiceRequirements(character)) {
+		var _character$proficienc2;
+		for (const value of (((_character$proficienc2 = character.proficiencyChoices) === null || _character$proficienc2 === void 0 ? void 0 : _character$proficienc2[requirement.key]) || []).slice(0, requirement.count)) if (requirement.kind === "weapon") weapons.push(value);
+		else if (requirement.kind === "skill-or-tool" && skillNames$1.includes(value)) skills.push(value);
+		else tools.push(value);
+	}
+	for (const value of ((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic["kensei-weapons"]) || []) weapons.push(value.replace(/^weapon-/, ""));
+	for (const value of ((_character$classChoic2 = character.classChoices) === null || _character$classChoic2 === void 0 ? void 0 : _character$classChoic2["tce-primal-knowledge"]) || []) skills.push(value);
+	for (const entry of classes) {
+		var _entry$choiceValues;
+		for (const value of ((_entry$choiceValues = entry.choiceValues) === null || _entry$choiceValues === void 0 ? void 0 : _entry$choiceValues["tce-primal-knowledge"]) || []) skills.push(value);
+	}
 	for (const advancement of character.advancements || []) {
-		if (advancement.featId === "skill-expert") skills.push(...advancement.featChoices?.skill || []);
-		if (advancement.featId === "weapon-master") weapons.push(...advancement.featChoices?.weapons || []);
-		if (advancement.featId === "skilled") for (const value of advancement.featChoices?.proficiencies || []) (skillNames$1.includes(value) ? skills : tools).push(value);
-		if (advancement.featId === "artificer-initiate") tools.push(...advancement.featChoices?.tool || []);
+		var _advancement$featChoi, _advancement$featChoi2, _advancement$featChoi4;
+		if (advancement.featId === "skill-expert") skills.push(...((_advancement$featChoi = advancement.featChoices) === null || _advancement$featChoi === void 0 ? void 0 : _advancement$featChoi.skill) || []);
+		if (advancement.featId === "weapon-master") weapons.push(...((_advancement$featChoi2 = advancement.featChoices) === null || _advancement$featChoi2 === void 0 ? void 0 : _advancement$featChoi2.weapons) || []);
+		if (advancement.featId === "skilled") {
+			var _advancement$featChoi3;
+			for (const value of ((_advancement$featChoi3 = advancement.featChoices) === null || _advancement$featChoi3 === void 0 ? void 0 : _advancement$featChoi3.proficiencies) || []) (skillNames$1.includes(value) ? skills : tools).push(value);
+		}
+		if (advancement.featId === "artificer-initiate") tools.push(...((_advancement$featChoi4 = advancement.featChoices) === null || _advancement$featChoi4 === void 0 ? void 0 : _advancement$featChoi4.tool) || []);
 	}
 	const startingOnlyTraining = new Set([
 		"weapon_proficiency",
@@ -19854,19 +19945,32 @@ function characterProficiencies(character) {
 	};
 }
 function characterExpertiseSkills(character) {
+	var _character$classChoic3, _character$classChoic4, _character$classChoic5;
 	const classes = orderedCharacterClasses(character);
 	const values = [
 		...hbEffects(character, "skill_expertise").map((x) => hbSkillName(x.effect.skill || "")),
 		...character.expertiseSkills || [],
-		...(character.classChoices?.expertise || []).map((value) => value.replace(/^skill-/, "")),
-		...classes.flatMap((entry) => (entry.choiceValues?.expertise || []).map((value) => value.replace(/^skill-/, ""))),
+		...(((_character$classChoic3 = character.classChoices) === null || _character$classChoic3 === void 0 ? void 0 : _character$classChoic3.expertise) || []).map((value) => value.replace(/^skill-/, "")),
+		...classes.flatMap((entry) => {
+			var _entry$choiceValues2;
+			return (((_entry$choiceValues2 = entry.choiceValues) === null || _entry$choiceValues2 === void 0 ? void 0 : _entry$choiceValues2.expertise) || []).map((value) => value.replace(/^skill-/, ""));
+		}),
 		...classes.flatMap((entry) => entry.classId === "rogue" && entry.subclassId === "scout" && entry.level >= 3 ? ["Природа", "Выживание"] : []),
-		...classes.flatMap((entry) => entry.classId === "cleric" && entry.subclassId === "knowledge" && entry.level >= 1 ? character.proficiencyChoices?.[`subclass-cleric-knowledge-skills`] || [] : []),
+		...classes.flatMap((entry) => {
+			var _character$proficienc3;
+			return entry.classId === "cleric" && entry.subclassId === "knowledge" && entry.level >= 1 ? ((_character$proficienc3 = character.proficiencyChoices) === null || _character$proficienc3 === void 0 ? void 0 : _character$proficienc3[`subclass-cleric-knowledge-skills`]) || [] : [];
+		}),
 		...classes.flatMap((entry) => entry.classId === "fighter" && entry.subclassId === "banneret" && entry.level >= 7 ? ["Убеждение"] : []),
-		...(character.advancements || []).flatMap((advancement) => advancement.featId === "skill-expert" ? advancement.featChoices?.expertise || [] : []),
-		...(character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") ? character.classChoices?.["tce-deft-explorer-skill"] || [] : []
+		...(character.advancements || []).flatMap((advancement) => {
+			var _advancement$featChoi5;
+			return advancement.featId === "skill-expert" ? ((_advancement$featChoi5 = advancement.featChoices) === null || _advancement$featChoi5 === void 0 ? void 0 : _advancement$featChoi5.expertise) || [] : [];
+		}),
+		...(((_character$classChoic4 = character.classChoices) === null || _character$classChoic4 === void 0 ? void 0 : _character$classChoic4["tce-deft-explorer"]) || []).includes("deft-explorer") ? ((_character$classChoic5 = character.classChoices) === null || _character$classChoic5 === void 0 ? void 0 : _character$classChoic5["tce-deft-explorer-skill"]) || [] : []
 	];
-	for (const entry of classes) if ((entry.choiceValues?.["tce-deft-explorer"] || []).includes("deft-explorer")) values.push(...entry.choiceValues?.["tce-deft-explorer-skill"] || []);
+	for (const entry of classes) {
+		var _entry$choiceValues3, _entry$choiceValues4;
+		if ((((_entry$choiceValues3 = entry.choiceValues) === null || _entry$choiceValues3 === void 0 ? void 0 : _entry$choiceValues3["tce-deft-explorer"]) || []).includes("deft-explorer")) values.push(...((_entry$choiceValues4 = entry.choiceValues) === null || _entry$choiceValues4 === void 0 ? void 0 : _entry$choiceValues4["tce-deft-explorer-skill"]) || []);
+	}
 	const proficient = new Set(characterProficiencies(character).skills);
 	return unique(values).filter((skill) => proficient.has(skill));
 }
@@ -20034,7 +20138,8 @@ var invocations$1 = [
 	name
 }));
 function choice$1(choice, key) {
-	return choice.featChoices?.[key] || [];
+	var _choice$featChoices;
+	return ((_choice$featChoices = choice.featChoices) === null || _choice$featChoices === void 0 ? void 0 : _choice$featChoices[key]) || [];
 }
 function classSpellOptions(spells, classId, level, ritualOnly = false) {
 	return spells.filter((spell) => spell.level === level && spell.classes.includes(classId) && (!ritualOnly || spell.ritual)).map((spell) => ({
@@ -20101,6 +20206,7 @@ var strixhavenColleges = {
 	}
 };
 function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.level) {
+	var _generatedFeats$find;
 	const feat = choiceValue.featId;
 	const tradition = choice$1(choiceValue, "tradition")[0] || "";
 	const groups = [];
@@ -20114,7 +20220,7 @@ function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.leve
 			options: abilityOptions(keys)
 		});
 	};
-	const documentedAbilityOptions = generatedFeats.find((item) => item.id === feat)?.abilityOptions || [];
+	const documentedAbilityOptions = ((_generatedFeats$find = generatedFeats.find((item) => item.id === feat)) === null || _generatedFeats$find === void 0 ? void 0 : _generatedFeats$find.abilityOptions) || [];
 	if (documentedAbilityOptions.length > 1) ability(documentedAbilityOptions);
 	if (feat === "skill-expert") {
 		groups.push({
@@ -20239,11 +20345,14 @@ function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.leve
 			title: "Известные руны",
 			description: "Выберите число рун, равное половине бонуса мастерства с округлением вниз. Каждая руна даёт связанное заклинание 1-го круга.",
 			count: Math.max(1, Math.floor(proficiency / 2)),
-			options: runeSpells.map(([id, name]) => ({
-				id,
-				name,
-				detail: spells.find((spell) => spell.id === id)?.description
-			}))
+			options: runeSpells.map(([id, name]) => {
+				var _spells$find;
+				return {
+					id,
+					name,
+					detail: (_spells$find = spells.find((spell) => spell.id === id)) === null || _spells$find === void 0 ? void 0 : _spells$find.description
+				};
+			})
 		});
 	}
 	if (feat === "strixhaven-initiate") {
@@ -20274,8 +20383,8 @@ function featChoiceGroups(choiceValue, spells, characterLevel = choiceValue.leve
 					const spell = spells.find((item) => item.id === id);
 					return {
 						id,
-						name: spell?.name || id,
-						detail: spell?.description
+						name: (spell === null || spell === void 0 ? void 0 : spell.name) || id,
+						detail: spell === null || spell === void 0 ? void 0 : spell.description
 					};
 				})
 			});
@@ -20439,7 +20548,8 @@ function advancementChoiceComplete(choiceValue, spells, characterLevel = choiceV
 	if (!choiceValue.featId) return false;
 	if (choiceValue.featId === "asi") return choiceValue.asiChoices.length === 2;
 	return featChoiceGroups(choiceValue, spells, characterLevel).every((group) => {
-		const selected = choiceValue.featChoices?.[group.key] || [];
+		var _choiceValue$featChoi;
+		const selected = ((_choiceValue$featChoi = choiceValue.featChoices) === null || _choiceValue$featChoi === void 0 ? void 0 : _choiceValue$featChoi[group.key]) || [];
 		const availability = featChoiceAvailability(choiceValue, group, character);
 		const allowed = new Set(availability.options.map((option) => option.id));
 		return selected.length === availability.count && new Set(selected).size === selected.length && selected.every((id) => allowed.has(id));
@@ -20464,9 +20574,10 @@ function featGrantedSpellIds(character) {
 function featAbilityBonuses(character) {
 	const result = {};
 	for (const choiceValue of character.advancements || []) {
-		const documented = generatedFeats.find((item) => item.id === choiceValue.featId)?.abilityOptions || [];
+		var _generatedFeats$find2, _choiceValue$featChoi3;
+		const documented = ((_generatedFeats$find2 = generatedFeats.find((item) => item.id === choiceValue.featId)) === null || _generatedFeats$find2 === void 0 ? void 0 : _generatedFeats$find2.abilityOptions) || [];
 		const fixed = documented.length === 1 ? documented[0] : "";
-		const selected = choiceValue.featChoices?.ability?.[0] || fixed;
+		const selected = ((_choiceValue$featChoi3 = choiceValue.featChoices) === null || _choiceValue$featChoi3 === void 0 || (_choiceValue$featChoi3 = _choiceValue$featChoi3.ability) === null || _choiceValue$featChoi3 === void 0 ? void 0 : _choiceValue$featChoi3[0]) || fixed;
 		if (selected) result[selected] = (result[selected] || 0) + 1;
 	}
 	return result;
@@ -21436,11 +21547,12 @@ for (const option of [
 		description: "Управление массой, притяжением и гравитационными полями."
 	}
 ]) {
+	var _subclassFeatureCorpu;
 	const group = subclasses[option.classId];
 	if (!group || group.options.some((existing) => existing.id === option.id)) continue;
 	group.options.push({
 		...option,
-		features: subclassFeatureCorpus[option.classId]?.[option.name] || []
+		features: ((_subclassFeatureCorpu = subclassFeatureCorpus[option.classId]) === null || _subclassFeatureCorpu === void 0 ? void 0 : _subclassFeatureCorpu[option.name]) || []
 	});
 }
 var G = (level, mode, ...refs) => ({
@@ -21591,10 +21703,12 @@ function spellMatchesRef(spell, ref) {
 	return normalSpellRef(spell.id) === needle || normalSpellRef(spell.name) === needle;
 }
 function subclassChoice(character, key) {
-	return character.classChoices?.[`${character.className}:${key}`] || character.classChoices?.[key] || character.classes?.find((entry) => entry.classId === character.className)?.choiceValues?.[key] || [];
+	var _character$classChoic, _character$classChoic2, _character$classes;
+	return ((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic[`${character.className}:${key}`]) || ((_character$classChoic2 = character.classChoices) === null || _character$classChoic2 === void 0 ? void 0 : _character$classChoic2[key]) || ((_character$classes = character.classes) === null || _character$classes === void 0 || (_character$classes = _character$classes.find((entry) => entry.classId === character.className)) === null || _character$classes === void 0 || (_character$classes = _character$classes.choiceValues) === null || _character$classes === void 0 ? void 0 : _character$classes[key]) || [];
 }
 function subclassSpellGrants(character) {
-	const grants = selectedSubclass(character.className, character.subclass || "")?.spellGrants?.filter((grant) => character.level >= grant.level) || [];
+	var _selectedSubclass;
+	const grants = ((_selectedSubclass = selectedSubclass(character.className, character.subclass || "")) === null || _selectedSubclass === void 0 || (_selectedSubclass = _selectedSubclass.spellGrants) === null || _selectedSubclass === void 0 ? void 0 : _selectedSubclass.filter((grant) => character.level >= grant.level)) || [];
 	if (character.className !== "sorcerer" || character.subclass !== "clockwork") return grants;
 	const defaults = [
 		"Тревога",
@@ -21646,15 +21760,17 @@ function selectedSubclassSpellChoiceEntries(character) {
 	return [];
 }
 for (const [classId, group] of Object.entries(subclasses)) for (const option of group.options) {
-	const documented = subclassFeatureCorpus[classId]?.[option.name];
-	if (documented?.length) option.features = documented;
+	var _subclassFeatureCorpu2;
+	const documented = (_subclassFeatureCorpu2 = subclassFeatureCorpus[classId]) === null || _subclassFeatureCorpu2 === void 0 ? void 0 : _subclassFeatureCorpu2[option.name];
+	if (documented === null || documented === void 0 ? void 0 : documented.length) option.features = documented;
 }
 Object.values(subclasses).reduce((total, group) => total + group.options.length, 0);
 function subclassRule(classId) {
 	return subclasses[classId];
 }
 function selectedSubclass(classId, subclassId) {
-	return subclassRule(classId)?.options.find((item) => item.id === subclassId);
+	var _subclassRule;
+	return (_subclassRule = subclassRule(classId)) === null || _subclassRule === void 0 ? void 0 : _subclassRule.options.find((item) => item.id === subclassId);
 }
 var optionalClassFeatures = {
 	barbarian: [SF(3, "Первобытные знания (TCE)", "Получает дополнительное владение навыком из списка варвара."), SF(7, "Инстинктивный наскок (TCE)", "При входе в ярость перемещается на половину скорости.")],
@@ -22112,8 +22228,9 @@ function knownSpellLevelLimits(classId, level, knownTable) {
 	return limits;
 }
 function spellSelectionRuleForClass$1(character, classId, classLevel) {
-	const level = classLevel ?? character.level;
-	const cantrips = cantripTables[classId]?.[level] || 0;
+	var _cantripTables$classI;
+	const level = classLevel !== null && classLevel !== void 0 ? classLevel : character.level;
+	const cantrips = ((_cantripTables$classI = cantripTables[classId]) === null || _cantripTables$classI === void 0 ? void 0 : _cantripTables$classI[level]) || 0;
 	const ability = classId === "wizard" || classId === "artificer" ? "int" : [
 		"cleric",
 		"druid",
@@ -22453,7 +22570,7 @@ var feats = [legacyFeats[0], ...generatedFeats.map((documented) => {
 	const legacy = legacyFeats.find((feat) => feat.id === documented.id);
 	return {
 		...documented,
-		requirement: documented.requirement || legacy?.requirement,
+		requirement: documented.requirement || (legacy === null || legacy === void 0 ? void 0 : legacy.requirement),
 		abilityOptions: documented.abilityOptions
 	};
 })];
@@ -22722,12 +22839,15 @@ var tashaAdditionalSpellIds = Object.freeze({
 	]
 });
 function isTashaAdditionalSpell(character, spellId) {
-	return !character.tceFullBanned && !character.bannedOptionalFeatures?.some((id) => id.startsWith(`${character.className}:дополнительные заклинания`)) && Boolean(tashaAdditionalSpellIds[character.className]?.includes(spellId));
+	var _character$bannedOpti, _tashaAdditionalSpell;
+	return !character.tceFullBanned && !((_character$bannedOpti = character.bannedOptionalFeatures) === null || _character$bannedOpti === void 0 ? void 0 : _character$bannedOpti.some((id) => id.startsWith(`${character.className}:дополнительные заклинания`))) && Boolean((_tashaAdditionalSpell = tashaAdditionalSpellIds[character.className]) === null || _tashaAdditionalSpell === void 0 ? void 0 : _tashaAdditionalSpell.includes(spellId));
 }
 function spellAvailableToCharacter(character, spell) {
+	var _subclass$expandedSpe;
 	if (spell.classes.includes(character.className)) return true;
 	if (isTashaAdditionalSpell(character, spell.id)) return true;
-	if (selectedSubclass(character.className, character.subclass || "")?.expandedSpells?.includes(spell.id)) return true;
+	const subclass = selectedSubclass(character.className, character.subclass || "");
+	if (subclass === null || subclass === void 0 || (_subclass$expandedSpe = subclass.expandedSpells) === null || _subclass$expandedSpe === void 0 ? void 0 : _subclass$expandedSpe.includes(spell.id)) return true;
 	if (subclassSpellGrants(character).some((grant) => grant.mode === "expanded" && grant.refs.some((ref) => spellMatchesRef(spell, ref)))) return true;
 	if (character.className === "sorcerer" && character.subclass === "divinesoul" && spell.classes.includes("cleric")) return true;
 	return false;
@@ -22744,7 +22864,10 @@ function recommendedLevelTargets(character, rule, catalog) {
 		return counts;
 	}
 	const availableLevels = Array.from({ length: rule.maxLevel }, (_, index) => index + 1).filter((level) => catalog.some((spell) => spell.level === level));
-	const canAdd = (level) => !rule.levelLimits?.some((limit, circle) => circle > 0 && circle <= level && counts.slice(circle).reduce((total, value) => total + value, 0) >= limit);
+	const canAdd = (level) => {
+		var _rule$levelLimits;
+		return !((_rule$levelLimits = rule.levelLimits) === null || _rule$levelLimits === void 0 ? void 0 : _rule$levelLimits.some((limit, circle) => circle > 0 && circle <= level && counts.slice(circle).reduce((total, value) => total + value, 0) >= limit));
+	};
 	for (let pick = 0; pick < rule.leveled; pick += 1) {
 		const candidates = availableLevels.filter(canAdd);
 		if (!candidates.length) break;
@@ -22765,11 +22888,12 @@ function rankedSpellCatalog(character, catalog) {
 	});
 }
 function alwaysPreparedSpellEntries$1(character, catalog) {
+	var _character$classChoic3, _character$classChoic4, _character$classChoic6;
 	const maximum = spellSelectionRule$1(character).maxLevel;
 	const subclass = selectedSubclass(character.className, character.subclass || "");
-	const entries = (subclass?.alwaysPrepared || []).map((id) => ({
+	const entries = ((subclass === null || subclass === void 0 ? void 0 : subclass.alwaysPrepared) || []).map((id) => ({
 		id,
-		source: subclass?.name || "Подкласс",
+		source: (subclass === null || subclass === void 0 ? void 0 : subclass.name) || "Подкласс",
 		mode: "always-prepared"
 	}));
 	for (const grant of subclassSpellGrants(character)) {
@@ -22778,25 +22902,26 @@ function alwaysPreparedSpellEntries$1(character, catalog) {
 			const spell = catalog.find((item) => spellMatchesRef(item, ref));
 			if (spell) entries.push({
 				id: spell.id,
-				source: subclass?.name || "Подкласс",
+				source: (subclass === null || subclass === void 0 ? void 0 : subclass.name) || "Подкласс",
 				mode: grant.mode
 			});
 		}
 	}
 	for (const choice of selectedSubclassSpellChoiceEntries(character)) entries.push({
 		id: choice.id,
-		source: subclass?.name || "Подкласс",
+		source: (subclass === null || subclass === void 0 ? void 0 : subclass.name) || "Подкласс",
 		mode: choice.mode
 	});
 	if (character.className === "bard" && character.subclass === "spirits" && character.level >= 6) {
-		const spiritSessionSpell = character.subclassState?.["bard:spirits:spirit-session-spell"];
+		var _character$subclassSt;
+		const spiritSessionSpell = (_character$subclassSt = character.subclassState) === null || _character$subclassSt === void 0 ? void 0 : _character$subclassSt["bard:spirits:spirit-session-spell"];
 		if (typeof spiritSessionSpell === "string") entries.push({
 			id: spiritSessionSpell,
 			source: "Духовный сеанс",
 			mode: "known"
 		});
 	}
-	if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && (character.classChoices?.["tce-primal-awareness"] || []).includes("primal-awareness")) {
+	if (character.useTasha && !character.tceFullBanned && character.className === "ranger" && (((_character$classChoic3 = character.classChoices) === null || _character$classChoic3 === void 0 ? void 0 : _character$classChoic3["tce-primal-awareness"]) || []).includes("primal-awareness")) {
 		for (const [level, id] of [
 			[3, "speak-with-animals"],
 			[5, "spell-doc-beast_sense"],
@@ -22809,16 +22934,22 @@ function alwaysPreparedSpellEntries$1(character, catalog) {
 			mode: "known"
 		});
 	}
-	if (!character.tceFullBanned && character.className === "ranger" && (character.classChoices?.["fighting-style"] || []).includes("druidic-warrior")) for (const id of character.classChoices?.["druidic-warrior-cantrips"] || []) entries.push({
-		id,
-		source: "Воин-друид (TCE)",
-		mode: "known"
-	});
-	if (!character.tceFullBanned && character.className === "paladin" && (character.classChoices?.["fighting-style"] || []).includes("blessed-warrior")) for (const id of character.classChoices?.["blessed-warrior-cantrips"] || []) entries.push({
-		id,
-		source: "Благословенный воин (TCE)",
-		mode: "known"
-	});
+	if (!character.tceFullBanned && character.className === "ranger" && (((_character$classChoic4 = character.classChoices) === null || _character$classChoic4 === void 0 ? void 0 : _character$classChoic4["fighting-style"]) || []).includes("druidic-warrior")) {
+		var _character$classChoic5;
+		for (const id of ((_character$classChoic5 = character.classChoices) === null || _character$classChoic5 === void 0 ? void 0 : _character$classChoic5["druidic-warrior-cantrips"]) || []) entries.push({
+			id,
+			source: "Воин-друид (TCE)",
+			mode: "known"
+		});
+	}
+	if (!character.tceFullBanned && character.className === "paladin" && (((_character$classChoic6 = character.classChoices) === null || _character$classChoic6 === void 0 ? void 0 : _character$classChoic6["fighting-style"]) || []).includes("blessed-warrior")) {
+		var _character$classChoic7;
+		for (const id of ((_character$classChoic7 = character.classChoices) === null || _character$classChoic7 === void 0 ? void 0 : _character$classChoic7["blessed-warrior-cantrips"]) || []) entries.push({
+			id,
+			source: "Благословенный воин (TCE)",
+			mode: "known"
+		});
+	}
 	return entries.filter((entry) => {
 		const spell = catalog.find((item) => item.id === entry.id);
 		return Boolean(spell) && spell.level <= maximum;
@@ -22876,7 +23007,10 @@ var pointBuyCost = {
 	15: 9
 };
 function pointBuySpent(scores) {
-	return Object.values(scores).reduce((total, score) => total + (pointBuyCost[Math.max(8, Math.min(15, score))] ?? 0), 0);
+	return Object.values(scores).reduce((total, score) => {
+		var _pointBuyCost$Math$ma;
+		return total + ((_pointBuyCost$Math$ma = pointBuyCost[Math.max(8, Math.min(15, score))]) !== null && _pointBuyCost$Math$ma !== void 0 ? _pointBuyCost$Math$ma : 0);
+	}, 0);
 }
 var legalPointBuyBuilds$1 = [];
 for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) for (let con = 8; con <= 15; con += 1) for (let int = 8; int <= 15; int += 1) for (let wis = 8; wis <= 15; wis += 1) for (let cha = 8; cha <= 15; cha += 1) {
@@ -22893,12 +23027,13 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
 //#endregion
 //#region app/characterRules.ts
 function spellSelectionRuleForClass(character, classId, classLevel = character.level) {
-	const custom = character.homebrew?.entities.find((e) => e.id === classId && e.type === "class");
-	const casting = custom?.spellcasting;
+	var _character$homebrew, _casting$slots, _casting$cantrips$lev, _casting$cantrips, _casting$known$level, _casting$known;
+	const custom = (_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.entities.find((e) => e.id === classId && e.type === "class");
+	const casting = custom === null || custom === void 0 ? void 0 : custom.spellcasting;
 	if (!casting || casting.mode === "none") return spellSelectionRuleForClass$1(character, classId, classLevel);
 	const level = Math.max(1, Math.min(20, classLevel));
 	const progression = casting.mode === "full" ? level : casting.mode === "half" ? Math.ceil(level / 2) : casting.mode === "third" ? Math.ceil(level / 3) : 0;
-	const slots = casting.mode === "custom" ? casting.slots?.[String(level)] || [] : casting.mode === "pact" ? [] : fullCasterSlots[progression] || [];
+	const slots = casting.mode === "custom" ? ((_casting$slots = casting.slots) === null || _casting$slots === void 0 ? void 0 : _casting$slots[String(level)]) || [] : casting.mode === "pact" ? [] : fullCasterSlots[progression] || [];
 	const maxLevel = casting.mode === "pact" ? Math.min(5, Math.ceil(level / 2)) : slots.length;
 	let prepared = 1;
 	try {
@@ -22910,10 +23045,10 @@ function spellSelectionRuleForClass(character, classId, classLevel = character.l
 				"@classLevel": level
 			}
 		})));
-	} catch {}
+	} catch (_unused) {}
 	const mode = casting.selection || "known";
-	const cantrips = casting.cantrips?.[level] ?? (maxLevel ? 2 : 0);
-	const leveled = mode === "prepared" ? prepared : casting.known?.[level] ?? Math.max(2, level + 1);
+	const cantrips = (_casting$cantrips$lev = (_casting$cantrips = casting.cantrips) === null || _casting$cantrips === void 0 ? void 0 : _casting$cantrips[level]) !== null && _casting$cantrips$lev !== void 0 ? _casting$cantrips$lev : maxLevel ? 2 : 0;
+	const leveled = mode === "prepared" ? prepared : (_casting$known$level = (_casting$known = casting.known) === null || _casting$known === void 0 ? void 0 : _casting$known[level]) !== null && _casting$known$level !== void 0 ? _casting$known$level : Math.max(2, level + 1);
 	return {
 		caster: maxLevel > 0 || cantrips > 0,
 		mode,
@@ -22935,12 +23070,13 @@ function spellSelectionRule(character) {
 function alwaysPreparedSpellEntries(character, catalog) {
 	const entries = alwaysPreparedSpellEntries$1(character, catalog);
 	for (const source of activeHomebrew(character)) {
+		var _source$parentClassId;
 		if (![
 			"class",
 			"subclass",
 			"ability"
 		].includes(source.type) || source.type === "ability" && !source.parentClassId) continue;
-		const classId = source.type === "class" ? source.id : source.parentClassId?.replace("official:class:", "") || "";
+		const classId = source.type === "class" ? source.id : ((_source$parentClassId = source.parentClassId) === null || _source$parentClassId === void 0 ? void 0 : _source$parentClassId.replace("official:class:", "")) || "";
 		if (classId !== character.className) continue;
 		const level = homebrewClassLevel(character, classId);
 		for (const grant of source.spellGrants || []) {
@@ -23330,8 +23466,11 @@ function raceAbilityBonuses(character) {
 		cha: 0
 	};
 	const variant = selectedRaceVariant(character.race, character.raceVariant);
-	for (const [key, value] of Object.entries(variant?.bonuses || {})) result[key] += value || 0;
-	if (variant?.chooseBonuses) for (const [index, key] of (character.raceAbilityChoices || []).slice(0, variant.chooseBonuses.count).entries()) result[key] += variant.chooseBonuses.amounts?.[index] ?? variant.chooseBonuses.amount ?? 0;
+	for (const [key, value] of Object.entries((variant === null || variant === void 0 ? void 0 : variant.bonuses) || {})) result[key] += value || 0;
+	if (variant === null || variant === void 0 ? void 0 : variant.chooseBonuses) for (const [index, key] of (character.raceAbilityChoices || []).slice(0, variant.chooseBonuses.count).entries()) {
+		var _ref, _variant$chooseBonuse, _variant$chooseBonuse2;
+		result[key] += (_ref = (_variant$chooseBonuse = (_variant$chooseBonuse2 = variant.chooseBonuses.amounts) === null || _variant$chooseBonuse2 === void 0 ? void 0 : _variant$chooseBonuse2[index]) !== null && _variant$chooseBonuse !== void 0 ? _variant$chooseBonuse : variant.chooseBonuses.amount) !== null && _ref !== void 0 ? _ref : 0;
+	}
 	return result;
 }
 function finalAbilityScores(character) {
@@ -23344,6 +23483,7 @@ function finalAbilityScores(character) {
 	return hbAbilities(character, Object.fromEntries(Object.keys(character.abilities).map((key) => [key, Math.min(20, character.abilities[key] + bonuses[key] + (asiBonuses[key] || 0) + (featBonuses[key] || 0))])));
 }
 function raceProficiencies(character) {
+	var _selectedRaceVariant;
 	return [...new Set([
 		...{
 			dwarf: [
@@ -23359,7 +23499,7 @@ function raceProficiencies(character) {
 			giff: ["Огнестрельное оружие"],
 			astralelf: ["Один навык и один инструмент после транса"]
 		}[character.race] || [],
-		...selectedRaceVariant(character.race, character.raceVariant)?.proficiencies || [],
+		...((_selectedRaceVariant = selectedRaceVariant(character.race, character.raceVariant)) === null || _selectedRaceVariant === void 0 ? void 0 : _selectedRaceVariant.proficiencies) || [],
 		...character.raceSkills || []
 	])];
 }
@@ -23388,6 +23528,7 @@ for (let str = 8; str <= 15; str += 1) for (let dex = 8; dex <= 15; dex += 1) fo
 	if (pointBuySpent(abilities) === 27) legalPointBuyBuilds.push(abilities);
 }
 function optimalAbilityBuild(character) {
+	var _character$homebrew2, _custom$spellcasting;
 	const variant = selectedRaceVariant(character.race, character.raceVariant);
 	const keys = [
 		"str",
@@ -23397,21 +23538,28 @@ function optimalAbilityBuild(character) {
 		"wis",
 		"cha"
 	];
-	const flexible = variant?.chooseBonuses;
-	const eligible = keys.filter((key) => !flexible?.exclude?.includes(key));
+	const flexible = variant === null || variant === void 0 ? void 0 : variant.chooseBonuses;
+	const eligible = keys.filter((key) => {
+		var _flexible$exclude;
+		return !(flexible === null || flexible === void 0 || (_flexible$exclude = flexible.exclude) === null || _flexible$exclude === void 0 ? void 0 : _flexible$exclude.includes(key));
+	});
 	const raceChoices = flexible ? distinctAbilitySelections(flexible.count, eligible) : [[]];
-	const fixed = Object.fromEntries(keys.map((key) => [key, variant?.bonuses?.[key] || 0]));
-	const custom = character.homebrew?.entities.find((entity) => entity.id === character.className && entity.type === "class");
+	const fixed = Object.fromEntries(keys.map((key) => {
+		var _variant$bonuses;
+		return [key, (variant === null || variant === void 0 || (_variant$bonuses = variant.bonuses) === null || _variant$bonuses === void 0 ? void 0 : _variant$bonuses[key]) || 0];
+	}));
+	const custom = (_character$homebrew2 = character.homebrew) === null || _character$homebrew2 === void 0 ? void 0 : _character$homebrew2.entities.find((entity) => entity.id === character.className && entity.type === "class");
 	const resolvedRule = classRuleFor(character, character.className);
-	const primary = custom?.spellcasting?.ability || resolvedRule?.spellAbility || custom?.primaryAbility || physicalPrimary[character.className] || "con";
-	const heavyArmor = /все доспехи|тяж[её]л/i.test(resolvedRule?.armor || "");
+	const primary = (custom === null || custom === void 0 || (_custom$spellcasting = custom.spellcasting) === null || _custom$spellcasting === void 0 ? void 0 : _custom$spellcasting.ability) || (resolvedRule === null || resolvedRule === void 0 ? void 0 : resolvedRule.spellAbility) || (custom === null || custom === void 0 ? void 0 : custom.primaryAbility) || physicalPrimary[character.className] || "con";
+	const heavyArmor = /все доспехи|тяж[её]л/i.test((resolvedRule === null || resolvedRule === void 0 ? void 0 : resolvedRule.armor) || "");
 	const second = !heavyArmor && primary !== "dex" ? "dex" : primary === "str" ? "con" : "str";
 	const third = primary === "con" || second === "con" ? "wis" : "con";
 	let best = null;
 	for (const chosen of raceChoices) {
 		const bonuses = { ...fixed };
 		chosen.forEach((key, index) => {
-			bonuses[key] += flexible?.amounts?.[index] ?? flexible?.amount ?? 0;
+			var _ref2, _flexible$amounts$ind, _flexible$amounts;
+			bonuses[key] += (_ref2 = (_flexible$amounts$ind = flexible === null || flexible === void 0 || (_flexible$amounts = flexible.amounts) === null || _flexible$amounts === void 0 ? void 0 : _flexible$amounts[index]) !== null && _flexible$amounts$ind !== void 0 ? _flexible$amounts$ind : flexible === null || flexible === void 0 ? void 0 : flexible.amount) !== null && _ref2 !== void 0 ? _ref2 : 0;
 		});
 		for (const abilities of legalPointBuyBuilds) {
 			const final = Object.fromEntries(keys.map((key) => [key, abilities[key] + bonuses[key]]));
@@ -23494,8 +23642,9 @@ function readConditions(formula) {
 	};
 }
 function effectLabel(effect, elements) {
-	const target = elements.find((element) => element.id === effect.id)?.name;
-	const amount = effect.formula ?? effect.value;
+	var _elements$find, _effect$formula;
+	const target = (_elements$find = elements.find((element) => element.id === effect.id)) === null || _elements$find === void 0 ? void 0 : _elements$find.name;
+	const amount = (_effect$formula = effect.formula) !== null && _effect$formula !== void 0 ? _effect$formula : effect.value;
 	return [
 		effectTypes[effect.type] || effect.type,
 		target || effect.id,
@@ -23506,6 +23655,7 @@ function effectLabel(effect, elements) {
 	].filter(Boolean).join(" · ");
 }
 function homebrewRelations(elements) {
+	var _byId$get;
 	const flat = editableHomebrew(elements), byId = new Map(flat.map((element) => [element.id, element]));
 	const officialNames = new Map([
 		...classes.map((e) => ["official:class:" + e.id, e.name]),
@@ -23618,6 +23768,7 @@ function homebrewRelations(elements) {
 				add(element.id, effect.id, effectTypes[effect.type] || effect.type, condition);
 				conditions(effect.when, effect.id, "Условие выдачи");
 			} else {
+				var _effect$formula2;
 				const key = `effect:${element.id}:${index}`;
 				node({
 					id: key,
@@ -23627,13 +23778,14 @@ function homebrewRelations(elements) {
 				});
 				add(element.id, key, "Даёт эффект", condition);
 				conditions(effect.when, key, "Включает эффект");
-				conditions(effect.formula ?? effect.value, key);
+				conditions((_effect$formula2 = effect.formula) !== null && _effect$formula2 !== void 0 ? _effect$formula2 : effect.value, key);
 			}
 			conditions(effect.when, element.id, "Включает эффект способности");
 		}
 		for (const requirement of element.requirements || []) add(requirement.id, element.id, "Требуется для выбора");
 		for (const [level, rows] of Object.entries(element.advancement || {})) for (const row of rows) if (row.id) {
-			const choice = element.choices?.find((c) => c.id === row.id);
+			var _element$choices;
+			const choice = (_element$choices = element.choices) === null || _element$choices === void 0 ? void 0 : _element$choices.find((c) => c.id === row.id);
 			add(element.id, row.type === "choice" && choice ? `choice:${element.id}:${choice.id}` : row.id, "Выдаёт", `С ${level} уровня`);
 		} else if (row.type === "subclass") for (const child of elements.filter((child) => child.type === "subclass" && child.parentClassId === element.id)) add(element.id, child.id, "Выбор подкласса", `С ${level} уровня`);
 		for (const grant of element.spellGrants || []) add(element.id, grant.spellId, grant.mode === "always-prepared" ? "Всегда подготовлено" : "Даёт заклинание", `С ${grant.level} уровня`);
@@ -23647,7 +23799,7 @@ function homebrewRelations(elements) {
 	const edges = [...edgesByKey.values()];
 	for (const edge of edges) for (const id of [edge.from, edge.to]) if (!nodesById.has(id)) node({
 		id,
-		name: byId.get(id)?.name || officialNames.get(id) || id,
+		name: ((_byId$get = byId.get(id)) === null || _byId$get === void 0 ? void 0 : _byId$get.name) || officialNames.get(id) || id,
 		kind: "reference",
 		entityId: id
 	});
@@ -23669,8 +23821,9 @@ function homebrewPackages(elements) {
 	const owner = /* @__PURE__ */ new Map();
 	const packRoot = /* @__PURE__ */ new Map();
 	for (const element of classes) {
+		var _element$source;
 		owner.set(element.id, element.id);
-		if (element.source?.packId) packRoot.set(element.source.packId, element.id);
+		if ((_element$source = element.source) === null || _element$source === void 0 ? void 0 : _element$source.packId) packRoot.set(element.source.packId, element.id);
 	}
 	const childIds = new Set(elements.flatMap((element) => [
 		...(element.choices || []).flatMap((choice) => choice.from),
@@ -23679,11 +23832,13 @@ function homebrewPackages(elements) {
 		...Object.values(element.advancement || {}).flatMap((rows) => rows.flatMap((row) => row.id ? [row.id] : []))
 	]));
 	for (const element of elements) if (!owner.has(element.id) && !childIds.has(element.id) && (!element.parentClassId || !byId.has(element.parentClassId)) && (!element.parentRaceId || !byId.has(element.parentRaceId)) && !(element.references || []).some((id) => byId.has(id))) {
+		var _element$source2;
 		owner.set(element.id, element.id);
-		if (element.source?.packId && !packRoot.has(element.source.packId)) packRoot.set(element.source.packId, element.id);
+		if (((_element$source2 = element.source) === null || _element$source2 === void 0 ? void 0 : _element$source2.packId) && !packRoot.has(element.source.packId)) packRoot.set(element.source.packId, element.id);
 	}
 	for (const element of elements) {
-		const root = element.source?.packId && packRoot.get(element.source.packId);
+		var _element$source3;
+		const root = ((_element$source3 = element.source) === null || _element$source3 === void 0 ? void 0 : _element$source3.packId) && packRoot.get(element.source.packId);
 		if (root) owner.set(element.id, root);
 	}
 	for (let pass = 0; pass < elements.length; pass += 1) {
@@ -23695,7 +23850,10 @@ function homebrewPackages(elements) {
 				element.parentRaceId,
 				...element.spellClasses || [],
 				...element.references || []
-			].filter((id) => !!id).map((id) => owner.get(id) || (byId.get(id)?.type === "class" ? id : void 0)).find(Boolean);
+			].filter((id) => !!id).map((id) => {
+				var _byId$get;
+				return owner.get(id) || (((_byId$get = byId.get(id)) === null || _byId$get === void 0 ? void 0 : _byId$get.type) === "class" ? id : void 0);
+			}).find(Boolean);
 			if (root) {
 				owner.set(element.id, root);
 				changed = true;
@@ -23748,22 +23906,34 @@ function homebrewPackageLabel(pack) {
 }
 //#endregion
 //#region app/homebrewEngine.ts
-var level = (c) => c.classes?.length ? c.classes.reduce((s, x) => s + x.level, 0) : c.level || 1;
-var homebrewClassLevel = (c, id) => c.classes?.length ? c.classes.find((x) => x.classId === id.replace("official:class:", ""))?.level || 0 : c.className === id.replace("official:class:", "") ? c.level : 0;
+var level = (c) => {
+	var _c$classes;
+	return ((_c$classes = c.classes) === null || _c$classes === void 0 ? void 0 : _c$classes.length) ? c.classes.reduce((s, x) => s + x.level, 0) : c.level || 1;
+};
+var homebrewClassLevel = (c, id) => {
+	var _c$classes2, _c$classes$find;
+	return ((_c$classes2 = c.classes) === null || _c$classes2 === void 0 ? void 0 : _c$classes2.length) ? ((_c$classes$find = c.classes.find((x) => x.classId === id.replace("official:class:", ""))) === null || _c$classes$find === void 0 ? void 0 : _c$classes$find.level) || 0 : c.className === id.replace("official:class:", "") ? c.level : 0;
+};
 var classLevel = homebrewClassLevel;
 function homebrewChoiceReason(c, owner, choice, target, all, available) {
+	var _all$find, _owner$choices;
 	const ownerLevel = owner.type === "class" ? classLevel(c, owner.id) : owner.parentClassId ? classLevel(c, owner.parentClassId) : level(c);
 	if (choice.level && ownerLevel < choice.level) return `Требуется ${choice.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
 	if (target.level && ownerLevel < target.level) return `Требуется ${target.level}-й уровень ${owner.type === "class" || owner.parentClassId ? "класса" : "персонажа"}`;
 	const valid = available || new Set(activeHomebrew(c).map((element) => element.id));
-	for (const requirement of target.requirements || []) if (requirement.type === "selected_feature" && !valid.has(requirement.id)) return `Требуется ${requirement.label || all.find((e) => e.id === requirement.id)?.name || requirement.id}`;
-	if (choice.uniqueAcrossGroup && choice.choiceGroup && owner.choices?.slice(0, owner.choices.findIndex((other) => other.id === choice.id)).some((other) => other.choiceGroup === choice.choiceGroup && (c.homebrew?.choices?.[other.id] || []).includes(target.id))) return "Уже выбран в этой группе";
+	for (const requirement of target.requirements || []) if (requirement.type === "selected_feature" && !valid.has(requirement.id)) return `Требуется ${requirement.label || ((_all$find = all.find((e) => e.id === requirement.id)) === null || _all$find === void 0 ? void 0 : _all$find.name) || requirement.id}`;
+	if (choice.uniqueAcrossGroup && choice.choiceGroup && ((_owner$choices = owner.choices) === null || _owner$choices === void 0 ? void 0 : _owner$choices.slice(0, owner.choices.findIndex((other) => other.id === choice.id)).some((other) => {
+		var _c$homebrew;
+		return other.choiceGroup === choice.choiceGroup && (((_c$homebrew = c.homebrew) === null || _c$homebrew === void 0 || (_c$homebrew = _c$homebrew.choices) === null || _c$homebrew === void 0 ? void 0 : _c$homebrew[other.id]) || []).includes(target.id);
+	}))) return "Уже выбран в этой группе";
 	return "";
 }
 function homebrewChoiceStatuses(c) {
-	const all = c.homebrew?.entities || [];
+	var _c$homebrew2;
+	const all = ((_c$homebrew2 = c.homebrew) === null || _c$homebrew2 === void 0 ? void 0 : _c$homebrew2.entities) || [];
 	return activeHomebrew(c).flatMap((owner) => (owner.choices || []).filter((choice) => hbEnabled(c, choice, owner)).map((choice) => {
-		const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => {
+		var _c$homebrew3;
+		const selected = [...new Set(((_c$homebrew3 = c.homebrew) === null || _c$homebrew3 === void 0 || (_c$homebrew3 = _c$homebrew3.choices) === null || _c$homebrew3 === void 0 ? void 0 : _c$homebrew3[choice.id]) || [])].filter((id) => {
 			const target = all.find((entity) => entity.id === id);
 			return !!target && choice.from.includes(id) && !homebrewChoiceReason(c, owner, choice, target, all);
 		}).slice(0, choice.count);
@@ -23779,10 +23949,14 @@ function homebrewChoicesComplete(c) {
 	return homebrewChoiceStatuses(c).every((status) => status.missing === 0);
 }
 function hbContext(c, source, available) {
-	const entities = c.homebrew?.entities || [];
+	var _c$homebrew4;
+	const entities = ((_c$homebrew4 = c.homebrew) === null || _c$homebrew4 === void 0 ? void 0 : _c$homebrew4.entities) || [];
 	const owner = entities.find((e) => e.id === source);
-	const featureOwner = entities.find((e) => e.features?.some((feature) => feature.id === source));
-	const classId = owner?.type === "class" ? owner.id : owner?.parentClassId || featureOwner?.parentClassId || featureOwner?.id;
+	const featureOwner = entities.find((e) => {
+		var _e$features;
+		return (_e$features = e.features) === null || _e$features === void 0 ? void 0 : _e$features.some((feature) => feature.id === source);
+	});
+	const classId = (owner === null || owner === void 0 ? void 0 : owner.type) === "class" ? owner.id : (owner === null || owner === void 0 ? void 0 : owner.parentClassId) || (featureOwner === null || featureOwner === void 0 ? void 0 : featureOwner.parentClassId) || (featureOwner === null || featureOwner === void 0 ? void 0 : featureOwner.id);
 	const values = {
 		"@level": level(c),
 		"@classLevel": classId ? classLevel(c, classId) : 0,
@@ -23801,8 +23975,12 @@ function hbContext(c, source, available) {
 		source,
 		classLevel: (id) => classLevel(c, id),
 		resource: (id, field) => {
-			const source = editableHomebrew(entities).find((e) => e.resources?.some((r) => r.id === id));
-			const r = source?.resources?.find((r) => r.id === id);
+			var _source$resources, _c$resourceSpent;
+			const source = editableHomebrew(entities).find((e) => {
+				var _e$resources;
+				return (_e$resources = e.resources) === null || _e$resources === void 0 ? void 0 : _e$resources.some((r) => r.id === id);
+			});
+			const r = source === null || source === void 0 || (_source$resources = source.resources) === null || _source$resources === void 0 ? void 0 : _source$resources.find((r) => r.id === id);
 			if (!r || !source) return 0;
 			const ownerId = source.type === "class" ? source.id : source.parentClassId;
 			const ownerLevel = ownerId ? classLevel(c, ownerId) : level(c);
@@ -23813,15 +23991,18 @@ function hbContext(c, source, available) {
 				},
 				classLevel: (i) => classLevel(c, i)
 			});
-			return field === "max" ? max : Math.max(0, max - (c.resourceSpent?.[id] || 0));
+			return field === "max" ? max : Math.max(0, max - (((_c$resourceSpent = c.resourceSpent) === null || _c$resourceSpent === void 0 ? void 0 : _c$resourceSpent[id]) || 0));
 		},
-		predicate: (name, id) => name === "equipped" ? (c.homebrew?.equipped || []).includes(id) : name === "hasFeature" ? featureIds.has(id) : name === "hasArmor" ? id === "shield" ? equippedItems.some((item) => /щит/.test(item)) : id === "armor" ? equippedItems.some((item) => /(доспех|кольчуг|латы|кожа|брон)/.test(item)) : false : false
+		predicate: (name, id) => {
+			var _c$homebrew5;
+			return name === "equipped" ? (((_c$homebrew5 = c.homebrew) === null || _c$homebrew5 === void 0 ? void 0 : _c$homebrew5.equipped) || []).includes(id) : name === "hasFeature" ? featureIds.has(id) : name === "hasArmor" ? id === "shield" ? equippedItems.some((item) => /щит/.test(item)) : id === "armor" ? equippedItems.some((item) => /(доспех|кольчуг|латы|кожа|брон)/.test(item)) : false : false;
+		}
 	};
 }
 function hbValue(c, value, source) {
 	try {
-		return evaluateFormula(value ?? 0, hbContext(c, source));
-	} catch {
+		return evaluateFormula(value !== null && value !== void 0 ? value : 0, hbContext(c, source));
+	} catch (_unused) {
 		return 0;
 	}
 }
@@ -23830,14 +24011,15 @@ function hbEnabled(c, row, source, available) {
 	if (row.level && row.level > l) return false;
 	try {
 		return !row.when || !!evaluateFormula(row.when, hbContext(c, source.id, available));
-	} catch {
+	} catch (_unused2) {
 		return false;
 	}
 }
 function activeHomebrew(c) {
-	const all = c.homebrew?.entities || [], byId = new Map(editableHomebrew(all).map((e) => [e.id, e]));
+	var _c$homebrew6, _c$homebrew7;
+	const all = ((_c$homebrew6 = c.homebrew) === null || _c$homebrew6 === void 0 ? void 0 : _c$homebrew6.entities) || [], byId = new Map(editableHomebrew(all).map((e) => [e.id, e]));
 	const roots = [
-		...c.homebrew?.activeIds || [],
+		...((_c$homebrew7 = c.homebrew) === null || _c$homebrew7 === void 0 ? void 0 : _c$homebrew7.activeIds) || [],
 		c.className,
 		c.race,
 		c.raceVariant,
@@ -23867,7 +24049,8 @@ function activeHomebrew(c) {
 			}
 			for (const effect of e.effects || []) if (effect.type.startsWith("grant_") && effect.id && hbEnabled(c, effect, e, available)) visit(effect.id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
 			for (const choice of e.choices || []) if (hbEnabled(c, choice, e, available)) {
-				const selected = [...new Set(c.homebrew?.choices?.[choice.id] || [])].filter((id) => choice.from.includes(id) && byId.has(id) && !homebrewChoiceReason(c, e, choice, byId.get(id), all, available)).slice(0, choice.count);
+				var _c$homebrew8;
+				const selected = [...new Set(((_c$homebrew8 = c.homebrew) === null || _c$homebrew8 === void 0 || (_c$homebrew8 = _c$homebrew8.choices) === null || _c$homebrew8 === void 0 ? void 0 : _c$homebrew8[choice.id]) || [])].filter((id) => choice.from.includes(id) && byId.has(id) && !homebrewChoiceReason(c, e, choice, byId.get(id), all, available)).slice(0, choice.count);
 				for (const id of selected) visit(id, depth + 1, e.type === "class" ? e.id : e.parentClassId);
 			}
 		};
@@ -23902,11 +24085,14 @@ function homebrewDefenses(c) {
 	};
 }
 function hbEffects(c, type) {
-	return activeHomebrew(c).flatMap((source) => (source.effects || []).filter((e) => (!type || e.type === type) && hbEnabled(c, e, source)).map((effect) => ({
-		source,
-		effect,
-		value: hbValue(c, effect.value ?? effect.formula, source.id)
-	})));
+	return activeHomebrew(c).flatMap((source) => (source.effects || []).filter((e) => (!type || e.type === type) && hbEnabled(c, e, source)).map((effect) => {
+		var _effect$value;
+		return {
+			source,
+			effect,
+			value: hbValue(c, (_effect$value = effect.value) !== null && _effect$value !== void 0 ? _effect$value : effect.formula, source.id)
+		};
+	}));
 }
 function hbSum(c, type, filter = () => true) {
 	return hbEffects(c, type).filter((x) => filter(x.effect)).reduce((sum, x) => sum + x.value, 0);
@@ -23920,8 +24106,9 @@ function hbAbilities(c, base) {
 	return result;
 }
 function hbSkillName(id) {
+	var _Object$entries$find;
 	const normalized = id.replace(/^skill:/, "").replace(/-/g, " ");
-	return Object.entries(skillKeys).find(([name, data]) => name === id || data.key === normalized)?.[0] || id;
+	return ((_Object$entries$find = Object.entries(skillKeys).find(([name, data]) => name === id || data.key === normalized)) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0]) || id;
 }
 var weaponProficiencyNames = {
 	club: "Дубинка",
@@ -23963,7 +24150,8 @@ var weaponProficiencyNames = {
 	net: "Сеть"
 };
 function classRuleFor(c, id) {
-	const e = c.homebrew?.entities.find((e) => e.id === id && e.type === "class");
+	var _c$homebrew9, _e$spellcasting;
+	const e = (_c$homebrew9 = c.homebrew) === null || _c$homebrew9 === void 0 ? void 0 : _c$homebrew9.entities.find((e) => e.id === id && e.type === "class");
 	if (!e) return classRules[id];
 	return {
 		hitDie: Number((e.hitDie || "d8").slice(1)),
@@ -23975,12 +24163,15 @@ function classRuleFor(c, id) {
 			shield: "Щиты"
 		})[e.group] || e.group).join(", "),
 		weapons: (e.effects || []).filter((e) => e.type === "weapon_proficiency" || e.type === "weapon_group_proficiency").map((e) => e.group === "simple" ? "Простое оружие" : e.group === "martial" ? "Воинское оружие" : weaponProficiencyNames[e.id || ""] || e.id || "").join(", "),
-		spellAbility: e.spellcasting?.mode && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
-		features: activeHomebrew(c).filter((x) => x.type === "ability" && x.parentClassId === id).map((x) => ({
-			name: x.name,
-			description: x.description,
-			effectHandling: x.effects?.some((effect) => effect.when) ? "conditional" : x.effects?.length || x.resources?.length || x.attacks?.length || x.actions?.length || x.choices?.length ? "automatic" : "manual"
-		}))
+		spellAbility: ((_e$spellcasting = e.spellcasting) === null || _e$spellcasting === void 0 ? void 0 : _e$spellcasting.mode) && e.spellcasting.mode !== "none" ? e.spellcasting.ability : void 0,
+		features: activeHomebrew(c).filter((x) => x.type === "ability" && x.parentClassId === id).map((x) => {
+			var _x$effects, _x$effects2, _x$resources, _x$attacks, _x$actions, _x$choices;
+			return {
+				name: x.name,
+				description: x.description,
+				effectHandling: ((_x$effects = x.effects) === null || _x$effects === void 0 ? void 0 : _x$effects.some((effect) => effect.when)) ? "conditional" : ((_x$effects2 = x.effects) === null || _x$effects2 === void 0 ? void 0 : _x$effects2.length) || ((_x$resources = x.resources) === null || _x$resources === void 0 ? void 0 : _x$resources.length) || ((_x$attacks = x.attacks) === null || _x$attacks === void 0 ? void 0 : _x$attacks.length) || ((_x$actions = x.actions) === null || _x$actions === void 0 ? void 0 : _x$actions.length) || ((_x$choices = x.choices) === null || _x$choices === void 0 ? void 0 : _x$choices.length) ? "automatic" : "manual"
+			};
+		})
 	};
 }
 function hbResources(c) {
@@ -23997,10 +24188,11 @@ function hbResources(c) {
 	}
 	for (const source of activeHomebrew(c)) if (source.type === "class" || source.parentClassId) {
 		for (const grant of source.spellGrants || []) if (grant.uses && grant.level <= classLevel(c, source.type === "class" ? source.id : source.parentClassId || "")) {
+			var _spells$find, _c$homebrew10;
 			const key = source.id + ":spell:" + grant.spellId;
 			map.set(key, {
 				key,
-				name: source.name + " · " + (spells.find((e) => e.id === grant.spellId)?.name || c.homebrew?.entities.find((e) => e.id === grant.spellId)?.name || grant.spellId),
+				name: source.name + " · " + (((_spells$find = spells.find((e) => e.id === grant.spellId)) === null || _spells$find === void 0 ? void 0 : _spells$find.name) || ((_c$homebrew10 = c.homebrew) === null || _c$homebrew10 === void 0 || (_c$homebrew10 = _c$homebrew10.entities.find((e) => e.id === grant.spellId)) === null || _c$homebrew10 === void 0 ? void 0 : _c$homebrew10.name) || grant.spellId),
 				max: grant.uses,
 				isShortRest: grant.recovery === "short_or_long",
 				isLongRest: true
@@ -24039,13 +24231,14 @@ function hbAttacks(c) {
 }
 /** Definitions belong to the shared library; character saves contain references and play state. */
 function bindHomebrewLibrary(c, library) {
+	var _c$homebrew11;
 	if (c.adventure) return c;
 	return {
 		...c,
 		homebrew: {
 			...c.homebrew,
 			entities: library.elements,
-			activeIds: c.homebrew?.activeIds || []
+			activeIds: ((_c$homebrew11 = c.homebrew) === null || _c$homebrew11 === void 0 ? void 0 : _c$homebrew11.activeIds) || []
 		}
 	};
 }
@@ -24073,37 +24266,43 @@ function homebrewExportClosure(root, library) {
 		for (const ref of refs) if (ref !== id) visit(ref);
 	};
 	const pack = homebrewPackageFor(root, library);
-	for (const member of pack?.members || [root]) visit(member.id);
+	for (const member of (pack === null || pack === void 0 ? void 0 : pack.members) || [root]) visit(member.id);
 	return result;
 }
 function homebrewExportWarning(c) {
+	var _c$homebrew12, _c$homebrew13;
 	const entries = activeHomebrew(c).map((e) => `${homebrewTypeLabels[e.type]}: ${e.name}`);
-	const known = new Set((c.homebrew?.entities || []).map((e) => e.id));
+	const known = new Set((((_c$homebrew12 = c.homebrew) === null || _c$homebrew12 === void 0 ? void 0 : _c$homebrew12.entities) || []).map((e) => e.id));
 	for (const id of [
-		...c.homebrew?.activeIds || [],
+		...((_c$homebrew13 = c.homebrew) === null || _c$homebrew13 === void 0 ? void 0 : _c$homebrew13.activeIds) || [],
 		c.className,
 		c.race,
 		c.subclass,
 		c.background,
 		...(c.classes || []).flatMap((x) => [x.classId, x.subclassId || ""])
-	]) if (id?.startsWith("hb:") && !known.has(id)) entries.push("Не загружен элемент: " + id);
+	]) if ((id === null || id === void 0 ? void 0 : id.startsWith("hb:")) && !known.has(id)) entries.push("Не загружен элемент: " + id);
 	return entries.length ? "Внимание, персонаж содержит Homebrew:\n" + [...new Set(entries)].join("\n") + "\n\nПолная поддержка пользовательских правил доступна в HeroList при подключённой библиотеке Homebrew. LSS и Helpmate могут перенести только часть данных; автоматизация и таблицы могут не сохраниться. Продолжить экспорт?" : "";
 }
 //#endregion
 //#region app/spellPreparation.ts
 /** Preparation V1 uses class IDs as keys. Legacy global IDs remain an export compatibility union. */
 function classPreparedSpellIds(character, classId) {
-	const explicit = character.preparedSpellsByClass?.[classId];
+	var _character$preparedSp, _character$classes, _character$spellGrant;
+	const explicit = (_character$preparedSp = character.preparedSpellsByClass) === null || _character$preparedSp === void 0 ? void 0 : _character$preparedSp[classId];
 	if (Array.isArray(explicit)) return [...new Set(explicit.filter((id) => typeof id === "string"))];
-	const entry = character.classes?.find((entry) => entry.classId === classId);
-	const ids = character.spellGrants?.length ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
-	const rule = spellSelectionRuleForClass(character, classId, entry?.level || character.level);
-	const leveled = ids.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0);
+	const entry = (_character$classes = character.classes) === null || _character$classes === void 0 ? void 0 : _character$classes.find((entry) => entry.classId === classId);
+	const ids = ((_character$spellGrant = character.spellGrants) === null || _character$spellGrant === void 0 ? void 0 : _character$spellGrant.length) ? character.spellGrants.filter((grant) => grant.classId === classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : classId === character.className ? character.spells : [];
+	const rule = spellSelectionRuleForClass(character, classId, (entry === null || entry === void 0 ? void 0 : entry.level) || character.level);
+	const leveled = ids.filter((id) => {
+		var _spells$find;
+		return (((_spells$find = spells.find((spell) => spell.id === id)) === null || _spells$find === void 0 ? void 0 : _spells$find.level) || 0) > 0;
+	});
 	if (rule.mode === "prepared" && !character.mobilePreparedConfigured) return leveled.slice(0, rule.prepared || leveled.length);
 	return (character.preparedSpells || []).filter((id) => ids.includes(id));
 }
 function migrateSpellPreparation(character) {
-	const classIds = character.classes?.length ? character.classes.map((entry) => entry.classId) : [character.className];
+	var _character$classes2;
+	const classIds = ((_character$classes2 = character.classes) === null || _character$classes2 === void 0 ? void 0 : _character$classes2.length) ? character.classes.map((entry) => entry.classId) : [character.className];
 	const preparedSpellsByClass = Object.fromEntries(classIds.filter(Boolean).map((id) => [id, classPreparedSpellIds(character, id)]));
 	return {
 		...character,
@@ -24848,9 +25047,10 @@ function helpmateSpellId(id) {
 	return helpmateSpellIds[id] || null;
 }
 function dndSpellUrl(id) {
+	var _documentSpells$find;
 	const reference = dndSpellRefs[id];
 	if (reference) return "https://dnd.su/spells/" + reference[0] + "-" + reference[1] + "/";
-	return documentSpells.find((spell) => spell.id === id)?.url || null;
+	return ((_documentSpells$find = documentSpells.find((spell) => spell.id === id)) === null || _documentSpells$find === void 0 ? void 0 : _documentSpells$find.url) || null;
 }
 var spellIdByDndNumber = Object.freeze(Object.fromEntries(Object.entries(dndSpellRefs).map(([id, [number]]) => [number, id])));
 var normalizeSpellName = (value) => value.normalize("NFKD").toLowerCase().replace(/[^a-zа-яё0-9]+/gi, "");
@@ -24871,7 +25071,7 @@ function spellIdFromDndUrl(value) {
 		const parsed = new URL(value, "https://dnd.su");
 		const query = parsed.hostname === "dnd.su" && parsed.pathname === "/spells/" ? parsed.searchParams.get("search") : null;
 		return query ? documentSpellIdByName[normalizeSpellName(query)] || null : null;
-	} catch {
+	} catch (_unused) {
 		return null;
 	}
 }
@@ -24919,7 +25119,8 @@ var optionalFeatureId = (classId, name) => {
 };
 var classOptionId = (classId, key, id) => `${classId}:${key}:${id}`;
 function optionalFeatureAllowed(character, classId, name) {
-	return !!character.useTasha && !character.tceFullBanned && !character.bannedOptionalFeatures?.includes(optionalFeatureId(classId, name));
+	var _character$bannedOpti;
+	return !!character.useTasha && !character.tceFullBanned && !((_character$bannedOpti = character.bannedOptionalFeatures) === null || _character$bannedOpti === void 0 ? void 0 : _character$bannedOpti.includes(optionalFeatureId(classId, name)));
 }
 var choiceFeatures = {
 	"tce-primal-knowledge": "Первобытное знание",
@@ -24937,6 +25138,7 @@ function optionalChoiceAllowed(character, key) {
 }
 /** A derived view: restrictions never erase a saved character's choices. */
 function restrictedCharacter(character) {
+	var _character$classes;
 	const choicesFor = (classId, values = {}) => Object.fromEntries(Object.entries(values).filter(([key]) => {
 		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
 		return optionalChoiceAllowed({
@@ -24945,7 +25147,10 @@ function restrictedCharacter(character) {
 		}, localKey);
 	}).map(([key, ids]) => {
 		const localKey = key.startsWith(`${classId}:`) ? key.slice(classId.length + 1) : key;
-		return [key, ids.filter((id) => !character.bannedClassOptions?.includes(classOptionId(classId, localKey, id)))];
+		return [key, ids.filter((id) => {
+			var _character$bannedClas;
+			return !((_character$bannedClas = character.bannedClassOptions) === null || _character$bannedClas === void 0 ? void 0 : _character$bannedClas.includes(classOptionId(classId, localKey, id)));
+		})];
 	}));
 	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).flatMap(([key, ids]) => {
 		const classId = key.includes(":") ? key.split(":")[0] : character.className;
@@ -24954,7 +25159,7 @@ function restrictedCharacter(character) {
 	return {
 		...character,
 		classChoices,
-		classes: character.classes?.map((entry) => ({
+		classes: (_character$classes = character.classes) === null || _character$classes === void 0 ? void 0 : _character$classes.map((entry) => ({
 			...entry,
 			choiceValues: choicesFor(entry.classId, entry.choiceValues)
 		}))
@@ -25277,8 +25482,9 @@ var abilityKeys$1 = [
 	"cha"
 ];
 function racialSpellAbility(character, definition) {
+	var _character$raceChoice;
 	if (definition.ability !== "choice") return definition.ability;
-	const saved = character.raceChoices?.["spellcasting-ability"]?.[0];
+	const saved = (_character$raceChoice = character.raceChoices) === null || _character$raceChoice === void 0 || (_character$raceChoice = _character$raceChoice["spellcasting-ability"]) === null || _character$raceChoice === void 0 ? void 0 : _character$raceChoice[0];
 	if (saved && abilityKeys$1.includes(saved)) return saved;
 	return abilityKeys$1.reduce((best, key) => character.abilities[key] > character.abilities[best] ? key : best, "int");
 }
@@ -25294,8 +25500,9 @@ function resolvedRacialSpells(character, catalog) {
 		const ability = racialSpellAbility(character, definition);
 		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
 		return definition.spells.flatMap((entry) => {
+			var _character$raceChoice2, _character$resourceSp;
 			if (entry.unlockLevel > level) return [];
-			const spellId = entry.spellId || character.raceChoices?.[entry.choiceKey || ""]?.[0];
+			const spellId = entry.spellId || ((_character$raceChoice2 = character.raceChoices) === null || _character$raceChoice2 === void 0 || (_character$raceChoice2 = _character$raceChoice2[entry.choiceKey || ""]) === null || _character$raceChoice2 === void 0 ? void 0 : _character$raceChoice2[0]);
 			const spell = spellId ? byId.get(spellId) : void 0;
 			if (!spell) return [];
 			const resourceKey = entry.freeUses ? `racial-spell:${character.race}:${entry.resourceGroup || spell.id}` : void 0;
@@ -25307,7 +25514,7 @@ function resolvedRacialSpells(character, catalog) {
 				saveDc: 8 + proficiency + modifier,
 				attackBonus: proficiency + modifier,
 				freeUses,
-				remainingUses: Math.max(0, freeUses - (resourceKey ? character.resourceSpent?.[resourceKey] || 0 : 0)),
+				remainingUses: Math.max(0, freeUses - (resourceKey ? ((_character$resourceSp = character.resourceSpent) === null || _character$resourceSp === void 0 ? void 0 : _character$resourceSp[resourceKey]) || 0 : 0)),
 				recharge: entry.recharge,
 				castWithSlots: !!entry.castWithSlots,
 				freeCastLevel: entry.freeCastLevel,
@@ -25346,10 +25553,11 @@ function rageMaximum(level) {
 }
 var add = (list, condition, resource) => condition && list.push(resource);
 function racialResources(character) {
+	var _selectedRaceVariant;
 	const resources = [];
 	const level = characterLevel(character);
 	const pb = 2 + Math.floor((Math.max(1, level) - 1) / 4);
-	const modern = selectedRaceVariant(character.race, character.raceVariant || "base")?.source === "MPMM";
+	const modern = ((_selectedRaceVariant = selectedRaceVariant(character.race, character.raceVariant || "base")) === null || _selectedRaceVariant === void 0 ? void 0 : _selectedRaceVariant.source) === "MPMM";
 	const pool = (race, key, name, max, short = false) => add(resources, character.race === race, {
 		key,
 		name,
@@ -25400,6 +25608,7 @@ function racialResources(character) {
 	return resources;
 }
 function singleClassResources(character) {
+	var _character$classChoic, _character$classChoic2, _character$classChoic3, _character$classChoic4;
 	const resources = [];
 	const level = getClassLevel(character, character.className) || character.level;
 	const pb = 2 + Math.floor((Math.max(1, characterLevel(character)) - 1) / 4);
@@ -25626,14 +25835,14 @@ function singleClassResources(character) {
 		isShortRest: false,
 		isLongRest: true
 	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-favored-foe"] || []).includes("favored-foe"), {
+	add(resources, character.className === "ranger" && !!character.useTasha && (((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic["tce-favored-foe"]) || []).includes("favored-foe"), {
 		key: "favored-foe",
 		name: "Предпочтительный противник",
 		max: pb,
 		isShortRest: false,
 		isLongRest: true
 	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-deft-explorer"] || []).includes("deft-explorer") && level >= 10, {
+	add(resources, character.className === "ranger" && !!character.useTasha && (((_character$classChoic2 = character.classChoices) === null || _character$classChoic2 === void 0 ? void 0 : _character$classChoic2["tce-deft-explorer"]) || []).includes("deft-explorer") && level >= 10, {
 		key: "tireless",
 		name: "Неутомимый",
 		max: pb,
@@ -25641,14 +25850,14 @@ function singleClassResources(character) {
 		isShortRest: false,
 		isLongRest: true
 	});
-	add(resources, character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-natures-veil"] || []).includes("natures-veil") && level >= 10, {
+	add(resources, character.className === "ranger" && !!character.useTasha && (((_character$classChoic3 = character.classChoices) === null || _character$classChoic3 === void 0 ? void 0 : _character$classChoic3["tce-natures-veil"]) || []).includes("natures-veil") && level >= 10, {
 		key: "natures-veil",
 		name: "Покров природы",
 		max: pb,
 		isShortRest: false,
 		isLongRest: true
 	});
-	if (character.className === "ranger" && !!character.useTasha && (character.classChoices?.["tce-primal-awareness"] || []).includes("primal-awareness")) for (const [at, key, name] of [
+	if (character.className === "ranger" && !!character.useTasha && (((_character$classChoic4 = character.classChoices) === null || _character$classChoic4 === void 0 ? void 0 : _character$classChoic4["tce-primal-awareness"]) || []).includes("primal-awareness")) for (const [at, key, name] of [
 		[
 			3,
 			"speak-with-animals",
@@ -25991,7 +26200,8 @@ function characterResources(character) {
 	return [...merged.values()];
 }
 function resourceSpent(character, resource) {
-	return Math.max(0, Math.min(resource.max, character.resourceSpent?.[resource.key] || 0));
+	var _character$resourceSp;
+	return Math.max(0, Math.min(resource.max, ((_character$resourceSp = character.resourceSpent) === null || _character$resourceSp === void 0 ? void 0 : _character$resourceSp[resource.key]) || 0));
 }
 function resourceCurrent(character, resource) {
 	return resource.max - resourceSpent(character, resource);
@@ -26003,23 +26213,24 @@ function spentResourcesAfterLongRest(character) {
 //#endregion
 //#region app/attackCustomization.ts
 function customizeAttack(attack, c, patch) {
+	var _patch$ability, _patch$proficient, _patch$bonus, _patch$damageFormula, _patch$name, _patch$bonus2, _patch$note;
 	if (!patch) return attack;
 	const pb = proficiencyBonus(characterLevel(c));
-	const ability = patch.ability ?? attack.ability, proficient = patch.proficient ?? attack.proficient;
-	const attackBonus = attack.attackBonus === void 0 ? void 0 : attack.attackBonus + abilityModifier$1(c.abilities[ability]) - abilityModifier$1(c.abilities[attack.ability]) + (Number(proficient) - Number(attack.proficient)) * pb + (patch.bonus ?? 0);
-	const damageFormula = patch.damageFormula ?? attack.damageFormula;
+	const ability = (_patch$ability = patch.ability) !== null && _patch$ability !== void 0 ? _patch$ability : attack.ability, proficient = (_patch$proficient = patch.proficient) !== null && _patch$proficient !== void 0 ? _patch$proficient : attack.proficient;
+	const attackBonus = attack.attackBonus === void 0 ? void 0 : attack.attackBonus + abilityModifier$1(c.abilities[ability]) - abilityModifier$1(c.abilities[attack.ability]) + (Number(proficient) - Number(attack.proficient)) * pb + ((_patch$bonus = patch.bonus) !== null && _patch$bonus !== void 0 ? _patch$bonus : 0);
+	const damageFormula = (_patch$damageFormula = patch.damageFormula) !== null && _patch$damageFormula !== void 0 ? _patch$damageFormula : attack.damageFormula;
 	const damageDisplay = patch.damageFormula !== void 0 ? damageFormula.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(c.abilities[key.toLowerCase()]))).replace(/\[PB\]/g, String(pb)) : attack.damageDisplay;
 	return {
 		...attack,
 		sourceName: attack.sourceName || attack.name,
-		name: patch.name ?? attack.name,
+		name: (_patch$name = patch.name) !== null && _patch$name !== void 0 ? _patch$name : attack.name,
 		ability,
 		proficient,
 		attackBonus,
-		attackBonusExtra: attack.attackBonusExtra + (patch.bonus ?? 0),
+		attackBonusExtra: attack.attackBonusExtra + ((_patch$bonus2 = patch.bonus) !== null && _patch$bonus2 !== void 0 ? _patch$bonus2 : 0),
 		damageFormula,
 		damageDisplay: damageDisplay + (patch.damageType ? ` · ${patch.damageType}` : ""),
-		note: patch.note ?? attack.note
+		note: (_patch$note = patch.note) !== null && _patch$note !== void 0 ? _patch$note : attack.note
 	};
 }
 //#endregion
@@ -26079,6 +26290,7 @@ var naturalWeapons = {
 	}
 };
 function naturalAttacks(character) {
+	var _selectedRaceVariant;
 	const weapon = character.race === "shifter" && ["longtooth", "motm-longtooth"].includes(character.raceVariant) ? {
 		name: "Клыки длиннозуба",
 		die: 6,
@@ -26086,7 +26298,7 @@ function naturalAttacks(character) {
 		condition: "Только во время Смены; атака клыками доступна бонусным действием."
 	} : naturalWeapons[character.race];
 	if (!weapon) return [];
-	const die = selectedRaceVariant(character.race, character.raceVariant)?.source !== "MPMM" ? weapon.legacyDie || weapon.die : weapon.die;
+	const die = ((_selectedRaceVariant = selectedRaceVariant(character.race, character.raceVariant)) === null || _selectedRaceVariant === void 0 ? void 0 : _selectedRaceVariant.source) !== "MPMM" ? weapon.legacyDie || weapon.die : weapon.die;
 	const proficiency = 2 + Math.floor((characterLevel(character) - 1) / 4);
 	const make = (ability, damageDie, martial = false) => {
 		const modifier = Math.floor((character.abilities[ability] - 10) / 2);
@@ -26605,9 +26817,13 @@ function subclassAttacks(character, prof) {
 	return result;
 }
 function characterAttacks(character, spells) {
+	var _character$classChoic, _orderedCharacterClas, _classRuleFor, _character$classChoic2;
 	const totalLevel = characterLevel(character);
 	const prof = proficiencyBonus$2(totalLevel);
-	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	const styles = new Set([...((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic["fighting-style"]) || [], ...orderedCharacterClasses(character).flatMap((entry) => {
+		var _entry$choiceValues;
+		return ((_entry$choiceValues = entry.choiceValues) === null || _entry$choiceValues === void 0 ? void 0 : _entry$choiceValues["fighting-style"]) || [];
+	})]);
 	const equipment = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const seenWeapons = /* @__PURE__ */ new Set();
 	const weaponAttacks = equipment.flatMap((item) => {
@@ -26638,7 +26854,7 @@ function characterAttacks(character, spells) {
 		return definition.versatileDice ? [makeAttack(definition.dice, false), makeAttack(definition.versatileDice, true)] : [makeAttack(definition.dice, false)];
 	});
 	const racialAttacks = naturalAttacks(character);
-	const monkLevel = orderedCharacterClasses(character).find((entry) => entry.classId === "monk")?.level || 0;
+	const monkLevel = ((_orderedCharacterClas = orderedCharacterClasses(character).find((entry) => entry.classId === "monk")) === null || _orderedCharacterClas === void 0 ? void 0 : _orderedCharacterClas.level) || 0;
 	const monkUnarmedAttacks = monkLevel && !racialAttacks.some((attack) => attack.id.endsWith("-martial-arts")) ? (() => {
 		const ability = character.abilities.dex > character.abilities.str ? "dex" : "str";
 		const modifier = abilityModifier$2(character.abilities[ability]);
@@ -26661,12 +26877,22 @@ function characterAttacks(character, spells) {
 		...monkUnarmedAttacks,
 		...subclassAttacks(character, prof)
 	];
-	const spellAbility = classRuleFor(character, character.className)?.spellAbility || orderedCharacterClasses(character).map((entry) => classRuleFor(character, entry.classId)?.spellAbility).find(Boolean);
+	const spellAbility = ((_classRuleFor = classRuleFor(character, character.className)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.spellAbility) || orderedCharacterClasses(character).map((entry) => {
+		var _classRuleFor2;
+		return (_classRuleFor2 = classRuleFor(character, entry.classId)) === null || _classRuleFor2 === void 0 ? void 0 : _classRuleFor2.spellAbility;
+	}).find(Boolean);
 	const diceCount = cantripDiceCount(totalLevel);
-	const elementalAdeptTypes = new Set((character.advancements || []).filter((choice) => choice.featId === "elemental-adept").flatMap((choice) => choice.featChoices?.element || []));
-	const invocations = new Set([...character.classChoices?.invocations || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.invocations || [])]);
+	const elementalAdeptTypes = new Set((character.advancements || []).filter((choice) => choice.featId === "elemental-adept").flatMap((choice) => {
+		var _choice$featChoices;
+		return ((_choice$featChoices = choice.featChoices) === null || _choice$featChoices === void 0 ? void 0 : _choice$featChoices.element) || [];
+	}));
+	const invocations = new Set([...((_character$classChoic2 = character.classChoices) === null || _character$classChoic2 === void 0 ? void 0 : _character$classChoic2.invocations) || [], ...orderedCharacterClasses(character).flatMap((entry) => {
+		var _entry$choiceValues2;
+		return ((_entry$choiceValues2 = entry.choiceValues) === null || _entry$choiceValues2 === void 0 ? void 0 : _entry$choiceValues2.invocations) || [];
+	})]);
 	const chosenSpellIds = [...new Set([...character.spells || [], ...(character.spellGrants || []).map((grant) => grant.spellId)])];
 	const cantripAttacks = chosenSpellIds.map((id) => spells.find((spell) => spell.id === id && spell.level === 0)).filter(Boolean).flatMap((spell) => {
+		var _character$spellGrant, _classRuleFor3, _spell$mechanics;
 		const definition = damagingCantrips[spell.id];
 		if (!definition && ![
 			"booming",
@@ -26674,7 +26900,7 @@ function characterAttacks(character, spells) {
 			"spell-doc-shillelagh"
 		].includes(spell.id)) return [];
 		const agonizing = spell.id === "eldritch" && invocations.has("agonizing-blast");
-		const castingAbility = classRuleFor(character, character.spellGrants?.find((grant) => grant.spellId === spell.id && grant.classId)?.classId || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className))?.spellAbility || spellAbility || spell.mechanics?.ability || "int";
+		const castingAbility = ((_classRuleFor3 = classRuleFor(character, ((_character$spellGrant = character.spellGrants) === null || _character$spellGrant === void 0 || (_character$spellGrant = _character$spellGrant.find((grant) => grant.spellId === spell.id && grant.classId)) === null || _character$spellGrant === void 0 ? void 0 : _character$spellGrant.classId) || (spell.id === "eldritch" && orderedCharacterClasses(character).some((entry) => entry.classId === "warlock") ? "warlock" : character.className))) === null || _classRuleFor3 === void 0 ? void 0 : _classRuleFor3.spellAbility) || spellAbility || ((_spell$mechanics = spell.mechanics) === null || _spell$mechanics === void 0 ? void 0 : _spell$mechanics.ability) || "int";
 		const castingMod = abilityModifier$2(character.abilities[castingAbility]);
 		if ([
 			"booming",
@@ -26686,7 +26912,8 @@ function characterAttacks(character, spells) {
 			return weaponDefinitions[key] && !weaponDefinitions[key].ranged;
 		}).map((weapon) => {
 			if (spell.id === "spell-doc-shillelagh") {
-				const extra = Number(weapon.damageFormula.match(/\+\[(?:STR|DEX)\]\+(\d+)$/)?.[1] || 0);
+				var _weapon$damageFormula;
+				const extra = Number(((_weapon$damageFormula = weapon.damageFormula.match(/\+\[(?:STR|DEX)\]\+(\d+)$/)) === null || _weapon$damageFormula === void 0 ? void 0 : _weapon$damageFormula[1]) || 0);
 				return {
 					...weapon,
 					id: `cantrip-${spell.id}-${weapon.id}`,
@@ -26738,10 +26965,11 @@ function characterAttacks(character, spells) {
 		}));
 	});
 	const homebrewSpellAttacks = chosenSpellIds.flatMap((id) => {
-		const spell = spells.find((entry) => entry.id === id), mechanics = spell?.mechanics;
+		var _character$spellGrant2, _orderedCharacterClas2, _classRuleFor4, _mechanics$saveAbilit;
+		const spell = spells.find((entry) => entry.id === id), mechanics = spell === null || spell === void 0 ? void 0 : spell.mechanics;
 		if (!spell || !mechanics) return [];
-		const sourceClassId = character.spellGrants?.find((grant) => grant.spellId === id && grant.classId)?.classId || orderedCharacterClasses(character).find((entry) => spell.classes.includes(entry.classId))?.classId || character.className;
-		const ability = mechanics.ability || classRuleFor(character, sourceClassId)?.spellAbility || spellAbility || "int";
+		const sourceClassId = ((_character$spellGrant2 = character.spellGrants) === null || _character$spellGrant2 === void 0 || (_character$spellGrant2 = _character$spellGrant2.find((grant) => grant.spellId === id && grant.classId)) === null || _character$spellGrant2 === void 0 ? void 0 : _character$spellGrant2.classId) || ((_orderedCharacterClas2 = orderedCharacterClasses(character).find((entry) => spell.classes.includes(entry.classId))) === null || _orderedCharacterClas2 === void 0 ? void 0 : _orderedCharacterClas2.classId) || character.className;
+		const ability = mechanics.ability || ((_classRuleFor4 = classRuleFor(character, sourceClassId)) === null || _classRuleFor4 === void 0 ? void 0 : _classRuleFor4.spellAbility) || spellAbility || "int";
 		const mod = abilityModifier$2(character.abilities[ability]);
 		const symbolic = (formula) => formula.replace(/@mod\.spell/g, `[${ability.toUpperCase()}]`).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => `[${String(key).toUpperCase()}]`).replace(/@pb/g, "[PB]").replace(/@level/g, String(totalLevel));
 		const displayed = (formula) => formula.replace(/@mod\.spell/g, String(mod)).replace(/@mod\.(str|dex|con|int|wis|cha)/g, (_, key) => String(abilityModifier$2(character.abilities[key]))).replace(/@pb/g, String(prof)).replace(/@level/g, String(totalLevel));
@@ -26751,7 +26979,7 @@ function characterAttacks(character, spells) {
 		const display = parts.map((part) => `${displayed(part.formula)} ${damageTypeNames[part.type] || part.type}`).join(" + ");
 		const upcast = mechanics.slotScaling;
 		const notes = [
-			mechanics.delivery === "save" ? `Спасбросок ${mechanics.saveAbility?.toUpperCase()}${mechanics.saveEffect === "half" ? " — половина урона при успехе" : ""}.` : mechanics.delivery === "automatic" ? "Урон без броска атаки и спасброска." : "Бросок атаки заклинанием.",
+			mechanics.delivery === "save" ? `Спасбросок ${(_mechanics$saveAbilit = mechanics.saveAbility) === null || _mechanics$saveAbilit === void 0 ? void 0 : _mechanics$saveAbilit.toUpperCase()}${mechanics.saveEffect === "half" ? " — половина урона при успехе" : ""}.` : mechanics.delivery === "automatic" ? "Урон без броска атаки и спасброска." : "Бросок атаки заклинанием.",
 			...scale.map((row) => row.effect).filter(Boolean),
 			upcast ? `Ячейка выше ${spell.level}-го круга: +${upcast.damage.map((part) => `${part.formula} ${damageTypeNames[part.type] || part.type}`).join(" + ")} за каждые ${upcast.every} ${upcast.every === 1 ? "круг" : "круга"}${upcast.effect ? `; ${upcast.effect}` : ""}.` : void 0
 		].filter(Boolean).join(" ");
@@ -26774,7 +27002,10 @@ function characterAttacks(character, spells) {
 		...featureAttacks,
 		...cantripAttacks,
 		...homebrewSpellAttacks
-	].map((attack) => customizeAttack(attack, character, character.attackCustomizations?.[attack.id]));
+	].map((attack) => {
+		var _character$attackCust;
+		return customizeAttack(attack, character, (_character$attackCust = character.attackCustomizations) === null || _character$attackCust === void 0 ? void 0 : _character$attackCust[attack.id]);
+	});
 }
 function lssWeaponAttacks(attacks) {
 	return attacks.filter((attack) => attack.kind === "weapon" || attack.attackBonus !== void 0).map((attack, index) => ({
@@ -26796,11 +27027,12 @@ function hasFeat(character, featId) {
 	return (character.advancements || []).some((choice) => choice.featId === featId) || (character.feats || []).includes(featId);
 }
 function armorClassBreakdown(character) {
+	var _character$adventure, _getClassProgress, _normalizedLevelHisto, _character$classChoic, _character$classChoic2;
 	const items = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const dex = modifier$2(character.abilities.dex);
 	const con = modifier$2(character.abilities.con);
 	const wis = modifier$2(character.abilities.wis);
-	const equipped = character.adventure?.inventory.filter((i) => i.equipped && i.quantity > 0);
+	const equipped = (_character$adventure = character.adventure) === null || _character$adventure === void 0 ? void 0 : _character$adventure.inventory.filter((i) => i.equipped && i.quantity > 0);
 	const shield = equipped ? equipped.some(isShieldItem) : hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
 	const armors = [
 		{
@@ -26906,13 +27138,13 @@ function armorClassBreakdown(character) {
 		base: "Природный доспех: 13 + Ловкость",
 		wearingArmor: false
 	});
-	if (!worn && getClassProgress(character, "sorcerer")?.subclassId === "draconic") candidates.push({
+	if (!worn && ((_getClassProgress = getClassProgress(character, "sorcerer")) === null || _getClassProgress === void 0 ? void 0 : _getClassProgress.subclassId) === "draconic") candidates.push({
 		id: "draconic",
 		value: 13 + dex,
 		base: "Драконья устойчивость: 13 + Ловкость",
 		wearingArmor: false
 	});
-	const unarmoredSource = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")?.classId;
+	const unarmoredSource = (_normalizedLevelHisto = normalizedLevelHistory(character).find((entry) => entry.classId === "monk" || entry.classId === "barbarian")) === null || _normalizedLevelHisto === void 0 ? void 0 : _normalizedLevelHisto.classId;
 	if (!worn && unarmoredSource === "monk" && !shield && getClassLevel(character, "monk")) candidates.push({
 		id: "monk",
 		value: 10 + dex + wis,
@@ -26941,12 +27173,18 @@ function armorClassBreakdown(character) {
 			wearingArmor: true
 		});
 	}
-	const stylesForSelection = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	const stylesForSelection = new Set([...((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic["fighting-style"]) || [], ...orderedCharacterClasses(character).flatMap((entry) => {
+		var _entry$choiceValues;
+		return ((_entry$choiceValues = entry.choiceValues) === null || _entry$choiceValues === void 0 ? void 0 : _entry$choiceValues["fighting-style"]) || [];
+	})]);
 	const optimal = candidates.reduce((best, next) => {
 		const score = (candidate) => candidate.value + (candidate.wearingArmor && stylesForSelection.has("defense") ? 1 : 0) + (candidate.wearingArmor && character.race === "warforged" ? 1 : 0);
 		return score(next) > score(best) ? next : best;
 	});
-	const selected = candidates.find((candidate) => candidate.id === character.adventure?.acSource) || optimal;
+	const selected = candidates.find((candidate) => {
+		var _character$adventure2;
+		return candidate.id === ((_character$adventure2 = character.adventure) === null || _character$adventure2 === void 0 ? void 0 : _character$adventure2.acSource);
+	}) || optimal;
 	value = selected.value;
 	base = selected.base;
 	wearingArmor = selected.wearingArmor;
@@ -26955,7 +27193,10 @@ function armorClassBreakdown(character) {
 		value += 2;
 		bonuses.push("щит +2");
 	}
-	const styles = new Set([...character.classChoices?.["fighting-style"] || [], ...orderedCharacterClasses(character).flatMap((entry) => entry.choiceValues?.["fighting-style"] || [])]);
+	const styles = new Set([...((_character$classChoic2 = character.classChoices) === null || _character$classChoic2 === void 0 ? void 0 : _character$classChoic2["fighting-style"]) || [], ...orderedCharacterClasses(character).flatMap((entry) => {
+		var _entry$choiceValues2;
+		return ((_entry$choiceValues2 = entry.choiceValues) === null || _entry$choiceValues2 === void 0 ? void 0 : _entry$choiceValues2["fighting-style"]) || [];
+	})]);
 	if (wearingArmor && styles.has("defense")) {
 		value += 1;
 		bonuses.push("стиль «Оборона» +1");
@@ -27021,8 +27262,9 @@ function skillNameFromExternalId(value) {
 }
 /** Converts a HeroList/legacy skill name to the canonical Long Story Short identifier. */
 function externalSkillId(value) {
+	var _skillKeys$russianNam;
 	const russianName = skillNameFromExternalId(value);
-	return russianName ? skillKeys[russianName]?.key || "" : "";
+	return russianName ? ((_skillKeys$russianNam = skillKeys[russianName]) === null || _skillKeys$russianNam === void 0 ? void 0 : _skillKeys$russianNam.key) || "" : "";
 }
 function normalizeImportedSkills(values) {
 	return [...new Set((values || []).map(skillNameFromExternalId).filter(Boolean))];
@@ -27068,8 +27310,9 @@ function normalizeExportText(value) {
 				const cells = tableCells(lines[index]);
 				if (cells.length < 2) break;
 				const values = cells.map((cell, cellIndex) => {
+					var _headers$cellIndex;
 					if (!cell) return "";
-					const header = headers[cellIndex]?.trim();
+					const header = (_headers$cellIndex = headers[cellIndex]) === null || _headers$cellIndex === void 0 ? void 0 : _headers$cellIndex.trim();
 					return header ? `${header}: ${cell}` : cell;
 				}).filter(Boolean);
 				if (values.length) output.push(`• ${values.join("; ")}`);
@@ -27108,6 +27351,7 @@ function equipment(character) {
 }
 /** Permanent walking speed and separately available movement modes (feet). */
 function speedBreakdown(character) {
+	var _baseSpeeds$race;
 	const race = character.race;
 	const variant = character.raceVariant;
 	const items = equipment(character);
@@ -27115,7 +27359,7 @@ function speedBreakdown(character) {
 	const heavy = items.find((item) => /(?:^|\s)латы(?:$|\s|\()|наборн(?:ый|ая) доспех|кольчуга|кольчат(?:ый|ая) доспех/i.test(item));
 	const medium = items.some((item) => /полулаты|нагрудник|чешуйчат|кольчужн(?:ая|ый) рубах|шкурн(?:ый|ая) доспех/i.test(item));
 	const shield = items.some((item) => /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s|\()/i.test(item));
-	const base = race === "elf" && variant === "wood" || race === "genasi" && variant === "motm-air" ? 35 : race === "aarakocra" && variant === "legacy-ee" ? 25 : race === "duergar" && !variant.startsWith("legacy") || race === "deepgnome" && !variant.startsWith("legacy") ? 30 : baseSpeeds[race] ?? 30;
+	const base = race === "elf" && variant === "wood" || race === "genasi" && variant === "motm-air" ? 35 : race === "aarakocra" && variant === "legacy-ee" ? 25 : race === "duergar" && !variant.startsWith("legacy") || race === "deepgnome" && !variant.startsWith("legacy") ? 30 : (_baseSpeeds$race = baseSpeeds[race]) !== null && _baseSpeeds$race !== void 0 ? _baseSpeeds$race : 30;
 	const sources = [`${race}${variant ? ` (${variant})` : ""}: ${base}`];
 	const conditions = [];
 	let walk = base;
@@ -27209,6 +27453,7 @@ function passivePerceptionBreakdown(character) {
 var modifier = (score) => Math.floor((score - 10) / 2);
 /** Permanent initiative modifier; roll-specific dice and advantage remain notes. */
 function initiativeBreakdown(character) {
+	var _getClassProgress, _getClassProgress2, _getClassProgress3;
 	const pb = Math.floor((characterLevel(character) - 1) / 4) + 2;
 	const sources = [];
 	const notes = [];
@@ -27224,18 +27469,18 @@ function initiativeBreakdown(character) {
 	const champion = getClassProgress(character, "fighter");
 	if (character.race !== "harengon") {
 		const jack = bard && bard.level >= 2 ? Math.floor(pb / 2) : 0;
-		const athlete = champion?.subclassId === "champion" && champion.level >= 7 ? Math.ceil(pb / 2) : 0;
+		const athlete = (champion === null || champion === void 0 ? void 0 : champion.subclassId) === "champion" && champion.level >= 7 ? Math.ceil(pb / 2) : 0;
 		if (Math.max(jack, athlete)) add(Math.max(jack, athlete), athlete >= jack && athlete ? "Выдающийся атлет" : "Мастер на все руки");
 	}
 	const rogue = getClassProgress(character, "rogue");
-	if (rogue?.subclassId === "swashbuckler" && rogue.level >= 3) add(modifier(character.abilities.cha), "Лихая удаль");
+	if ((rogue === null || rogue === void 0 ? void 0 : rogue.subclassId) === "swashbuckler" && rogue.level >= 3) add(modifier(character.abilities.cha), "Лихая удаль");
 	const wizard = getClassProgress(character, "wizard");
 	if (wizard && wizard.level >= 2 && ["warmagic", "chronurgy"].includes(wizard.subclassId || "")) add(modifier(character.abilities.int), wizard.subclassId === "warmagic" ? "Тактическая смекалка" : "Хрональная осведомлённость");
 	const ranger = getClassProgress(character, "ranger");
-	if (ranger?.subclassId === "gloomstalker" && ranger.level >= 3) add(modifier(character.abilities.wis), "Ужасающая засада");
-	if (getClassProgress(character, "barbarian")?.level && getClassProgress(character, "barbarian").level >= 7) notes.push("Дикий инстинкт: преимущество на бросок инициативы");
-	if (getClassProgress(character, "paladin")?.subclassId === "watchers" && getClassProgress(character, "paladin").level >= 7) notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
-	if (getClassProgress(character, "cleric")?.subclassId === "twilight") notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
+	if ((ranger === null || ranger === void 0 ? void 0 : ranger.subclassId) === "gloomstalker" && ranger.level >= 3) add(modifier(character.abilities.wis), "Ужасающая засада");
+	if (((_getClassProgress = getClassProgress(character, "barbarian")) === null || _getClassProgress === void 0 ? void 0 : _getClassProgress.level) && getClassProgress(character, "barbarian").level >= 7) notes.push("Дикий инстинкт: преимущество на бросок инициативы");
+	if (((_getClassProgress2 = getClassProgress(character, "paladin")) === null || _getClassProgress2 === void 0 ? void 0 : _getClassProgress2.subclassId) === "watchers" && getClassProgress(character, "paladin").level >= 7) notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
+	if (((_getClassProgress3 = getClassProgress(character, "cleric")) === null || _getClassProgress3 === void 0 ? void 0 : _getClassProgress3.subclassId) === "twilight") notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
 	for (const row of hbEffects(character, "initiative_bonus")) add(row.value, row.source.name);
 	if (hbEffects(character, "initiative_advantage").length) notes.push("Homebrew: преимущество на инициативу");
 	return {
@@ -27268,10 +27513,12 @@ function darkvisionDistance(features) {
 	}, 0);
 }
 function estimatedHitPoints(character) {
+	var _character$levelHisto;
 	const constitution = abilityModifier$1(character.abilities.con);
-	const history = character.levelHistory?.length === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
+	const history = ((_character$levelHisto = character.levelHistory) === null || _character$levelHisto === void 0 ? void 0 : _character$levelHisto.length) === characterLevel(character) ? character.levelHistory : normalizedLevelHistory(character);
 	return Math.max(1, history.reduce((total, entry) => {
-		const hitDie = classRuleFor(character, entry.classId)?.hitDie || 8;
+		var _classRuleFor;
+		const hitDie = ((_classRuleFor = classRuleFor(character, entry.classId)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.hitDie) || 8;
 		return total + (entry.characterLevel === 1 ? hitDie + constitution : entry.hpMode === "roll" || entry.hpMode === "manual" ? entry.hpGainFormat === "raw-roll-plus-con-v1" && Number.isInteger(entry.hpGain) ? Math.max(1, Math.min(hitDie, Math.max(1, entry.hpGain)) + constitution) : Math.max(1, entry.hpGain || 1) : Math.max(1, Math.floor(hitDie / 2) + 1 + constitution));
 	}, 0) + hbSum(character, "hp_bonus") + hbEffects(character, "hp_per_level").reduce((sum, entry) => sum + entry.value * (entry.source.parentClassId ? getClassLevel(character, entry.source.parentClassId.replace("official:class:", "")) : entry.source.type === "class" ? getClassLevel(character, entry.source.id) : characterLevel(character)), 0));
 }
@@ -27342,6 +27589,7 @@ function helpmateNote(context) {
 	}).join("\n").replace(/\r\n?/g, "\n").replace(/\n{2,}/g, "\n").replace(/\n/g, "\r\n");
 }
 function summaryText(context) {
+	var _classRules$character;
 	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
 	const racialSpells = resolvedRacialSpells(character, spells);
 	const selectedSpells = [...new Set([
@@ -27349,13 +27597,22 @@ function summaryText(context) {
 		...context.featSpellIds || [],
 		...context.alwaysPreparedSpellIds || [],
 		...racialSpells.map((entry) => entry.spell.id)
-	])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	])].map((id) => {
+		var _spells$find;
+		return (_spells$find = spells.find((spell) => spell.id === id)) === null || _spells$find === void 0 ? void 0 : _spells$find.name;
+	}).filter(Boolean);
 	const alwaysPrepared = new Set(context.alwaysPreparedSpellIds || []);
-	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const alwaysPreparedNames = [...alwaysPrepared].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => {
+		var _spells$find2;
+		return (_spells$find2 = spells.find((spell) => spell.id === id)) === null || _spells$find2 === void 0 ? void 0 : _spells$find2.name;
+	}).filter(Boolean);
+	const alwaysPreparedNames = [...alwaysPrepared].map((id) => {
+		var _spells$find3;
+		return (_spells$find3 = spells.find((spell) => spell.id === id)) === null || _spells$find3 === void 0 ? void 0 : _spells$find3.name;
+	}).filter(Boolean);
 	const classes = orderedCharacterClasses(character);
 	const totalLevel = characterLevel(character);
-	const spellAbility = classRules[character.className]?.spellAbility;
+	const spellAbility = (_classRules$character = classRules[character.className]) === null || _classRules$character === void 0 ? void 0 : _classRules$character.spellAbility;
 	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
 	const spellDc = spellAbility ? 8 + proficiencyBonus(totalLevel) + spellMod : 0;
 	const resources = characterResources(character).map((resource) => `${resource.name}: ${resourceCurrent(character, resource)} / ${resource.max}${resource.die ? ` (${resource.die})` : ""}`);
@@ -27368,7 +27625,8 @@ function summaryText(context) {
 	const pact = resolvePactMagic(character);
 	const hitDice = hitDicePools(character).map((pool) => `${pool.max}к${pool.die}${pool.spent ? ` (потрачено ${pool.spent})` : ""}`).join(" + ");
 	const spellSources = classes.flatMap((entry) => {
-		const ability = classRules[entry.classId]?.spellAbility;
+		var _classRules$entry$cla;
+		const ability = (_classRules$entry$cla = classRules[entry.classId]) === null || _classRules$entry$cla === void 0 ? void 0 : _classRules$entry$cla.spellAbility;
 		if (!ability) return [];
 		const mod = abilityModifier$1(character.abilities[ability]);
 		return [`${entry.classId} ${entry.level}: ${ability.toUpperCase()}, Сл ${8 + proficiencyBonus(totalLevel) + mod}, атака ${proficiencyBonus(totalLevel) + mod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + mod}`];
@@ -27376,11 +27634,11 @@ function summaryText(context) {
 	return [
 		`Имя: ${character.name || "Безымянный герой"}`,
 		`Игрок: ${character.playerName || ""}`,
-		`Классы: ${classSummary || `${characterClass?.name || ""}, уровень ${character.level}`}`,
+		`Классы: ${classSummary || `${(characterClass === null || characterClass === void 0 ? void 0 : characterClass.name) || ""}, уровень ${character.level}`}`,
 		`Общий уровень: ${totalLevel}; стартовый класс: ${getStartingClassId(character) || "не указан"}`,
 		`Кости хитов: ${hitDice || "нет"}`,
-		`Раса: ${race?.name || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
-		`Предыстория: ${background?.name || ""}`,
+		`Раса: ${(race === null || race === void 0 ? void 0 : race.name) || ""}${context.raceVariantName ? ` — ${context.raceVariantName}` : ""}`,
+		`Предыстория: ${(background === null || background === void 0 ? void 0 : background.name) || ""}`,
 		`Особенность предыстории: ${backgroundData.feature.name}. ${normalizeExportText(backgroundData.feature.description)}`,
 		`Навыки: ${proficiencies.skills.join(", ") || "нет"}`,
 		`Доспехи: ${proficiencies.armor.join(", ") || "нет"}`,
@@ -27396,7 +27654,10 @@ function summaryText(context) {
 		`Классовые особенности:\n${featureText(classFeatureList)}`,
 		...spellAbility ? [`Сл спасброска заклинаний: ${spellDc}`, `Бонус атаки заклинанием: ${spellMod >= 0 ? "+" : ""}${proficiencyBonus(totalLevel) + spellMod}`] : [],
 		...spellSources.length ? [`Источники магии: ${spellSources.join("; ")}`] : [],
-		...sharedSlots.some(Boolean) ? [`Общие ячейки заклинаний (осталось / максимум): ${sharedSlots.map((max, index) => `${index + 1} круг: ${Math.max(0, max - (character.spellSlotsUsed?.[index] || 0))} / ${max}`).join("; ")}`] : [],
+		...sharedSlots.some(Boolean) ? [`Общие ячейки заклинаний (осталось / максимум): ${sharedSlots.map((max, index) => {
+			var _character$spellSlots;
+			return `${index + 1} круг: ${Math.max(0, max - (((_character$spellSlots = character.spellSlotsUsed) === null || _character$spellSlots === void 0 ? void 0 : _character$spellSlots[index]) || 0))} / ${max}`;
+		}).join("; ")}`] : [],
 		...pact.slots ? [`Магия договора (осталось / максимум): ${pact.level} круг: ${Math.max(0, pact.slots - (character.pactSlotsUsed || 0))} / ${pact.slots}`] : [],
 		`Ресурсы: ${resources.join("; ") || "нет"}`,
 		`Снаряжение: ${equipment.join(", ") || "нет"}`,
@@ -27484,13 +27745,14 @@ function helpmateSkippedSpells(context) {
 	return helpmateSelectedSpellIds(context).filter((id) => !helpmateSpellId(id)).map((id) => context.spells.find((spell) => spell.id === id)).filter((spell) => Boolean(spell));
 }
 function createHelpmateExport(context) {
+	var _classRules$startingC, _classRules$primarySp, _character$currentHit, _classRules$character2;
 	const { character, race, raceFeatureList } = context;
 	const selectedSkills = new Set(characterProficiencies(character).skills);
 	const expertiseSkills = new Set(characterExpertiseSkills(character));
 	const classes = orderedCharacterClasses(character);
 	const totalLevel = characterLevel(character);
 	const startingClassId = getStartingClassId(character);
-	const saves = new Set(classRules[startingClassId]?.saves || []);
+	const saves = new Set(((_classRules$startingC = classRules[startingClassId]) === null || _classRules$startingC === void 0 ? void 0 : _classRules$startingC.saves) || []);
 	const hitPoints = estimatedHitPoints(character);
 	const darkvision = darkvisionDistance(raceFeatureList);
 	const movement = speedBreakdown(character);
@@ -27508,13 +27770,17 @@ function createHelpmateExport(context) {
 	const selectedHelpmateSpellIds = helpmateSelectedSpellIds(context).map(helpmateSpellId).filter((id) => Boolean(id));
 	const ordinarySpellcasters = classes.filter((entry) => spellSelectionRuleForClass(character, entry.classId, entry.level).caster && entry.classId !== "warlock");
 	const sharedSlots = resolveSpellSlots(character);
-	const primarySpellcaster = classes.find((entry) => entry.classId === character.primarySpellcastingClassId) || classes.find((entry) => Boolean(classRules[entry.classId]?.spellAbility));
-	const spellAbility = primarySpellcaster ? classRules[primarySpellcaster.classId]?.spellAbility : void 0;
+	const primarySpellcaster = classes.find((entry) => entry.classId === character.primarySpellcastingClassId) || classes.find((entry) => {
+		var _classRules$entry$cla2;
+		return Boolean((_classRules$entry$cla2 = classRules[entry.classId]) === null || _classRules$entry$cla2 === void 0 ? void 0 : _classRules$entry$cla2.spellAbility);
+	});
+	const spellAbility = primarySpellcaster ? (_classRules$primarySp = classRules[primarySpellcaster.classId]) === null || _classRules$primarySp === void 0 ? void 0 : _classRules$primarySp.spellAbility : void 0;
 	const spellModifier = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
 	const spellAttack = proficiencyBonus(character.level) + spellModifier;
 	const spellSaveDc = spellAbility ? 8 + spellAttack : null;
 	const pact = resolvePactMagic(character);
 	const classesPayload = classes.map((entry) => {
+		var _helpmateSubclassClas;
 		const selection = spellSelectionRuleForClass(character, entry.classId, entry.level);
 		const cells = [
 			...selection.cantrips ? [{
@@ -27522,18 +27788,21 @@ function createHelpmateExport(context) {
 				Left: selection.cantrips,
 				Max: selection.cantrips
 			}] : [],
-			...ordinarySpellcasters.length === 1 && entry.classId === ordinarySpellcasters[0].classId ? sharedSlots.map((max, index) => ({
-				Level: index + 1,
-				Left: Math.max(0, max - (character.spellSlotsUsed?.[index] || 0)),
-				Max: max
-			})) : [],
+			...ordinarySpellcasters.length === 1 && entry.classId === ordinarySpellcasters[0].classId ? sharedSlots.map((max, index) => {
+				var _character$spellSlots2;
+				return {
+					Level: index + 1,
+					Left: Math.max(0, max - (((_character$spellSlots2 = character.spellSlotsUsed) === null || _character$spellSlots2 === void 0 ? void 0 : _character$spellSlots2[index]) || 0)),
+					Max: max
+				};
+			}) : [],
 			...entry.classId === "warlock" && pact.slots ? [{
 				Level: pact.level,
 				Left: Math.max(0, pact.slots - (character.pactSlotsUsed || 0)),
 				Max: pact.slots
 			}] : []
 		];
-		const id = helpmateSubclassClassIds[entry.classId]?.[entry.subclassId || ""] || helpmateClassIds[entry.classId];
+		const id = ((_helpmateSubclassClas = helpmateSubclassClassIds[entry.classId]) === null || _helpmateSubclassClas === void 0 ? void 0 : _helpmateSubclassClas[entry.subclassId || ""]) || helpmateClassIds[entry.classId];
 		if (!id) throw new Error(`Helpmate: неизвестный класс ${entry.classId}.`);
 		return {
 			Id: id,
@@ -27546,7 +27815,7 @@ function createHelpmateExport(context) {
 	return {
 		Id: makeId(),
 		MyRaceId: null,
-		UserRace: [race?.name, context.raceVariantName].filter(Boolean).join(" — "),
+		UserRace: [race === null || race === void 0 ? void 0 : race.name, context.raceVariantName].filter(Boolean).join(" — "),
 		TokenColor: "196|196|9|255",
 		SecondName: null,
 		Speed: movement.walk,
@@ -27562,12 +27831,12 @@ function createHelpmateExport(context) {
 		Silver: character.currency.sp || 0,
 		Copper: character.currency.cp || 0,
 		HitPoints: hitPoints,
-		CurrentHitPoints: character.currentHitPoints ?? hitPoints,
+		CurrentHitPoints: (_character$currentHit = character.currentHitPoints) !== null && _character$currentHit !== void 0 ? _character$currentHit : hitPoints,
 		TempHitPoints: character.temporaryHitPoints || 0,
 		TempCurrentHitPoints: character.temporaryHitPoints || 0,
 		HasInspiration: !!character.inspiration,
 		Alignment: 0,
-		HitDice: isMulticlass(character) ? 0 : classRules[character.className]?.hitDie || 8,
+		HitDice: isMulticlass(character) ? 0 : ((_classRules$character2 = classRules[character.className]) === null || _classRules$character2 === void 0 ? void 0 : _classRules$character2.hitDie) || 8,
 		HitDiceCount: isMulticlass(character) ? 0 : totalLevel,
 		IsArmorTakeOf: false,
 		TwoHanded: false,
@@ -27696,6 +27965,7 @@ var mechanicalVerbs = /бонусным действием|действием|р
 var briefGrant = /получаете владение|получаете компетентность|увеличивается на|повышается на|изучаете язык|изучаете .*заговор|получаете .*язык/i;
 /** Removes source appendices and prose that duplicates other LSS blocks while retaining play instructions. */
 function conciseLssFeature(feature, required = false) {
+	var _description$match;
 	if (!required && /^использование заклинаний$/i.test(feature.name)) return null;
 	const sourceHasTable = /\|\s*:?-{3,}:?/.test(feature.description);
 	let description = normalizeExportText(feature.description).split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0].replace(/•\s*-{5,}[\s\S]*/g, "").replace(/[^\S\n]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
@@ -27711,7 +27981,7 @@ function conciseLssFeature(feature, required = false) {
 		...feature,
 		description
 	};
-	const sentences = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((value) => value.trim()) || [description];
+	const sentences = ((_description$match = description.match(/[^.!?]+[.!?]+|[^.!?]+$/g)) === null || _description$match === void 0 ? void 0 : _description$match.map((value) => value.trim())) || [description];
 	if (briefGrant.test(description) && !mechanicalVerbs.test(description.replace(briefGrant, ""))) description = sentences.slice(0, 2).join(" ");
 	else if (description.length > 900) {
 		const important = sentences.filter((sentence) => mechanicalVerbs.test(sentence));
@@ -27887,12 +28157,13 @@ function lssSkills(selectedSkills, expertiseSkills) {
 	}]));
 }
 function createLongStoryShortExport(context, options = {}) {
+	var _classRules$character3, _classRules$character4, _character$lssSpellCa, _character$lssSpellCa2, _character$currentHit2, _classRules$character5, _character$lssSpellCa3;
 	const { character, race, characterClass, background, spells, raceFeatureList, classFeatureList } = context;
 	const proficiencies = characterProficiencies(character);
 	const selectedSkills = new Set(proficiencies.skills);
 	const expertiseSkills = new Set(characterExpertiseSkills(character));
-	const saves = new Set(classRules[character.className]?.saves || []);
-	const spellAbility = classRules[character.className]?.spellAbility;
+	const saves = new Set(((_classRules$character3 = classRules[character.className]) === null || _classRules$character3 === void 0 ? void 0 : _classRules$character3.saves) || []);
+	const spellAbility = (_classRules$character4 = classRules[character.className]) === null || _classRules$character4 === void 0 ? void 0 : _classRules$character4.spellAbility;
 	const spellMod = spellAbility ? abilityModifier$1(character.abilities[spellAbility]) : 0;
 	const prof = proficiencyBonus(character.level);
 	const sharedSpellSlots = resolveSpellSlots(character);
@@ -27905,8 +28176,8 @@ function createLongStoryShortExport(context, options = {}) {
 	])];
 	const chosenSpells = chosenIds.map((id) => spells.find((spell) => spell.id === id)).filter(Boolean);
 	const retainedCardIds = (values) => (values || []).filter((value) => /^[0-9a-f]{24}$/i.test(value));
-	const retainedPreparedCards = retainedCardIds(character.lssSpellCards?.prepared);
-	const retainedBookCards = retainedCardIds(character.lssSpellCards?.book);
+	const retainedPreparedCards = retainedCardIds((_character$lssSpellCa = character.lssSpellCards) === null || _character$lssSpellCa === void 0 ? void 0 : _character$lssSpellCa.prepared);
+	const retainedBookCards = retainedCardIds((_character$lssSpellCa2 = character.lssSpellCards) === null || _character$lssSpellCa2 === void 0 ? void 0 : _character$lssSpellCa2.book);
 	const preparedSpellIds$1 = new Set([
 		...preparedSpellIds(character),
 		...context.alwaysPreparedSpellIds || [],
@@ -27919,8 +28190,14 @@ function createLongStoryShortExport(context, options = {}) {
 	const preparedCardSet = new Set(preparedCards);
 	const bookCards = [...new Set([...retainedBookCards, ...confirmedBookCards])].filter((id) => retainedBookCards.includes(id) || !preparedCardSet.has(id));
 	const hasCards = preparedCards.length > 0 || bookCards.length > 0;
-	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
-	const alwaysPreparedNames = (context.alwaysPreparedSpellIds || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const preparedSpellNames = [...new Set([...preparedSpellIds(character), ...context.alwaysPreparedSpellIds || []])].map((id) => {
+		var _spells$find4;
+		return (_spells$find4 = spells.find((spell) => spell.id === id)) === null || _spells$find4 === void 0 ? void 0 : _spells$find4.name;
+	}).filter(Boolean);
+	const alwaysPreparedNames = (context.alwaysPreparedSpellIds || []).map((id) => {
+		var _spells$find5;
+		return (_spells$find5 = spells.find((spell) => spell.id === id)) === null || _spells$find5 === void 0 ? void 0 : _spells$find5.name;
+	}).filter(Boolean);
 	const profLines = [
 		["Доспехи", proficiencies.armor.join(", ") || "нет"],
 		["Оружие", proficiencies.weapons.join(", ") || "нет"],
@@ -27932,7 +28209,13 @@ function createLongStoryShortExport(context, options = {}) {
 	const backgroundData = backgroundRule(character.background, background);
 	const equipment = selectedEquipment(character);
 	const attacks = characterAttacks(character, spells);
-	const spellMasteryNames = ["spell-mastery-1", "spell-mastery-2"].flatMap((key) => character.classChoices?.[key] || []).map((id) => spells.find((spell) => spell.id === id)?.name).filter(Boolean);
+	const spellMasteryNames = ["spell-mastery-1", "spell-mastery-2"].flatMap((key) => {
+		var _character$classChoic;
+		return ((_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic[key]) || [];
+	}).map((id) => {
+		var _spells$find6;
+		return (_spells$find6 = spells.find((spell) => spell.id === id)) === null || _spells$find6 === void 0 ? void 0 : _spells$find6.name;
+	}).filter(Boolean);
 	const exportClassFeatures = orderedLssFeatures(classFeatureList.map((feature) => feature.name === "Мастерство заклинателя" && spellMasteryNames.length ? {
 		...feature,
 		description: `${spellMasteryNames.join(" и ")}: пока выбранные заклинания подготовлены, вы можете накладывать их на минимальном круге без траты ячеек.`
@@ -27958,7 +28241,7 @@ function createLongStoryShortExport(context, options = {}) {
 		info: {
 			charClass: {
 				name: "charClass",
-				value: characterClass?.name || ""
+				value: (characterClass === null || characterClass === void 0 ? void 0 : characterClass.name) || ""
 			},
 			charSubclass: {
 				name: "charSubclass",
@@ -27970,7 +28253,7 @@ function createLongStoryShortExport(context, options = {}) {
 			},
 			background: {
 				name: "background",
-				value: background?.name || ""
+				value: (background === null || background === void 0 ? void 0 : background.name) || ""
 			},
 			playerName: {
 				name: "playerName",
@@ -27978,7 +28261,7 @@ function createLongStoryShortExport(context, options = {}) {
 			},
 			race: {
 				name: "race",
-				value: [race?.name, context.raceVariantName].filter(Boolean).join(" · ")
+				value: [race === null || race === void 0 ? void 0 : race.name, context.raceVariantName].filter(Boolean).join(" · ")
 			},
 			alignment: {
 				name: "alignment",
@@ -28063,14 +28346,14 @@ function createLongStoryShortExport(context, options = {}) {
 			"hp-max-con-bonus": { value: 0 },
 			darkvision: { value: darkvisionDistance(raceFeatureList) },
 			"hp-max": { value: estimatedHitPoints(character) },
-			"hp-current": { value: character.currentHitPoints ?? estimatedHitPoints(character) },
+			"hp-current": { value: (_character$currentHit2 = character.currentHitPoints) !== null && _character$currentHit2 !== void 0 ? _character$currentHit2 : estimatedHitPoints(character) },
 			"hp-temp": { value: character.temporaryHitPoints || 0 },
 			isDying: false,
 			deathFails: 0,
 			deathSuccesses: 0,
 			ac: { value: armorClass(character) },
 			speed: { value: speedBreakdown(character).walk },
-			"hit-die": { value: `D${classRules[character.className]?.hitDie || 8}` },
+			"hit-die": { value: `D${((_classRules$character5 = classRules[character.className]) === null || _classRules$character5 === void 0 ? void 0 : _classRules$character5.hitDie) || 8}` },
 			"hp-max-bonus": { value: 0 }
 		},
 		attunementsList: [{
@@ -28093,7 +28376,7 @@ function createLongStoryShortExport(context, options = {}) {
 			...chosenSpells.some((spell) => spell.level >= 8) ? { "spells-level-8": richSpellText(chosenSpells, 8) } : {},
 			...chosenSpells.some((spell) => spell.level >= 9) ? { "spells-level-9": richSpellText(chosenSpells, 9) } : {},
 			equipment: richText(equipment.join("\n"), "equipment"),
-			background: richLabeledText([[background?.name || "Предыстория", background?.description || ""], [backgroundData.feature.name, backgroundData.feature.description]], "background"),
+			background: richLabeledText([[(background === null || background === void 0 ? void 0 : background.name) || "Предыстория", (background === null || background === void 0 ? void 0 : background.description) || ""], [backgroundData.feature.name, backgroundData.feature.description]], "background"),
 			ideals: richText(character.personality.ideals, "ideals"),
 			personality: {
 				...richText(character.personality.traits, "personality"),
@@ -28149,7 +28432,7 @@ function createLongStoryShortExport(context, options = {}) {
 		isDefault: true,
 		weapons: {},
 		hiddenName: character.name || "Безымянный герой",
-		casterClass: { value: characterClass?.name || "" },
+		casterClass: { value: (characterClass === null || characterClass === void 0 ? void 0 : characterClass.name) || "" },
 		avatar: {
 			jpeg: "",
 			webp: ""
@@ -28181,7 +28464,7 @@ function createLongStoryShortExport(context, options = {}) {
 		lastWriterSessionId: `${Date.now()}-list-geroya5e`,
 		linkAccess: "none",
 		rooms: [],
-		sheetEdition: options.sheetEdition || character.lssSpellCards?.sheetEdition || "2014",
+		sheetEdition: options.sheetEdition || ((_character$lssSpellCa3 = character.lssSpellCards) === null || _character$lssSpellCa3 === void 0 ? void 0 : _character$lssSpellCa3.sheetEdition) || "2014",
 		jsonType: "character",
 		version: "2",
 		wizard: {}
@@ -28467,13 +28750,16 @@ var itemCatalog = [
 		properties,
 		hands: Number(hands)
 	})),
-	...rows(supplyRows).map(([name, price, weight, category]) => ({
-		name,
-		category: category || "gear",
-		priceGp: Number(price),
-		weight: packWeights[name] ?? Number(weight),
-		...category === "focus" || isHandTool(name) ? { hands: 1 } : {}
-	})),
+	...rows(supplyRows).map(([name, price, weight, category]) => {
+		var _packWeights$name;
+		return {
+			name,
+			category: category || "gear",
+			priceGp: Number(price),
+			weight: (_packWeights$name = packWeights[name]) !== null && _packWeights$name !== void 0 ? _packWeights$name : Number(weight),
+			...category === "focus" || isHandTool(name) ? { hands: 1 } : {}
+		};
+	}),
 	{
 		name: "Магическая фокусировка",
 		category: "focus",
@@ -28523,7 +28809,10 @@ function normalizedItemName(name) {
 function catalogItemFor(name) {
 	const key = normalizedItemName(name);
 	const redirected = aliases$1[key] ? normalizedItemName(aliases$1[key]) : key;
-	return itemCatalog.find((item) => normalizedItemName(item.name) === redirected || item.aliases?.some((a) => normalizedItemName(a) === redirected)) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
+	return itemCatalog.find((item) => {
+		var _item$aliases;
+		return normalizedItemName(item.name) === redirected || ((_item$aliases = item.aliases) === null || _item$aliases === void 0 ? void 0 : _item$aliases.some((a) => normalizedItemName(a) === redirected));
+	}) || itemCatalog.find((item) => (item.category === "armor" || item.category === "focus") && redirected.startsWith(normalizedItemName(item.name) + " ("));
 }
 function currencyLabel(gp) {
 	if (gp === void 0) return "—";
@@ -28647,16 +28936,16 @@ function subclassRuntimeControls(character, spells = []) {
 	const classes = orderedCharacterClasses(character);
 	const controls = definitions.filter((control) => classes.some((entry) => entry.classId === control.classId && entry.subclassId === control.subclassId && entry.level >= control.minLevel)).map((control) => {
 		const entry = classes.find((item) => item.classId === control.classId);
-		if (control.key === "fighter:echo-knight:echo-count" && (entry?.level || 0) < 18) return {
+		if (control.key === "fighter:echo-knight:echo-count" && ((entry === null || entry === void 0 ? void 0 : entry.level) || 0) < 18) return {
 			...control,
 			options: control.options.filter((option) => option.id !== "2")
 		};
-		if (control.key === "cleric:trickery:invoke-duplicity" && (entry?.level || 0) < 17) return {
+		if (control.key === "cleric:trickery:invoke-duplicity" && ((entry === null || entry === void 0 ? void 0 : entry.level) || 0) < 17) return {
 			...control,
 			options: control.options.filter((option) => ["inactive", "1"].includes(option.id))
 		};
 		if (control.key === "monk:astral-self:astral-manifestation") {
-			const level = entry?.level || 0;
+			const level = (entry === null || entry === void 0 ? void 0 : entry.level) || 0;
 			return {
 				...control,
 				options: control.options.filter((option) => option.id === "none" || option.id === "arms" || level >= 6 && option.id === "arms-visage" || level >= 17 && option.id === "full")
@@ -28672,7 +28961,8 @@ function subclassRuntimeControls(character, spells = []) {
 	return controls;
 }
 function subclassRuntimeValue(character, key) {
-	return character.subclassState?.[key];
+	var _character$subclassSt;
+	return (_character$subclassSt = character.subclassState) === null || _character$subclassSt === void 0 ? void 0 : _character$subclassSt[key];
 }
 function setSubclassRuntimeValue(character, key, value) {
 	return {
@@ -28725,15 +29015,16 @@ var incapacitating = [
 var playId = () => crypto.randomUUID();
 var integer = (n, min = 0, max = 999999) => Math.min(max, Math.max(min, Math.trunc(Number(n) || 0)));
 function newPlayItem(name = "") {
+	var _ref$weight;
 	const ref = catalogItemFor(name);
 	return {
 		id: playId(),
 		name,
-		category: ref?.category,
-		catalogName: ref?.name,
-		hands: ref?.hands,
+		category: ref === null || ref === void 0 ? void 0 : ref.category,
+		catalogName: ref === null || ref === void 0 ? void 0 : ref.name,
+		hands: ref === null || ref === void 0 ? void 0 : ref.hands,
 		quantity: 1,
-		weight: ref?.weight ?? 0,
+		weight: (_ref$weight = ref === null || ref === void 0 ? void 0 : ref.weight) !== null && _ref$weight !== void 0 ? _ref$weight : 0,
 		equipped: false,
 		magical: false,
 		requiresAttunement: false,
@@ -28741,7 +29032,7 @@ function newPlayItem(name = "") {
 		charges: 0,
 		maxCharges: 0,
 		recharge: "none",
-		notes: ref?.damage ? [ref.damage, ref.properties].filter(Boolean).join(" · ") : "",
+		notes: (ref === null || ref === void 0 ? void 0 : ref.damage) ? [ref.damage, ref.properties].filter(Boolean).join(" · ") : "",
 		container: "",
 		acBonus: 0,
 		attackBonus: 0,
@@ -28749,15 +29040,19 @@ function newPlayItem(name = "") {
 	};
 }
 function isShieldItem(i) {
-	return !!catalogItemFor(i.catalogName || i.name)?.shield || /^(?:деревянный\s+)?щит(?:\s*\(|\s*\+[123]|$)/i.test(i.name);
+	var _catalogItemFor;
+	return !!((_catalogItemFor = catalogItemFor(i.catalogName || i.name)) === null || _catalogItemFor === void 0 ? void 0 : _catalogItemFor.shield) || /^(?:деревянный\s+)?щит(?:\s*\(|\s*\+[123]|$)/i.test(i.name);
 }
 function handCost(i) {
+	var _ref$hands;
 	if (i.quantity <= 0 || !i.equipped) return 0;
 	if (i.hands !== void 0) return i.hands;
-	return catalogItemFor(i.catalogName || i.weaponBase || i.name)?.hands ?? (isShieldItem(i) || itemCategory(i) === "weapon" || itemCategory(i) === "focus" || isHandTool(i.name) || isWoodenFocus(i.name, i.notes) ? 1 : 0);
+	const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
+	return (_ref$hands = ref === null || ref === void 0 ? void 0 : ref.hands) !== null && _ref$hands !== void 0 ? _ref$hands : isShieldItem(i) || itemCategory(i) === "weapon" || itemCategory(i) === "focus" || isHandTool(i.name) || isWoodenFocus(i.name, i.notes) ? 1 : 0;
 }
 function equippedHands(c) {
-	const held = (c.adventure?.inventory || []).filter((i) => handCost(i) > 0);
+	var _c$adventure;
+	const held = (((_c$adventure = c.adventure) === null || _c$adventure === void 0 ? void 0 : _c$adventure.inventory) || []).filter((i) => handCost(i) > 0);
 	return {
 		held,
 		used: held.reduce((n, i) => n + handCost(i), 0),
@@ -28774,10 +29069,11 @@ function handSlots(items) {
 	const right = held.find((i) => i.hand === "right") || held.find((i) => i.hand !== "left");
 	return {
 		right,
-		left: held.find((i) => i.id !== right?.id && i.hand === "left") || held.find((i) => i.id !== right?.id)
+		left: held.find((i) => i.id !== (right === null || right === void 0 ? void 0 : right.id) && i.hand === "left") || held.find((i) => i.id !== (right === null || right === void 0 ? void 0 : right.id))
 	};
 }
 function equipInHand(c, id, hand) {
+	var _slots$hand, _slots$other;
 	if (!c.adventure) throw new Error("Откройте игровую копию героя.");
 	const item = c.adventure.inventory.find((i) => i.id === id && i.quantity > 0);
 	if (!item || handCost({
@@ -28790,7 +29086,7 @@ function equipInHand(c, id, hand) {
 	});
 	const other = hand === "right" ? "left" : "right";
 	const slots = handSlots(c.adventure.inventory.filter((i) => i.id !== id));
-	const displaced = new Set([slots[hand]?.id, ...cost === 2 ? [slots[other]?.id] : []]);
+	const displaced = new Set([(_slots$hand = slots[hand]) === null || _slots$hand === void 0 ? void 0 : _slots$hand.id, ...cost === 2 ? [(_slots$other = slots[other]) === null || _slots$other === void 0 ? void 0 : _slots$other.id] : []]);
 	return updateInventory(c, c.adventure.inventory.map((i) => i.id === id ? {
 		...i,
 		equipped: true,
@@ -28807,10 +29103,19 @@ function checkEquipmentCapacity(items) {
 	const specified = held.filter((i) => handCost(i) === 1 && i.hand);
 	if (specified.some((i, n) => specified.some((j, m) => n !== m && j.hand === i.hand))) throw new Error("Два предмета не могут занимать одну руку.");
 	if (held.filter((i) => isShieldItem(i)).length > 1) throw new Error("Нельзя использовать два щита одновременно.");
-	if (held.filter((i) => !isShieldItem(i) && !!catalogItemFor(i.catalogName || i.name)?.armor).length > 1) throw new Error("Можно носить только один комплект доспехов.");
+	if (held.filter((i) => {
+		var _catalogItemFor2;
+		return !isShieldItem(i) && !!((_catalogItemFor2 = catalogItemFor(i.catalogName || i.name)) === null || _catalogItemFor2 === void 0 ? void 0 : _catalogItemFor2.armor);
+	}).length > 1) throw new Error("Можно носить только один комплект доспехов.");
 }
 function prepareStartingEquipment(items) {
-	const best = items.filter((i) => !!catalogItemFor(i.catalogName || i.name)?.armor).sort((a, b) => (catalogItemFor(b.catalogName || b.name)?.armor?.base || 0) - (catalogItemFor(a.catalogName || a.name)?.armor?.base || 0))[0];
+	const best = items.filter((i) => {
+		var _catalogItemFor3;
+		return !!((_catalogItemFor3 = catalogItemFor(i.catalogName || i.name)) === null || _catalogItemFor3 === void 0 ? void 0 : _catalogItemFor3.armor);
+	}).sort((a, b) => {
+		var _catalogItemFor4, _catalogItemFor5;
+		return (((_catalogItemFor4 = catalogItemFor(b.catalogName || b.name)) === null || _catalogItemFor4 === void 0 || (_catalogItemFor4 = _catalogItemFor4.armor) === null || _catalogItemFor4 === void 0 ? void 0 : _catalogItemFor4.base) || 0) - (((_catalogItemFor5 = catalogItemFor(a.catalogName || a.name)) === null || _catalogItemFor5 === void 0 || (_catalogItemFor5 = _catalogItemFor5.armor) === null || _catalogItemFor5 === void 0 ? void 0 : _catalogItemFor5.base) || 0);
+	})[0];
 	if (best) best.equipped = true;
 	const shield = items.find(isShieldItem);
 	if (shield) shield.equipped = true;
@@ -28848,7 +29153,7 @@ function createAdventureCharacter(source, sourceId, sourceUpdatedAt, name) {
 	}
 	const expandedInventory = (c.inventoryOverride === void 0 ? selectedEquipment(c) : c.inventoryOverride.split("\n")).filter(Boolean).map((line) => {
 		const match = line.match(/^(.*?)\s*[×x]\s*(\d+)\s*$/i);
-		const item = newPlayItem(match?.[1] || line);
+		const item = newPlayItem((match === null || match === void 0 ? void 0 : match[1]) || line);
 		item.category = itemCategory(item);
 		item.quantity = match ? integer(match[2], 1) : 1;
 		return item;
@@ -28907,7 +29212,8 @@ function logPlay(c, text, result) {
 	};
 }
 function playMaximum(c) {
-	return c.adventure?.hpMaximum ?? estimatedHitPoints({
+	var _c$adventure$hpMaximu, _c$adventure2;
+	return (_c$adventure$hpMaximu = (_c$adventure2 = c.adventure) === null || _c$adventure2 === void 0 ? void 0 : _c$adventure2.hpMaximum) !== null && _c$adventure$hpMaximu !== void 0 ? _c$adventure$hpMaximu : estimatedHitPoints({
 		...c,
 		abilities: finalAbilityScores(c)
 	});
@@ -28916,7 +29222,8 @@ function inventoryText(items) {
 	return items.filter((i) => i.quantity > 0).map((i) => `${i.name}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join("\n");
 }
 function playDerived(c) {
-	const items = c.adventure?.inventory;
+	var _c$adventure3;
+	const items = (_c$adventure3 = c.adventure) === null || _c$adventure3 === void 0 ? void 0 : _c$adventure3.inventory;
 	return {
 		...c,
 		abilities: finalAbilityScores(c),
@@ -28930,7 +29237,8 @@ function activeItem(i) {
 	return i.quantity > 0 && i.equipped && (!i.requiresAttunement || i.attuned);
 }
 function itemBonus(c, key) {
-	return (c.adventure?.inventory || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+	var _c$adventure4;
+	return (((_c$adventure4 = c.adventure) === null || _c$adventure4 === void 0 ? void 0 : _c$adventure4.inventory) || []).filter(activeItem).reduce((n, i) => n + (Number(i[key]) || 0), 0);
 }
 var itemCategoryLabels = {
 	weapon: "Оружие",
@@ -28941,7 +29249,8 @@ var itemCategoryLabels = {
 	gear: "Снаряжение"
 };
 function itemCategory(i) {
-	if (i.category && !(i.category === "gear" && catalogItemFor(i.catalogName || i.name)?.category !== "gear")) return i.category;
+	var _catalogItemFor6;
+	if (i.category && !(i.category === "gear" && ((_catalogItemFor6 = catalogItemFor(i.catalogName || i.name)) === null || _catalogItemFor6 === void 0 ? void 0 : _catalogItemFor6.category) !== "gear")) return i.category;
 	const ref = catalogItemFor(i.catalogName || i.weaponBase || i.name);
 	if (ref) return ref.category;
 	if (/зелье|эликсир|свиток|рацион|порци|масло|(?:^|\s)яд(?:\s|$)/i.test(i.name)) return "consumable";
@@ -28951,7 +29260,8 @@ function itemCategory(i) {
 	return "gear";
 }
 function consumePlayItem(c, id) {
-	const i = c.adventure?.inventory.find((i) => i.id === id);
+	var _c$adventure5;
+	const i = (_c$adventure5 = c.adventure) === null || _c$adventure5 === void 0 ? void 0 : _c$adventure5.inventory.find((i) => i.id === id);
 	if (!i || !["consumable", "ammunition"].includes(itemCategory(i))) throw new Error("Этот предмет не расходуется при использовании.");
 	if (i.quantity <= 0) throw new Error("Предмет закончился.");
 	return logPlay(updateInventory(c, c.adventure.inventory.map((x) => x.id === id ? {
@@ -28960,11 +29270,13 @@ function consumePlayItem(c, id) {
 	} : x)), `Использован предмет: ${i.name}`);
 }
 function spellItemBonus(c, key, classId) {
-	return (c.adventure?.inventory || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
+	var _c$adventure6;
+	return (((_c$adventure6 = c.adventure) === null || _c$adventure6 === void 0 ? void 0 : _c$adventure6.inventory) || []).filter((i) => activeItem(i) && (!i.bonusClassId || i.bonusClassId === classId)).reduce((n, i) => n + (Number(i[key]) || 0), 0);
 }
 function weaponItemBonus(c, attackName, key) {
+	var _c$adventure7;
 	const normalize = (v) => v.toLowerCase().replace(/\([^)]*\)|\+[123]/g, "").trim();
-	const values = (c.adventure?.inventory || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
+	const values = (((_c$adventure7 = c.adventure) === null || _c$adventure7 === void 0 ? void 0 : _c$adventure7.inventory) || []).filter((i) => activeItem(i) && itemCategory(i) === "weapon" && normalize(i.weaponBase || i.name) === normalize(attackName.split(" · ").at(-1) || attackName)).map((i) => Number(i[key]) || 0);
 	return values.length ? Math.max(...values) : 0;
 }
 function expandEquipmentPack(item) {
@@ -29011,6 +29323,7 @@ function expandEquipmentPack(item) {
 function upgradeLegacyInventory(c) {
 	if (!c.adventure || c.adventure.inventoryCatalogVersion === 3) return c;
 	const upgrade = (item) => {
+		var _item$hands;
 		const ref = catalogItemFor(item.catalogName || item.name);
 		if (!ref) return item;
 		return {
@@ -29018,7 +29331,7 @@ function upgradeLegacyInventory(c) {
 			catalogName: item.catalogName || ref.name,
 			category: item.category === "gear" && ref.category !== "gear" ? ref.category : item.category || ref.category,
 			weight: item.weight === 0 && ref.weight > 0 ? ref.weight : item.weight,
-			hands: item.hands ?? ref.hands
+			hands: (_item$hands = item.hands) !== null && _item$hands !== void 0 ? _item$hands : ref.hands
 		};
 	};
 	const inventory = c.adventure.inventory.map(upgrade).flatMap(expandEquipmentPack);
@@ -29069,7 +29382,8 @@ function updateInventory(c, items) {
 	};
 }
 function restorePlayItem(c, id) {
-	const item = c.adventure?.inventoryTrash?.find((i) => i.id === id);
+	var _c$adventure8;
+	const item = (_c$adventure8 = c.adventure) === null || _c$adventure8 === void 0 || (_c$adventure8 = _c$adventure8.inventoryTrash) === null || _c$adventure8 === void 0 ? void 0 : _c$adventure8.find((i) => i.id === id);
 	if (!item) throw new Error("Предмет не найден в корзине.");
 	return logPlay(updateInventory(c, [...c.adventure.inventory, {
 		...item,
@@ -29080,10 +29394,11 @@ function restorePlayItem(c, id) {
 	}]), `Возвращено из корзины: ${item.name}`);
 }
 function applyPlayDamage(c, amount, defense = "normal") {
+	var _c$currentHitPoints;
 	if (!c.adventure) return c;
 	const raw = integer(amount);
 	const damage = defense === "immune" ? 0 : defense === "resistance" ? Math.floor(raw / 2) : defense === "vulnerability" ? raw * 2 : raw;
-	const hp = c.currentHitPoints ?? playMaximum(c);
+	const hp = (_c$currentHitPoints = c.currentHitPoints) !== null && _c$currentHitPoints !== void 0 ? _c$currentHitPoints : playMaximum(c);
 	const temp = c.temporaryHitPoints || 0;
 	const lost = Math.max(0, damage - temp);
 	const nextHp = Math.max(0, hp - lost);
@@ -29113,7 +29428,8 @@ function applyPlayDamage(c, amount, defense = "normal") {
 	return next;
 }
 function healPlay(c, amount) {
-	const hp = c.currentHitPoints ?? playMaximum(c);
+	var _c$currentHitPoints2;
+	const hp = (_c$currentHitPoints2 = c.currentHitPoints) !== null && _c$currentHitPoints2 !== void 0 ? _c$currentHitPoints2 : playMaximum(c);
 	const nextHp = Math.min(playMaximum(c), hp + integer(amount));
 	return logPlay({
 		...c,
@@ -29172,7 +29488,7 @@ function toggleCondition(c, name) {
 function queueAttunement(c, id) {
 	if (!c.adventure) return c;
 	const item = c.adventure.inventory.find((i) => i.id === id);
-	if (!item?.requiresAttunement || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
+	if (!(item === null || item === void 0 ? void 0 : item.requiresAttunement) || item.quantity < 1) throw new Error("Этот предмет не требует настройки.");
 	if (!item.attunementPending && c.adventure.inventory.some((i) => i.id !== id && i.attunementPending)) throw new Error("Выберите только один предмет на один короткий отдых.");
 	if (!item.attuned && c.adventure.inventory.some((i) => i.id !== id && i.attuned && i.name.trim().toLowerCase() === item.name.trim().toLowerCase())) throw new Error("Нельзя настроиться на две копии одного магического предмета.");
 	if (item.attuned && item.cursed) throw new Error("Сначала мастер должен снять проклятие.");
@@ -29250,7 +29566,8 @@ function rollD20(bonus, mode = "normal", die = randomDie) {
 	};
 }
 function applyDeathSave(c, natural) {
-	if ((c.currentHitPoints ?? playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
+	var _c$currentHitPoints3;
+	if (((_c$currentHitPoints3 = c.currentHitPoints) !== null && _c$currentHitPoints3 !== void 0 ? _c$currentHitPoints3 : playMaximum(c)) > 0) throw new Error("Спасбросок смерти доступен при 0 HP.");
 	if (natural === 20) return logPlay(healPlay(c, 1), "Спасбросок смерти: натуральная 20");
 	const succeeds = natural >= 10;
 	return logPlay({
@@ -29260,12 +29577,15 @@ function applyDeathSave(c, natural) {
 	}, `Спасбросок смерти: ${natural}${succeeds ? ", успех" : ", провал"}`);
 }
 function playHitDicePools(c) {
-	return orderedCharacterClasses(c).map((entry) => ({
-		classId: entry.classId,
-		die: classRuleFor(c, entry.classId)?.hitDie || 8,
-		max: entry.level,
-		spent: integer(c.hitDiceSpentByClass?.[entry.classId], 0, entry.level)
-	}));
+	return orderedCharacterClasses(c).map((entry) => {
+		var _classRuleFor, _c$hitDiceSpentByClas;
+		return {
+			classId: entry.classId,
+			die: ((_classRuleFor = classRuleFor(c, entry.classId)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.hitDie) || 8,
+			max: entry.level,
+			spent: integer((_c$hitDiceSpentByClas = c.hitDiceSpentByClass) === null || _c$hitDiceSpentByClas === void 0 ? void 0 : _c$hitDiceSpentByClas[entry.classId], 0, entry.level)
+		};
+	});
 }
 function durationMinutes(text) {
 	const match = text.match(/(\d+)\s*(минут|minute|час|hour|дн|день|day|раунд|round)/i);
@@ -29273,10 +29593,11 @@ function durationMinutes(text) {
 	return Number(match[1]) * (/час|hour/i.test(match[2]) ? 60 : /дн|день|day/i.test(match[2]) ? 1440 : /раунд|round/i.test(match[2]) ? .1 : 1);
 }
 function restPlay(c, kind, selectedDice = {}, die = randomDie, consciousConfirmed = false) {
+	var _c$currentHitPoints4, _c$adventure$concentr, _c$adventure$concentr2, _c$adventure$concentr3, _c$currentHitPoints5, _c$adventure$customRe;
 	if (!c.adventure) return c;
-	if ((c.currentHitPoints ?? playMaximum(c)) <= 0 && kind === "long" && !consciousConfirmed) throw new Error("Подтвердите: персонаж в сознании?");
+	if (((_c$currentHitPoints4 = c.currentHitPoints) !== null && _c$currentHitPoints4 !== void 0 ? _c$currentHitPoints4 : playMaximum(c)) <= 0 && kind === "long" && !consciousConfirmed) throw new Error("Подтвердите: персонаж в сознании?");
 	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации.");
-	const remaining = c.adventure.concentration?.remainingMinutes ?? durationMinutes(c.adventure.concentration?.duration || "");
+	const remaining = (_c$adventure$concentr = (_c$adventure$concentr2 = c.adventure.concentration) === null || _c$adventure$concentr2 === void 0 ? void 0 : _c$adventure$concentr2.remainingMinutes) !== null && _c$adventure$concentr !== void 0 ? _c$adventure$concentr : durationMinutes(((_c$adventure$concentr3 = c.adventure.concentration) === null || _c$adventure$concentr3 === void 0 ? void 0 : _c$adventure$concentr3.duration) || "");
 	const keepConcentration = kind === "short" && c.adventure.concentration && (remaining === void 0 || remaining > 60);
 	const derived = playDerived(c);
 	const pools = playHitDicePools(c);
@@ -29301,7 +29622,7 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie, consciousConfirme
 	});
 	let next = {
 		...c,
-		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), (c.currentHitPoints ?? playMaximum(c)) + healing),
+		currentHitPoints: kind === "long" ? playMaximum(c) : Math.min(playMaximum(c), ((_c$currentHitPoints5 = c.currentHitPoints) !== null && _c$currentHitPoints5 !== void 0 ? _c$currentHitPoints5 : playMaximum(c)) + healing),
 		temporaryHitPoints: kind === "long" ? 0 : c.temporaryHitPoints,
 		hitDiceSpentByClass: spent,
 		hitDiceSpent: Object.values(spent).reduce((a, b) => a + b, 0),
@@ -29312,7 +29633,7 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie, consciousConfirme
 			...c.adventure,
 			elapsedMinutes: c.adventure.elapsedMinutes + (kind === "long" ? 480 : 60),
 			exhaustion: kind === "long" ? Math.max(0, c.adventure.exhaustion - 1) : c.adventure.exhaustion,
-			customResources: c.adventure.customResources?.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
+			customResources: (_c$adventure$customRe = c.adventure.customResources) === null || _c$adventure$customRe === void 0 ? void 0 : _c$adventure$customRe.map((r) => r.recharge === kind || kind === "long" && r.recharge === "short" ? {
 				...r,
 				current: r.max
 			} : r),
@@ -29345,6 +29666,7 @@ function restPlay(c, kind, selectedDice = {}, die = randomDie, consciousConfirme
 	return logPlay(next, `${kind === "long" ? "Длинный" : "Короткий"} отдых завершён${kind === "short" && healing ? `: лечение ${healing}` : ""}. Другие состояния сохранены.`);
 }
 function advancePlayTurn(c) {
+	var _c$adventure$concentr4;
 	if (!c.adventure) return c;
 	if (c.adventure.concentrationChecks.length) throw new Error("Сначала разрешите проверки концентрации от полученного урона.");
 	const ended = c.adventure.effects.filter((e) => e.remaining !== void 0 && e.remaining <= 1);
@@ -29364,7 +29686,7 @@ function advancePlayTurn(c) {
 			})
 		}
 	};
-	if (c.adventure.concentration?.remainingMinutes !== void 0) {
+	if (((_c$adventure$concentr4 = c.adventure.concentration) === null || _c$adventure$concentr4 === void 0 ? void 0 : _c$adventure$concentr4.remainingMinutes) !== void 0) {
 		const remainingMinutes = c.adventure.concentration.remainingMinutes - .1;
 		next.adventure.concentration = {
 			...c.adventure.concentration,
@@ -29402,11 +29724,12 @@ function restore(state, delta) {
 }
 /** Persist only changed fields; never embed another undo history in a snapshot. */
 function commitPlayChange(before, after) {
+	var _after$adventure$jour, _before$adventure$jou, _after$adventure$jour2;
 	if (!before.adventure || !after.adventure) return after;
 	const character = patch(before, after, ["adventure"]);
 	const adventure = patch(before.adventure, after.adventure, ["undo"]);
 	if (!Object.keys(character.values).length && !character.absent.length && !Object.keys(adventure.values).length && !adventure.absent.length) return before;
-	const label = after.adventure.journal[0]?.id !== before.adventure.journal[0]?.id ? after.adventure.journal[0]?.text || "Изменение героя" : "Изменение героя";
+	const label = ((_after$adventure$jour = after.adventure.journal[0]) === null || _after$adventure$jour === void 0 ? void 0 : _after$adventure$jour.id) !== ((_before$adventure$jou = before.adventure.journal[0]) === null || _before$adventure$jou === void 0 ? void 0 : _before$adventure$jou.id) ? ((_after$adventure$jour2 = after.adventure.journal[0]) === null || _after$adventure$jour2 === void 0 ? void 0 : _after$adventure$jour2.text) || "Изменение героя" : "Изменение героя";
 	const entry = {
 		id: playId(),
 		at: (/* @__PURE__ */ new Date()).toISOString(),
@@ -29425,7 +29748,8 @@ function commitPlayChange(before, after) {
 	};
 }
 function undoPlayChange(c) {
-	const entry = c.adventure?.undo?.at(-1);
+	var _c$adventure;
+	const entry = (_c$adventure = c.adventure) === null || _c$adventure === void 0 || (_c$adventure = _c$adventure.undo) === null || _c$adventure === void 0 ? void 0 : _c$adventure.at(-1);
 	if (!entry || !c.adventure) return c;
 	const previous = restore(c, entry.character);
 	previous.adventure = {
@@ -29450,7 +29774,7 @@ function NumberSlider({ label, value, min = 0, max = 100, step = 1, onChange }) 
 		setPreview(void 0);
 		if (Number(next) !== Number(value)) onChange(next);
 	}
-	const display = preview ?? String(value);
+	const display = preview !== null && preview !== void 0 ? preview : String(value);
 	return /* @__PURE__ */ jsxs("span", {
 		className: "number-slider",
 		children: [/* @__PURE__ */ jsx("input", {
@@ -29496,6 +29820,7 @@ function healthAmount(input) {
 	return Number(input);
 }
 function QuickHealth({ character: c, onChange, onUndo }) {
+	var _c$currentHitPoints, _c$adventure2;
 	const [amount, setAmount] = useState("5");
 	const [defense, setDefense] = useState("normal");
 	const [error, setError] = useState("");
@@ -29504,9 +29829,10 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 		at: 0,
 		signature: ""
 	});
-	const max = playMaximum(c), hp = c.currentHitPoints ?? max;
+	const max = playMaximum(c), hp = (_c$currentHitPoints = c.currentHitPoints) !== null && _c$currentHitPoints !== void 0 ? _c$currentHitPoints : max;
 	function apply(kind) {
 		try {
+			var _next$adventure$journ, _c$adventure;
 			const value = healthAmount(amount);
 			const signature = `${kind}:${value}:${defense}`;
 			if (Date.now() - lock.current.at < 450 && lock.current.signature === signature) return;
@@ -29520,15 +29846,15 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 			};
 			onChange(next);
 			setLast({
-				text: next.adventure.journal[0]?.text || "Здоровье изменено",
-				transaction: c.adventure?.undo?.at(-1)?.id
+				text: ((_next$adventure$journ = next.adventure.journal[0]) === null || _next$adventure$journ === void 0 ? void 0 : _next$adventure$journ.text) || "Здоровье изменено",
+				transaction: (_c$adventure = c.adventure) === null || _c$adventure === void 0 || (_c$adventure = _c$adventure.undo) === null || _c$adventure === void 0 || (_c$adventure = _c$adventure.at(-1)) === null || _c$adventure === void 0 ? void 0 : _c$adventure.id
 			});
 			setError("");
 		} catch (e) {
 			setError(e.message);
 		}
 	}
-	const latest = c.adventure?.undo?.at(-1);
+	const latest = (_c$adventure2 = c.adventure) === null || _c$adventure2 === void 0 || (_c$adventure2 = _c$adventure2.undo) === null || _c$adventure2 === void 0 ? void 0 : _c$adventure2.at(-1);
 	const canUndo = !!last && !!latest && latest.id !== last.transaction && latest.label === last.text;
 	return /* @__PURE__ */ jsxs("section", {
 		className: "quick-health",
@@ -29662,16 +29988,18 @@ function QuickHealth({ character: c, onChange, onUndo }) {
 //#endregion
 //#region app/AttackCustomizationEditor.tsx
 function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave, onClose }) {
-	const [draft, setDraft] = useState({ ...c.attackCustomizations?.[base.id] });
+	var _c$attackCustomizatio, _draft$name2, _draft$ability, _draft$proficient, _draft$bonus, _draft$bonus2, _draft$damageFormula2, _draft$damageType, _draft$bonus3, _ref, _draft$note;
+	const [draft, setDraft] = useState({ ...(_c$attackCustomizatio = c.attackCustomizations) === null || _c$attackCustomizatio === void 0 ? void 0 : _c$attackCustomizatio[base.id] });
 	const [error, setError] = useState("");
 	const form = useRef(null);
 	const preview = customizeAttack(base, c, draft);
 	const pb = proficiencyBonus(characterLevel(c));
 	useEffect(() => {
+		var _form$current;
 		const previous = document.activeElement;
 		const overflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
-		form.current?.querySelector("input")?.focus();
+		(_form$current = form.current) === null || _form$current === void 0 || (_form$current = _form$current.querySelector("input")) === null || _form$current === void 0 || _form$current.focus();
 		function key(e) {
 			if (e.key === "Escape") {
 				e.preventDefault();
@@ -29682,10 +30010,10 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 				const first = controls[0], last = controls.at(-1);
 				if (e.shiftKey && document.activeElement === first) {
 					e.preventDefault();
-					last?.focus();
+					last === null || last === void 0 || last.focus();
 				} else if (!e.shiftKey && document.activeElement === last) {
 					e.preventDefault();
-					first?.focus();
+					first === null || first === void 0 || first.focus();
 				}
 			}
 		}
@@ -29693,7 +30021,7 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 		return () => {
 			document.body.style.overflow = overflow;
 			document.removeEventListener("keydown", key);
-			previous?.focus({ preventScroll: true });
+			previous === null || previous === void 0 || previous.focus({ preventScroll: true });
 		};
 	}, [onClose]);
 	function set(patch) {
@@ -29713,8 +30041,9 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 			onSubmit: (e) => {
 				e.preventDefault();
 				try {
-					if (!(draft.name ?? base.name).trim()) throw new Error("Укажите название атаки.");
-					const formula = draft.damageFormula ?? base.damageFormula;
+					var _draft$name, _draft$damageFormula;
+					if (!((_draft$name = draft.name) !== null && _draft$name !== void 0 ? _draft$name : base.name).trim()) throw new Error("Укажите название атаки.");
+					const formula = (_draft$damageFormula = draft.damageFormula) !== null && _draft$damageFormula !== void 0 ? _draft$damageFormula : base.damageFormula;
 					if (formula) rollDice(formula.replace(/\[(STR|DEX|CON|INT|WIS|CHA|PB)\]/gi, "1"), () => .5);
 					onSave(draft);
 				} catch (e) {
@@ -29727,14 +30056,14 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 					className: "attack-editor-fields",
 					children: [
 						/* @__PURE__ */ jsxs("label", { children: ["Название", /* @__PURE__ */ jsx("input", {
-							value: draft.name ?? base.name,
+							value: (_draft$name2 = draft.name) !== null && _draft$name2 !== void 0 ? _draft$name2 : base.name,
 							maxLength: 150,
 							onChange: (e) => set({ name: e.target.value })
 						})] }),
 						base.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 							/* @__PURE__ */ jsxs("label", { children: ["Характеристика попадания", /* @__PURE__ */ jsx("select", {
 								"aria-label": "Характеристика попадания",
-								value: draft.ability ?? base.ability,
+								value: (_draft$ability = draft.ability) !== null && _draft$ability !== void 0 ? _draft$ability : base.ability,
 								onChange: (e) => set({ ability: e.target.value }),
 								children: Object.entries(abilityLabels).map(([id, label]) => /* @__PURE__ */ jsx("option", {
 									value: id,
@@ -29746,7 +30075,7 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 								children: [
 									/* @__PURE__ */ jsx("input", {
 										type: "checkbox",
-										checked: draft.proficient ?? base.proficient,
+										checked: (_draft$proficient = draft.proficient) !== null && _draft$proficient !== void 0 ? _draft$proficient : base.proficient,
 										onChange: (e) => set({ proficient: e.target.checked })
 									}),
 									"Владение · бонус мастерства ",
@@ -29766,9 +30095,9 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 										" · мастерство ",
 										preview.proficient ? pb : 0,
 										" · особенности ",
-										preview.attackBonus - abilityModifier$1(c.abilities[preview.ability]) - (preview.proficient ? pb : 0) - (draft.bonus ?? 0),
+										preview.attackBonus - abilityModifier$1(c.abilities[preview.ability]) - (preview.proficient ? pb : 0) - ((_draft$bonus = draft.bonus) !== null && _draft$bonus !== void 0 ? _draft$bonus : 0),
 										" · ручная поправка ",
-										draft.bonus ?? 0,
+										(_draft$bonus2 = draft.bonus) !== null && _draft$bonus2 !== void 0 ? _draft$bonus2 : 0,
 										" · предметы ",
 										equipmentBonus
 									] })
@@ -29779,13 +30108,13 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 							"Формула урона",
 							/* @__PURE__ */ jsx("input", {
 								"aria-label": "Формула урона",
-								value: draft.damageFormula ?? base.damageFormula,
+								value: (_draft$damageFormula2 = draft.damageFormula) !== null && _draft$damageFormula2 !== void 0 ? _draft$damageFormula2 : base.damageFormula,
 								onChange: (e) => set({ damageFormula: e.target.value })
 							}),
 							/* @__PURE__ */ jsx("small", { children: "Например, 1d8+[STR]. [PB] — мастерство." })
 						] }),
 						/* @__PURE__ */ jsxs("label", { children: ["Тип урона", /* @__PURE__ */ jsx("input", {
-							value: draft.damageType ?? "",
+							value: (_draft$damageType = draft.damageType) !== null && _draft$damageType !== void 0 ? _draft$damageType : "",
 							placeholder: "Из описания оружия / способности",
 							onChange: (e) => set({ damageType: e.target.value })
 						})] }),
@@ -29795,13 +30124,13 @@ function AttackCustomizationEditor({ base, character: c, equipmentBonus, onSave,
 								type: "number",
 								min: -100,
 								max: 100,
-								value: draft.bonus ?? 0,
+								value: (_draft$bonus3 = draft.bonus) !== null && _draft$bonus3 !== void 0 ? _draft$bonus3 : 0,
 								onChange: (e) => set({ bonus: Number(e.target.value) })
 							})] }),
 							/* @__PURE__ */ jsx("small", { children: "Магические предметы в экипировке уже учитываются автоматически. Здесь добавляется только отдельная поправка." }),
 							/* @__PURE__ */ jsxs("label", { children: ["Описание и особые правила", /* @__PURE__ */ jsx("textarea", {
 								rows: 4,
-								value: draft.note ?? base.note ?? "",
+								value: (_ref = (_draft$note = draft.note) !== null && _draft$note !== void 0 ? _draft$note : base.note) !== null && _ref !== void 0 ? _ref : "",
 								onChange: (e) => set({ note: e.target.value })
 							})] }),
 							/* @__PURE__ */ jsx("button", {
@@ -29859,16 +30188,17 @@ function featureResourceTiming(c, key) {
 	return resourceActionTiming[key];
 }
 function spendFeatureResource(c, key, timing) {
+	var _c$resourceSpent;
 	const resource = characterResources(playDerived(c)).find((r) => r.key === key);
 	if (!c.adventure || !resource) throw new Error("Способность недоступна этому герою.");
 	const cost = resource.unit || 1;
 	if (resourceCurrent(c, resource) < cost) throw new Error("Ресурс способности закончился.");
-	const action = timing ?? featureResourceTiming(c, key);
+	const action = timing !== null && timing !== void 0 ? timing : featureResourceTiming(c, key);
 	let next = {
 		...c,
 		resourceSpent: {
 			...c.resourceSpent,
-			[key]: (c.resourceSpent?.[key] || 0) + cost
+			[key]: (((_c$resourceSpent = c.resourceSpent) === null || _c$resourceSpent === void 0 ? void 0 : _c$resourceSpent[key]) || 0) + cost
 		},
 		adventure: {
 			...c.adventure,
@@ -29915,7 +30245,10 @@ function startManualConcentration(c, name, amount, unit = "minute") {
 //#region app/FeatureActions.tsx
 function FeatureActions({ character: c, features, onChange, favoritesOnly = false, availableOnly = false }) {
 	const resources = characterResources(playDerived(c));
-	const pinned = (key) => !!c.adventure.favoriteActions?.includes(key);
+	const pinned = (key) => {
+		var _c$adventure$favorite;
+		return !!((_c$adventure$favorite = c.adventure.favoriteActions) === null || _c$adventure$favorite === void 0 ? void 0 : _c$adventure$favorite.includes(key));
+	};
 	const pin = (key) => onChange({
 		...c,
 		adventure: {
@@ -30021,6 +30354,7 @@ function homebrewOptions(entities, type) {
 function homebrewSpells(entities) {
 	const damage = (rows) => (rows || []).map((row) => `${row.formula} ${row.type}`).join(" + ");
 	return entities.filter((e) => e.type === "spell").map((e) => {
+		var _e$spellClasses;
 		const mechanics = e.spellMechanics;
 		const rules = mechanics ? [
 			`Урон: ${damage(mechanics.damage)}.`,
@@ -30038,7 +30372,7 @@ function homebrewSpells(entities) {
 			].filter(Boolean).join("\n\n"),
 			level: e.level || 0,
 			school: e.school || "Авторская",
-			classes: e.spellClasses?.length ? e.spellClasses : [],
+			classes: ((_e$spellClasses = e.spellClasses) === null || _e$spellClasses === void 0 ? void 0 : _e$spellClasses.length) ? e.spellClasses : [],
 			ritual: e.ritual,
 			castingTime: e.castingTime,
 			range: e.range,
@@ -30049,15 +30383,20 @@ function homebrewSpells(entities) {
 	});
 }
 function homebrewSpellAvailable(classId, spell, entities) {
+	var _entity$spellClasses;
 	if (!spell.id.startsWith("hb:") && !entities.some((e) => e.type === "spell" && e.id === spell.id)) {
+		var _owner$spellList, _owner$spellListSourc;
 		const owner = entities.find((e) => e.type === "class" && e.id === classId);
-		return !!owner && (!!owner.spellList?.includes(spell.id) || !!owner.spellListSources?.some((source) => spell.classes.includes(source.replace("official:class:", ""))));
+		return !!owner && (!!((_owner$spellList = owner.spellList) === null || _owner$spellList === void 0 ? void 0 : _owner$spellList.includes(spell.id)) || !!((_owner$spellListSourc = owner.spellListSources) === null || _owner$spellListSourc === void 0 ? void 0 : _owner$spellListSourc.some((source) => spell.classes.includes(source.replace("official:class:", "")))));
 	}
 	const entity = entities.find((e) => e.id === spell.id && e.type === "spell");
-	return !!entity && (!entity.spellClasses?.length || entity.spellClasses.includes(classId));
+	return !!entity && (!((_entity$spellClasses = entity.spellClasses) === null || _entity$spellClasses === void 0 ? void 0 : _entity$spellClasses.length) || entity.spellClasses.includes(classId));
 }
 function homebrewSubclassOptions(classId, entities) {
-	return entities.filter((e) => e.type === "subclass" && e.parentClassId?.replace("official:class:", "") === classId).map((e) => ({
+	return entities.filter((e) => {
+		var _e$parentClassId;
+		return e.type === "subclass" && ((_e$parentClassId = e.parentClassId) === null || _e$parentClassId === void 0 ? void 0 : _e$parentClassId.replace("official:class:", "")) === classId;
+	}).map((e) => ({
 		id: e.id,
 		name: e.name,
 		source: "Homebrew",
@@ -30075,8 +30414,9 @@ function homebrewSubclassOptions(classId, entities) {
 //#region app/spellSources.ts
 /** Keep class associations even when two classes grant the same catalog spell. */
 function classSpellGroups(character, catalog) {
+	var _character$spellGrant;
 	const byId = new Map(catalog.map((spell) => [spell.id, spell]));
-	const grants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
+	const grants = ((_character$spellGrant = character.spellGrants) === null || _character$spellGrant === void 0 ? void 0 : _character$spellGrant.length) ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
 		sourceType: "class",
 		sourceId: character.className,
@@ -30113,7 +30453,7 @@ function classSpellGroups(character, catalog) {
 				spell,
 				classId: entry.classId,
 				source: grant.source,
-				prepared: existing?.prepared || grant.mode === "always-prepared" || grant.mode === "known",
+				prepared: (existing === null || existing === void 0 ? void 0 : existing.prepared) || grant.mode === "always-prepared" || grant.mode === "known",
 				alwaysPrepared: grant.mode === "always-prepared"
 			});
 		}
@@ -30127,10 +30467,11 @@ function classSpellGroups(character, catalog) {
 }
 /** Resolve an internal source id to a user-facing name for exports. */
 function spellSourceDisplayName(sourceId, character, classCatalog) {
-	const catalogName = classCatalog.find((item) => item.id === sourceId)?.name;
+	var _classCatalog$find, _character$homebrew;
+	const catalogName = (_classCatalog$find = classCatalog.find((item) => item.id === sourceId)) === null || _classCatalog$find === void 0 ? void 0 : _classCatalog$find.name;
 	if (catalogName) return catalogName;
-	const hbDefinition = character.homebrew?.entities?.find((item) => item.id === sourceId && item.type === "class");
-	if (hbDefinition?.name) return hbDefinition.name;
+	const hbDefinition = (_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 || (_character$homebrew = _character$homebrew.entities) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.find((item) => item.id === sourceId && item.type === "class");
+	if (hbDefinition === null || hbDefinition === void 0 ? void 0 : hbDefinition.name) return hbDefinition.name;
 	return sourceId.startsWith("hb:") ? "Хоумбрю" : sourceId;
 }
 function otherSpellSources(character, catalog) {
@@ -30194,12 +30535,14 @@ function potionPreset(item) {
 	return healingPotions.find((p) => normalized$1(p.name) === normalized$1(item.name));
 }
 function healingFormulaForItem(item) {
-	return item.healingFormula || potionPreset(item)?.formula;
+	var _potionPreset;
+	return item.healingFormula || ((_potionPreset = potionPreset(item)) === null || _potionPreset === void 0 ? void 0 : _potionPreset.formula);
 }
 //#endregion
 //#region app/playActions.ts
 function useQuickItem(c, id, die) {
-	const item = c.adventure?.inventory.find((i) => i.id === id);
+	var _c$adventure;
+	const item = (_c$adventure = c.adventure) === null || _c$adventure === void 0 ? void 0 : _c$adventure.inventory.find((i) => i.id === id);
 	if (!item) throw new Error("Предмет не найден.");
 	if (item.quantity <= 0) throw new Error("Предмет закончился.");
 	const formula = healingFormulaForItem(item);
@@ -30215,7 +30558,7 @@ function useQuickItem(c, id, die) {
 function resolvePlayAttack(c, name, bonus, formula, mode, die) {
 	if (formula) rollDice(formula, () => 1);
 	const attack = bonus !== void 0 ? rollD20(bonus, mode, die) : void 0;
-	const damage = formula && attack?.natural !== 1 ? rollDamage(formula, die, attack?.natural === 20) : void 0;
+	const damage = formula && (attack === null || attack === void 0 ? void 0 : attack.natural) !== 1 ? rollDamage(formula, die, (attack === null || attack === void 0 ? void 0 : attack.natural) === 20) : void 0;
 	let next = c;
 	if (attack) next = logPlay(next, `Атака: ${name}`, attack);
 	if (damage) next = logPlay(next, `Урон: ${name}`, damage);
@@ -30267,6 +30610,7 @@ var weaponNames = [
 	"Праща"
 ];
 function PlayInventory({ character: c, onChange, onRoll }) {
+	var _ref, _draft$hands, _catalogItemFor;
 	const items = c.adventure.inventory.filter((i) => i.quantity > 0);
 	const trash = c.adventure.inventoryTrash || [];
 	const [filter, setFilter] = useState("all"), [search, setSearch] = useState(""), [worn, setWorn] = useState(false), [draft, setDraft] = useState(), [error, setError] = useState("");
@@ -30274,8 +30618,9 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 	const [coin, setCoin] = useState("gp"), [coinAmount, setCoinAmount] = useState(1);
 	const dialog = useRef(null);
 	useEffect(() => {
-		if (draft) dialog.current?.showModal();
-		else dialog.current?.close();
+		var _dialog$current, _dialog$current2;
+		if (draft) (_dialog$current = dialog.current) === null || _dialog$current === void 0 || _dialog$current.showModal();
+		else (_dialog$current2 = dialog.current) === null || _dialog$current2 === void 0 || _dialog$current2.close();
 	}, [!!draft]);
 	function mutate(fn) {
 		try {
@@ -30306,7 +30651,8 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 	const matchingCatalog = itemCatalog.filter((entry) => (catalogCategory === "all" || entry.category === catalogCategory) && entry.name.toLocaleLowerCase("ru").includes(catalogSearch.trim().toLocaleLowerCase("ru")));
 	function money(sign) {
 		mutate(() => {
-			const value = (c.currency?.[coin] || 0) + coinAmount * sign;
+			var _c$currency;
+			const value = (((_c$currency = c.currency) === null || _c$currency === void 0 ? void 0 : _c$currency[coin]) || 0) + coinAmount * sign;
 			if (value < 0) throw new Error("Недостаточно монет.");
 			return logPlay({
 				...c,
@@ -30318,6 +30664,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 		});
 	}
 	const renderItem = (i) => {
+		var _c$adventure$favorite, _c$adventure$favorite3;
 		const key = itemCategory(i);
 		return /* @__PURE__ */ jsxs("article", {
 			className: `play-card inventory-item${i.quantity === 0 ? " inventory-empty" : ""}`,
@@ -30328,15 +30675,18 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: [i.magical ? "Магический · " : "", i.container || "При себе"] }), /* @__PURE__ */ jsx("h3", { children: i.name })] }),
 						key === "consumable" && /* @__PURE__ */ jsx("button", {
 							"aria-label": `Закрепить предмет: ${i.name}`,
-							"aria-pressed": !!c.adventure.favoriteActions?.includes(`item:${i.id}`),
-							onClick: () => onChange({
-								...c,
-								adventure: {
-									...c.adventure,
-									favoriteActions: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? c.adventure.favoriteActions.filter((key) => key !== `item:${i.id}`) : [...c.adventure.favoriteActions || [], `item:${i.id}`]
-								}
-							}),
-							children: c.adventure.favoriteActions?.includes(`item:${i.id}`) ? "★" : "☆"
+							"aria-pressed": !!((_c$adventure$favorite = c.adventure.favoriteActions) === null || _c$adventure$favorite === void 0 ? void 0 : _c$adventure$favorite.includes(`item:${i.id}`)),
+							onClick: () => {
+								var _c$adventure$favorite2;
+								return onChange({
+									...c,
+									adventure: {
+										...c.adventure,
+										favoriteActions: ((_c$adventure$favorite2 = c.adventure.favoriteActions) === null || _c$adventure$favorite2 === void 0 ? void 0 : _c$adventure$favorite2.includes(`item:${i.id}`)) ? c.adventure.favoriteActions.filter((key) => key !== `item:${i.id}`) : [...c.adventure.favoriteActions || [], `item:${i.id}`]
+									}
+								});
+							},
+							children: ((_c$adventure$favorite3 = c.adventure.favoriteActions) === null || _c$adventure$favorite3 === void 0 ? void 0 : _c$adventure$favorite3.includes(`item:${i.id}`)) ? "★" : "☆"
 						}),
 						/* @__PURE__ */ jsx("button", {
 							"aria-label": `Изменить ${i.name}`,
@@ -30685,29 +31035,32 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 						"sp",
 						"cp",
 						"pp"
-					].map((key, i) => /* @__PURE__ */ jsxs("label", { children: [[
-						"ЗМ",
-						"СМ",
-						"ММ",
-						"ПМ"
-					][i], /* @__PURE__ */ jsx(NumberSlider, {
-						label: [
+					].map((key, i) => {
+						var _c$currency2;
+						return /* @__PURE__ */ jsxs("label", { children: [[
 							"ЗМ",
 							"СМ",
 							"ММ",
 							"ПМ"
-						][i],
-						min: 0,
-						value: c.currency?.[key] || 0,
-						onChange: (value) => onChange({
-							...c,
-							currency: {
-								...c.currency,
-								[key]: integer(value)
-							}
-						}),
-						max: 100
-					})] }, key))
+						][i], /* @__PURE__ */ jsx(NumberSlider, {
+							label: [
+								"ЗМ",
+								"СМ",
+								"ММ",
+								"ПМ"
+							][i],
+							min: 0,
+							value: ((_c$currency2 = c.currency) === null || _c$currency2 === void 0 ? void 0 : _c$currency2[key]) || 0,
+							onChange: (value) => onChange({
+								...c,
+								currency: {
+									...c.currency,
+									[key]: integer(value)
+								}
+							}),
+							max: 100
+						})] }, key);
+					})
 				}),
 				/* @__PURE__ */ jsxs("div", {
 					className: "play-row play-wrap",
@@ -30821,7 +31174,7 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 					})] }),
 					(draft.category === "weapon" || draft.category === "focus" || draft.category === "armor" || draft.category === "gear") && /* @__PURE__ */ jsxs("label", { children: ["Занимает рук", /* @__PURE__ */ jsxs("select", {
 						"aria-label": "Занимает рук",
-						value: draft.hands ?? catalogItemFor(draft.catalogName || draft.weaponBase || draft.name)?.hands ?? (draft.category === "weapon" || draft.category === "focus" ? 1 : 0),
+						value: (_ref = (_draft$hands = draft.hands) !== null && _draft$hands !== void 0 ? _draft$hands : (_catalogItemFor = catalogItemFor(draft.catalogName || draft.weaponBase || draft.name)) === null || _catalogItemFor === void 0 ? void 0 : _catalogItemFor.hands) !== null && _ref !== void 0 ? _ref : draft.category === "weapon" || draft.category === "focus" ? 1 : 0,
 						onChange: (e) => setDraft({
 							...draft,
 							hands: Number(e.target.value)
@@ -30939,10 +31292,13 @@ function PlayInventory({ character: c, onChange, onRoll }) {
 								children: [/* @__PURE__ */ jsx("option", {
 									value: "",
 									children: "Все классы"
-								}), orderedCharacterClasses(c).map((entry) => /* @__PURE__ */ jsx("option", {
-									value: entry.classId,
-									children: classes.find((x) => x.id === entry.classId)?.name || c.homebrew?.entities.find((x) => x.id === entry.classId)?.name || entry.classId
-								}, entry.classId))]
+								}), orderedCharacterClasses(c).map((entry) => {
+									var _classes$find, _c$homebrew;
+									return /* @__PURE__ */ jsx("option", {
+										value: entry.classId,
+										children: ((_classes$find = classes.find((x) => x.id === entry.classId)) === null || _classes$find === void 0 ? void 0 : _classes$find.name) || ((_c$homebrew = c.homebrew) === null || _c$homebrew === void 0 || (_c$homebrew = _c$homebrew.entities.find((x) => x.id === entry.classId)) === null || _c$homebrew === void 0 ? void 0 : _c$homebrew.name) || entry.classId
+									}, entry.classId);
+								})]
 							})] }),
 							/* @__PURE__ */ jsx("small", { children: "Оружейные бонусы применяются только к выбранному базовому оружию. Магические — к указанным классам. Предмет должен быть надет / в руках и настроен, если требует настройки." })
 						]
@@ -31076,7 +31432,7 @@ function DiceFace({ sides, value }) {
 				x: "50",
 				y: "57",
 				textAnchor: "middle",
-				children: value ?? `d${sides}`
+				children: value !== null && value !== void 0 ? value : `d${sides}`
 			})
 		]
 	});
@@ -31223,10 +31579,11 @@ var saveNames = {
 };
 /** Structured mechanics take precedence. Official text supplies delivery; ambiguous compound damage stays manual. */
 function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.className) {
+	var _classRuleFor, _classRuleFor2, _text$match;
 	slotLevel = spell.level === 0 ? 0 : Math.max(spell.level, Math.min(9, Math.trunc(slotLevel) || spell.level));
 	const d = playDerived(c), level = characterLevel(c), pb = proficiencyBonus(level), m = spell.mechanics;
 	const innate = classId === "race" ? resolvedRacialSpells(d, [spell])[0] : void 0;
-	const ability = m?.ability || innate?.ability || classRuleFor(c, classId)?.spellAbility || classRuleFor(c, c.className)?.spellAbility || "int";
+	const ability = (m === null || m === void 0 ? void 0 : m.ability) || (innate === null || innate === void 0 ? void 0 : innate.ability) || ((_classRuleFor = classRuleFor(c, classId)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.spellAbility) || ((_classRuleFor2 = classRuleFor(c, c.className)) === null || _classRuleFor2 === void 0 ? void 0 : _classRuleFor2.spellAbility) || "int";
 	const mod = abilityModifier$1(d.abilities[ability]);
 	const text = spell.description || "";
 	const attack = /атак[ауи]\s+заклинанием|spell attack/i.test(text);
@@ -31302,7 +31659,7 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 			note = "Первоначальное попадание. Для повторного автоматического урона используйте 1d12; повторный урон не критует.";
 		}
 	}
-	const saveAbility = m?.saveAbility ? saveNames[m.saveAbility] : text.match(/спасброс(?:ок|ки|ка)\s+(Силы|Ловкости|Телосложения|Интеллекта|Мудрости|Харизмы)/i)?.[1];
+	const saveAbility = (m === null || m === void 0 ? void 0 : m.saveAbility) ? saveNames[m.saveAbility] : (_text$match = text.match(/спасброс(?:ок|ки|ка)\s+(Силы|Ловкости|Телосложения|Интеллекта|Мудрости|Харизмы)/i)) === null || _text$match === void 0 ? void 0 : _text$match[1];
 	return {
 		delivery,
 		ability,
@@ -31321,9 +31678,10 @@ function spellPlayProfile(c, spell, slotLevel = spell.level, classId = c.classNa
 //#region app/rollComposer.ts
 /** One-shot extras never alter the underlying character. Natural d20 is preserved. */
 function composeD20(options, die) {
-	const adjustment = options.adjustment ?? 0;
+	var _options$adjustment, _options$extraDice;
+	const adjustment = (_options$adjustment = options.adjustment) !== null && _options$adjustment !== void 0 ? _options$adjustment : 0;
 	if (![options.bonus, adjustment].every(Number.isSafeInteger) || Math.abs(adjustment) > 1e3) throw new Error("Поправка должна быть целым числом от −1000 до 1000.");
-	const formula = options.extraDice?.trim();
+	const formula = (_options$extraDice = options.extraDice) === null || _options$extraDice === void 0 ? void 0 : _options$extraDice.trim();
 	if (formula) rollDice(formula, () => 1);
 	const base = rollD20(options.bonus + adjustment, options.mode, die);
 	if (!formula) return base;
@@ -31359,51 +31717,57 @@ function SpellRollPanel({ spell, result, onClose }) {
 				"."
 			] }),
 			profile.delivery === "automatic" && /* @__PURE__ */ jsx("p", { children: "Автоматическое попадание." }),
-			parts.map((part, index) => /* @__PURE__ */ jsxs("article", {
-				className: "spell-roll-step",
-				children: [
-					parts.length > 1 && /* @__PURE__ */ jsxs("h3", { children: ["Снаряд ", index + 1] }),
-					part.attack && /* @__PURE__ */ jsxs("p", { children: [
-						"Попадание: ",
-						/* @__PURE__ */ jsx("b", { children: part.attack.total }),
-						" · d20: ",
-						part.attack.natural,
-						part.attack.natural === 20 ? " · крит" : part.attack.natural === 1 ? " · промах" : "",
-						/* @__PURE__ */ jsx("br", {}),
-						/* @__PURE__ */ jsxs("small", { children: [
-							part.attack.formula,
-							" · кости [",
-							part.attack.rolls.join(", "),
-							"]"
-						] })
-					] }),
-					(part.damage || part.healing) && /* @__PURE__ */ jsxs("p", { children: [
-						label,
-						part.attack && part.attack.natural !== 20 ? " при попадании" : "",
-						": ",
-						/* @__PURE__ */ jsx("strong", { children: (part.damage || part.healing).total }),
-						/* @__PURE__ */ jsx("br", {}),
-						/* @__PURE__ */ jsxs("small", { children: [
-							(part.damage || part.healing).formula,
-							" · кости [",
-							(part.damage || part.healing).rolls.join(", "),
-							"]"
-						] })
-					] }),
-					part.attack?.natural === 1 && /* @__PURE__ */ jsxs("p", { children: [
-						"Урон: ",
-						/* @__PURE__ */ jsx("b", { children: "0" }),
-						" · натуральная 1."
-					] }),
-					!part.damage && !part.healing && !part.attack && /* @__PURE__ */ jsx("p", { children: "Эффект применяется по описанию заклинания." })
-				]
-			}, index)),
+			parts.map((part, index) => {
+				var _part$attack;
+				return /* @__PURE__ */ jsxs("article", {
+					className: "spell-roll-step",
+					children: [
+						parts.length > 1 && /* @__PURE__ */ jsxs("h3", { children: ["Снаряд ", index + 1] }),
+						part.attack && /* @__PURE__ */ jsxs("p", { children: [
+							"Попадание: ",
+							/* @__PURE__ */ jsx("b", { children: part.attack.total }),
+							" · d20: ",
+							part.attack.natural,
+							part.attack.natural === 20 ? " · крит" : part.attack.natural === 1 ? " · промах" : "",
+							/* @__PURE__ */ jsx("br", {}),
+							/* @__PURE__ */ jsxs("small", { children: [
+								part.attack.formula,
+								" · кости [",
+								part.attack.rolls.join(", "),
+								"]"
+							] })
+						] }),
+						(part.damage || part.healing) && /* @__PURE__ */ jsxs("p", { children: [
+							label,
+							part.attack && part.attack.natural !== 20 ? " при попадании" : "",
+							": ",
+							/* @__PURE__ */ jsx("strong", { children: (part.damage || part.healing).total }),
+							/* @__PURE__ */ jsx("br", {}),
+							/* @__PURE__ */ jsxs("small", { children: [
+								(part.damage || part.healing).formula,
+								" · кости [",
+								(part.damage || part.healing).rolls.join(", "),
+								"]"
+							] })
+						] }),
+						((_part$attack = part.attack) === null || _part$attack === void 0 ? void 0 : _part$attack.natural) === 1 && /* @__PURE__ */ jsxs("p", { children: [
+							"Урон: ",
+							/* @__PURE__ */ jsx("b", { children: "0" }),
+							" · натуральная 1."
+						] }),
+						!part.damage && !part.healing && !part.attack && /* @__PURE__ */ jsx("p", { children: "Эффект применяется по описанию заклинания." })
+					]
+				}, index);
+			}),
 			parts.length > 1 && /* @__PURE__ */ jsxs("p", { children: [
 				"Суммарный ",
 				label.toLowerCase(),
 				profile.delivery === "attack" ? " при попадании всех остальных лучей" : "",
 				": ",
-				/* @__PURE__ */ jsx("strong", { children: parts.reduce((n, p) => n + (p.damage?.total || p.healing?.total || 0), 0) })
+				/* @__PURE__ */ jsx("strong", { children: parts.reduce((n, p) => {
+					var _p$damage, _p$healing;
+					return n + (((_p$damage = p.damage) === null || _p$damage === void 0 ? void 0 : _p$damage.total) || ((_p$healing = p.healing) === null || _p$healing === void 0 ? void 0 : _p$healing.total) || 0);
+				}, 0) })
 			] }),
 			profile.note && /* @__PURE__ */ jsx("p", { children: profile.note }),
 			/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Описание заклинания" }), /* @__PURE__ */ jsx("p", {
@@ -31437,7 +31801,10 @@ function HealingPotions({ character: c, onChange, onRoll }) {
 			className: "healing-potions",
 			"aria-label": "Автоматические зелья лечения",
 			children: healingPotions.map((p, index) => {
-				const items = c.adventure.inventory.filter((i) => i.quantity > 0 && potionPreset(i)?.id === p.id);
+				const items = c.adventure.inventory.filter((i) => {
+					var _potionPreset;
+					return i.quantity > 0 && ((_potionPreset = potionPreset(i)) === null || _potionPreset === void 0 ? void 0 : _potionPreset.id) === p.id;
+				});
 				const count = items.reduce((n, i) => n + i.quantity, 0);
 				return /* @__PURE__ */ jsxs("button", {
 					className: "potion-button",
@@ -31485,6 +31852,7 @@ function HealingPotions({ character: c, onChange, onRoll }) {
 //#endregion
 //#region app/SessionResources.tsx
 function SessionResources({ character: c, onChange, open, onOpenChange }) {
+	var _a$customResources;
 	const d = playDerived(c), resources = characterResources(d), a = c.adventure;
 	const [name, setName] = useState(""), [maximum, setMaximum] = useState(3), [recharge, setRecharge] = useState("long");
 	return /* @__PURE__ */ jsxs("details", {
@@ -31496,59 +31864,68 @@ function SessionResources({ character: c, onChange, open, onOpenChange }) {
 					e.preventDefault();
 					onOpenChange(!open);
 				} : void 0,
-				children: ["Ресурсы ", /* @__PURE__ */ jsx("small", { children: resources.length + (a.customResources?.length || 0) })]
+				children: ["Ресурсы ", /* @__PURE__ */ jsx("small", { children: resources.length + (((_a$customResources = a.customResources) === null || _a$customResources === void 0 ? void 0 : _a$customResources.length) || 0) })]
 			}),
 			/* @__PURE__ */ jsxs("div", {
 				className: "session-resource-grid",
-				children: [resources.map((r) => /* @__PURE__ */ jsxs("div", {
-					className: "play-counter",
-					children: [
-						/* @__PURE__ */ jsx("strong", { children: r.name }),
-						/* @__PURE__ */ jsxs("b", { children: [
-							resourceCurrent(d, r),
-							"/",
-							r.max
-						] }),
-						/* @__PURE__ */ jsx(NumberSlider, {
-							label: `Остаток: ${r.name}`,
-							min: 0,
-							max: r.max,
-							value: resourceCurrent(d, r),
-							onChange: (value) => onChange(logPlay({
-								...c,
-								resourceSpent: {
-									...c.resourceSpent,
-									[r.key]: r.max - integer(value, 0, r.max)
-								}
-							}, `Ресурс ${r.name}: ${integer(value, 0, r.max)}/${r.max}`))
-						}),
-						/* @__PURE__ */ jsx("button", {
-							"aria-label": `Потратить ресурс: ${r.name}`,
-							disabled: resourceCurrent(d, r) <= 0,
-							onClick: () => onChange(logPlay({
-								...c,
-								resourceSpent: {
-									...c.resourceSpent,
-									[r.key]: (c.resourceSpent?.[r.key] || 0) + 1
-								}
-							}, `Использован ресурс: ${r.name}`)),
-							children: "Использовать"
-						}),
-						/* @__PURE__ */ jsx("button", {
-							"aria-label": `Вернуть ресурс: ${r.name}`,
-							disabled: !(c.resourceSpent?.[r.key] || 0),
-							onClick: () => onChange(logPlay({
-								...c,
-								resourceSpent: {
-									...c.resourceSpent,
-									[r.key]: (c.resourceSpent?.[r.key] || 0) - 1
-								}
-							}, `Возвращён ресурс: ${r.name}`)),
-							children: "Вернуть"
-						}),
-						/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
-					]
-				}, r.key)), (a.customResources || []).map((r) => /* @__PURE__ */ jsxs("div", {
+				children: [resources.map((r) => {
+					var _c$resourceSpent2;
+					return /* @__PURE__ */ jsxs("div", {
+						className: "play-counter",
+						children: [
+							/* @__PURE__ */ jsx("strong", { children: r.name }),
+							/* @__PURE__ */ jsxs("b", { children: [
+								resourceCurrent(d, r),
+								"/",
+								r.max
+							] }),
+							/* @__PURE__ */ jsx(NumberSlider, {
+								label: `Остаток: ${r.name}`,
+								min: 0,
+								max: r.max,
+								value: resourceCurrent(d, r),
+								onChange: (value) => onChange(logPlay({
+									...c,
+									resourceSpent: {
+										...c.resourceSpent,
+										[r.key]: r.max - integer(value, 0, r.max)
+									}
+								}, `Ресурс ${r.name}: ${integer(value, 0, r.max)}/${r.max}`))
+							}),
+							/* @__PURE__ */ jsx("button", {
+								"aria-label": `Потратить ресурс: ${r.name}`,
+								disabled: resourceCurrent(d, r) <= 0,
+								onClick: () => {
+									var _c$resourceSpent;
+									return onChange(logPlay({
+										...c,
+										resourceSpent: {
+											...c.resourceSpent,
+											[r.key]: (((_c$resourceSpent = c.resourceSpent) === null || _c$resourceSpent === void 0 ? void 0 : _c$resourceSpent[r.key]) || 0) + 1
+										}
+									}, `Использован ресурс: ${r.name}`));
+								},
+								children: "Использовать"
+							}),
+							/* @__PURE__ */ jsx("button", {
+								"aria-label": `Вернуть ресурс: ${r.name}`,
+								disabled: !(((_c$resourceSpent2 = c.resourceSpent) === null || _c$resourceSpent2 === void 0 ? void 0 : _c$resourceSpent2[r.key]) || 0),
+								onClick: () => {
+									var _c$resourceSpent3;
+									return onChange(logPlay({
+										...c,
+										resourceSpent: {
+											...c.resourceSpent,
+											[r.key]: (((_c$resourceSpent3 = c.resourceSpent) === null || _c$resourceSpent3 === void 0 ? void 0 : _c$resourceSpent3[r.key]) || 0) - 1
+										}
+									}, `Возвращён ресурс: ${r.name}`));
+								},
+								children: "Вернуть"
+							}),
+							/* @__PURE__ */ jsx("small", { children: resourceRestLabel(r) })
+						]
+					}, r.key);
+				}), (a.customResources || []).map((r) => /* @__PURE__ */ jsxs("div", {
 					className: "play-counter",
 					children: [
 						/* @__PURE__ */ jsx("strong", { children: r.name }),
@@ -31682,6 +32059,7 @@ function SessionResources({ character: c, onChange, open, onOpenChange }) {
 //#endregion
 //#region app/spellCasting.ts
 function spellHandsWarning(c, spell, classId = c.className) {
+	var _c$adventure;
 	const parts = (spell.components || "").split(/[,;\s]+/).map((s) => s.toUpperCase().replace(/[^ВСМVSM]/g, ""));
 	const somatic = parts.includes("С") || parts.includes("S");
 	const material = parts.includes("М") || parts.includes("M");
@@ -31689,7 +32067,7 @@ function spellHandsWarning(c, spell, classId = c.className) {
 	const hands = equippedHands(c);
 	const warCaster = (c.feats || []).includes("war-caster") || (c.advancements || []).some((a) => a.featId === "war-caster");
 	const focus = hands.held.some((i) => itemCategory(i) === "focus" || /священный символ|фокусировк/i.test(i.name) || classId === "bard" && isMusicalInstrument(i.name) || classId === "wizard" && isWoodenFocus(i.name, i.notes));
-	const pouch = (c.adventure?.inventory || []).some((i) => i.quantity > 0 && /мешочек с компонентами/i.test(i.name));
+	const pouch = (((_c$adventure = c.adventure) === null || _c$adventure === void 0 ? void 0 : _c$adventure.inventory) || []).some((i) => i.quantity > 0 && /мешочек с компонентами/i.test(i.name));
 	if (material && !focus && hands.free === 0) return "Для материального компонента нужна свободная рука, чтобы достать компонент или мешочек. Сначала освободите руку.";
 	if (somatic && !warCaster && !(focus && material) && hands.free === 0) return "Для соматического компонента нужна свободная рука. Черта «Боевой заклинатель» разрешает жесты с оружием или щитом в руках.";
 	if (material && !focus && !pouch) return "Для материального компонента требуется фокусировка, мешочек с компонентами или сам компонент (особенно если указана стоимость).";
@@ -31702,7 +32080,7 @@ function spellCastOptions(c, spell, classId = c.className) {
 	}];
 	const innate = classId === "race" ? resolvedRacialSpells(c, [spell])[0] : void 0;
 	const options = [];
-	if (innate?.resourceKey && innate.remainingUses > 0) options.push({
+	if ((innate === null || innate === void 0 ? void 0 : innate.resourceKey) && innate.remainingUses > 0) options.push({
 		id: "free",
 		label: `Расовое использование · осталось ${innate.remainingUses}`,
 		level: spell.level,
@@ -31710,7 +32088,8 @@ function spellCastOptions(c, spell, classId = c.className) {
 	});
 	if (!innate || innate.castWithSlots) {
 		resolveSpellSlots(c).forEach((n, i) => {
-			const left = n - (c.spellSlotsUsed?.[i] || 0);
+			var _c$spellSlotsUsed;
+			const left = n - (((_c$spellSlotsUsed = c.spellSlotsUsed) === null || _c$spellSlotsUsed === void 0 ? void 0 : _c$spellSlotsUsed[i]) || 0);
 			if (i + 1 >= spell.level && left > 0) options.push({
 				id: `slot:${i}`,
 				label: `${i + 1} круг · осталось ${left}`,
@@ -31733,17 +32112,19 @@ function spellCastOptions(c, spell, classId = c.className) {
 }
 /** Cost, concentration, every attack and damage roll are one atomic character update. */
 function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal", die, manualFormula, ignoreHands = false) {
+	var _c$resourceSpent;
 	if (!c.adventure) throw new Error("Откройте игровую копию героя.");
 	const method = spellCastOptions(c, spell, classId).find((x) => x.id === methodId);
 	if (!method) throw new Error("Выбранная ячейка или использование уже недоступны.");
 	const base = spellPlayProfile(c, spell, method.level, classId);
 	const profile = {
 		...base,
-		...manualFormula?.trim() ? base.healingFormula ? { healingFormula: manualFormula.trim() } : { damageFormula: manualFormula.trim() } : {}
+		...(manualFormula === null || manualFormula === void 0 ? void 0 : manualFormula.trim()) ? base.healingFormula ? { healingFormula: manualFormula.trim() } : { damageFormula: manualFormula.trim() } : {}
 	};
 	for (const formula of [profile.damageFormula, profile.healingFormula]) if (formula) rollDice(formula, () => 1);
 	const parts = [], events = [];
 	for (let i = 0; i < profile.projectiles; i++) {
+		var _part$attack;
 		const part = {}, suffix = profile.projectiles > 1 ? ` · снаряд ${i + 1}` : "";
 		if (profile.attackBonus !== void 0) {
 			part.attack = rollD20(profile.attackBonus, mode, die);
@@ -31752,10 +32133,11 @@ function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal
 				result: part.attack
 			});
 		}
-		if (profile.damageFormula && part.attack?.natural !== 1) {
-			part.damage = rollDamage(profile.damageFormula, die, profile.criticalAllowed && part.attack?.natural === 20);
+		if (profile.damageFormula && ((_part$attack = part.attack) === null || _part$attack === void 0 ? void 0 : _part$attack.natural) !== 1) {
+			var _part$attack2, _part$attack3;
+			part.damage = rollDamage(profile.damageFormula, die, profile.criticalAllowed && ((_part$attack2 = part.attack) === null || _part$attack2 === void 0 ? void 0 : _part$attack2.natural) === 20);
 			events.push({
-				name: `${spell.name}: ${profile.delivery === "effect" ? "эффект" : "урон"}${suffix}${part.attack?.natural === 20 && profile.criticalAllowed ? " · крит" : ""}`,
+				name: `${spell.name}: ${profile.delivery === "effect" ? "эффект" : "урон"}${suffix}${((_part$attack3 = part.attack) === null || _part$attack3 === void 0 ? void 0 : _part$attack3.natural) === 20 && profile.criticalAllowed ? " · крит" : ""}`,
 				result: part.damage
 			});
 		}
@@ -31771,14 +32153,17 @@ function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal
 	let next = { ...c };
 	if (method.id.startsWith("slot:")) {
 		const i = Number(method.id.slice(5));
-		const used = resolveSpellSlots(c).map((_, j) => c.spellSlotsUsed?.[j] || 0);
+		const used = resolveSpellSlots(c).map((_, j) => {
+			var _c$spellSlotsUsed2;
+			return ((_c$spellSlotsUsed2 = c.spellSlotsUsed) === null || _c$spellSlotsUsed2 === void 0 ? void 0 : _c$spellSlotsUsed2[j]) || 0;
+		});
 		used[i]++;
 		next.spellSlotsUsed = used;
 	}
 	if (method.id === "pact") next.pactSlotsUsed = (c.pactSlotsUsed || 0) + 1;
 	if (method.id === "free" && method.freeKey) next.resourceSpent = {
 		...c.resourceSpent,
-		[method.freeKey]: (c.resourceSpent?.[method.freeKey] || 0) + 1
+		[method.freeKey]: (((_c$resourceSpent = c.resourceSpent) === null || _c$resourceSpent === void 0 ? void 0 : _c$resourceSpent[method.freeKey]) || 0) + 1
 	};
 	if (/концентрац|concentration/i.test(spell.duration || "")) {
 		next = endConcentration(next);
@@ -31807,6 +32192,7 @@ function castPlaySpell(c, spell, methodId, classId = c.className, mode = "normal
 //#region app/GameMode.tsx
 var sign = (n) => `${n >= 0 ? "+" : ""}${n}`;
 function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport, saveStatus, features, shellClassName = "", shellStyle, siteTheme = "classic", chrome }) {
+	var _c$currentHitPoints, _c$homebrew, _a$acOverride, _classRuleFor, _a$mobileLayout2, _a$mobileLayout4, _a$mobileLayout5, _a$mobileLayout6, _a$mobileLayout7, _a$mobileLayout8, _a$undo, _a$undo2, _a$undo3, _sessionPanels$resour, _a$hpMaximum, _a$acOverride2, _a$mobileLayout9;
 	const a = c.adventure;
 	useEffect(() => {
 		if (a.inventoryCatalogVersion !== 3) onChange(upgradeLegacyInventory(c));
@@ -31821,7 +32207,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const settingsRef = useRef(null);
 	useEffect(() => {
-		if (settingsOpen && !settingsRef.current?.open) settingsRef.current?.showModal();
+		var _settingsRef$current, _settingsRef$current2;
+		if (settingsOpen && !((_settingsRef$current = settingsRef.current) === null || _settingsRef$current === void 0 ? void 0 : _settingsRef$current.open)) (_settingsRef$current2 = settingsRef.current) === null || _settingsRef$current2 === void 0 || _settingsRef$current2.showModal();
 	}, [settingsOpen]);
 	const [tab, setTab] = useState("actions");
 	const shellRef = useRef(null);
@@ -31873,12 +32260,13 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	const [effectName, setEffectName] = useState("");
 	const [effectRounds, setEffectRounds] = useState(0);
 	useEffect(() => {
+		var _dialog$querySelector;
 		if (!rest && !rollDraft && !settingsOpen) return;
 		const previous = document.activeElement;
 		const dialog = document.querySelector(".play-modal,.play-settings-dialog");
 		const oldOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
-		dialog?.querySelector("button,input,select,textarea")?.focus({ preventScroll: true });
+		dialog === null || dialog === void 0 || (_dialog$querySelector = dialog.querySelector("button,input,select,textarea")) === null || _dialog$querySelector === void 0 || _dialog$querySelector.focus({ preventScroll: true });
 		const keydown = (event) => {
 			if (event.key === "Escape") {
 				setRest(void 0);
@@ -31890,18 +32278,18 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			const first = controls[0], last = controls.at(-1);
 			if (event.shiftKey && document.activeElement === first) {
 				event.preventDefault();
-				last?.focus({ preventScroll: true });
+				last === null || last === void 0 || last.focus({ preventScroll: true });
 			}
 			if (!event.shiftKey && document.activeElement === last) {
 				event.preventDefault();
-				first?.focus({ preventScroll: true });
+				first === null || first === void 0 || first.focus({ preventScroll: true });
 			}
 		};
 		document.addEventListener("keydown", keydown);
 		return () => {
 			document.body.style.overflow = oldOverflow;
 			document.removeEventListener("keydown", keydown);
-			previous?.focus({ preventScroll: true });
+			previous === null || previous === void 0 || previous.focus({ preventScroll: true });
 		};
 	}, [
 		!!rest,
@@ -31909,36 +32297,39 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		settingsOpen
 	]);
 	useEffect(() => {
+		var _rail$querySelector;
 		if (!diceOpen) return;
 		const previous = document.activeElement;
 		const rail = document.querySelector(".play-dice-sidebar");
 		const oldOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
-		rail?.querySelector(".dice-mobile-close")?.focus({ preventScroll: true });
+		rail === null || rail === void 0 || (_rail$querySelector = rail.querySelector(".dice-mobile-close")) === null || _rail$querySelector === void 0 || _rail$querySelector.focus({ preventScroll: true });
 		const keydown = (e) => {
 			if (e.key === "Escape") setDiceOpen(false);
 			if (e.key !== "Tab" || !rail) return;
 			const controls = [...rail.querySelectorAll("button:not(:disabled),input,summary")].filter((el) => el.getClientRects().length);
 			if (e.shiftKey && document.activeElement === controls[0]) {
+				var _controls$at;
 				e.preventDefault();
-				controls.at(-1)?.focus({ preventScroll: true });
+				(_controls$at = controls.at(-1)) === null || _controls$at === void 0 || _controls$at.focus({ preventScroll: true });
 			}
 			if (!e.shiftKey && document.activeElement === controls.at(-1)) {
+				var _controls$;
 				e.preventDefault();
-				controls[0]?.focus({ preventScroll: true });
+				(_controls$ = controls[0]) === null || _controls$ === void 0 || _controls$.focus({ preventScroll: true });
 			}
 		};
 		document.addEventListener("keydown", keydown);
 		return () => {
 			document.body.style.overflow = oldOverflow;
 			document.removeEventListener("keydown", keydown);
-			previous?.focus({ preventScroll: true });
+			previous === null || previous === void 0 || previous.focus({ preventScroll: true });
 		};
 	}, [diceOpen]);
 	const d = playDerived(c);
-	const hp = c.currentHitPoints ?? playMaximum(c);
+	const hp = (_c$currentHitPoints = c.currentHitPoints) !== null && _c$currentHitPoints !== void 0 ? _c$currentHitPoints : playMaximum(c);
 	const max = playMaximum(c);
-	const catalog = [...spells, ...homebrewSpells(c.homebrew?.entities || [])];
+	const catalog = [...spells, ...homebrewSpells(((_c$homebrew = c.homebrew) === null || _c$homebrew === void 0 ? void 0 : _c$homebrew.entities) || [])];
 	const baseAttacks = characterAttacks({
 		...d,
 		attackCustomizations: void 0,
@@ -31971,7 +32362,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 	].map((e) => [`${e.classId}:${e.spell.id}`, e])).values()];
 	const matches = (name, query = "") => name.toLocaleLowerCase("ru").replace(/ё/g, "е").includes(query.toLocaleLowerCase("ru").replace(/ё/g, "е"));
 	const spellKey = (entry) => `spell:${entry.classId}:${entry.spell.id}`;
-	const isPinned = (key) => !!a.favoriteActions?.includes(key);
+	const isPinned = (key) => {
+		var _a$favoriteActions;
+		return !!((_a$favoriteActions = a.favoriteActions) === null || _a$favoriteActions === void 0 ? void 0 : _a$favoriteActions.includes(key));
+	};
 	const togglePin = (key) => change({
 		...c,
 		adventure: {
@@ -31979,7 +32373,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			favoriteActions: isPinned(key) ? a.favoriteActions.filter((x) => x !== key) : [...a.favoriteActions || [], key]
 		}
 	});
-	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0 || resolution?.spell.id === e.spell.id && resolution.classId === e.classId) && (!favoritesOnly || isPinned(spellKey(e))));
+	const readySpells = allSpellEntries.filter((e) => e.prepared && matches(e.spell.name) && (!availableOnly || spellCastOptions(c, e.spell, e.classId).length > 0 || (resolution === null || resolution === void 0 ? void 0 : resolution.spell.id) === e.spell.id && resolution.classId === e.classId) && (!favoritesOnly || isPinned(spellKey(e))));
 	const hasPinnedSpells = readySpells.some((e) => isPinned(spellKey(e)));
 	const quickSpells = favoritesOnly ? readySpells : hasPinnedSpells ? readySpells.filter((e) => isPinned(spellKey(e))) : readySpells.slice(0, 3);
 	const matchingItems = a.inventory.filter((i) => i.quantity > 0 && itemCategory(i) === "consumable" && !healingFormulaForItem(i) && matches(i.name) && (!availableOnly || i.quantity > 0) && (!favoritesOnly || isPinned(`item:${i.id}`))).sort((x, y) => Number(isPinned(`item:${y.id}`)) - Number(isPinned(`item:${x.id}`)));
@@ -31989,13 +32383,13 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		name: quickCheck.slice(6),
 		bonus: skillBonusBreakdown(d, quickCheck.slice(6)).value
 	} : void 0;
-	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && (spellCastOptions(c, entry.spell, entry.classId).length > 0 || resolution?.spell.id === entry.spell.id && resolution.classId === entry.classId)) && (!favoritesOnly || isPinned(spellKey(entry)));
+	const spellMatches = (entry) => (showUnprepared || entry.prepared) && matches(entry.spell.name, search) && (spellCircle === "all" || entry.spell.level === Number(spellCircle)) && (spellSchool === "all" || entry.spell.school === spellSchool) && (spellKind === "all" || spellKind === "concentration" && /концентрац|concentration/i.test(entry.spell.duration || "") || spellKind === "ritual" && entry.spell.ritual) && (!availableOnly || entry.prepared && (spellCastOptions(c, entry.spell, entry.classId).length > 0 || (resolution === null || resolution === void 0 ? void 0 : resolution.spell.id) === entry.spell.id && resolution.classId === entry.classId)) && (!favoritesOnly || isPinned(spellKey(entry)));
 	const baseAc = armorClassBreakdown(d);
-	const ac = a.acOverride ?? baseAc.value + itemBonus(c, "acBonus");
+	const ac = (_a$acOverride = a.acOverride) !== null && _a$acOverride !== void 0 ? _a$acOverride : baseAc.value + itemBonus(c, "acBonus");
 	const heldSlots = handSlots(a.inventory);
 	const speed = speedBreakdown(d);
 	const pb = proficiencyBonus(characterLevel(c));
-	const saves = classRuleFor(c, getStartingClassId(c))?.saves || [];
+	const saves = ((_classRuleFor = classRuleFor(c, getStartingClassId(c))) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.saves) || [];
 	const saveBonus = (key) => abilityModifier$1(d.abilities[key]) + (saves.includes(key) ? pb : 0) + hbSum(d, "save_bonus", (e) => !e.ability || e.ability === key);
 	function change(next) {
 		try {
@@ -32041,7 +32435,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		return value.replace(/\[(STR|DEX|CON|INT|WIS|CHA)\]/gi, (_, key) => String(abilityModifier$1(d.abilities[key.toLowerCase()]))).replace(/\[PB\]/g, String(pb)) + sign(itemBonus(c, "damageBonus") + bonus);
 	}
 	function attackBonusFor(attack) {
-		return itemBonus(c, "attackBonus") + (attack.kind === "weapon" || attack.id.includes("weapon-") ? weaponItemBonus(c, attack.sourceName || attack.name, "weaponAttackBonus") : attack.kind === "spell" || attack.kind === "cantrip" ? spellItemBonus(c, "spellAttackBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className) : 0);
+		var _c$spellGrants;
+		return itemBonus(c, "attackBonus") + (attack.kind === "weapon" || attack.id.includes("weapon-") ? weaponItemBonus(c, attack.sourceName || attack.name, "weaponAttackBonus") : attack.kind === "spell" || attack.kind === "cantrip" ? spellItemBonus(c, "spellAttackBonus", ((_c$spellGrants = c.spellGrants) === null || _c$spellGrants === void 0 || (_c$spellGrants = _c$spellGrants.find((g) => attack.id.includes(g.spellId))) === null || _c$spellGrants === void 0 ? void 0 : _c$spellGrants.classId) || c.className) : 0);
 	}
 	function commitCast(spell, classId, method, formula) {
 		try {
@@ -32088,9 +32483,13 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		}
 	}
 	useEffect(() => {
-		if (a.mobileLayout?.hiddenTabs?.includes(tab)) setTab("actions");
-	}, [a.mobileLayout?.hiddenTabs, tab]);
-	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: orderedPlayTabs(c).filter(([id]) => id === "actions" || !a.mobileLayout?.hiddenTabs?.includes(id)).map(([id, label]) => /* @__PURE__ */ jsx("button", {
+		var _a$mobileLayout;
+		if ((_a$mobileLayout = a.mobileLayout) === null || _a$mobileLayout === void 0 || (_a$mobileLayout = _a$mobileLayout.hiddenTabs) === null || _a$mobileLayout === void 0 ? void 0 : _a$mobileLayout.includes(tab)) setTab("actions");
+	}, [(_a$mobileLayout2 = a.mobileLayout) === null || _a$mobileLayout2 === void 0 ? void 0 : _a$mobileLayout2.hiddenTabs, tab]);
+	const nav = /* @__PURE__ */ jsx(Fragment$1, { children: orderedPlayTabs(c).filter(([id]) => {
+		var _a$mobileLayout3;
+		return id === "actions" || !((_a$mobileLayout3 = a.mobileLayout) === null || _a$mobileLayout3 === void 0 || (_a$mobileLayout3 = _a$mobileLayout3.hiddenTabs) === null || _a$mobileLayout3 === void 0 ? void 0 : _a$mobileLayout3.includes(id));
+	}).map(([id, label]) => /* @__PURE__ */ jsx("button", {
 		"aria-current": tab === id ? "page" : void 0,
 		className: tab === id ? "active" : "",
 		onClick: () => {
@@ -32100,10 +32499,11 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		children: label
 	}, id)) });
 	const spellCard = (entry, prepMax) => {
+		var _options$find, _options$, _options$find$level, _options$find2;
 		const key = `${entry.classId}:${entry.spell.id}`;
 		const options = spellCastOptions(c, entry.spell, entry.classId);
-		const method = options.find((x) => x.id === castMethods[key])?.id || options[0]?.id || "";
-		const profile = spellPlayProfile(c, entry.spell, options.find((x) => x.id === method)?.level ?? entry.spell.level, entry.classId);
+		const method = ((_options$find = options.find((x) => x.id === castMethods[key])) === null || _options$find === void 0 ? void 0 : _options$find.id) || ((_options$ = options[0]) === null || _options$ === void 0 ? void 0 : _options$.id) || "";
+		const profile = spellPlayProfile(c, entry.spell, (_options$find$level = (_options$find2 = options.find((x) => x.id === method)) === null || _options$find2 === void 0 ? void 0 : _options$find2.level) !== null && _options$find$level !== void 0 ? _options$find$level : entry.spell.level, entry.classId);
 		const handWarning = spellHandsWarning(c, entry.spell, entry.classId);
 		return /* @__PURE__ */ jsxs("article", {
 			className: "play-card play-spell-card",
@@ -32211,7 +32611,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					onClick: () => commitCast(entry.spell, entry.classId, method, castFormulas[key]),
 					children: "Сотворить"
 				}),
-				resolution?.spell.id === entry.spell.id && resolution.classId === entry.classId && /* @__PURE__ */ jsx(SpellRollPanel, {
+				(resolution === null || resolution === void 0 ? void 0 : resolution.spell.id) === entry.spell.id && resolution.classId === entry.classId && /* @__PURE__ */ jsx(SpellRollPanel, {
 					spell: resolution.spell,
 					result: resolution.result,
 					onClose: () => setResolution(void 0)
@@ -32226,10 +32626,10 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 		"data-layout": view.layout,
 		"data-hints": view.hints,
 		"data-site-theme": siteTheme,
-		"data-nav-position": a.mobileLayout?.navPosition || "bottom",
-		"data-hud-position": a.mobileLayout?.hudPosition || "top",
-		"data-dice-side": a.mobileLayout?.diceSide || "right",
-		"data-hide-dice": !!a.mobileLayout?.hideDice,
+		"data-nav-position": ((_a$mobileLayout4 = a.mobileLayout) === null || _a$mobileLayout4 === void 0 ? void 0 : _a$mobileLayout4.navPosition) || "bottom",
+		"data-hud-position": ((_a$mobileLayout5 = a.mobileLayout) === null || _a$mobileLayout5 === void 0 ? void 0 : _a$mobileLayout5.hudPosition) || "top",
+		"data-dice-side": ((_a$mobileLayout6 = a.mobileLayout) === null || _a$mobileLayout6 === void 0 ? void 0 : _a$mobileLayout6.diceSide) || "right",
+		"data-hide-dice": !!((_a$mobileLayout7 = a.mobileLayout) === null || _a$mobileLayout7 === void 0 ? void 0 : _a$mobileLayout7.hideDice),
 		children: [
 			/* @__PURE__ */ jsxs("header", {
 				className: "play-header",
@@ -32366,12 +32766,15 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 					}),
 					/* @__PURE__ */ jsxs("div", {
 						className: "play-hands",
-						children: [/* @__PURE__ */ jsx("small", { children: "Предметы в руках" }), ["right", "left"].map((hand) => /* @__PURE__ */ jsxs("button", {
-							className: "play-hud-stat",
-							"aria-expanded": handPicker === hand,
-							onClick: () => setHandPicker(handPicker === hand ? void 0 : hand),
-							children: [/* @__PURE__ */ jsx("span", { children: hand === "right" ? "Правая рука" : "Левая рука" }), /* @__PURE__ */ jsx("b", { children: heldSlots[hand]?.name || "Свободна" })]
-						}, hand))]
+						children: [/* @__PURE__ */ jsx("small", { children: "Предметы в руках" }), ["right", "left"].map((hand) => {
+							var _heldSlots$hand;
+							return /* @__PURE__ */ jsxs("button", {
+								className: "play-hud-stat",
+								"aria-expanded": handPicker === hand,
+								onClick: () => setHandPicker(handPicker === hand ? void 0 : hand),
+								children: [/* @__PURE__ */ jsx("span", { children: hand === "right" ? "Правая рука" : "Левая рука" }), /* @__PURE__ */ jsx("b", { children: ((_heldSlots$hand = heldSlots[hand]) === null || _heldSlots$hand === void 0 ? void 0 : _heldSlots$hand.name) || "Свободна" })]
+							}, hand);
+						})]
 					})
 				]
 			}),
@@ -32452,7 +32855,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				"aria-label": "Игровые разделы",
 				children: nav
 			}),
-			a.mobileLayout?.navPosition === "top" && /* @__PURE__ */ jsx("nav", {
+			((_a$mobileLayout8 = a.mobileLayout) === null || _a$mobileLayout8 === void 0 ? void 0 : _a$mobileLayout8.navPosition) === "top" && /* @__PURE__ */ jsx("nav", {
 				className: "play-mobile-nav",
 				"aria-label": "Игровые разделы на телефоне",
 				children: nav
@@ -32494,8 +32897,8 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 						children: "Длинный отдых"
 					}),
 					/* @__PURE__ */ jsxs("button", {
-						disabled: !a.undo?.length,
-						title: a.undo?.at(-1)?.label,
+						disabled: !((_a$undo = a.undo) === null || _a$undo === void 0 ? void 0 : _a$undo.length),
+						title: (_a$undo2 = a.undo) === null || _a$undo2 === void 0 || (_a$undo2 = _a$undo2.at(-1)) === null || _a$undo2 === void 0 ? void 0 : _a$undo2.label,
 						onClick: () => {
 							try {
 								const previous = undoPlayChange(c);
@@ -32519,7 +32922,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								setError(e instanceof Error ? e.message : String(e));
 							}
 						},
-						children: ["Отменить действие", a.undo?.length ? ` (${a.undo.length})` : ""]
+						children: ["Отменить действие", ((_a$undo3 = a.undo) === null || _a$undo3 === void 0 ? void 0 : _a$undo3.length) ? ` (${a.undo.length})` : ""]
 					})
 				]
 			}),
@@ -32700,7 +33103,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 							}), /* @__PURE__ */ jsx(SessionResources, {
 								character: c,
 								onChange: change,
-								open: sessionPanels.resources ?? false,
+								open: (_sessionPanels$resour = sessionPanels.resources) !== null && _sessionPanels$resour !== void 0 ? _sessionPanels$resour : false,
 								onOpenChange: (open) => updateView({ sessionPanels: {
 									...sessionPanels,
 									resources: open
@@ -32748,11 +33151,17 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 											})]
 										}),
 										/* @__PURE__ */ jsx("button", {
-											onClick: () => d20(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+											onClick: () => {
+												var _selectedCheck$bonus;
+												return d20((selectedCheck === null || selectedCheck === void 0 ? void 0 : selectedCheck.name) || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, (_selectedCheck$bonus = selectedCheck === null || selectedCheck === void 0 ? void 0 : selectedCheck.bonus) !== null && _selectedCheck$bonus !== void 0 ? _selectedCheck$bonus : saveBonus(quickCheck.slice(5)));
+											},
 											children: "Проверка"
 										}),
 										/* @__PURE__ */ jsx("button", {
-											onClick: () => beginRoll(selectedCheck?.name || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, selectedCheck?.bonus ?? saveBonus(quickCheck.slice(5))),
+											onClick: () => {
+												var _selectedCheck$bonus2;
+												return beginRoll((selectedCheck === null || selectedCheck === void 0 ? void 0 : selectedCheck.name) || `Спасбросок: ${abilityLabels[quickCheck.slice(5)]}`, (_selectedCheck$bonus2 = selectedCheck === null || selectedCheck === void 0 ? void 0 : selectedCheck.bonus) !== null && _selectedCheck$bonus2 !== void 0 ? _selectedCheck$bonus2 : saveBonus(quickCheck.slice(5)));
+											},
 											children: "Поправки"
 										})
 									]
@@ -32858,139 +33267,148 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 											className: "play-help",
 											children: "Название — параметры; бонус — расчёт; «Атаковать» — бросок."
 										}),
-										favoritesOnly && !attacks.some((x) => a.favoriteActions?.includes(x.id)) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })
+										favoritesOnly && !attacks.some((x) => {
+											var _a$favoriteActions2;
+											return (_a$favoriteActions2 = a.favoriteActions) === null || _a$favoriteActions2 === void 0 ? void 0 : _a$favoriteActions2.includes(x.id);
+										}) && /* @__PURE__ */ jsx("p", { children: "Добавьте часто используемые атаки кнопкой ☆ на карточке." })
 									]
 								}),
 								/* @__PURE__ */ jsx("div", {
 									className: "play-grid session-attacks",
-									children: visibleAttacks.map((attack) => /* @__PURE__ */ jsxs("article", {
-										className: "play-card play-attack-card",
-										children: [
-											/* @__PURE__ */ jsxs("div", {
-												className: "play-row",
-												children: [/* @__PURE__ */ jsx("h3", { children: /* @__PURE__ */ jsxs("button", {
-													className: "attack-title",
-													onClick: () => setEditingAttack(attack.id),
-													"aria-label": `Изменить атаку: ${attack.name}`,
-													children: [
-														attack.name,
-														" ",
-														/* @__PURE__ */ jsx("span", {
-															"aria-hidden": "true",
-															children: "✎"
-														})
-													]
-												}) }), /* @__PURE__ */ jsx("button", {
-													"aria-label": `Избранное: ${attack.name}`,
-													"aria-pressed": !!a.favoriteActions?.includes(attack.id),
-													onClick: () => change({
-														...c,
-														adventure: {
-															...a,
-															favoriteActions: a.favoriteActions?.includes(attack.id) ? a.favoriteActions.filter((id) => id !== attack.id) : [...a.favoriteActions || [], attack.id]
-														}
-													}),
-													children: a.favoriteActions?.includes(attack.id) ? "★" : "☆"
-												})]
-											}),
-											/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", c.spellGrants?.find((g) => attack.id.includes(g.spellId))?.classId || c.className)}` : ""] }),
-											/* @__PURE__ */ jsxs("details", {
-												className: "attack-notes",
-												children: [/* @__PURE__ */ jsx("summary", { children: "Описание и условия" }), /* @__PURE__ */ jsx("p", { children: attack.note || "Без дополнительных условий." })]
-											}),
-											attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("details", {
-												className: "attack-bonus",
-												children: [
-													/* @__PURE__ */ jsxs("summary", {
-														"aria-label": `Бонус попадания: ${attack.name}`,
+									children: visibleAttacks.map((attack) => {
+										var _a$favoriteActions3, _a$favoriteActions5, _c$spellGrants2, _c$attackCustomizatio, _c$attackCustomizatio2, _attackResolution$dam, _attackResolution$dam2;
+										return /* @__PURE__ */ jsxs("article", {
+											className: "play-card play-attack-card",
+											children: [
+												/* @__PURE__ */ jsxs("div", {
+													className: "play-row",
+													children: [/* @__PURE__ */ jsx("h3", { children: /* @__PURE__ */ jsxs("button", {
+														className: "attack-title",
+														onClick: () => setEditingAttack(attack.id),
+														"aria-label": `Изменить атаку: ${attack.name}`,
 														children: [
-															/* @__PURE__ */ jsx("b", { children: sign(attack.attackBonus + attackBonusFor(attack)) }),
+															attack.name,
 															" ",
 															/* @__PURE__ */ jsx("span", {
 																"aria-hidden": "true",
-																children: "⌄"
+																children: "✎"
 															})
 														]
-													}),
-													/* @__PURE__ */ jsxs("p", { children: [
-														abilityLabels[attack.ability],
-														": ",
-														sign(abilityModifier$1(d.abilities[attack.ability])),
-														/* @__PURE__ */ jsx("br", {}),
-														"Мастерство: ",
-														sign(attack.proficient ? pb : 0),
-														/* @__PURE__ */ jsx("br", {}),
-														"Особенности и остальные бонусы листа: ",
-														sign(attack.attackBonus - abilityModifier$1(d.abilities[attack.ability]) - (attack.proficient ? pb : 0) - (c.attackCustomizations?.[attack.id]?.bonus || 0)),
-														/* @__PURE__ */ jsx("br", {}),
-														"Ручная поправка: ",
-														sign(c.attackCustomizations?.[attack.id]?.bonus || 0),
-														/* @__PURE__ */ jsx("br", {}),
-														"Активные предметы игрового режима: ",
-														sign(attackBonusFor(attack)),
-														/* @__PURE__ */ jsx("br", {}),
-														/* @__PURE__ */ jsxs("strong", { children: ["Итого: ", sign(attack.attackBonus + attackBonusFor(attack))] })
-													] }),
-													/* @__PURE__ */ jsx("button", {
-														onClick: () => setEditingAttack(attack.id),
-														children: "Изменить параметры"
-													})
-												]
-											}),
-											/* @__PURE__ */ jsx("button", {
-												className: "play-primary",
-												"aria-label": `Бросить атаку: ${attack.name}`,
-												disabled: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1,
-												title: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1 ? "Освободите вторую руку" : void 0,
-												onClick: () => performAttack(attack),
-												children: "Атаковать"
-											}),
-											attackResolution?.attackId === attack.id && /* @__PURE__ */ jsxs("section", {
-												className: "play-card play-resolution",
-												"aria-label": "Результат атаки",
-												children: [
-													/* @__PURE__ */ jsxs("div", {
-														className: "play-row",
-														children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
-															onClick: () => setAttackResolution(void 0),
-															children: "Закрыть атаку"
-														})]
-													}),
-													attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
-														"Попадание: ",
-														/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
-														" · d20: ",
-														attackResolution.attack.natural,
-														attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
-													] }),
-													/* @__PURE__ */ jsxs("p", { children: [
-														"Урон",
-														attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
-														": ",
-														/* @__PURE__ */ jsx("b", { children: attackResolution.damage?.total || 0 }),
-														" · ",
-														attackResolution.damage?.formula || "Промах"
-													] })
-												]
-											}),
-											/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
-												className: "play-row play-wrap",
-												children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
-													onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
-													children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
-												}), /* @__PURE__ */ jsx("button", {
-													onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
-													children: "Настроить бросок"
-												})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
-													onClick: () => rolled(`Урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")))),
-													children: "Урон"
-												}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
-													onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")), void 0, true)),
-													children: "Крит"
-												})] })]
-											})] })
-										]
-									}, attack.id))
+													}) }), /* @__PURE__ */ jsx("button", {
+														"aria-label": `Избранное: ${attack.name}`,
+														"aria-pressed": !!((_a$favoriteActions3 = a.favoriteActions) === null || _a$favoriteActions3 === void 0 ? void 0 : _a$favoriteActions3.includes(attack.id)),
+														onClick: () => {
+															var _a$favoriteActions4;
+															return change({
+																...c,
+																adventure: {
+																	...a,
+																	favoriteActions: ((_a$favoriteActions4 = a.favoriteActions) === null || _a$favoriteActions4 === void 0 ? void 0 : _a$favoriteActions4.includes(attack.id)) ? a.favoriteActions.filter((id) => id !== attack.id) : [...a.favoriteActions || [], attack.id]
+																}
+															});
+														},
+														children: ((_a$favoriteActions5 = a.favoriteActions) === null || _a$favoriteActions5 === void 0 ? void 0 : _a$favoriteActions5.includes(attack.id)) ? "★" : "☆"
+													})]
+												}),
+												/* @__PURE__ */ jsxs("p", { children: [attack.damageDisplay, attack.saveDc ? ` · Сл ${attack.saveDc + spellItemBonus(c, "spellSaveDcBonus", ((_c$spellGrants2 = c.spellGrants) === null || _c$spellGrants2 === void 0 || (_c$spellGrants2 = _c$spellGrants2.find((g) => attack.id.includes(g.spellId))) === null || _c$spellGrants2 === void 0 ? void 0 : _c$spellGrants2.classId) || c.className)}` : ""] }),
+												/* @__PURE__ */ jsxs("details", {
+													className: "attack-notes",
+													children: [/* @__PURE__ */ jsx("summary", { children: "Описание и условия" }), /* @__PURE__ */ jsx("p", { children: attack.note || "Без дополнительных условий." })]
+												}),
+												attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs("details", {
+													className: "attack-bonus",
+													children: [
+														/* @__PURE__ */ jsxs("summary", {
+															"aria-label": `Бонус попадания: ${attack.name}`,
+															children: [
+																/* @__PURE__ */ jsx("b", { children: sign(attack.attackBonus + attackBonusFor(attack)) }),
+																" ",
+																/* @__PURE__ */ jsx("span", {
+																	"aria-hidden": "true",
+																	children: "⌄"
+																})
+															]
+														}),
+														/* @__PURE__ */ jsxs("p", { children: [
+															abilityLabels[attack.ability],
+															": ",
+															sign(abilityModifier$1(d.abilities[attack.ability])),
+															/* @__PURE__ */ jsx("br", {}),
+															"Мастерство: ",
+															sign(attack.proficient ? pb : 0),
+															/* @__PURE__ */ jsx("br", {}),
+															"Особенности и остальные бонусы листа: ",
+															sign(attack.attackBonus - abilityModifier$1(d.abilities[attack.ability]) - (attack.proficient ? pb : 0) - (((_c$attackCustomizatio = c.attackCustomizations) === null || _c$attackCustomizatio === void 0 || (_c$attackCustomizatio = _c$attackCustomizatio[attack.id]) === null || _c$attackCustomizatio === void 0 ? void 0 : _c$attackCustomizatio.bonus) || 0)),
+															/* @__PURE__ */ jsx("br", {}),
+															"Ручная поправка: ",
+															sign(((_c$attackCustomizatio2 = c.attackCustomizations) === null || _c$attackCustomizatio2 === void 0 || (_c$attackCustomizatio2 = _c$attackCustomizatio2[attack.id]) === null || _c$attackCustomizatio2 === void 0 ? void 0 : _c$attackCustomizatio2.bonus) || 0),
+															/* @__PURE__ */ jsx("br", {}),
+															"Активные предметы игрового режима: ",
+															sign(attackBonusFor(attack)),
+															/* @__PURE__ */ jsx("br", {}),
+															/* @__PURE__ */ jsxs("strong", { children: ["Итого: ", sign(attack.attackBonus + attackBonusFor(attack))] })
+														] }),
+														/* @__PURE__ */ jsx("button", {
+															onClick: () => setEditingAttack(attack.id),
+															children: "Изменить параметры"
+														})
+													]
+												}),
+												/* @__PURE__ */ jsx("button", {
+													className: "play-primary",
+													"aria-label": `Бросить атаку: ${attack.name}`,
+													disabled: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1,
+													title: attack.id.endsWith("-two-hands") && equippedHands(c).used > 1 ? "Освободите вторую руку" : void 0,
+													onClick: () => performAttack(attack),
+													children: "Атаковать"
+												}),
+												(attackResolution === null || attackResolution === void 0 ? void 0 : attackResolution.attackId) === attack.id && /* @__PURE__ */ jsxs("section", {
+													className: "play-card play-resolution",
+													"aria-label": "Результат атаки",
+													children: [
+														/* @__PURE__ */ jsxs("div", {
+															className: "play-row",
+															children: [/* @__PURE__ */ jsx("h2", { children: attackResolution.name }), /* @__PURE__ */ jsx("button", {
+																onClick: () => setAttackResolution(void 0),
+																children: "Закрыть атаку"
+															})]
+														}),
+														attackResolution.attack && /* @__PURE__ */ jsxs("p", { children: [
+															"Попадание: ",
+															/* @__PURE__ */ jsx("b", { children: attackResolution.attack.total }),
+															" · d20: ",
+															attackResolution.attack.natural,
+															attackResolution.attack.natural === 20 ? " · крит" : attackResolution.attack.natural === 1 ? " · промах" : ""
+														] }),
+														/* @__PURE__ */ jsxs("p", { children: [
+															"Урон",
+															attackResolution.attack && attackResolution.attack.natural !== 20 ? " при попадании" : "",
+															": ",
+															/* @__PURE__ */ jsx("b", { children: ((_attackResolution$dam = attackResolution.damage) === null || _attackResolution$dam === void 0 ? void 0 : _attackResolution$dam.total) || 0 }),
+															" · ",
+															((_attackResolution$dam2 = attackResolution.damage) === null || _attackResolution$dam2 === void 0 ? void 0 : _attackResolution$dam2.formula) || "Промах"
+														] })
+													]
+												}),
+												/* @__PURE__ */ jsxs("details", { children: [/* @__PURE__ */ jsx("summary", { children: "Отдельные броски и поправки" }), /* @__PURE__ */ jsxs("div", {
+													className: "play-row play-wrap",
+													children: [attack.attackBonus !== void 0 && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("button", {
+														onClick: () => d20(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+														children: ["Атака ", sign(attack.attackBonus + attackBonusFor(attack))]
+													}), /* @__PURE__ */ jsx("button", {
+														onClick: () => beginRoll(`Атака: ${attack.name}`, attack.attackBonus + attackBonusFor(attack)),
+														children: "Настроить бросок"
+													})] }), attack.damageFormula && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx("button", {
+														onClick: () => rolled(`Урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")))),
+														children: "Урон"
+													}), attack.attackBonus !== void 0 && /* @__PURE__ */ jsx("button", {
+														onClick: () => rolled(`Критический урон: ${attack.name}`, () => rollDamage(damageFormula(attack.damageFormula, weaponItemBonus(c, attack.sourceName || attack.name, "weaponDamageBonus")), void 0, true)),
+														children: "Крит"
+													})] })]
+												})] })
+											]
+										}, attack.id);
+									})
 								}),
 								!view.hiddenBlocks.includes("quickSpells") && (quickSpells.length > 0 || quickItems.length > 0) && /* @__PURE__ */ jsxs("section", {
 									className: "session-quick",
@@ -33129,57 +33547,69 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 								className: "play-card",
 								children: [/* @__PURE__ */ jsx("h2", { children: "Ячейки" }), /* @__PURE__ */ jsxs("div", {
 									className: "play-row play-wrap",
-									children: [slots.map((n, i) => n > 0 && /* @__PURE__ */ jsxs("div", {
-										className: "play-counter",
-										children: [
-											/* @__PURE__ */ jsxs("strong", { children: [i + 1, " круг"] }),
-											/* @__PURE__ */ jsxs("span", { children: [
-												Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
-												" / ",
-												n
-											] }),
-											/* @__PURE__ */ jsx(NumberSlider, {
-												label: `Осталось ячеек ${i + 1} круга`,
-												min: 0,
-												max: n,
-												value: Math.max(0, n - (c.spellSlotsUsed?.[i] || 0)),
-												onChange: (value) => change((prev) => {
-													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
-													used[i] = n - integer(value, 0, n);
-													return logPlay({
-														...prev,
-														spellSlotsUsed: used
-													}, `Ячейки ${i + 1} круга: ${integer(value, 0, n)}/${n}`);
+									children: [slots.map((n, i) => {
+										var _c$spellSlotsUsed, _c$spellSlotsUsed2, _c$spellSlotsUsed3, _c$spellSlotsUsed4;
+										return n > 0 && /* @__PURE__ */ jsxs("div", {
+											className: "play-counter",
+											children: [
+												/* @__PURE__ */ jsxs("strong", { children: [i + 1, " круг"] }),
+												/* @__PURE__ */ jsxs("span", { children: [
+													Math.max(0, n - (((_c$spellSlotsUsed = c.spellSlotsUsed) === null || _c$spellSlotsUsed === void 0 ? void 0 : _c$spellSlotsUsed[i]) || 0)),
+													" / ",
+													n
+												] }),
+												/* @__PURE__ */ jsx(NumberSlider, {
+													label: `Осталось ячеек ${i + 1} круга`,
+													min: 0,
+													max: n,
+													value: Math.max(0, n - (((_c$spellSlotsUsed2 = c.spellSlotsUsed) === null || _c$spellSlotsUsed2 === void 0 ? void 0 : _c$spellSlotsUsed2[i]) || 0)),
+													onChange: (value) => change((prev) => {
+														const used = slots.map((_, j) => {
+															var _prev$spellSlotsUsed;
+															return ((_prev$spellSlotsUsed = prev.spellSlotsUsed) === null || _prev$spellSlotsUsed === void 0 ? void 0 : _prev$spellSlotsUsed[j]) || 0;
+														});
+														used[i] = n - integer(value, 0, n);
+														return logPlay({
+															...prev,
+															spellSlotsUsed: used
+														}, `Ячейки ${i + 1} круга: ${integer(value, 0, n)}/${n}`);
+													})
+												}),
+												/* @__PURE__ */ jsx("button", {
+													"aria-label": `Потратить ячейку ${i + 1} круга`,
+													disabled: (((_c$spellSlotsUsed3 = c.spellSlotsUsed) === null || _c$spellSlotsUsed3 === void 0 ? void 0 : _c$spellSlotsUsed3[i]) || 0) >= n,
+													onClick: () => change((prev) => {
+														const used = slots.map((_, j) => {
+															var _prev$spellSlotsUsed2;
+															return ((_prev$spellSlotsUsed2 = prev.spellSlotsUsed) === null || _prev$spellSlotsUsed2 === void 0 ? void 0 : _prev$spellSlotsUsed2[j]) || 0;
+														});
+														used[i]++;
+														return logPlay({
+															...prev,
+															spellSlotsUsed: used
+														}, `Потрачена ячейка ${i + 1} круга`);
+													}),
+													children: "−"
+												}),
+												/* @__PURE__ */ jsx("button", {
+													"aria-label": `Вернуть ячейку ${i + 1} круга`,
+													disabled: !(((_c$spellSlotsUsed4 = c.spellSlotsUsed) === null || _c$spellSlotsUsed4 === void 0 ? void 0 : _c$spellSlotsUsed4[i]) || 0),
+													onClick: () => change((prev) => {
+														const used = slots.map((_, j) => {
+															var _prev$spellSlotsUsed3;
+															return ((_prev$spellSlotsUsed3 = prev.spellSlotsUsed) === null || _prev$spellSlotsUsed3 === void 0 ? void 0 : _prev$spellSlotsUsed3[j]) || 0;
+														});
+														used[i]--;
+														return {
+															...prev,
+															spellSlotsUsed: used
+														};
+													}),
+													children: "+"
 												})
-											}),
-											/* @__PURE__ */ jsx("button", {
-												"aria-label": `Потратить ячейку ${i + 1} круга`,
-												disabled: (c.spellSlotsUsed?.[i] || 0) >= n,
-												onClick: () => change((prev) => {
-													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
-													used[i]++;
-													return logPlay({
-														...prev,
-														spellSlotsUsed: used
-													}, `Потрачена ячейка ${i + 1} круга`);
-												}),
-												children: "−"
-											}),
-											/* @__PURE__ */ jsx("button", {
-												"aria-label": `Вернуть ячейку ${i + 1} круга`,
-												disabled: !(c.spellSlotsUsed?.[i] || 0),
-												onClick: () => change((prev) => {
-													const used = slots.map((_, j) => prev.spellSlotsUsed?.[j] || 0);
-													used[i]--;
-													return {
-														...prev,
-														spellSlotsUsed: used
-													};
-												}),
-												children: "+"
-											})
-										]
-									}, i)), pact.slots > 0 && /* @__PURE__ */ jsxs("div", {
+											]
+										}, i);
+									}), pact.slots > 0 && /* @__PURE__ */ jsxs("div", {
 										className: "play-counter",
 										children: [
 											/* @__PURE__ */ jsxs("strong", { children: [
@@ -33383,14 +33813,17 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
-								children: [/* @__PURE__ */ jsx("h2", { children: "Настройки подкласса" }), subclassRuntimeControls(d).map((control) => /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
-									value: String(subclassRuntimeValue(c, control.key) || control.options[0]?.id || ""),
-									onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
-									children: control.options?.map((option) => /* @__PURE__ */ jsx("option", {
-										value: String(option.id),
-										children: option.name
-									}, String(option.id)))
-								})] }, control.key))]
+								children: [/* @__PURE__ */ jsx("h2", { children: "Настройки подкласса" }), subclassRuntimeControls(d).map((control) => {
+									var _control$options$, _control$options;
+									return /* @__PURE__ */ jsxs("label", { children: [control.title, /* @__PURE__ */ jsx("select", {
+										value: String(subclassRuntimeValue(c, control.key) || ((_control$options$ = control.options[0]) === null || _control$options$ === void 0 ? void 0 : _control$options$.id) || ""),
+										onChange: (e) => change(setSubclassRuntimeValue(c, control.key, e.target.value)),
+										children: (_control$options = control.options) === null || _control$options === void 0 ? void 0 : _control$options.map((option) => /* @__PURE__ */ jsx("option", {
+											value: String(option.id),
+											children: option.name
+										}, String(option.id)))
+									})] }, control.key);
+								})]
 							}),
 							/* @__PURE__ */ jsxs("section", {
 								className: "play-card",
@@ -33486,7 +33919,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 											/* @__PURE__ */ jsxs("label", { children: ["Максимум HP", /* @__PURE__ */ jsx(NumberSlider, {
 												label: "Максимум HP",
 												min: 1,
-												value: a.hpMaximum ?? max,
+												value: (_a$hpMaximum = a.hpMaximum) !== null && _a$hpMaximum !== void 0 ? _a$hpMaximum : max,
 												onChange: (value) => change({
 													...c,
 													adventure: {
@@ -33499,7 +33932,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 											/* @__PURE__ */ jsxs("label", { children: ["КД вручную (пусто — расчёт)", /* @__PURE__ */ jsx(NumberSlider, {
 												label: "КД вручную",
 												min: 5,
-												value: a.acOverride ?? "",
+												value: (_a$acOverride2 = a.acOverride) !== null && _a$acOverride2 !== void 0 ? _a$acOverride2 : "",
 												onChange: (value) => change({
 													...c,
 													adventure: {
@@ -33682,21 +34115,24 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 										a.elapsedMinutes,
 										" мин."
 									] }),
-									a.journal.map((entry) => /* @__PURE__ */ jsxs("article", {
-										className: "play-log",
-										children: [
-											/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
-											/* @__PURE__ */ jsx("p", { children: entry.text }),
-											entry.formula && /* @__PURE__ */ jsxs("p", { children: [
-												/* @__PURE__ */ jsx("b", { children: entry.total }),
-												" · ",
-												entry.formula,
-												" · кости [",
-												entry.rolls?.join(", "),
-												"]"
-											] })
-										]
-									}, entry.id))
+									a.journal.map((entry) => {
+										var _entry$rolls;
+										return /* @__PURE__ */ jsxs("article", {
+											className: "play-log",
+											children: [
+												/* @__PURE__ */ jsx("time", { children: new Date(entry.at).toLocaleString("ru-RU") }),
+												/* @__PURE__ */ jsx("p", { children: entry.text }),
+												entry.formula && /* @__PURE__ */ jsxs("p", { children: [
+													/* @__PURE__ */ jsx("b", { children: entry.total }),
+													" · ",
+													entry.formula,
+													" · кости [",
+													(_entry$rolls = entry.rolls) === null || _entry$rolls === void 0 ? void 0 : _entry$rolls.join(", "),
+													"]"
+												] })
+											]
+										}, entry.id);
+									})
 								]
 							})
 						] })
@@ -33725,7 +34161,7 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 				"aria-label": "Открыть кубы",
 				children: "◆ Кубы"
 			}),
-			a.mobileLayout?.navPosition !== "top" && /* @__PURE__ */ jsx("nav", {
+			((_a$mobileLayout9 = a.mobileLayout) === null || _a$mobileLayout9 === void 0 ? void 0 : _a$mobileLayout9.navPosition) !== "top" && /* @__PURE__ */ jsx("nav", {
 				className: "play-mobile-nav",
 				"aria-label": "Игровые разделы на телефоне",
 				children: nav
@@ -34254,7 +34690,8 @@ function findDesign(presets, id) {
 	return presets.find((p) => p.id === id) || calmPresets.find((p) => p.id === id);
 }
 function designLayout(presets, id) {
-	return findDesign(presets, id)?.layout || (palettes[id] ? id : "");
+	const p = findDesign(presets, id);
+	return (p === null || p === void 0 ? void 0 : p.layout) || (palettes[id] ? id : "");
 }
 //#endregion
 //#region app/interfacePreferences.ts
@@ -34275,10 +34712,16 @@ function normalizePreferences(value) {
 		base: p.base === "parchment" ? "parchment" : "classic",
 		roles: Object.fromEntries(Object.entries(p.roles && typeof p.roles === "object" ? p.roles : {}).filter(([key, value]) => paletteRoles.some((role) => role.token === key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value))),
 		colors: Object.fromEntries(Object.entries(p.colors && typeof p.colors === "object" ? p.colors : {}).filter(([key, value]) => themeColors_default.includes(key) && typeof value === "string" && /^#[\da-f]{6}$/i.test(value)))
-	})).map((p) => ({
-		...p,
-		layout: calmPresets.some((b) => b.id === raw.presets?.find((r) => r?.id === p.id)?.layout) ? raw.presets?.find((r) => r?.id === p.id)?.layout : void 0
-	}));
+	})).map((p) => {
+		var _raw$presets2;
+		return {
+			...p,
+			layout: calmPresets.some((b) => {
+				var _raw$presets;
+				return b.id === ((_raw$presets = raw.presets) === null || _raw$presets === void 0 || (_raw$presets = _raw$presets.find((r) => (r === null || r === void 0 ? void 0 : r.id) === p.id)) === null || _raw$presets === void 0 ? void 0 : _raw$presets.layout);
+			}) ? (_raw$presets2 = raw.presets) === null || _raw$presets2 === void 0 || (_raw$presets2 = _raw$presets2.find((r) => (r === null || r === void 0 ? void 0 : r.id) === p.id)) === null || _raw$presets2 === void 0 ? void 0 : _raw$presets2.layout : void 0
+		};
+	});
 	return {
 		zoom: limit(raw.zoom, 75, 175, 125),
 		font: limit(raw.font, 80, 160, 100),
@@ -34424,10 +34867,11 @@ function changePaletteRole(preset, index, color) {
 	};
 }
 function themeStyle(preferences, base) {
+	var _preset$roles;
 	const preset = findDesign(preferences.presets, preferences.activePreset);
 	const style = { "--interface-font": preferences.font / 100 };
 	if (!preset) return style;
-	for (const role of paletteRoles) style[`--${role.token}`] = preset.roles?.[role.token] || preset.colors[role[base]] || `#${role[base]}`;
+	for (const role of paletteRoles) style[`--${role.token}`] = ((_preset$roles = preset.roles) === null || _preset$roles === void 0 ? void 0 : _preset$roles[role.token]) || preset.colors[role[base]] || `#${role[base]}`;
 	for (const [key, value] of Object.entries(preset.colors)) {
 		style[`--theme-${key}`] = value;
 		style[`--theme-rgb-${key}`] = [
@@ -34442,6 +34886,7 @@ function themeStyle(preferences, base) {
 //#region app/ThemeSettings.tsx
 var storageKey$1 = "list-geroya-interface-v1";
 function useInterfacePreferences() {
+	var _findDesign;
 	const [preferences, setPreferences] = useState(defaultPreferences);
 	const [loaded, setLoaded] = useState(false);
 	const [showDesignPicker, setShowDesignPicker] = useState(false);
@@ -34449,7 +34894,7 @@ function useInterfacePreferences() {
 		let next = defaultPreferences;
 		try {
 			next = normalizePreferences(JSON.parse(localStorage.getItem(storageKey$1) || "null"));
-		} catch {}
+		} catch (_unused) {}
 		setPreferences(next);
 		setShowDesignPicker(!next.rememberDesign);
 		setLoaded(true);
@@ -34458,7 +34903,7 @@ function useInterfacePreferences() {
 		if (!loaded) return;
 		try {
 			localStorage.setItem(storageKey$1, JSON.stringify(preferences));
-		} catch {}
+		} catch (_unused2) {}
 		document.documentElement.style.setProperty("--interface-zoom", String(preferences.zoom / 100));
 	}, [preferences, loaded]);
 	return {
@@ -34466,7 +34911,7 @@ function useInterfacePreferences() {
 		update: setPreferences,
 		showDesignPicker,
 		closeDesignPicker: () => setShowDesignPicker(false),
-		style: themeStyle(preferences, findDesign(preferences.presets, preferences.activePreset)?.base || "classic")
+		style: themeStyle(preferences, ((_findDesign = findDesign(preferences.presets, preferences.activePreset)) === null || _findDesign === void 0 ? void 0 : _findDesign.base) || "classic")
 	};
 }
 function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
@@ -34488,7 +34933,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		if (typeof el.showModal === "function") try {
 			el.showModal();
 			return;
-		} catch {}
+		} catch (_unused3) {}
 		el.setAttribute("open", "");
 	}
 	useEffect(() => {
@@ -34497,7 +34942,8 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		showDialog();
 	}, [appearance.showDesignPicker, dialogHost]);
 	function close() {
-		if (dialog.current?.open) if (typeof dialog.current.close === "function") dialog.current.close();
+		var _dialog$current;
+		if ((_dialog$current = dialog.current) === null || _dialog$current === void 0 ? void 0 : _dialog$current.open) if (typeof dialog.current.close === "function") dialog.current.close();
 		else dialog.current.removeAttribute("open");
 		appearance.closeDesignPicker();
 	}
@@ -34516,7 +34962,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 			...preferences,
 			activePreset: preset ? id : ""
 		});
-		onTheme(preset?.base || (id === "parchment" ? "parchment" : "classic"));
+		onTheme((preset === null || preset === void 0 ? void 0 : preset.base) || (id === "parchment" ? "parchment" : "classic"));
 		setDraft(preset && !calmPresets.some((p) => p.id === preset.id) ? {
 			...preset,
 			colors: { ...preset.colors }
@@ -34527,10 +34973,10 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 		const preset = {
 			id: crypto.randomUUID(),
 			name: "Моя тема",
-			base: active?.base || theme,
-			layout: active?.layout || (calmPresets.some((p) => p.id === active?.id) ? active?.id : void 0),
-			colors: { ...active?.colors },
-			roles: { ...active?.roles }
+			base: (active === null || active === void 0 ? void 0 : active.base) || theme,
+			layout: (active === null || active === void 0 ? void 0 : active.layout) || (calmPresets.some((p) => p.id === (active === null || active === void 0 ? void 0 : active.id)) ? active === null || active === void 0 ? void 0 : active.id : void 0),
+			colors: { ...active === null || active === void 0 ? void 0 : active.colors },
+			roles: { ...active === null || active === void 0 ? void 0 : active.roles }
 		};
 		setDraft(preset);
 		setGallery(false);
@@ -34772,12 +35218,15 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 						})] }),
 						/* @__PURE__ */ jsx("div", {
 							className: "theme-palette",
-							children: paletteRoles.map((role, index) => /* @__PURE__ */ jsxs("label", { children: [role.label, /* @__PURE__ */ jsx("input", {
-								type: "color",
-								"aria-label": role.label,
-								value: draft.roles?.[role.token] || draft.colors[role[draft.base]] || `#${role[draft.base]}`,
-								onChange: (e) => edit(changePaletteRole(draft, index, e.target.value))
-							})] }, role.token))
+							children: paletteRoles.map((role, index) => {
+								var _draft$roles;
+								return /* @__PURE__ */ jsxs("label", { children: [role.label, /* @__PURE__ */ jsx("input", {
+									type: "color",
+									"aria-label": role.label,
+									value: ((_draft$roles = draft.roles) === null || _draft$roles === void 0 ? void 0 : _draft$roles[role.token]) || draft.colors[role[draft.base]] || `#${role[draft.base]}`,
+									onChange: (e) => edit(changePaletteRole(draft, index, e.target.value))
+								})] }, role.token);
+							})
 						}),
 						/* @__PURE__ */ jsxs("details", { children: [
 							/* @__PURE__ */ jsx("summary", { children: "Все цвета · тонкая настройка" }),
@@ -34859,7 +35308,7 @@ function saveExport(blob, filename) {
 }
 function printStandalonePdf(filename) {
 	const native = window.HeroListDesktop || window.HeroListNative;
-	if (native?.printPdf) {
+	if (native === null || native === void 0 ? void 0 : native.printPdf) {
 		Promise.resolve(native.printPdf(filename)).catch((error) => {
 			alert("Не удалось создать PDF: " + (error instanceof Error ? error.message : String(error)));
 		});
@@ -34952,8 +35401,9 @@ var subclassFeatureLevels = {
 	]
 };
 function subclassTemplate(parentId, entities) {
+	var _parent$subclass, _parent$subclass2;
 	const parent = entities.find((e) => e.id === parentId);
-	const levels = subclassFeatureLevels[parentId.replace("official:class:", "")] || parent?.subclass?.featureLevels || [parent?.subclass?.chooseAtLevel || 3];
+	const levels = subclassFeatureLevels[parentId.replace("official:class:", "")] || (parent === null || parent === void 0 || (_parent$subclass = parent.subclass) === null || _parent$subclass === void 0 ? void 0 : _parent$subclass.featureLevels) || [(parent === null || parent === void 0 || (_parent$subclass2 = parent.subclass) === null || _parent$subclass2 === void 0 ? void 0 : _parent$subclass2.chooseAtLevel) || 3];
 	return Object.fromEntries(levels.map((level) => [String(level), [{ type: "feature" }]]));
 }
 function homebrewAsiLevels(entities, classId) {
@@ -34962,7 +35412,10 @@ function homebrewAsiLevels(entities, classId) {
 	return Object.entries(owner.advancement || {}).filter(([, rows]) => rows.some((row) => row.type === "asi_or_feat")).map(([level]) => Number(level)).filter((level) => Number.isInteger(level) && level >= 1 && level <= 20).sort((a, b) => a - b);
 }
 function homebrewTableFeatures(entities) {
-	return entities.filter((e) => e.table?.columns.length).map((e) => {
+	return entities.filter((e) => {
+		var _e$table;
+		return (_e$table = e.table) === null || _e$table === void 0 ? void 0 : _e$table.columns.length;
+	}).map((e) => {
 		const table = e.table;
 		const clean = (s) => s.replace(/\|/g, "／").replace(/[\r\n]+/g, " ");
 		return {
@@ -35070,8 +35523,9 @@ var featHandling = {
 	"dual-wielder": "conditional"
 };
 function markFeature(feature, source, id, featId) {
+	var _classHandling$id, _raceHandling$id;
 	const name = source === "class" ? feature.name.split(" · ").at(-1) || feature.name : feature.name;
-	const effectHandling = feature.effectHandling || (source === "class" ? classHandling[id]?.[name] : source === "race" ? raceHandling[id]?.[name] : source === "feat" ? featHandling[featId || ""] : void 0) || "manual";
+	const effectHandling = feature.effectHandling || (source === "class" ? (_classHandling$id = classHandling[id]) === null || _classHandling$id === void 0 ? void 0 : _classHandling$id[name] : source === "race" ? (_raceHandling$id = raceHandling[id]) === null || _raceHandling$id === void 0 ? void 0 : _raceHandling$id[name] : source === "feat" ? featHandling[featId || ""] : void 0) || "manual";
 	return {
 		...feature,
 		effectHandling
@@ -35081,10 +35535,11 @@ function markFeature(feature, source, id, featId) {
 //#region app/hpProgress.ts
 /** A conscious edit to one level; legacy totals are never inferred as raw rolls. */
 function setHitPointRoll(character, characterLevel, roll, resolvedAbilities = character.abilities) {
+	var _classRules$history$i;
 	const history = normalizedLevelHistory(character);
 	const index = history.findIndex((entry) => entry.characterLevel === characterLevel && characterLevel > 1);
 	if (index < 0) return character;
-	const die = classRules[history[index].classId]?.hitDie || 8;
+	const die = ((_classRules$history$i = classRules[history[index].classId]) === null || _classRules$history$i === void 0 ? void 0 : _classRules$history$i.hitDie) || 8;
 	if (roll !== null && (!Number.isInteger(roll) || roll < 1 || roll > die)) return character;
 	const updated = [...history];
 	updated[index] = roll === null ? {
@@ -42558,9 +43013,10 @@ function raceClassFit(raceId, classId) {
 	return abilities.includes(order[1]) ? 1 : 0;
 }
 function chooseRaceCandidate(scores, classId) {
+	var _byRaw$0$raw, _byRaw$;
 	const normalized = [...scores].sort(stable);
 	const byRaw = [...scores].sort((a, b) => b.raw - a.raw || b.score - a.score || a.id.localeCompare(b.id, "en"));
-	const topRaw = byRaw[0]?.raw ?? 0;
+	const topRaw = (_byRaw$0$raw = (_byRaw$ = byRaw[0]) === null || _byRaw$ === void 0 ? void 0 : _byRaw$.raw) !== null && _byRaw$0$raw !== void 0 ? _byRaw$0$raw : 0;
 	const rawLeaders = byRaw.filter((candidate) => Math.abs(candidate.raw - topRaw) < 1e-9);
 	if (rawLeaders.length >= 2 && topRaw > 0) {
 		const underdog = byRaw.find((candidate) => candidate.raw < topRaw && candidate.raw >= topRaw * .75 && candidate.signals >= 2);
@@ -42631,6 +43087,7 @@ function stableJitter(seed) {
 	return (hash >>> 0) / 4294967296;
 }
 function nextQuizQuestionId(questionIds, answers) {
+	var _quizQuestions$filter;
 	validateSession(questionIds, answers);
 	if (answers.length !== questionIds.length || questionIds.length >= QUIZ_MAX_QUESTIONS) return null;
 	const main = resolveMain(questionIds, answers);
@@ -42641,7 +43098,7 @@ function nextQuizQuestionId(questionIds, answers) {
 		background: main.backgroundScores.slice(0, 3)
 	};
 	const signature = `${questionIds.join(",")}|${answers.join(",")}`;
-	return quizQuestions.filter((question) => !questionIds.includes(question.id)).map((question) => {
+	return ((_quizQuestions$filter = quizQuestions.filter((question) => !questionIds.includes(question.id)).map((question) => {
 		let discrimination = 0;
 		[
 			"race",
@@ -42663,7 +43120,7 @@ function nextQuizQuestionId(questionIds, answers) {
 			id: question.id,
 			score: discrimination + stableJitter(`${signature}|${question.id}`) * Math.max(discrimination * .08, 1)
 		};
-	}).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, "en"))[0]?.id || null;
+	}).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, "en"))[0]) === null || _quizQuestions$filter === void 0 ? void 0 : _quizQuestions$filter.id) || null;
 }
 function isQuizComplete(questionIds, answers) {
 	validateSession(questionIds, answers);
@@ -42697,11 +43154,12 @@ function validSaved(value) {
 	const saved = value;
 	try {
 		return Array.isArray(saved.questionIds) && Array.isArray(saved.answers) && Number.isInteger(saved.index) && saved.questionIds.length >= QUIZ_CORE_COUNT && saved.questionIds.length <= QUIZ_MAX_QUESTIONS && quizCoreQuestionIds.every((id, index) => saved.questionIds[index] === id) && saved.answers.length <= saved.questionIds.length && saved.index >= 0 && saved.index <= saved.answers.length && saved.answers.every((answer, index) => Number.isInteger(answer) && !!quizQuestion(saved.questionIds[index]).answers[answer]);
-	} catch {
+	} catch (_unused) {
 		return false;
 	}
 }
 function HeroQuiz({ onClose, onCreate }) {
+	var _races$find, _variantsFor$find, _classes$find, _backgrounds$find, _subclasses$result$cl;
 	const [questionIds, setQuestionIds] = useState([...quizCoreQuestionIds]);
 	const [answers, setAnswers] = useState([]);
 	const [index, setIndex] = useState(0);
@@ -42716,7 +43174,7 @@ function HeroQuiz({ onClose, onCreate }) {
 				setAnswers(saved.answers);
 				setIndex(saved.index);
 			}
-		} catch {}
+		} catch (_unused2) {}
 		setLoaded(true);
 	}, []);
 	useEffect(() => {
@@ -42726,7 +43184,7 @@ function HeroQuiz({ onClose, onCreate }) {
 				answers,
 				index
 			}));
-		} catch {}
+		} catch (_unused3) {}
 	}, [
 		questionIds,
 		answers,
@@ -42753,8 +43211,8 @@ function HeroQuiz({ onClose, onCreate }) {
 		setIndex(0);
 		setError("");
 	};
-	const raceName = result ? races.find((option) => option.id === result.raceId)?.name : "";
-	const raceVariant = result?.raceId === "elf" ? variantsFor("elf").find((option) => option.id === (result.raceVariantId || preferredElfVariant(result.classId)))?.name : "";
+	const raceName = result ? (_races$find = races.find((option) => option.id === result.raceId)) === null || _races$find === void 0 ? void 0 : _races$find.name : "";
+	const raceVariant = (result === null || result === void 0 ? void 0 : result.raceId) === "elf" ? (_variantsFor$find = variantsFor("elf").find((option) => option.id === (result.raceVariantId || preferredElfVariant(result.classId)))) === null || _variantsFor$find === void 0 ? void 0 : _variantsFor$find.name : "";
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hero-quiz",
 		children: [
@@ -42780,9 +43238,9 @@ function HeroQuiz({ onClose, onCreate }) {
 					className: "quiz-result",
 					children: [
 						["Раса", raceVariant ? `${raceName} — ${raceVariant}` : raceName],
-						["Класс", classes.find((option) => option.id === result.classId)?.name],
-						["Предыстория", backgrounds.find((option) => option.id === result.backgroundId)?.name],
-						["Подкласс", subclasses[result.classId].options.find((option) => option.id === result.subclassId)?.name]
+						["Класс", (_classes$find = classes.find((option) => option.id === result.classId)) === null || _classes$find === void 0 ? void 0 : _classes$find.name],
+						["Предыстория", (_backgrounds$find = backgrounds.find((option) => option.id === result.backgroundId)) === null || _backgrounds$find === void 0 ? void 0 : _backgrounds$find.name],
+						["Подкласс", (_subclasses$result$cl = subclasses[result.classId].options.find((option) => option.id === result.subclassId)) === null || _subclasses$result$cl === void 0 ? void 0 : _subclasses$result$cl.name]
 					].map(([label, value]) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: label }), /* @__PURE__ */ jsx("strong", { children: value })] }, label))
 				}),
 				/* @__PURE__ */ jsxs("p", { children: [
@@ -42985,7 +43443,7 @@ function backgroundChoiceGroups(id, feats) {
 		description: "Черта добавляется в лист отдельным бонусным выбором и открывает её обычные настройки.",
 		options: bonusFeats[id].map((featId) => {
 			const feat = feats.find((item) => item.id === featId);
-			return option(featId, feat?.name || featId, feat?.description);
+			return option(featId, (feat === null || feat === void 0 ? void 0 : feat.name) || featId, feat === null || feat === void 0 ? void 0 : feat.description);
 		})
 	});
 	return groups;
@@ -47007,9 +47465,9 @@ function sheetFeature(classId, name, subclass = "") {
 }
 function documentedOption(classId, id, name, source, summary, extra = {}) {
 	const documented = sheetFeature(classId, extra.canonicalFeatureName || name);
-	return O(id, documented?.name || name, source, summary, {
+	return O(id, (documented === null || documented === void 0 ? void 0 : documented.name) || name, source, summary, {
 		...extra,
-		fullDescription: documented?.description || extra.fullDescription
+		fullDescription: (documented === null || documented === void 0 ? void 0 : documented.description) || extra.fullDescription
 	});
 }
 var fightingStyles = [
@@ -47227,8 +47685,9 @@ var clericSubclassNames = {
 	twilight: "Домен сумерек"
 };
 function clericEighthLevelFeature(subclassId) {
+	var _sheetSubclassFeature;
 	const subclassName = clericSubclassNames[subclassId];
-	return (subclassName ? sheetSubclassFeatures.cleric?.[subclassName] || [] : []).find((feature) => feature.level === 8 && /божественный удар|могущественное колдовство/i.test(feature.name));
+	return (subclassName ? ((_sheetSubclassFeature = sheetSubclassFeatures.cleric) === null || _sheetSubclassFeature === void 0 ? void 0 : _sheetSubclassFeature[subclassName]) || [] : []).find((feature) => feature.level === 8 && /божественный удар|могущественное колдовство/i.test(feature.name));
 }
 function singleClassChoiceGroups(character, spells = []) {
 	const groups = [];
@@ -47363,20 +47822,20 @@ function singleClassChoiceGroups(character, spells = []) {
 			const phb = clericEighthLevelFeature(subclass);
 			add({
 				key: "tce-blessed-strikes",
-				title: `${phb?.name || "Доменная способность"} или Благословлённые удары`,
+				title: `${(phb === null || phb === void 0 ? void 0 : phb.name) || "Доменная способность"} или Благословлённые удары`,
 				description: "Tasha открывает альтернативу и не заменяет доменную способность автоматически.",
 				level: 8,
 				count: 1,
 				defaultOptionId: "domain-feature",
-				options: [O("domain-feature", phb?.name || "Доменная способность 8-го уровня", "PHB · базовое правило", phb?.description || "Оставляет исходную способность вашего домена.", {
+				options: [O("domain-feature", (phb === null || phb === void 0 ? void 0 : phb.name) || "Доменная способность 8-го уровня", "PHB · базовое правило", (phb === null || phb === void 0 ? void 0 : phb.description) || "Оставляет исходную способность вашего домена.", {
 					mode: "passthrough",
-					canonicalFeatureName: phb?.name,
+					canonicalFeatureName: phb === null || phb === void 0 ? void 0 : phb.name,
 					emitFeature: false,
-					fullDescription: phb?.description
+					fullDescription: phb === null || phb === void 0 ? void 0 : phb.description
 				}), documentedOption("cleric", "blessed-strikes", "Благословлённые удары", "TCE · опциональная замена", "Раз в свой ход добавьте 1к8 урона излучением существу, получившему урон от вашего заговора или атаки оружием.", {
 					mode: "replace",
 					canonicalFeatureName: "Благословлённые удары",
-					replacesFeatureName: phb?.name || "Божественный удар",
+					replacesFeatureName: (phb === null || phb === void 0 ? void 0 : phb.name) || "Божественный удар",
 					tasha: true
 				})]
 			});
@@ -47557,7 +48016,8 @@ function singleClassChoiceGroups(character, spells = []) {
 		});
 	}
 	if (character.className === "warlock") {
-		const pact = selected["pact-boon"]?.[0] || "";
+		var _selected$pactBoon;
+		const pact = ((_selected$pactBoon = selected["pact-boon"]) === null || _selected$pactBoon === void 0 ? void 0 : _selected$pactBoon[0]) || "";
 		if (level >= 2) add({
 			key: "invocations",
 			title: "Таинственные воззвания",
@@ -47907,11 +48367,15 @@ function singleClassChoiceGroups(character, spells = []) {
 	});
 	return groups.filter((group) => optionalChoiceAllowed(character, group.key)).map((group) => ({
 		...group,
-		options: group.options.filter((option) => !character.bannedClassOptions?.includes(classOptionId(character.className, group.key, option.id)))
+		options: group.options.filter((option) => {
+			var _character$bannedClas;
+			return !((_character$bannedClas = character.bannedClassOptions) === null || _character$bannedClas === void 0 ? void 0 : _character$bannedClas.includes(classOptionId(character.className, group.key, option.id)));
+		})
 	}));
 }
 function entryLocalChoices(character, classId) {
-	const local = { ...orderedCharacterClasses(character).find((item) => item.classId === classId)?.choiceValues || {} };
+	const entry = orderedCharacterClasses(character).find((item) => item.classId === classId);
+	const local = { ...(entry === null || entry === void 0 ? void 0 : entry.choiceValues) || {} };
 	const prefix = `${classId}:`;
 	for (const [key, value] of Object.entries(character.classChoices || {})) if (key.startsWith(prefix)) local[key.slice(prefix.length)] = value;
 	if (classId === getStartingClassId(character)) {
@@ -47938,23 +48402,29 @@ function classChoiceGroups(character, spells = []) {
 	})));
 }
 function selectedForGroup(character, key, defaultOptionId) {
-	const global = character.classChoices?.[key];
-	if (global?.length) return global;
+	var _character$classChoic, _starting$choiceValue;
+	const global = (_character$classChoic = character.classChoices) === null || _character$classChoic === void 0 ? void 0 : _character$classChoic[key];
+	if (global === null || global === void 0 ? void 0 : global.length) return global;
 	const separator = key.indexOf(":");
 	if (separator > 0) {
+		var _orderedCharacterClas;
 		const classId = key.slice(0, separator);
 		const localKey = key.slice(separator + 1);
-		const selected = orderedCharacterClasses(character).find((entry) => entry.classId === classId)?.choiceValues?.[localKey] || [];
+		const selected = ((_orderedCharacterClas = orderedCharacterClasses(character).find((entry) => entry.classId === classId)) === null || _orderedCharacterClas === void 0 || (_orderedCharacterClas = _orderedCharacterClas.choiceValues) === null || _orderedCharacterClas === void 0 ? void 0 : _orderedCharacterClas[localKey]) || [];
 		return selected.length ? selected : defaultOptionId ? [defaultOptionId] : [];
 	}
-	const selected = orderedCharacterClasses(character).find((entry) => entry.classId === getStartingClassId(character))?.choiceValues?.[key] || [];
+	const starting = orderedCharacterClasses(character).find((entry) => entry.classId === getStartingClassId(character));
+	const selected = (starting === null || starting === void 0 || (_starting$choiceValue = starting.choiceValues) === null || _starting$choiceValue === void 0 ? void 0 : _starting$choiceValue[key]) || [];
 	return selected.length ? selected : defaultOptionId ? [defaultOptionId] : [];
 }
 function selectedClassChoiceIds(character, group) {
 	return selectedForGroup(character, group.key, group.defaultOptionId);
 }
 function clearTashaOptionalState(character) {
-	const isTceKey = (key) => key.split(":").at(-1)?.startsWith("tce-");
+	const isTceKey = (key) => {
+		var _key$split$at;
+		return (_key$split$at = key.split(":").at(-1)) === null || _key$split$at === void 0 ? void 0 : _key$split$at.startsWith("tce-");
+	};
 	const classChoices = Object.fromEntries(Object.entries(character.classChoices || {}).filter(([key]) => !isTceKey(key)));
 	const classes = (character.classes || []).map((entry) => ({
 		...entry,
@@ -48088,11 +48558,12 @@ function swapStandardAbility(abilities, key, value) {
 	};
 }
 function buildRecommendedCharacter(result, level, initial) {
+	var _subclasses$result$cl, _variants$find, _variants$find2, _selectedRaceVariant;
 	if (!Number.isInteger(level) || level < 1 || level > 20) throw new Error("Уровень должен быть от 1 до 20.");
-	if (!races.some((x) => x.id === result.raceId) || !classes.some((x) => x.id === result.classId) || !backgrounds.some((x) => x.id === result.backgroundId) || !subclasses[result.classId]?.options.some((x) => x.id === result.subclassId)) throw new Error("Результат несовместим с каталогом.");
+	if (!races.some((x) => x.id === result.raceId) || !classes.some((x) => x.id === result.classId) || !backgrounds.some((x) => x.id === result.backgroundId) || !((_subclasses$result$cl = subclasses[result.classId]) === null || _subclasses$result$cl === void 0 ? void 0 : _subclasses$result$cl.options.some((x) => x.id === result.subclassId))) throw new Error("Результат несовместим с каталогом.");
 	const order = abilityOrder(result.classId, result.subclassId);
 	const variants = variantsFor(result.raceId);
-	const variant = variants.find((x) => x.id === result.raceVariantId)?.id || variants.find((x) => x.id !== "variant")?.id || "base";
+	const variant = ((_variants$find = variants.find((x) => x.id === result.raceVariantId)) === null || _variants$find === void 0 ? void 0 : _variants$find.id) || ((_variants$find2 = variants.find((x) => x.id !== "variant")) === null || _variants$find2 === void 0 ? void 0 : _variants$find2.id) || "base";
 	let c = {
 		...structuredClone(initial),
 		race: result.raceId,
@@ -48122,8 +48593,11 @@ function buildRecommendedCharacter(result, level, initial) {
 		}];
 		c = migrateMulticlassCharacter(c);
 	};
-	const flexible = selectedRaceVariant(c.race, c.raceVariant)?.chooseBonuses;
-	c.raceAbilityChoices = flexible ? order.filter((k) => !flexible.exclude?.includes(k)).slice(0, flexible.count) : [];
+	const flexible = (_selectedRaceVariant = selectedRaceVariant(c.race, c.raceVariant)) === null || _selectedRaceVariant === void 0 ? void 0 : _selectedRaceVariant.chooseBonuses;
+	c.raceAbilityChoices = flexible ? order.filter((k) => {
+		var _flexible$exclude;
+		return !((_flexible$exclude = flexible.exclude) === null || _flexible$exclude === void 0 ? void 0 : _flexible$exclude.includes(k));
+	}).slice(0, flexible.count) : [];
 	c.currency.gp = backgroundStartingGold(c.background, backgrounds.find((x) => x.id === c.background));
 	sync();
 	const skillOrder = [
@@ -48224,12 +48698,15 @@ function buildRecommendedCharacter(result, level, initial) {
 		"ideals",
 		"bonds",
 		"flaws"
-	].map((k, i) => [k, personality?.[k]?.[0] || [
-		"Довожу начатое до конца.",
-		"Каждый заслуживает шанс.",
-		"Помню тех, кто помог мне.",
-		"Иногда слишком полагаюсь на себя."
-	][i]]));
+	].map((k, i) => {
+		var _personality$k;
+		return [k, (personality === null || personality === void 0 || (_personality$k = personality[k]) === null || _personality$k === void 0 ? void 0 : _personality$k[0]) || [
+			"Довожу начатое до конца.",
+			"Каждый заслуживает шанс.",
+			"Помню тех, кто помог мне.",
+			"Иногда слишком полагаюсь на себя."
+		][i]];
+	}));
 	c.currentHitPoints = estimatedHitPoints({
 		...c,
 		abilities: finalAbilityScores(c)
@@ -48252,6 +48729,7 @@ function buildRecommendedCharacter(result, level, initial) {
 	return c;
 }
 function validateRecommendedCharacter(c) {
+	var _rule$levelLimits;
 	const errors = [];
 	const rule = spellSelectionRule({
 		...c,
@@ -48265,7 +48743,7 @@ function validateRecommendedCharacter(c) {
 	const selected = spells.filter((s) => c.spells.includes(s.id));
 	if (selected.filter((s) => s.level === 0).length !== rule.cantrips || selected.filter((s) => s.level > 0).length !== rule.leveled) errors.push("число заклинаний");
 	if (rule.mode === "spellbook" && (c.preparedSpells || []).length !== rule.prepared) errors.push("подготовка заклинаний");
-	if (rule.levelLimits?.some((limit, level) => level > 0 && selected.filter((s) => s.level >= level).length > limit)) errors.push("лимиты кругов");
+	if ((_rule$levelLimits = rule.levelLimits) === null || _rule$levelLimits === void 0 ? void 0 : _rule$levelLimits.some((limit, level) => level > 0 && selected.filter((s) => s.level >= level).length > limit)) errors.push("лимиты кругов");
 	return errors;
 }
 //#endregion
@@ -48306,7 +48784,8 @@ var aliases = [
 	["Псионика гитцерая", "Псионика гитзерая"]
 ];
 function racialTraitKey(name) {
-	return (aliases.find((group) => group.includes(name))?.[0] || name).toLocaleLowerCase("ru").replace(/ё/g, "е");
+	var _aliases$find;
+	return (((_aliases$find = aliases.find((group) => group.includes(name))) === null || _aliases$find === void 0 ? void 0 : _aliases$find[0]) || name).toLocaleLowerCase("ru").replace(/ё/g, "е");
 }
 var FINAL_SHEET_HIDDEN_RACE_FEATURES = new Set([
 	"универсальность",
@@ -48363,7 +48842,7 @@ var legacyCommon = {
 };
 function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	const variant = selectedRaceVariant(raceId, variantId || "base");
-	const modern = variant?.source === "MPMM";
+	const modern = (variant === null || variant === void 0 ? void 0 : variant.source) === "MPMM";
 	let common = raceFeatures(raceId, variantId, description, tags);
 	if (variantId.startsWith("legacy-") && legacyCommon[raceId]) common = common.filter((feature) => legacyCommon[raceId].includes(feature.name));
 	if (modern && raceId === "goliath") common = common.filter((f) => !["Могучее телосложение", "Прирождённый атлет"].includes(f.name));
@@ -48372,7 +48851,7 @@ function resolvedRaceFeatures(raceId, variantId, description = "", tags = []) {
 	if (raceId === "aasimar" && !modern) common = common.filter((f) => f.name !== "Небесное откровение");
 	if (raceId === "shifter") common = common.filter((f) => f.name !== "Наследие");
 	const merged = /* @__PURE__ */ new Map();
-	for (const feature of [...common, ...variant?.features || []]) merged.set(racialTraitKey(feature.name), feature);
+	for (const feature of [...common, ...(variant === null || variant === void 0 ? void 0 : variant.features) || []]) merged.set(racialTraitKey(feature.name), feature);
 	const put = (name, text) => merged.set(racialTraitKey(name), {
 		name,
 		description: text
@@ -50169,7 +50648,7 @@ addRaceSheet("races-spelljammer", [
 	"thrikreen"
 ]);
 function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false, image }) {
-	if (image?.startsWith("data:image/png;base64,")) return /* @__PURE__ */ jsx("span", {
+	if (image === null || image === void 0 ? void 0 : image.startsWith("data:image/png;base64,")) return /* @__PURE__ */ jsx("span", {
 		className: `${className} catalog-icon homebrew-catalog-icon`,
 		"aria-hidden": "true",
 		title: fallback,
@@ -50255,11 +50734,12 @@ function valueOf(value) {
 	return value;
 }
 function matchCatalog(value, options) {
+	var _options$find;
 	const target = normalized(value).split(/\s+(?:и|and)\s+/)[0];
-	return options.find((option) => {
+	return ((_options$find = options.find((option) => {
 		const name = normalized(option.name);
 		return target === name || target.startsWith(`${name} `) || name.startsWith(`${target} `);
-	})?.id || "";
+	})) === null || _options$find === void 0 ? void 0 : _options$find.id) || "";
 }
 function collectText(node) {
 	if (typeof node === "string") return [node];
@@ -50413,13 +50893,17 @@ function inferBuild(finalScores, race, rawRaceLabel, className, level, featIds, 
 	let best = null;
 	for (const raceVariant of variantIds) {
 		const variant = selectedRaceVariant(race, raceVariant);
-		const raceChoices = variant?.chooseBonuses ? distinctAbilityChoices(variant.chooseBonuses.count, variant.chooseBonuses.exclude || []) : [[]];
+		const raceChoices = (variant === null || variant === void 0 ? void 0 : variant.chooseBonuses) ? distinctAbilityChoices(variant.chooseBonuses.count, variant.chooseBonuses.exclude || []) : [[]];
 		const slots = advancementSlots(race, raceVariant, className, level);
 		if (featIds.length > slots.length) continue;
 		for (const choices of raceChoices) {
-			const raceBonus = Object.fromEntries(abilityKeys.map((key) => [key, variant?.bonuses?.[key] || 0]));
+			const raceBonus = Object.fromEntries(abilityKeys.map((key) => {
+				var _variant$bonuses;
+				return [key, (variant === null || variant === void 0 || (_variant$bonuses = variant.bonuses) === null || _variant$bonuses === void 0 ? void 0 : _variant$bonuses[key]) || 0];
+			}));
 			choices.forEach((key, index) => {
-				raceBonus[key] += variant?.chooseBonuses?.amounts?.[index] ?? variant?.chooseBonuses?.amount ?? 0;
+				var _ref, _variant$chooseBonuse, _variant$chooseBonuse2, _variant$chooseBonuse3;
+				raceBonus[key] += (_ref = (_variant$chooseBonuse = variant === null || variant === void 0 || (_variant$chooseBonuse2 = variant.chooseBonuses) === null || _variant$chooseBonuse2 === void 0 || (_variant$chooseBonuse2 = _variant$chooseBonuse2.amounts) === null || _variant$chooseBonuse2 === void 0 ? void 0 : _variant$chooseBonuse2[index]) !== null && _variant$chooseBonuse !== void 0 ? _variant$chooseBonuse : variant === null || variant === void 0 || (_variant$chooseBonuse3 = variant.chooseBonuses) === null || _variant$chooseBonuse3 === void 0 ? void 0 : _variant$chooseBonuse3.amount) !== null && _ref !== void 0 ? _ref : 0;
 			});
 			const afterRace = Object.fromEntries(abilityKeys.map((key) => [key, finalScores[key] - raceBonus[key]]));
 			for (const halfAssignments of halfFeatAssignments(featIds)) {
@@ -50505,7 +50989,7 @@ function inferBuild(finalScores, race, rawRaceLabel, className, level, featIds, 
 	if (best) return best;
 	return {
 		abilities: { ...finalScores },
-		raceVariant: explicitVariant?.id || variantIds[0] || "",
+		raceVariant: (explicitVariant === null || explicitVariant === void 0 ? void 0 : explicitVariant.id) || variantIds[0] || "",
 		raceAbilityChoices: [],
 		advancements: [],
 		asiCount: 0,
@@ -50513,14 +50997,15 @@ function inferBuild(finalScores, race, rawRaceLabel, className, level, featIds, 
 	};
 }
 function importLss(payload, empty) {
+	var _inner$text, _inner$text2, _inner$text3, _inner$text4;
 	const raw = typeof payload.data === "string" ? JSON.parse(payload.data) : payload.data;
 	if (!raw || typeof raw !== "object") throw new Error("В файле Long Story Short отсутствует блок data.");
 	const inner = raw;
 	const info = inner.info || {};
 	const stats = inner.stats || {};
 	const skillData = inner.skills || {};
-	const selectedSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 1).map(([key]) => skillNameFromExternalId(key)).filter(Boolean);
-	const expertiseSkills = Object.entries(skillData).filter(([, data]) => Number(data?.isProf || 0) >= 2).map(([key]) => skillNameFromExternalId(key)).filter(Boolean);
+	const selectedSkills = Object.entries(skillData).filter(([, data]) => Number((data === null || data === void 0 ? void 0 : data.isProf) || 0) >= 1).map(([key]) => skillNameFromExternalId(key)).filter(Boolean);
+	const expertiseSkills = Object.entries(skillData).filter(([, data]) => Number((data === null || data === void 0 ? void 0 : data.isProf) || 0) >= 2).map(([key]) => skillNameFromExternalId(key)).filter(Boolean);
 	const className = matchCatalog(valueOf(info.charClass), classes);
 	const rawRaceLabel = text(valueOf(info.race));
 	const raceName = rawRaceLabel.split(/[·—]/)[0];
@@ -50530,11 +51015,12 @@ function importLss(payload, empty) {
 	const level = Math.max(1, Math.min(20, Number(valueOf(info.level)) || 1));
 	const spellSlotsUsed = Array.from({ length: 9 }, (_, circle) => {
 		const prefix = `level-${circle + 1}-slot-`;
-		return Object.entries(inner.spells || {}).filter(([key, slot]) => key.startsWith(prefix) && slot?.isChecked).length;
+		return Object.entries(inner.spells || {}).filter(([key, slot]) => key.startsWith(prefix) && (slot === null || slot === void 0 ? void 0 : slot.isChecked)).length;
 	});
 	const finalAbilities = { ...empty.abilities };
 	for (const key of Object.keys(finalAbilities)) {
-		const score = Number(stats[key]?.score);
+		var _stats$key;
+		const score = Number((_stats$key = stats[key]) === null || _stats$key === void 0 ? void 0 : _stats$key.score);
 		if (Number.isFinite(score)) finalAbilities[key] = score;
 	}
 	const allLssText = normalized(collectText(inner.text || {}).join(" "));
@@ -50585,7 +51071,13 @@ function importLss(payload, empty) {
 			feats: inferredBuild.advancements.map((choice) => choice.featId).filter(Boolean),
 			asiChoices: inferredBuild.advancements.flatMap((choice) => choice.featId === "asi" ? choice.asiChoices : []),
 			spells: importedSpells,
-			preparedSpells: [...new Set([...textSpells.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0), ...resolvedPreparedSpellIds.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0)])],
+			preparedSpells: [...new Set([...textSpells.filter((id) => {
+				var _spells$find;
+				return (((_spells$find = spells.find((spell) => spell.id === id)) === null || _spells$find === void 0 ? void 0 : _spells$find.level) || 0) > 0;
+			}), ...resolvedPreparedSpellIds.filter((id) => {
+				var _spells$find2;
+				return (((_spells$find2 = spells.find((spell) => spell.id === id)) === null || _spells$find2 === void 0 ? void 0 : _spells$find2.level) || 0) > 0;
+			})])],
 			lssSpellCards: hasCardSpells ? {
 				mode: "cards",
 				prepared: preparedCards,
@@ -50596,10 +51088,10 @@ function importLss(payload, empty) {
 			} : void 0,
 			spellSlotsUsed,
 			personality: {
-				traits: collectText(inner.text?.personality).join(" ").trim(),
-				ideals: collectText(inner.text?.ideals).join(" ").trim(),
-				bonds: collectText(inner.text?.bonds).join(" ").trim(),
-				flaws: collectText(inner.text?.flaws).join(" ").trim()
+				traits: collectText((_inner$text = inner.text) === null || _inner$text === void 0 ? void 0 : _inner$text.personality).join(" ").trim(),
+				ideals: collectText((_inner$text2 = inner.text) === null || _inner$text2 === void 0 ? void 0 : _inner$text2.ideals).join(" ").trim(),
+				bonds: collectText((_inner$text3 = inner.text) === null || _inner$text3 === void 0 ? void 0 : _inner$text3.bonds).join(" ").trim(),
+				flaws: collectText((_inner$text4 = inner.text) === null || _inner$text4 === void 0 ? void 0 : _inner$text4.flaws).join(" ").trim()
 			}
 		})
 	};
@@ -50634,12 +51126,14 @@ var helpmateSkills = {
 	]
 };
 function importHelpmate(payload, empty) {
+	var _resolvedClasses$, _resolvedClasses$2, _classProgress$;
 	const importedClassEntries = Array.isArray(payload.Classes) ? payload.Classes.filter((entry) => !!entry && typeof entry === "object") : [];
 	const classEntry = importedClassEntries[0];
 	if (!classEntry) throw new Error("В файле Helpmate не найден класс персонажа.");
 	const resolveClass = (entry) => {
+		var _Object$entries$find;
 		const classId = text(entry.Id);
-		let className = Object.entries(helpmateClassIds).find(([, id]) => id === classId)?.[0] || "";
+		let className = ((_Object$entries$find = Object.entries(helpmateClassIds).find(([, id]) => id === classId)) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0]) || "";
 		let subclass = "";
 		for (const [candidateClass, subclasses] of Object.entries(helpmateSubclassClassIds)) {
 			const found = Object.entries(subclasses).find(([, id]) => id === classId);
@@ -50651,8 +51145,8 @@ function importHelpmate(payload, empty) {
 		};
 	};
 	const resolvedClasses = importedClassEntries.map(resolveClass).filter((entry) => entry.className);
-	const className = resolvedClasses[0]?.className || "";
-	const subclass = resolvedClasses[0]?.subclass || "";
+	const className = ((_resolvedClasses$ = resolvedClasses[0]) === null || _resolvedClasses$ === void 0 ? void 0 : _resolvedClasses$.className) || "";
+	const subclass = ((_resolvedClasses$2 = resolvedClasses[0]) === null || _resolvedClasses$2 === void 0 ? void 0 : _resolvedClasses$2.subclass) || "";
 	const raceLabel = text(payload.UserRace).split(/[·—]/)[0];
 	const race = matchCatalog(raceLabel, races);
 	const parameters = Array.isArray(payload.Parameters) ? payload.Parameters : [];
@@ -50672,18 +51166,21 @@ function importHelpmate(payload, empty) {
 		if (key) abilities[key] = Number(parameter.Value) || abilities[key];
 		const abilitySkills = helpmateSkills[name] || [];
 		(Array.isArray(parameter.Abilities) ? parameter.Abilities : []).forEach((entry, index) => {
-			if (entry?.Proficiency && abilitySkills[index]) importedSkills.push(abilitySkills[index]);
+			if ((entry === null || entry === void 0 ? void 0 : entry.Proficiency) && abilitySkills[index]) importedSkills.push(abilitySkills[index]);
 		});
 	}
 	const reverseSpellIds = Object.fromEntries(Object.entries(helpmateSpellIds).map(([id, external]) => [external, id]));
 	const importedSpells = (Array.isArray(payload.Spells) ? payload.Spells : []).map((value) => reverseSpellIds[String(value)]).filter(Boolean);
-	const classProgress = importedClassEntries.map((entry, index) => ({
-		classId: resolvedClasses[index]?.className || "",
-		level: Math.max(1, Math.min(20, Number(entry.Level) || 1)),
-		subclassId: resolvedClasses[index]?.subclass || "",
-		acquiredAtCharacterLevel: index + 1,
-		classSkills: index === 0 ? importedSkills : []
-	})).filter((entry) => entry.classId);
+	const classProgress = importedClassEntries.map((entry, index) => {
+		var _resolvedClasses$inde, _resolvedClasses$inde2;
+		return {
+			classId: ((_resolvedClasses$inde = resolvedClasses[index]) === null || _resolvedClasses$inde === void 0 ? void 0 : _resolvedClasses$inde.className) || "",
+			level: Math.max(1, Math.min(20, Number(entry.Level) || 1)),
+			subclassId: ((_resolvedClasses$inde2 = resolvedClasses[index]) === null || _resolvedClasses$inde2 === void 0 ? void 0 : _resolvedClasses$inde2.subclass) || "",
+			acquiredAtCharacterLevel: index + 1,
+			classSkills: index === 0 ? importedSkills : []
+		};
+	}).filter((entry) => entry.classId);
 	const level = classProgress.reduce((sum, entry) => sum + entry.level, 0) || 1;
 	const cells = Array.isArray(classEntry.SpellCells) ? classEntry.SpellCells : [];
 	const spellSlotsUsed = Array.from({ length: 9 }, (_, index) => {
@@ -50701,12 +51198,15 @@ function importHelpmate(payload, empty) {
 			className,
 			subclass,
 			level,
-			startingClassId: classProgress[0]?.classId || className,
+			startingClassId: ((_classProgress$ = classProgress[0]) === null || _classProgress$ === void 0 ? void 0 : _classProgress$.classId) || className,
 			classes: classProgress,
 			abilities,
 			classSkills: importedSkills,
 			spells: importedSpells,
-			preparedSpells: importedSpells.filter((id) => (spells.find((spell) => spell.id === id)?.level || 0) > 0),
+			preparedSpells: importedSpells.filter((id) => {
+				var _spells$find3;
+				return (((_spells$find3 = spells.find((spell) => spell.id === id)) === null || _spells$find3 === void 0 ? void 0 : _spells$find3.level) || 0) > 0;
+			}),
 			spellSlotsUsed
 		})
 	};
@@ -50742,9 +51242,10 @@ function parseCharacterFile(payload, empty) {
 * sheet (spellcasting boilerplate, ASI bookkeeping) is omitted here.
 */
 function detailedFeature(feature) {
+	var _feature$description;
 	return {
 		...feature,
-		description: feature.description?.trim() || ""
+		description: ((_feature$description = feature.description) === null || _feature$description === void 0 ? void 0 : _feature$description.trim()) || ""
 	};
 }
 function detailedFeatures(features) {
@@ -50784,18 +51285,19 @@ var SUBCLASS_SELECTOR_FEATURES = {
 /** Builder/catalog labels sometimes differ from canonical Russian corpus names. */
 var SUBCLASS_NAME_ALIASES = { ranger: { "убийца монстров": "убийца чудовищ" } };
 function withoutSubclassSelector(classId, subclassName, features) {
-	if (!subclassName?.trim()) return features;
+	if (!(subclassName === null || subclassName === void 0 ? void 0 : subclassName.trim())) return features;
 	const selectors = new Set(SUBCLASS_SELECTOR_FEATURES[classId] || []);
 	return features.filter((feature) => !selectors.has(feature.name));
 }
 function subclassByName(classId, subclassName, entries) {
+	var _SUBCLASS_NAME_ALIASE, _Object$entries$find;
 	const wantedRaw = normalizedFeatureKey(subclassName || "");
 	if (!wantedRaw) return void 0;
-	const wanted = SUBCLASS_NAME_ALIASES[classId]?.[wantedRaw] || wantedRaw;
-	return Object.entries(entries).find(([name]) => {
+	const wanted = ((_SUBCLASS_NAME_ALIASE = SUBCLASS_NAME_ALIASES[classId]) === null || _SUBCLASS_NAME_ALIASE === void 0 ? void 0 : _SUBCLASS_NAME_ALIASE[wantedRaw]) || wantedRaw;
+	return (_Object$entries$find = Object.entries(entries).find(([name]) => {
 		const key = normalizedFeatureKey(name);
 		return key === wanted || key.startsWith(wanted) || wanted.startsWith(key);
-	})?.[1];
+	})) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[1];
 }
 /**
 * Last-resort resolver for catalog/corpus naming differences. A unique overlap
@@ -50816,13 +51318,14 @@ function subclassByFeatureOverlap(entries, fallbackSubclass) {
 	return best.features;
 }
 function documentedClassFeatures(classId, subclassName, includeOptional, fallbackClass, fallbackSubclass, fallbackOptional, bannedOptionalFeatures = []) {
-	const base = withoutSubclassSelector(classId, subclassName, sheetClassFeatures[classId]?.length ? sheetClassFeatures[classId] : classFeatureCorpus[classId]?.length ? classFeatureCorpus[classId] : fallbackClass);
+	var _sheetClassFeatures$c, _classFeatureCorpus$c, _sheetOptionalFeature, _optionalClassFeature;
+	const base = withoutSubclassSelector(classId, subclassName, ((_sheetClassFeatures$c = sheetClassFeatures[classId]) === null || _sheetClassFeatures$c === void 0 ? void 0 : _sheetClassFeatures$c.length) ? sheetClassFeatures[classId] : ((_classFeatureCorpus$c = classFeatureCorpus[classId]) === null || _classFeatureCorpus$c === void 0 ? void 0 : _classFeatureCorpus$c.length) ? classFeatureCorpus[classId] : fallbackClass);
 	const subclassEntries = Object.keys(sheetSubclassFeatures[classId] || {}).length ? sheetSubclassFeatures[classId] : subclassFeatureCorpus[classId] || {};
 	const documentedSubclass = subclassByName(classId, subclassName, subclassEntries) || subclassByFeatureOverlap(subclassEntries, fallbackSubclass);
-	const optional = includeOptional ? sheetOptionalFeatures[classId]?.length ? sheetOptionalFeatures[classId] : optionalClassFeatureCorpus[classId]?.length ? optionalClassFeatureCorpus[classId] : fallbackOptional : [];
+	const optional = includeOptional ? ((_sheetOptionalFeature = sheetOptionalFeatures[classId]) === null || _sheetOptionalFeature === void 0 ? void 0 : _sheetOptionalFeature.length) ? sheetOptionalFeatures[classId] : ((_optionalClassFeature = optionalClassFeatureCorpus[classId]) === null || _optionalClassFeature === void 0 ? void 0 : _optionalClassFeature.length) ? optionalClassFeatureCorpus[classId] : fallbackOptional : [];
 	return detailedFeatures([
 		...base,
-		...documentedSubclass?.length ? documentedSubclass : fallbackSubclass,
+		...(documentedSubclass === null || documentedSubclass === void 0 ? void 0 : documentedSubclass.length) ? documentedSubclass : fallbackSubclass,
 		...optional.filter((feature) => !bannedOptionalFeatures.includes(optionalFeatureId(classId, feature.name)))
 	]).filter(usefulFinalClassFeature);
 }
@@ -50831,7 +51334,7 @@ function documentedClassFeatures(classId, subclassName, includeOptional, fallbac
 var sourceCode = /\b(PHB|DMG|SCAG|VGM|XGE|MTF|GGR|ERLW|TCE|VRGR|WBW|MPMM|SCC|MOT|SDQ|BMT|FTD|EGW|AI|SAS|PAM|IDROTF|AAG|OGA|BPGG|GGTR|BGDIA|GOS|TOA)\b/g;
 function sourceTokens(source) {
 	const codes = source.toUpperCase().match(sourceCode);
-	return codes?.length ? [...new Set(codes.map((code) => code === "IDROTF" ? "IDRotF" : code))] : [source.trim()];
+	return (codes === null || codes === void 0 ? void 0 : codes.length) ? [...new Set(codes.map((code) => code === "IDROTF" ? "IDRotF" : code))] : [source.trim()];
 }
 function catalogSources(options) {
 	return [...new Set(options.flatMap((option) => sourceTokens(option.source)))].sort((a, b) => {
@@ -51109,10 +51612,14 @@ function normalizeSheetLayout(value) {
 	return {
 		mode: raw.mode === "classic" ? "classic" : "adaptive",
 		sizes: Object.fromEntries(sheetGroups.map((key) => {
-			const n = raw.sizes?.[key];
+			var _raw$sizes;
+			const n = (_raw$sizes = raw.sizes) === null || _raw$sizes === void 0 ? void 0 : _raw$sizes[key];
 			return [key, typeof n === "number" && Number.isFinite(n) ? Math.max(70, Math.min(160, Math.round(n / 10) * 10)) : 100];
 		})),
-		visible: Object.fromEntries(Object.entries(defaultSheetLayout.visible).map(([key, fallback]) => [key, typeof raw.visible?.[key] === "boolean" ? raw.visible[key] : fallback])),
+		visible: Object.fromEntries(Object.entries(defaultSheetLayout.visible).map(([key, fallback]) => {
+			var _raw$visible;
+			return [key, typeof ((_raw$visible = raw.visible) === null || _raw$visible === void 0 ? void 0 : _raw$visible[key]) === "boolean" ? raw.visible[key] : fallback];
+		})),
 		hiddenAttacks: Array.isArray(raw.hiddenAttacks) ? [...new Set(raw.hiddenAttacks.filter((id) => typeof id === "string"))].slice(0, 500) : []
 	};
 }
@@ -54367,7 +54874,8 @@ function paginateSpellCards(spells) {
 	return pages;
 }
 function spellCardDensity(spell) {
-	const length = spell.description.length + (spell.castingTime?.length || 0) + (spell.range?.length || 0) + (spell.components?.length || 0) + (spell.duration?.length || 0);
+	var _spell$castingTime, _spell$range, _spell$components, _spell$duration;
+	const length = spell.description.length + (((_spell$castingTime = spell.castingTime) === null || _spell$castingTime === void 0 ? void 0 : _spell$castingTime.length) || 0) + (((_spell$range = spell.range) === null || _spell$range === void 0 ? void 0 : _spell$range.length) || 0) + (((_spell$components = spell.components) === null || _spell$components === void 0 ? void 0 : _spell$components.length) || 0) + (((_spell$duration = spell.duration) === null || _spell$duration === void 0 ? void 0 : _spell$duration.length) || 0);
 	if (length > 920) return "micro";
 	if (length > 680) return "dense";
 	if (length > 430) return "compact";
@@ -54577,6 +55085,7 @@ function InventoryPanel({ equipment, currency, mode, onModeChange, size, onSize,
 	});
 }
 function PdfCharacterSheet(props) {
+	var _props$initiativeNote, _props$hitDiceRemaini, _props$spellcastingSo;
 	const primaryContent = useRef(null);
 	const attackDialog = useRef(null);
 	const [layout, setLayout] = useState(defaultSheetLayout);
@@ -54588,13 +55097,13 @@ function PdfCharacterSheet(props) {
 	useEffect(() => {
 		try {
 			setLayout(normalizeSheetLayout(JSON.parse(localStorage.getItem("list-geroya-sheet-layout-v1") || "null")));
-		} catch {}
+		} catch (_unused) {}
 		setLayoutReady(true);
 	}, []);
 	useEffect(() => {
 		if (layoutReady) try {
 			localStorage.setItem("list-geroya-sheet-layout-v1", JSON.stringify(layout));
-		} catch {}
+		} catch (_unused2) {}
 	}, [layout, layoutReady]);
 	function resize(group, delta) {
 		setLayout((current) => ({
@@ -54805,11 +55314,14 @@ function PdfCharacterSheet(props) {
 			/* @__PURE__ */ jsx("h2", { children: "Спасброски" }),
 			/* @__PURE__ */ jsx("div", {
 				className: "pdf-save-row",
-				children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("span", { children: [
-					/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
-					/* @__PURE__ */ jsx("b", { children: classic ? abilityLabels[key].slice(0, 3) : abilityLabels[key] }),
-					/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0)) })
-				] }, key))
+				children: Object.keys(abilityLabels).map((key) => {
+					var _props$savingThrowBon;
+					return /* @__PURE__ */ jsxs("span", { children: [
+						/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
+						/* @__PURE__ */ jsx("b", { children: classic ? abilityLabels[key].slice(0, 3) : abilityLabels[key] }),
+						/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (((_props$savingThrowBon = props.savingThrowBonuses) === null || _props$savingThrowBon === void 0 ? void 0 : _props$savingThrowBon[key]) || 0)) })
+					] }, key);
+				})
 			})
 		]
 	});
@@ -54972,7 +55484,7 @@ function PdfCharacterSheet(props) {
 													] })
 												]
 											}),
-											!!props.initiativeNotes?.length && /* @__PURE__ */ jsxs("p", {
+											!!((_props$initiativeNote = props.initiativeNotes) === null || _props$initiativeNote === void 0 ? void 0 : _props$initiativeNote.length) && /* @__PURE__ */ jsxs("p", {
 												className: "pdf-inline-stats",
 												children: ["Инициатива: ", props.initiativeNotes.join("; ")]
 											}),
@@ -54985,7 +55497,7 @@ function PdfCharacterSheet(props) {
 														"Кости хитов: ",
 														props.hitDiceLabel || `к${props.hitDie}`,
 														" · ",
-														props.hitDiceRemaining ?? props.identity.level,
+														(_props$hitDiceRemaini = props.hitDiceRemaining) !== null && _props$hitDiceRemaini !== void 0 ? _props$hitDiceRemaini : props.identity.level,
 														" / ",
 														props.identity.level
 													] })
@@ -55023,7 +55535,10 @@ function PdfCharacterSheet(props) {
 													type: "button",
 													"aria-label": "Настройки оружия и заклинаний",
 													title: "Что отображать на листе",
-													onClick: () => attackDialog.current?.showModal(),
+													onClick: () => {
+														var _attackDialog$current;
+														return (_attackDialog$current = attackDialog.current) === null || _attackDialog$current === void 0 ? void 0 : _attackDialog$current.showModal();
+													},
 													children: /* @__PURE__ */ jsx(Settings, {
 														size: 14,
 														"aria-hidden": "true"
@@ -55050,7 +55565,7 @@ function PdfCharacterSheet(props) {
 												]
 											}), layout.visible.notes && attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)),
 											!props.attacks.some((attack) => layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)) && /* @__PURE__ */ jsx("p", { children: "Нет атак для отображения. Выберите их в настройках блока." }),
-											layout.visible.spellNumbers && (props.spellcastingSources?.length ? /* @__PURE__ */ jsx("div", {
+											layout.visible.spellNumbers && (((_props$spellcastingSo = props.spellcastingSources) === null || _props$spellcastingSo === void 0 ? void 0 : _props$spellcastingSo.length) ? /* @__PURE__ */ jsx("div", {
 												className: "pdf-spell-numbers",
 												children: props.spellcastingSources.map((source) => /* @__PURE__ */ jsxs("span", { children: [
 													/* @__PURE__ */ jsx("b", { children: source.name }),
@@ -55193,6 +55708,7 @@ function PdfCharacterSheet(props) {
 					]
 				}, `resources-${index}`)),
 				spellPages.map((pageSpells, spellPageIndex) => {
+					var _props$preparedMaximu;
 					const split = Math.ceil(pageSpells.length / 2);
 					const columns = [pageSpells.slice(0, split), pageSpells.slice(split)];
 					const pageNumber = firstSpellPageNumber + spellPageIndex;
@@ -55218,7 +55734,7 @@ function PdfCharacterSheet(props) {
 							}),
 							wizardPrepared && spellPageIndex === 0 && /* @__PURE__ */ jsxs("div", {
 								className: "pdf-prepared-summary",
-								children: [/* @__PURE__ */ jsxs("span", { children: ["Максимум подготовленных: ", /* @__PURE__ */ jsx("b", { children: props.preparedMaximum ?? 0 })] }), /* @__PURE__ */ jsx("button", {
+								children: [/* @__PURE__ */ jsxs("span", { children: ["Максимум подготовленных: ", /* @__PURE__ */ jsx("b", { children: (_props$preparedMaximu = props.preparedMaximum) !== null && _props$preparedMaximu !== void 0 ? _props$preparedMaximu : 0 })] }), /* @__PURE__ */ jsx("button", {
 									type: "button",
 									onClick: () => setShowPreparedMarks((value) => !value),
 									children: showPreparedMarks ? "Очистить отметки для печати" : "Показать текущую подготовку"
@@ -55302,7 +55818,10 @@ function PdfCharacterSheet(props) {
 							children: "Оружие и заклинания на листе"
 						}), /* @__PURE__ */ jsx("button", {
 							type: "button",
-							onClick: () => attackDialog.current?.close(),
+							onClick: () => {
+								var _attackDialog$current2;
+								return (_attackDialog$current2 = attackDialog.current) === null || _attackDialog$current2 === void 0 ? void 0 : _attackDialog$current2.close();
+							},
 							"aria-label": "Закрыть настройки оружия",
 							children: "✕"
 						})] }),
@@ -55347,7 +55866,10 @@ function PdfCharacterSheet(props) {
 						}),
 						/* @__PURE__ */ jsx("button", {
 							type: "button",
-							onClick: () => attackDialog.current?.close(),
+							onClick: () => {
+								var _attackDialog$current3;
+								return (_attackDialog$current3 = attackDialog.current) === null || _attackDialog$current3 === void 0 ? void 0 : _attackDialog$current3.close();
+							},
 							children: "Готово"
 						})
 					]
@@ -56259,11 +56781,13 @@ function unzipSync(data, opts) {
 //#region app/levelState.ts
 /** Level edits do not constitute a rest. Prune only choices that become illegal. */
 function retainLevelState(before, after, catalog = spells) {
+	var _before$spellGrants2, _before$preparedSpell;
 	const classes = orderedCharacterClasses(after);
 	const legal = /* @__PURE__ */ new Map();
 	for (const entry of classes) {
+		var _before$spellGrants;
 		const previous = orderedCharacterClasses(before).find((row) => row.classId === entry.classId);
-		const ids = before.spellGrants?.length ? before.spellGrants.filter((grant) => grant.classId === entry.classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : entry.classId === before.className ? before.spells : [];
+		const ids = ((_before$spellGrants = before.spellGrants) === null || _before$spellGrants === void 0 ? void 0 : _before$spellGrants.length) ? before.spellGrants.filter((grant) => grant.classId === entry.classId && grant.mode !== "always-prepared").map((grant) => grant.spellId) : entry.classId === before.className ? before.spells : [];
 		if (previous && entry.level >= previous.level) {
 			legal.set(entry.classId, new Set(ids));
 			continue;
@@ -56280,23 +56804,30 @@ function retainLevelState(before, after, catalog = spells) {
 			return spell.level === 0 ? cantrips++ < rule.cantrips : leveled++ < rule.leveled;
 		})));
 	}
-	const spellGrants = before.spellGrants?.filter((grant) => !grant.classId || (grant.mode === "always-prepared" ? classes.some((entry) => entry.classId === grant.classId) : legal.get(grant.classId)?.has(grant.spellId)));
+	const spellGrants = (_before$spellGrants2 = before.spellGrants) === null || _before$spellGrants2 === void 0 ? void 0 : _before$spellGrants2.filter((grant) => {
+		var _legal$get;
+		return !grant.classId || (grant.mode === "always-prepared" ? classes.some((entry) => entry.classId === grant.classId) : (_legal$get = legal.get(grant.classId)) === null || _legal$get === void 0 ? void 0 : _legal$get.has(grant.spellId));
+	});
 	const retained = new Set([...legal.values()].flatMap((ids) => [...ids]));
 	for (const grant of spellGrants || []) retained.add(grant.spellId);
 	const preparedSpellsByClass = Object.fromEntries(Object.entries(before.preparedSpellsByClass || {}).filter(([id]) => legal.has(id)).map(([id, values]) => {
+		var _rule$prepared;
 		const entry = classes.find((row) => row.classId === id);
 		const rule = spellSelectionRuleForClass({
 			...after,
 			homebrew: before.homebrew
 		}, id, entry.level);
-		return [id, values.filter((spell) => legal.get(id)?.has(spell)).slice(0, rule.prepared ?? values.length)];
+		return [id, values.filter((spell) => {
+			var _legal$get2;
+			return (_legal$get2 = legal.get(id)) === null || _legal$get2 === void 0 ? void 0 : _legal$get2.has(spell);
+		}).slice(0, (_rule$prepared = rule.prepared) !== null && _rule$prepared !== void 0 ? _rule$prepared : values.length)];
 	}));
 	return {
 		...after,
 		spells: before.spells.filter((id) => retained.has(id)),
 		spellGrants,
 		preparedSpellsByClass: before.preparedSpellsByClass ? preparedSpellsByClass : void 0,
-		preparedSpells: before.preparedSpellsByClass ? [...new Set(Object.values(preparedSpellsByClass).flat())] : before.preparedSpells?.filter((id) => retained.has(id)),
+		preparedSpells: before.preparedSpellsByClass ? [...new Set(Object.values(preparedSpellsByClass).flat())] : (_before$preparedSpell = before.preparedSpells) === null || _before$preparedSpell === void 0 ? void 0 : _before$preparedSpell.filter((id) => retained.has(id)),
 		spellSlotsUsed: before.spellSlotsUsed,
 		pactSlotsUsed: before.pactSlotsUsed,
 		resourceSpent: before.resourceSpent
@@ -56473,6 +57004,7 @@ function validateHomebrew(entities, officialIds = []) {
 		if (id && !all.has(id)) add(owner, "Не найдена ссылка: " + id);
 	};
 	for (const e of entities) {
+		var _e$spellList, _e$spellListSources, _e$spellGrants, _e$requirements, _e$spellcasting, _e$spellcasting2, _e$effects, _e$attacks, _e$resources;
 		if (!e || typeof e !== "object") {
 			add("", "Некорректная сущность");
 			continue;
@@ -56492,35 +57024,36 @@ function validateHomebrew(entities, officialIds = []) {
 			const used = /* @__PURE__ */ new Set();
 			for (const f of e.features) {
 				if (!f || typeof f.id !== "string" || !/^hb:[a-z0-9_-]+:ability:[a-z0-9_-]+$/.test(f.id) || used.has(f.id) || !Number.isInteger(f.level) || f.level < 1 || f.level > 20 || typeof f.name !== "string" || !f.name.trim() || typeof f.description !== "string") add(e.id, "Особенность: название, текст, уникальный ID и уровень 1–20 обязательны");
-				if (f?.id) used.add(f.id);
-				for (const effect of f?.effects || []) {
+				if (f === null || f === void 0 ? void 0 : f.id) used.add(f.id);
+				for (const effect of (f === null || f === void 0 ? void 0 : f.effects) || []) {
 					if (!effectTypes[effect.type]) add(e.id, "Неизвестный эффект особенности");
 					formula(e.id, effect.value);
 					formula(e.id, effect.when);
 				}
-				for (const resource of f?.resources || []) {
+				for (const resource of (f === null || f === void 0 ? void 0 : f.resources) || []) {
 					formula(e.id, resource.max);
 					formula(e.id, resource.when);
 				}
-				for (const attack of f?.attacks || []) {
+				for (const attack of (f === null || f === void 0 ? void 0 : f.attacks) || []) {
 					formula(e.id, attack.bonus);
 					formula(e.id, attack.when);
 					for (const damage of attack.damage || []) formula(e.id, damage.formula);
 				}
-				for (const choice of f?.choices || []) {
+				for (const choice of (f === null || f === void 0 ? void 0 : f.choices) || []) {
 					if (!choice.id || !choice.name || !Number.isInteger(choice.count) || choice.count < 1 || !Array.isArray(choice.from)) add(e.id, "Особенность: у выбора нужны название, количество и варианты");
 					for (const id of choice.from || []) ref(e.id, id);
 				}
-				for (const action of f?.actions || []) if (!action.id || !action.name) add(e.id, "Особенность: у действия нужны ID и название");
+				for (const action of (f === null || f === void 0 ? void 0 : f.actions) || []) if (!action.id || !action.name) add(e.id, "Особенность: у действия нужны ID и название");
 			}
 		}
-		if (e.spellList?.some((id) => !all.has(id) && !all.has("official:spell:" + id))) add(e.id, "В списке заклинаний класса есть неизвестный ID");
-		if (e.spellListSources?.some((id) => !officialIds.includes("official:class:" + id.replace("official:class:", "")))) add(e.id, "Источник списка заклинаний должен быть официальным классом");
-		if (e.spellGrants?.some((grant) => !Number.isInteger(grant.level) || grant.level < 1 || grant.level > 20 || !all.has(grant.spellId) && !all.has("official:spell:" + grant.spellId) || grant.uses !== void 0 && (!Number.isInteger(grant.uses) || grant.uses < 1 || grant.uses > 20))) add(e.id, "Бонусное заклинание: выберите заклинание, уровень и допустимое число применений");
-		if (e.requirements?.some((r) => r.type !== "selected_feature" || !r.id || !all.has(r.id))) add(e.id, "Требование: выберите существующую способность");
-		if (e.spellcasting?.recovery && !["long", "short_or_long"].includes(e.spellcasting.recovery)) add(e.id, "Магия: неизвестный способ восстановления ячеек");
-		if (e.spellcasting?.slots && Object.entries(e.spellcasting.slots).some(([level, slots]) => !Number.isInteger(Number(level)) || Number(level) < 1 || Number(level) > 20 || !Array.isArray(slots) || slots.length > 9 || slots.some((v) => !Number.isInteger(v) || v < 0 || v > 20))) add(e.id, "Магия: ячейки должны быть таблицей уровней 1–20");
+		if ((_e$spellList = e.spellList) === null || _e$spellList === void 0 ? void 0 : _e$spellList.some((id) => !all.has(id) && !all.has("official:spell:" + id))) add(e.id, "В списке заклинаний класса есть неизвестный ID");
+		if ((_e$spellListSources = e.spellListSources) === null || _e$spellListSources === void 0 ? void 0 : _e$spellListSources.some((id) => !officialIds.includes("official:class:" + id.replace("official:class:", "")))) add(e.id, "Источник списка заклинаний должен быть официальным классом");
+		if ((_e$spellGrants = e.spellGrants) === null || _e$spellGrants === void 0 ? void 0 : _e$spellGrants.some((grant) => !Number.isInteger(grant.level) || grant.level < 1 || grant.level > 20 || !all.has(grant.spellId) && !all.has("official:spell:" + grant.spellId) || grant.uses !== void 0 && (!Number.isInteger(grant.uses) || grant.uses < 1 || grant.uses > 20))) add(e.id, "Бонусное заклинание: выберите заклинание, уровень и допустимое число применений");
+		if ((_e$requirements = e.requirements) === null || _e$requirements === void 0 ? void 0 : _e$requirements.some((r) => r.type !== "selected_feature" || !r.id || !all.has(r.id))) add(e.id, "Требование: выберите существующую способность");
+		if (((_e$spellcasting = e.spellcasting) === null || _e$spellcasting === void 0 ? void 0 : _e$spellcasting.recovery) && !["long", "short_or_long"].includes(e.spellcasting.recovery)) add(e.id, "Магия: неизвестный способ восстановления ячеек");
+		if (((_e$spellcasting2 = e.spellcasting) === null || _e$spellcasting2 === void 0 ? void 0 : _e$spellcasting2.slots) && Object.entries(e.spellcasting.slots).some(([level, slots]) => !Number.isInteger(Number(level)) || Number(level) < 1 || Number(level) > 20 || !Array.isArray(slots) || slots.length > 9 || slots.some((v) => !Number.isInteger(v) || v < 0 || v > 20))) add(e.id, "Магия: ячейки должны быть таблицей уровней 1–20");
 		if (e.spellMechanics !== void 0) {
+			var _m$slotScaling, _m$cantripScaling;
 			const m = e.spellMechanics;
 			if (e.type !== "spell" || ![
 				"attack",
@@ -56531,14 +57064,14 @@ function validateHomebrew(entities, officialIds = []) {
 			const damage = [
 				...m.damage || [],
 				...(m.cantripScaling || []).flatMap((row) => row.damage || []),
-				...m.slotScaling?.damage || []
+				...((_m$slotScaling = m.slotScaling) === null || _m$slotScaling === void 0 ? void 0 : _m$slotScaling.damage) || []
 			];
 			for (const row of damage) {
 				formula(e.id, row.formula);
 				if (!damageTypes.includes(row.type)) add(e.id, "Урон заклинания: неизвестный тип урона");
 			}
 			if ((m.cantripScaling || []).some((row) => !Number.isInteger(row.level) || row.level < 2 || row.level > 20 || !Array.isArray(row.damage))) add(e.id, "Развитие заговора: уровень должен быть от 2 до 20");
-			if ((e.level || 0) !== 0 && (m.cantripScaling?.length || 0) > 0) add(e.id, "Развитие по уровню персонажа доступно только заговорам");
+			if ((e.level || 0) !== 0 && (((_m$cantripScaling = m.cantripScaling) === null || _m$cantripScaling === void 0 ? void 0 : _m$cantripScaling.length) || 0) > 0) add(e.id, "Развитие по уровню персонажа доступно только заговорам");
 			if (m.slotScaling && (!Number.isInteger(m.slotScaling.every) || m.slotScaling.every < 1 || m.slotScaling.every > 9)) add(e.id, "Усиление ячейкой: шаг должен быть от 1 до 9 кругов");
 			if ((e.level || 0) === 0 && m.slotScaling) add(e.id, "Заговор не может усиливаться ячейкой");
 		}
@@ -56559,7 +57092,7 @@ function validateHomebrew(entities, officialIds = []) {
 		]) if (Array.isArray(e[key]) && e[key].some((row) => !row || typeof row !== "object")) add(e.id, key + ": некорректная запись");
 		if (problems.some((p) => p.id === e.id)) continue;
 		if (e.table && (!Array.isArray(e.table.columns) || !Array.isArray(e.table.rows) || e.table.columns.length < 1 || e.table.columns.length > 6 || e.table.rows.length > 200 || e.table.columns.some((c) => typeof c !== "string" || c.length > 80) || e.table.rows.some((r) => !Array.isArray(r) || r.length !== e.table.columns.length || r.some((c) => typeof c !== "string" || c.length > 160)))) add(e.id, "Таблица: 1–6 колонок, до 200 строк, до 160 символов в ячейке");
-		if ((e.effects?.length || 0) > 100 || (e.attacks?.length || 0) > 50 || (e.resources?.length || 0) > 50) add(e.id, "Слишком много механик в одной сущности");
+		if ((((_e$effects = e.effects) === null || _e$effects === void 0 ? void 0 : _e$effects.length) || 0) > 100 || (((_e$attacks = e.attacks) === null || _e$attacks === void 0 ? void 0 : _e$attacks.length) || 0) > 50 || (((_e$resources = e.resources) === null || _e$resources === void 0 ? void 0 : _e$resources.length) || 0) > 50) add(e.id, "Слишком много механик в одной сущности");
 		if (e.type === "class" && ![
 			"d6",
 			"d8",
@@ -56690,13 +57223,14 @@ function validateHomebrew(entities, officialIds = []) {
 	if (!problems.length) {
 		const flat = editableHomebrew(entities), byId = new Map(flat.map((e) => [e.id, e])), done = /* @__PURE__ */ new Set(), path = /* @__PURE__ */ new Set();
 		const visit = (id) => {
+			var _byId$get;
 			if (path.has(id)) {
 				add(id, "Циклическое требование: варианты зависят друг от друга");
 				return;
 			}
 			if (done.has(id)) return;
 			path.add(id);
-			for (const r of byId.get(id)?.requirements || []) visit(r.id);
+			for (const r of ((_byId$get = byId.get(id)) === null || _byId$get === void 0 ? void 0 : _byId$get.requirements) || []) visit(r.id);
 			path.delete(id);
 			done.add(id);
 		};
@@ -56905,21 +57439,23 @@ function HomebrewCommandInput({ value, onChange, label, multiline = false, rows 
 	const commands = multiline ? [...descriptionCommands, ...formulaCommands] : formulaCommands;
 	const options = range ? filterCommands(commands, range.query) : [];
 	useEffect(() => {
-		if (range) document.getElementById(`${id}-${selected}`)?.scrollIntoView({ block: "nearest" });
+		var _document$getElementB;
+		if (range) (_document$getElementB = document.getElementById(`${id}-${selected}`)) === null || _document$getElementB === void 0 || _document$getElementB.scrollIntoView({ block: "nearest" });
 	}, [
 		id,
 		selected,
 		range
 	]);
 	const insert = (command) => {
+		var _ref, _range$start, _ref2, _range$end;
 		const node = ref.current;
-		const start = range?.start ?? node?.selectionStart ?? value.length;
-		const result = insertCommand(value, start, range?.end ?? node?.selectionEnd ?? start, command);
+		const start = (_ref = (_range$start = range === null || range === void 0 ? void 0 : range.start) !== null && _range$start !== void 0 ? _range$start : node === null || node === void 0 ? void 0 : node.selectionStart) !== null && _ref !== void 0 ? _ref : value.length;
+		const result = insertCommand(value, start, (_ref2 = (_range$end = range === null || range === void 0 ? void 0 : range.end) !== null && _range$end !== void 0 ? _range$end : node === null || node === void 0 ? void 0 : node.selectionEnd) !== null && _ref2 !== void 0 ? _ref2 : start, command);
 		onChange(result.value);
 		setRange(null);
 		requestAnimationFrame(() => {
-			node?.focus();
-			node?.setSelectionRange(result.caret, result.caret);
+			node === null || node === void 0 || node.focus();
+			node === null || node === void 0 || node.setSelectionRange(result.caret, result.caret);
 		});
 	};
 	const props = {
@@ -56930,13 +57466,15 @@ function HomebrewCommandInput({ value, onChange, label, multiline = false, rows 
 		"aria-autocomplete": "list",
 		"aria-activedescendant": range && options[selected] ? `${id}-${selected}` : void 0,
 		onChange: (event) => {
+			var _event$target$selecti;
 			onChange(event.target.value);
-			setRange(commandQuery(event.target.value, event.target.selectionStart ?? event.target.value.length));
+			setRange(commandQuery(event.target.value, (_event$target$selecti = event.target.selectionStart) !== null && _event$target$selecti !== void 0 ? _event$target$selecti : event.target.value.length));
 			setSelected(0);
 		},
 		onClick: () => {
+			var _node$selectionStart;
 			const node = ref.current;
-			setRange(commandQuery(value, node?.selectionStart ?? value.length));
+			setRange(commandQuery(value, (_node$selectionStart = node === null || node === void 0 ? void 0 : node.selectionStart) !== null && _node$selectionStart !== void 0 ? _node$selectionStart : value.length));
 			setSelected(0);
 		},
 		onBlur: () => setRange(null),
@@ -56962,7 +57500,7 @@ function HomebrewCommandInput({ value, onChange, label, multiline = false, rows 
 				"Home",
 				"End"
 			].includes(event.key)) setRange(null);
-			onKeyDown?.(event);
+			onKeyDown === null || onKeyDown === void 0 || onKeyDown(event);
 		}
 	};
 	return /* @__PURE__ */ jsxs("div", {
@@ -57059,7 +57597,7 @@ function NamedReference({ value, onChange, options, label }) {
 				type: "button",
 				"aria-expanded": expanded,
 				onClick: () => setExpanded(!expanded),
-				children: selected?.name || (value ? "Не найдено: " + value : "Выбрать по названию")
+				children: (selected === null || selected === void 0 ? void 0 : selected.name) || (value ? "Не найдено: " + value : "Выбрать по названию")
 			}),
 			expanded && /* @__PURE__ */ jsxs("div", {
 				className: "hb-reference-menu",
@@ -57090,7 +57628,7 @@ function NamedReference({ value, onChange, options, label }) {
 }
 function ConditionEditor({ value, onChange, elements, label = "Когда действует" }) {
 	const parsed = readConditions(value), flat = editableHomebrew(elements);
-	const change = (rows, mode = parsed?.mode || "all") => onChange(conditionFormula(rows, mode));
+	const change = (rows, mode = (parsed === null || parsed === void 0 ? void 0 : parsed.mode) || "all") => onChange(conditionFormula(rows, mode));
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-condition-editor",
 		children: [
@@ -57104,11 +57642,14 @@ function ConditionEditor({ value, onChange, elements, label = "Когда дей
 							/* @__PURE__ */ jsxs("select", {
 								"aria-label": "Вид условия",
 								value: row.kind,
-								onChange: (event) => change(parsed.rows.map((r, i) => i === index ? {
-									kind: event.target.value,
-									id: flat[0]?.id,
-									level: 1
-								} : r)),
+								onChange: (event) => change(parsed.rows.map((r, i) => {
+									var _flat$;
+									return i === index ? {
+										kind: event.target.value,
+										id: (_flat$ = flat[0]) === null || _flat$ === void 0 ? void 0 : _flat$.id,
+										level: 1
+									} : r;
+								})),
 								children: [
 									/* @__PURE__ */ jsx("option", {
 										value: "selected",
@@ -57196,7 +57737,10 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 	const graph = useMemo(() => homebrewRelations(session.elements), [session.elements]);
 	const [mode, setMode] = useState("requires"), [focus, setFocus] = useState("");
 	const incoming = graph.edges.filter((edge) => edge.to === element.id), outgoing = graph.edges.filter((edge) => edge.from === element.id);
-	const dependent = flat.filter((other) => other.id !== element.id && other.requirements?.some((r) => r.id === element.id));
+	const dependent = flat.filter((other) => {
+		var _other$requirements;
+		return other.id !== element.id && ((_other$requirements = other.requirements) === null || _other$requirements === void 0 ? void 0 : _other$requirements.some((r) => r.id === element.id));
+	});
 	const granted = (element.effects || []).filter((effect) => effect.type.startsWith("grant_") && effect.id);
 	const connect = (id) => {
 		if (mode === "requires") onChange({ requirements: [...(element.requirements || []).filter((r) => r.id !== id), {
@@ -57211,7 +57755,7 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 			}] });
 		} else {
 			const target = flat.find((row) => row.id === id);
-			const type = target?.type === "spell" ? "grant_spell" : target?.type === "resource" ? "grant_resource" : target?.type === "attack" ? "grant_attack" : "grant_feature";
+			const type = (target === null || target === void 0 ? void 0 : target.type) === "spell" ? "grant_spell" : (target === null || target === void 0 ? void 0 : target.type) === "resource" ? "grant_resource" : (target === null || target === void 0 ? void 0 : target.type) === "attack" ? "grant_attack" : "grant_feature";
 			onChange({ effects: [...element.effects || [], {
 				type,
 				id
@@ -57223,25 +57767,28 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 		children: "В правилах этого элемента нет таких зависимостей."
 	}), edges.map((edge, index) => {
 		const target = graph.nodes.find((node) => node.id === edge[direction]);
-		const options = target?.kind === "choice" ? graph.edges.filter((row) => row.from === target.id && row.label === "Вариант выбора") : [];
+		const options = (target === null || target === void 0 ? void 0 : target.kind) === "choice" ? graph.edges.filter((row) => row.from === target.id && row.label === "Вариант выбора") : [];
 		return /* @__PURE__ */ jsxs("div", {
 			className: "hb-auto-relation",
 			children: [/* @__PURE__ */ jsxs("button", {
 				type: "button",
 				className: "hb-graph-node",
 				onClick: () => setFocus(edge[direction]),
-				children: [target?.name || edge[direction], /* @__PURE__ */ jsxs("small", { children: [
+				children: [(target === null || target === void 0 ? void 0 : target.name) || edge[direction], /* @__PURE__ */ jsxs("small", { children: [
 					edge.label,
 					edge.condition ? " · " + edge.condition : "",
 					options.length ? " · " + options.length + " вариантов" : ""
 				] })]
 			}), options.length > 0 && /* @__PURE__ */ jsx("div", {
 				className: "hb-auto-options",
-				children: options.map((row) => /* @__PURE__ */ jsx("button", {
-					type: "button",
-					onClick: () => setFocus(row.to),
-					children: graph.nodes.find((node) => node.id === row.to)?.name || row.to
-				}, row.to))
+				children: options.map((row) => {
+					var _graph$nodes$find;
+					return /* @__PURE__ */ jsx("button", {
+						type: "button",
+						onClick: () => setFocus(row.to),
+						children: ((_graph$nodes$find = graph.nodes.find((node) => node.id === row.to)) === null || _graph$nodes$find === void 0 ? void 0 : _graph$nodes$find.name) || row.to
+					}, row.to);
+				})
 			})]
 		}, index);
 	})] });
@@ -57279,19 +57826,28 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 				}),
 				/* @__PURE__ */ jsxs("div", {
 					className: "hb-relation-columns",
-					children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Требует выбранного элемента" }), (element.requirements || []).map((r, index) => /* @__PURE__ */ jsxs("div", {
-						className: "hb-relation-line",
-						children: [/* @__PURE__ */ jsx("span", { children: flat.find((row) => row.id === r.id)?.name || r.id }), /* @__PURE__ */ jsx("button", {
-							type: "button",
-							"aria-label": "Убрать требование " + (flat.find((row) => row.id === r.id)?.name || r.id),
-							onClick: () => onChange({ requirements: element.requirements?.filter((_, i) => i !== index) }),
-							children: "Убрать"
-						})]
-					}, index))] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Открывает выбор способностей" }), dependent.map((row) => /* @__PURE__ */ jsxs("div", {
+					children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Требует выбранного элемента" }), (element.requirements || []).map((r, index) => {
+						var _flat$find, _flat$find2;
+						return /* @__PURE__ */ jsxs("div", {
+							className: "hb-relation-line",
+							children: [/* @__PURE__ */ jsx("span", { children: ((_flat$find = flat.find((row) => row.id === r.id)) === null || _flat$find === void 0 ? void 0 : _flat$find.name) || r.id }), /* @__PURE__ */ jsx("button", {
+								type: "button",
+								"aria-label": "Убрать требование " + (((_flat$find2 = flat.find((row) => row.id === r.id)) === null || _flat$find2 === void 0 ? void 0 : _flat$find2.name) || r.id),
+								onClick: () => {
+									var _element$requirements;
+									return onChange({ requirements: (_element$requirements = element.requirements) === null || _element$requirements === void 0 ? void 0 : _element$requirements.filter((_, i) => i !== index) });
+								},
+								children: "Убрать"
+							})]
+						}, index);
+					})] }), /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "Открывает выбор способностей" }), dependent.map((row) => /* @__PURE__ */ jsxs("div", {
 						className: "hb-relation-line",
 						children: [/* @__PURE__ */ jsx("span", { children: row.name }), /* @__PURE__ */ jsx("button", {
 							type: "button",
-							onClick: () => session.patchElement(row.id, { requirements: row.requirements?.filter((r) => r.id !== element.id) }),
+							onClick: () => {
+								var _row$requirements;
+								return session.patchElement(row.id, { requirements: (_row$requirements = row.requirements) === null || _row$requirements === void 0 ? void 0 : _row$requirements.filter((r) => r.id !== element.id) });
+							},
 							children: "Убрать требование"
 						})]
 					}, row.id))] })]
@@ -57300,7 +57856,10 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 					className: "hb-relation-line",
 					children: [/* @__PURE__ */ jsxs("span", { children: [effectLabel(effect, flat), effect.when ? ` · ${effect.when}` : ""] }), /* @__PURE__ */ jsx("button", {
 						type: "button",
-						onClick: () => onChange({ effects: element.effects?.filter((row) => row !== effect) }),
+						onClick: () => {
+							var _element$effects;
+							return onChange({ effects: (_element$effects = element.effects) === null || _element$effects === void 0 ? void 0 : _element$effects.filter((row) => row !== effect) });
+						},
 						children: "Убрать выдачу"
 					})]
 				}, index)),
@@ -57318,6 +57877,7 @@ function RelationshipPanel({ element, onChange, compact = false }) {
 	});
 }
 function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0 }) {
+	var _session$character$ho, _option$resources, _option$attacks;
 	const session = useSession();
 	const flat = editableHomebrew(session.elements);
 	const [creating, setCreating] = useState(false), [name, setName] = useState(""), [selected, setSelected] = useState(choice.from[0] || ""), [map, setMap] = useState(false), [level, setLevel] = useState(choice.level || 1);
@@ -57328,7 +57888,7 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 		...p
 	});
 	const milestones = (owner.choices || []).filter((row) => row.id === choice.id || !!choice.choiceGroup && row.choiceGroup === choice.choiceGroup).sort((a, b) => (a.level || 1) - (b.level || 1));
-	const visibleEffects = option?.effects || [];
+	const visibleEffects = (option === null || option === void 0 ? void 0 : option.effects) || [];
 	const classId = owner.type === "class" ? owner.id : owner.parentClassId;
 	const preview = {
 		...session.character,
@@ -57344,7 +57904,7 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 			entities: session.elements,
 			activeIds: [...new Set([owner.id, ...classId ? [classId] : []])],
 			choices: {
-				...session.character.homebrew?.choices,
+				...(_session$character$ho = session.character.homebrew) === null || _session$character$ho === void 0 ? void 0 : _session$character$ho.choices,
 				[choice.id]: option ? [option.id] : []
 			}
 		}
@@ -57435,7 +57995,7 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 				className: "hb-option-tabs",
 				children: options.map((row) => /* @__PURE__ */ jsxs("button", {
 					type: "button",
-					"aria-pressed": row.id === option?.id,
+					"aria-pressed": row.id === (option === null || option === void 0 ? void 0 : option.id),
 					onClick: () => setSelected(row.id),
 					children: [row.name, /* @__PURE__ */ jsx("small", { children: row.level && row.level > (choice.level || 1) ? `С ${row.level} уровня` : "" })]
 				}, row.id))
@@ -57548,20 +58108,23 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 							previewBlock,
 							"."
 						] }) : /* @__PURE__ */ jsxs(Fragment$1, { children: [
-							visibleEffects.map((effect, index) => /* @__PURE__ */ jsxs("p", { children: [
-								hbEnabled(preview, effect, option) ? "✓ Действует: " : "○ Не действует: ",
-								effectLabel(effect, flat),
-								(effect.formula !== void 0 || typeof effect.value === "string") && /* @__PURE__ */ jsxs("strong", { children: [" = ", hbValue(preview, effect.formula ?? effect.value, option.id)] }),
-								effect.when && /* @__PURE__ */ jsxs("small", { children: [" · Условие: ", effect.when] })
-							] }, index)),
+							visibleEffects.map((effect, index) => {
+								var _effect$formula;
+								return /* @__PURE__ */ jsxs("p", { children: [
+									hbEnabled(preview, effect, option) ? "✓ Действует: " : "○ Не действует: ",
+									effectLabel(effect, flat),
+									(effect.formula !== void 0 || typeof effect.value === "string") && /* @__PURE__ */ jsxs("strong", { children: [" = ", hbValue(preview, (_effect$formula = effect.formula) !== null && _effect$formula !== void 0 ? _effect$formula : effect.value, option.id)] }),
+									effect.when && /* @__PURE__ */ jsxs("small", { children: [" · Условие: ", effect.when] })
+								] }, index);
+							}),
 							!visibleEffects.length && /* @__PURE__ */ jsx("p", { children: option.summary || option.description || "Добавьте описание или механический эффект." }),
-							option.resources?.map((row) => /* @__PURE__ */ jsxs("p", { children: [
+							(_option$resources = option.resources) === null || _option$resources === void 0 ? void 0 : _option$resources.map((row) => /* @__PURE__ */ jsxs("p", { children: [
 								"Ресурс: ",
 								row.name,
 								" · максимум ",
 								row.max
 							] }, row.id)),
-							option.attacks?.map((row) => /* @__PURE__ */ jsxs("p", { children: ["Атака: ", row.name] }, row.id))
+							(_option$attacks = option.attacks) === null || _option$attacks === void 0 ? void 0 : _option$attacks.map((row) => /* @__PURE__ */ jsxs("p", { children: ["Атака: ", row.name] }, row.id))
 						] })]
 					}),
 					/* @__PURE__ */ jsx(RelationshipPanel, {
@@ -57578,7 +58141,7 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 			}, option.id),
 			map && /* @__PURE__ */ jsx(RelationsMap, {
 				element: owner,
-				initialFocus: option?.id || owner.id
+				initialFocus: (option === null || option === void 0 ? void 0 : option.id) || owner.id
 			}),
 			/* @__PURE__ */ jsx("button", {
 				type: "button",
@@ -57592,7 +58155,10 @@ function ChoiceEditor({ owner, choice, onChange, onRemove, onAddStage, depth = 0
 function ChoicesEditor({ draft, update, depth = 0 }) {
 	const session = useSession();
 	const choices = draft.choices || [];
-	const parent = session.elements.find((element) => element.features?.some((feature) => feature.id === draft.id));
+	const parent = session.elements.find((element) => {
+		var _element$features;
+		return (_element$features = element.features) === null || _element$features === void 0 ? void 0 : _element$features.some((feature) => feature.id === draft.id);
+	});
 	const linked = parent ? linkedChoicesForFeature(parent, draft.id).filter((choice) => !choices.some((row) => row.id === choice.id)) : [];
 	const addStage = (choice, source, apply) => {
 		const group = choice.choiceGroup || choice.id;
@@ -57671,13 +58237,14 @@ function ChoicesEditor({ draft, update, depth = 0 }) {
 	});
 }
 function RelationsMap({ element, initialFocus }) {
+	var _subject$choices, _session$renderMagic;
 	const session = useSession(), [focus, setFocus] = useState(initialFocus || element.id);
 	const graph = useMemo(() => homebrewRelations(session.elements), [session.elements]);
 	const current = graph.nodes.find((node) => node.id === focus) || graph.nodes.find((node) => node.id === element.id);
 	if (!current) return null;
 	const incoming = graph.edges.filter((edge) => edge.to === current.id), outgoing = graph.edges.filter((edge) => edge.from === current.id);
 	const subject = editableHomebrew(session.elements).find((row) => row.id === current.entityId);
-	const choice = current.kind === "choice" ? subject?.choices?.find((row) => row.id === current.choiceId) : void 0;
+	const choice = current.kind === "choice" ? subject === null || subject === void 0 || (_subject$choices = subject.choices) === null || _subject$choices === void 0 ? void 0 : _subject$choices.find((row) => row.id === current.choiceId) : void 0;
 	const list = (edges, direction) => /* @__PURE__ */ jsxs("div", {
 		className: "hb-graph-lane",
 		children: [!edges.length && /* @__PURE__ */ jsx("p", {
@@ -57698,14 +58265,14 @@ function RelationsMap({ element, initialFocus }) {
 					type: "button",
 					className: "hb-graph-node",
 					onClick: () => setFocus(edge[direction]),
-					children: [target?.name || edge[direction], /* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[target?.kind] || {
+					children: [(target === null || target === void 0 ? void 0 : target.name) || edge[direction], /* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[target === null || target === void 0 ? void 0 : target.kind] || {
 						choice: "Выбор",
 						effect: "Эффект",
 						resources: "Ресурс",
 						attacks: "Атака",
 						actions: "Действие",
 						magic: "Магия"
-					}[target?.kind || ""] || "Ссылка" })]
+					}[(target === null || target === void 0 ? void 0 : target.kind) || ""] || "Ссылка" })]
 				})]
 			}, index);
 		})]
@@ -57731,12 +58298,18 @@ function RelationsMap({ element, initialFocus }) {
 					/* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h4", { children: "На что влияет" }), list(outgoing, "to")] })
 				]
 			}),
-			subject && current.kind === "magic" && session.renderMagic?.(subject),
+			subject && current.kind === "magic" && ((_session$renderMagic = session.renderMagic) === null || _session$renderMagic === void 0 ? void 0 : _session$renderMagic.call(session, subject)),
 			subject && choice && /* @__PURE__ */ jsx(ChoiceEditor, {
 				owner: subject,
 				choice,
-				onChange: (next, related) => session.patchElement(subject.id, { choices: subject.choices?.map((row) => row.id === choice.id ? next : row) }, related),
-				onRemove: () => session.patchElement(subject.id, { choices: subject.choices?.filter((row) => row.id !== choice.id) })
+				onChange: (next, related) => {
+					var _subject$choices2;
+					return session.patchElement(subject.id, { choices: (_subject$choices2 = subject.choices) === null || _subject$choices2 === void 0 ? void 0 : _subject$choices2.map((row) => row.id === choice.id ? next : row) }, related);
+				},
+				onRemove: () => {
+					var _subject$choices3;
+					return session.patchElement(subject.id, { choices: (_subject$choices3 = subject.choices) === null || _subject$choices3 === void 0 ? void 0 : _subject$choices3.filter((row) => row.id !== choice.id) });
+				}
 			}),
 			subject && current.kind !== "magic" && current.kind !== "choice" && (session.elements.some((row) => row.id === subject.id) ? /* @__PURE__ */ jsx(RelationshipPanel, {
 				element: subject,
@@ -61966,7 +62539,10 @@ function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, fea
 		error = e.message;
 	}
 	const current = rows[previewLevel - 1];
-	const sources = magicFeatureIds(root).map((id) => root.features?.find((f) => f.id === id)?.name).filter(Boolean);
+	const sources = magicFeatureIds(root).map((id) => {
+		var _root$features;
+		return (_root$features = root.features) === null || _root$features === void 0 || (_root$features = _root$features.find((f) => f.id === id)) === null || _root$features === void 0 ? void 0 : _root$features.name;
+	}).filter(Boolean);
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-magic-workspace",
 		"aria-label": "Магия и заклинания способности",
@@ -62044,12 +62620,15 @@ function HomebrewMagicWorkspace({ root, level, entities, settings, onChange, fea
 						/* @__PURE__ */ jsx("th", { children: "Заговоры" }),
 						/* @__PURE__ */ jsx("th", { children: casting.selection === "prepared" ? "Подготовлено" : "Известно" }),
 						/* @__PURE__ */ jsx("th", { children: "Ячейки по кругам" })
-					] }) }), /* @__PURE__ */ jsx("tbody", { children: rows.map((row) => /* @__PURE__ */ jsxs("tr", { children: [
-						/* @__PURE__ */ jsx("td", { children: row.level }),
-						/* @__PURE__ */ jsx("td", { children: row.cantrips }),
-						/* @__PURE__ */ jsx("td", { children: row.prepared ?? row.known }),
-						/* @__PURE__ */ jsx("td", { children: slotSummary(row.slots) })
-					] }, row.level)) })] })
+					] }) }), /* @__PURE__ */ jsx("tbody", { children: rows.map((row) => {
+						var _row$prepared;
+						return /* @__PURE__ */ jsxs("tr", { children: [
+							/* @__PURE__ */ jsx("td", { children: row.level }),
+							/* @__PURE__ */ jsx("td", { children: row.cantrips }),
+							/* @__PURE__ */ jsx("td", { children: (_row$prepared = row.prepared) !== null && _row$prepared !== void 0 ? _row$prepared : row.known }),
+							/* @__PURE__ */ jsx("td", { children: slotSummary(row.slots) })
+						] }, row.level);
+					}) })] })
 				})] }),
 				/* @__PURE__ */ jsxs("details", { children: [
 					/* @__PURE__ */ jsxs("summary", { children: ["Доступные заклинания · ", list.length] }),
@@ -62164,7 +62743,8 @@ var sectionGuide = {
 	}
 };
 function SectionIcon({ name }) {
-	return /* @__PURE__ */ jsx(sectionGuide[name]?.icon || SlidersHorizontal, {
+	var _sectionGuide$name;
+	return /* @__PURE__ */ jsx(((_sectionGuide$name = sectionGuide[name]) === null || _sectionGuide$name === void 0 ? void 0 : _sectionGuide$name.icon) || SlidersHorizontal, {
 		size: 18,
 		"aria-hidden": "true"
 	});
@@ -62254,8 +62834,9 @@ function HomebrewText({ text, character, onResource }) {
 	return /* @__PURE__ */ jsxs("div", {
 		className: "hb-rich",
 		children: [text.split(/(\[\[[^\]]+\]\])/g).map((part, i) => {
+			var _exec;
 			if (!part.startsWith("[[")) return /* @__PURE__ */ jsx("span", { children: part }, i);
-			const name = /^\[\[(\w+)/.exec(part)?.[1] || "";
+			const name = ((_exec = /^\[\[(\w+)/.exec(part)) === null || _exec === void 0 ? void 0 : _exec[1]) || "";
 			const params = Object.fromEntries([...part.matchAll(/(\w+)="([^"]*)"/g)].map((m) => [m[1], m[2]]));
 			const label = params.label || params.text || params.id || name;
 			return /* @__PURE__ */ jsx("button", {
@@ -62287,11 +62868,12 @@ function Description({ draft, update, entities, character }) {
 	const area = useRef(null);
 	const [tag, setTag] = useState("roll"), [formula, setFormula] = useState("1d20 + @pb + @mod.int"), [ref, setRef] = useState(""), [label, setLabel] = useState("Бросок");
 	const insert = (value, after = "") => {
-		const node = area.current, start = node?.selectionStart ?? draft.description.length, end = node?.selectionEnd ?? start;
+		var _node$selectionStart, _node$selectionEnd;
+		const node = area.current, start = (_node$selectionStart = node === null || node === void 0 ? void 0 : node.selectionStart) !== null && _node$selectionStart !== void 0 ? _node$selectionStart : draft.description.length, end = (_node$selectionEnd = node === null || node === void 0 ? void 0 : node.selectionEnd) !== null && _node$selectionEnd !== void 0 ? _node$selectionEnd : start;
 		update({ description: draft.description.slice(0, start) + value + draft.description.slice(start, end) + after + draft.description.slice(end) });
 		requestAnimationFrame(() => {
-			node?.focus();
-			node?.setSelectionRange(start + value.length, end + value.length);
+			node === null || node === void 0 || node.focus();
+			node === null || node === void 0 || node.setSelectionRange(start + value.length, end + value.length);
 		});
 	};
 	return /* @__PURE__ */ jsxs(Fragment$1, { children: [
@@ -62438,6 +63020,7 @@ function Description({ draft, update, entities, character }) {
 	] });
 }
 function HomebrewEditor({ library, onSave, character, onCharacter, saveState, onClose }) {
+	var _draft$skillChoices$c, _draft$skillChoices, _draft$subclass;
 	const [draft, setDraft] = useState(null), [tab, setTab] = useState("Основное"), [query, setQuery] = useState(""), [filter, setFilter] = useState("all"), [error, setError] = useState(""), [code, setCode] = useState(""), [related, setRelated] = useState({}), [history, setHistory] = useState([]), [future, setFuture] = useState([]), [registry, setRegistry] = useState(false), [registryValue, setRegistryValue] = useState("");
 	const file = useRef(null);
 	const refs = useMemo(() => {
@@ -62477,7 +63060,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 			update(patch, changed);
 			return;
 		}
-		const parent = refs.find((element) => element.features?.some((feature) => feature.id === id));
+		const parent = refs.find((element) => {
+			var _element$features;
+			return (_element$features = element.features) === null || _element$features === void 0 ? void 0 : _element$features.some((feature) => feature.id === id);
+		});
 		if (parent) {
 			const next = {
 				...parent,
@@ -62516,7 +63102,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 				const raw = localStorage.getItem("herolist-homebrew-draft-v2");
 				if (raw) setDraft(JSON.parse(raw));
 			}
-		} catch {}
+		} catch (_unused) {}
 	}, []);
 	useEffect(() => {
 		if (draft) {
@@ -62589,6 +63175,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		}
 	};
 	const apply = (e) => {
+		var _e$parentRaceId;
 		const old = character.homebrew || {
 			entities: [],
 			activeIds: []
@@ -62620,15 +63207,16 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 			};
 		}
 		if (e.type === "subclass") {
+			var _c$classes, _c$classes2;
 			const parent = (e.parentClassId || "").replace("official:class:", "");
-			if (!c.classes?.some((x) => x.classId === parent) && c.className !== parent) {
+			if (!((_c$classes = c.classes) === null || _c$classes === void 0 ? void 0 : _c$classes.some((x) => x.classId === parent)) && c.className !== parent) {
 				setError("Сначала выберите родительский класс");
 				return;
 			}
 			c = {
 				...c,
 				subclass: c.className === parent ? e.id : c.subclass,
-				classes: c.classes?.map((x) => x.classId === parent ? {
+				classes: (_c$classes2 = c.classes) === null || _c$classes2 === void 0 ? void 0 : _c$classes2.map((x) => x.classId === parent ? {
 					...x,
 					subclassId: e.id
 				} : x)
@@ -62642,7 +63230,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 		};
 		if (e.type === "subrace") c = {
 			...c,
-			race: e.parentRaceId?.replace("official:race:", "") || c.race,
+			race: ((_e$parentRaceId = e.parentRaceId) === null || _e$parentRaceId === void 0 ? void 0 : _e$parentRaceId.replace("official:race:", "")) || c.race,
 			raceVariant: e.id
 		};
 		if (e.type === "background") c = {
@@ -62662,7 +63250,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 	const removeMany = async (entries) => {
 		const targets = new Set(entries.flatMap((e) => {
 			const pack = homebrewPackageFor(e, library.elements);
-			return pack?.root.id === e.id ? pack.members.map((member) => member.id) : [e.id];
+			return (pack === null || pack === void 0 ? void 0 : pack.root.id) === e.id ? pack.members.map((member) => member.id) : [e.id];
 		}));
 		const used = library.elements.filter((x) => !targets.has(x.id) && [...targets].some((id) => JSON.stringify(x).includes("\"" + id + "\"")));
 		if (used.length) {
@@ -62743,7 +63331,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 							children: "Пример: Шаман 5.6.1"
 						}),
 						/* @__PURE__ */ jsx("button", {
-							onClick: () => file.current?.click(),
+							onClick: () => {
+								var _file$current;
+								return (_file$current = file.current) === null || _file$current === void 0 ? void 0 : _file$current.click();
+							},
 							children: "Импорт"
 						}),
 						/* @__PURE__ */ jsx("button", {
@@ -62770,9 +63361,11 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 					type: "file",
 					accept: ".json,.herolistbrew",
 					onChange: async (event) => {
-						const f = event.target.files?.[0];
+						var _event$target$files;
+						const f = (_event$target$files = event.target.files) === null || _event$target$files === void 0 ? void 0 : _event$target$files[0];
 						if (!f) return;
 						try {
+							var _importedPacks$;
 							if (f.size > 2 * 1024 * 1024) throw Error("Лимит импорта — 2 МиБ");
 							const data = JSON.parse(await f.text());
 							const incoming = normalizeHomebrewLibrary({ elements: data.elements || data.entities || (data.id ? [data] : []) });
@@ -62785,7 +63378,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 							await onSave(next);
 							const importedPacks = homebrewPackages(incoming.elements);
 							setError(`Импортировано: ${importedPacks.length} ${importedPacks.length === 1 ? "набор" : "набора"} · ${incoming.elements.length} внутренних компонентов`);
-							open(incoming.elements.find((e) => e.id === data.rootId) || importedPacks[0]?.root || incoming.elements[0]);
+							open(incoming.elements.find((e) => e.id === data.rootId) || ((_importedPacks$ = importedPacks[0]) === null || _importedPacks$ === void 0 ? void 0 : _importedPacks$.root) || incoming.elements[0]);
 						} catch (e) {
 							setError(e.message);
 						}
@@ -62800,8 +63393,9 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 				registry && /* @__PURE__ */ jsx(RefPicker, {
 					value: registryValue,
 					onChange: (v) => {
+						var _navigator$clipboard;
 						setRegistryValue(v);
-						navigator.clipboard?.writeText(v);
+						(_navigator$clipboard = navigator.clipboard) === null || _navigator$clipboard === void 0 || _navigator$clipboard.writeText(v);
 					},
 					entities: library.elements,
 					label: "Справочник — выбор копирует ID"
@@ -62991,7 +63585,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													readOnly: true,
 													value: draft.id
 												}), /* @__PURE__ */ jsx("button", {
-													onClick: () => navigator.clipboard?.writeText(draft.id),
+													onClick: () => {
+														var _navigator$clipboard2;
+														return (_navigator$clipboard2 = navigator.clipboard) === null || _navigator$clipboard2 === void 0 ? void 0 : _navigator$clipboard2.writeText(draft.id);
+													},
 													children: "Копировать ID"
 												})]
 											})]
@@ -63027,11 +63624,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 														"healing",
 														"utility",
 														"concentration"
-													].map((tag) => /* @__PURE__ */ jsx("button", {
-														"aria-pressed": draft.tags?.includes(tag) || false,
-														onClick: () => update({ tags: draft.tags?.includes(tag) ? draft.tags.filter((t) => t !== tag) : [...draft.tags || [], tag] }),
-														children: tagNames[tag] || tag
-													}, tag))
+													].map((tag) => {
+														var _draft$tags;
+														return /* @__PURE__ */ jsx("button", {
+															"aria-pressed": ((_draft$tags = draft.tags) === null || _draft$tags === void 0 ? void 0 : _draft$tags.includes(tag)) || false,
+															onClick: () => {
+																var _draft$tags2;
+																return update({ tags: ((_draft$tags2 = draft.tags) === null || _draft$tags2 === void 0 ? void 0 : _draft$tags2.includes(tag)) ? draft.tags.filter((t) => t !== tag) : [...draft.tags || [], tag] });
+															},
+															children: tagNames[tag] || tag
+														}, tag);
+													})
 												})
 											})]
 										}),
@@ -63063,11 +63666,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 												label: "Спасброски",
 												children: /* @__PURE__ */ jsx("div", {
 													className: "hb-toolbar",
-													children: abilities.map((a) => /* @__PURE__ */ jsx("button", {
-														"aria-pressed": draft.savingThrows?.includes(a) || false,
-														onClick: () => update({ savingThrows: draft.savingThrows?.includes(a) ? draft.savingThrows.filter((x) => x !== a) : [...draft.savingThrows || [], a] }),
-														children: abilityLabels[a]
-													}, a))
+													children: abilities.map((a) => {
+														var _draft$savingThrows;
+														return /* @__PURE__ */ jsx("button", {
+															"aria-pressed": ((_draft$savingThrows = draft.savingThrows) === null || _draft$savingThrows === void 0 ? void 0 : _draft$savingThrows.includes(a)) || false,
+															onClick: () => {
+																var _draft$savingThrows2;
+																return update({ savingThrows: ((_draft$savingThrows2 = draft.savingThrows) === null || _draft$savingThrows2 === void 0 ? void 0 : _draft$savingThrows2.includes(a)) ? draft.savingThrows.filter((x) => x !== a) : [...draft.savingThrows || [], a] });
+															},
+															children: abilityLabels[a]
+														}, a);
+													})
 												})
 											}),
 											/* @__PURE__ */ jsxs(Field, {
@@ -63076,21 +63685,30 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													type: "number",
 													min: 0,
 													max: 18,
-													value: draft.skillChoices?.count ?? 2,
-													onChange: (e) => update({ skillChoices: {
-														count: Number(e.target.value),
-														from: draft.skillChoices?.from || []
-													} })
+													value: (_draft$skillChoices$c = (_draft$skillChoices = draft.skillChoices) === null || _draft$skillChoices === void 0 ? void 0 : _draft$skillChoices.count) !== null && _draft$skillChoices$c !== void 0 ? _draft$skillChoices$c : 2,
+													onChange: (e) => {
+														var _draft$skillChoices2;
+														return update({ skillChoices: {
+															count: Number(e.target.value),
+															from: ((_draft$skillChoices2 = draft.skillChoices) === null || _draft$skillChoices2 === void 0 ? void 0 : _draft$skillChoices2.from) || []
+														} });
+													}
 												}), /* @__PURE__ */ jsx("div", {
 													className: "hb-toolbar",
-													children: Object.entries(skillKeys).map(([name, data]) => /* @__PURE__ */ jsx("button", {
-														"aria-pressed": draft.skillChoices?.from.includes(data.key) || false,
-														onClick: () => update({ skillChoices: {
-															count: draft.skillChoices?.count ?? 2,
-															from: draft.skillChoices?.from.includes(data.key) ? draft.skillChoices.from.filter((x) => x !== data.key) : [...draft.skillChoices?.from || [], data.key]
-														} }),
-														children: name
-													}, name))
+													children: Object.entries(skillKeys).map(([name, data]) => {
+														var _draft$skillChoices3;
+														return /* @__PURE__ */ jsx("button", {
+															"aria-pressed": ((_draft$skillChoices3 = draft.skillChoices) === null || _draft$skillChoices3 === void 0 ? void 0 : _draft$skillChoices3.from.includes(data.key)) || false,
+															onClick: () => {
+																var _draft$skillChoices$c2, _draft$skillChoices4, _draft$skillChoices5, _draft$skillChoices6;
+																return update({ skillChoices: {
+																	count: (_draft$skillChoices$c2 = (_draft$skillChoices4 = draft.skillChoices) === null || _draft$skillChoices4 === void 0 ? void 0 : _draft$skillChoices4.count) !== null && _draft$skillChoices$c2 !== void 0 ? _draft$skillChoices$c2 : 2,
+																	from: ((_draft$skillChoices5 = draft.skillChoices) === null || _draft$skillChoices5 === void 0 ? void 0 : _draft$skillChoices5.from.includes(data.key)) ? draft.skillChoices.from.filter((x) => x !== data.key) : [...((_draft$skillChoices6 = draft.skillChoices) === null || _draft$skillChoices6 === void 0 ? void 0 : _draft$skillChoices6.from) || [], data.key]
+																} });
+															},
+															children: name
+														}, name);
+													})
 												})]
 											}),
 											/* @__PURE__ */ jsx(Field, {
@@ -63099,7 +63717,7 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													type: "number",
 													min: 1,
 													max: 20,
-													value: draft.subclass?.chooseAtLevel || 3,
+													value: ((_draft$subclass = draft.subclass) === null || _draft$subclass === void 0 ? void 0 : _draft$subclass.chooseAtLevel) || 3,
 													onChange: (e) => update({ subclass: {
 														...draft.subclass,
 														chooseAtLevel: Number(e.target.value)
@@ -63110,14 +63728,20 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 												label: "Уровни способностей подкласса",
 												children: /* @__PURE__ */ jsx("div", {
 													className: "hb-toolbar",
-													children: Array.from({ length: 20 }, (_, i) => i + 1).map((level) => /* @__PURE__ */ jsx("button", {
-														"aria-pressed": draft.subclass?.featureLevels?.includes(level) || false,
-														onClick: () => update({ subclass: {
-															chooseAtLevel: draft.subclass?.chooseAtLevel || 3,
-															featureLevels: draft.subclass?.featureLevels?.includes(level) ? draft.subclass.featureLevels.filter((x) => x !== level) : [...draft.subclass?.featureLevels || [], level].sort((a, b) => a - b)
-														} }),
-														children: level
-													}, level))
+													children: Array.from({ length: 20 }, (_, i) => i + 1).map((level) => {
+														var _draft$subclass2;
+														return /* @__PURE__ */ jsx("button", {
+															"aria-pressed": ((_draft$subclass2 = draft.subclass) === null || _draft$subclass2 === void 0 || (_draft$subclass2 = _draft$subclass2.featureLevels) === null || _draft$subclass2 === void 0 ? void 0 : _draft$subclass2.includes(level)) || false,
+															onClick: () => {
+																var _draft$subclass3, _draft$subclass4, _draft$subclass5;
+																return update({ subclass: {
+																	chooseAtLevel: ((_draft$subclass3 = draft.subclass) === null || _draft$subclass3 === void 0 ? void 0 : _draft$subclass3.chooseAtLevel) || 3,
+																	featureLevels: ((_draft$subclass4 = draft.subclass) === null || _draft$subclass4 === void 0 || (_draft$subclass4 = _draft$subclass4.featureLevels) === null || _draft$subclass4 === void 0 ? void 0 : _draft$subclass4.includes(level)) ? draft.subclass.featureLevels.filter((x) => x !== level) : [...((_draft$subclass5 = draft.subclass) === null || _draft$subclass5 === void 0 ? void 0 : _draft$subclass5.featureLevels) || [], level].sort((a, b) => a - b)
+																} });
+															},
+															children: level
+														}, level);
+													})
 												})
 											})
 										] }),
@@ -63147,18 +63771,21 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 											"swim",
 											"climb",
 											"fly"
-										].map((mode) => /* @__PURE__ */ jsx(Field, {
-											label: "Скорость " + mode,
-											children: /* @__PURE__ */ jsx("input", {
-												type: "number",
-												min: 0,
-												value: draft.speed?.[mode] || 0,
-												onChange: (e) => update({ speed: {
-													...draft.speed,
-													[mode]: Number(e.target.value)
-												} })
-											})
-										}, mode))] }),
+										].map((mode) => {
+											var _draft$speed;
+											return /* @__PURE__ */ jsx(Field, {
+												label: "Скорость " + mode,
+												children: /* @__PURE__ */ jsx("input", {
+													type: "number",
+													min: 0,
+													value: ((_draft$speed = draft.speed) === null || _draft$speed === void 0 ? void 0 : _draft$speed[mode]) || 0,
+													onChange: (e) => update({ speed: {
+														...draft.speed,
+														[mode]: Number(e.target.value)
+													} })
+												})
+											}, mode);
+										})] }),
 										draft.type === "spell" && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 											/* @__PURE__ */ jsx(Field, {
 												label: "Круг",
@@ -63202,11 +63829,17 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 													children: [...classes, ...refs.filter((e) => e.type === "class").map((e) => ({
 														id: e.id,
 														name: e.name
-													}))].map((c) => /* @__PURE__ */ jsx("button", {
-														"aria-pressed": draft.spellClasses?.includes(c.id) || false,
-														onClick: () => update({ spellClasses: draft.spellClasses?.includes(c.id) ? draft.spellClasses.filter((id) => id !== c.id) : [...draft.spellClasses || [], c.id] }),
-														children: c.name
-													}, c.id))
+													}))].map((c) => {
+														var _draft$spellClasses;
+														return /* @__PURE__ */ jsx("button", {
+															"aria-pressed": ((_draft$spellClasses = draft.spellClasses) === null || _draft$spellClasses === void 0 ? void 0 : _draft$spellClasses.includes(c.id)) || false,
+															onClick: () => {
+																var _draft$spellClasses2;
+																return update({ spellClasses: ((_draft$spellClasses2 = draft.spellClasses) === null || _draft$spellClasses2 === void 0 ? void 0 : _draft$spellClasses2.includes(c.id)) ? draft.spellClasses.filter((id) => id !== c.id) : [...draft.spellClasses || [], c.id] });
+															},
+															children: c.name
+														}, c.id);
+													})
 												})
 											}),
 											["concentration", "ritual"].map((key) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
@@ -63391,7 +64024,10 @@ function HomebrewEditor({ library, onSave, character, onCharacter, saveState, on
 function SpellCardPreview({ draft }) {
 	const catalog = homebrewSpells([draft])[0];
 	if (!catalog) return null;
-	const classNames = (draft.spellClasses || []).map((id) => classes.find((entry) => entry.id === id)?.name || id).join(", ") || "Все классы";
+	const classNames = (draft.spellClasses || []).map((id) => {
+		var _classes$find;
+		return ((_classes$find = classes.find((entry) => entry.id === id)) === null || _classes$find === void 0 ? void 0 : _classes$find.name) || id;
+	}).join(", ") || "Все классы";
 	const spell = {
 		...catalog,
 		name: catalog.name || "Новое заклинание",
@@ -63450,13 +64086,16 @@ function DamageParts({ value, onChange }) {
 }
 function SpellMechanicsEditor({ draft, update }) {
 	const mechanics = draft.spellMechanics;
-	const create = () => update({ spellMechanics: {
-		delivery: "attack",
-		damage: [{
-			formula: "1d6",
-			type: draft.tags?.find((tag) => damageTypes.includes(tag)) || "fire"
-		}]
-	} });
+	const create = () => {
+		var _draft$tags3;
+		return update({ spellMechanics: {
+			delivery: "attack",
+			damage: [{
+				formula: "1d6",
+				type: ((_draft$tags3 = draft.tags) === null || _draft$tags3 === void 0 ? void 0 : _draft$tags3.find((tag) => damageTypes.includes(tag))) || "fire"
+			}]
+		} });
+	};
 	if (!mechanics) return /* @__PURE__ */ jsxs("div", {
 		className: "hb-spell-mechanics",
 		children: [
@@ -63573,16 +64212,17 @@ function SpellMechanicsEditor({ draft, update }) {
 				/* @__PURE__ */ jsx("button", {
 					type: "button",
 					onClick: () => {
+						var _scaling$at, _mechanics$damage$, _mechanics$damage$2;
 						const preferred = [
 							5,
 							11,
 							17
-						].find((level) => !scaling.some((row) => row.level === level)) || Math.min(20, (scaling.at(-1)?.level || 1) + 1);
+						].find((level) => !scaling.some((row) => row.level === level)) || Math.min(20, (((_scaling$at = scaling.at(-1)) === null || _scaling$at === void 0 ? void 0 : _scaling$at.level) || 1) + 1);
 						patch({ cantripScaling: [...scaling, {
 							level: preferred,
 							damage: [{
-								formula: mechanics.damage[0]?.formula || "1d6",
-								type: mechanics.damage[0]?.type || "fire"
+								formula: ((_mechanics$damage$ = mechanics.damage[0]) === null || _mechanics$damage$ === void 0 ? void 0 : _mechanics$damage$.formula) || "1d6",
+								type: ((_mechanics$damage$2 = mechanics.damage[0]) === null || _mechanics$damage$2 === void 0 ? void 0 : _mechanics$damage$2.type) || "fire"
 							}]
 						}].sort((a, b) => a.level - b.level) });
 					},
@@ -63627,21 +64267,28 @@ function SpellMechanicsEditor({ draft, update }) {
 				})
 			] }) : /* @__PURE__ */ jsx("button", {
 				type: "button",
-				onClick: () => patch({ slotScaling: {
-					every: 1,
-					damage: [{
-						formula: "1d6",
-						type: mechanics.damage[0]?.type || "fire"
-					}]
-				} }),
+				onClick: () => {
+					var _mechanics$damage$3;
+					return patch({ slotScaling: {
+						every: 1,
+						damage: [{
+							formula: "1d6",
+							type: ((_mechanics$damage$3 = mechanics.damage[0]) === null || _mechanics$damage$3 === void 0 ? void 0 : _mechanics$damage$3.type) || "fire"
+						}]
+					} });
+				},
 				children: "+ Усиление от ячейки"
 			})] })
 		]
 	});
 }
 function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) {
+	var _draft$effects, _draft$effects2, _draft$resources, _draft$resources2, _draft$attacks, _draft$attacks2, _draft$choices, _draft$actions, _draft$actions2, _draft$spellGrants, _draft$spellGrants2;
 	const [adding, setAdding] = useState("");
-	const parent = entities.find((element) => element.features?.some((feature) => feature.id === draft.id));
+	const parent = entities.find((element) => {
+		var _element$features2;
+		return (_element$features2 = element.features) === null || _element$features2 === void 0 ? void 0 : _element$features2.some((feature) => feature.id === draft.id);
+	});
 	const linkedCount = parent ? linkedChoicesForFeature(parent, draft.id).length : 0;
 	const resourceOptions = editableHomebrew(entities).flatMap((element) => (element.resources || []).map((resource) => [resource.id, resource.name + " · " + element.name]));
 	const quickEffects = [
@@ -63718,10 +64365,10 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					children: [/* @__PURE__ */ jsx("strong", { children: title }), /* @__PURE__ */ jsx("small", { children: description })]
 				}, key)) })]
 			}),
-			(!!draft.effects?.length || adding === "effects") && /* @__PURE__ */ jsxs("details", {
+			(!!((_draft$effects = draft.effects) === null || _draft$effects === void 0 ? void 0 : _draft$effects.length) || adding === "effects") && /* @__PURE__ */ jsxs("details", {
 				open: true,
 				children: [
-					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", draft.effects?.length || 0] }),
+					/* @__PURE__ */ jsxs("summary", { children: ["Бонусы и эффекты · ", ((_draft$effects2 = draft.effects) === null || _draft$effects2 === void 0 ? void 0 : _draft$effects2.length) || 0] }),
 					/* @__PURE__ */ jsxs("h3", { children: ["Эффекты ", /* @__PURE__ */ jsx(HBHelp, { children: "Постоянные эффекты участвуют в расчётах. Поле «Условие» включает эффект только при истинной формуле. Неизвестная формула блокирует сохранение." })] }),
 					/* @__PURE__ */ jsxs("div", {
 						className: "hb-quick-effects",
@@ -63734,134 +64381,137 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							}, label))
 						})]
 					}),
-					(draft.effects || []).map((e, i) => /* @__PURE__ */ jsxs("fieldset", { children: [
-						/* @__PURE__ */ jsx(Select, {
-							label: "Тип эффекта",
-							value: e.type,
-							onChange: (type) => setEffect(i, { type }),
-							options: effectTypes
-						}),
-						/ability|saving_throw/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-							label: "Характеристика эффекта",
-							value: e.ability || "str",
-							onChange: (ability) => setEffect(i, { ability }),
-							options: {
-								all: "Все",
-								...abilityLabels
-							}
-						}),
-						/skill|passive/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-							label: "Навык эффекта",
-							value: e.skill || "perception",
-							onChange: (skill) => setEffect(i, { skill }),
-							options: Object.fromEntries(Object.entries(skillKeys).map(([name, s]) => [s.key, name]))
-						}),
-						["speed_bonus", "movement_mode"].includes(e.type) && /* @__PURE__ */ jsx(Select, {
-							label: "Вид скорости",
-							value: e.mode || "walk",
-							onChange: (mode) => setEffect(i, { mode }),
-							options: {
-								walk: "Ходьба",
-								swim: "Плавание",
-								climb: "Лазание",
-								fly: "Полёт"
-							}
-						}),
-						e.type.startsWith("damage_") && /* @__PURE__ */ jsx(Select, {
-							label: "Тип урона эффекта",
-							value: e.damage || "fire",
-							onChange: (damage) => setEffect(i, { damage }),
-							options: Object.fromEntries(damageTypes.map((t) => [t, tagNames[t] || t]))
-						}),
-						e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
-							label: "Состояние",
-							value: e.condition || "poisoned",
-							onChange: (condition) => setEffect(i, { condition }),
-							options: Object.fromEntries(conditionIds.map((t) => [t, t]))
-						}),
-						/group_proficiency|armor_proficiency/.test(e.type) && /* @__PURE__ */ jsx(Select, {
-							label: "Группа владения",
-							value: e.group || "simple",
-							onChange: (group) => setEffect(i, { group }),
-							options: {
-								simple: "Простое оружие",
-								martial: "Воинское оружие",
-								light: "Лёгкие доспехи",
-								medium: "Средние доспехи",
-								heavy: "Тяжёлые доспехи",
-								shield: "Щиты"
-							}
-						}),
-						e.type.startsWith("grant_") && /* @__PURE__ */ jsx(RefPicker, {
-							entities,
-							value: e.id || "",
-							onChange: (id) => setEffect(i, { id })
-						}),
-						[
-							"weapon_proficiency",
-							"tool_proficiency",
-							"language"
-						].includes(e.type) && /* @__PURE__ */ jsxs("label", {
-							className: "hb-effect-name",
-							children: [e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия", /* @__PURE__ */ jsx("input", {
-								"aria-label": e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия",
-								placeholder: e.type === "tool_proficiency" ? "Например, инструменты вора" : e.type === "language" ? "Например, Эльфийский" : "Например, длинный меч",
+					(draft.effects || []).map((e, i) => {
+						var _ref, _e$formula;
+						return /* @__PURE__ */ jsxs("fieldset", { children: [
+							/* @__PURE__ */ jsx(Select, {
+								label: "Тип эффекта",
+								value: e.type,
+								onChange: (type) => setEffect(i, { type }),
+								options: effectTypes
+							}),
+							/ability|saving_throw/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+								label: "Характеристика эффекта",
+								value: e.ability || "str",
+								onChange: (ability) => setEffect(i, { ability }),
+								options: {
+									all: "Все",
+									...abilityLabels
+								}
+							}),
+							/skill|passive/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+								label: "Навык эффекта",
+								value: e.skill || "perception",
+								onChange: (skill) => setEffect(i, { skill }),
+								options: Object.fromEntries(Object.entries(skillKeys).map(([name, s]) => [s.key, name]))
+							}),
+							["speed_bonus", "movement_mode"].includes(e.type) && /* @__PURE__ */ jsx(Select, {
+								label: "Вид скорости",
+								value: e.mode || "walk",
+								onChange: (mode) => setEffect(i, { mode }),
+								options: {
+									walk: "Ходьба",
+									swim: "Плавание",
+									climb: "Лазание",
+									fly: "Полёт"
+								}
+							}),
+							e.type.startsWith("damage_") && /* @__PURE__ */ jsx(Select, {
+								label: "Тип урона эффекта",
+								value: e.damage || "fire",
+								onChange: (damage) => setEffect(i, { damage }),
+								options: Object.fromEntries(damageTypes.map((t) => [t, tagNames[t] || t]))
+							}),
+							e.type === "condition_immunity" && /* @__PURE__ */ jsx(Select, {
+								label: "Состояние",
+								value: e.condition || "poisoned",
+								onChange: (condition) => setEffect(i, { condition }),
+								options: Object.fromEntries(conditionIds.map((t) => [t, t]))
+							}),
+							/group_proficiency|armor_proficiency/.test(e.type) && /* @__PURE__ */ jsx(Select, {
+								label: "Группа владения",
+								value: e.group || "simple",
+								onChange: (group) => setEffect(i, { group }),
+								options: {
+									simple: "Простое оружие",
+									martial: "Воинское оружие",
+									light: "Лёгкие доспехи",
+									medium: "Средние доспехи",
+									heavy: "Тяжёлые доспехи",
+									shield: "Щиты"
+								}
+							}),
+							e.type.startsWith("grant_") && /* @__PURE__ */ jsx(RefPicker, {
+								entities,
 								value: e.id || "",
-								onChange: (event) => setEffect(i, { id: event.target.value })
-							})]
-						}),
-						e.type === "sense" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
-							label: "Чувство",
-							value: e.sense || "darkvision",
-							onChange: (sense) => setEffect(i, { sense }),
-							options: {
-								darkvision: "Тёмное зрение",
-								blindsight: "Слепое зрение",
-								tremorsense: "Чувство вибрации",
-								truesight: "Истинное зрение"
-							}
-						}), /* @__PURE__ */ jsx("input", {
-							"aria-label": "Дальность чувства",
-							type: "number",
-							value: e.range || 60,
-							onChange: (event) => setEffect(i, { range: Number(event.target.value) })
-						})] }),
-						![
-							"skill_proficiency",
-							"skill_expertise",
-							"saving_throw_proficiency",
-							"weapon_proficiency",
-							"weapon_group_proficiency",
-							"armor_proficiency",
-							"tool_proficiency",
-							"language",
-							"damage_resistance",
-							"damage_immunity",
-							"damage_vulnerability",
-							"condition_immunity",
-							"sense",
-							"initiative_advantage"
-						].includes(e.type) && !e.type.startsWith("grant_") && /* @__PURE__ */ jsx(Formula, {
-							value: e.formula ?? e.value ?? 0,
-							onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
-								formula: v,
-								value: void 0
-							} : { value: v })
-						}),
-						/* @__PURE__ */ jsxs("details", {
-							className: "hb-effect-condition",
-							children: [/* @__PURE__ */ jsx("summary", { children: e.when ? "Условие действия: настроено" : "Условие действия · необязательно" }), /* @__PURE__ */ jsx(ConditionEditor, {
-								label: "Действует, когда",
-								elements: entities,
-								value: e.when || "",
-								onChange: (when) => setEffect(i, { when })
-							})]
-						}),
-						/* @__PURE__ */ jsx("button", {
-							onClick: () => update({ effects: draft.effects.filter((_, n) => n !== i) }),
-							children: "Удалить эффект"
-						})
-					] }, i)),
+								onChange: (id) => setEffect(i, { id })
+							}),
+							[
+								"weapon_proficiency",
+								"tool_proficiency",
+								"language"
+							].includes(e.type) && /* @__PURE__ */ jsxs("label", {
+								className: "hb-effect-name",
+								children: [e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия", /* @__PURE__ */ jsx("input", {
+									"aria-label": e.type === "tool_proficiency" ? "Название инструмента" : e.type === "language" ? "Название языка" : "Название оружия",
+									placeholder: e.type === "tool_proficiency" ? "Например, инструменты вора" : e.type === "language" ? "Например, Эльфийский" : "Например, длинный меч",
+									value: e.id || "",
+									onChange: (event) => setEffect(i, { id: event.target.value })
+								})]
+							}),
+							e.type === "sense" && /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsx(Select, {
+								label: "Чувство",
+								value: e.sense || "darkvision",
+								onChange: (sense) => setEffect(i, { sense }),
+								options: {
+									darkvision: "Тёмное зрение",
+									blindsight: "Слепое зрение",
+									tremorsense: "Чувство вибрации",
+									truesight: "Истинное зрение"
+								}
+							}), /* @__PURE__ */ jsx("input", {
+								"aria-label": "Дальность чувства",
+								type: "number",
+								value: e.range || 60,
+								onChange: (event) => setEffect(i, { range: Number(event.target.value) })
+							})] }),
+							![
+								"skill_proficiency",
+								"skill_expertise",
+								"saving_throw_proficiency",
+								"weapon_proficiency",
+								"weapon_group_proficiency",
+								"armor_proficiency",
+								"tool_proficiency",
+								"language",
+								"damage_resistance",
+								"damage_immunity",
+								"damage_vulnerability",
+								"condition_immunity",
+								"sense",
+								"initiative_advantage"
+							].includes(e.type) && !e.type.startsWith("grant_") && /* @__PURE__ */ jsx(Formula, {
+								value: (_ref = (_e$formula = e.formula) !== null && _e$formula !== void 0 ? _e$formula : e.value) !== null && _ref !== void 0 ? _ref : 0,
+								onChange: (v) => setEffect(i, e.type === "ac_formula" || e.type === "movement_mode" ? {
+									formula: v,
+									value: void 0
+								} : { value: v })
+							}),
+							/* @__PURE__ */ jsxs("details", {
+								className: "hb-effect-condition",
+								children: [/* @__PURE__ */ jsx("summary", { children: e.when ? "Условие действия: настроено" : "Условие действия · необязательно" }), /* @__PURE__ */ jsx(ConditionEditor, {
+									label: "Действует, когда",
+									elements: entities,
+									value: e.when || "",
+									onChange: (when) => setEffect(i, { when })
+								})]
+							}),
+							/* @__PURE__ */ jsx("button", {
+								onClick: () => update({ effects: draft.effects.filter((_, n) => n !== i) }),
+								children: "Удалить эффект"
+							})
+						] }, i);
+					}),
 					/* @__PURE__ */ jsx("button", {
 						onClick: () => update({ effects: [...draft.effects || [], {
 							type: "ability_bonus",
@@ -63872,12 +64522,13 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			(!!draft.resources?.length || adding === "resources") && /* @__PURE__ */ jsxs("details", {
+			(!!((_draft$resources = draft.resources) === null || _draft$resources === void 0 ? void 0 : _draft$resources.length) || adding === "resources") && /* @__PURE__ */ jsxs("details", {
 				open: true,
 				children: [
-					/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы · ", draft.resources?.length || 0] }),
+					/* @__PURE__ */ jsxs("summary", { children: ["Ресурсы · ", ((_draft$resources2 = draft.resources) === null || _draft$resources2 === void 0 ? void 0 : _draft$resources2.length) || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Ресурсы" }),
 					(draft.resources || []).map((r, i) => {
+						var _r$progression, _r$progression2;
 						const patch = (p) => update({ resources: draft.resources.map((x, n) => i === n ? {
 							...x,
 							...p
@@ -63923,7 +64574,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							/* @__PURE__ */ jsxs("details", {
 								className: "hb-resource-progression",
 								children: [
-									/* @__PURE__ */ jsxs("summary", { children: ["Улучшения на следующих уровнях · ", r.progression?.length || 0] }),
+									/* @__PURE__ */ jsxs("summary", { children: ["Улучшения на следующих уровнях · ", ((_r$progression = r.progression) === null || _r$progression === void 0 ? void 0 : _r$progression.length) || 0] }),
 									/* @__PURE__ */ jsx("p", { children: "Укажите только уровни, на которых меняется число применений или восстановление. Между ними действует последняя ступень." }),
 									(r.progression || []).map((step, index) => /* @__PURE__ */ jsxs("fieldset", { children: [
 										/* @__PURE__ */ jsx(Field, {
@@ -63988,9 +64639,12 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 									] }, index)),
 									/* @__PURE__ */ jsx("button", {
 										type: "button",
-										disabled: (r.progression?.length || 0) >= 20,
+										disabled: (((_r$progression2 = r.progression) === null || _r$progression2 === void 0 ? void 0 : _r$progression2.length) || 0) >= 20,
 										onClick: () => {
-											const next = Array.from({ length: 20 }, (_, i) => i + 1).find((level) => level > (r.level || 1) && !r.progression?.some((row) => row.level === level));
+											const next = Array.from({ length: 20 }, (_, i) => i + 1).find((level) => {
+												var _r$progression3;
+												return level > (r.level || 1) && !((_r$progression3 = r.progression) === null || _r$progression3 === void 0 ? void 0 : _r$progression3.some((row) => row.level === level));
+											});
 											if (next) patch({ progression: [...r.progression || [], {
 												level: next,
 												max: r.max
@@ -64024,10 +64678,10 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			(!!draft.attacks?.length || adding === "attacks") && /* @__PURE__ */ jsxs("details", {
+			(!!((_draft$attacks = draft.attacks) === null || _draft$attacks === void 0 ? void 0 : _draft$attacks.length) || adding === "attacks") && /* @__PURE__ */ jsxs("details", {
 				open: true,
 				children: [
-					/* @__PURE__ */ jsxs("summary", { children: ["Атаки · ", draft.attacks?.length || 0] }),
+					/* @__PURE__ */ jsxs("summary", { children: ["Атаки · ", ((_draft$attacks2 = draft.attacks) === null || _draft$attacks2 === void 0 ? void 0 : _draft$attacks2.length) || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Атаки" }),
 					(draft.attacks || []).map((a, i) => {
 						const patch = (p) => update({ attacks: draft.attacks.map((x, n) => i === n ? {
@@ -64151,17 +64805,18 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			!hideChoices && (!!draft.choices?.length || linkedCount > 0 || adding === "choices") && /* @__PURE__ */ jsx(ChoicesEditor, {
+			!hideChoices && (!!((_draft$choices = draft.choices) === null || _draft$choices === void 0 ? void 0 : _draft$choices.length) || linkedCount > 0 || adding === "choices") && /* @__PURE__ */ jsx(ChoicesEditor, {
 				draft,
 				update,
 				depth
 			}),
-			(!!draft.actions?.length || adding === "actions") && /* @__PURE__ */ jsxs("details", {
+			(!!((_draft$actions = draft.actions) === null || _draft$actions === void 0 ? void 0 : _draft$actions.length) || adding === "actions") && /* @__PURE__ */ jsxs("details", {
 				open: true,
 				children: [
-					/* @__PURE__ */ jsxs("summary", { children: ["Действия · ", draft.actions?.length || 0] }),
+					/* @__PURE__ */ jsxs("summary", { children: ["Действия · ", ((_draft$actions2 = draft.actions) === null || _draft$actions2 === void 0 ? void 0 : _draft$actions2.length) || 0] }),
 					/* @__PURE__ */ jsx("h3", { children: "Действия" }),
 					(draft.actions || []).map((a, i) => {
+						var _a$cost;
 						const patch = (p) => update({ actions: draft.actions.map((x, n) => i === n ? {
 							...x,
 							...p
@@ -64185,7 +64840,7 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 							}),
 							/* @__PURE__ */ jsx(Select, {
 								label: "Ресурс действия",
-								value: a.cost?.resource || "",
+								value: ((_a$cost = a.cost) === null || _a$cost === void 0 ? void 0 : _a$cost.resource) || "",
 								onChange: (resource) => patch({ cost: resource ? {
 									resource,
 									amount: 1
@@ -64228,9 +64883,9 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})
 				]
 			}),
-			(!!draft.spellGrants?.length || adding === "spells") && /* @__PURE__ */ jsxs("details", {
+			(!!((_draft$spellGrants = draft.spellGrants) === null || _draft$spellGrants === void 0 ? void 0 : _draft$spellGrants.length) || adding === "spells") && /* @__PURE__ */ jsxs("details", {
 				open: true,
-				children: [/* @__PURE__ */ jsxs("summary", { children: ["Заклинания способности · ", draft.spellGrants?.length || 0] }), /* @__PURE__ */ jsx(SpellGrantsEditor, {
+				children: [/* @__PURE__ */ jsxs("summary", { children: ["Заклинания способности · ", ((_draft$spellGrants2 = draft.spellGrants) === null || _draft$spellGrants2 === void 0 ? void 0 : _draft$spellGrants2.length) || 0] }), /* @__PURE__ */ jsx(SpellGrantsEditor, {
 					draft,
 					update,
 					entities
@@ -64257,10 +64912,13 @@ function Mechanics({ draft, update, entities, depth = 0, hideChoices = false }) 
 					})]
 				}, i)),
 				/* @__PURE__ */ jsx("button", {
-					onClick: () => update({ rows: [...draft.rows || [], {
-						range: String((draft.rows?.length || 0) + 1),
-						text: ""
-					}] }),
+					onClick: () => {
+						var _draft$rows;
+						return update({ rows: [...draft.rows || [], {
+							range: String((((_draft$rows = draft.rows) === null || _draft$rows === void 0 ? void 0 : _draft$rows.length) || 0) + 1),
+							text: ""
+						}] });
+					},
 					children: "+ Строка"
 				})
 			] })
@@ -64273,10 +64931,11 @@ function HomebrewOnSheet({ character, onChange }) {
 	const choiceStatuses = homebrewChoiceStatuses(character);
 	const choiceMissing = choiceStatuses.reduce((sum, status) => sum + status.missing, 0);
 	const spend = (id, amount) => {
+		var _character$resourceSp;
 		const resource = hbResources(character).find((r) => r.key === id);
 		if (!resource) return;
 		const max = resource.max;
-		const used = character.resourceSpent?.[id] || 0;
+		const used = ((_character$resourceSp = character.resourceSpent) === null || _character$resourceSp === void 0 ? void 0 : _character$resourceSp[id]) || 0;
 		if (amount > max - used) return;
 		onChange({
 			...character,
@@ -64287,15 +64946,16 @@ function HomebrewOnSheet({ character, onChange }) {
 		});
 	};
 	const choose = (owner, choice, id) => {
-		const selected = character.homebrew?.choices?.[choice.id] || [];
-		const valid = homebrewChoiceStatuses(character).find((status) => status.choice.id === choice.id)?.selected || [];
+		var _character$homebrew, _homebrewChoiceStatus, _character$homebrew2;
+		const selected = ((_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 || (_character$homebrew = _character$homebrew.choices) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew[choice.id]) || [];
+		const valid = ((_homebrewChoiceStatus = homebrewChoiceStatuses(character).find((status) => status.choice.id === choice.id)) === null || _homebrewChoiceStatus === void 0 ? void 0 : _homebrewChoiceStatus.selected) || [];
 		const next = selected.includes(id) ? selected.filter((value) => value !== id) : choice.count === 1 ? [id] : valid.length < choice.count ? [...valid, id] : valid;
 		onChange({
 			...character,
 			homebrew: {
 				...character.homebrew,
 				choices: {
-					...character.homebrew?.choices,
+					...(_character$homebrew2 = character.homebrew) === null || _character$homebrew2 === void 0 ? void 0 : _character$homebrew2.choices,
 					[choice.id]: next
 				}
 			}
@@ -64309,13 +64969,16 @@ function HomebrewOnSheet({ character, onChange }) {
 				className: "hb-choice-header",
 				children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Обязательные решения Homebrew" }), /* @__PURE__ */ jsx("h3", { children: "Настройка класса и способностей" })] }), /* @__PURE__ */ jsx("strong", { children: choiceMissing ? "Осталось: " + choiceMissing : "Готово" })]
 			}),
-			entities.filter((e) => [
-				"class",
-				"subclass",
-				"race",
-				"subrace",
-				"background"
-			].includes(e.type) || !!e.choices?.length).map((e) => {
+			entities.filter((e) => {
+				var _e$choices;
+				return [
+					"class",
+					"subclass",
+					"race",
+					"subrace",
+					"background"
+				].includes(e.type) || !!((_e$choices = e.choices) === null || _e$choices === void 0 ? void 0 : _e$choices.length);
+			}).map((e) => {
 				const statuses = choiceStatuses.filter((status) => status.owner.id === e.id);
 				return /* @__PURE__ */ jsxs("details", {
 					open: statuses.reduce((sum, status) => sum + status.missing, 0) > 0 || statuses.some((status) => status.selected.length > 0),
@@ -64339,11 +65002,12 @@ function HomebrewOnSheet({ character, onChange }) {
 									return /* @__PURE__ */ jsx("button", {
 										"aria-pressed": character.classSkills.includes(name),
 										onClick: () => {
+											var _character$classes;
 											const selected = character.classSkills.includes(name) ? character.classSkills.filter((x) => x !== name) : character.classSkills.length < e.skillChoices.count ? [...character.classSkills, name] : character.classSkills;
 											onChange({
 												...character,
 												classSkills: selected,
-												classes: character.classes?.map((x) => x.classId === e.id ? {
+												classes: (_character$classes = character.classes) === null || _character$classes === void 0 ? void 0 : _character$classes.map((x) => x.classId === e.id ? {
 													...x,
 													classSkills: selected
 												} : x)
@@ -64359,10 +65023,11 @@ function HomebrewOnSheet({ character, onChange }) {
 							children: [/* @__PURE__ */ jsx("div", {
 								className: "hb-choice-options",
 								children: choice.from.map((id) => {
-									const target = editableHomebrew(character.homebrew?.entities || []).find((x) => x.id === id);
+									var _character$homebrew3, _character$homebrew4, _character$homebrew5;
+									const target = editableHomebrew(((_character$homebrew3 = character.homebrew) === null || _character$homebrew3 === void 0 ? void 0 : _character$homebrew3.entities) || []).find((x) => x.id === id);
 									if (!target) return null;
-									const rawSelected = character.homebrew?.choices?.[choice.id] || [];
-									const reason = homebrewChoiceReason(character, e, choice, target, character.homebrew?.entities || []);
+									const rawSelected = ((_character$homebrew4 = character.homebrew) === null || _character$homebrew4 === void 0 || (_character$homebrew4 = _character$homebrew4.choices) === null || _character$homebrew4 === void 0 ? void 0 : _character$homebrew4[choice.id]) || [];
+									const reason = homebrewChoiceReason(character, e, choice, target, ((_character$homebrew5 = character.homebrew) === null || _character$homebrew5 === void 0 ? void 0 : _character$homebrew5.entities) || []);
 									return /* @__PURE__ */ jsxs("button", {
 										"aria-pressed": rawSelected.includes(id),
 										disabled: !!reason && !rawSelected.includes(id),
@@ -64394,12 +65059,15 @@ function HomebrewOnSheet({ character, onChange }) {
 				character,
 				onResource: spend
 			})] }, e.id)),
-			entities.flatMap((e) => (e.actions || []).map((a) => /* @__PURE__ */ jsxs("button", {
-				disabled: !!a.cost && (hbResources(character).find((r) => r.key === a.cost.resource)?.max || 0) - (character.resourceSpent?.[a.cost.resource] || 0) < a.cost.amount,
-				onClick: () => a.cost && spend(a.cost.resource, a.cost.amount),
-				title: a.description,
-				children: [a.name, a.cost ? " · −" + a.cost.amount : ""]
-			}, a.id))),
+			entities.flatMap((e) => (e.actions || []).map((a) => {
+				var _hbResources$find, _character$resourceSp2;
+				return /* @__PURE__ */ jsxs("button", {
+					disabled: !!a.cost && (((_hbResources$find = hbResources(character).find((r) => r.key === a.cost.resource)) === null || _hbResources$find === void 0 ? void 0 : _hbResources$find.max) || 0) - (((_character$resourceSp2 = character.resourceSpent) === null || _character$resourceSp2 === void 0 ? void 0 : _character$resourceSp2[a.cost.resource]) || 0) < a.cost.amount,
+					onClick: () => a.cost && spend(a.cost.resource, a.cost.amount),
+					title: a.description,
+					children: [a.name, a.cost ? " · −" + a.cost.amount : ""]
+				}, a.id);
+			})),
 			entities.filter((e) => e.table).map((e) => /* @__PURE__ */ jsxs("div", {
 				style: { overflowX: "auto" },
 				children: [/* @__PURE__ */ jsx("h4", { children: e.name }), /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsx("tr", { children: e.table.columns.map((c, i) => /* @__PURE__ */ jsx("th", { children: c }, i)) }) }), /* @__PURE__ */ jsx("tbody", { children: e.table.rows.map((r, i) => /* @__PURE__ */ jsx("tr", { children: e.table.columns.map((_, j) => /* @__PURE__ */ jsx("td", { children: r[j] }, j)) }, i)) })] })]
@@ -64539,12 +65207,16 @@ function IconPicker({ draft, update }) {
 					accept: "image/png,.png",
 					"aria-label": "Загрузить PNG иконки",
 					onChange: (e) => {
-						upload(e.target.files?.[0]);
+						var _e$target$files;
+						upload((_e$target$files = e.target.files) === null || _e$target$files === void 0 ? void 0 : _e$target$files[0]);
 						e.target.value = "";
 					}
 				}),
 				/* @__PURE__ */ jsx("button", {
-					onClick: () => ref.current?.click(),
+					onClick: () => {
+						var _ref$current;
+						return (_ref$current = ref.current) === null || _ref$current === void 0 ? void 0 : _ref$current.click();
+					},
 					children: "Загрузить PNG"
 				}),
 				draft.icon && /* @__PURE__ */ jsx("button", {
@@ -64560,6 +65232,7 @@ function IconPicker({ draft, update }) {
 	});
 }
 function ClassEquipmentEditor({ draft, update }) {
+	var _draft$equipment;
 	const groups = draft.equipmentGroups || [];
 	const patchGroup = (index, patch) => update({ equipmentGroups: groups.map((group, i) => i === index ? {
 		...group,
@@ -64590,7 +65263,7 @@ function ClassEquipmentEditor({ draft, update }) {
 				help: "Один предмет или набор на строку. Это не заменяет группы выбора ниже.",
 				children: /* @__PURE__ */ jsx("textarea", {
 					"aria-label": "Фиксированное снаряжение класса",
-					value: draft.equipment?.join("\n") || "",
+					value: ((_draft$equipment = draft.equipment) === null || _draft$equipment === void 0 ? void 0 : _draft$equipment.join("\n")) || "",
 					onChange: (event) => update({ equipment: event.target.value.split("\n").map((value) => value.trim()).filter(Boolean) })
 				})
 			}),
@@ -64796,18 +65469,21 @@ function ClassTraining({ draft, update }) {
 					/* @__PURE__ */ jsx("h4", { children: "Требования характеристик" }),
 					/* @__PURE__ */ jsx("div", {
 						className: "hb-toolbar",
-						children: abilities.map((ability) => /* @__PURE__ */ jsxs("button", {
-							type: "button",
-							"aria-label": `Мультикласс: ${abilityLabels[ability]} 13`,
-							"aria-pressed": requirements.some((row) => row.ability === ability),
-							onClick: () => toggleRequirement(ability),
-							children: [
-								abilityLabels[ability],
-								" ",
-								requirements.find((row) => row.ability === ability)?.min || 13,
-								"+"
-							]
-						}, ability))
+						children: abilities.map((ability) => {
+							var _requirements$find;
+							return /* @__PURE__ */ jsxs("button", {
+								type: "button",
+								"aria-label": `Мультикласс: ${abilityLabels[ability]} 13`,
+								"aria-pressed": requirements.some((row) => row.ability === ability),
+								onClick: () => toggleRequirement(ability),
+								children: [
+									abilityLabels[ability],
+									" ",
+									((_requirements$find = requirements.find((row) => row.ability === ability)) === null || _requirements$find === void 0 ? void 0 : _requirements$find.min) || 13,
+									"+"
+								]
+							}, ability);
+						})
 					}),
 					requirements.map((requirement) => /* @__PURE__ */ jsx(Field, {
 						label: `Минимум: ${abilityLabels[requirement.ability]}`,
@@ -64887,8 +65563,9 @@ function ClassTraining({ draft, update }) {
 	});
 }
 function ClassDevelopment({ draft, update, entities, pack, open }) {
-	const [level, setLevel] = useState(draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1);
-	const rows = draft.advancement?.[level] || [];
+	var _draft$subclass6, _draft$advancement, _draft$subclass8;
+	const [level, setLevel] = useState(draft.type === "subclass" ? ((_draft$subclass6 = draft.subclass) === null || _draft$subclass6 === void 0 ? void 0 : _draft$subclass6.chooseAtLevel) || 3 : 1);
+	const rows = ((_draft$advancement = draft.advancement) === null || _draft$advancement === void 0 ? void 0 : _draft$advancement[level]) || [];
 	const patchRows = (next) => update({ advancement: {
 		...draft.advancement,
 		[level]: next
@@ -64898,7 +65575,10 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 	const choicesAtLevel = (n) => (draft.choices || []).filter((choice) => (choice.level || 1) === n).length + (draft.features || []).reduce((sum, feature) => sum + (feature.choices || []).filter((choice) => (choice.level || feature.level || 1) === n).length, 0);
 	const choiceCount = choicesAtLevel(level);
 	const linkedCount = rows.filter((row) => row.type !== "asi_or_feat").length;
-	const levelCount = (n) => (draft.features || []).filter((feature) => feature.level === n).length + choicesAtLevel(n) + (draft.advancement?.[n]?.length || 0);
+	const levelCount = (n) => {
+		var _draft$advancement2;
+		return (draft.features || []).filter((feature) => feature.level === n).length + choicesAtLevel(n) + (((_draft$advancement2 = draft.advancement) === null || _draft$advancement2 === void 0 || (_draft$advancement2 = _draft$advancement2[n]) === null || _draft$advancement2 === void 0 ? void 0 : _draft$advancement2.length) || 0);
+	};
 	return /* @__PURE__ */ jsxs("section", {
 		className: "hb-development",
 		children: [
@@ -64909,14 +65589,18 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 				children: [/* @__PURE__ */ jsx("summary", { children: "Всё развитие от 1 до 20 уровня" }), /* @__PURE__ */ jsx("div", {
 					className: "hb-magic-table-wrap",
 					children: /* @__PURE__ */ jsxs("table", { children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("th", { children: "Уровень" }), /* @__PURE__ */ jsx("th", { children: "Что получает герой" })] }) }), /* @__PURE__ */ jsx("tbody", { children: Array.from({ length: 20 }, (_, i) => i + 1).map((n) => {
+						var _draft$advancement3, _draft$subclass7;
 						const names = [
 							...(draft.features || []).filter((f) => f.level === n).map((f) => f.name),
 							...(draft.choices || []).filter((c) => (c.level || 1) === n).map((c) => `${c.name}: выбрать ${c.count}`),
-							...(draft.advancement?.[n] || []).map((row) => row.type === "asi_or_feat" ? "Повышение характеристик или черта" : entities.find((e) => e.id === row.id)?.name || {
-								subclass: "Выбор подкласса",
-								choice: "Выбор"
-							}[row.type] || "Способность из библиотеки"),
-							...draft.subclass?.chooseAtLevel === n && draft.type === "class" ? ["Выбор подкласса"] : []
+							...(((_draft$advancement3 = draft.advancement) === null || _draft$advancement3 === void 0 ? void 0 : _draft$advancement3[n]) || []).map((row) => {
+								var _entities$find;
+								return row.type === "asi_or_feat" ? "Повышение характеристик или черта" : ((_entities$find = entities.find((e) => e.id === row.id)) === null || _entities$find === void 0 ? void 0 : _entities$find.name) || {
+									subclass: "Выбор подкласса",
+									choice: "Выбор"
+								}[row.type] || "Способность из библиотеки";
+							}),
+							...((_draft$subclass7 = draft.subclass) === null || _draft$subclass7 === void 0 ? void 0 : _draft$subclass7.chooseAtLevel) === n && draft.type === "class" ? ["Выбор подкласса"] : []
 						];
 						return /* @__PURE__ */ jsxs("tr", { children: [/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx("button", {
 							type: "button",
@@ -64962,7 +65646,7 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 						onClick: () => patchRows(hasAsi ? rows.filter((row) => row.type !== "asi_or_feat") : [...rows, { type: "asi_or_feat" }]),
 						children: hasAsi ? "✓ Повышение характеристик / черта" : "+ Повышение характеристик / черта"
 					}),
-					draft.subclass?.chooseAtLevel === level && /* @__PURE__ */ jsx("span", { children: "На этом уровне выбирается подкласс" }),
+					((_draft$subclass8 = draft.subclass) === null || _draft$subclass8 === void 0 ? void 0 : _draft$subclass8.chooseAtLevel) === level && /* @__PURE__ */ jsx("span", { children: "На этом уровне выбирается подкласс" }),
 					level === 1 && draft.skillChoices && /* @__PURE__ */ jsxs("span", { children: ["Навыки: выбрать ", draft.skillChoices.count] })
 				]
 			}),
@@ -64981,45 +65665,48 @@ function ClassDevelopment({ draft, update, entities, pack, open }) {
 				summary: /* @__PURE__ */ jsxs(Fragment$1, { children: ["Использовать готовую способность или ресурс · ", linkedCount] }),
 				children: [
 					/* @__PURE__ */ jsx("p", { children: "Выберите то, что уже создано в библиотеке. Герой получит это на выбранном уровне." }),
-					rows.map((row, i) => row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
-						className: "hb-linked-row",
-						children: [
-							/* @__PURE__ */ jsx(Select, {
-								label: "Что выдать на уровне",
-								value: row.type,
-								options: {
-									feature: "Способность",
-									resource: "Ресурс",
-									attack: "Атака",
-									spell: "Заклинание",
-									subclass: "Подкласс",
-									choice: "Выбор"
-								},
-								onChange: (type) => patchRows(rows.map((r, n) => n === i ? {
-									...r,
-									type
-								} : r))
-							}),
-							row.type !== "subclass" && /* @__PURE__ */ jsx(RefPicker, {
-								value: row.id || "",
-								onChange: (id) => patchRows(rows.map((r, n) => n === i ? {
-									...r,
-									id
-								} : r)),
-								entities
-							}),
-							row.id && entities.some((e) => e.id === row.id) && /* @__PURE__ */ jsxs("button", {
-								type: "button",
-								onClick: () => open(entities.find((e) => e.id === row.id)),
-								children: ["Открыть ", entities.find((e) => e.id === row.id)?.name]
-							}),
-							/* @__PURE__ */ jsx("button", {
-								type: "button",
-								onClick: () => patchRows(rows.filter((_, n) => n !== i)),
-								children: "Убрать с уровня"
-							})
-						]
-					}, i)),
+					rows.map((row, i) => {
+						var _entities$find2;
+						return row.type !== "asi_or_feat" && /* @__PURE__ */ jsxs("div", {
+							className: "hb-linked-row",
+							children: [
+								/* @__PURE__ */ jsx(Select, {
+									label: "Что выдать на уровне",
+									value: row.type,
+									options: {
+										feature: "Способность",
+										resource: "Ресурс",
+										attack: "Атака",
+										spell: "Заклинание",
+										subclass: "Подкласс",
+										choice: "Выбор"
+									},
+									onChange: (type) => patchRows(rows.map((r, n) => n === i ? {
+										...r,
+										type
+									} : r))
+								}),
+								row.type !== "subclass" && /* @__PURE__ */ jsx(RefPicker, {
+									value: row.id || "",
+									onChange: (id) => patchRows(rows.map((r, n) => n === i ? {
+										...r,
+										id
+									} : r)),
+									entities
+								}),
+								row.id && entities.some((e) => e.id === row.id) && /* @__PURE__ */ jsxs("button", {
+									type: "button",
+									onClick: () => open(entities.find((e) => e.id === row.id)),
+									children: ["Открыть ", (_entities$find2 = entities.find((e) => e.id === row.id)) === null || _entities$find2 === void 0 ? void 0 : _entities$find2.name]
+								}),
+								/* @__PURE__ */ jsx("button", {
+									type: "button",
+									onClick: () => patchRows(rows.filter((_, n) => n !== i)),
+									children: "Убрать с уровня"
+								})
+							]
+						}, i);
+					}),
 					/* @__PURE__ */ jsxs("button", {
 						type: "button",
 						onClick: () => patchRows([...rows, { type: "feature" }]),
@@ -65216,6 +65903,7 @@ function ClassFeatures({ draft, update, entities, level }) {
 	});
 }
 function ClassSpellcasting({ draft, update }) {
+	var _draft$spellListSourc3, _draft$spellList3;
 	const casting = draft.spellcasting || {
 		mode: "none",
 		ability: "int"
@@ -65286,44 +65974,47 @@ function ClassSpellcasting({ draft, update }) {
 			}),
 			/* @__PURE__ */ jsx("div", {
 				className: "hb-spell-levels",
-				children: Array.from({ length: 20 }, (_, i) => i + 1).map((level) => /* @__PURE__ */ jsxs("label", { children: [
-					"Уровень ",
-					level,
-					/* @__PURE__ */ jsxs("span", { children: ["Заговоры ", /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: 0,
-						max: 20,
-						value: casting.cantrips?.[level] ?? 0,
-						onChange: (e) => patch({ cantrips: Object.assign([...casting.cantrips || []], { [level]: Number(e.target.value) }) })
-					})] }),
-					casting.selection !== "prepared" && /* @__PURE__ */ jsxs("span", { children: ["Известно ", /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: 0,
-						max: 100,
-						value: casting.known?.[level] ?? 0,
-						onChange: (e) => patch({ known: Object.assign([...casting.known || []], { [level]: Number(e.target.value) }) })
-					})] }),
-					casting.mode === "custom" && /* @__PURE__ */ jsxs("span", { children: ["Ячейки по кругам (через запятую)", /* @__PURE__ */ jsx("input", {
-						"aria-label": `Ячейки уровня ${level}`,
-						value: slotEdits[level] ?? (casting.slots?.[String(level)] || []).join(", "),
-						onChange: (e) => setSlotEdits((current) => ({
-							...current,
-							[level]: e.target.value
-						})),
-						onBlur: (e) => {
-							const values = e.target.value.trim() ? e.target.value.split(",").map((v) => Number(v.trim())).filter((v) => Number.isInteger(v) && v >= 0) : [];
-							patch({ slots: {
-								...casting.slots,
-								[level]: values
-							} });
-							setSlotEdits((current) => {
-								const next = { ...current };
-								delete next[level];
-								return next;
-							});
-						}
-					})] })
-				] }, level))
+				children: Array.from({ length: 20 }, (_, i) => i + 1).map((level) => {
+					var _casting$cantrips$lev, _casting$cantrips, _casting$known$level, _casting$known, _slotEdits$level, _casting$slots;
+					return /* @__PURE__ */ jsxs("label", { children: [
+						"Уровень ",
+						level,
+						/* @__PURE__ */ jsxs("span", { children: ["Заговоры ", /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: 0,
+							max: 20,
+							value: (_casting$cantrips$lev = (_casting$cantrips = casting.cantrips) === null || _casting$cantrips === void 0 ? void 0 : _casting$cantrips[level]) !== null && _casting$cantrips$lev !== void 0 ? _casting$cantrips$lev : 0,
+							onChange: (e) => patch({ cantrips: Object.assign([...casting.cantrips || []], { [level]: Number(e.target.value) }) })
+						})] }),
+						casting.selection !== "prepared" && /* @__PURE__ */ jsxs("span", { children: ["Известно ", /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: 0,
+							max: 100,
+							value: (_casting$known$level = (_casting$known = casting.known) === null || _casting$known === void 0 ? void 0 : _casting$known[level]) !== null && _casting$known$level !== void 0 ? _casting$known$level : 0,
+							onChange: (e) => patch({ known: Object.assign([...casting.known || []], { [level]: Number(e.target.value) }) })
+						})] }),
+						casting.mode === "custom" && /* @__PURE__ */ jsxs("span", { children: ["Ячейки по кругам (через запятую)", /* @__PURE__ */ jsx("input", {
+							"aria-label": `Ячейки уровня ${level}`,
+							value: (_slotEdits$level = slotEdits[level]) !== null && _slotEdits$level !== void 0 ? _slotEdits$level : (((_casting$slots = casting.slots) === null || _casting$slots === void 0 ? void 0 : _casting$slots[String(level)]) || []).join(", "),
+							onChange: (e) => setSlotEdits((current) => ({
+								...current,
+								[level]: e.target.value
+							})),
+							onBlur: (e) => {
+								const values = e.target.value.trim() ? e.target.value.split(",").map((v) => Number(v.trim())).filter((v) => Number.isInteger(v) && v >= 0) : [];
+								patch({ slots: {
+									...casting.slots,
+									[level]: values
+								} });
+								setSlotEdits((current) => {
+									const next = { ...current };
+									delete next[level];
+									return next;
+								});
+							}
+						})] })
+					] }, level);
+				})
 			}),
 			/* @__PURE__ */ jsx("p", { children: "Значения указаны для каждого уровня класса. Для своей таблицы перечислите число ячеек с 1-го круга: например 0, 0, 2." })
 		] }),
@@ -65332,11 +66023,15 @@ function ClassSpellcasting({ draft, update }) {
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-spell-source-grid",
 			children: classes.filter((c) => spells.some((s) => s.classes.includes(c.id))).map((c) => {
+				var _draft$spellListSourc;
 				const count = spells.filter((s) => s.classes.includes(c.id)).length;
-				const selected = draft.spellListSources?.includes(c.id) || false;
+				const selected = ((_draft$spellListSourc = draft.spellListSources) === null || _draft$spellListSourc === void 0 ? void 0 : _draft$spellListSourc.includes(c.id)) || false;
 				return /* @__PURE__ */ jsxs("button", {
 					"aria-pressed": selected,
-					onClick: () => update({ spellListSources: selected ? draft.spellListSources?.filter((id) => id !== c.id) : [...draft.spellListSources || [], c.id] }),
+					onClick: () => {
+						var _draft$spellListSourc2;
+						return update({ spellListSources: selected ? (_draft$spellListSourc2 = draft.spellListSources) === null || _draft$spellListSourc2 === void 0 ? void 0 : _draft$spellListSourc2.filter((id) => id !== c.id) : [...draft.spellListSources || [], c.id] });
+					},
 					children: [/* @__PURE__ */ jsx("strong", { children: c.name }), /* @__PURE__ */ jsxs("small", { children: [count, " заклинаний"] })]
 				}, c.id);
 			})
@@ -65351,23 +66046,32 @@ function ClassSpellcasting({ draft, update }) {
 		}),
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-toolbar",
-			children: spells.filter((s) => (s.name + " " + s.school).toLowerCase().includes(query.toLowerCase())).slice(0, 40).map((s) => /* @__PURE__ */ jsxs("button", {
-				"aria-pressed": draft.spellList?.includes(s.id) || false,
-				onClick: () => update({ spellList: draft.spellList?.includes(s.id) ? draft.spellList.filter((x) => x !== s.id) : [...draft.spellList || [], s.id] }),
-				children: [
-					s.name,
-					" · ",
-					s.level
-				]
-			}, s.id))
+			children: spells.filter((s) => (s.name + " " + s.school).toLowerCase().includes(query.toLowerCase())).slice(0, 40).map((s) => {
+				var _draft$spellList;
+				return /* @__PURE__ */ jsxs("button", {
+					"aria-pressed": ((_draft$spellList = draft.spellList) === null || _draft$spellList === void 0 ? void 0 : _draft$spellList.includes(s.id)) || false,
+					onClick: () => {
+						var _draft$spellList2;
+						return update({ spellList: ((_draft$spellList2 = draft.spellList) === null || _draft$spellList2 === void 0 ? void 0 : _draft$spellList2.includes(s.id)) ? draft.spellList.filter((x) => x !== s.id) : [...draft.spellList || [], s.id] });
+					},
+					children: [
+						s.name,
+						" · ",
+						s.level
+					]
+				}, s.id);
+			})
 		}),
 		/* @__PURE__ */ jsxs("small", { children: [
 			"Готовых списков: ",
-			draft.spellListSources?.length || 0,
+			((_draft$spellListSourc3 = draft.spellListSources) === null || _draft$spellListSourc3 === void 0 ? void 0 : _draft$spellListSourc3.length) || 0,
 			". Отдельно добавлено: ",
-			draft.spellList?.length || 0,
+			((_draft$spellList3 = draft.spellList) === null || _draft$spellList3 === void 0 ? void 0 : _draft$spellList3.length) || 0,
 			". Всего доступно: ",
-			new Set(spells.filter((s) => draft.spellList?.includes(s.id) || draft.spellListSources?.some((source) => s.classes.includes(source))).map((s) => s.id)).size,
+			new Set(spells.filter((s) => {
+				var _draft$spellList4, _draft$spellListSourc4;
+				return ((_draft$spellList4 = draft.spellList) === null || _draft$spellList4 === void 0 ? void 0 : _draft$spellList4.includes(s.id)) || ((_draft$spellListSourc4 = draft.spellListSources) === null || _draft$spellListSourc4 === void 0 ? void 0 : _draft$spellListSourc4.some((source) => s.classes.includes(source)));
+			}).map((s) => s.id)).size,
 			"."
 		] })
 	] });
@@ -65392,78 +66096,84 @@ function SpellGrantsEditor({ draft, update, entities }) {
 		/* @__PURE__ */ jsx("div", {
 			className: "hb-toolbar",
 			children: options.map((spell) => /* @__PURE__ */ jsxs("button", {
-				onClick: () => update({ spellGrants: [...grants, {
-					spellId: spell.id,
-					level: draft.level || (draft.type === "subclass" ? draft.subclass?.chooseAtLevel || 3 : 1),
-					mode: "known",
-					countsAgainstKnown: false
-				}] }),
+				onClick: () => {
+					var _draft$subclass9;
+					return update({ spellGrants: [...grants, {
+						spellId: spell.id,
+						level: draft.level || (draft.type === "subclass" ? ((_draft$subclass9 = draft.subclass) === null || _draft$subclass9 === void 0 ? void 0 : _draft$subclass9.chooseAtLevel) || 3 : 1),
+						mode: "known",
+						countsAgainstKnown: false
+					}] });
+				},
 				children: ["+ ", spell.name]
 			}, spell.id))
 		}),
-		grants.map((grant, i) => /* @__PURE__ */ jsxs("fieldset", {
-			className: "hb-row",
-			children: [
-				/* @__PURE__ */ jsx("strong", { children: options.find((e) => e.id === grant.spellId)?.name || spells.find((e) => e.id === grant.spellId)?.name || entities.find((e) => e.id === grant.spellId)?.name || grant.spellId }),
-				/* @__PURE__ */ jsx(Field, {
-					label: "С уровня класса",
-					children: /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: 1,
-						max: 20,
-						value: grant.level,
-						onChange: (e) => update({ spellGrants: grants.map((g, n) => n === i ? {
+		grants.map((grant, i) => {
+			var _options$find, _spells$find, _entities$find3;
+			return /* @__PURE__ */ jsxs("fieldset", {
+				className: "hb-row",
+				children: [
+					/* @__PURE__ */ jsx("strong", { children: ((_options$find = options.find((e) => e.id === grant.spellId)) === null || _options$find === void 0 ? void 0 : _options$find.name) || ((_spells$find = spells.find((e) => e.id === grant.spellId)) === null || _spells$find === void 0 ? void 0 : _spells$find.name) || ((_entities$find3 = entities.find((e) => e.id === grant.spellId)) === null || _entities$find3 === void 0 ? void 0 : _entities$find3.name) || grant.spellId }),
+					/* @__PURE__ */ jsx(Field, {
+						label: "С уровня класса",
+						children: /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: 1,
+							max: 20,
+							value: grant.level,
+							onChange: (e) => update({ spellGrants: grants.map((g, n) => n === i ? {
+								...g,
+								level: Number(e.target.value)
+							} : g) })
+						})
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Режим",
+						children: /* @__PURE__ */ jsx(Select, {
+							label: "Режим заклинания",
+							value: grant.mode || "known",
+							onChange: (mode) => update({ spellGrants: grants.map((g, n) => n === i ? {
+								...g,
+								mode
+							} : g) }),
+							options: {
+								known: "Всегда известно",
+								"always-prepared": "Всегда подготовлено"
+							}
+						})
+					}),
+					/* @__PURE__ */ jsx(Field, {
+						label: "Применений без ячейки (0 — обычные ячейки)",
+						children: /* @__PURE__ */ jsx("input", {
+							type: "number",
+							min: 0,
+							max: 20,
+							value: grant.uses || 0,
+							onChange: (e) => update({ spellGrants: grants.map((g, n) => n === i ? {
+								...g,
+								uses: Number(e.target.value) || void 0
+							} : g) })
+						})
+					}),
+					!!grant.uses && /* @__PURE__ */ jsx(Select, {
+						label: "Восстановление применений",
+						value: grant.recovery || "long",
+						onChange: (recovery) => update({ spellGrants: grants.map((g, n) => n === i ? {
 							...g,
-							level: Number(e.target.value)
-						} : g) })
-					})
-				}),
-				/* @__PURE__ */ jsx(Field, {
-					label: "Режим",
-					children: /* @__PURE__ */ jsx(Select, {
-						label: "Режим заклинания",
-						value: grant.mode || "known",
-						onChange: (mode) => update({ spellGrants: grants.map((g, n) => n === i ? {
-							...g,
-							mode
+							recovery
 						} : g) }),
 						options: {
-							known: "Всегда известно",
-							"always-prepared": "Всегда подготовлено"
+							long: "Длинный отдых",
+							short_or_long: "Короткий или длинный"
 						}
+					}),
+					/* @__PURE__ */ jsx("button", {
+						onClick: () => update({ spellGrants: grants.filter((_, n) => n !== i) }),
+						children: "Удалить"
 					})
-				}),
-				/* @__PURE__ */ jsx(Field, {
-					label: "Применений без ячейки (0 — обычные ячейки)",
-					children: /* @__PURE__ */ jsx("input", {
-						type: "number",
-						min: 0,
-						max: 20,
-						value: grant.uses || 0,
-						onChange: (e) => update({ spellGrants: grants.map((g, n) => n === i ? {
-							...g,
-							uses: Number(e.target.value) || void 0
-						} : g) })
-					})
-				}),
-				!!grant.uses && /* @__PURE__ */ jsx(Select, {
-					label: "Восстановление применений",
-					value: grant.recovery || "long",
-					onChange: (recovery) => update({ spellGrants: grants.map((g, n) => n === i ? {
-						...g,
-						recovery
-					} : g) }),
-					options: {
-						long: "Длинный отдых",
-						short_or_long: "Короткий или длинный"
-					}
-				}),
-				/* @__PURE__ */ jsx("button", {
-					onClick: () => update({ spellGrants: grants.filter((_, n) => n !== i) }),
-					children: "Удалить"
-				})
-			]
-		}, i))
+				]
+			}, i);
+		})
 	] });
 }
 function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
@@ -65519,7 +66229,7 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 					return /* @__PURE__ */ jsxs("div", {
 						className: "hb-sidebar-package",
 						children: [/* @__PURE__ */ jsxs("button", {
-							className: draft?.id === pack.root.id ? "selected" : "",
+							className: (draft === null || draft === void 0 ? void 0 : draft.id) === pack.root.id ? "selected" : "",
 							onClick: () => open(pack.root),
 							children: [
 								/* @__PURE__ */ jsxs("small", { children: [
@@ -65530,7 +66240,7 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 								/* @__PURE__ */ jsx("strong", { children: pack.name }),
 								/* @__PURE__ */ jsx("span", { children: homebrewPackageLabel(pack) })
 							]
-						}), current?.id === pack.id && pack.members.length > 1 && /* @__PURE__ */ jsxs("details", {
+						}), (current === null || current === void 0 ? void 0 : current.id) === pack.id && pack.members.length > 1 && /* @__PURE__ */ jsxs("details", {
 							open: !!needle,
 							children: [
 								/* @__PURE__ */ jsxs("summary", { children: [
@@ -65544,7 +66254,7 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 									children: [abilityCount, " вариантов способностей находятся внутри прогрессии класса, а не отдельным списком."]
 								}),
 								/* @__PURE__ */ jsx("div", { children: nested.map((member) => /* @__PURE__ */ jsxs("button", {
-									className: draft?.id === member.id ? "selected" : "",
+									className: (draft === null || draft === void 0 ? void 0 : draft.id) === member.id ? "selected" : "",
 									onClick: () => open(member),
 									children: [/* @__PURE__ */ jsx("small", { children: homebrewTypeLabels[member.type] }), /* @__PURE__ */ jsx("strong", { children: member.name })]
 								}, member.id)) })
@@ -65558,7 +66268,7 @@ function HomebrewSidebar({ packages, draft, query, setQuery, open }) {
 }
 function ClassPackageContents({ root, pack, open }) {
 	const [query, setQuery] = useState("");
-	const members = (pack?.members || [root]).filter((member) => member.id !== root.id);
+	const members = ((pack === null || pack === void 0 ? void 0 : pack.members) || [root]).filter((member) => member.id !== root.id);
 	const abilityCount = members.filter((member) => member.type === "ability").length;
 	const technicalMembers = members.filter((member) => member.type !== "ability");
 	const groups = [
@@ -65618,7 +66328,11 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, co
 	const [sort, setSort] = useState("newest"), [source, setSource] = useState("all"), [selected, setSelected] = useState([]);
 	const packs = homebrewPackages(library.elements);
 	const visible = packs.filter((pack) => {
-		return pack.members.some((e) => (e.name + " " + e.id + " " + e.tags?.join(" ") + " " + e.summary).toLowerCase().includes(query.toLowerCase())) && (filter === "all" || pack.members.some((e) => e.type === filter)) && (source === "all" || source === "example" === (pack.root.source?.kind === "example"));
+		var _pack$root$source;
+		return pack.members.some((e) => {
+			var _e$tags;
+			return (e.name + " " + e.id + " " + ((_e$tags = e.tags) === null || _e$tags === void 0 ? void 0 : _e$tags.join(" ")) + " " + e.summary).toLowerCase().includes(query.toLowerCase());
+		}) && (filter === "all" || pack.members.some((e) => e.type === filter)) && (source === "all" || source === "example" === (((_pack$root$source = pack.root.source) === null || _pack$root$source === void 0 ? void 0 : _pack$root$source.kind) === "example"));
 	}).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name, "ru") : sort === "type" ? a.root.type.localeCompare(b.root.type) || a.name.localeCompare(b.name, "ru") : b.root.updatedAt.localeCompare(a.root.updatedAt));
 	const allVisibleSelected = visible.length > 0 && visible.every((pack) => selected.includes(pack.id));
 	const toggle = (id) => setSelected((current) => current.includes(id) ? current.filter((value) => value !== id) : [...current, id]);
@@ -65717,7 +66431,10 @@ function HomebrewBrowser({ library, query, setQuery, filter, setFilter, open, co
 							/* @__PURE__ */ jsx("p", { children: e.summary || e.description.slice(0, 125) }),
 							query && /* @__PURE__ */ jsxs("p", {
 								className: "hb-search-matches",
-								children: ["Совпадения: ", pack.members.filter((member) => (member.name + " " + member.id + " " + member.tags?.join(" ") + " " + member.summary).toLowerCase().includes(query.toLowerCase())).map((member) => member.name).join(", ")]
+								children: ["Совпадения: ", pack.members.filter((member) => {
+									var _member$tags;
+									return (member.name + " " + member.id + " " + ((_member$tags = member.tags) === null || _member$tags === void 0 ? void 0 : _member$tags.join(" ")) + " " + member.summary).toLowerCase().includes(query.toLowerCase());
+								}).map((member) => member.name).join(", ")]
 							}),
 							/* @__PURE__ */ jsxs("small", { children: ["Сохранено ", new Date(e.updatedAt).toLocaleString("ru-RU", {
 								dateStyle: "short",
@@ -65999,7 +66716,10 @@ function normalizeBanList(value) {
 		id: typeof input.id === "string" && input.id ? input.id : newBanId(),
 		name: typeof input.name === "string" ? input.name : "Правила кампании",
 		mode,
-		categories: Object.fromEntries(Object.keys(categoryNames).map((category) => [category, Array.isArray(input.categories?.[category]) ? [...new Set(input.categories[category].filter((id) => typeof id === "string"))] : mode === "allow" ? catalogs[category].map((option) => option.id) : []])),
+		categories: Object.fromEntries(Object.keys(categoryNames).map((category) => {
+			var _input$categories;
+			return [category, Array.isArray((_input$categories = input.categories) === null || _input$categories === void 0 ? void 0 : _input$categories[category]) ? [...new Set(input.categories[category].filter((id) => typeof id === "string"))] : mode === "allow" ? catalogs[category].map((option) => option.id) : []];
+		})),
 		tceOptionalFeaturesBanned: false,
 		tceFullBanned: false
 	};
@@ -66008,11 +66728,12 @@ function normalizeBanList(value) {
 	return result;
 }
 function allowed(list, category, id) {
+	var _list$categories$cate;
 	if (!list || !id) return true;
 	if (category === "optionalFeatures" && (list.tceOptionalFeaturesBanned || list.tceFullBanned)) return false;
 	const option = catalogs[category].find((option) => option.id === id);
 	if (list.tceFullBanned && option && sourceTokens(option.source).includes("TCE")) return false;
-	const listed = list.categories[category]?.includes(id);
+	const listed = (_list$categories$cate = list.categories[category]) === null || _list$categories$cate === void 0 ? void 0 : _list$categories$cate.includes(id);
 	return list.mode === "deny" ? !listed : !!listed;
 }
 function setBanState(list, category, ids, banned) {
@@ -66122,20 +66843,23 @@ Object.entries(subclasses).flatMap(([classId, rule]) => rule.options.map((option
 	id: `${classId}:${option.id}`
 })));
 var featCatalog = feats.filter((feat) => feat.id !== "asi");
-catalogs.classOptions = [...new Map(classes.flatMap((classOption) => ["", ...subclasses[classOption.id]?.options.map((option) => option.id) || []].flatMap((subclass) => classChoiceGroups({
-	...initial,
-	className: classOption.id,
-	subclass,
-	level: 20,
-	useTasha: true
-}, []).flatMap((group) => group.options.filter((option) => !group.key.startsWith("tce-")).map((option) => ({
-	...option,
-	id: classOptionId(classOption.id, group.key, option.id),
-	classId: classOption.id,
-	group: group.title,
-	level: group.level,
-	tags: []
-}))))).map((option) => [option.id, option])).values()];
+catalogs.classOptions = [...new Map(classes.flatMap((classOption) => {
+	var _subclasses$classOpti;
+	return ["", ...((_subclasses$classOpti = subclasses[classOption.id]) === null || _subclasses$classOpti === void 0 ? void 0 : _subclasses$classOpti.options.map((option) => option.id)) || []].flatMap((subclass) => classChoiceGroups({
+		...initial,
+		className: classOption.id,
+		subclass,
+		level: 20,
+		useTasha: true
+	}, []).flatMap((group) => group.options.filter((option) => !group.key.startsWith("tce-")).map((option) => ({
+		...option,
+		id: classOptionId(classOption.id, group.key, option.id),
+		classId: classOption.id,
+		group: group.title,
+		level: group.level,
+		tags: []
+	}))));
+}).map((option) => [option.id, option])).values()];
 var personalityNames = {
 	traits: "Черты характера",
 	ideals: "Идеалы",
@@ -66590,24 +67314,26 @@ function folderId() {
 	return `folder-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 function normalizeVault(value) {
-	const folders = Array.isArray(value?.folders) ? value.folders.filter((folder) => folder && typeof folder.id === "string" && typeof folder.name === "string") : [];
+	var _slots$;
+	const folders = Array.isArray(value === null || value === void 0 ? void 0 : value.folders) ? value.folders.filter((folder) => folder && typeof folder.id === "string" && typeof folder.name === "string") : [];
 	const folderIds = new Set(folders.map((folder) => folder.id));
-	const slots = Array.isArray(value?.slots) ? value.slots.map((slot) => ({
+	const slots = Array.isArray(value === null || value === void 0 ? void 0 : value.slots) ? value.slots.map((slot) => ({
 		...slot,
 		character: normalizeCharacter(slot.character),
 		folderId: slot.folderId && folderIds.has(slot.folderId) ? slot.folderId : void 0
 	})) : [];
-	const activeId = slots.some((slot) => slot.id === value?.activeId) ? value.activeId : slots[0]?.id || "";
+	const activeId = slots.some((slot) => slot.id === (value === null || value === void 0 ? void 0 : value.activeId)) ? value.activeId : ((_slots$ = slots[0]) === null || _slots$ === void 0 ? void 0 : _slots$.id) || "";
 	return {
 		version: 1,
-		capacity: Math.max(5, value?.capacity || 5, slots.length),
+		capacity: Math.max(5, (value === null || value === void 0 ? void 0 : value.capacity) || 5, slots.length),
 		activeId,
 		slots,
 		folders
 	};
 }
 function mergeVaults(local, remote) {
-	if (!remote?.slots?.length) return local;
+	var _remote$slots, _mergedSlots$;
+	if (!(remote === null || remote === void 0 || (_remote$slots = remote.slots) === null || _remote$slots === void 0 ? void 0 : _remote$slots.length)) return local;
 	const remoteNormalized = normalizeVault(remote);
 	const folders = /* @__PURE__ */ new Map();
 	for (const folder of [...remoteNormalized.folders, ...local.folders]) folders.set(folder.id, folder);
@@ -66620,7 +67346,7 @@ function mergeVaults(local, remote) {
 		});
 	}
 	const mergedSlots = [...slots.values()].sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
-	const activeId = mergedSlots.some((slot) => slot.id === local.activeId) ? local.activeId : mergedSlots.some((slot) => slot.id === remoteNormalized.activeId) ? remoteNormalized.activeId : mergedSlots[0]?.id || "";
+	const activeId = mergedSlots.some((slot) => slot.id === local.activeId) ? local.activeId : mergedSlots.some((slot) => slot.id === remoteNormalized.activeId) ? remoteNormalized.activeId : ((_mergedSlots$ = mergedSlots[0]) === null || _mergedSlots$ === void 0 ? void 0 : _mergedSlots$.id) || "";
 	return {
 		version: 1,
 		capacity: Math.max(5, local.capacity, remoteNormalized.capacity, mergedSlots.length),
@@ -66635,8 +67361,12 @@ function levelLabel(value) {
 function hasOriginFeat(character) {
 	return character.race === "human" && character.raceVariant === "variant" || character.race === "customlineage";
 }
-function advancementSlotsFor(character, homebrewElements = character.homebrew?.entities || []) {
-	const classEntries = character.classes?.filter((entry) => entry.classId && entry.level > 0) || [{
+function advancementSlotsFor(character, homebrewElements = (() => {
+	var _character$homebrew;
+	return (_character$homebrew = character.homebrew) === null || _character$homebrew === void 0 ? void 0 : _character$homebrew.entities;
+})() || []) {
+	var _character$classes, _character$feats;
+	const classEntries = ((_character$classes = character.classes) === null || _character$classes === void 0 ? void 0 : _character$classes.filter((entry) => entry.classId && entry.level > 0)) || [{
 		classId: character.className,
 		level: character.level
 	}];
@@ -66645,17 +67375,20 @@ function advancementSlotsFor(character, homebrewElements = character.homebrew?.e
 		key: "origin-1",
 		level: 1,
 		origin: true
-	}] : [], ...classEntries.flatMap((entry) => (homebrewAsiLevels(homebrewElements, entry.classId) ?? asiLevelsForClass(entry.classId)).filter((level) => level <= entry.level).map((level) => ({
-		key: isSingleClass ? `class-${level}` : `class:${entry.classId}:${level}`,
-		level,
-		origin: false
-	})))];
+	}] : [], ...classEntries.flatMap((entry) => {
+		var _homebrewAsiLevels;
+		return ((_homebrewAsiLevels = homebrewAsiLevels(homebrewElements, entry.classId)) !== null && _homebrewAsiLevels !== void 0 ? _homebrewAsiLevels : asiLevelsForClass(entry.classId)).filter((level) => level <= entry.level).map((level) => ({
+			key: isSingleClass ? `class-${level}` : `class:${entry.classId}:${level}`,
+			level,
+			origin: false
+		}));
+	})];
 	const savedBonus = (character.advancements || []).filter((choice) => choice.bonus).map((choice) => ({
 		key: choice.key,
 		level: choice.level,
 		bonus: true
 	}));
-	const requiredBonusCount = Math.max(0, (character.feats?.length || 0) - regular.length - savedBonus.length);
+	const requiredBonusCount = Math.max(0, (((_character$feats = character.feats) === null || _character$feats === void 0 ? void 0 : _character$feats.length) || 0) - regular.length - savedBonus.length);
 	const generatedBonus = Array.from({ length: requiredBonusCount }, (_, index) => ({
 		key: `bonus-${savedBonus.length + index + 1}`,
 		level: character.level,
@@ -66668,16 +67401,21 @@ function advancementSlotsFor(character, homebrewElements = character.homebrew?.e
 	];
 }
 function homebrewClassSkillRule(elements, classId, multiclass = false) {
+	var _owner$multiclass;
 	const owner = elements.find((element) => element.id === classId && element.type === "class");
-	const rule = multiclass ? owner?.multiclass?.skillChoices : owner?.skillChoices;
+	const rule = multiclass ? owner === null || owner === void 0 || (_owner$multiclass = owner.multiclass) === null || _owner$multiclass === void 0 ? void 0 : _owner$multiclass.skillChoices : owner === null || owner === void 0 ? void 0 : owner.skillChoices;
 	return {
-		count: rule?.count || 0,
-		skills: (rule?.from || []).map((id) => Object.entries(skillKeys).find(([, value]) => value.key === id)?.[0] || id)
+		count: (rule === null || rule === void 0 ? void 0 : rule.count) || 0,
+		skills: ((rule === null || rule === void 0 ? void 0 : rule.from) || []).map((id) => {
+			var _Object$entries$find;
+			return ((_Object$entries$find = Object.entries(skillKeys).find(([, value]) => value.key === id)) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0]) || id;
+		})
 	};
 }
 function multiclassSkillChoiceCount(classId, elements = []) {
+	var _custom$multiclass;
 	const custom = elements.find((element) => element.id === classId && element.type === "class");
-	if (custom) return custom.multiclass?.skillChoices?.count || 0;
+	if (custom) return ((_custom$multiclass = custom.multiclass) === null || _custom$multiclass === void 0 || (_custom$multiclass = _custom$multiclass.skillChoices) === null || _custom$multiclass === void 0 ? void 0 : _custom$multiclass.count) || 0;
 	return [
 		"bard",
 		"ranger",
@@ -66698,15 +67436,16 @@ function syncAdvancements(character, advancements = []) {
 	};
 }
 function repairBackgroundAdvancement(character) {
+	var _character$background;
 	if (!character.background) return character;
 	const group = backgroundChoiceGroups(character.background, featCatalog).find((item) => item.kind === "feat" || item.grantsFeatId);
 	if (!group) return character;
-	const selected = character.backgroundChoices?.[group.key] || [];
+	const selected = ((_character$background = character.backgroundChoices) === null || _character$background === void 0 ? void 0 : _character$background[group.key]) || [];
 	const featId = group.grantsFeatId || selected[0] || "";
 	if (!featId || !selected.length) return character;
 	const key = `background-${character.background}`;
 	const existing = (character.advancements || []).find((choice) => choice.key === key);
-	if (existing?.featId === featId) return character;
+	if ((existing === null || existing === void 0 ? void 0 : existing.featId) === featId) return character;
 	const slot = {
 		key,
 		level: 1,
@@ -66714,7 +67453,7 @@ function repairBackgroundAdvancement(character) {
 		featId,
 		asiChoices: [],
 		featChoices: featId === "strixhaven-initiate" ? {
-			...existing?.featChoices || {},
+			...(existing === null || existing === void 0 ? void 0 : existing.featChoices) || {},
 			college: selected
 		} : {}
 	};
@@ -66808,7 +67547,8 @@ function normalizeCharacter(value) {
 		const slots = [...regularSlots, ...extraSlots];
 		const legacyAsi = [...normalized.asiChoices || []];
 		normalized.advancements = slots.slice(0, normalized.feats.length).map((slot, index) => {
-			const featId = normalized.feats?.[index] || "";
+			var _normalized$feats;
+			const featId = ((_normalized$feats = normalized.feats) === null || _normalized$feats === void 0 ? void 0 : _normalized$feats[index]) || "";
 			return {
 				...slot,
 				featId,
@@ -66826,8 +67566,8 @@ function savedCharacterExportContext(value, activeBan = null) {
 	const rulesCharacter = restrictedCharacter({
 		...character,
 		...advancementFields,
-		useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
-		tceFullBanned: !!activeBan?.tceFullBanned,
+		useTasha: !!character.useTasha && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
+		tceFullBanned: !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
 		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
 	});
@@ -66839,8 +67579,9 @@ function savedCharacterExportContext(value, activeBan = null) {
 	const race = races.find((option) => option.id === exportCharacter.race);
 	const characterClass = classes.find((option) => option.id === exportCharacter.className);
 	const background = backgrounds.find((option) => option.id === exportCharacter.background);
-	const raceFeatureList = resolvedRaceFeatures(exportCharacter.race, exportCharacter.raceVariant, race?.description, race?.tags);
+	const raceFeatureList = resolvedRaceFeatures(exportCharacter.race, exportCharacter.raceVariant, race === null || race === void 0 ? void 0 : race.description, race === null || race === void 0 ? void 0 : race.tags);
 	const classFeatureList = orderedCharacterClasses(exportCharacter).flatMap((entry) => {
+		var _classes$find, _exportCharacter$home, _classRules$entry$cla, _exportCharacter$home2;
 		const subclass = selectedSubclass(entry.classId, entry.subclassId || "");
 		const scoped = {
 			...exportCharacter,
@@ -66848,24 +67589,31 @@ function savedCharacterExportContext(value, activeBan = null) {
 			subclass: entry.subclassId || "",
 			level: entry.level
 		};
-		const className = classes.find((option) => option.id === entry.classId)?.name || exportCharacter.homebrew?.entities.find((e) => e.id === entry.classId)?.name || entry.classId;
-		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!exportCharacter.useTasha, classRules[entry.classId]?.features || exportCharacter.homebrew?.entities.find((e) => e.id === entry.classId)?.features?.map((f) => ({
+		const className = ((_classes$find = classes.find((option) => option.id === entry.classId)) === null || _classes$find === void 0 ? void 0 : _classes$find.name) || ((_exportCharacter$home = exportCharacter.homebrew) === null || _exportCharacter$home === void 0 || (_exportCharacter$home = _exportCharacter$home.entities.find((e) => e.id === entry.classId)) === null || _exportCharacter$home === void 0 ? void 0 : _exportCharacter$home.name) || entry.classId;
+		return detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass === null || subclass === void 0 ? void 0 : subclass.name, !!exportCharacter.useTasha, ((_classRules$entry$cla = classRules[entry.classId]) === null || _classRules$entry$cla === void 0 ? void 0 : _classRules$entry$cla.features) || ((_exportCharacter$home2 = exportCharacter.homebrew) === null || _exportCharacter$home2 === void 0 || (_exportCharacter$home2 = _exportCharacter$home2.entities.find((e) => e.id === entry.classId)) === null || _exportCharacter$home2 === void 0 || (_exportCharacter$home2 = _exportCharacter$home2.features) === null || _exportCharacter$home2 === void 0 ? void 0 : _exportCharacter$home2.map((f) => ({
 			name: f.name,
 			description: f.description,
 			level: f.level
-		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [], exportCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		}))) || [], (subclass === null || subclass === void 0 ? void 0 : subclass.features) || [], optionalClassFeatures[entry.classId] || [], exportCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
 	});
 	const chosenRaceVariant = selectedRaceVariant(exportCharacter.race, exportCharacter.raceVariant);
 	const chosenSubclass = selectedSubclass(exportCharacter.className, exportCharacter.subclass || "");
-	const featNames = (exportCharacter.advancements || []).map((choice) => feats.find((item) => item.id === choice.featId)?.name).filter((name) => Boolean(name));
+	const featNames = (exportCharacter.advancements || []).map((choice) => {
+		var _feats$find;
+		return (_feats$find = feats.find((item) => item.id === choice.featId)) === null || _feats$find === void 0 ? void 0 : _feats$find.name;
+	}).filter((name) => Boolean(name));
 	const featFeatureList = (exportCharacter.advancements || []).flatMap((choice) => {
 		const feat = feats.find((item) => item.id === choice.featId);
 		if (!feat || feat.id === "asi") return [];
 		const details = featChoiceGroups(choice, spells, exportCharacter.level).map((group) => {
-			const names = (choice.featChoices?.[group.key] || []).map((id) => group.options.find((option) => option.id === id)?.name || id);
+			var _choice$featChoices;
+			const names = (((_choice$featChoices = choice.featChoices) === null || _choice$featChoices === void 0 ? void 0 : _choice$featChoices[group.key]) || []).map((id) => {
+				var _group$options$find;
+				return ((_group$options$find = group.options.find((option) => option.id === id)) === null || _group$options$find === void 0 ? void 0 : _group$options$find.name) || id;
+			});
 			return names.length ? `${group.title}: ${names.join(", ")}` : "";
 		}).filter(Boolean);
 		return [markFeature({
@@ -66889,8 +67637,8 @@ function savedCharacterExportContext(value, activeBan = null) {
 		raceFeatureList,
 		classFeatureList,
 		raceProficiencies: raceProficiencies(exportCharacter),
-		subclassName: chosenSubclass?.name,
-		raceVariantName: chosenRaceVariant?.name,
+		subclassName: chosenSubclass === null || chosenSubclass === void 0 ? void 0 : chosenSubclass.name,
+		raceVariantName: chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name,
 		featNames,
 		featFeatureList,
 		featSpellIds,
@@ -66906,7 +67654,8 @@ function HitPointRollEditor({ character, onChange }) {
 			/* @__PURE__ */ jsx("summary", { children: "Броски хитов по уровням" }),
 			/* @__PURE__ */ jsx("p", { children: "Введите результат кости без модификатора Телосложения. Старые числа учитываются как готовый прирост. Если сохранённое число было результатом кости, подтвердите это кнопкой ниже — модификатор Телосложения будет добавлен отдельно." }),
 			history.map((entry) => {
-				const die = classRules[entry.classId]?.hitDie || 8;
+				var _classRules$entry$cla2, _entry$hpGain;
+				const die = ((_classRules$entry$cla2 = classRules[entry.classId]) === null || _classRules$entry$cla2 === void 0 ? void 0 : _classRules$entry$cla2.hitDie) || 8;
 				const raw = entry.hpGainFormat === "raw-roll-plus-con-v1" && entry.hpMode === "roll";
 				return /* @__PURE__ */ jsxs("label", { children: [
 					"Уровень ",
@@ -66920,7 +67669,7 @@ function HitPointRollEditor({ character, onChange }) {
 						type: "number",
 						min: "1",
 						max: die,
-						value: raw ? entry.hpGain ?? "" : "",
+						value: raw ? (_entry$hpGain = entry.hpGain) !== null && _entry$hpGain !== void 0 ? _entry$hpGain : "" : "",
 						placeholder: entry.hpGain !== void 0 && !raw ? `Старое значение: ${entry.hpGain}` : "Среднее",
 						onChange: (event) => onChange(entry.characterLevel, event.target.value === "" ? null : Number(event.target.value))
 					}),
@@ -67024,6 +67773,7 @@ function AdventureApp() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, { adventureRoute: true }) });
 }
 function Builder({ adventureRoute = false } = {}) {
+	var _classRuleFor, _homebrew$elements$fi3, _classRuleFor2, _character$spellGrant, _character$raceChoice3, _feats$find4, _classRuleFor4, _sourcedSpellGroups$f2, _homebrew$elements$fi7;
 	const [view, setView] = useState(adventureRoute ? "characters" : "home");
 	const [step, setStep] = useState(0);
 	const [character, setCharacter] = useState(initial);
@@ -67105,7 +67855,7 @@ function Builder({ adventureRoute = false } = {}) {
 	function readLocalHomebrew() {
 		try {
 			return normalizeHomebrewLibrary(JSON.parse(localStorage.getItem("herolist-homebrew-local-v2") || "null"));
-		} catch {
+		} catch (_unused) {
 			return emptyHomebrewLibrary;
 		}
 	}
@@ -67143,7 +67893,7 @@ function Builder({ adventureRoute = false } = {}) {
 			try {
 				const stored = localStorage.getItem("list-geroya-character-vault-v1");
 				if (stored) latestLocal = normalizeVault(JSON.parse(stored));
-			} catch {}
+			} catch (_unused2) {}
 			const merged = mergeVaults(latestLocal, remotePayload.vault);
 			const requestedPlay = adventureRoute ? new URLSearchParams(window.location.search).get("play") : null;
 			if (requestedPlay && merged.slots.some((slot) => slot.id === requestedPlay && slot.character.adventure)) {
@@ -67162,7 +67912,7 @@ function Builder({ adventureRoute = false } = {}) {
 				body: JSON.stringify({ vault: merged })
 			})).ok ? "saved" : "error");
 			setAccount(accountValue);
-		} catch {
+		} catch (_unused3) {
 			setAccount({ authenticated: false });
 			setHomebrew(readLocalHomebrew());
 			setCloudState("error");
@@ -67190,7 +67940,7 @@ function Builder({ adventureRoute = false } = {}) {
 				loadedVault = {
 					version: 1,
 					capacity: 5,
-					activeId: slot?.id || "",
+					activeId: (slot === null || slot === void 0 ? void 0 : slot.id) || "",
 					slots: slot ? [slot] : [],
 					folders: []
 				};
@@ -67209,11 +67959,11 @@ function Builder({ adventureRoute = false } = {}) {
 			if (migratedBan && !lists.some((list) => list.id === migratedBan.id)) lists.push(migratedBan);
 			setBanLists(lists);
 			localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(lists));
-			if (lists.length) setBanDraft(lists.find((list) => list.id === migratedBan?.id) || lists[0]);
+			if (lists.length) setBanDraft(lists.find((list) => list.id === (migratedBan === null || migratedBan === void 0 ? void 0 : migratedBan.id)) || lists[0]);
 			setAdditionalSpellsUnlocked(localStorage.getItem("list-geroya-additional-spells") === "enabled");
 			setAdditionalSpellsAcknowledged(localStorage.getItem("list-geroya-additional-spells-warning") === "acknowledged");
 			setSiteTheme(localStorage.getItem("list-geroya-site-theme") === "parchment" ? "parchment" : "classic");
-		} catch {
+		} catch (_unused4) {
 			const slot = createSlot(initial);
 			loadedVault = {
 				version: 1,
@@ -67252,7 +68002,7 @@ function Builder({ adventureRoute = false } = {}) {
 		};
 		localStorage.setItem("list-geroya-character-vault-v1", JSON.stringify(next));
 		localStorage.setItem("dark-codex-character", JSON.stringify(character));
-		if (account?.authenticated) {
+		if (account === null || account === void 0 ? void 0 : account.authenticated) {
 			if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
 			cloudSaveTimerRef.current = setTimeout(async () => {
 				setCloudState("saving");
@@ -67262,7 +68012,7 @@ function Builder({ adventureRoute = false } = {}) {
 						headers: { "content-type": "application/json" },
 						body: JSON.stringify({ vault: next })
 					})).ok ? "saved" : "error");
-				} catch {
+				} catch (_unused5) {
 					setCloudState("error");
 				}
 			}, 650);
@@ -67308,18 +68058,21 @@ function Builder({ adventureRoute = false } = {}) {
 	const allSkillNames = [...new Set(Object.values(classSkillRules).flatMap((rule) => rule.skills))].sort((a, b) => a.localeCompare(b, "ru"));
 	const currentOptions = step === 0 ? availableRaces : step === 1 ? availableClasses : availableBackgrounds;
 	const advancementSlots = advancementSlotsFor(character, homebrew.elements);
-	const advancements = advancementSlots.map((slot) => character.advancements?.find((choice) => choice.key === slot.key) || {
-		...slot,
-		featId: "",
-		asiChoices: []
+	const advancements = advancementSlots.map((slot) => {
+		var _character$advancemen;
+		return ((_character$advancemen = character.advancements) === null || _character$advancemen === void 0 ? void 0 : _character$advancemen.find((choice) => choice.key === slot.key)) || {
+			...slot,
+			featId: "",
+			asiChoices: []
+		};
 	});
 	const advancementFields = deriveLegacyAdvancementFields(advancements);
 	const rulesCharacter = restrictedCharacter({
 		...bindHomebrewLibrary(character, homebrew),
 		...advancementFields,
 		advancements,
-		useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned,
-		tceFullBanned: !!activeBan?.tceFullBanned,
+		useTasha: !!character.useTasha && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) && !(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
+		tceFullBanned: !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 		bannedOptionalFeatures: catalogs.optionalFeatures.filter((option) => !allowed(activeBan, "optionalFeatures", option.id)).map((option) => option.id),
 		bannedClassOptions: catalogs.classOptions.filter((option) => !allowed(activeBan, "classOptions", option.id)).map((option) => option.id)
 	});
@@ -67333,7 +68086,7 @@ function Builder({ adventureRoute = false } = {}) {
 		}, entry.classId, entry.level)
 	})).filter((candidate) => candidate.rule.caster);
 	const activeSpellClass = spellClassCandidates.find((candidate) => candidate.entry.classId === spellClassId) || spellClassCandidates[0];
-	const activeSpellClassId = activeSpellClass?.entry.classId || character.className;
+	const activeSpellClassId = (activeSpellClass === null || activeSpellClass === void 0 ? void 0 : activeSpellClass.entry.classId) || character.className;
 	const spellCharacter = activeSpellClass ? {
 		...rulesCharacter,
 		className: activeSpellClass.entry.classId,
@@ -67344,7 +68097,7 @@ function Builder({ adventureRoute = false } = {}) {
 		...rulesCharacter,
 		abilities: finalAbilities
 	};
-	const spellRule = activeSpellClass?.rule || spellSelectionRule(spellCharacter);
+	const spellRule = (activeSpellClass === null || activeSpellClass === void 0 ? void 0 : activeSpellClass.rule) || spellSelectionRule(spellCharacter);
 	const sourceAvailableSpells = [...sourceAvailableSpellCatalog(spells, additionalSpellsUnlocked), ...homebrewSpells(homebrew.elements)];
 	const availableSpellCatalog = sourceAvailableSpells.filter((spell) => allowed(activeBan, "spells", spell.id) && (!rulesCharacter.tceFullBanned || spell.source !== "TCE"));
 	const alwaysPreparedEntries = alwaysPreparedSpellEntries(spellCharacter, availableSpellCatalog);
@@ -67372,18 +68125,23 @@ function Builder({ adventureRoute = false } = {}) {
 	})).filter((group) => group.spells.length > 0);
 	const hiddenCount = activeBan ? Object.keys(catalogs).reduce((count, key) => count + catalogs[key].filter((option) => !allowed(activeBan, key, option.id)).length, 0) : 0;
 	const chosenRaceVariant = selectedRaceVariant(character.race, character.raceVariant);
-	const selectedRaceFeatures = resolvedRaceFeatures(character.race, character.raceVariant, selectedRace?.description, selectedRace?.tags).map((feature) => markFeature(feature, "race", character.race));
+	const selectedRaceFeatures = resolvedRaceFeatures(character.race, character.raceVariant, selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.description, selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.tags).map((feature) => markFeature(feature, "race", character.race));
 	const subclassData = (id) => {
+		var _homebrew$elements$fi;
 		const base = subclassRule(id);
 		const custom = homebrewSubclassOptions(id, homebrew.elements);
 		return custom.length ? {
-			level: homebrew.elements.find((e) => e.type === "class" && e.id === id)?.subclass?.chooseAtLevel || base?.level || 3,
-			options: [...base?.options || [], ...custom]
+			level: ((_homebrew$elements$fi = homebrew.elements.find((e) => e.type === "class" && e.id === id)) === null || _homebrew$elements$fi === void 0 || (_homebrew$elements$fi = _homebrew$elements$fi.subclass) === null || _homebrew$elements$fi === void 0 ? void 0 : _homebrew$elements$fi.chooseAtLevel) || (base === null || base === void 0 ? void 0 : base.level) || 3,
+			options: [...(base === null || base === void 0 ? void 0 : base.options) || [], ...custom]
 		} : base;
 	};
-	const subclassFor = (id, sub) => subclassData(id)?.options.find((e) => e.id === sub);
+	const subclassFor = (id, sub) => {
+		var _subclassData;
+		return (_subclassData = subclassData(id)) === null || _subclassData === void 0 ? void 0 : _subclassData.options.find((e) => e.id === sub);
+	};
 	const chosenSubclass = subclassFor(character.className, character.subclass || "");
 	const selectedClassFeatureSections = multiclassEntries.map((entry) => {
+		var _availableClasses$fin, _classRules$entry$cla3, _homebrew$elements$fi2;
 		const subclass = subclassFor(entry.classId, entry.subclassId || "");
 		const scoped = {
 			...rulesCharacter,
@@ -67391,12 +68149,12 @@ function Builder({ adventureRoute = false } = {}) {
 			subclass: entry.subclassId || "",
 			level: entry.level
 		};
-		const className = availableClasses.find((option) => option.id === entry.classId)?.name || entry.classId;
-		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass?.name, !!rulesCharacter.useTasha, classRules[entry.classId]?.features || homebrew.elements.find((e) => e.id === entry.classId)?.features?.filter((feature) => feature.showOnSheet !== false).map((f) => ({
+		const className = ((_availableClasses$fin = availableClasses.find((option) => option.id === entry.classId)) === null || _availableClasses$fin === void 0 ? void 0 : _availableClasses$fin.name) || entry.classId;
+		const features = detailedFeatures(resolvedClassChoiceFeatures(scoped, documentedClassFeatures(entry.classId, subclass === null || subclass === void 0 ? void 0 : subclass.name, !!rulesCharacter.useTasha, ((_classRules$entry$cla3 = classRules[entry.classId]) === null || _classRules$entry$cla3 === void 0 ? void 0 : _classRules$entry$cla3.features) || ((_homebrew$elements$fi2 = homebrew.elements.find((e) => e.id === entry.classId)) === null || _homebrew$elements$fi2 === void 0 || (_homebrew$elements$fi2 = _homebrew$elements$fi2.features) === null || _homebrew$elements$fi2 === void 0 ? void 0 : _homebrew$elements$fi2.filter((feature) => feature.showOnSheet !== false).map((f) => ({
 			name: f.name,
 			description: f.description,
 			level: f.level
-		})) || [], subclass?.features || [], optionalClassFeatures[entry.classId] || [], rulesCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
+		}))) || [], (subclass === null || subclass === void 0 ? void 0 : subclass.features) || [], optionalClassFeatures[entry.classId] || [], rulesCharacter.bannedOptionalFeatures).filter((feature) => (feature.level || 1) <= entry.level), spells)).map((feature) => markFeature({
 			...feature,
 			name: `${className} · ${feature.name}`
 		}, "class", entry.classId));
@@ -67407,11 +68165,14 @@ function Builder({ adventureRoute = false } = {}) {
 		};
 	});
 	const selectedClassFeatures = selectedClassFeatureSections.flatMap((section) => section.features);
-	const tashaPreviewSections = multiclassEntries.map((entry) => ({
-		key: entry.classId,
-		title: classes.find((option) => option.id === entry.classId)?.name || entry.classId,
-		features: (sheetOptionalFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level && optionalFeatureAllowed(rulesCharacter, entry.classId, feature.name))
-	})).filter((section) => section.features.length > 0);
+	const tashaPreviewSections = multiclassEntries.map((entry) => {
+		var _classes$find2;
+		return {
+			key: entry.classId,
+			title: ((_classes$find2 = classes.find((option) => option.id === entry.classId)) === null || _classes$find2 === void 0 ? void 0 : _classes$find2.name) || entry.classId,
+			features: (sheetOptionalFeatures[entry.classId] || []).filter((feature) => (feature.level || 1) <= entry.level && optionalFeatureAllowed(rulesCharacter, entry.classId, feature.name))
+		};
+	}).filter((section) => section.features.length > 0);
 	const personalityLists = personalityOptions(character.background);
 	const proficiency = proficiencyBonus(character.level);
 	const exportCharacter = {
@@ -67419,12 +68180,12 @@ function Builder({ adventureRoute = false } = {}) {
 		abilities: finalAbilities
 	};
 	const homebrewChoiceState = homebrewChoiceStatuses(exportCharacter);
-	const homebrewSavingThrows = [...new Set([...classRuleFor(rulesCharacter, character.startingClassId || character.className)?.saves || [], ...hbEffects(exportCharacter, "saving_throw_proficiency").map((entry) => entry.effect.ability || "").filter(Boolean)])];
+	const homebrewSavingThrows = [...new Set([...((_classRuleFor = classRuleFor(rulesCharacter, character.startingClassId || character.className)) === null || _classRuleFor === void 0 ? void 0 : _classRuleFor.saves) || [], ...hbEffects(exportCharacter, "saving_throw_proficiency").map((entry) => entry.effect.ability || "").filter(Boolean)])];
 	const homebrewSavingThrowBonuses = Object.fromEntries(Object.keys(abilityLabels).map((key) => [key, hbSum(exportCharacter, "saving_throw_bonus", (effect) => effect.ability === key)]));
 	const sharedSpellSlots = resolveSpellSlots(exportCharacter);
 	const pactMagicSlots = resolvePactMagic(exportCharacter);
 	const classEquipment = equipmentRule(character.className, homebrew.elements);
-	const authoredEquipment = [...homebrew.elements.find((e) => e.id === character.background && e.type === "background")?.equipment || []];
+	const authoredEquipment = [...((_homebrew$elements$fi3 = homebrew.elements.find((e) => e.id === character.background && e.type === "background")) === null || _homebrew$elements$fi3 === void 0 ? void 0 : _homebrew$elements$fi3.equipment) || []];
 	const equipmentItems = selectedEquipment(exportCharacter);
 	const displayedInventory = character.inventoryOverride === void 0 ? equipmentItems : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
 	const languageRequirements = languageRule(exportCharacter);
@@ -67435,12 +68196,18 @@ function Builder({ adventureRoute = false } = {}) {
 	const knownLanguages = proficiencies.languages;
 	const resources = characterResources(exportCharacter);
 	const attachedHomebrew = [...new Map([...activeHomebrew(exportCharacter), ...homebrew.elements.filter((element) => element.characterId === vault.activeId)].map((e) => [e.id, e])).values()];
-	const ownedFeatureIds = new Set(homebrew.elements.filter((e) => e.type === "class" || e.type === "subclass").flatMap((e) => [...e.features?.map((f) => f.id) || [], ...Object.values(e.advancement || {}).flatMap((rows) => rows.filter((row) => row.type === "feature").map((row) => row.id || ""))]));
-	const customFeatures = attachedHomebrew.filter((element) => element.type === "ability" && !ownedFeatureIds.has(element.id)).map((element) => ({
-		name: element.name,
-		description: element.description,
-		effectHandling: element.effects?.some((effect) => effect.when) ? "conditional" : element.effects?.length || element.resources?.length || element.attacks?.length ? "automatic" : "manual"
+	const ownedFeatureIds = new Set(homebrew.elements.filter((e) => e.type === "class" || e.type === "subclass").flatMap((e) => {
+		var _e$features;
+		return [...((_e$features = e.features) === null || _e$features === void 0 ? void 0 : _e$features.map((f) => f.id)) || [], ...Object.values(e.advancement || {}).flatMap((rows) => rows.filter((row) => row.type === "feature").map((row) => row.id || ""))];
 	}));
+	const customFeatures = attachedHomebrew.filter((element) => element.type === "ability" && !ownedFeatureIds.has(element.id)).map((element) => {
+		var _element$effects, _element$effects2, _element$resources, _element$attacks;
+		return {
+			name: element.name,
+			description: element.description,
+			effectHandling: ((_element$effects = element.effects) === null || _element$effects === void 0 ? void 0 : _element$effects.some((effect) => effect.when)) ? "conditional" : ((_element$effects2 = element.effects) === null || _element$effects2 === void 0 ? void 0 : _element$effects2.length) || ((_element$resources = element.resources) === null || _element$resources === void 0 ? void 0 : _element$resources.length) || ((_element$attacks = element.attacks) === null || _element$attacks === void 0 ? void 0 : _element$attacks.length) ? "automatic" : "manual"
+		};
+	});
 	const customEquipment = attachedHomebrew.filter((element) => element.type === "item").map((element) => element.name);
 	const customProficiencies = attachedHomebrew.filter((element) => element.type === "proficiency").map((element) => element.name);
 	const customNotes = attachedHomebrew.filter((element) => element.type === "note");
@@ -67467,7 +68234,7 @@ function Builder({ adventureRoute = false } = {}) {
 	});
 	const resourceMarkCount = resources.reduce((sum, resource) => sum + Math.ceil(resource.max / (resource.unit || 1)), 0);
 	const resourceDensity = resources.length >= 6 || resourceMarkCount >= 32 ? "micro" : resources.length >= 4 || resourceMarkCount >= 22 ? "dense" : resources.length >= 3 || resourceMarkCount >= 14 ? "compact" : "normal";
-	const spellAbilityKey = classRuleFor(rulesCharacter, activeSpellClassId)?.spellAbility;
+	const spellAbilityKey = (_classRuleFor2 = classRuleFor(rulesCharacter, activeSpellClassId)) === null || _classRuleFor2 === void 0 ? void 0 : _classRuleFor2.spellAbility;
 	const spellcastingModifier = spellAbilityKey ? abilityModifier$1(finalAbilities[spellAbilityKey]) : 0;
 	const spellSaveDc = spellAbilityKey ? 8 + proficiency + spellcastingModifier : 0;
 	const spellAttackBonus = spellAbilityKey ? proficiency + spellcastingModifier : 0;
@@ -67488,7 +68255,7 @@ function Builder({ adventureRoute = false } = {}) {
 			data
 		}] : [];
 	});
-	const currentSpellGrants = character.spellGrants?.length ? character.spellGrants : character.spells.map((spellId) => ({
+	const currentSpellGrants = ((_character$spellGrant = character.spellGrants) === null || _character$spellGrant === void 0 ? void 0 : _character$spellGrant.length) ? character.spellGrants : character.spells.map((spellId) => ({
 		spellId,
 		sourceType: "class",
 		sourceId: character.className,
@@ -67497,14 +68264,26 @@ function Builder({ adventureRoute = false } = {}) {
 	}));
 	const activeSpellIds = currentSpellGrants.filter((grant) => grant.classId === activeSpellClassId).map((grant) => grant.spellId);
 	const ordinarySpellIds = activeSpellIds.filter((id) => !alwaysPreparedSet.has(id));
-	const selectedCantrips = ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === 0);
-	const selectedLeveled = ordinarySpellIds.filter((id) => (availableSpellCatalog.find((item) => item.id === id)?.level || 0) > 0);
+	const selectedCantrips = ordinarySpellIds.filter((id) => {
+		var _availableSpellCatalo;
+		return ((_availableSpellCatalo = availableSpellCatalog.find((item) => item.id === id)) === null || _availableSpellCatalo === void 0 ? void 0 : _availableSpellCatalo.level) === 0;
+	});
+	const selectedLeveled = ordinarySpellIds.filter((id) => {
+		var _availableSpellCatalo2;
+		return (((_availableSpellCatalo2 = availableSpellCatalog.find((item) => item.id === id)) === null || _availableSpellCatalo2 === void 0 ? void 0 : _availableSpellCatalo2.level) || 0) > 0;
+	});
 	const selectedPrepared = classPreparedSpellIds(character, activeSpellClassId).filter((id) => selectedLeveled.includes(id));
-	const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter((id) => availableSpellCatalog.find((item) => item.id === id)?.level === level).length);
+	const selectedByLevel = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => ordinarySpellIds.filter((id) => {
+		var _availableSpellCatalo3;
+		return ((_availableSpellCatalo3 = availableSpellCatalog.find((item) => item.id === id)) === null || _availableSpellCatalo3 === void 0 ? void 0 : _availableSpellCatalo3.level) === level;
+	}).length);
 	const selectedAtOrAbove = Array.from({ length: spellRule.maxLevel + 1 }, (_, level) => level === 0 ? selectedCantrips.length : selectedByLevel.slice(level).reduce((total, count) => total + count, 0));
 	const featSlots = advancementSlots.length;
 	const completedAdvancements = advancements.filter((choice) => advancementChoiceComplete(choice, spells, character.level, character));
-	const selectedFeatNames = advancementFields.feats.map((id) => feats.find((item) => item.id === id)?.name).filter(Boolean);
+	const selectedFeatNames = advancementFields.feats.map((id) => {
+		var _feats$find2;
+		return (_feats$find2 = feats.find((item) => item.id === id)) === null || _feats$find2 === void 0 ? void 0 : _feats$find2.name;
+	}).filter(Boolean);
 	const grantedFeatSpells = featGrantedSpellIds(exportCharacter);
 	const sourcedSpellGroups = classSpellGroups(exportCharacter, availableSpellCatalog);
 	const sourcedSpells = sourcedSpellGroups.flatMap((group) => group.spells);
@@ -67526,7 +68305,11 @@ function Builder({ adventureRoute = false } = {}) {
 		const feat = feats.find((item) => item.id === choice.featId);
 		if (!feat || feat.id === "asi") return [];
 		const details = featChoiceGroups(choice, spells, character.level).map((group) => {
-			const names = (choice.featChoices?.[group.key] || []).map((id) => group.options.find((option) => option.id === id)?.name || id);
+			var _choice$featChoices2;
+			const names = (((_choice$featChoices2 = choice.featChoices) === null || _choice$featChoices2 === void 0 ? void 0 : _choice$featChoices2[group.key]) || []).map((id) => {
+				var _group$options$find2;
+				return ((_group$options$find2 = group.options.find((option) => option.id === id)) === null || _group$options$find2 === void 0 ? void 0 : _group$options$find2.name) || id;
+			});
 			return names.length ? `${group.title}: ${names.join(", ")}` : "";
 		}).filter(Boolean);
 		return [markFeature({
@@ -67550,8 +68333,8 @@ function Builder({ adventureRoute = false } = {}) {
 		raceFeatureList: selectedRaceFeatures,
 		classFeatureList: [...selectedClassFeatures, ...runtimeFeatures],
 		raceProficiencies: racialProficiencies,
-		subclassName: chosenSubclass?.name,
-		raceVariantName: chosenRaceVariant?.name,
+		subclassName: chosenSubclass === null || chosenSubclass === void 0 ? void 0 : chosenSubclass.name,
+		raceVariantName: chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name,
 		featNames: selectedFeatNames,
 		featFeatureList: selectedFeatFeatures,
 		featSpellIds: grantedFeatSpells,
@@ -67560,8 +68343,8 @@ function Builder({ adventureRoute = false } = {}) {
 	const availableFeatOptions = feats.filter((feat) => {
 		if (feat.id === "asi") return false;
 		if (!allowed(activeBan, "feats", feat.id) || !matchesSources(feat.source, selectedSources)) return false;
-		if (feat.repeatable || activeAdvancement?.featId === feat.id) return true;
-		return !advancements.some((choice) => choice.key !== activeAdvancement?.key && choice.featId === feat.id);
+		if (feat.repeatable || (activeAdvancement === null || activeAdvancement === void 0 ? void 0 : activeAdvancement.featId) === feat.id) return true;
+		return !advancements.some((choice) => choice.key !== (activeAdvancement === null || activeAdvancement === void 0 ? void 0 : activeAdvancement.key) && choice.featId === feat.id);
 	});
 	const featSourceGroups = selectedSources.length > 1 ? selectedSources.map((book) => ({
 		book,
@@ -67674,6 +68457,7 @@ function Builder({ adventureRoute = false } = {}) {
 			const backgroundSkills = backgroundFixedSkills(id);
 			const startingGold = backgroundStartingGold(id, option);
 			setCharacter((current) => {
+				var _safe$classes, _safe$currency, _safe$currency2, _safe$currency3;
 				const safe = normalizeCharacter(current);
 				if (safe.background === id) return safe;
 				return syncAdvancements({
@@ -67682,15 +68466,18 @@ function Builder({ adventureRoute = false } = {}) {
 					backgroundSkills,
 					backgroundChoices: {},
 					classSkills: safe.classSkills.filter((skill) => !backgroundSkills.includes(skill)),
-					classes: safe.classes?.map((entry) => ({
-						...entry,
-						classSkills: entry.classSkills?.filter((skill) => !backgroundSkills.includes(skill))
-					})),
+					classes: (_safe$classes = safe.classes) === null || _safe$classes === void 0 ? void 0 : _safe$classes.map((entry) => {
+						var _entry$classSkills;
+						return {
+							...entry,
+							classSkills: (_entry$classSkills = entry.classSkills) === null || _entry$classSkills === void 0 ? void 0 : _entry$classSkills.filter((skill) => !backgroundSkills.includes(skill))
+						};
+					}),
 					proficiencyChoices: {},
 					currency: {
 						...initial.currency,
 						...safe.currency,
-						gp: !safe.background ? (safe.currency?.gp || 0) + startingGold : safe.currency?.gp === backgroundStartingGold(safe.background, availableBackgrounds.find((item) => item.id === safe.background)) ? startingGold : safe.currency?.gp || 0
+						gp: !safe.background ? (((_safe$currency = safe.currency) === null || _safe$currency === void 0 ? void 0 : _safe$currency.gp) || 0) + startingGold : ((_safe$currency2 = safe.currency) === null || _safe$currency2 === void 0 ? void 0 : _safe$currency2.gp) === backgroundStartingGold(safe.background, availableBackgrounds.find((item) => item.id === safe.background)) ? startingGold : ((_safe$currency3 = safe.currency) === null || _safe$currency3 === void 0 ? void 0 : _safe$currency3.gp) || 0
 					}
 				}, (safe.advancements || []).filter((choice) => !choice.key.startsWith("background-")));
 			});
@@ -67713,11 +68500,15 @@ function Builder({ adventureRoute = false } = {}) {
 		if (targetStep === 0) return !!character.race && (!variantsFor(character.race).length || !!character.raceVariant);
 		if (targetStep === 1) return !!character.className;
 		if (targetStep === 2) {
-			const choiceCount = chosenRaceVariant?.chooseBonuses?.count || 0;
+			var _chosenRaceVariant$ch;
+			const choiceCount = (chosenRaceVariant === null || chosenRaceVariant === void 0 || (_chosenRaceVariant$ch = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch === void 0 ? void 0 : _chosenRaceVariant$ch.count) || 0;
 			const raceSkillCount = raceSkillChoiceCount(character);
 			return abilitiesComplete && (character.raceAbilityChoices || []).length === choiceCount && (character.raceSkills || []).length === raceSkillCount;
 		}
-		if (targetStep === 3) return !!character.background && backgroundChoiceGroups(character.background, featCatalog).every((group) => (character.backgroundChoices?.[group.key] || []).length === group.count);
+		if (targetStep === 3) return !!character.background && backgroundChoiceGroups(character.background, featCatalog).every((group) => {
+			var _character$background2;
+			return (((_character$background2 = character.backgroundChoices) === null || _character$background2 === void 0 ? void 0 : _character$background2[group.key]) || []).length === group.count;
+		});
 		if (targetStep === 4) return character.classSkills.length === classRule.count;
 		if (targetStep === 5) return equipmentComplete(character);
 		if (targetStep === 6) {
@@ -67726,8 +68517,9 @@ function Builder({ adventureRoute = false } = {}) {
 			return !missingSubclass && completedAdvancements.length === featSlots && allComplete && classChoicesComplete(rulesCharacter, spells) && homebrewChoicesComplete(exportCharacter);
 		}
 		if (targetStep === 7) return spellClassCandidates.every((candidate) => {
+			var _sourcedSpellGroups$f;
 			const rule = candidate.rule;
-			const selected = sourcedSpellGroups.find((group) => group.classId === candidate.entry.classId)?.spells.filter((entry) => !entry.alwaysPrepared) || [];
+			const selected = ((_sourcedSpellGroups$f = sourcedSpellGroups.find((group) => group.classId === candidate.entry.classId)) === null || _sourcedSpellGroups$f === void 0 ? void 0 : _sourcedSpellGroups$f.spells.filter((entry) => !entry.alwaysPrepared)) || [];
 			const cantrips = selected.filter((entry) => entry.spell.level === 0);
 			const leveled = selected.filter((entry) => entry.spell.level > 0);
 			const legalLevels = leveled.every((entry) => entry.spell.level <= rule.maxLevel) && (!rule.levelLimits || rule.levelLimits.every((limit, level) => level === 0 || leveled.filter((entry) => entry.spell.level >= level).length <= limit));
@@ -67742,22 +68534,27 @@ function Builder({ adventureRoute = false } = {}) {
 		if (step === 0) return !character.race ? "Выберите расу." : "Выберите обязательный вариант расы или подрасу.";
 		if (step === 1) return "Выберите класс.";
 		if (step === 2) {
+			var _chosenRaceVariant$ch2;
 			if (standardMode && !abilitiesComplete) return "Распределите стандартный набор 15, 14, 13, 12, 10, 8.";
 			if (!standardMode && pointRemaining !== 0) return pointRemaining > 0 ? `Распределите ещё ${pointRemaining} очк. Point Buy.` : "Распределение превышает 27 очков Point Buy.";
-			const choiceCount = chosenRaceVariant?.chooseBonuses?.count || 0;
+			const choiceCount = (chosenRaceVariant === null || chosenRaceVariant === void 0 || (_chosenRaceVariant$ch2 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch2 === void 0 ? void 0 : _chosenRaceVariant$ch2.count) || 0;
 			if ((character.raceAbilityChoices || []).length !== choiceCount) return `Выберите ${choiceCount} расовых бонуса характеристик.`;
 			return `Выберите ${raceSkillChoiceCount(character)} расовых владения навыками.`;
 		}
 		if (step === 3) {
 			if (!character.background) return "Выберите предысторию.";
-			const unfinished = backgroundChoiceGroups(character.background, featCatalog).find((group) => (character.backgroundChoices?.[group.key] || []).length !== group.count);
+			const unfinished = backgroundChoiceGroups(character.background, featCatalog).find((group) => {
+				var _character$background3;
+				return (((_character$background3 = character.backgroundChoices) === null || _character$background3 === void 0 ? void 0 : _character$background3[group.key]) || []).length !== group.count;
+			});
 			return unfinished ? `Завершите обязательный выбор предыстории: ${unfinished.title}.` : "Завершите обязательные решения предыстории.";
 		}
 		if (step === 4) return `Выберите навыки класса: ${character.classSkills.length} из ${classRule.count}.`;
 		if (step === 5) return "Заполните каждый обязательный выбор стартового снаряжения.";
 		if (step === 6) {
+			var _classes$find3;
 			const missingSubclass = subclassRequirements.find(({ entry }) => !entry.subclassId);
-			if (missingSubclass) return `Выберите подкласс: ${classes.find((option) => option.id === missingSubclass.entry.classId)?.name || missingSubclass.entry.classId}.`;
+			if (missingSubclass) return `Выберите подкласс: ${((_classes$find3 = classes.find((option) => option.id === missingSubclass.entry.classId)) === null || _classes$find3 === void 0 ? void 0 : _classes$find3.name) || missingSubclass.entry.classId}.`;
 			const unfinished = advancements.find((choice) => !advancementChoiceComplete(choice, spells, character.level, character));
 			if (unfinished) return `Завершите выбор ${unfinished.origin ? "черты происхождения" : `на ${unfinished.level}-м уровне`}: черту, повышение характеристик и все дополнительные решения.`;
 			if (!classChoicesComplete(rulesCharacter, spells)) return "Заполните все обязательные выборы способностей класса.";
@@ -67765,9 +68562,10 @@ function Builder({ adventureRoute = false } = {}) {
 			if (missingHomebrew) return `Завершите Homebrew-выбор «${missingHomebrew.choice.name}»: осталось ${missingHomebrew.missing}.`;
 		}
 		if (step === 7 && spellRule.caster) {
+			var _spellRule$levelLimit;
 			if (selectedCantrips.length !== spellRule.cantrips) return `Выберите заговоры: ${selectedCantrips.length} из ${spellRule.cantrips}.`;
 			if (selectedLeveled.length !== spellRule.leveled) return `Выберите ${spellRule.title.toLowerCase()}: ${selectedLeveled.length} из ${spellRule.leveled}.`;
-			if (spellRule.levelLimits?.some((limit, level) => level > 0 && selectedAtOrAbove[level] > limit)) return "Превышен допустимый лимит заклинаний высокого круга.";
+			if ((_spellRule$levelLimit = spellRule.levelLimits) === null || _spellRule$levelLimit === void 0 ? void 0 : _spellRule$levelLimit.some((limit, level) => level > 0 && selectedAtOrAbove[level] > limit)) return "Превышен допустимый лимит заклинаний высокого круга.";
 			if (spellRule.mode === "spellbook" && selectedPrepared.length !== spellRule.prepared) return `Подготовьте заклинания из книги: ${selectedPrepared.length} из ${spellRule.prepared}.`;
 		}
 		if (step === 8) {
@@ -67778,6 +68576,7 @@ function Builder({ adventureRoute = false } = {}) {
 		return "Завершите обязательные выборы на этом шаге.";
 	}
 	function collectCharacterChecks() {
+		var _chosenRaceVariant$ch3;
 		const issues = [];
 		const add = (step, message, severity = "error") => issues.push({
 			step,
@@ -67798,17 +68597,19 @@ function Builder({ adventureRoute = false } = {}) {
 		else if (variantsFor(character.race).length && !character.raceVariant) add(0, "Не выбран вариант расы или подраса.");
 		if (!character.className) add(1, "Не выбран класс.");
 		if (!abilitiesComplete) add(2, "Не распределены характеристики.");
-		const raceBonusCount = chosenRaceVariant?.chooseBonuses?.count || 0;
+		const raceBonusCount = (chosenRaceVariant === null || chosenRaceVariant === void 0 || (_chosenRaceVariant$ch3 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch3 === void 0 ? void 0 : _chosenRaceVariant$ch3.count) || 0;
 		if ((character.raceAbilityChoices || []).length !== raceBonusCount) add(2, "Не распределён расовый бонус характеристики.");
 		if ((character.raceSkills || []).length !== raceSkillChoiceCount(character)) add(2, "Не выбран расовый навык.");
 		if (!character.background) add(3, "Не выбрана предыстория.");
 		else backgroundChoiceGroups(character.background, featCatalog).forEach((group) => {
-			if ((character.backgroundChoices?.[group.key] || []).length < group.count) add(3, `Не завершён выбор предыстории: ${group.title}.`);
+			var _character$background4;
+			if ((((_character$background4 = character.backgroundChoices) === null || _character$background4 === void 0 ? void 0 : _character$background4[group.key]) || []).length < group.count) add(3, `Не завершён выбор предыстории: ${group.title}.`);
 		});
 		if (character.classSkills.length < classRule.count) add(4, `Не выбран навык класса: ${character.classSkills.length} из ${classRule.count}.`);
 		if (!equipmentComplete(character)) add(5, "Не завершён выбор стартового снаряжения.");
 		subclassRequirements.forEach(({ entry }) => {
-			if (!entry.subclassId) add(6, `Не выбран подкласс: ${classes.find((option) => option.id === entry.classId)?.name || entry.classId}.`);
+			var _classes$find4;
+			if (!entry.subclassId) add(6, `Не выбран подкласс: ${((_classes$find4 = classes.find((option) => option.id === entry.classId)) === null || _classes$find4 === void 0 ? void 0 : _classes$find4.name) || entry.classId}.`);
 		});
 		advancements.forEach((choice) => {
 			if (!advancementChoiceComplete(choice, spells, character.level, character)) add(6, `Не завершён выбор развития на ${choice.level}-м уровне.`);
@@ -67816,6 +68617,7 @@ function Builder({ adventureRoute = false } = {}) {
 		if (!classChoicesComplete(rulesCharacter, spells)) add(6, "Не завершены обязательные выборы способностей класса.");
 		homebrewChoiceState.filter((status) => status.missing > 0).forEach((status) => add(6, `Не завершён Homebrew-выбор «${status.choice.name}»: ${status.selected.length} из ${status.choice.count}.`));
 		spellClassCandidates.forEach((candidate) => {
+			var _classes$find5;
 			const classId = candidate.entry.classId;
 			const scoped = {
 				...rulesCharacter,
@@ -67827,9 +68629,15 @@ function Builder({ adventureRoute = false } = {}) {
 			const rule = spellSelectionRuleForClass(scoped, classId, candidate.entry.level);
 			const automatic = new Set(alwaysPreparedSpellEntries(scoped, availableSpellCatalog).map((entry) => entry.id));
 			const ids = currentSpellGrants.filter((grant) => grant.classId === classId && !automatic.has(grant.spellId)).map((grant) => grant.spellId);
-			const cantrips = ids.filter((id) => availableSpellCatalog.find((spell) => spell.id === id)?.level === 0);
-			const leveled = ids.filter((id) => (availableSpellCatalog.find((spell) => spell.id === id)?.level || 0) > 0);
-			const className = classes.find((option) => option.id === classId)?.name || classId;
+			const cantrips = ids.filter((id) => {
+				var _availableSpellCatalo4;
+				return ((_availableSpellCatalo4 = availableSpellCatalog.find((spell) => spell.id === id)) === null || _availableSpellCatalo4 === void 0 ? void 0 : _availableSpellCatalo4.level) === 0;
+			});
+			const leveled = ids.filter((id) => {
+				var _availableSpellCatalo5;
+				return (((_availableSpellCatalo5 = availableSpellCatalog.find((spell) => spell.id === id)) === null || _availableSpellCatalo5 === void 0 ? void 0 : _availableSpellCatalo5.level) || 0) > 0;
+			});
+			const className = ((_classes$find5 = classes.find((option) => option.id === classId)) === null || _classes$find5 === void 0 ? void 0 : _classes$find5.name) || classId;
 			if (cantrips.length < rule.cantrips) add(7, `Не выбраны заговоры класса «${className}»: ${cantrips.length} из ${rule.cantrips}.`);
 			if (leveled.length < rule.leveled) add(7, `Не выбраны заклинания класса «${className}»: ${leveled.length} из ${rule.leveled}.`);
 			if (rule.mode === "spellbook") {
@@ -67848,7 +68656,7 @@ function Builder({ adventureRoute = false } = {}) {
 		setCharacterCheck(collectCharacterChecks());
 	}
 	function closeCharacterCheck() {
-		const completedTutorial = tutorialMode && characterCheck?.length === 0;
+		const completedTutorial = tutorialMode && (characterCheck === null || characterCheck === void 0 ? void 0 : characterCheck.length) === 0;
 		setCharacterCheck(null);
 		if (completedTutorial) setShowTutorialReflection(true);
 	}
@@ -67954,10 +68762,12 @@ function Builder({ adventureRoute = false } = {}) {
 		}));
 	}
 	function toggleSpell(id) {
-		const level = availableSpellCatalog.find((spell) => spell.id === id)?.level || 0;
+		var _availableSpellCatalo6;
+		const level = ((_availableSpellCatalo6 = availableSpellCatalog.find((spell) => spell.id === id)) === null || _availableSpellCatalo6 === void 0 ? void 0 : _availableSpellCatalo6.level) || 0;
 		setCharacter((current) => {
+			var _current$spellGrants;
 			if (alwaysPreparedSet.has(id)) return current;
-			const grants = current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
+			const grants = ((_current$spellGrants = current.spellGrants) === null || _current$spellGrants === void 0 ? void 0 : _current$spellGrants.length) ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
 				sourceId: current.className,
@@ -67974,11 +68784,17 @@ function Builder({ adventureRoute = false } = {}) {
 					spells: remainsSelected ? current.spells : current.spells.filter((spell) => spell !== id)
 				};
 			}
-			const sameKind = selectedForClass.filter((spellId) => (availableSpellCatalog.find((item) => item.id === spellId)?.level || 0) === 0 ? level === 0 : level > 0);
+			const sameKind = selectedForClass.filter((spellId) => {
+				var _availableSpellCatalo7;
+				return (((_availableSpellCatalo7 = availableSpellCatalog.find((item) => item.id === spellId)) === null || _availableSpellCatalo7 === void 0 ? void 0 : _availableSpellCatalo7.level) || 0) === 0 ? level === 0 : level > 0;
+			});
 			const cap = level === 0 ? spellRule.cantrips : spellRule.leveled;
 			if (sameKind.length >= cap) return current;
 			if (level > 0 && spellRule.levelLimits) {
-				if (spellRule.levelLimits.some((limit, circle) => circle > 0 && circle <= level && selectedForClass.filter((spellId) => (availableSpellCatalog.find((item) => item.id === spellId)?.level || 0) >= circle).length >= limit)) return current;
+				if (spellRule.levelLimits.some((limit, circle) => circle > 0 && circle <= level && selectedForClass.filter((spellId) => {
+					var _availableSpellCatalo8;
+					return (((_availableSpellCatalo8 = availableSpellCatalog.find((item) => item.id === spellId)) === null || _availableSpellCatalo8 === void 0 ? void 0 : _availableSpellCatalo8.level) || 0) >= circle;
+				}).length >= limit)) return current;
 			}
 			return {
 				...spellRule.mode === "prepared" && level > 0 ? setClassPreparedSpells(current, activeSpellClassId, [...classPreparedSpellIds(current, activeSpellClassId), id]) : current,
@@ -67995,7 +68811,8 @@ function Builder({ adventureRoute = false } = {}) {
 	}
 	function togglePreparedSpell(id) {
 		setCharacter((current) => {
-			if (!current.spells.includes(id) || (availableSpellCatalog.find((spell) => spell.id === id)?.level || 0) === 0) return current;
+			var _availableSpellCatalo9;
+			if (!current.spells.includes(id) || (((_availableSpellCatalo9 = availableSpellCatalog.find((spell) => spell.id === id)) === null || _availableSpellCatalo9 === void 0 ? void 0 : _availableSpellCatalo9.level) || 0) === 0) return current;
 			const selected = classPreparedSpellIds(current, activeSpellClassId);
 			if (selected.includes(id)) return setClassPreparedSpells(current, activeSpellClassId, selected.filter((spell) => spell !== id));
 			if (selected.length >= (spellRule.prepared || 0)) return current;
@@ -68012,7 +68829,8 @@ function Builder({ adventureRoute = false } = {}) {
 		});
 	}
 	function scrollToExports() {
-		exportPanelRef.current?.scrollIntoView({
+		var _exportPanelRef$curre;
+		(_exportPanelRef$curre = exportPanelRef.current) === null || _exportPanelRef$curre === void 0 || _exportPanelRef$curre.scrollIntoView({
 			behavior: "smooth",
 			block: "start"
 		});
@@ -68037,12 +68855,13 @@ function Builder({ adventureRoute = false } = {}) {
 			const bound = bindHomebrewLibrary(current, homebrew);
 			const custom = homebrew.elements.find((element) => element.id === current.className && element.type === "class");
 			if (current.abilityMethod === "standard") {
+				var _custom$spellcasting;
 				if (!custom) return {
 					...current,
 					abilities: standardAbilityBuild(current.className, current.subclass)
 				};
 				const order = [
-					custom.spellcasting?.ability || custom.primaryAbility || "con",
+					((_custom$spellcasting = custom.spellcasting) === null || _custom$spellcasting === void 0 ? void 0 : _custom$spellcasting.ability) || custom.primaryAbility || "con",
 					"con",
 					"dex",
 					"wis",
@@ -68068,7 +68887,8 @@ function Builder({ adventureRoute = false } = {}) {
 		});
 	}
 	function toggleRaceAbility(key) {
-		const limit = chosenRaceVariant?.chooseBonuses?.count || 0;
+		var _chosenRaceVariant$ch4;
+		const limit = (chosenRaceVariant === null || chosenRaceVariant === void 0 || (_chosenRaceVariant$ch4 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch4 === void 0 ? void 0 : _chosenRaceVariant$ch4.count) || 0;
 		setCharacter((current) => {
 			const selected = current.raceAbilityChoices || [];
 			const next = selected.includes(key) ? selected.filter((item) => item !== key) : selected.length < limit ? [...selected, key] : selected;
@@ -68096,7 +68916,7 @@ function Builder({ adventureRoute = false } = {}) {
 			if (!slot || "origin" in slot && slot.origin && id === "asi") return current;
 			const feat = feats.find((item) => item.id === id);
 			const liveCharacter = syncAdvancements(current, current.advancements || []);
-			if (feat?.requirement && !featRequirementMet(liveCharacter, feat.requirement)) {
+			if ((feat === null || feat === void 0 ? void 0 : feat.requirement) && !featRequirementMet(liveCharacter, feat.requirement)) {
 				alert("Требования не соблюдены");
 				return current;
 			}
@@ -68105,18 +68925,19 @@ function Builder({ adventureRoute = false } = {}) {
 			const nextChoice = {
 				...slot,
 				featId: id,
-				asiChoices: id === "asi" && previous?.featId === "asi" ? previous.asiChoices : [],
-				featChoices: id && previous?.featId === id ? previous.featChoices || {} : {}
+				asiChoices: id === "asi" && (previous === null || previous === void 0 ? void 0 : previous.featId) === "asi" ? previous.asiChoices : [],
+				featChoices: id && (previous === null || previous === void 0 ? void 0 : previous.featId) === id ? previous.featChoices || {} : {}
 			};
 			return syncAdvancements(current, [...existing.filter((choice) => choice.key !== slotKey), ...id ? [nextChoice] : []].filter((choice) => slots.some((item) => item.key === choice.key)));
 		});
 	}
 	function toggleFeatChoice(slotKey, groupKey, id, limit) {
 		setCharacter((current) => {
+			var _target$featChoices;
 			const existing = current.advancements || [];
 			const target = existing.find((choice) => choice.key === slotKey);
 			if (!target) return current;
-			const selected = target.featChoices?.[groupKey] || [];
+			const selected = ((_target$featChoices = target.featChoices) === null || _target$featChoices === void 0 ? void 0 : _target$featChoices[groupKey]) || [];
 			const known = characterProficiencies(current);
 			const ownedSkills = new Set(known.skills);
 			const ownedTools = new Set(known.tools);
@@ -68142,7 +68963,8 @@ function Builder({ adventureRoute = false } = {}) {
 	}
 	function chooseBackgroundChoice(groupKey, id, count, kind, grantsFeatId) {
 		setCharacter((current) => {
-			const selected = current.backgroundChoices?.[groupKey] || [];
+			var _current$backgroundCh;
+			const selected = ((_current$backgroundCh = current.backgroundChoices) === null || _current$backgroundCh === void 0 ? void 0 : _current$backgroundCh[groupKey]) || [];
 			const nextSelected = selected.includes(id) ? selected.filter((value) => value !== id) : selected.length < count ? [...selected, id] : count === 1 ? [id] : selected;
 			const backgroundChoices = {
 				...current.backgroundChoices || {},
@@ -68167,9 +68989,9 @@ function Builder({ adventureRoute = false } = {}) {
 				featId,
 				asiChoices: [],
 				featChoices: featId === "strixhaven-initiate" && nextSelected[0] ? {
-					...previous?.featChoices || {},
+					...(previous === null || previous === void 0 ? void 0 : previous.featChoices) || {},
 					college: nextSelected
-				} : featId === previous?.featId ? previous.featChoices || {} : {}
+				} : featId === (previous === null || previous === void 0 ? void 0 : previous.featId) ? previous.featChoices || {} : {}
 			};
 			return syncAdvancements(nextBase, [...(current.advancements || []).filter((choice) => choice.key !== key), ...nextSelected.length ? [slot] : []]);
 		});
@@ -68185,12 +69007,13 @@ function Builder({ adventureRoute = false } = {}) {
 		});
 	}
 	function changeClassLevelValue(current, classId, delta) {
+		var _safe$levelHistory;
 		const safe = migrateMulticlassCharacter(current);
 		const classes = orderedCharacterClasses(safe);
 		const entry = classes.find((item) => item.classId === classId);
 		if (!entry || delta > 0 && characterLevel(safe) >= 20) return safe;
 		if (delta < 0 && entry.level <= 1 && classId === safe.startingClassId) return safe;
-		if (delta < 0 && safe.levelHistory?.[safe.levelHistory.length - 1]?.classId !== classId) return safe;
+		if (delta < 0 && ((_safe$levelHistory = safe.levelHistory) === null || _safe$levelHistory === void 0 || (_safe$levelHistory = _safe$levelHistory[safe.levelHistory.length - 1]) === null || _safe$levelHistory === void 0 ? void 0 : _safe$levelHistory.classId) !== classId) return safe;
 		if (delta < 0 && entry.level === 1) {
 			const nextBase = migrateMulticlassCharacter({
 				...safe,
@@ -68319,13 +69142,14 @@ function Builder({ adventureRoute = false } = {}) {
 	}
 	function toggleClassChoice(groupKey, id, limit) {
 		setCharacter((current) => {
+			var _entry$choiceValues;
 			const safe = migrateMulticlassCharacter(current);
 			const separator = groupKey.indexOf(":");
 			const classId = separator > 0 ? groupKey.slice(0, separator) : safe.startingClassId || safe.className;
 			const localKey = separator > 0 ? groupKey.slice(separator + 1) : groupKey;
 			const entry = orderedCharacterClasses(safe).find((item) => item.classId === classId);
 			const choices = safe.classChoices || {};
-			const selected = choices[groupKey] || entry?.choiceValues?.[localKey] || [];
+			const selected = choices[groupKey] || (entry === null || entry === void 0 || (_entry$choiceValues = entry.choiceValues) === null || _entry$choiceValues === void 0 ? void 0 : _entry$choiceValues[localKey]) || [];
 			const next = limit === 1 ? selected[0] === id ? selected : [id] : selected.includes(id) ? selected.filter((value) => value !== id) : selected.length < limit ? [...selected, id] : selected;
 			const classes = orderedCharacterClasses(safe).map((item) => item.classId === classId ? {
 				...item,
@@ -68393,7 +69217,8 @@ function Builder({ adventureRoute = false } = {}) {
 		const ids = optimalSpellIds(value, availableSpellCatalog, (spell) => spellAvailableToCharacter(value, spell) || homebrewSpellAvailable(value.className, spell, homebrew.elements), spellRule);
 		const preparedSpells = optimalPreparedSpellIds(value, availableSpellCatalog, ids);
 		setCharacter((current) => {
-			const otherGrants = (current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
+			var _current$spellGrants3;
+			const otherGrants = (((_current$spellGrants3 = current.spellGrants) === null || _current$spellGrants3 === void 0 ? void 0 : _current$spellGrants3.length) ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
 				sourceId: current.className,
@@ -68418,7 +69243,8 @@ function Builder({ adventureRoute = false } = {}) {
 	}
 	function resetSpells() {
 		setCharacter((current) => {
-			const otherGrants = (current.spellGrants?.length ? current.spellGrants : current.spells.map((spellId) => ({
+			var _current$spellGrants4;
+			const otherGrants = (((_current$spellGrants4 = current.spellGrants) === null || _current$spellGrants4 === void 0 ? void 0 : _current$spellGrants4.length) ? current.spellGrants : current.spells.map((spellId) => ({
 				spellId,
 				sourceType: "class",
 				sourceId: current.className,
@@ -68467,7 +69293,8 @@ function Builder({ adventureRoute = false } = {}) {
 		resetFilters(0, false);
 	}
 	function importBan(event) {
-		const file = event.target.files?.[0];
+		var _event$target$files;
+		const file = (_event$target$files = event.target.files) === null || _event$target$files === void 0 ? void 0 : _event$target$files[0];
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = () => {
@@ -68486,7 +69313,7 @@ function Builder({ adventureRoute = false } = {}) {
 				setBanDraft(imported);
 				setView("banlist");
 				setBanNotice("Список импортирован. Проверьте ограничения и примените его к мастеру.");
-			} catch {
+			} catch (_unused6) {
 				alert("Файл не похож на бан-лист «Листа Героя 5e».");
 			}
 		};
@@ -68499,7 +69326,7 @@ function Builder({ adventureRoute = false } = {}) {
 		setBanLists(next);
 		localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(next));
 		setBanNotice("Список сохранён.");
-		if (activeBan?.id === normalized.id) {
+		if ((activeBan === null || activeBan === void 0 ? void 0 : activeBan.id) === normalized.id) {
 			setActiveBan(normalized);
 			localStorage.setItem("dark-codex-banlist", JSON.stringify(normalized));
 		}
@@ -68525,7 +69352,7 @@ function Builder({ adventureRoute = false } = {}) {
 		const next = banLists.filter((list) => list.id !== banDraft.id);
 		setBanLists(next);
 		localStorage.setItem("list-geroya-ban-lists-v1", JSON.stringify(next));
-		if (activeBan?.id === banDraft.id) {
+		if ((activeBan === null || activeBan === void 0 ? void 0 : activeBan.id) === banDraft.id) {
 			setActiveBan(null);
 			localStorage.removeItem("dark-codex-banlist");
 		}
@@ -68586,7 +69413,7 @@ function Builder({ adventureRoute = false } = {}) {
 		const normalized = normalizeHomebrewLibrary(next);
 		setHomebrewState("saving");
 		try {
-			if (account?.authenticated) {
+			if (account === null || account === void 0 ? void 0 : account.authenticated) {
 				if (!(await fetch("/api/homebrew", {
 					method: "PUT",
 					headers: { "content-type": "application/json" },
@@ -68938,7 +69765,7 @@ function Builder({ adventureRoute = false } = {}) {
 		if (!slots.length) return;
 		const warnings = slots.map((slot) => homebrewExportWarning(bindHomebrewLibrary(slot.character, homebrew))).filter(Boolean);
 		if (format !== "herolist" && warnings.length && !confirm(warnings.join("\n\n"))) return;
-		const folderName = folder?.name || "Без папки";
+		const folderName = (folder === null || folder === void 0 ? void 0 : folder.name) || "Без папки";
 		const files = { "manifest.json": strToU8(JSON.stringify({
 			format: "list-geroya-5e-folder",
 			version: 2,
@@ -68973,15 +69800,17 @@ function Builder({ adventureRoute = false } = {}) {
 		saveExport(new Blob([zipSync(files, { level: 6 })], { type: "application/zip" }), `${safeName(folderName)} — ${format === "herolist" ? "HeroList" : format === "helpmate" ? "Helpmate" : format === "lss-2024" ? "LSS 2024" : "LSS"}.zip`);
 	}
 	async function importFolderArchive(event) {
-		const file = event.target.files?.[0];
+		var _event$target$files2;
+		const file = (_event$target$files2 = event.target.files) === null || _event$target$files2 === void 0 ? void 0 : _event$target$files2[0];
 		event.target.value = "";
 		if (!file) return;
 		try {
 			const archive = unzipSync(new Uint8Array(await file.arrayBuffer()));
 			let folderName = file.name.replace(/\.zip$/i, "").replace(/\s+—\s+персонажи$/i, "");
 			if (archive["manifest.json"]) {
+				var _manifest$folderName;
 				const manifest = JSON.parse(strFromU8(archive["manifest.json"]));
-				if (manifest.folderName?.trim()) folderName = manifest.folderName.trim();
+				if ((_manifest$folderName = manifest.folderName) === null || _manifest$folderName === void 0 ? void 0 : _manifest$folderName.trim()) folderName = manifest.folderName.trim();
 			}
 			const items = [];
 			for (const [key, bytes] of Object.entries(archive)) {
@@ -68994,7 +69823,7 @@ function Builder({ adventureRoute = false } = {}) {
 						character: imported,
 						selected: true
 					});
-				} catch {}
+				} catch (_unused7) {}
 			}
 			if (!items.length) throw new Error("В ZIP-архиве не найдено совместимых JSON-файлов персонажей.");
 			setFolderImport({
@@ -69030,7 +69859,8 @@ function Builder({ adventureRoute = false } = {}) {
 		setFolderImport(null);
 	}
 	function importCharacterFile(event) {
-		const file = event.target.files?.[0];
+		var _event$target$files3;
+		const file = (_event$target$files3 = event.target.files) === null || _event$target$files3 === void 0 ? void 0 : _event$target$files3[0];
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = () => {
@@ -69125,7 +69955,7 @@ function Builder({ adventureRoute = false } = {}) {
 			setView("builder");
 		},
 		onExport: () => download(createNativeCharacterFile(character), `${safeName(character.name)} — приключение.json`),
-		saveStatus: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : account?.authenticated ? "Сохранено в аккаунте" : "Сохранено на устройстве"
+		saveStatus: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : (account === null || account === void 0 ? void 0 : account.authenticated) ? "Сохранено в аккаунте" : "Сохранено на устройстве"
 	}, vault.activeId);
 	if (view === "home" || view === "quiz") return /* @__PURE__ */ jsxs("main", {
 		className: `app-shell${shellThemeClass}`,
@@ -69203,7 +70033,7 @@ function Builder({ adventureRoute = false } = {}) {
 								className: "home-lead",
 								children: "Правила, расчёты, заклинания и печатный PDF собраны в одном мастере. Можно начать с нуля или пройти создание с подсказками."
 							}),
-							!account?.authenticated && /* @__PURE__ */ jsx(AccountAccess, {
+							!(account === null || account === void 0 ? void 0 : account.authenticated) && /* @__PURE__ */ jsx(AccountAccess, {
 								account,
 								cloudState
 							}),
@@ -69512,11 +70342,17 @@ function Builder({ adventureRoute = false } = {}) {
 											children: "Моё хоумбрю"
 										}),
 										/* @__PURE__ */ jsx("button", {
-											onClick: () => characterFileRef.current?.click(),
+											onClick: () => {
+												var _characterFileRef$cur;
+												return (_characterFileRef$cur = characterFileRef.current) === null || _characterFileRef$cur === void 0 ? void 0 : _characterFileRef$cur.click();
+											},
 											children: "Импорт JSON"
 										}),
 										/* @__PURE__ */ jsx("button", {
-											onClick: () => folderFileRef.current?.click(),
+											onClick: () => {
+												var _folderFileRef$curren;
+												return (_folderFileRef$curren = folderFileRef.current) === null || _folderFileRef$curren === void 0 ? void 0 : _folderFileRef$curren.click();
+											},
 											children: "Импорт папки ZIP"
 										}),
 										/* @__PURE__ */ jsx("button", {
@@ -69646,6 +70482,7 @@ function Builder({ adventureRoute = false } = {}) {
 							/* @__PURE__ */ jsx("div", {
 								className: "character-grid",
 								children: visibleSlots.map((slot) => {
+									var _homebrew$elements$fi4;
 									const itemClass = classes.find((item) => item.id === slot.character.className) || homebrewOption(slot.character.className);
 									const itemRace = races.find((item) => item.id === slot.character.race) || homebrewOption(slot.character.race);
 									return /* @__PURE__ */ jsxs("article", {
@@ -69660,11 +70497,11 @@ function Builder({ adventureRoute = false } = {}) {
 												}), /* @__PURE__ */ jsx("span", { children: "Выбрать" })]
 											}),
 											/* @__PURE__ */ jsx(CatalogIcon, {
-												id: itemClass?.id || itemRace?.id,
+												id: (itemClass === null || itemClass === void 0 ? void 0 : itemClass.id) || (itemRace === null || itemRace === void 0 ? void 0 : itemRace.id),
 												kind: itemClass ? "class" : "race",
-												fallback: itemClass?.name || itemRace?.name || "Новый герой",
+												fallback: (itemClass === null || itemClass === void 0 ? void 0 : itemClass.name) || (itemRace === null || itemRace === void 0 ? void 0 : itemRace.name) || "Новый герой",
 												experimental: usesOrnateIcons,
-												image: homebrew.elements.find((e) => e.id === (itemClass?.id || itemRace?.id))?.icon
+												image: (_homebrew$elements$fi4 = homebrew.elements.find((e) => e.id === ((itemClass === null || itemClass === void 0 ? void 0 : itemClass.id) || (itemRace === null || itemRace === void 0 ? void 0 : itemRace.id)))) === null || _homebrew$elements$fi4 === void 0 ? void 0 : _homebrew$elements$fi4.icon
 											}),
 											/* @__PURE__ */ jsxs("div", { children: [
 												/* @__PURE__ */ jsx("small", { children: slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}` }),
@@ -69675,9 +70512,9 @@ function Builder({ adventureRoute = false } = {}) {
 													slot.character.adventure.status === "archived" ? "Завершено" : "В игре"
 												] }),
 												/* @__PURE__ */ jsxs("p", { children: [
-													itemRace?.name || "Раса не выбрана",
+													(itemRace === null || itemRace === void 0 ? void 0 : itemRace.name) || "Раса не выбрана",
 													" · ",
-													itemClass?.name || "Класс не выбран",
+													(itemClass === null || itemClass === void 0 ? void 0 : itemClass.name) || "Класс не выбран",
 													" · ",
 													slot.character.level,
 													" уровень"
@@ -69968,7 +70805,7 @@ function Builder({ adventureRoute = false } = {}) {
 										children: [banDraft.name, " · новый"]
 									}), banLists.map((list) => /* @__PURE__ */ jsxs("option", {
 										value: list.id,
-										children: [list.name, activeBan?.id === list.id ? " · активен" : ""]
+										children: [list.name, (activeBan === null || activeBan === void 0 ? void 0 : activeBan.id) === list.id ? " · активен" : ""]
 									}, list.id))]
 								})] }),
 								/* @__PURE__ */ jsx("button", {
@@ -70162,6 +70999,7 @@ function Builder({ adventureRoute = false } = {}) {
 						/* @__PURE__ */ jsx("div", {
 							className: "ban-grid",
 							children: list.map((option) => {
+								var _classes$find6;
 								const banned = !allowed(banDraft, banCategory, option.id);
 								return /* @__PURE__ */ jsxs("button", {
 									"aria-pressed": banned,
@@ -70179,7 +71017,7 @@ function Builder({ adventureRoute = false } = {}) {
 											/* @__PURE__ */ jsx("strong", { children: option.name }),
 											/* @__PURE__ */ jsx("small", { children: [
 												option.source,
-												option.classId ? classes.find((item) => item.id === option.classId)?.name : "",
+												option.classId ? (_classes$find6 = classes.find((item) => item.id === option.classId)) === null || _classes$find6 === void 0 ? void 0 : _classes$find6.name : "",
 												option.group,
 												banCategory === "spells" ? levelLabel(option.level || 0) : option.level ? `${option.level} ур.` : ""
 											].filter(Boolean).join(" · ") }),
@@ -70325,7 +71163,10 @@ function Builder({ adventureRoute = false } = {}) {
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
-								onClick: () => banFileRef.current?.click(),
+								onClick: () => {
+									var _banFileRef$current;
+									return (_banFileRef$current = banFileRef.current) === null || _banFileRef$current === void 0 ? void 0 : _banFileRef$current.click();
+								},
 								children: "Загрузить бан-лист"
 							}),
 							/* @__PURE__ */ jsx("input", {
@@ -70387,7 +71228,10 @@ function Builder({ adventureRoute = false } = {}) {
 							}),
 							/* @__PURE__ */ jsx("button", {
 								className: "nav-button",
-								onClick: () => banFileRef.current?.click(),
+								onClick: () => {
+									var _banFileRef$current2;
+									return (_banFileRef$current2 = banFileRef.current) === null || _banFileRef$current2 === void 0 ? void 0 : _banFileRef$current2.click();
+								},
 								children: "Загрузить бан-лист"
 							}),
 							/* @__PURE__ */ jsx(AccountAccess, {
@@ -70780,12 +71624,13 @@ function Builder({ adventureRoute = false } = {}) {
 								/* @__PURE__ */ jsx("div", {
 									className: "card-grid",
 									children: filtered.map((option) => {
+										var _classRules$option$id, _homebrew$elements$fi5, _homebrew$elements$fi6, _option$tags, _option$details;
 										const selected = (step === 0 ? character.race : step === 1 ? character.className : character.background) === option.id;
-										const detailFeatures = step === 0 ? resolvedRaceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags) : step === 1 ? documentedClassFeatures(option.id, void 0, false, classRules[option.id]?.features || homebrew.elements.find((e) => e.id === option.id)?.features?.map((f) => ({
+										const detailFeatures = step === 0 ? resolvedRaceFeatures(option.id, option.id === character.race ? character.raceVariant : "", option.description, option.tags) : step === 1 ? documentedClassFeatures(option.id, void 0, false, ((_classRules$option$id = classRules[option.id]) === null || _classRules$option$id === void 0 ? void 0 : _classRules$option$id.features) || ((_homebrew$elements$fi5 = homebrew.elements.find((e) => e.id === option.id)) === null || _homebrew$elements$fi5 === void 0 || (_homebrew$elements$fi5 = _homebrew$elements$fi5.features) === null || _homebrew$elements$fi5 === void 0 ? void 0 : _homebrew$elements$fi5.map((f) => ({
 											name: f.name,
 											description: f.description,
 											level: f.level
-										})) || [], [], []) : [{ ...backgroundRule(option.id, option).feature }];
+										}))) || [], [], []) : [{ ...backgroundRule(option.id, option).feature }];
 										return /* @__PURE__ */ jsxs("article", {
 											className: `choice-card ${selected ? "selected" : ""}`,
 											children: [
@@ -70794,7 +71639,7 @@ function Builder({ adventureRoute = false } = {}) {
 													kind: step === 0 ? "race" : step === 1 ? "class" : "background",
 													fallback: option.name,
 													experimental: usesOrnateIcons,
-													image: homebrew.elements.find((e) => e.id === option.id)?.icon
+													image: (_homebrew$elements$fi6 = homebrew.elements.find((e) => e.id === option.id)) === null || _homebrew$elements$fi6 === void 0 ? void 0 : _homebrew$elements$fi6.icon
 												}),
 												/* @__PURE__ */ jsxs("div", { children: [
 													/* @__PURE__ */ jsxs("div", {
@@ -70804,7 +71649,7 @@ function Builder({ adventureRoute = false } = {}) {
 													/* @__PURE__ */ jsx("p", { children: option.description }),
 													/* @__PURE__ */ jsx("div", {
 														className: "tags",
-														children: option.tags?.map((tag) => /* @__PURE__ */ jsx("span", { children: tag }, tag))
+														children: (_option$tags = option.tags) === null || _option$tags === void 0 ? void 0 : _option$tags.map((tag) => /* @__PURE__ */ jsx("span", { children: tag }, tag))
 													}),
 													/* @__PURE__ */ jsxs("div", {
 														className: "card-actions",
@@ -70862,7 +71707,7 @@ function Builder({ adventureRoute = false } = {}) {
 														detailFeatures.length ? /* @__PURE__ */ jsx("div", {
 															className: "feature-preview",
 															children: detailFeatures.map((feature) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("strong", { children: [feature.level ? `${feature.level} ур. · ` : "", feature.name] }), /* @__PURE__ */ jsx("p", { children: feature.description })] }, `${feature.level}-${feature.name}`))
-														}) : /* @__PURE__ */ jsx("ul", { children: (option.details?.length ? option.details : [
+														}) : /* @__PURE__ */ jsx("ul", { children: (((_option$details = option.details) === null || _option$details === void 0 ? void 0 : _option$details.length) ? option.details : [
 															`Источник: ${option.source}.`,
 															option.description,
 															...(option.tags || []).map((tag) => `Ключевая особенность: ${tag}.`)
@@ -70906,42 +71751,45 @@ function Builder({ adventureRoute = false } = {}) {
 														})(),
 														step === 0 && variantsFor(option.id).length > 0 && /* @__PURE__ */ jsxs("fieldset", {
 															className: "variant-picker",
-															children: [/* @__PURE__ */ jsx("legend", { children: "Обязательный вариант / подраса" }), variantsFor(option.id).map((variant) => /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
-																type: "radio",
-																checked: character.race === option.id && character.raceVariant === variant.id,
-																onChange: () => setCharacter((current) => ({
-																	...current,
-																	race: option.id,
-																	raceVariant: variant.id,
-																	raceAbilityChoices: [],
-																	raceSkills: [],
-																	feats: [],
-																	asiChoices: [],
-																	advancements: []
-																}))
-															}), /* @__PURE__ */ jsxs("span", { children: [
-																/* @__PURE__ */ jsxs("strong", { children: [
-																	variant.name,
-																	" · ",
-																	variant.source
-																] }),
-																variant.description,
-																/* @__PURE__ */ jsxs("small", {
-																	className: "variant-bonus-line",
-																	children: [Object.keys(variant.bonuses || {}).length ? `Характеристики: ${Object.entries(variant.bonuses || {}).map(([key, value]) => `${abilityLabels[key]} +${value}`).join(", ")}` : variant.chooseBonuses ? "Характеристики выбираются по правилам варианта" : "Без фиксированного бонуса", variant.proficiencies?.length ? ` · Владения: ${variant.proficiencies.join(", ")}` : ""]
-																}),
-																variant.features?.length ? /* @__PURE__ */ jsx("span", {
-																	className: "variant-feature-list",
-																	children: variant.features.map((feature) => /* @__PURE__ */ jsxs("small", {
-																		className: "variant-feature-line",
-																		children: [
-																			/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
-																			" ",
-																			feature.description
-																		]
-																	}, feature.name))
-																}) : null
-															] })] }, variant.id))]
+															children: [/* @__PURE__ */ jsx("legend", { children: "Обязательный вариант / подраса" }), variantsFor(option.id).map((variant) => {
+																var _variant$proficiencie, _variant$features;
+																return /* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
+																	type: "radio",
+																	checked: character.race === option.id && character.raceVariant === variant.id,
+																	onChange: () => setCharacter((current) => ({
+																		...current,
+																		race: option.id,
+																		raceVariant: variant.id,
+																		raceAbilityChoices: [],
+																		raceSkills: [],
+																		feats: [],
+																		asiChoices: [],
+																		advancements: []
+																	}))
+																}), /* @__PURE__ */ jsxs("span", { children: [
+																	/* @__PURE__ */ jsxs("strong", { children: [
+																		variant.name,
+																		" · ",
+																		variant.source
+																	] }),
+																	variant.description,
+																	/* @__PURE__ */ jsxs("small", {
+																		className: "variant-bonus-line",
+																		children: [Object.keys(variant.bonuses || {}).length ? `Характеристики: ${Object.entries(variant.bonuses || {}).map(([key, value]) => `${abilityLabels[key]} +${value}`).join(", ")}` : variant.chooseBonuses ? "Характеристики выбираются по правилам варианта" : "Без фиксированного бонуса", ((_variant$proficiencie = variant.proficiencies) === null || _variant$proficiencie === void 0 ? void 0 : _variant$proficiencie.length) ? ` · Владения: ${variant.proficiencies.join(", ")}` : ""]
+																	}),
+																	((_variant$features = variant.features) === null || _variant$features === void 0 ? void 0 : _variant$features.length) ? /* @__PURE__ */ jsx("span", {
+																		className: "variant-feature-list",
+																		children: variant.features.map((feature) => /* @__PURE__ */ jsxs("small", {
+																			className: "variant-feature-line",
+																			children: [
+																				/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
+																				" ",
+																				feature.description
+																			]
+																		}, feature.name))
+																	}) : null
+																] })] }, variant.id);
+															})]
 														})
 													]
 												})
@@ -70956,11 +71804,12 @@ function Builder({ adventureRoute = false } = {}) {
 									className: "ability-editor-head",
 									children: /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Обязательные решения предыстории" }), /* @__PURE__ */ jsxs("h2", { children: [
 										"Настройте «",
-										selectedBackground?.name,
+										selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name,
 										"»"
 									] })] })
 								}), backgroundChoiceGroups(character.background, featCatalog).map((group) => {
-									const selected = character.backgroundChoices?.[group.key] || [];
+									var _character$background5;
+									const selected = ((_character$background5 = character.backgroundChoices) === null || _character$background5 === void 0 ? void 0 : _character$background5[group.key]) || [];
 									return /* @__PURE__ */ jsxs("section", {
 										className: "feat-choice-group",
 										"data-incomplete": selected.length !== group.count,
@@ -71070,7 +71919,7 @@ function Builder({ adventureRoute = false } = {}) {
 											] })
 										] }, key))
 									}),
-									chosenRaceVariant?.chooseBonuses && /* @__PURE__ */ jsxs("div", {
+									(chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.chooseBonuses) && /* @__PURE__ */ jsxs("div", {
 										className: "racial-choice",
 										"data-incomplete": (character.raceAbilityChoices || []).length !== chosenRaceVariant.chooseBonuses.count,
 										children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: chosenRaceVariant.name }), /* @__PURE__ */ jsxs("h2", { children: [
@@ -71079,22 +71928,28 @@ function Builder({ adventureRoute = false } = {}) {
 											" бонуса характеристик"
 										] })] }), /* @__PURE__ */ jsx("div", {
 											className: "proficiency-grid",
-											children: Object.keys(abilityLabels).filter((key) => !chosenRaceVariant.chooseBonuses?.exclude?.includes(key)).map((key) => /* @__PURE__ */ jsxs("button", {
-												className: (character.raceAbilityChoices || []).includes(key) ? "selected" : "",
-												onClick: () => toggleRaceAbility(key),
-												children: [
-													/* @__PURE__ */ jsx("span", { children: (character.raceAbilityChoices || []).includes(key) ? "✓" : "+" }),
-													abilityLabels[key],
-													" ",
-													(character.raceAbilityChoices || []).includes(key) ? `+${chosenRaceVariant.chooseBonuses?.amounts?.[(character.raceAbilityChoices || []).indexOf(key)] ?? chosenRaceVariant.chooseBonuses?.amount ?? 0}` : chosenRaceVariant.chooseBonuses?.amounts ? `(+${chosenRaceVariant.chooseBonuses.amounts.join(" / +")})` : `+${chosenRaceVariant.chooseBonuses?.amount}`
-												]
-											}, key))
+											children: Object.keys(abilityLabels).filter((key) => {
+												var _chosenRaceVariant$ch5;
+												return !((_chosenRaceVariant$ch5 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch5 === void 0 || (_chosenRaceVariant$ch5 = _chosenRaceVariant$ch5.exclude) === null || _chosenRaceVariant$ch5 === void 0 ? void 0 : _chosenRaceVariant$ch5.includes(key));
+											}).map((key) => {
+												var _ref, _chosenRaceVariant$ch6, _chosenRaceVariant$ch7, _chosenRaceVariant$ch8, _chosenRaceVariant$ch9, _chosenRaceVariant$ch10;
+												return /* @__PURE__ */ jsxs("button", {
+													className: (character.raceAbilityChoices || []).includes(key) ? "selected" : "",
+													onClick: () => toggleRaceAbility(key),
+													children: [
+														/* @__PURE__ */ jsx("span", { children: (character.raceAbilityChoices || []).includes(key) ? "✓" : "+" }),
+														abilityLabels[key],
+														" ",
+														(character.raceAbilityChoices || []).includes(key) ? `+${(_ref = (_chosenRaceVariant$ch6 = (_chosenRaceVariant$ch7 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch7 === void 0 || (_chosenRaceVariant$ch7 = _chosenRaceVariant$ch7.amounts) === null || _chosenRaceVariant$ch7 === void 0 ? void 0 : _chosenRaceVariant$ch7[(character.raceAbilityChoices || []).indexOf(key)]) !== null && _chosenRaceVariant$ch6 !== void 0 ? _chosenRaceVariant$ch6 : (_chosenRaceVariant$ch8 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch8 === void 0 ? void 0 : _chosenRaceVariant$ch8.amount) !== null && _ref !== void 0 ? _ref : 0}` : ((_chosenRaceVariant$ch9 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch9 === void 0 ? void 0 : _chosenRaceVariant$ch9.amounts) ? `(+${chosenRaceVariant.chooseBonuses.amounts.join(" / +")})` : `+${(_chosenRaceVariant$ch10 = chosenRaceVariant.chooseBonuses) === null || _chosenRaceVariant$ch10 === void 0 ? void 0 : _chosenRaceVariant$ch10.amount}`
+													]
+												}, key);
+											})
 										})]
 									}),
 									raceSkillChoiceCount(character) > 0 && /* @__PURE__ */ jsxs("div", {
 										className: "racial-choice",
 										"data-incomplete": (character.raceSkills || []).length !== raceSkillChoiceCount(character),
-										children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: chosenRaceVariant?.name || selectedRace?.name }), /* @__PURE__ */ jsxs("h2", { children: [
+										children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: (chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name) || (selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name) }), /* @__PURE__ */ jsxs("h2", { children: [
 											"Выберите расовые владения навыками: ",
 											(character.raceSkills || []).length,
 											" / ",
@@ -71108,31 +71963,34 @@ function Builder({ adventureRoute = false } = {}) {
 											}, skill))
 										})]
 									}),
-									racialChoiceGroups.length > 0 && racialChoiceGroups.map((group) => /* @__PURE__ */ jsxs("div", {
-										className: "racial-choice",
-										"data-incomplete": !character.raceChoices?.[group.key]?.[0],
-										children: [/* @__PURE__ */ jsxs("div", { children: [
-											/* @__PURE__ */ jsx("small", { children: "Расовая магия" }),
-											/* @__PURE__ */ jsx("h2", { children: group.title }),
-											/* @__PURE__ */ jsx("p", { children: "Выберите один заговор. Он появится в листе автоматически и не займёт лимит заклинаний класса." })
-										] }), /* @__PURE__ */ jsxs("label", { children: ["Заговор", /* @__PURE__ */ jsxs("select", {
-											value: character.raceChoices?.[group.key]?.[0] || "",
-											onChange: (event) => setCharacter((current) => ({
-												...current,
-												raceChoices: {
-													...current.raceChoices,
-													[group.key]: event.target.value ? [event.target.value] : []
-												}
-											})),
-											children: [/* @__PURE__ */ jsx("option", {
-												value: "",
-												children: "Выберите…"
-											}), group.options.map((spell) => /* @__PURE__ */ jsx("option", {
-												value: spell.id,
-												children: spell.name
-											}, spell.id))]
-										})] })]
-									}, group.key)),
+									racialChoiceGroups.length > 0 && racialChoiceGroups.map((group) => {
+										var _character$raceChoice, _character$raceChoice2;
+										return /* @__PURE__ */ jsxs("div", {
+											className: "racial-choice",
+											"data-incomplete": !((_character$raceChoice = character.raceChoices) === null || _character$raceChoice === void 0 || (_character$raceChoice = _character$raceChoice[group.key]) === null || _character$raceChoice === void 0 ? void 0 : _character$raceChoice[0]),
+											children: [/* @__PURE__ */ jsxs("div", { children: [
+												/* @__PURE__ */ jsx("small", { children: "Расовая магия" }),
+												/* @__PURE__ */ jsx("h2", { children: group.title }),
+												/* @__PURE__ */ jsx("p", { children: "Выберите один заговор. Он появится в листе автоматически и не займёт лимит заклинаний класса." })
+											] }), /* @__PURE__ */ jsxs("label", { children: ["Заговор", /* @__PURE__ */ jsxs("select", {
+												value: ((_character$raceChoice2 = character.raceChoices) === null || _character$raceChoice2 === void 0 || (_character$raceChoice2 = _character$raceChoice2[group.key]) === null || _character$raceChoice2 === void 0 ? void 0 : _character$raceChoice2[0]) || "",
+												onChange: (event) => setCharacter((current) => ({
+													...current,
+													raceChoices: {
+														...current.raceChoices,
+														[group.key]: event.target.value ? [event.target.value] : []
+													}
+												})),
+												children: [/* @__PURE__ */ jsx("option", {
+													value: "",
+													children: "Выберите…"
+												}), group.options.map((spell) => /* @__PURE__ */ jsx("option", {
+													value: spell.id,
+													children: spell.name
+												}, spell.id))]
+											})] })]
+										}, group.key);
+									}),
 									racialSpells.length > 0 && racialSpellDefinitions(exportCharacter).some((definition) => definition.ability === "choice") && /* @__PURE__ */ jsxs("div", {
 										className: "racial-choice",
 										children: [/* @__PURE__ */ jsxs("div", { children: [
@@ -71140,7 +71998,7 @@ function Builder({ adventureRoute = false } = {}) {
 											/* @__PURE__ */ jsx("h2", { children: "Характеристика заклинаний" }),
 											/* @__PURE__ */ jsx("p", { children: "Автоматически выбрана самая высокая; при необходимости измените." })
 										] }), /* @__PURE__ */ jsxs("label", { children: ["Характеристика", /* @__PURE__ */ jsx("select", {
-											value: character.raceChoices?.["spellcasting-ability"]?.[0] || racialSpells[0].ability,
+											value: ((_character$raceChoice3 = character.raceChoices) === null || _character$raceChoice3 === void 0 || (_character$raceChoice3 = _character$raceChoice3["spellcasting-ability"]) === null || _character$raceChoice3 === void 0 ? void 0 : _character$raceChoice3[0]) || racialSpells[0].ability,
 											onChange: (event) => setCharacter((current) => ({
 												...current,
 												raceChoices: {
@@ -71168,7 +72026,7 @@ function Builder({ adventureRoute = false } = {}) {
 									children: [
 										/* @__PURE__ */ jsxs("div", {
 											className: "skill-source-head",
-											children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Предыстория" }), /* @__PURE__ */ jsx("h2", { children: selectedBackground?.name })] }), /* @__PURE__ */ jsx("strong", { children: fixedBackgroundSkills.length })]
+											children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Предыстория" }), /* @__PURE__ */ jsx("h2", { children: selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name })] }), /* @__PURE__ */ jsx("strong", { children: fixedBackgroundSkills.length })]
 										}),
 										/* @__PURE__ */ jsx("p", { children: "Эти владения выдаются выбранной предысторией." }),
 										/* @__PURE__ */ jsx("div", {
@@ -71185,7 +72043,7 @@ function Builder({ adventureRoute = false } = {}) {
 									children: [
 										/* @__PURE__ */ jsxs("div", {
 											className: "skill-source-head",
-											children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Класс" }), /* @__PURE__ */ jsx("h2", { children: selectedClass?.name })] }), /* @__PURE__ */ jsxs("strong", { children: [
+											children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Класс" }), /* @__PURE__ */ jsx("h2", { children: selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name })] }), /* @__PURE__ */ jsxs("strong", { children: [
 												character.classSkills.length,
 												" / ",
 												classRule.count
@@ -71223,7 +72081,7 @@ function Builder({ adventureRoute = false } = {}) {
 									/* @__PURE__ */ jsxs("div", {
 										className: "equipment-toolbar",
 										children: [/* @__PURE__ */ jsxs("div", { children: [
-											/* @__PURE__ */ jsx("small", { children: selectedClass?.name }),
+											/* @__PURE__ */ jsx("small", { children: selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name }),
 											/* @__PURE__ */ jsx("h2", { children: "Стартовое снаряжение класса" }),
 											/* @__PURE__ */ jsxs("p", { children: [
 												"Рекомендация учитывает Силу ",
@@ -71238,7 +72096,8 @@ function Builder({ adventureRoute = false } = {}) {
 										})]
 									}),
 									classEquipment.groups.map((group) => {
-										const selected = character.equipmentSelections?.[group.key] || [];
+										var _character$equipmentS;
+										const selected = ((_character$equipmentS = character.equipmentSelections) === null || _character$equipmentS === void 0 ? void 0 : _character$equipmentS[group.key]) || [];
 										const recommended = optimalEquipmentSelections(character.className, finalAbilities, {
 											classChoices: character.classChoices,
 											subclass: character.subclass
@@ -71300,6 +72159,7 @@ function Builder({ adventureRoute = false } = {}) {
 												"cp",
 												"pp"
 											].map((key) => {
+												var _character$currency;
 												const labels = {
 													gp: ["ЗМ", "золото"],
 													sp: ["СМ", "серебро"],
@@ -71312,7 +72172,7 @@ function Builder({ adventureRoute = false } = {}) {
 														"aria-label": `${labels[key][1]}: количество`,
 														type: "number",
 														min: "0",
-														value: character.currency?.[key] || 0,
+														value: ((_character$currency = character.currency) === null || _character$currency === void 0 ? void 0 : _character$currency[key]) || 0,
 														onChange: (event) => setCharacter((current) => ({
 															...current,
 															currency: {
@@ -71348,8 +72208,9 @@ function Builder({ adventureRoute = false } = {}) {
 											/* @__PURE__ */ jsx("div", {
 												className: "multiclass-class-grid",
 												children: multiclassEntries.map((entry) => {
+													var _character$levelHisto;
 													const option = availableClasses.find((item) => item.id === entry.classId);
-													const isLastLevel = character.levelHistory?.[character.levelHistory.length - 1]?.classId === entry.classId;
+													const isLastLevel = ((_character$levelHisto = character.levelHistory) === null || _character$levelHisto === void 0 || (_character$levelHisto = _character$levelHisto[character.levelHistory.length - 1]) === null || _character$levelHisto === void 0 ? void 0 : _character$levelHisto.classId) === entry.classId;
 													const skillRule = classSkillRules[entry.classId] || homebrewClassSkillRule(homebrew.elements, entry.classId, true);
 													const secondarySkillCount = multiclassSkillChoiceCount(entry.classId, homebrew.elements);
 													const classSkills = entry.classSkills || [];
@@ -71358,7 +72219,7 @@ function Builder({ adventureRoute = false } = {}) {
 														children: [
 															/* @__PURE__ */ jsx("small", { children: entry.classId === character.startingClassId ? "Стартовый класс" : `Получен на ${entry.acquiredAtCharacterLevel}-м общем уровне` }),
 															/* @__PURE__ */ jsxs("h3", { children: [
-																option?.name || entry.classId,
+																(option === null || option === void 0 ? void 0 : option.name) || entry.classId,
 																" ",
 																/* @__PURE__ */ jsx("span", { children: entry.level })
 															] }),
@@ -71513,7 +72374,8 @@ function Builder({ adventureRoute = false } = {}) {
 										})]
 									}),
 									subclassRequirements.map(({ entry, data }) => {
-										const className = classes.find((option) => option.id === entry.classId)?.name || entry.classId;
+										var _classes$find7;
+										const className = ((_classes$find7 = classes.find((option) => option.id === entry.classId)) === null || _classes$find7 === void 0 ? void 0 : _classes$find7.name) || entry.classId;
 										return /* @__PURE__ */ jsxs("div", {
 											className: "subclass-picker",
 											"data-incomplete": !entry.subclassId,
@@ -71527,17 +72389,20 @@ function Builder({ adventureRoute = false } = {}) {
 												] }), /* @__PURE__ */ jsx("h2", { children: "Выберите подкласс" })] }), /* @__PURE__ */ jsxs("span", { children: [data.options.length, " вариантов"] })]
 											}), /* @__PURE__ */ jsx("div", {
 												className: "subclass-grid",
-												children: data.options.filter((option) => allowed(activeBan, "subclasses", `${entry.classId}:${option.id}`)).map((option) => /* @__PURE__ */ jsxs("button", {
-													className: entry.subclassId === option.id ? "selected" : "",
-													onClick: () => selectMulticlassSubclass(entry.classId, option.id),
-													children: [
-														/* @__PURE__ */ jsxs("span", { children: [option.source, option.flags?.dmApproval ? " · разрешение Мастера" : ""] }),
-														/* @__PURE__ */ jsx("strong", { children: option.name }),
-														/* @__PURE__ */ jsx("p", { children: option.description }),
-														option.flags?.settingRestriction && /* @__PURE__ */ jsxs("small", { children: ["Ограничение сеттинга: ", option.flags.settingRestriction] }),
-														option.flags?.dmApproval && /* @__PURE__ */ jsx("small", { children: "Вариант DMG: не скрыт, но обычно требует разрешения Мастера." })
-													]
-												}, option.id))
+												children: data.options.filter((option) => allowed(activeBan, "subclasses", `${entry.classId}:${option.id}`)).map((option) => {
+													var _option$flags, _option$flags2, _option$flags3;
+													return /* @__PURE__ */ jsxs("button", {
+														className: entry.subclassId === option.id ? "selected" : "",
+														onClick: () => selectMulticlassSubclass(entry.classId, option.id),
+														children: [
+															/* @__PURE__ */ jsxs("span", { children: [option.source, ((_option$flags = option.flags) === null || _option$flags === void 0 ? void 0 : _option$flags.dmApproval) ? " · разрешение Мастера" : ""] }),
+															/* @__PURE__ */ jsx("strong", { children: option.name }),
+															/* @__PURE__ */ jsx("p", { children: option.description }),
+															((_option$flags2 = option.flags) === null || _option$flags2 === void 0 ? void 0 : _option$flags2.settingRestriction) && /* @__PURE__ */ jsxs("small", { children: ["Ограничение сеттинга: ", option.flags.settingRestriction] }),
+															((_option$flags3 = option.flags) === null || _option$flags3 === void 0 ? void 0 : _option$flags3.dmApproval) && /* @__PURE__ */ jsx("small", { children: "Вариант DMG: не скрыт, но обычно требует разрешения Мастера." })
+														]
+													}, option.id);
+												})
 											})]
 										}, entry.classId);
 									}),
@@ -71596,10 +72461,10 @@ function Builder({ adventureRoute = false } = {}) {
 											/* @__PURE__ */ jsxs("label", { children: [/* @__PURE__ */ jsx("input", {
 												type: "checkbox",
 												checked: !!rulesCharacter.useTasha,
-												disabled: !!activeBan?.tceOptionalFeaturesBanned || !!activeBan?.tceFullBanned,
+												disabled: !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) || !!(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceFullBanned),
 												onChange: (event) => toggleTasha(event.target.checked)
 											}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: "Опциональные способности Tasha’s Cauldron of Everything" }), "Включает только заменяемые и дополнительные классовые способности. Расширенные списки заклинаний, боевые стили, воззвания и метамагия не зависят от этой галочки; они отключаются только полным запретом TCE в бан-листе."] })] }),
-											activeBan?.tceOptionalFeaturesBanned && /* @__PURE__ */ jsx("p", {
+											(activeBan === null || activeBan === void 0 ? void 0 : activeBan.tceOptionalFeaturesBanned) && /* @__PURE__ */ jsx("p", {
 												className: "muted",
 												children: "Опциональные способности TCE запрещены текущим бан-листом."
 											}),
@@ -71618,7 +72483,7 @@ function Builder({ adventureRoute = false } = {}) {
 										children: [
 											/* @__PURE__ */ jsxs("div", {
 												className: "ability-editor-head",
-												children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: ["Прогрессия ", selectedClass?.name || "класса"] }), /* @__PURE__ */ jsx("h2", { children: "Черты и увеличение характеристик" })] }), /* @__PURE__ */ jsxs("span", { children: [
+												children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("small", { children: ["Прогрессия ", (selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name) || "класса"] }), /* @__PURE__ */ jsx("h2", { children: "Черты и увеличение характеристик" })] }), /* @__PURE__ */ jsxs("span", { children: [
 													completedAdvancements.length,
 													" / ",
 													featSlots
@@ -71643,19 +72508,22 @@ function Builder({ adventureRoute = false } = {}) {
 											}),
 											/* @__PURE__ */ jsx("div", {
 												className: "advancement-tabs",
-												children: advancements.map((choice) => /* @__PURE__ */ jsxs("button", {
-													className: (activeAdvancement?.key === choice.key ? "active " : "") + (advancementChoiceComplete(choice, spells, character.level, character) ? "complete" : ""),
-													"data-incomplete": !advancementChoiceComplete(choice, spells, character.level, character),
-													onClick: () => setAdvancementKey(choice.key),
-													children: [
-														/* @__PURE__ */ jsx("span", { children: choice.origin ? "Происхождение" : choice.bonus ? "Дополнительная черта" : `${choice.level} уровень` }),
-														/* @__PURE__ */ jsx("strong", { children: choice.featId ? feats.find((feat) => feat.id === choice.featId)?.name : "Не выбрано" }),
-														choice.featId && choice.featId !== "asi" && !advancementChoiceComplete(choice, spells, character.level, character) && /* @__PURE__ */ jsx("em", {
-															className: "choice-required",
-															children: "требуется выбор"
-														})
-													]
-												}, choice.key))
+												children: advancements.map((choice) => {
+													var _feats$find3;
+													return /* @__PURE__ */ jsxs("button", {
+														className: ((activeAdvancement === null || activeAdvancement === void 0 ? void 0 : activeAdvancement.key) === choice.key ? "active " : "") + (advancementChoiceComplete(choice, spells, character.level, character) ? "complete" : ""),
+														"data-incomplete": !advancementChoiceComplete(choice, spells, character.level, character),
+														onClick: () => setAdvancementKey(choice.key),
+														children: [
+															/* @__PURE__ */ jsx("span", { children: choice.origin ? "Происхождение" : choice.bonus ? "Дополнительная черта" : `${choice.level} уровень` }),
+															/* @__PURE__ */ jsx("strong", { children: choice.featId ? (_feats$find3 = feats.find((feat) => feat.id === choice.featId)) === null || _feats$find3 === void 0 ? void 0 : _feats$find3.name : "Не выбрано" }),
+															choice.featId && choice.featId !== "asi" && !advancementChoiceComplete(choice, spells, character.level, character) && /* @__PURE__ */ jsx("em", {
+																className: "choice-required",
+																children: "требуется выбор"
+															})
+														]
+													}, choice.key);
+												})
 											}),
 											activeAdvancement && /* @__PURE__ */ jsxs(Fragment$1, { children: [
 												/* @__PURE__ */ jsxs("div", {
@@ -71802,11 +72670,12 @@ function Builder({ adventureRoute = false } = {}) {
 														className: "ability-editor-head",
 														children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Обязательные решения черты" }), /* @__PURE__ */ jsxs("h2", { children: [
 															"Настройте «",
-															feats.find((feat) => feat.id === activeAdvancement.featId)?.name,
+															(_feats$find4 = feats.find((feat) => feat.id === activeAdvancement.featId)) === null || _feats$find4 === void 0 ? void 0 : _feats$find4.name,
 															"»"
 														] })] }), /* @__PURE__ */ jsx("span", { children: advancementChoiceComplete(activeAdvancement, spells, character.level, character) ? "Готово" : "Не завершено" })]
 													}), featChoiceGroups(activeAdvancement, spells, character.level).map((group) => {
-														const selected = activeAdvancement.featChoices?.[group.key] || [];
+														var _activeAdvancement$fe;
+														const selected = ((_activeAdvancement$fe = activeAdvancement.featChoices) === null || _activeAdvancement$fe === void 0 ? void 0 : _activeAdvancement$fe[group.key]) || [];
 														const availability = featChoiceAvailability(activeAdvancement, group, character);
 														const allowedOptionIds = new Set(availability.options.map((option) => option.id));
 														const options = group.options;
@@ -71865,15 +72734,18 @@ function Builder({ adventureRoute = false } = {}) {
 								spellClassCandidates.length > 1 && /* @__PURE__ */ jsx("div", {
 									className: "spell-level-filter",
 									"aria-label": "Класс заклинаний",
-									children: spellClassCandidates.map((candidate) => /* @__PURE__ */ jsxs("button", {
-										className: candidate.entry.classId === activeSpellClassId ? "active" : "",
-										onClick: () => setSpellClassId(candidate.entry.classId),
-										children: [
-											classes.find((item) => item.id === candidate.entry.classId)?.name || candidate.entry.classId,
-											" ",
-											candidate.entry.level
-										]
-									}, candidate.entry.classId))
+									children: spellClassCandidates.map((candidate) => {
+										var _classes$find8;
+										return /* @__PURE__ */ jsxs("button", {
+											className: candidate.entry.classId === activeSpellClassId ? "active" : "",
+											onClick: () => setSpellClassId(candidate.entry.classId),
+											children: [
+												((_classes$find8 = classes.find((item) => item.id === candidate.entry.classId)) === null || _classes$find8 === void 0 ? void 0 : _classes$find8.name) || candidate.entry.classId,
+												" ",
+												candidate.entry.level
+											]
+										}, candidate.entry.classId);
+									})
 								}),
 								/* @__PURE__ */ jsxs("div", {
 									className: "spell-requirements",
@@ -72139,44 +73011,47 @@ function Builder({ adventureRoute = false } = {}) {
 											levelLabel(group.level),
 											" ",
 											/* @__PURE__ */ jsx("span", { children: group.spells.length })
-										] }), group.spells.map((spell) => /* @__PURE__ */ jsxs("article", {
-											className: activeSpellIds.includes(spell.id) ? "selected" : "",
-											children: [
-												/* @__PURE__ */ jsx("span", {
-													className: "spell-level",
-													children: spell.level
-												}),
-												/* @__PURE__ */ jsxs("div", { children: [
-													/* @__PURE__ */ jsx("h3", { children: spell.name }),
-													/* @__PURE__ */ jsxs("small", { children: [
-														levelLabel(spell.level),
-														" · ",
-														spell.school,
-														" · ",
-														spell.source,
-														spell.castingTime ? ` · ${spell.castingTime}` : "",
-														/концентрац/i.test(spell.duration || "") ? " · концентрация" : "",
-														spell.ritual ? " · ритуал" : "",
-														isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : "",
-														chosenSubclass?.expandedSpells?.includes(spell.id) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""
+										] }), group.spells.map((spell) => {
+											var _chosenSubclass$expan;
+											return /* @__PURE__ */ jsxs("article", {
+												className: activeSpellIds.includes(spell.id) ? "selected" : "",
+												children: [
+													/* @__PURE__ */ jsx("span", {
+														className: "spell-level",
+														children: spell.level
+													}),
+													/* @__PURE__ */ jsxs("div", { children: [
+														/* @__PURE__ */ jsx("h3", { children: spell.name }),
+														/* @__PURE__ */ jsxs("small", { children: [
+															levelLabel(spell.level),
+															" · ",
+															spell.school,
+															" · ",
+															spell.source,
+															spell.castingTime ? ` · ${spell.castingTime}` : "",
+															/концентрац/i.test(spell.duration || "") ? " · концентрация" : "",
+															spell.ritual ? " · ритуал" : "",
+															isTashaAdditionalSpell(character, spell.id) && !spell.classes.includes(character.className) ? " · расширенный список TCE" : "",
+															(chosenSubclass === null || chosenSubclass === void 0 || (_chosenSubclass$expan = chosenSubclass.expandedSpells) === null || _chosenSubclass$expan === void 0 ? void 0 : _chosenSubclass$expan.includes(spell.id)) && !spell.classes.includes(character.className) ? ` · список: ${chosenSubclass.name}` : ""
+														] }),
+														/* @__PURE__ */ jsx("p", { children: spell.description })
 													] }),
-													/* @__PURE__ */ jsx("p", { children: spell.description })
-												] }),
-												/* @__PURE__ */ jsxs("div", {
-													className: "spell-actions",
-													children: [/* @__PURE__ */ jsx("a", {
-														href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
-														target: "_blank",
-														rel: "noreferrer",
-														"aria-label": `Открыть ${spell.name} на dnd.su`,
-														children: "dnd.su ↗"
-													}), /* @__PURE__ */ jsx("button", {
-														onClick: () => toggleSpell(spell.id),
-														children: activeSpellIds.includes(spell.id) ? "✓" : "+"
-													})]
-												})
-											]
-										}, spell.id))]
+													/* @__PURE__ */ jsxs("div", {
+														className: "spell-actions",
+														children: [/* @__PURE__ */ jsx("a", {
+															href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
+															target: "_blank",
+															rel: "noreferrer",
+															"aria-label": `Открыть ${spell.name} на dnd.su`,
+															children: "dnd.su ↗"
+														}), /* @__PURE__ */ jsx("button", {
+															onClick: () => toggleSpell(spell.id),
+															children: activeSpellIds.includes(spell.id) ? "✓" : "+"
+														})]
+													})
+												]
+											}, spell.id);
+										})]
 									}, group.level))
 								})
 							] }) }),
@@ -72215,7 +73090,8 @@ function Builder({ adventureRoute = false } = {}) {
 										]
 									}),
 									proficiencyRequirements.map((requirement) => {
-										const selected = character.proficiencyChoices?.[requirement.key] || [];
+										var _character$proficienc;
+										const selected = ((_character$proficienc = character.proficiencyChoices) === null || _character$proficienc === void 0 ? void 0 : _character$proficienc[requirement.key]) || [];
 										return /* @__PURE__ */ jsxs("section", {
 											className: "skill-source",
 											"data-incomplete": selected.length !== requirement.count,
@@ -72262,7 +73138,7 @@ function Builder({ adventureRoute = false } = {}) {
 								className: "personality-builder",
 								children: [/* @__PURE__ */ jsxs("div", {
 									className: "personality-toolbar",
-									children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Основано на предыстории" }), /* @__PURE__ */ jsx("strong", { children: selectedBackground?.name })] }), /* @__PURE__ */ jsx("button", {
+									children: [/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("small", { children: "Основано на предыстории" }), /* @__PURE__ */ jsx("strong", { children: selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name })] }), /* @__PURE__ */ jsx("button", {
 										onClick: randomizeAllPersonality,
 										children: "Случайно заполнить всё"
 									})]
@@ -72384,14 +73260,14 @@ function Builder({ adventureRoute = false } = {}) {
 												className: "sheet-identity",
 												children: [
 													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("strong", { children: [
-														selectedClass?.name,
+														selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name,
 														" ",
 														character.level,
 														chosenSubclass ? ` · ${chosenSubclass.name}` : ""
 													] }), /* @__PURE__ */ jsx("small", { children: "КЛАСС, УРОВЕНЬ И ПОДКЛАСС" })] }),
-													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: selectedBackground?.name }), /* @__PURE__ */ jsx("small", { children: "ПРЕДЫСТОРИЯ" })] }),
+													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name }), /* @__PURE__ */ jsx("small", { children: "ПРЕДЫСТОРИЯ" })] }),
 													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: character.playerName || "—" }), /* @__PURE__ */ jsx("small", { children: "ИМЯ ИГРОКА" })] }),
-													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("strong", { children: [selectedRace?.name, chosenRaceVariant ? ` · ${chosenRaceVariant.name}` : ""] }), /* @__PURE__ */ jsx("small", { children: "РАСА И ПОДРАСА" })] }),
+													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("strong", { children: [selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name, chosenRaceVariant ? ` · ${chosenRaceVariant.name}` : ""] }), /* @__PURE__ */ jsx("small", { children: "РАСА И ПОДРАСА" })] }),
 													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: character.alignment || "—" }), /* @__PURE__ */ jsx("small", { children: "МИРОВОЗЗРЕНИЕ" })] }),
 													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: "2014" }), /* @__PURE__ */ jsx("small", { children: "РЕДАКЦИЯ" })] })
 												]
@@ -72601,12 +73477,13 @@ function Builder({ adventureRoute = false } = {}) {
 																	}, attack.id)) : /* @__PURE__ */ jsx("p", { children: "Выберите стартовое оружие или боевой заговор." })]
 																}),
 																sourcedSpellGroups.map((group) => {
-																	const ability = classRuleFor(rulesCharacter, group.classId)?.spellAbility;
+																	var _classRuleFor3, _classes$find9;
+																	const ability = (_classRuleFor3 = classRuleFor(rulesCharacter, group.classId)) === null || _classRuleFor3 === void 0 ? void 0 : _classRuleFor3.spellAbility;
 																	if (!ability) return null;
 																	const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
 																	return /* @__PURE__ */ jsxs("p", { children: [
 																		/* @__PURE__ */ jsxs("b", { children: [
-																			classes.find((item) => item.id === group.classId)?.name || group.classId,
+																			((_classes$find9 = classes.find((item) => item.id === group.classId)) === null || _classes$find9 === void 0 ? void 0 : _classes$find9.name) || group.classId,
 																			" · ",
 																			abilityLabels[ability],
 																			":"
@@ -72618,28 +73495,34 @@ function Builder({ adventureRoute = false } = {}) {
 																		attack
 																	] }, group.classId);
 																}),
-																sourcedSpellGroups.map((group) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("h4", { children: [
-																	classes.find((item) => item.id === group.classId)?.name || group.classId,
-																	" ",
-																	group.level
-																] }), group.spells.map(({ spell, source, prepared, alwaysPrepared }) => /* @__PURE__ */ jsxs("p", { children: [
-																	/* @__PURE__ */ jsx("a", {
-																		href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
-																		target: "_blank",
-																		rel: "noreferrer",
-																		children: /* @__PURE__ */ jsx("b", { children: spell.name })
-																	}),
-																	" — ",
-																	levelLabel(spell.level),
-																	", ",
-																	spell.school,
-																	". ",
-																	spell.description,
-																	" (",
-																	source === group.classId ? classes.find((item) => item.id === source)?.name || source : source,
-																	alwaysPrepared ? "; всегда подготовлено, вне лимита" : prepared && spell.level > 0 ? "; подготовлено" : "",
-																	")"
-																] }, spell.id))] }, group.classId)),
+																sourcedSpellGroups.map((group) => {
+																	var _classes$find10;
+																	return /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsxs("h4", { children: [
+																		((_classes$find10 = classes.find((item) => item.id === group.classId)) === null || _classes$find10 === void 0 ? void 0 : _classes$find10.name) || group.classId,
+																		" ",
+																		group.level
+																	] }), group.spells.map(({ spell, source, prepared, alwaysPrepared }) => {
+																		var _classes$find11;
+																		return /* @__PURE__ */ jsxs("p", { children: [
+																			/* @__PURE__ */ jsx("a", {
+																				href: spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`,
+																				target: "_blank",
+																				rel: "noreferrer",
+																				children: /* @__PURE__ */ jsx("b", { children: spell.name })
+																			}),
+																			" — ",
+																			levelLabel(spell.level),
+																			", ",
+																			spell.school,
+																			". ",
+																			spell.description,
+																			" (",
+																			source === group.classId ? ((_classes$find11 = classes.find((item) => item.id === source)) === null || _classes$find11 === void 0 ? void 0 : _classes$find11.name) || source : source,
+																			alwaysPrepared ? "; всегда подготовлено, вне лимита" : prepared && spell.level > 0 ? "; подготовлено" : "",
+																			")"
+																		] }, spell.id);
+																	})] }, group.classId);
+																}),
 																grantedFeatSpells.map((id) => spells.find((item) => item.id === id)).filter((spell) => !!spell).map((spell) => /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsx("b", { children: spell.name }),
 																	" — ",
@@ -72689,7 +73572,7 @@ function Builder({ adventureRoute = false } = {}) {
 															className: "sheet-box feature-box",
 															children: [
 																/* @__PURE__ */ jsx("h3", { children: "УМЕНИЯ И СПОСОБНОСТИ" }),
-																/* @__PURE__ */ jsxs("h4", { children: [selectedRace?.name, ": расовые особенности"] }),
+																/* @__PURE__ */ jsxs("h4", { children: [selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name, ": расовые особенности"] }),
 																chosenRaceVariant && /* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsxs("b", { children: [chosenRaceVariant.name, "."] }),
 																	" ",
@@ -72720,8 +73603,8 @@ function Builder({ adventureRoute = false } = {}) {
 																	" ",
 																	feature.description
 																] }, feature.name))] }),
-																/* @__PURE__ */ jsxs("h4", { children: [selectedBackground?.name, ": предыстория"] }),
-																/* @__PURE__ */ jsx("p", { children: selectedBackground?.description }),
+																/* @__PURE__ */ jsxs("h4", { children: [selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name, ": предыстория"] }),
+																/* @__PURE__ */ jsx("p", { children: selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.description }),
 																/* @__PURE__ */ jsxs("p", { children: [
 																	/* @__PURE__ */ jsxs("b", { children: [selectedBackgroundRule.feature.name, "."] }),
 																	" ",
@@ -72761,10 +73644,13 @@ function Builder({ adventureRoute = false } = {}) {
 											playerName: character.playerName,
 											experience: character.experience || 0,
 											inspiration: !!character.inspiration,
-											className: multiclassEntries.map((entry) => `${classes.find((option) => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`).join(" / ") || "Класс не выбран",
-											subclassName: multiclassEntries.length > 1 ? void 0 : chosenSubclass?.name,
-											raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
-											backgroundName: selectedBackground?.name || "Предыстория не выбрана",
+											className: multiclassEntries.map((entry) => {
+												var _classes$find12, _homebrewOption;
+												return `${((_classes$find12 = classes.find((option) => option.id === entry.classId)) === null || _classes$find12 === void 0 ? void 0 : _classes$find12.name) || ((_homebrewOption = homebrewOption(entry.classId)) === null || _homebrewOption === void 0 ? void 0 : _homebrewOption.name) || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`;
+											}).join(" / ") || "Класс не выбран",
+											subclassName: multiclassEntries.length > 1 ? void 0 : chosenSubclass === null || chosenSubclass === void 0 ? void 0 : chosenSubclass.name,
+											raceName: [selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name, chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name].filter(Boolean).join(" · ") || "Раса не выбрана",
+											backgroundName: (selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name) || "Предыстория не выбрана",
 											alignment: character.alignment,
 											level: characterLevel(character)
 										},
@@ -72785,7 +73671,7 @@ function Builder({ adventureRoute = false } = {}) {
 										speed: speedBreakdown(exportCharacter).walk,
 										movement: speedBreakdown(exportCharacter),
 										hitPoints,
-										hitDie: classRuleFor(rulesCharacter, character.className)?.hitDie || 8,
+										hitDie: ((_classRuleFor4 = classRuleFor(rulesCharacter, character.className)) === null || _classRuleFor4 === void 0 ? void 0 : _classRuleFor4.hitDie) || 8,
 										hitDiceLabel: hitDicePoolsForCharacter.map((pool) => `${pool.max - pool.spent}к${pool.die}`).join(" + "),
 										currentHitPoints: character.currentHitPoints,
 										temporaryHitPoints: character.temporaryHitPoints,
@@ -72822,9 +73708,10 @@ function Builder({ adventureRoute = false } = {}) {
 										spellAttackBonus: spellAbilityKey ? spellAttackBonus : void 0,
 										spellSlots: sharedSpellSlots,
 										pactSlots: pactMagicSlots,
-										preparedMaximum: sourcedSpellGroups.find((group) => group.classId === "wizard")?.preparedMaximum,
+										preparedMaximum: (_sourcedSpellGroups$f2 = sourcedSpellGroups.find((group) => group.classId === "wizard")) === null || _sourcedSpellGroups$f2 === void 0 ? void 0 : _sourcedSpellGroups$f2.preparedMaximum,
 										spellcastingSources: sourcedSpellGroups.flatMap((group) => {
-											const ability = classRuleFor(exportCharacter, group.classId)?.spellAbility;
+											var _classRuleFor5;
+											const ability = (_classRuleFor5 = classRuleFor(exportCharacter, group.classId)) === null || _classRuleFor5 === void 0 ? void 0 : _classRuleFor5.spellAbility;
 											if (!ability) return [];
 											const attack = proficiencyBonus(characterLevel(exportCharacter)) + abilityModifier$1(finalAbilities[ability]);
 											return [{
@@ -72903,17 +73790,20 @@ function Builder({ adventureRoute = false } = {}) {
 											] }),
 											sharedSpellSlots.length > 0 && /* @__PURE__ */ jsx("div", {
 												className: "slot-usage-editor",
-												children: sharedSpellSlots.map((maximum, circle) => /* @__PURE__ */ jsxs("label", { children: [
-													/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
-													/* @__PURE__ */ jsx("input", {
-														type: "number",
-														min: "0",
-														max: maximum,
-														value: character.spellSlotsUsed?.[circle] || 0,
-														onChange: (event) => setUsedSlots(circle, +event.target.value, maximum)
-													}),
-													/* @__PURE__ */ jsxs("small", { children: ["потрачено из ", maximum] })
-												] }, circle))
+												children: sharedSpellSlots.map((maximum, circle) => {
+													var _character$spellSlots;
+													return /* @__PURE__ */ jsxs("label", { children: [
+														/* @__PURE__ */ jsxs("span", { children: [circle + 1, " круг"] }),
+														/* @__PURE__ */ jsx("input", {
+															type: "number",
+															min: "0",
+															max: maximum,
+															value: ((_character$spellSlots = character.spellSlotsUsed) === null || _character$spellSlots === void 0 ? void 0 : _character$spellSlots[circle]) || 0,
+															onChange: (event) => setUsedSlots(circle, +event.target.value, maximum)
+														}),
+														/* @__PURE__ */ jsxs("small", { children: ["потрачено из ", maximum] })
+													] }, circle);
+												})
 											}),
 											pactMagicSlots.slots > 0 && /* @__PURE__ */ jsx("div", {
 												className: "slot-usage-editor",
@@ -73015,28 +73905,28 @@ function Builder({ adventureRoute = false } = {}) {
 							/* @__PURE__ */ jsx("div", {
 								className: "summary-catalog-icon-wrap selected",
 								children: /* @__PURE__ */ jsx(CatalogIcon, {
-									id: selectedClass?.id || selectedRace?.id,
+									id: (selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.id) || (selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.id),
 									kind: selectedClass ? "class" : "race",
-									fallback: selectedClass?.name || selectedRace?.name || "Новый герой",
+									fallback: (selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name) || (selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name) || "Новый герой",
 									className: "sigil summary-catalog-icon",
 									experimental: usesOrnateIcons,
-									image: homebrew.elements.find((e) => e.id === (selectedClass?.id || selectedRace?.id))?.icon
+									image: (_homebrew$elements$fi7 = homebrew.elements.find((e) => e.id === ((selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.id) || (selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.id)))) === null || _homebrew$elements$fi7 === void 0 ? void 0 : _homebrew$elements$fi7.icon
 								})
 							}),
-							/* @__PURE__ */ jsx("h2", { children: character.name || selectedRace?.name || "Новый герой" }),
+							/* @__PURE__ */ jsx("h2", { children: character.name || (selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name) || "Новый герой" }),
 							/* @__PURE__ */ jsxs("p", {
 								className: "summary-line",
 								children: [
-									selectedRace?.name || "Раса не выбрана",
+									(selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name) || "Раса не выбрана",
 									" · ",
-									selectedClass?.name || "Класс не выбран"
+									(selectedClass === null || selectedClass === void 0 ? void 0 : selectedClass.name) || "Класс не выбран"
 								]
 							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "summary-facts",
 								children: [
 									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Уровень" }), /* @__PURE__ */ jsx("strong", { children: character.level })] }),
-									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Предыстория" }), /* @__PURE__ */ jsx("strong", { children: selectedBackground?.name || "—" })] }),
+									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Предыстория" }), /* @__PURE__ */ jsx("strong", { children: (selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name) || "—" })] }),
 									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Владения" }), /* @__PURE__ */ jsx("strong", { children: proficiencies.skills.length || "—" })] }),
 									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Языки" }), /* @__PURE__ */ jsx("strong", { children: knownLanguages.length || "—" })] }),
 									/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("span", { children: "Снаряжение" }), /* @__PURE__ */ jsx("strong", { children: displayedInventory.length || "—" })] }),

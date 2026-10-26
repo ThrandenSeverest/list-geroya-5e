@@ -43,7 +43,7 @@ function tinyassert(value, message) {
 }
 var TinyAssertionError = class extends Error {
 	constructor(message, stackStartFunction) {
-		super(message ?? "TinyAssertionError");
+		super(message !== null && message !== void 0 ? message : "TinyAssertionError");
 		if (stackStartFunction && "captureStackTrace" in Error) Error.captureStackTrace(this, stackStartFunction);
 	}
 };
@@ -51,8 +51,9 @@ function safeFunctionCast(f) {
 	return f;
 }
 function memoize(f, options) {
-	const keyFn = options?.keyFn ?? ((...args) => args[0]);
-	const cache = options?.cache ?? /* @__PURE__ */ new Map();
+	var _options$keyFn, _options$cache;
+	const keyFn = (_options$keyFn = options === null || options === void 0 ? void 0 : options.keyFn) !== null && _options$keyFn !== void 0 ? _options$keyFn : ((...args) => args[0]);
+	const cache = (_options$cache = options === null || options === void 0 ? void 0 : options.cache) !== null && _options$cache !== void 0 ? _options$cache : /* @__PURE__ */ new Map();
 	return safeFunctionCast(function(...args) {
 		const key = keyFn(...args);
 		const value = cache.get(key);
@@ -425,7 +426,7 @@ var require_react_dom_react_server_production = /* @__PURE__ */ __commonJSMin(((
 					nonce: "string" === typeof options.nonce ? options.nonce : void 0
 				});
 			}
-		} else options ?? Internals.d.M(href);
+		} else null == options && Internals.d.M(href);
 	};
 	exports.preload = function(href, options) {
 		if ("string" === typeof href && "object" === typeof options && null !== options && "string" === typeof options.as) {
@@ -2557,9 +2558,10 @@ function setRequireModule(options) {
 			id = removeReferenceCacheTag(id);
 			const target = {};
 			const getOrCreateClientReference = (name) => {
-				return target[name] ?? (target[name] = import_server_edge.registerClientReference(() => {
+				var _target$name;
+				return (_target$name = target[name]) !== null && _target$name !== void 0 ? _target$name : target[name] = import_server_edge.registerClientReference(() => {
 					throw new Error(`Unexpectedly client reference export '${name}' is called on server`);
-				}, id, name));
+				}, id, name);
 			};
 			return new Proxy(target, { getOwnPropertyDescriptor(_target, name) {
 				if (typeof name !== "string" || name === "then") return Reflect.getOwnPropertyDescriptor(target, name);
@@ -2593,11 +2595,12 @@ function createServerManifest() {
 function createClientManifest(options) {
 	const cacheTag = "";
 	return new Proxy({}, { get(_target, $$id, _receiver) {
+		var _options$onClientRefe;
 		tinyassert(typeof $$id === "string");
 		let [id, name] = $$id.split("#");
 		tinyassert(id);
 		tinyassert(name);
-		options?.onClientReference?.({
+		options === null || options === void 0 || (_options$onClientRefe = options.onClientReference) === null || _options$onClientRefe === void 0 || _options$onClientRefe.call(options, {
 			id,
 			name
 		});
@@ -2810,7 +2813,7 @@ var require_react_server_dom_webpack_client_edge_production = /* @__PURE__ */ __
 	module.exports = require_react_server_dom_webpack_client_edge_production();
 })))();
 function renderToReadableStream$2(data, options, extraOptions) {
-	return import_server_edge.renderToReadableStream(data, createClientManifest({ onClientReference: extraOptions?.onClientReference }), options);
+	return import_server_edge.renderToReadableStream(data, createClientManifest({ onClientReference: extraOptions === null || extraOptions === void 0 ? void 0 : extraOptions.onClientReference }), options);
 }
 function registerClientReference(proxy, id, name) {
 	return import_server_edge.registerClientReference(proxy, id, name);
@@ -2840,11 +2843,12 @@ function initialize() {
 }
 function renderToReadableStream$1(data, options, extraOptions) {
 	return renderToReadableStream$2(data, options, { onClientReference(metadata) {
-		const deps = assetsManifest.clientReferenceDeps[metadata.id] ?? {
+		var _assetsManifest$clien, _extraOptions$onClien;
+		const deps = (_assetsManifest$clien = assetsManifest.clientReferenceDeps[metadata.id]) !== null && _assetsManifest$clien !== void 0 ? _assetsManifest$clien : {
 			js: [],
 			css: []
 		};
-		extraOptions?.onClientReference?.({
+		extraOptions === null || extraOptions === void 0 || (_extraOptions$onClien = extraOptions.onClientReference) === null || _extraOptions$onClien === void 0 || _extraOptions$onClien.call(extraOptions, {
 			id: metadata.id,
 			name: metadata.name,
 			deps
@@ -3085,14 +3089,15 @@ function fnv1a64(input) {
 //#endregion
 //#region node_modules/vinext/dist/server/artifact-compatibility.js
 function createArtifactCompatibilityEnvelope(input = {}) {
+	var _input$graphVersion, _input$deploymentVers, _input$rootBoundaryId, _input$renderEpoch;
 	return {
 		schemaVersion: 1,
-		graphVersion: input.graphVersion ?? null,
-		deploymentVersion: input.deploymentVersion ?? null,
+		graphVersion: (_input$graphVersion = input.graphVersion) !== null && _input$graphVersion !== void 0 ? _input$graphVersion : null,
+		deploymentVersion: (_input$deploymentVers = input.deploymentVersion) !== null && _input$deploymentVers !== void 0 ? _input$deploymentVers : null,
 		appElementsSchemaVersion: 1,
 		rscPayloadSchemaVersion: 1,
-		rootBoundaryId: input.rootBoundaryId ?? null,
-		renderEpoch: input.renderEpoch ?? null
+		rootBoundaryId: (_input$rootBoundaryId = input.rootBoundaryId) !== null && _input$rootBoundaryId !== void 0 ? _input$rootBoundaryId : null,
+		renderEpoch: (_input$renderEpoch = input.renderEpoch) !== null && _input$renderEpoch !== void 0 ? _input$renderEpoch : null
 	};
 }
 function createArtifactCompatibilityGraphVersion(input) {
@@ -3226,10 +3231,11 @@ function isAppElementsWireSlotId(key) {
 	return separatorIndex > 0 && body.charCodeAt(separatorIndex + 1) === 47;
 }
 function createAppElementsWireMetadataEntries(input) {
+	var _input$layoutIds;
 	return {
 		[APP_ROUTE_KEY]: input.routeId,
 		[APP_INTERCEPTION_CONTEXT_KEY]: input.interceptionContext,
-		[APP_LAYOUT_IDS_KEY]: [...input.layoutIds ?? []],
+		[APP_LAYOUT_IDS_KEY]: [...(_input$layoutIds = input.layoutIds) !== null && _input$layoutIds !== void 0 ? _input$layoutIds : []],
 		[APP_ROOT_LAYOUT_KEY]: input.rootLayoutTreePath
 	};
 }
@@ -3258,8 +3264,9 @@ function parseLayoutIds(value) {
 	if (!Array.isArray(value)) throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout id string[]");
 	const layoutIds = [];
 	for (const entry of value) {
+		var _parseAppElementsWire;
 		if (typeof entry !== "string") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout id string[]");
-		if (parseAppElementsWireElementKey(entry)?.kind !== "layout") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout ids");
+		if (((_parseAppElementsWire = parseAppElementsWireElementKey(entry)) === null || _parseAppElementsWire === void 0 ? void 0 : _parseAppElementsWire.kind) !== "layout") throw new Error("[vinext] Invalid __layoutIds in App Router payload: expected layout ids");
 		layoutIds.push(entry);
 	}
 	return layoutIds;
@@ -3286,16 +3293,18 @@ function withLayoutFlags(elements, layoutFlags) {
 	};
 }
 function buildOutgoingAppPayload(input) {
+	var _input$artifactCompat;
 	if (!isAppElementsRecord(input.element)) return input.element;
 	return {
 		...input.element,
 		[APP_LAYOUT_FLAGS_KEY]: input.layoutFlags,
-		[APP_ARTIFACT_COMPATIBILITY_KEY]: input.artifactCompatibility ?? createArtifactCompatibilityEnvelope()
+		[APP_ARTIFACT_COMPATIBILITY_KEY]: (_input$artifactCompat = input.artifactCompatibility) !== null && _input$artifactCompat !== void 0 ? _input$artifactCompat : createArtifactCompatibilityEnvelope()
 	};
 }
 function readArtifactCompatibilityMetadata(value) {
+	var _parseArtifactCompati;
 	if (value === void 0) return createArtifactCompatibilityEnvelope();
-	return parseArtifactCompatibilityEnvelope(value) ?? createArtifactCompatibilityEnvelope();
+	return (_parseArtifactCompati = parseArtifactCompatibilityEnvelope(value)) !== null && _parseArtifactCompati !== void 0 ? _parseArtifactCompati : createArtifactCompatibilityEnvelope();
 }
 function readAppElementsMetadata(elements) {
 	const routeId = elements[APP_ROUTE_KEY];
@@ -3309,7 +3318,7 @@ function readAppElementsMetadata(elements) {
 	const layoutIds = parseLayoutIds(elements[APP_LAYOUT_IDS_KEY]);
 	return {
 		artifactCompatibility: readArtifactCompatibilityMetadata(elements[APP_ARTIFACT_COMPATIBILITY_KEY]),
-		interceptionContext: interceptionContext ?? null,
+		interceptionContext: interceptionContext !== null && interceptionContext !== void 0 ? interceptionContext : null,
 		layoutIds,
 		layoutFlags,
 		routeId,
@@ -3404,7 +3413,7 @@ function encodeBase64Url(bytes) {
 	return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 function normalizeHeaderValue(value) {
-	return value ?? "0";
+	return value !== null && value !== void 0 ? value : "0";
 }
 function normalizeRenderModeHeaderValue(value) {
 	const renderMode = parseAppRscRenderMode(value);
@@ -3448,7 +3457,7 @@ function isRscCacheBustingSearchPair(pair) {
 	const rawKey = separatorIndex === -1 ? pair : pair.slice(0, separatorIndex);
 	try {
 		return decodeURIComponent(rawKey.replaceAll("+", " ")) === VINEXT_RSC_CACHE_BUSTING_SEARCH_PARAM;
-	} catch {
+	} catch (_unused) {
 		return rawKey === VINEXT_RSC_CACHE_BUSTING_SEARCH_PARAM;
 	}
 }
@@ -3556,12 +3565,14 @@ function _defineProperty(e, r, t) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/navigation.js
+var _ref;
 var _SERVER_INSERTED_HTML_CTX_KEY = Symbol.for("vinext.serverInsertedHTMLContext");
 function getServerInsertedHTMLContext() {
+	var _globalState$_SERVER_;
 	if (typeof import_react_react_server.createContext !== "function") return null;
 	const globalState = globalThis;
 	if (!globalState[_SERVER_INSERTED_HTML_CTX_KEY]) globalState[_SERVER_INSERTED_HTML_CTX_KEY] = import_react_react_server.createContext(null);
-	return globalState[_SERVER_INSERTED_HTML_CTX_KEY] ?? null;
+	return (_globalState$_SERVER_ = globalState[_SERVER_INSERTED_HTML_CTX_KEY]) !== null && _globalState$_SERVER_ !== void 0 ? _globalState$_SERVER_ : null;
 }
 getServerInsertedHTMLContext();
 var GLOBAL_ACCESSORS_KEY = Symbol.for("vinext.navigation.globalAccessors");
@@ -3571,8 +3582,9 @@ function _getGlobalAccessors() {
 	return globalThis[_GLOBAL_ACCESSORS_KEY];
 }
 function _getClientHydrationContext() {
+	var _globalState$_GLOBAL_;
 	const globalState = globalThis;
-	if (Object.prototype.hasOwnProperty.call(globalState, _GLOBAL_HYDRATION_CONTEXT_KEY)) return globalState[_GLOBAL_HYDRATION_CONTEXT_KEY] ?? null;
+	if (Object.prototype.hasOwnProperty.call(globalState, _GLOBAL_HYDRATION_CONTEXT_KEY)) return (_globalState$_GLOBAL_ = globalState[_GLOBAL_HYDRATION_CONTEXT_KEY]) !== null && _globalState$_GLOBAL_ !== void 0 ? _globalState$_GLOBAL_ : null;
 }
 function _setClientHydrationContext(ctx) {
 	globalThis[_GLOBAL_HYDRATION_CONTEXT_KEY] = ctx;
@@ -3622,15 +3634,18 @@ function setNavigationContext(ctx) {
 	_setServerContext(ctx);
 }
 var isServer = typeof window === "undefined";
+/** basePath from next.config.js, injected by the plugin at build time */
+var __basePath$1 = (_ref = "") !== null && _ref !== void 0 ? _ref : "";
 var _CLIENT_NAV_STATE_KEY = Symbol.for("vinext.clientNavigationState");
 function getClientNavigationState() {
+	var _globalState$_CLIENT_;
 	if (isServer) return null;
 	const globalState = window;
-	globalState[_CLIENT_NAV_STATE_KEY] ?? (globalState[_CLIENT_NAV_STATE_KEY] = {
+	(_globalState$_CLIENT_ = globalState[_CLIENT_NAV_STATE_KEY]) !== null && _globalState$_CLIENT_ !== void 0 || (globalState[_CLIENT_NAV_STATE_KEY] = {
 		listeners: /* @__PURE__ */ new Set(),
 		cachedSearch: window.location.search,
 		cachedReadonlySearchParams: new ReadonlyURLSearchParams(window.location.search),
-		cachedPathname: stripBasePath(window.location.pathname, ""),
+		cachedPathname: stripBasePath(window.location.pathname, __basePath$1),
 		clientParams: {},
 		clientParamsJson: "{}",
 		pendingClientParams: null,
@@ -3655,7 +3670,7 @@ function syncCommittedUrlStateFromLocation() {
 	const state = getClientNavigationState();
 	if (!state) return false;
 	let changed = false;
-	const pathname = stripBasePath(window.location.pathname, "");
+	const pathname = stripBasePath(window.location.pathname, __basePath$1);
 	if (pathname !== state.cachedPathname) {
 		state.cachedPathname = pathname;
 		changed = true;
@@ -3680,7 +3695,7 @@ function commitClientNavigationState(navId, options) {
 	if (isServer) return;
 	const state = getClientNavigationState();
 	if (!state) return;
-	if ((navId !== void 0 || options?.releaseSnapshot === true) && state.navigationSnapshotActiveCount > 0) state.navigationSnapshotActiveCount -= 1;
+	if ((navId !== void 0 || (options === null || options === void 0 ? void 0 : options.releaseSnapshot) === true) && state.navigationSnapshotActiveCount > 0) state.navigationSnapshotActiveCount -= 1;
 	const urlChanged = syncCommittedUrlStateFromLocation();
 	if (state.pendingClientParams !== null && state.pendingClientParamsJson !== null) {
 		state.clientParams = state.pendingClientParams;
@@ -3715,7 +3730,8 @@ function restoreScrollPosition(state) {
 	if (state && typeof state === "object" && "__vinext_scrollY" in state) {
 		const { __vinext_scrollX: x, __vinext_scrollY: y } = state;
 		Promise.resolve().then(() => {
-			const pending = window.__VINEXT_RSC_PENDING__ ?? null;
+			var _window$__VINEXT_RSC_;
+			const pending = (_window$__VINEXT_RSC_ = window.__VINEXT_RSC_PENDING__) !== null && _window$__VINEXT_RSC_ !== void 0 ? _window$__VINEXT_RSC_ : null;
 			if (pending) pending.then(() => {
 				requestAnimationFrame(() => {
 					window.scrollTo(x, y);
@@ -3808,8 +3824,9 @@ var _g$8 = globalThis;
 *   shims use a dotted namespace such as `"vinext.cache.als"`.
 */
 function getOrCreateAls(key) {
+	var _g$sym;
 	const sym = Symbol.for(key);
-	return _g$8[sym] ?? (_g$8[sym] = new AsyncLocalStorage$1());
+	return (_g$sym = _g$8[sym]) !== null && _g$sym !== void 0 ? _g$sym : _g$8[sym] = new AsyncLocalStorage$1();
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/unified-request-context.js
@@ -3817,9 +3834,10 @@ var _REQUEST_CONTEXT_ALS_KEY = Symbol.for("vinext.requestContext.als");
 var _g$7 = globalThis;
 var _als$4 = getOrCreateAls("vinext.unifiedRequestContext.als");
 function _getInheritedExecutionContext() {
+	var _g$_REQUEST_CONTEXT_A, _g$_REQUEST_CONTEXT_A2;
 	const unifiedStore = _als$4.getStore();
 	if (unifiedStore) return unifiedStore.executionContext;
-	return _g$7[_REQUEST_CONTEXT_ALS_KEY]?.getStore() ?? null;
+	return (_g$_REQUEST_CONTEXT_A = (_g$_REQUEST_CONTEXT_A2 = _g$7[_REQUEST_CONTEXT_ALS_KEY]) === null || _g$_REQUEST_CONTEXT_A2 === void 0 ? void 0 : _g$_REQUEST_CONTEXT_A2.getStore()) !== null && _g$_REQUEST_CONTEXT_A !== void 0 ? _g$_REQUEST_CONTEXT_A : null;
 }
 /**
 * Create a fresh `UnifiedRequestContext` with defaults for all fields.
@@ -3878,7 +3896,8 @@ function runWithUnifiedStateMutation(mutate, fn) {
 * detached context still reflects that inherited `executionContext`.
 */
 function getRequestContext() {
-	return _als$4.getStore() ?? createRequestContext();
+	var _als$getStore;
+	return (_als$getStore = _als$4.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : createRequestContext();
 }
 /**
 * Check whether the current execution is inside a `runWithRequestContext()` scope.
@@ -3892,10 +3911,11 @@ function isInsideUnifiedScope() {
 //#region node_modules/vinext/dist/server/middleware-request-headers.js
 var CREDENTIAL_REQUEST_HEADERS = ["authorization", "cookie"];
 function getMiddlewareHeaderValue(source, key) {
+	var _value$;
 	if (source instanceof Headers) return source.get(key);
 	const value = source[key];
 	if (value === void 0) return null;
-	return Array.isArray(value) ? value[0] ?? null : value;
+	return Array.isArray(value) ? (_value$ = value[0]) !== null && _value$ !== void 0 ? _value$ : null : value;
 }
 function getOverrideHeaderNames(source) {
 	const rawValue = getMiddlewareHeaderValue(source, MIDDLEWARE_OVERRIDE_HEADERS);
@@ -3909,8 +3929,9 @@ function getForwardedRequestHeaders(source) {
 		return forwardedHeaders;
 	}
 	for (const [key, value] of Object.entries(source)) {
+		var _value$2;
 		if (!key.startsWith("x-middleware-request-")) continue;
-		const normalizedValue = Array.isArray(value) ? value[0] ?? "" : value;
+		const normalizedValue = Array.isArray(value) ? (_value$2 = value[0]) !== null && _value$2 !== void 0 ? _value$2 : "" : value;
 		forwardedHeaders.set(key.slice(MIDDLEWARE_REQUEST_HEADER_PREFIX.length), normalizedValue);
 	}
 	return forwardedHeaders;
@@ -3981,21 +4002,24 @@ function parseCookieHeader(cookieHeader) {
 		const value = pair.slice(splitAt + 1);
 		try {
 			cookies.set(key, decodeURIComponent(value));
-		} catch {}
+		} catch (_unused) {}
 	}
 	return cookies;
 }
+//#endregion
+//#region node_modules/vinext/dist/shims/headers.js
+var _g$_FALLBACK_KEY$4;
 var _FALLBACK_KEY$4 = Symbol.for("vinext.nextHeadersShim.fallback");
 var _g$6 = globalThis;
 var _als$3 = getOrCreateAls("vinext.nextHeadersShim.als");
-var _fallbackState$3 = _g$6[_FALLBACK_KEY$4] ?? (_g$6[_FALLBACK_KEY$4] = {
+var _fallbackState$3 = (_g$_FALLBACK_KEY$4 = _g$6[_FALLBACK_KEY$4]) !== null && _g$_FALLBACK_KEY$4 !== void 0 ? _g$_FALLBACK_KEY$4 : _g$6[_FALLBACK_KEY$4] = {
 	headersContext: null,
 	dynamicUsageDetected: false,
 	invalidDynamicUsageError: null,
 	pendingSetCookies: [],
 	draftModeCookieHeader: null,
 	phase: "render"
-});
+};
 (/* @__PURE__ */ new Date(0)).toUTCString();
 function splitMiddlewareSetCookieHeader(value) {
 	const cookies = [];
@@ -4039,7 +4063,7 @@ function setCookieNameValue(setCookie) {
 	let value;
 	try {
 		value = decodeURIComponent(encodedValue);
-	} catch {
+	} catch (_unused) {
 		value = encodedValue;
 	}
 	return {
@@ -4065,8 +4089,9 @@ function mergeMiddlewareSetCookies(ctx, rawHeader) {
 	return merged;
 }
 function _getState$2() {
+	var _als$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext();
-	return _als$3.getStore() ?? _fallbackState$3;
+	return (_als$getStore = _als$3.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : _fallbackState$3;
 }
 /**
 * Dynamic usage flag — set when a component calls connection(), cookies(),
@@ -4078,8 +4103,9 @@ function _getState$2() {
 * Called by connection(), cookies(), headers(), and noStore().
 */
 function markDynamicUsage() {
+	var _state$headersContext;
 	const state = _getState$2();
-	if (state.headersContext?.forceStatic) return;
+	if ((_state$headersContext = state.headersContext) === null || _state$headersContext === void 0 ? void 0 : _state$headersContext.forceStatic) return;
 	state.dynamicUsageDetected = true;
 }
 /**
@@ -4217,7 +4243,8 @@ var _HEADERS_MUTATING_METHODS = new Set([
 function headersContextFromRequest(request) {
 	let _mutable = null;
 	const headersProxy = new Proxy(request.headers, { get(target, prop) {
-		const src = _mutable ?? target;
+		var _mutable2;
+		const src = (_mutable2 = _mutable) !== null && _mutable2 !== void 0 ? _mutable2 : target;
 		if (typeof prop === "string" && _HEADERS_MUTATING_METHODS.has(prop)) return (...args) => {
 			if (!_mutable) _mutable = new Headers(target);
 			return _mutable[prop](...args);
@@ -4436,8 +4463,9 @@ function isOtherMetadata(value) {
 * Extract a plain string title from a metadata title value.
 */
 function resolveStringTitle(title) {
+	var _ref, _title$absolute;
 	if (typeof title === "string") return title;
-	if (title && typeof title === "object") return title.absolute ?? title.default ?? void 0;
+	if (title && typeof title === "object") return (_ref = (_title$absolute = title.absolute) !== null && _title$absolute !== void 0 ? _title$absolute : title.default) !== null && _ref !== void 0 ? _ref : void 0;
 }
 /**
 * Post-process merged metadata to cross-fill openGraph and Twitter fields.
@@ -4593,7 +4621,7 @@ function MetadataHead({ metadata }) {
 		if (s.startsWith("http://") || s.startsWith("https://") || s.startsWith("//")) return s;
 		try {
 			return new URL(s, base).toString();
-		} catch {
+		} catch (_unused) {
 			return s;
 		}
 	}
@@ -4859,6 +4887,7 @@ function MetadataHead({ metadata }) {
 				"ipad",
 				"googleplay"
 			]) {
+				var _app$url;
 				if (app.name) elements.push(/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("meta", {
 					name: `twitter:app:name:${platform}`,
 					content: app.name
@@ -4867,7 +4896,7 @@ function MetadataHead({ metadata }) {
 					name: `twitter:app:id:${platform}`,
 					content: String(app.id[platform])
 				}, key++));
-				if (app.url?.[platform] !== void 0) {
+				if (((_app$url = app.url) === null || _app$url === void 0 ? void 0 : _app$url[platform]) !== void 0) {
 					const appUrl = app.url[platform].toString();
 					elements.push(/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("meta", {
 						name: `twitter:app:url:${platform}`,
@@ -5053,8 +5082,9 @@ var _als$2 = getOrCreateAls("vinext.requestContext.als");
 * complete before the Worker isolate is torn down.
 */
 function getRequestExecutionContext() {
+	var _als$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext().executionContext;
-	return _als$2.getStore() ?? null;
+	return (_als$getStore = _als$2.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : null;
 }
 //#endregion
 //#region node_modules/vinext/dist/config/config-matchers.js
@@ -5317,7 +5347,7 @@ function safeRegExp(pattern, flags) {
 	}
 	try {
 		return new RegExp(pattern, flags);
-	} catch {
+	} catch (_unused) {
 		return null;
 	}
 }
@@ -5392,7 +5422,7 @@ function requestContextFromRequest(request) {
 	};
 }
 function normalizeHost(hostHeader, fallbackHostname) {
-	return (hostHeader ?? fallbackHostname).split(":", 1)[0].toLowerCase();
+	return (hostHeader !== null && hostHeader !== void 0 ? hostHeader : fallbackHostname).split(":", 1)[0].toLowerCase();
 }
 function _emptyParams() {
 	return Object.create(null);
@@ -5500,6 +5530,7 @@ function extractConstraint$1(str, re) {
 */
 function matchConfigPattern(pathname, pattern) {
 	if (pattern.includes("(") || pattern.includes("\\") || /:[\w-]+[*+][^/]/.test(pattern) || /:[\w-]+\./.test(pattern)) try {
+		var _match;
 		const compiled = getCachedRegex(_compiledPatternCache, pattern, () => {
 			const paramNames = [];
 			let regexStr = "";
@@ -5532,9 +5563,9 @@ function matchConfigPattern(pathname, pattern) {
 		const match = compiled.re.exec(pathname);
 		if (!match) return null;
 		const params = Object.create(null);
-		for (let i = 0; i < compiled.paramNames.length; i++) params[compiled.paramNames[i]] = match[i + 1] ?? "";
+		for (let i = 0; i < compiled.paramNames.length; i++) params[compiled.paramNames[i]] = (_match = match[i + 1]) !== null && _match !== void 0 ? _match : "";
 		return params;
-	} catch {}
+	} catch (_unused2) {}
 	const catchAllMatch = pattern.match(/:([\w-]+)(\*|\+)$/);
 	if (catchAllMatch) {
 		const prefix = pattern.slice(0, pattern.lastIndexOf(":"));
@@ -5738,6 +5769,7 @@ function isExternalUrl(url) {
 * Works in all runtimes (Node.js, Cloudflare Workers) via the standard fetch() API.
 */
 async function proxyExternalRequest(request, externalUrl) {
+	var _process$versions;
 	const originalUrl = new URL(request.url);
 	const targetUrl = new URL(externalUrl);
 	const destinationKeys = new Set(targetUrl.searchParams.keys());
@@ -5779,7 +5811,7 @@ async function proxyExternalRequest(request, externalUrl) {
 	} finally {
 		clearTimeout(timeout);
 	}
-	const isNodeRuntime = typeof process !== "undefined" && !!process.versions?.node;
+	const isNodeRuntime = typeof process !== "undefined" && !!((_process$versions = process.versions) === null || _process$versions === void 0 ? void 0 : _process$versions.node);
 	const responseHeaders = new Headers();
 	upstreamResponse.headers.forEach((value, key) => {
 		const lower = key.toLowerCase();
@@ -5825,7 +5857,7 @@ function matchHeaders(pathname, headers, ctx) {
 function badRequestResponse(init) {
 	return new Response("Bad Request", {
 		status: 400,
-		headers: init?.headers
+		headers: init === null || init === void 0 ? void 0 : init.headers
 	});
 }
 /**
@@ -5849,7 +5881,7 @@ function forbiddenResponse() {
 function notFoundResponse(init) {
 	return new Response("Not Found", {
 		status: 404,
-		headers: init?.headers
+		headers: init === null || init === void 0 ? void 0 : init.headers
 	});
 }
 /**
@@ -5860,7 +5892,7 @@ function notFoundResponse(init) {
 * the `Allow` header takes precedence and overwrites any colliding entry.
 */
 function methodNotAllowedResponse(allowedMethods, init) {
-	const headers = new Headers(init?.headers);
+	const headers = new Headers(init === null || init === void 0 ? void 0 : init.headers);
 	headers.set("Allow", allowedMethods);
 	return new Response("Method Not Allowed", {
 		status: 405,
@@ -5883,9 +5915,9 @@ function payloadTooLargeResponse() {
 * to use the canonical "Internal Server Error" body.
 */
 function internalServerErrorResponse(message, init) {
-	return new Response(message ?? "Internal Server Error", {
+	return new Response(message !== null && message !== void 0 ? message : "Internal Server Error", {
 		status: 500,
-		headers: init?.headers
+		headers: init === null || init === void 0 ? void 0 : init.headers
 	});
 }
 //#endregion
@@ -5980,10 +6012,11 @@ function applyConfigHeadersToResponse(responseHeaders, options) {
 	}
 }
 function createStaticFileSignal(pathname, context) {
+	var _context$status;
 	const headers = new Headers({ [VINEXT_STATIC_FILE_HEADER]: encodeURIComponent(pathname) });
 	if (context.headers) for (const [key, value] of context.headers) headers.append(key, value);
 	return new Response(null, {
-		status: context.status ?? 200,
+		status: (_context$status = context.status) !== null && _context$status !== void 0 ? _context$status : 200,
 		headers
 	});
 }
@@ -6052,7 +6085,7 @@ function validateCsrfOrigin(request, allowedOrigins = []) {
 	let originHost;
 	try {
 		originHost = new URL(originHeader).host.toLowerCase();
-	} catch {
+	} catch (_unused) {
 		return forbiddenResponse();
 	}
 	const hostHeader = (request.headers.get("host") || "").split(",")[0].trim().toLowerCase() || new URL(request.url).host.toLowerCase();
@@ -6090,7 +6123,7 @@ async function validateServerActionPayload(body) {
 			collectRefs(key, value);
 			continue;
 		}
-		if (typeof value?.text === "function") collectRefs(key, await value.text());
+		if (typeof (value === null || value === void 0 ? void 0 : value.text) === "function") collectRefs(key, await value.text());
 	}
 	if (fieldRefs.size === 0) return null;
 	const knownFields = new Set(fieldRefs.keys());
@@ -6101,11 +6134,12 @@ async function validateServerActionPayload(body) {
 	const visited = /* @__PURE__ */ new Set();
 	const stack = /* @__PURE__ */ new Set();
 	const hasCycle = (node) => {
+		var _fieldRefs$get;
 		if (stack.has(node)) return true;
 		if (visited.has(node)) return false;
 		visited.add(node);
 		stack.add(node);
-		for (const ref of fieldRefs.get(node) ?? []) if (hasCycle(ref)) return true;
+		for (const ref of (_fieldRefs$get = fieldRefs.get(node)) !== null && _fieldRefs$get !== void 0 ? _fieldRefs$get : []) if (hasCycle(ref)) return true;
 		stack.delete(node);
 		return false;
 	};
@@ -6169,7 +6203,8 @@ function isOriginAllowed(origin, allowed) {
 * @returns An error Response if validation fails, or the normalized image URL
 */
 function validateImageUrl(rawUrl, requestUrl) {
-	const imgUrl = rawUrl?.replaceAll("\\", "/") ?? null;
+	var _rawUrl$replaceAll;
+	const imgUrl = (_rawUrl$replaceAll = rawUrl === null || rawUrl === void 0 ? void 0 : rawUrl.replaceAll("\\", "/")) !== null && _rawUrl$replaceAll !== void 0 ? _rawUrl$replaceAll : null;
 	if (!imgUrl || !imgUrl.startsWith("/") || imgUrl.startsWith("//")) return new Response(!rawUrl ? "Missing url parameter" : "Only relative URLs allowed", { status: 400 });
 	const url = new URL(requestUrl);
 	if (new URL(imgUrl, url.origin).origin !== url.origin) return new Response("Only relative URLs allowed", { status: 400 });
@@ -6225,11 +6260,12 @@ function cloneRequestWithHeaders(request, headers) {
 	let cloned;
 	try {
 		cloned = new Request(request, { headers });
-	} catch {
+	} catch (_unused2) {
+		var _request$body;
 		const init = {
 			method: request.method,
 			headers,
-			body: request.body ?? void 0,
+			body: (_request$body = request.body) !== null && _request$body !== void 0 ? _request$body : void 0,
 			redirect: request.redirect,
 			signal: request.signal,
 			integrity: request.integrity,
@@ -6305,17 +6341,19 @@ function isUnknownRecord(value) {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 function readRecordField(ctx, field) {
-	const value = ctx?.[field];
+	const value = ctx === null || ctx === void 0 ? void 0 : ctx[field];
 	return isUnknownRecord(value) ? value : void 0;
 }
 function readCacheControlNumberField(ctx, field) {
-	const value = readRecordField(ctx, "cacheControl")?.[field] ?? ctx?.[field];
+	var _readRecordField$fiel, _readRecordField;
+	const value = (_readRecordField$fiel = (_readRecordField = readRecordField(ctx, "cacheControl")) === null || _readRecordField === void 0 ? void 0 : _readRecordField[field]) !== null && _readRecordField$fiel !== void 0 ? _readRecordField$fiel : ctx === null || ctx === void 0 ? void 0 : ctx[field];
 	return typeof value === "number" ? value : void 0;
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/cache.js
+var _g$_FALLBACK_KEY$3;
 function readStringArrayField(ctx, field) {
-	const value = ctx?.[field];
+	const value = ctx === null || ctx === void 0 ? void 0 : ctx[field];
 	if (!Array.isArray(value)) return [];
 	return value.filter((item) => typeof item === "string");
 }
@@ -6391,7 +6429,8 @@ var MemoryCacheHandler = class {
 var _HANDLER_KEY = Symbol.for("vinext.cacheHandler");
 var _gHandler = globalThis;
 function _getActiveHandler() {
-	return _gHandler[_HANDLER_KEY] ?? (_gHandler[_HANDLER_KEY] = new MemoryCacheHandler());
+	var _gHandler$_HANDLER_KE;
+	return (_gHandler$_HANDLER_KE = _gHandler[_HANDLER_KEY]) !== null && _gHandler$_HANDLER_KE !== void 0 ? _gHandler$_HANDLER_KE : _gHandler[_HANDLER_KEY] = new MemoryCacheHandler();
 }
 /**
 * Get the active CacheHandler (for internal use or testing).
@@ -6412,15 +6451,16 @@ _resolvedIOPromise.value = void 0;
 var _FALLBACK_KEY$3 = Symbol.for("vinext.cache.fallback");
 var _g$5 = globalThis;
 var _cacheAls = getOrCreateAls("vinext.cache.als");
-var _cacheFallbackState = _g$5[_FALLBACK_KEY$3] ?? (_g$5[_FALLBACK_KEY$3] = {
+var _cacheFallbackState = (_g$_FALLBACK_KEY$3 = _g$5[_FALLBACK_KEY$3]) !== null && _g$_FALLBACK_KEY$3 !== void 0 ? _g$_FALLBACK_KEY$3 : _g$5[_FALLBACK_KEY$3] = {
 	actionRevalidationKind: 0,
 	requestScopedCacheLife: null,
 	unstableCacheRevalidation: "foreground"
-});
+};
 var ACTION_DID_NOT_REVALIDATE$1 = 0;
 function _getCacheState() {
+	var _cacheAls$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext();
-	return _cacheAls.getStore() ?? _cacheFallbackState;
+	return (_cacheAls$getStore = _cacheAls.getStore()) !== null && _cacheAls$getStore !== void 0 ? _cacheAls$getStore : _cacheFallbackState;
 }
 function getAndClearActionRevalidationKind() {
 	const state = _getCacheState();
@@ -6451,6 +6491,7 @@ function _consumeRequestScopedCacheLife() {
 getOrCreateAls("vinext.unstableCache.als");
 //#endregion
 //#region node_modules/vinext/dist/shims/fetch-cache.js
+var _gPending$_PENDING_KE, _gFetch$_ORIG_FETCH_K, _g$_FALLBACK_KEY$2;
 /**
 * Extended fetch() with Next.js caching semantics.
 *
@@ -6499,7 +6540,7 @@ function collectHeaders(input, init) {
 	if (input instanceof Request && input.headers) input.headers.forEach((v, k) => {
 		merged[k] = v;
 	});
-	if (init?.headers) (init.headers instanceof Headers ? init.headers : new Headers(init.headers)).forEach((v, k) => {
+	if (init === null || init === void 0 ? void 0 : init.headers) (init.headers instanceof Headers ? init.headers : new Headers(init.headers)).forEach((v, k) => {
 		merged[k] = v;
 	});
 	for (const blocked of HEADER_BLOCKLIST) delete merged[blocked];
@@ -6538,7 +6579,8 @@ async function serializeFormData(formData, pushBodyChunk, getTotalBodyBytes) {
 	}
 }
 function getParsedFormContentType(contentType) {
-	const mediaType = contentType?.split(";")[0]?.trim().toLowerCase();
+	var _contentType$split$;
+	const mediaType = contentType === null || contentType === void 0 || (_contentType$split$ = contentType.split(";")[0]) === null || _contentType$split$ === void 0 ? void 0 : _contentType$split$.trim().toLowerCase();
 	if (mediaType === "multipart/form-data" || mediaType === "application/x-www-form-urlencoded") return mediaType;
 }
 function stripMultipartBoundary(contentType) {
@@ -6548,14 +6590,15 @@ function stripMultipartBoundary(contentType) {
 	return keptParams.length > 0 ? `${normalizedType}; ${keptParams.join("; ")}` : normalizedType;
 }
 async function readRequestBodyChunksWithinLimit(request) {
+	var _requestClone$headers, _requestClone$body;
 	const contentLengthHeader = request.headers.get("content-length");
 	if (contentLengthHeader) {
 		const contentLength = Number(contentLengthHeader);
 		if (Number.isFinite(contentLength) && contentLength > MAX_CACHE_KEY_BODY_BYTES) throw new BodyTooLargeForCacheKeyError();
 	}
 	const requestClone = request.clone();
-	const contentType = requestClone.headers.get("content-type") ?? void 0;
-	const reader = requestClone.body?.getReader();
+	const contentType = (_requestClone$headers = requestClone.headers.get("content-type")) !== null && _requestClone$headers !== void 0 ? _requestClone$headers : void 0;
+	const reader = (_requestClone$body = requestClone.body) === null || _requestClone$body === void 0 ? void 0 : _requestClone$body.getReader();
 	if (!reader) return {
 		chunks: [],
 		contentType
@@ -6587,7 +6630,7 @@ async function readRequestBodyChunksWithinLimit(request) {
 * on init as `_ogBody` so it can still be used after stream consumption.
 */
 async function serializeBody(input, init) {
-	if (!init?.body && !(input instanceof Request && input.body)) return { bodyChunks: [] };
+	if (!(init === null || init === void 0 ? void 0 : init.body) && !(input instanceof Request && input.body)) return { bodyChunks: [] };
 	const bodyChunks = [];
 	const encoder = new TextEncoder();
 	const decoder = new TextDecoder();
@@ -6599,11 +6642,11 @@ async function serializeBody(input, init) {
 		bodyChunks.push(chunk);
 	};
 	const getTotalBodyBytes = () => totalBodyBytes;
-	if (init?.body instanceof Uint8Array) {
+	if ((init === null || init === void 0 ? void 0 : init.body) instanceof Uint8Array) {
 		if (init.body.byteLength > MAX_CACHE_KEY_BODY_BYTES) throw new BodyTooLargeForCacheKeyError();
 		pushBodyChunk(decoder.decode(init.body));
 		init._ogBody = init.body;
-	} else if (init?.body && typeof init.body.getReader === "function") {
+	} else if ((init === null || init === void 0 ? void 0 : init.body) && typeof init.body.getReader === "function") {
 		const [bodyForHashing, bodyForFetch] = init.body.tee();
 		init._ogBody = bodyForFetch;
 		const reader = bodyForHashing.getReader();
@@ -6625,20 +6668,20 @@ async function serializeBody(input, init) {
 			if (err instanceof BodyTooLargeForCacheKeyError) throw err;
 			throw new SkipCacheKeyGenerationError();
 		}
-	} else if (init?.body instanceof URLSearchParams) {
+	} else if ((init === null || init === void 0 ? void 0 : init.body) instanceof URLSearchParams) {
 		init._ogBody = init.body;
 		pushBodyChunk(init.body.toString());
-	} else if (init?.body && typeof init.body.keys === "function") {
+	} else if ((init === null || init === void 0 ? void 0 : init.body) && typeof init.body.keys === "function") {
 		const formData = init.body;
 		init._ogBody = init.body;
 		await serializeFormData(formData, pushBodyChunk, getTotalBodyBytes);
-	} else if (init?.body && typeof init.body.arrayBuffer === "function") {
+	} else if ((init === null || init === void 0 ? void 0 : init.body) && typeof init.body.arrayBuffer === "function") {
 		const blob = init.body;
 		if (blob.size > MAX_CACHE_KEY_BODY_BYTES) throw new BodyTooLargeForCacheKeyError();
 		pushBodyChunk(await blob.text());
 		const arrayBuffer = await blob.arrayBuffer();
 		init._ogBody = new Blob([arrayBuffer], { type: blob.type });
-	} else if (typeof init?.body === "string") {
+	} else if (typeof (init === null || init === void 0 ? void 0 : init.body) === "string") {
 		if (init.body.length > MAX_CACHE_KEY_BODY_BYTES) throw new BodyTooLargeForCacheKeyError();
 		pushBodyChunk(init.body);
 		init._ogBody = init.body;
@@ -6692,7 +6735,7 @@ async function buildFetchCacheKey(input, init) {
 		url = input.url;
 		method = input.method || "GET";
 	}
-	if (init?.method) method = init.method;
+	if (init === null || init === void 0 ? void 0 : init.method) method = init.method;
 	const headers = collectHeaders(input, init);
 	const { bodyChunks, canonicalizedContentType } = await serializeBody(input, init);
 	if (canonicalizedContentType) headers["content-type"] = canonicalizedContentType;
@@ -6701,13 +6744,13 @@ async function buildFetchCacheKey(input, init) {
 		url,
 		method,
 		headers,
-		init?.mode,
-		init?.redirect,
-		init?.credentials,
-		init?.referrer,
-		init?.referrerPolicy,
-		init?.integrity,
-		init?.cache,
+		init === null || init === void 0 ? void 0 : init.mode,
+		init === null || init === void 0 ? void 0 : init.redirect,
+		init === null || init === void 0 ? void 0 : init.credentials,
+		init === null || init === void 0 ? void 0 : init.referrer,
+		init === null || init === void 0 ? void 0 : init.referrerPolicy,
+		init === null || init === void 0 ? void 0 : init.integrity,
+		init === null || init === void 0 ? void 0 : init.cache,
 		bodyChunks
 	]);
 	const buffer = new TextEncoder().encode(cacheString);
@@ -6716,11 +6759,11 @@ async function buildFetchCacheKey(input, init) {
 }
 var _PENDING_KEY = Symbol.for("vinext.fetchCache.pendingRefetches");
 var _gPending = globalThis;
-var pendingRefetches = _gPending[_PENDING_KEY] ?? (_gPending[_PENDING_KEY] = /* @__PURE__ */ new Map());
+var pendingRefetches = (_gPending$_PENDING_KE = _gPending[_PENDING_KEY]) !== null && _gPending$_PENDING_KE !== void 0 ? _gPending$_PENDING_KE : _gPending[_PENDING_KEY] = /* @__PURE__ */ new Map();
 var DEDUP_TIMEOUT_MS = 6e4;
 var _ORIG_FETCH_KEY = Symbol.for("vinext.fetchCache.originalFetch");
 var _gFetch = globalThis;
-var originalFetch = _gFetch[_ORIG_FETCH_KEY] ?? (_gFetch[_ORIG_FETCH_KEY] = globalThis.fetch);
+var originalFetch = (_gFetch$_ORIG_FETCH_K = _gFetch[_ORIG_FETCH_KEY]) !== null && _gFetch$_ORIG_FETCH_K !== void 0 ? _gFetch$_ORIG_FETCH_K : _gFetch[_ORIG_FETCH_KEY] = globalThis.fetch;
 var _FALLBACK_KEY$2 = Symbol.for("vinext.fetchCache.fallback");
 var _g$4 = globalThis;
 var _als$1 = getOrCreateAls("vinext.fetchCache.als");
@@ -6730,16 +6773,17 @@ if (globalThis.FinalizationRegistry) _responseBodyRegistry = new FinalizationReg
 	const stream = weakRef.deref();
 	if (stream && !stream.locked) stream.cancel("Response object has been garbage collected").then(_noop, _noop);
 });
-var _fallbackState$2 = _g$4[_FALLBACK_KEY$2] ?? (_g$4[_FALLBACK_KEY$2] = {
+var _fallbackState$2 = (_g$_FALLBACK_KEY$2 = _g$4[_FALLBACK_KEY$2]) !== null && _g$_FALLBACK_KEY$2 !== void 0 ? _g$_FALLBACK_KEY$2 : _g$4[_FALLBACK_KEY$2] = {
 	currentRequestTags: [],
 	currentFetchSoftTags: [],
 	currentFetchCacheMode: null,
 	isFetchDedupeActive: false,
 	currentFetchDedupeEntries: /* @__PURE__ */ new Map()
-});
+};
 function _getState$1() {
+	var _als$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext();
-	return _als$1.getStore() ?? _fallbackState$2;
+	return (_als$getStore = _als$1.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : _fallbackState$2;
 }
 /**
 * Get tags collected during the current render pass.
@@ -6763,13 +6807,13 @@ function setCurrentFetchCacheMode(mode) {
 	_getState$1().currentFetchCacheMode = mode;
 }
 function isNoStoreFetch(cacheDirective, nextOpts) {
-	return cacheDirective === "no-store" || cacheDirective === "no-cache" || nextOpts?.revalidate === false || nextOpts?.revalidate === 0;
+	return cacheDirective === "no-store" || cacheDirective === "no-cache" || (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === false || (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === 0;
 }
 function isCacheableFetch(cacheDirective, nextOpts) {
-	return cacheDirective === "force-cache" || typeof nextOpts?.revalidate === "number" && nextOpts.revalidate > 0;
+	return cacheDirective === "force-cache" || typeof (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === "number" && nextOpts.revalidate > 0;
 }
 function hasExplicitRevalidateValue(nextOpts) {
-	return nextOpts?.revalidate !== void 0;
+	return (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) !== void 0;
 }
 function resolveSegmentCacheDirective(cacheDirective, nextOpts, mode) {
 	if (!mode || mode === "auto") return cacheDirective;
@@ -6778,17 +6822,17 @@ function resolveSegmentCacheDirective(cacheDirective, nextOpts, mode) {
 		case "force-no-store": return "no-store";
 		case "only-cache":
 			if (isNoStoreFetch(cacheDirective, nextOpts)) throw new Error("Route segment config `fetchCache = \"only-cache\"` conflicts with no-store fetch.");
-			return cacheDirective ?? "force-cache";
+			return cacheDirective !== null && cacheDirective !== void 0 ? cacheDirective : "force-cache";
 		case "only-no-store":
 			if (isCacheableFetch(cacheDirective, nextOpts)) throw new Error("Route segment config `fetchCache = \"only-no-store\"` conflicts with cacheable fetch.");
-			return cacheDirective ?? "no-store";
-		case "default-cache": return cacheDirective ?? (hasExplicitRevalidateValue(nextOpts) ? void 0 : "force-cache");
-		case "default-no-store": return cacheDirective ?? (hasExplicitRevalidateValue(nextOpts) ? void 0 : "no-store");
+			return cacheDirective !== null && cacheDirective !== void 0 ? cacheDirective : "no-store";
+		case "default-cache": return cacheDirective !== null && cacheDirective !== void 0 ? cacheDirective : hasExplicitRevalidateValue(nextOpts) ? void 0 : "force-cache";
+		case "default-no-store": return cacheDirective !== null && cacheDirective !== void 0 ? cacheDirective : hasExplicitRevalidateValue(nextOpts) ? void 0 : "no-store";
 	}
 	return cacheDirective;
 }
 function getFetchCacheDirective(input, init) {
-	if (init?.cache !== void 0) return init.cache;
+	if ((init === null || init === void 0 ? void 0 : init.cache) !== void 0) return init.cache;
 	if (!(input instanceof Request) || input.cache === "default") return;
 	return input.cache;
 }
@@ -6806,10 +6850,11 @@ function buildFetchDedupeKey(request) {
 	]);
 }
 function createFetchDedupeCandidate(input, init) {
-	if (init?.signal) return null;
-	const method = init?.method?.toUpperCase();
+	var _init$method;
+	if (init === null || init === void 0 ? void 0 : init.signal) return null;
+	const method = init === null || init === void 0 || (_init$method = init.method) === null || _init$method === void 0 ? void 0 : _init$method.toUpperCase();
 	if (method && method !== "GET" && method !== "HEAD") return null;
-	if (init?.keepalive) return null;
+	if (init === null || init === void 0 ? void 0 : init.keepalive) return null;
 	const request = typeof input === "string" || input instanceof URL ? new Request(input, init) : input;
 	if (request.method !== "GET" && request.method !== "HEAD" || request.keepalive) return null;
 	return {
@@ -6886,17 +6931,18 @@ function dedupeFetch(input, init) {
 */
 function createPatchedFetch() {
 	return async function patchedFetch(input, init) {
-		const nextOpts = init?.next;
+		var _nextOpts$tags;
+		const nextOpts = init === null || init === void 0 ? void 0 : init.next;
 		const cacheDirective = resolveSegmentCacheDirective(getFetchCacheDirective(input, init), nextOpts, _getState$1().currentFetchCacheMode);
 		if (!nextOpts && !cacheDirective) return dedupeFetch(input, init);
-		if (cacheDirective === "no-store" || cacheDirective === "no-cache" || nextOpts?.revalidate === false || nextOpts?.revalidate === 0) return dedupeFetch(input, stripNextFromInit(init, cacheDirective));
-		if (!(cacheDirective === "force-cache" || typeof nextOpts?.revalidate === "number" && nextOpts.revalidate > 0) && hasAuthHeaders(input, init)) return dedupeFetch(input, stripNextFromInit(init, cacheDirective));
+		if (cacheDirective === "no-store" || cacheDirective === "no-cache" || (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === false || (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === 0) return dedupeFetch(input, stripNextFromInit(init, cacheDirective));
+		if (!(cacheDirective === "force-cache" || typeof (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === "number" && nextOpts.revalidate > 0) && hasAuthHeaders(input, init)) return dedupeFetch(input, stripNextFromInit(init, cacheDirective));
 		let revalidateSeconds;
-		if (cacheDirective === "force-cache") revalidateSeconds = nextOpts?.revalidate && typeof nextOpts.revalidate === "number" ? nextOpts.revalidate : 31536e3;
-		else if (typeof nextOpts?.revalidate === "number" && nextOpts.revalidate > 0) revalidateSeconds = nextOpts.revalidate;
-		else if (nextOpts?.tags && nextOpts.tags.length > 0) revalidateSeconds = 31536e3;
+		if (cacheDirective === "force-cache") revalidateSeconds = (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) && typeof nextOpts.revalidate === "number" ? nextOpts.revalidate : 31536e3;
+		else if (typeof (nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.revalidate) === "number" && nextOpts.revalidate > 0) revalidateSeconds = nextOpts.revalidate;
+		else if ((nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.tags) && nextOpts.tags.length > 0) revalidateSeconds = 31536e3;
 		else return dedupeFetch(input, stripNextFromInit(init, cacheDirective));
-		const tags = encodeCacheTags(nextOpts?.tags ?? []);
+		const tags = encodeCacheTags((_nextOpts$tags = nextOpts === null || nextOpts === void 0 ? void 0 : nextOpts.tags) !== null && _nextOpts$tags !== void 0 ? _nextOpts$tags : []);
 		const softTags = _getState$1().currentFetchSoftTags;
 		let fetchInit = stripNextFromInit(init, cacheDirective);
 		let cacheKey;
@@ -6921,16 +6967,19 @@ function createPatchedFetch() {
 				tags,
 				softTags
 			});
-			if (cached?.value && cached.value.kind === "FETCH" && cached.cacheState !== "stale") {
+			if ((cached === null || cached === void 0 ? void 0 : cached.value) && cached.value.kind === "FETCH" && cached.cacheState !== "stale") {
+				var _cachedData$status;
 				const cachedData = cached.value.data;
 				return new Response(cachedData.body, {
-					status: cachedData.status ?? 200,
+					status: (_cachedData$status = cachedData.status) !== null && _cachedData$status !== void 0 ? _cachedData$status : 200,
 					headers: cachedData.headers
 				});
 			}
-			if (cached?.value && cached.value.kind === "FETCH" && cached.cacheState === "stale") {
+			if ((cached === null || cached === void 0 ? void 0 : cached.value) && cached.value.kind === "FETCH" && cached.cacheState === "stale") {
+				var _staleData$status;
 				const staleData = cached.value.data;
 				if (!pendingRefetches.has(cacheKey)) {
+					var _getRequestExecutionC;
 					const refetchPromise = originalFetch(input, fetchInit).then(async (freshResp) => {
 						if (freshResp.status !== 200) return;
 						const freshBody = await freshResp.text();
@@ -6966,10 +7015,10 @@ function createPatchedFetch() {
 					const timeoutId = setTimeout(() => {
 						if (pendingRefetches.get(cacheKey) === refetchPromise) pendingRefetches.delete(cacheKey);
 					}, DEDUP_TIMEOUT_MS);
-					getRequestExecutionContext()?.waitUntil(refetchPromise);
+					(_getRequestExecutionC = getRequestExecutionContext()) === null || _getRequestExecutionC === void 0 || _getRequestExecutionC.waitUntil(refetchPromise);
 				}
 				return new Response(staleData.body, {
-					status: staleData.status ?? 200,
+					status: (_staleData$status = staleData.status) !== null && _staleData$status !== void 0 ? _staleData$status : 200,
 					headers: staleData.headers
 				});
 			}
@@ -7057,16 +7106,18 @@ function matchesDirectiveName(directive, name) {
 	return directive === name || directive.startsWith(`${name} `);
 }
 function getScriptNonceFromHeader(cspHeaderValue) {
+	var _directives$find, _directive$split$slic;
 	const directives = cspHeaderValue.split(";").map((directive) => directive.trim());
-	const directive = directives.find((value) => matchesDirectiveName(value, "script-src")) ?? directives.find((value) => matchesDirectiveName(value, "default-src"));
+	const directive = (_directives$find = directives.find((value) => matchesDirectiveName(value, "script-src"))) !== null && _directives$find !== void 0 ? _directives$find : directives.find((value) => matchesDirectiveName(value, "default-src"));
 	if (!directive) return;
-	const nonce = directive.split(" ").slice(1).map((source) => source.trim()).find((source) => source.startsWith("'nonce-") && source.length > 8 && source.endsWith("'"))?.slice(7, -1);
+	const nonce = (_directive$split$slic = directive.split(" ").slice(1).map((source) => source.trim()).find((source) => source.startsWith("'nonce-") && source.length > 8 && source.endsWith("'"))) === null || _directive$split$slic === void 0 ? void 0 : _directive$split$slic.slice(7, -1);
 	if (!nonce) return;
 	if (ESCAPE_REGEX.test(nonce)) throw new Error("Nonce value from Content-Security-Policy contained HTML escape characters.\nLearn more: https://nextjs.org/docs/messages/nonce-contained-invalid-characters");
 	return nonce;
 }
 function getScriptNonceFromHeaders(headers) {
-	const csp = headers?.get("content-security-policy") ?? headers?.get("content-security-policy-report-only");
+	var _headers$get;
+	const csp = (_headers$get = headers === null || headers === void 0 ? void 0 : headers.get("content-security-policy")) !== null && _headers$get !== void 0 ? _headers$get : headers === null || headers === void 0 ? void 0 : headers.get("content-security-policy-report-only");
 	if (!csp) return;
 	return getScriptNonceFromHeader(csp);
 }
@@ -7130,7 +7181,7 @@ function encodePathDelimiters(segment) {
 function decodeRouteSegment(segment) {
 	try {
 		return encodePathDelimiters(decodeURIComponent(segment));
-	} catch {
+	} catch (_unused) {
 		return segment;
 	}
 }
@@ -7157,7 +7208,7 @@ function normalizePathnameForRouteMatchStrict(pathname) {
 function decodeMatchedParam(value) {
 	try {
 		return decodeURIComponent(value);
-	} catch {
+	} catch (_unused2) {
 		return value;
 	}
 }
@@ -7174,13 +7225,11 @@ function decodeMatchedParams(params) {
 		else params[key] = decodeMatchedParam(value);
 	}
 }
-//#endregion
-//#region node_modules/vinext/dist/shims/server.js
 var _Symbol$iterator;
 var NextRequest = class extends Request {
 	constructor(input, init) {
 		var _super = (..._args) => (super(..._args), _defineProperty(this, "_nextUrl", void 0), _defineProperty(this, "_url", void 0), _defineProperty(this, "_cookies", void 0), this);
-		const { nextConfig: _nextConfig, ...requestInit } = init ?? {};
+		const { nextConfig: _nextConfig, ...requestInit } = init !== null && init !== void 0 ? init : {};
 		if (input instanceof Request) _super(requestInit.body === void 0 && input.body && !input.bodyUsed ? input.clone() : input, requestInit);
 		else _super(input, requestInit);
 		const url = typeof input === "string" ? new URL(input, "http://localhost") : input instanceof URL ? input : new URL(input.url, "http://localhost");
@@ -7206,21 +7255,23 @@ var NextRequest = class extends Request {
 	* over the spoofable X-Forwarded-For. Returns undefined if unavailable.
 	*/
 	get ip() {
-		return this.headers.get("cf-connecting-ip") ?? this.headers.get("x-real-ip") ?? this.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? void 0;
+		var _ref, _ref2, _this$headers$get, _this$headers$get2;
+		return (_ref = (_ref2 = (_this$headers$get = this.headers.get("cf-connecting-ip")) !== null && _this$headers$get !== void 0 ? _this$headers$get : this.headers.get("x-real-ip")) !== null && _ref2 !== void 0 ? _ref2 : (_this$headers$get2 = this.headers.get("x-forwarded-for")) === null || _this$headers$get2 === void 0 || (_this$headers$get2 = _this$headers$get2.split(",")[0]) === null || _this$headers$get2 === void 0 ? void 0 : _this$headers$get2.trim()) !== null && _ref !== void 0 ? _ref : void 0;
 	}
 	/**
 	* Geolocation data. Platform-dependent (e.g., Cloudflare, Vercel).
 	* Returns undefined if not available.
 	*/
 	get geo() {
-		const country = this.headers.get("cf-ipcountry") ?? this.headers.get("x-vercel-ip-country") ?? void 0;
+		var _ref3, _this$headers$get3, _ref4, _this$headers$get4, _ref5, _this$headers$get5, _ref6, _this$headers$get6, _ref7, _this$headers$get7;
+		const country = (_ref3 = (_this$headers$get3 = this.headers.get("cf-ipcountry")) !== null && _this$headers$get3 !== void 0 ? _this$headers$get3 : this.headers.get("x-vercel-ip-country")) !== null && _ref3 !== void 0 ? _ref3 : void 0;
 		if (!country) return void 0;
 		return {
 			country,
-			city: this.headers.get("cf-ipcity") ?? this.headers.get("x-vercel-ip-city") ?? void 0,
-			region: this.headers.get("cf-region") ?? this.headers.get("x-vercel-ip-country-region") ?? void 0,
-			latitude: this.headers.get("cf-iplatitude") ?? this.headers.get("x-vercel-ip-latitude") ?? void 0,
-			longitude: this.headers.get("cf-iplongitude") ?? this.headers.get("x-vercel-ip-longitude") ?? void 0
+			city: (_ref4 = (_this$headers$get4 = this.headers.get("cf-ipcity")) !== null && _this$headers$get4 !== void 0 ? _this$headers$get4 : this.headers.get("x-vercel-ip-city")) !== null && _ref4 !== void 0 ? _ref4 : void 0,
+			region: (_ref5 = (_this$headers$get5 = this.headers.get("cf-region")) !== null && _this$headers$get5 !== void 0 ? _this$headers$get5 : this.headers.get("x-vercel-ip-country-region")) !== null && _ref5 !== void 0 ? _ref5 : void 0,
+			latitude: (_ref6 = (_this$headers$get6 = this.headers.get("cf-iplatitude")) !== null && _this$headers$get6 !== void 0 ? _this$headers$get6 : this.headers.get("x-vercel-ip-latitude")) !== null && _ref6 !== void 0 ? _ref6 : void 0,
+			longitude: (_ref7 = (_this$headers$get7 = this.headers.get("cf-iplongitude")) !== null && _this$headers$get7 !== void 0 ? _this$headers$get7 : this.headers.get("x-vercel-ip-longitude")) !== null && _ref7 !== void 0 ? _ref7 : void 0
 		};
 	}
 	/**
@@ -7234,6 +7285,7 @@ var NextRequest = class extends Request {
 };
 var NextURL = class NextURL {
 	constructor(input, base, config) {
+		var _config$basePath, _config$nextConfig;
 		_defineProperty(
 			this,
 			/** Internal URL stores the pathname WITHOUT basePath or locale prefix. */
@@ -7245,9 +7297,9 @@ var NextURL = class NextURL {
 		_defineProperty(this, "_defaultLocale", void 0);
 		_defineProperty(this, "_locales", void 0);
 		this._url = new URL(input.toString(), base);
-		this._basePath = config?.basePath ?? "";
+		this._basePath = (_config$basePath = config === null || config === void 0 ? void 0 : config.basePath) !== null && _config$basePath !== void 0 ? _config$basePath : "";
 		this._stripBasePath();
-		const i18n = config?.nextConfig?.i18n;
+		const i18n = config === null || config === void 0 || (_config$nextConfig = config.nextConfig) === null || _config$nextConfig === void 0 ? void 0 : _config$nextConfig.i18n;
 		if (i18n) {
 			this._locales = [...i18n.locales];
 			this._defaultLocale = i18n.defaultLocale;
@@ -7261,8 +7313,9 @@ var NextURL = class NextURL {
 	}
 	/** Extract locale from pathname, stripping it from the internal URL. */
 	_analyzeLocale(locales) {
+		var _segments$;
 		const segments = this._url.pathname.split("/");
-		const candidate = segments[1]?.toLowerCase();
+		const candidate = (_segments$ = segments[1]) === null || _segments$ === void 0 ? void 0 : _segments$.toLowerCase();
 		const match = locales.find((l) => l.toLowerCase() === candidate);
 		if (match) {
 			this._locale = match;
@@ -7360,7 +7413,8 @@ var NextURL = class NextURL {
 		this._basePath = value === "" ? "" : value.startsWith("/") ? value : "/" + value;
 	}
 	get locale() {
-		return this._locale ?? "";
+		var _this$_locale;
+		return (_this$_locale = this._locale) !== null && _this$_locale !== void 0 ? _this$_locale : "";
 	}
 	set locale(value) {
 		if (this._locales) {
@@ -7398,15 +7452,17 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		return "d8540892-8409-4fd5-9093-d98f49052445";
+		var _7c7f9056db;
+		return (_7c7f9056db = "07c7f905-6db7-4518-901a-4bc17b2de425") !== null && _7c7f9056db !== void 0 ? _7c7f9056db : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
 	constructor(headers) {
+		var _headers$get;
 		_defineProperty(this, "_headers", void 0);
 		_defineProperty(this, "_parsed", void 0);
 		this._headers = headers;
-		this._parsed = parseCookieHeader(headers.get("cookie") ?? "");
+		this._parsed = parseCookieHeader((_headers$get = headers.get("cookie")) !== null && _headers$get !== void 0 ? _headers$get : "");
 	}
 	get(name) {
 		const value = this._parsed.get(name);
@@ -7416,7 +7472,7 @@ var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
 		} : void 0;
 	}
 	getAll(nameOrOptions) {
-		const name = typeof nameOrOptions === "string" ? nameOrOptions : nameOrOptions?.name;
+		const name = typeof nameOrOptions === "string" ? nameOrOptions : nameOrOptions === null || nameOrOptions === void 0 ? void 0 : nameOrOptions.name;
 		return [...this._parsed.entries()].filter(([cookieName]) => name === void 0 || cookieName === name).map(([cookieName, value]) => ({
 			name: cookieName,
 			value
@@ -7430,7 +7486,7 @@ var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
 		let cookieValue;
 		if (typeof nameOrOptions === "string") {
 			cookieName = nameOrOptions;
-			cookieValue = value ?? "";
+			cookieValue = value !== null && value !== void 0 ? value : "";
 		} else {
 			cookieName = nameOrOptions.name;
 			cookieValue = nameOrOptions.value;
@@ -7603,8 +7659,9 @@ function isValidMiddlewareMatcherObject(value) {
 	return true;
 }
 function matchMatcherPattern(pathname, pattern, i18nConfig) {
+	var _stripLocalePrefix;
 	if (!i18nConfig) return matchPattern(pathname, pattern);
-	return matchPattern(stripLocalePrefix(pathname, i18nConfig) ?? pathname, pattern);
+	return matchPattern((_stripLocalePrefix = stripLocalePrefix(pathname, i18nConfig)) !== null && _stripLocalePrefix !== void 0 ? _stripLocalePrefix : pathname, pattern);
 }
 function matchObjectMatcher(pathname, matcher, i18nConfig) {
 	return matcher.locale === false ? matchPattern(pathname, matcher.source) : matchMatcherPattern(pathname, matcher.source, i18nConfig);
@@ -7678,7 +7735,8 @@ function middlewareExpectedExport(isProxy) {
 	return isProxy ? "proxy" : "middleware";
 }
 function resolveMiddlewareModuleHandler(mod, options) {
-	const handler = options.isProxy ? mod.proxy ?? mod.default : mod.middleware ?? mod.default;
+	var _mod$proxy, _mod$middleware;
+	const handler = options.isProxy ? (_mod$proxy = mod.proxy) !== null && _mod$proxy !== void 0 ? _mod$proxy : mod.default : (_mod$middleware = mod.middleware) !== null && _mod$middleware !== void 0 ? _mod$middleware : mod.default;
 	if (isMiddlewareHandler(handler)) return handler;
 	const fileLabel = middlewareFileLabel(options.isProxy);
 	const expectedExport = middlewareExpectedExport(options.isProxy);
@@ -7715,7 +7773,7 @@ function resolveMiddlewarePathname(request) {
 	const url = new URL(request.url);
 	try {
 		return normalizePath(normalizePathnameForRouteMatchStrict(url.pathname));
-	} catch {
+	} catch (_unused) {
 		return badRequestResponse();
 	}
 }
@@ -7728,17 +7786,18 @@ function createNextRequest(request, normalizedPathname, i18nConfig, basePath) {
 		mwRequest = new Request(mwUrl, mwRequest);
 	}
 	const nextConfig = basePath || i18nConfig ? {
-		basePath: basePath ?? "",
-		i18n: i18nConfig ?? void 0
+		basePath: basePath !== null && basePath !== void 0 ? basePath : "",
+		i18n: i18nConfig !== null && i18nConfig !== void 0 ? i18nConfig : void 0
 	} : void 0;
 	return mwRequest instanceof NextRequest ? mwRequest : new NextRequest(mwRequest, nextConfig ? { nextConfig } : void 0);
 }
 async function executeMiddleware(options) {
+	var _options$normalizedPa;
 	const middlewareFn = resolveMiddlewareModuleHandler(options.module, {
 		filePath: options.filePath,
 		isProxy: options.isProxy
 	});
-	const normalizedPathname = options.normalizedPathname ?? resolveMiddlewarePathname(options.request);
+	const normalizedPathname = (_options$normalizedPa = options.normalizedPathname) !== null && _options$normalizedPa !== void 0 ? _options$normalizedPa : resolveMiddlewarePathname(options.request);
 	if (normalizedPathname instanceof Response) return {
 		continue: false,
 		response: normalizedPathname
@@ -7770,7 +7829,8 @@ async function executeMiddleware(options) {
 		waitUntilPromises
 	};
 	if (response.status >= 300 && response.status < 400) {
-		const location = response.headers.get("Location") ?? response.headers.get("location");
+		var _response$headers$get;
+		const location = (_response$headers$get = response.headers.get("Location")) !== null && _response$headers$get !== void 0 ? _response$headers$get : response.headers.get("location");
 		if (location) {
 			const responseHeaders = new Headers();
 			for (const [key, value] of response.headers) if (!key.startsWith("x-middleware-") && key.toLowerCase() !== "location") responseHeaders.append(key, value);
@@ -7791,7 +7851,7 @@ async function executeMiddleware(options) {
 			const rewriteParsed = new URL(rewriteUrl, options.request.url);
 			const requestOrigin = new URL(options.request.url).origin;
 			rewritePath = rewriteParsed.origin === requestOrigin ? rewriteParsed.pathname + rewriteParsed.search : rewriteParsed.href;
-		} catch {
+		} catch (_unused2) {
 			rewritePath = rewriteUrl;
 		}
 		return {
@@ -7821,11 +7881,12 @@ function requestWithoutFlightHeaders(request) {
 	return cloneRequestWithHeaders(request.body ? request.clone() : request, headers);
 }
 function responseFromMiddlewareRedirect(result) {
+	var _result$redirectStatu;
 	if (result.response) return result.response;
 	const headers = new Headers(result.responseHeaders);
 	if (result.redirectUrl) headers.set("Location", result.redirectUrl);
 	return new Response(null, {
-		status: result.redirectStatus ?? 307,
+		status: (_result$redirectStatu = result.redirectStatus) !== null && _result$redirectStatu !== void 0 ? _result$redirectStatu : 307,
 		headers
 	});
 }
@@ -7847,7 +7908,8 @@ function requestWithMiddlewareRequestHeaders(request, middlewareHeaders) {
 	return new Request(request.url, init);
 }
 async function proxyExternalMiddlewareRewrite(request, rewriteUrl, context) {
-	const proxyRequest = requestWithMiddlewareRequestHeaders(request, context.requestHeaders ?? context.headers);
+	var _context$requestHeade;
+	const proxyRequest = requestWithMiddlewareRequestHeaders(request, (_context$requestHeade = context.requestHeaders) !== null && _context$requestHeade !== void 0 ? _context$requestHeade : context.headers);
 	setHeadersContext(null);
 	setNavigationContext(null);
 	const proxyResponse = await proxyExternalRequest(proxyRequest, rewriteUrl);
@@ -8031,6 +8093,7 @@ function resolveAppPageHtmlResponsePolicy(options) {
 	return { shouldWriteToCache: false };
 }
 function buildAppPageRscResponse(body, options) {
+	var _options$middlewareCo;
 	const headers = new Headers({
 		"Content-Type": "text/x-component; charset=utf-8",
 		Vary: VINEXT_RSC_VARY_HEADER
@@ -8042,11 +8105,12 @@ function buildAppPageRscResponse(body, options) {
 	mergeMiddlewareResponseHeaders(headers, options.middlewareContext.headers);
 	applyTimingHeader(headers, options.timing);
 	return new Response(body, {
-		status: options.middlewareContext.status ?? 200,
+		status: (_options$middlewareCo = options.middlewareContext.status) !== null && _options$middlewareCo !== void 0 ? _options$middlewareCo : 200,
 		headers
 	});
 }
 function buildAppPageHtmlResponse(body, options) {
+	var _options$middlewareCo2;
 	const headers = new Headers({
 		"Content-Type": "text/html; charset=utf-8",
 		Vary: VINEXT_RSC_VARY_HEADER
@@ -8058,7 +8122,7 @@ function buildAppPageHtmlResponse(body, options) {
 	mergeMiddlewareResponseHeaders(headers, options.middlewareContext.headers);
 	applyTimingHeader(headers, options.timing);
 	return new Response(body, {
-		status: options.middlewareContext.status ?? 200,
+		status: (_options$middlewareCo2 = options.middlewareContext.status) !== null && _options$middlewareCo2 !== void 0 ? _options$middlewareCo2 : 200,
 		headers
 	});
 }
@@ -8126,16 +8190,17 @@ function buildPostMwRequestContext(request) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/root-params.js
+var _g$_FALLBACK_KEY$1;
 var _FALLBACK_KEY$1 = Symbol.for("vinext.rootParams.fallback");
 var _g$3 = globalThis;
-var _fallbackState$1 = _g$3[_FALLBACK_KEY$1] ?? (_g$3[_FALLBACK_KEY$1] = { rootParams: null });
+var _fallbackState$1 = (_g$_FALLBACK_KEY$1 = _g$3[_FALLBACK_KEY$1]) !== null && _g$_FALLBACK_KEY$1 !== void 0 ? _g$_FALLBACK_KEY$1 : _g$3[_FALLBACK_KEY$1] = { rootParams: null };
 function getState() {
 	if (isInsideUnifiedScope()) return getRequestContext();
 	return _fallbackState$1;
 }
 function pickRootParams(params, rootParamNames) {
 	const picked = {};
-	for (const name of rootParamNames ?? []) picked[name] = params[name];
+	for (const name of rootParamNames !== null && rootParamNames !== void 0 ? rootParamNames : []) picked[name] = params[name];
 	return picked;
 }
 function setRootParams(params) {
@@ -8172,11 +8237,12 @@ async function handleStaticParamsEndpoint(request, options) {
 	const generateStaticParams = options.staticParamsMap[pattern];
 	if (typeof generateStaticParams !== "function") return jsonNullResponse();
 	try {
+		var _options$rootParamNam;
 		return jsonResponse(await callAppPrerenderStaticParams({
 			fn: generateStaticParams,
 			params: parseParentParams(url.searchParams.get("parentParams")),
 			pattern,
-			rootParamNamesByPattern: options.rootParamNamesByPattern ?? {}
+			rootParamNamesByPattern: (_options$rootParamNam = options.rootParamNamesByPattern) !== null && _options$rootParamNam !== void 0 ? _options$rootParamNam : {}
 		}));
 	} catch (error) {
 		return jsonResponse({ error: String(error) }, 500);
@@ -8188,18 +8254,20 @@ async function handlePagesStaticPathsEndpoint(request, options) {
 	const pattern = url.searchParams.get("pattern");
 	if (!pattern) return new Response("missing pattern", { status: 400 });
 	try {
-		const getStaticPaths = findPageRoute(await options.loadPagesRoutes?.(), pattern)?.module?.getStaticPaths;
+		var _findPageRoute, _options$loadPagesRou, _url$searchParams$get;
+		const getStaticPaths = (_findPageRoute = findPageRoute(await ((_options$loadPagesRou = options.loadPagesRoutes) === null || _options$loadPagesRou === void 0 ? void 0 : _options$loadPagesRou.call(options)), pattern)) === null || _findPageRoute === void 0 || (_findPageRoute = _findPageRoute.module) === null || _findPageRoute === void 0 ? void 0 : _findPageRoute.getStaticPaths;
 		if (typeof getStaticPaths !== "function") return jsonNullResponse();
 		return jsonResponse(await getStaticPaths({
 			locales: parseLocales(url.searchParams.get("locales")),
-			defaultLocale: url.searchParams.get("defaultLocale") ?? ""
+			defaultLocale: (_url$searchParams$get = url.searchParams.get("defaultLocale")) !== null && _url$searchParams$get !== void 0 ? _url$searchParams$get : ""
 		}));
 	} catch (error) {
 		return jsonResponse({ error: String(error) }, 500);
 	}
 }
 function isEnabled(options) {
-	return options.isPrerenderEnabled?.() ?? false;
+	var _options$isPrerenderE, _options$isPrerenderE2;
+	return (_options$isPrerenderE = (_options$isPrerenderE2 = options.isPrerenderEnabled) === null || _options$isPrerenderE2 === void 0 ? void 0 : _options$isPrerenderE2.call(options)) !== null && _options$isPrerenderE !== void 0 ? _options$isPrerenderE : false;
 }
 function jsonResponse(body, status = 200) {
 	return new Response(JSON.stringify(body), {
@@ -8265,7 +8333,7 @@ function finalizeAppRscResponse(response, request, options) {
 	let pathname;
 	try {
 		pathname = normalizePath(normalizePathnameForRouteMatch(url.pathname));
-	} catch {
+	} catch (_unused) {
 		pathname = url.pathname;
 	}
 	pathname = stripBasePath(pathname, options.basePath);
@@ -8307,13 +8375,14 @@ function finalizeAppRscResponse(response, request, options) {
 *          or a NormalizedRscRequest for valid requests.
 */
 function normalizeRscRequest(request, basePath) {
+	var _request$headers$get;
 	const url = new URL(request.url);
 	const protoGuard = guardProtocolRelativeUrl(url.pathname);
 	if (protoGuard) return protoGuard;
 	let decoded;
 	try {
 		decoded = normalizePathnameForRouteMatchStrict(url.pathname);
-	} catch {
+	} catch (_unused) {
 		return badRequestResponse();
 	}
 	let pathname = normalizePath(decoded);
@@ -8323,7 +8392,7 @@ function normalizeRscRequest(request, basePath) {
 	}
 	const isRscRequest = pathname.endsWith(".rsc");
 	const cleanPathname = stripRscSuffix(pathname);
-	const interceptionContextHeader = request.headers.get("X-Vinext-Interception-Context")?.replaceAll("\0", "") || null;
+	const interceptionContextHeader = ((_request$headers$get = request.headers.get("X-Vinext-Interception-Context")) === null || _request$headers$get === void 0 ? void 0 : _request$headers$get.replaceAll("\0", "")) || null;
 	const mountedSlotsHeader = normalizeMountedSlotsHeader(request.headers.get(VINEXT_MOUNTED_SLOTS_HEADER));
 	const renderMode = isRscRequest ? parseAppRscRenderMode(request.headers.get(VINEXT_RSC_RENDER_MODE_HEADER)) : APP_RSC_RENDER_MODE_NAVIGATION;
 	return {
@@ -8435,9 +8504,18 @@ function escapeXml(s) {
 * Convert a sitemap array to XML string.
 */
 function sitemapToXml(entries) {
-	const hasAlternates = entries.some((entry) => Object.keys(entry.alternates ?? {}).length > 0);
-	const hasImages = entries.some((entry) => Boolean(entry.images?.length));
-	const hasVideos = entries.some((entry) => Boolean(entry.videos?.length));
+	const hasAlternates = entries.some((entry) => {
+		var _entry$alternates;
+		return Object.keys((_entry$alternates = entry.alternates) !== null && _entry$alternates !== void 0 ? _entry$alternates : {}).length > 0;
+	});
+	const hasImages = entries.some((entry) => {
+		var _entry$images;
+		return Boolean((_entry$images = entry.images) === null || _entry$images === void 0 ? void 0 : _entry$images.length);
+	});
+	const hasVideos = entries.some((entry) => {
+		var _entry$videos;
+		return Boolean((_entry$videos = entry.videos) === null || _entry$videos === void 0 ? void 0 : _entry$videos.length);
+	});
 	let content = "";
 	content += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 	content += "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"";
@@ -8446,12 +8524,13 @@ function sitemapToXml(entries) {
 	if (hasAlternates) content += " xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n";
 	else content += ">\n";
 	for (const entry of entries) {
+		var _entry$alternates2, _entry$images2, _entry$videos2;
 		content += "<url>\n";
 		content += `<loc>${escapeXml(entry.url)}</loc>\n`;
-		const languages = entry.alternates?.languages;
+		const languages = (_entry$alternates2 = entry.alternates) === null || _entry$alternates2 === void 0 ? void 0 : _entry$alternates2.languages;
 		if (languages && Object.keys(languages).length) for (const language in languages) content += `<xhtml:link rel="alternate" hreflang="${escapeXml(language)}" href="${escapeXml(languages[language])}" />\n`;
-		if (entry.images?.length) for (const image of entry.images) content += `<image:image>\n<image:loc>${escapeXml(image)}</image:loc>\n</image:image>\n`;
-		if (entry.videos?.length) for (const video of entry.videos) {
+		if ((_entry$images2 = entry.images) === null || _entry$images2 === void 0 ? void 0 : _entry$images2.length) for (const image of entry.images) content += `<image:image>\n<image:loc>${escapeXml(image)}</image:loc>\n</image:image>\n`;
+		if ((_entry$videos2 = entry.videos) === null || _entry$videos2 === void 0 ? void 0 : _entry$videos2.length) for (const video of entry.videos) {
 			const videoFields = [
 				"<video:video>",
 				`<video:title>${escapeXml(String(video.title))}</video:title>`,
@@ -8490,7 +8569,8 @@ function robotsToText(config) {
 	const lines = [];
 	const rules = Array.isArray(config.rules) ? config.rules : [config.rules];
 	for (const rule of rules) {
-		const agents = Array.isArray(rule.userAgent) ? rule.userAgent : [rule.userAgent ?? "*"];
+		var _rule$userAgent;
+		const agents = Array.isArray(rule.userAgent) ? rule.userAgent : [(_rule$userAgent = rule.userAgent) !== null && _rule$userAgent !== void 0 ? _rule$userAgent : "*"];
 		for (const agent of agents) lines.push(`User-Agent: ${agent}`);
 		if (rule.allow) {
 			const allows = Array.isArray(rule.allow) ? rule.allow : [rule.allow];
@@ -8664,11 +8744,12 @@ function findGeneratedImageId(imageMetadata, imageId, servedUrl) {
 	return null;
 }
 async function callDynamicMetadataRoute(route, match, makeThenableParams, functions) {
+	var _match$params;
 	if (!functions.defaultExport) {
 		console.warn(`[vinext] Dynamic metadata route ${route.servedUrl} has no default export.`);
 		return notFoundResponse();
 	}
-	const paramsThenable = makeThenableParams(match.params ?? {});
+	const paramsThenable = makeThenableParams((_match$params = match.params) !== null && _match$params !== void 0 ? _match$params : {});
 	let result;
 	if (functions.hasGeneratedImageMetadata) {
 		if (match.imageId === null || !isValidMetadataImageId(match.imageId)) return notFoundResponse();
@@ -8746,7 +8827,7 @@ async function handleMetadataRouteRequest(options) {
 function runWithPrerenderWorkUnit(fn, options) {
 	if (process.env.VINEXT_PRERENDER === "1") {
 		const controller = new AbortController();
-		const route = typeof options?.route === "function" ? options.route() : options?.route;
+		const route = typeof (options === null || options === void 0 ? void 0 : options.route) === "function" ? options.route() : options === null || options === void 0 ? void 0 : options.route;
 		return workUnitAsyncStorage.run({
 			type: "prerender",
 			renderSignal: controller.signal,
@@ -8798,6 +8879,7 @@ function applyConfigHeadersToMiddlewareRedirect(response, options) {
 	return response;
 }
 async function handleAppRscRequest(options, request, preMiddlewareRequestContext) {
+	var _request$headers$get;
 	const handlerStart = 0;
 	const normalized = normalizeRscRequest(request, options.basePath);
 	if (normalized instanceof Response) return normalized;
@@ -8890,7 +8972,7 @@ async function handleAppRscRequest(options, request, preMiddlewareRequestContext
 		searchParams: url.searchParams,
 		params: {}
 	});
-	const actionId = request.headers.get("x-rsc-action") ?? request.headers.get("next-action");
+	const actionId = (_request$headers$get = request.headers.get("x-rsc-action")) !== null && _request$headers$get !== void 0 ? _request$headers$get : request.headers.get("next-action");
 	const contentType = request.headers.get("content-type") || "";
 	const progressiveActionResult = await options.handleProgressiveActionRequest({
 		actionId,
@@ -8900,7 +8982,7 @@ async function handleAppRscRequest(options, request, preMiddlewareRequestContext
 		request
 	});
 	if (progressiveActionResult instanceof Response) return progressiveActionResult;
-	const isProgressiveActionRender = progressiveActionResult?.kind === "form-state";
+	const isProgressiveActionRender = (progressiveActionResult === null || progressiveActionResult === void 0 ? void 0 : progressiveActionResult.kind) === "form-state";
 	const formState = isProgressiveActionRender ? progressiveActionResult.formState : null;
 	const serverActionResponse = await options.handleServerActionRequest({
 		actionId,
@@ -8942,12 +9024,13 @@ async function handleAppRscRequest(options, request, preMiddlewareRequestContext
 		}
 	}
 	if (!match) {
-		const pagesFallbackResponse = await options.renderPagesFallback?.({
+		var _options$renderPagesF;
+		const pagesFallbackResponse = await ((_options$renderPagesF = options.renderPagesFallback) === null || _options$renderPagesF === void 0 ? void 0 : _options$renderPagesF.call(options, {
 			isRscRequest,
 			middlewareContext,
 			request,
 			url
-		});
+		}));
 		if (pagesFallbackResponse) {
 			options.clearRequestContext();
 			return pagesFallbackResponse;
@@ -9002,12 +9085,13 @@ async function handleAppRscRequest(options, request, preMiddlewareRequestContext
 }
 function createAppRscHandler(options) {
 	return async function appRscHandler(rawRequest, ctx) {
-		await options.ensureInstrumentation?.();
+		var _options$ensureInstru, _getRequestExecutionC;
+		await ((_options$ensureInstru = options.ensureInstrumentation) === null || _options$ensureInstru === void 0 ? void 0 : _options$ensureInstru.call(options));
 		const mwCtx = rawRequest.headers.get(VINEXT_MW_CTX_HEADER);
 		const filteredHeaders = filterInternalHeaders(rawRequest.headers);
 		if (mwCtx !== null) filteredHeaders.set(VINEXT_MW_CTX_HEADER, mwCtx);
 		const request = cloneRequestWithHeaders(rawRequest, filteredHeaders);
-		const executionContext = isExecutionContextLike(ctx) ? ctx : getRequestExecutionContext() ?? null;
+		const executionContext = isExecutionContextLike(ctx) ? ctx : (_getRequestExecutionC = getRequestExecutionContext()) !== null && _getRequestExecutionC !== void 0 ? _getRequestExecutionC : null;
 		return runWithRequestContext(createRequestContext({
 			headersContext: headersContextFromRequest(request),
 			executionContext,
@@ -9037,7 +9121,8 @@ function createAppRscHandler(options) {
 * Reads from globalThis so it works across Vite environment boundaries.
 */
 function getOnRequestErrorHandler() {
-	return globalThis.__VINEXT_onRequestErrorHandler__ ?? null;
+	var _globalThis$__VINEXT_;
+	return (_globalThis$__VINEXT_ = globalThis.__VINEXT_onRequestErrorHandler__) !== null && _globalThis$__VINEXT_ !== void 0 ? _globalThis$__VINEXT_ : null;
 }
 /**
 * Report a request error via the instrumentation handler.
@@ -9048,6 +9133,7 @@ function getOnRequestErrorHandler() {
 * of which environment it is called from.
 */
 function reportRequestError(error, request, context) {
+	var _getRequestExecutionC;
 	const handler = getOnRequestErrorHandler();
 	if (!handler) return Promise.resolve();
 	const promise = (async () => {
@@ -9057,11 +9143,12 @@ function reportRequestError(error, request, context) {
 			console.error("[vinext] onRequestError handler threw:", reportErr instanceof Error ? reportErr.message : String(reportErr));
 		}
 	})();
-	getRequestExecutionContext()?.waitUntil(promise);
+	(_getRequestExecutionC = getRequestExecutionContext()) === null || _getRequestExecutionC === void 0 || _getRequestExecutionC.waitUntil(promise);
 	return promise;
 }
 //#endregion
 //#region node_modules/vinext/dist/server/app-route-handler-runtime.js
+var _g$_KNOWN_DYNAMIC_APP;
 var ROUTE_HANDLER_HTTP_METHODS = [
 	"GET",
 	"HEAD",
@@ -9093,7 +9180,7 @@ function buildRouteHandlerAllowHeader(exportedMethods) {
 }
 var _KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY = Symbol.for("vinext.appRouteHandlerRuntime.knownDynamicHandlers");
 var _g$2 = globalThis;
-var knownDynamicAppRouteHandlers = _g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] ?? (_g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] = /* @__PURE__ */ new Set());
+var knownDynamicAppRouteHandlers = (_g$_KNOWN_DYNAMIC_APP = _g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY]) !== null && _g$_KNOWN_DYNAMIC_APP !== void 0 ? _g$_KNOWN_DYNAMIC_APP : _g$2[_KNOWN_DYNAMIC_APP_ROUTE_HANDLERS_KEY] = /* @__PURE__ */ new Set();
 function isKnownDynamicAppRoute(pattern) {
 	return knownDynamicAppRouteHandlers.has(pattern);
 }
@@ -9104,10 +9191,11 @@ function bindMethodIfNeeded(value, target) {
 	return typeof value === "function" ? value.bind(target) : value;
 }
 function buildNextConfig(options) {
+	var _options$i18n;
 	if (!options.basePath && !options.i18n) return null;
 	return {
 		basePath: options.basePath,
-		i18n: options.i18n ?? void 0
+		i18n: (_options$i18n = options.i18n) !== null && _options$i18n !== void 0 ? _options$i18n : void 0
 	};
 }
 function rebuildRequestWithHeaders(input, headers) {
@@ -9158,12 +9246,14 @@ function readEmptyBodyAsText() {
 	return new Response(null).text();
 }
 function createTrackedAppRouteRequest(request, options = {}) {
+	var _options$requestMode;
 	let didAccessDynamicRequest = false;
-	const requestMode = options.requestMode ?? "auto";
+	const requestMode = (_options$requestMode = options.requestMode) !== null && _options$requestMode !== void 0 ? _options$requestMode : "auto";
 	const nextConfig = buildNextConfig(options);
 	const markDynamicAccess = (access) => {
+		var _options$onDynamicAcc;
 		didAccessDynamicRequest = true;
-		options.onDynamicAccess?.(access);
+		(_options$onDynamicAcc = options.onDynamicAccess) === null || _options$onDynamicAcc === void 0 || _options$onDynamicAcc.call(options, access);
 	};
 	const wrapNextUrl = (nextUrl) => {
 		return new Proxy(nextUrl, { get(target, prop) {
@@ -9199,7 +9289,8 @@ function createTrackedAppRouteRequest(request, options = {}) {
 		} });
 	};
 	const throwStaticGenerationError = (expression) => {
-		throw new Error(options.staticGenerationErrorMessage?.(expression) ?? `Route handler with \`dynamic = "error"\` used ${expression}.`);
+		var _options$staticGenera, _options$staticGenera2;
+		throw new Error((_options$staticGenera = (_options$staticGenera2 = options.staticGenerationErrorMessage) === null || _options$staticGenera2 === void 0 ? void 0 : _options$staticGenera2.call(options, expression)) !== null && _options$staticGenera !== void 0 ? _options$staticGenera : `Route handler with \`dynamic = "error"\` used ${expression}.`);
 	};
 	const wrapRequireStaticNextUrl = (nextUrl) => {
 		return new Proxy(nextUrl, { get(target, prop) {
@@ -9219,7 +9310,7 @@ function createTrackedAppRouteRequest(request, options = {}) {
 	const wrapRequest = (input) => {
 		const requestHeaders = options.middlewareHeaders ? buildRequestHeadersFromMiddlewareResponse(input.headers, options.middlewareHeaders) : null;
 		const requestWithOverrides = requestHeaders ? rebuildRequestWithHeaders(input, requestHeaders) : input;
-		const nextRequest = requestWithOverrides instanceof NextRequest ? requestWithOverrides : new NextRequest(requestWithOverrides, { nextConfig: nextConfig ?? void 0 });
+		const nextRequest = requestWithOverrides instanceof NextRequest ? requestWithOverrides : new NextRequest(requestWithOverrides, { nextConfig: nextConfig !== null && nextConfig !== void 0 ? nextConfig : void 0 });
 		let proxiedNextUrl = null;
 		let forceStaticNextUrl = null;
 		let requireStaticNextUrl = null;
@@ -9228,13 +9319,16 @@ function createTrackedAppRouteRequest(request, options = {}) {
 		return new Proxy(nextRequest, { get(target, prop) {
 			if (requestMode === "force-static") switch (prop) {
 				case "nextUrl":
-					forceStaticNextUrl ?? (forceStaticNextUrl = wrapForceStaticNextUrl(target.nextUrl));
+					var _forceStaticNextUrl;
+					(_forceStaticNextUrl = forceStaticNextUrl) !== null && _forceStaticNextUrl !== void 0 || (forceStaticNextUrl = wrapForceStaticNextUrl(target.nextUrl));
 					return forceStaticNextUrl;
 				case "headers":
-					forceStaticHeaders ?? (forceStaticHeaders = sealRequestHeaders(new Headers()));
+					var _forceStaticHeaders;
+					(_forceStaticHeaders = forceStaticHeaders) !== null && _forceStaticHeaders !== void 0 || (forceStaticHeaders = sealRequestHeaders(new Headers()));
 					return forceStaticHeaders;
 				case "cookies":
-					forceStaticCookies ?? (forceStaticCookies = sealRequestCookies(new RequestCookies(new Headers())));
+					var _forceStaticCookies;
+					(_forceStaticCookies = forceStaticCookies) !== null && _forceStaticCookies !== void 0 || (forceStaticCookies = sealRequestCookies(new RequestCookies(new Headers())));
 					return forceStaticCookies;
 				case "url": return cleanStaticUrl(target.nextUrl.href);
 				case "ip":
@@ -9250,7 +9344,8 @@ function createTrackedAppRouteRequest(request, options = {}) {
 			}
 			if (requestMode === "error") switch (prop) {
 				case "nextUrl":
-					requireStaticNextUrl ?? (requireStaticNextUrl = wrapRequireStaticNextUrl(target.nextUrl));
+					var _requireStaticNextUrl;
+					(_requireStaticNextUrl = requireStaticNextUrl) !== null && _requireStaticNextUrl !== void 0 || (requireStaticNextUrl = wrapRequireStaticNextUrl(target.nextUrl));
 					return requireStaticNextUrl;
 				case "headers":
 				case "cookies":
@@ -9268,7 +9363,8 @@ function createTrackedAppRouteRequest(request, options = {}) {
 			}
 			switch (prop) {
 				case "nextUrl":
-					proxiedNextUrl ?? (proxiedNextUrl = wrapNextUrl(target.nextUrl));
+					var _proxiedNextUrl;
+					(_proxiedNextUrl = proxiedNextUrl) !== null && _proxiedNextUrl !== void 0 || (proxiedNextUrl = wrapNextUrl(target.nextUrl));
 					return proxiedNextUrl;
 				case "headers":
 				case "cookies":
@@ -9339,7 +9435,7 @@ function parseNextHttpErrorDigest(digest) {
 function isPossibleAppRouteActionRequest(request) {
 	if (request.method.toUpperCase() !== "POST") return false;
 	const contentType = request.headers.get("content-type");
-	return request.headers.has("x-rsc-action") || request.headers.has("next-action") || contentType === "application/x-www-form-urlencoded" || contentType?.startsWith("multipart/form-data") === true;
+	return request.headers.has("x-rsc-action") || request.headers.has("next-action") || contentType === "application/x-www-form-urlencoded" || (contentType === null || contentType === void 0 ? void 0 : contentType.startsWith("multipart/form-data")) === true;
 }
 function getAppRouteHandlerRevalidateSeconds(handler) {
 	const { revalidate } = handler;
@@ -9384,7 +9480,7 @@ function resolveAppRouteHandlerSpecialError(error, requestUrl, options) {
 	if (redirect) return {
 		kind: "redirect",
 		location: new URL(redirect.url, requestUrl).toString(),
-		statusCode: options?.isAction ? 303 : redirect.status
+		statusCode: (options === null || options === void 0 ? void 0 : options.isAction) ? 303 : redirect.status
 	};
 	const httpError = parseNextHttpErrorDigest(digest);
 	if (httpError) return {
@@ -9399,7 +9495,7 @@ function getAppPageStaticGenerationErrorMessage() {
 	return "Page with `dynamic = \"error\"` used a dynamic API. This page was expected to be fully static, but headers(), cookies(), or searchParams was accessed. Remove the dynamic API usage or change the dynamic config to \"auto\" or \"force-dynamic\".";
 }
 function getAppRouteStaticGenerationErrorMessage(routePattern, expression) {
-	return `Route ${routePattern ?? "unknown route"} with \`dynamic = "error"\` couldn't be rendered statically because it used ${expression ?? "a dynamic request API"}. See more info here: https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic#dynamic-rendering`;
+	return `Route ${routePattern !== null && routePattern !== void 0 ? routePattern : "unknown route"} with \`dynamic = "error"\` couldn't be rendered statically because it used ${expression !== null && expression !== void 0 ? expression : "a dynamic request API"}. See more info here: https://nextjs.org/docs/app/building-your-application/rendering/static-and-dynamic#dynamic-rendering`;
 }
 function createStaticGenerationHeadersContext(options) {
 	const context = {
@@ -9424,11 +9520,12 @@ function buildRouteHandlerCacheControl(cacheState, revalidateSeconds, expireSeco
 	return buildCachedRevalidateCacheControl(cacheState, revalidateSeconds, expireSeconds);
 }
 function applyRouteHandlerMiddlewareContext(response, middlewareContext) {
+	var _middlewareContext$st;
 	if (!middlewareContext.headers && middlewareContext.status == null) return response;
 	const responseHeaders = new Headers(response.headers);
 	mergeMiddlewareResponseHeaders(responseHeaders, middlewareContext.headers);
 	return new Response(response.body, {
-		status: middlewareContext.status ?? response.status,
+		status: (_middlewareContext$st = middlewareContext.status) !== null && _middlewareContext$st !== void 0 ? _middlewareContext$st : response.status,
 		statusText: response.statusText,
 		headers: responseHeaders
 	});
@@ -9438,12 +9535,13 @@ function assertSupportedAppRouteHandlerResponse(response) {
 	if (response.headers.get("x-middleware-next") === "1") throw new Error(APP_ROUTE_NEXT_ERROR);
 }
 function buildRouteHandlerCachedResponse(cachedValue, options) {
+	var _options$cacheControl, _options$cacheControl2, _options$cacheControl3;
 	const headers = new Headers();
 	for (const [key, value] of Object.entries(cachedValue.headers)) if (Array.isArray(value)) for (const entry of value) headers.append(key, entry);
 	else headers.set(key, value);
 	headers.set(VINEXT_CACHE_HEADER, options.cacheState);
-	const revalidateSeconds = options.cacheControl?.revalidate ?? options.revalidateSeconds;
-	const expireSeconds = options.cacheControl === void 0 ? void 0 : options.cacheControl.expire ?? options.expireSeconds;
+	const revalidateSeconds = (_options$cacheControl = (_options$cacheControl2 = options.cacheControl) === null || _options$cacheControl2 === void 0 ? void 0 : _options$cacheControl2.revalidate) !== null && _options$cacheControl !== void 0 ? _options$cacheControl : options.revalidateSeconds;
+	const expireSeconds = options.cacheControl === void 0 ? void 0 : (_options$cacheControl3 = options.cacheControl.expire) !== null && _options$cacheControl3 !== void 0 ? _options$cacheControl3 : options.expireSeconds;
 	headers.set("Cache-Control", buildRouteHandlerCacheControl(options.cacheState, revalidateSeconds, expireSeconds));
 	return new Response(options.isHead ? null : cachedValue.body, {
 		status: cachedValue.status,
@@ -9485,13 +9583,14 @@ function applyMutableCookieFallbacks(headers, pendingCookies) {
 	for (const cookie of returnedCookies) headers.append("Set-Cookie", cookie);
 }
 async function buildAppRouteCacheValue(response) {
+	var _response$headers$get, _response$headers$get2, _response$headers;
 	const body = await response.arrayBuffer();
 	const headers = {};
 	response.headers.forEach((value, key) => {
 		if (key === "set-cookie" || key === "X-Vinext-Cache".toLowerCase() || key === "cache-control" || key.startsWith("x-middleware-")) return;
 		headers[key] = value;
 	});
-	const setCookies = response.headers.getSetCookie?.() ?? [];
+	const setCookies = (_response$headers$get = (_response$headers$get2 = (_response$headers = response.headers).getSetCookie) === null || _response$headers$get2 === void 0 ? void 0 : _response$headers$get2.call(_response$headers)) !== null && _response$headers$get !== void 0 ? _response$headers$get : [];
 	if (setCookies.length > 0) headers["set-cookie"] = setCookies;
 	return {
 		kind: "APP_ROUTE",
@@ -9517,12 +9616,13 @@ function finalizeRouteHandlerResponse(response, options) {
 //#region node_modules/vinext/dist/server/app-route-handler-execution.js
 function configureAppRouteStaticGenerationContext(options) {
 	if (options.dynamicConfig === "force-static" || options.dynamicConfig === "error") {
+		var _options$setHeadersAc;
 		setHeadersContext(createStaticGenerationHeadersContext({
 			dynamicConfig: options.dynamicConfig,
 			routeKind: "route",
 			routePattern: options.routePattern
 		}));
-		options.setHeadersAccessPhase?.("route-handler");
+		(_options$setHeadersAc = options.setHeadersAccessPhase) === null || _options$setHeadersAc === void 0 || _options$setHeadersAc.call(options, "route-handler");
 	}
 }
 async function runAppRouteHandler(options) {
@@ -9576,6 +9676,7 @@ async function executeAppRouteHandler(options) {
 			method: options.method,
 			revalidateSeconds: options.revalidateSeconds
 		})) {
+			var _options$executionCon;
 			markRouteHandlerCacheMiss(response);
 			const routeClone = response.clone();
 			const routeKey = options.isrRouteKey(options.cleanPathname);
@@ -9584,14 +9685,15 @@ async function executeAppRouteHandler(options) {
 			const routeTags = options.buildPageCacheTags(options.cleanPathname, options.getCollectedFetchTags());
 			const routeWritePromise = (async () => {
 				try {
+					var _options$isrDebug;
 					const routeCacheValue = await buildAppRouteCacheValue(routeClone);
 					await options.isrSet(routeKey, routeCacheValue, revalidateSeconds, routeTags, options.expireSeconds);
-					options.isrDebug?.("route cache written", routeKey);
+					(_options$isrDebug = options.isrDebug) === null || _options$isrDebug === void 0 || _options$isrDebug.call(options, "route cache written", routeKey);
 				} catch (cacheErr) {
 					console.error("[vinext] ISR route cache write error:", cacheErr);
 				}
 			})();
-			options.executionContext?.waitUntil(routeWritePromise);
+			(_options$executionCon = options.executionContext) === null || _options$executionCon === void 0 || _options$executionCon.waitUntil(routeWritePromise);
 		}
 		const pendingCookies = options.getAndClearPendingCookies();
 		const draftCookie = options.getDraftModeCookieHeader();
@@ -9635,29 +9737,32 @@ async function executeAppRouteHandler(options) {
 //#endregion
 //#region node_modules/vinext/dist/server/app-route-handler-cache.js
 function getCachedAppRouteValue(entry) {
-	return entry?.value.value && entry.value.value.kind === "APP_ROUTE" ? entry.value.value : null;
+	return (entry === null || entry === void 0 ? void 0 : entry.value.value) && entry.value.value.kind === "APP_ROUTE" ? entry.value.value : null;
 }
 async function readAppRouteHandlerCacheResponse(options) {
 	const routeKey = options.isrRouteKey(options.cleanPathname);
 	try {
 		const cached = await options.isrGet(routeKey);
 		const cachedValue = getCachedAppRouteValue(cached);
-		if (cachedValue && !cached?.isStale) {
-			options.isrDebug?.("HIT (route)", options.cleanPathname);
+		if (cachedValue && !(cached === null || cached === void 0 ? void 0 : cached.isStale)) {
+			var _options$isrDebug;
+			(_options$isrDebug = options.isrDebug) === null || _options$isrDebug === void 0 || _options$isrDebug.call(options, "HIT (route)", options.cleanPathname);
 			options.clearRequestContext();
 			return applyRouteHandlerMiddlewareContext(buildRouteHandlerCachedResponse(cachedValue, {
 				cacheState: "HIT",
-				cacheControl: cached?.value.cacheControl,
+				cacheControl: cached === null || cached === void 0 ? void 0 : cached.value.cacheControl,
 				expireSeconds: options.expireSeconds,
 				isHead: options.isAutoHead,
 				revalidateSeconds: options.revalidateSeconds
 			}), options.middlewareContext);
 		}
-		if (cached?.isStale && cachedValue) {
+		if ((cached === null || cached === void 0 ? void 0 : cached.isStale) && cachedValue) {
+			var _options$isrDebug4;
 			const staleValue = cachedValue;
 			const revalidateSearchParams = new URLSearchParams(options.revalidateSearchParams);
 			options.scheduleBackgroundRegeneration(routeKey, async () => {
 				await options.runInRevalidationContext(async () => {
+					var _options$isrDebug3;
 					options.setNavigationContext({
 						pathname: options.cleanPathname,
 						searchParams: revalidateSearchParams,
@@ -9678,17 +9783,18 @@ async function readAppRouteHandlerCacheResponse(options) {
 					options.setNavigationContext(null);
 					assertSupportedAppRouteHandlerResponse(response);
 					if (dynamicUsedInHandler) {
+						var _options$isrDebug2;
 						markKnownDynamicAppRoute(options.routePattern);
-						options.isrDebug?.("route regen skipped (dynamic usage)", options.cleanPathname);
+						(_options$isrDebug2 = options.isrDebug) === null || _options$isrDebug2 === void 0 || _options$isrDebug2.call(options, "route regen skipped (dynamic usage)", options.cleanPathname);
 						return;
 					}
 					const routeTags = options.buildPageCacheTags(options.cleanPathname, options.getCollectedFetchTags());
 					const routeCacheValue = await buildAppRouteCacheValue(response);
 					await options.isrSet(routeKey, routeCacheValue, options.revalidateSeconds, routeTags, options.expireSeconds);
-					options.isrDebug?.("route regen complete", routeKey);
+					(_options$isrDebug3 = options.isrDebug) === null || _options$isrDebug3 === void 0 || _options$isrDebug3.call(options, "route regen complete", routeKey);
 				});
 			});
-			options.isrDebug?.("STALE (route)", options.cleanPathname);
+			(_options$isrDebug4 = options.isrDebug) === null || _options$isrDebug4 === void 0 || _options$isrDebug4.call(options, "STALE (route)", options.cleanPathname);
 			options.clearRequestContext();
 			return applyRouteHandlerMiddlewareContext(buildRouteHandlerCachedResponse(staleValue, {
 				cacheState: "STALE",
@@ -9727,12 +9833,13 @@ async function runInRouteHandlerRevalidationContext(options, renderFn) {
 	});
 }
 async function dispatchAppRouteHandler(options) {
+	var _options$isDevelopmen, _options$isProduction;
 	const { route } = options;
 	const handler = route.routeHandler;
 	const method = options.request.method.toUpperCase();
 	const revalidateSeconds = getAppRouteHandlerRevalidateSeconds(handler);
-	const isDevelopment = options.isDevelopment ?? false;
-	const isProduction = options.isProduction ?? true;
+	const isDevelopment = (_options$isDevelopmen = options.isDevelopment) !== null && _options$isDevelopmen !== void 0 ? _options$isDevelopmen : false;
+	const isProduction = (_options$isProduction = options.isProduction) !== null && _options$isProduction !== void 0 ? _options$isProduction : true;
 	if (hasAppRouteHandlerDefaultExport(handler) && isDevelopment) console.error("[vinext] Detected default export in route handler " + route.pattern + ". Export a named export for each HTTP method instead.");
 	if (!isValidHTTPMethod(method)) {
 		options.clearRequestContext();
@@ -9944,7 +10051,7 @@ function isEmptyOptionalCatchAll(segment, paramValue) {
 }
 function resolveAppPageSegmentParams(routeSegments, treePosition, matchedParams) {
 	const segmentParams = {};
-	const segments = routeSegments ?? [];
+	const segments = routeSegments !== null && routeSegments !== void 0 ? routeSegments : [];
 	const end = Math.min(Math.max(treePosition, 0), segments.length);
 	for (let index = 0; index < end; index++) {
 		const segment = segments[index];
@@ -9976,18 +10083,20 @@ function collectParentParamNames(routeSegments, boundaryPosition) {
 	return names;
 }
 function getLayoutGenerateStaticParamsBoundary(layoutTreePosition) {
-	return (layoutTreePosition ?? 0) - 1;
+	return (layoutTreePosition !== null && layoutTreePosition !== void 0 ? layoutTreePosition : 0) - 1;
 }
 function resolveAppPageGenerateStaticParamsSources(options) {
+	var _options$layouts, _options$page;
 	const sources = [];
-	options.layouts?.forEach((layout, index) => {
-		if (typeof layout?.generateStaticParams !== "function") return;
+	(_options$layouts = options.layouts) === null || _options$layouts === void 0 || _options$layouts.forEach((layout, index) => {
+		var _options$layoutTreePo;
+		if (typeof (layout === null || layout === void 0 ? void 0 : layout.generateStaticParams) !== "function") return;
 		sources.push({
 			generateStaticParams: layout.generateStaticParams,
-			parentParamNames: collectParentParamNames(options.routeSegments, getLayoutGenerateStaticParamsBoundary(options.layoutTreePositions?.[index]))
+			parentParamNames: collectParentParamNames(options.routeSegments, getLayoutGenerateStaticParamsBoundary((_options$layoutTreePo = options.layoutTreePositions) === null || _options$layoutTreePo === void 0 ? void 0 : _options$layoutTreePo[index]))
 		});
 	});
-	if (typeof options.page?.generateStaticParams === "function") sources.push({
+	if (typeof ((_options$page = options.page) === null || _options$page === void 0 ? void 0 : _options$page.generateStaticParams) === "function") sources.push({
 		generateStaticParams: options.page.generateStaticParams,
 		parentParamNames: collectParentParamNames(options.routeSegments, Math.max(0, options.routeSegments.length - 1))
 	});
@@ -10010,7 +10119,7 @@ function normalizeGenerateStaticParams(generateStaticParams) {
 			generateStaticParams: source,
 			parentParamNames: []
 		}];
-		if (typeof source?.generateStaticParams === "function") return [source];
+		if (typeof (source === null || source === void 0 ? void 0 : source.generateStaticParams) === "function") return [source];
 		return [];
 	});
 }
@@ -10194,13 +10303,14 @@ function getActionControlResponse(error) {
 	return null;
 }
 function getActionRedirect(error) {
+	var _redirect$type;
 	const digest = getNextErrorDigest(error);
 	if (!digest) return null;
 	const redirect = parseNextRedirectDigest(digest);
 	if (!redirect) return null;
 	return {
 		status: redirect.status,
-		type: redirect.type ?? "push",
+		type: (_redirect$type = redirect.type) !== null && _redirect$type !== void 0 ? _redirect$type : "push",
 		url: redirect.url
 	};
 }
@@ -10273,10 +10383,11 @@ async function handleProgressiveServerActionRequest(options) {
 			options.setHeadersAccessPhase(previousHeadersPhase);
 		}
 		if (!actionControlResponse) {
+			var _await$options$decode;
 			getAndClearActionRevalidationKind();
 			return {
 				kind: "form-state",
-				formState: await options.decodeFormState(actionResult, body) ?? null
+				formState: (_await$options$decode = await options.decodeFormState(actionResult, body)) !== null && _await$options$decode !== void 0 ? _await$options$decode : null
 			};
 		}
 		const actionPendingCookies = options.getAndClearPendingCookies();
@@ -10323,6 +10434,7 @@ async function handleServerActionRscRequest(options) {
 		return payloadTooLargeResponse();
 	}
 	try {
+		var _options$middlewareSt2;
 		let body;
 		try {
 			body = options.contentType.startsWith("multipart/form-data") ? await options.readFormDataWithLimit(options.request, options.maxActionBodySize) : await options.readBodyWithLimit(options.request, options.maxActionBodySize);
@@ -10416,6 +10528,7 @@ async function handleServerActionRscRequest(options) {
 		const actionDraftCookie = options.getDraftModeCookieHeader();
 		const actionRevalidationKind = resolveActionRevalidationKind(actionPendingCookies.length > 0 || Boolean(actionDraftCookie));
 		if (actionRevalidationKind === ACTION_DID_NOT_REVALIDATE) {
+			var _options$middlewareSt;
 			const onRenderError = options.createRscOnErrorHandler(options.request, options.cleanPathname, options.cleanPathname);
 			const rscStream = await options.renderToReadableStream({ returnValue }, {
 				temporaryReferences,
@@ -10428,7 +10541,7 @@ async function handleServerActionRscRequest(options) {
 			});
 			mergeMiddlewareResponseHeaders(actionHeaders, options.middlewareHeaders);
 			return new Response(rscStream, {
-				status: options.middlewareStatus ?? actionStatus,
+				status: (_options$middlewareSt = options.middlewareStatus) !== null && _options$middlewareSt !== void 0 ? _options$middlewareSt : actionStatus,
 				headers: actionHeaders
 			});
 		}
@@ -10436,6 +10549,7 @@ async function handleServerActionRscRequest(options) {
 		let element;
 		let errorPattern = match ? match.route.pattern : options.cleanPathname;
 		if (match) {
+			var _options$resolveRoute, _options$resolveRoute2;
 			const { route: actionRoute, params: actionParams } = match;
 			const actionRerenderTarget = resolveAppPageActionRerenderTarget({
 				cleanPathname: options.cleanPathname,
@@ -10452,7 +10566,7 @@ async function handleServerActionRscRequest(options) {
 				searchParams: options.searchParams,
 				params: actionRerenderTarget.navigationParams
 			});
-			setCurrentFetchCacheMode(options.resolveRouteFetchCacheMode?.(actionRerenderTarget.route) ?? null);
+			setCurrentFetchCacheMode((_options$resolveRoute = (_options$resolveRoute2 = options.resolveRouteFetchCacheMode) === null || _options$resolveRoute2 === void 0 ? void 0 : _options$resolveRoute2.call(options, actionRerenderTarget.route)) !== null && _options$resolveRoute !== void 0 ? _options$resolveRoute : null);
 			element = options.buildPageElement({
 				cleanPathname: options.cleanPathname,
 				interceptOpts: actionRerenderTarget.interceptOpts,
@@ -10484,7 +10598,7 @@ async function handleServerActionRscRequest(options) {
 		mergeMiddlewareResponseHeaders(actionHeaders, options.middlewareHeaders);
 		setActionRevalidatedHeader(actionHeaders, actionRevalidationKind);
 		const actionResponse = new Response(rscStream, {
-			status: options.middlewareStatus ?? actionStatus,
+			status: (_options$middlewareSt2 = options.middlewareStatus) !== null && _options$middlewareSt2 !== void 0 ? _options$middlewareSt2 : actionStatus,
 			headers: actionHeaders
 		});
 		if (actionPendingCookies.length > 0 || actionDraftCookie) {
@@ -10512,8 +10626,9 @@ function getAppPageStatusText(statusCode) {
 	return statusCode === 403 ? "Forbidden" : statusCode === 401 ? "Unauthorized" : "Not Found";
 }
 function mergeAppPageSpecialErrorHeaders(response, middlewareContext) {
+	var _middlewareContext$he;
 	const headers = new Headers(response.headers);
-	mergeMiddlewareResponseHeaders(headers, middlewareContext?.headers ?? null);
+	mergeMiddlewareResponseHeaders(headers, (_middlewareContext$he = middlewareContext === null || middlewareContext === void 0 ? void 0 : middlewareContext.headers) !== null && _middlewareContext$he !== void 0 ? _middlewareContext$he : null);
 	return new Response(response.body, {
 		headers,
 		status: response.status,
@@ -10559,12 +10674,13 @@ function applyAppPageRedirectBasePath(location, requestUrl, basePath) {
 }
 async function buildAppPageSpecialErrorResponse(options) {
 	if (options.specialError.kind === "redirect") {
+		var _options$middlewareCo, _options$middlewareCo2, _options$getAndClearP, _options$getAndClearP2;
 		options.clearRequestContext();
 		const prefixedLocation = applyAppPageRedirectBasePath(options.specialError.location, options.request.url, options.basePath);
 		const location = options.isRscRequest ? await createRscRedirectLocation(prefixedLocation, options.request) : prefixedLocation;
 		const headers = new Headers({ Location: location });
-		mergeMiddlewareResponseHeaders(headers, options.middlewareContext?.headers ?? null);
-		const pendingCookies = options.getAndClearPendingCookies?.() ?? [];
+		mergeMiddlewareResponseHeaders(headers, (_options$middlewareCo = (_options$middlewareCo2 = options.middlewareContext) === null || _options$middlewareCo2 === void 0 ? void 0 : _options$middlewareCo2.headers) !== null && _options$middlewareCo !== void 0 ? _options$middlewareCo : null);
+		const pendingCookies = (_options$getAndClearP = (_options$getAndClearP2 = options.getAndClearPendingCookies) === null || _options$getAndClearP2 === void 0 ? void 0 : _options$getAndClearP2.call(options)) !== null && _options$getAndClearP !== void 0 ? _options$getAndClearP : [];
 		for (const cookie of pendingCookies) headers.append("Set-Cookie", cookie);
 		return new Response(null, {
 			headers,
@@ -10580,15 +10696,18 @@ async function buildAppPageSpecialErrorResponse(options) {
 }
 /** See `LayoutFlags` type docblock in app-elements.ts for lifecycle. */
 async function probeAppPageLayouts(options) {
+	var _options$classificati;
 	const layoutFlags = {};
-	const cls = options.classification ?? null;
+	const cls = (_options$classificati = options.classification) !== null && _options$classificati !== void 0 ? _options$classificati : null;
 	return {
 		response: await options.runWithSuppressedHookWarning(async () => {
 			for (let layoutIndex = options.layoutCount - 1; layoutIndex >= 0; layoutIndex--) {
-				const buildTimeResult = cls?.buildTimeClassifications?.get(layoutIndex);
+				var _cls$buildTimeClassif;
+				const buildTimeResult = cls === null || cls === void 0 || (_cls$buildTimeClassif = cls.buildTimeClassifications) === null || _cls$buildTimeClassif === void 0 ? void 0 : _cls$buildTimeClassif.get(layoutIndex);
 				if (cls && buildTimeResult) {
+					var _cls$buildTimeReasons, _cls$buildTimeReasons2;
 					layoutFlags[cls.getLayoutId(layoutIndex)] = buildTimeResult === "static" ? "s" : "d";
-					if (cls.debugClassification) cls.debugClassification(cls.getLayoutId(layoutIndex), cls.buildTimeReasons?.get(layoutIndex) ?? { layer: "no-classifier" });
+					if (cls.debugClassification) cls.debugClassification(cls.getLayoutId(layoutIndex), (_cls$buildTimeReasons = (_cls$buildTimeReasons2 = cls.buildTimeReasons) === null || _cls$buildTimeReasons2 === void 0 ? void 0 : _cls$buildTimeReasons2.get(layoutIndex)) !== null && _cls$buildTimeReasons !== void 0 ? _cls$buildTimeReasons : { layer: "no-classifier" });
 					const errorResponse = await probeLayoutForErrors(options, layoutIndex);
 					if (errorResponse) return errorResponse;
 					continue;
@@ -10700,7 +10819,8 @@ function sanitizeErrorForClient(error, nodeEnv = "production") {
 }
 function createRscOnErrorHandler$1(options) {
 	return (error) => {
-		const nodeEnv = options.nodeEnv ?? "production";
+		var _options$nodeEnv;
+		const nodeEnv = (_options$nodeEnv = options.nodeEnv) !== null && _options$nodeEnv !== void 0 ? _options$nodeEnv : "production";
 		if (hasDigest(error)) return String(error.digest);
 		if (nodeEnv !== "production" && error instanceof Error && error.message.includes("Only plain objects, and a few built-ins, can be passed to Client Components")) {
 			console.error("[vinext] RSC serialization error: a non-plain object was passed from a Server Component to a Client Component.\n\nCommon causes:\n  * Passing a module namespace (import * as X) directly as a prop.\n    Unlike Next.js (webpack), Vite produces real ESM module namespace objects\n    which are not serializable. Fix: pass individual values instead,\n    e.g. <Comp value={module.value} />\n  * Passing a class instance (new Foo()) as a prop.\n    Fix: convert to a plain object, e.g. { id: foo.id, name: foo.name }\n  * Passing a Date, Map, or Set. Use .toISOString(), [...map.entries()], etc.\n  * Passing Object.create(null). Use { ...obj } to restore a prototype.\n\nOriginal error:", error.message);
@@ -10866,9 +10986,10 @@ function readSegmentParam(segment) {
 	return null;
 }
 function formatSegmentStateParamValue(param, params, fallbackSegment) {
+	var _formatParamSegmentVa;
 	const value = params[param.name];
 	if (param.type === "oc" && (value === void 0 || Array.isArray(value) && value.length === 0)) return "";
-	return formatParamSegmentValue(value) ?? fallbackSegment;
+	return (_formatParamSegmentVa = formatParamSegmentValue(value)) !== null && _formatParamSegmentVa !== void 0 ? _formatParamSegmentVa : fallbackSegment;
 }
 function resolveSingleSegmentStateKey(segment, params) {
 	const param = readSegmentParam(segment);
@@ -10887,13 +11008,15 @@ function resolveAppPageChildSegments(routeSegments, treePosition, params) {
 			continue;
 		}
 		if (isCatchAllSegment(segment)) {
+			var _formatParamSegmentVa2;
 			const paramName = segment.slice(4, -1);
-			resolvedSegments.push(formatParamSegmentValue(params[paramName]) ?? segment);
+			resolvedSegments.push((_formatParamSegmentVa2 = formatParamSegmentValue(params[paramName])) !== null && _formatParamSegmentVa2 !== void 0 ? _formatParamSegmentVa2 : segment);
 			continue;
 		}
 		if (isDynamicSegment(segment)) {
+			var _formatParamSegmentVa3;
 			const paramName = segment.slice(1, -1);
-			resolvedSegments.push(formatParamSegmentValue(params[paramName]) ?? segment);
+			resolvedSegments.push((_formatParamSegmentVa3 = formatParamSegmentValue(params[paramName])) !== null && _formatParamSegmentVa3 !== void 0 ? _formatParamSegmentVa3 : segment);
 			continue;
 		}
 		resolvedSegments.push(segment);
@@ -10912,35 +11035,41 @@ function resolveAppPageRouteStateKey(routeSegments, params) {
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-route-wiring.js
 function getDefaultExport$1(module) {
-	return module?.default ?? null;
+	var _module$default;
+	return (_module$default = module === null || module === void 0 ? void 0 : module.default) !== null && _module$default !== void 0 ? _module$default : null;
 }
 function getErrorBoundaryExport(module) {
-	return module?.default ?? null;
+	var _module$default2;
+	return (_module$default2 = module === null || module === void 0 ? void 0 : module.default) !== null && _module$default2 !== void 0 ? _module$default2 : null;
 }
 function createAppPageTreePath(routeSegments, treePosition) {
-	const treePathSegments = routeSegments?.slice(0, treePosition) ?? [];
+	var _routeSegments$slice;
+	const treePathSegments = (_routeSegments$slice = routeSegments === null || routeSegments === void 0 ? void 0 : routeSegments.slice(0, treePosition)) !== null && _routeSegments$slice !== void 0 ? _routeSegments$slice : [];
 	if (treePathSegments.length === 0) return "/";
 	return `/${treePathSegments.join("/")}`;
 }
 function createAppPageLayoutEntries(route) {
 	return route.layouts.map((layoutModule, index) => {
-		const treePosition = route.layoutTreePositions?.[index] ?? 0;
+		var _route$layoutTreePosi, _route$layoutTreePosi2, _route$errors$index, _route$errors, _route$forbiddens$ind, _route$forbiddens, _route$notFounds$inde, _route$notFounds, _route$unauthorizeds$, _route$unauthorizeds;
+		const treePosition = (_route$layoutTreePosi = (_route$layoutTreePosi2 = route.layoutTreePositions) === null || _route$layoutTreePosi2 === void 0 ? void 0 : _route$layoutTreePosi2[index]) !== null && _route$layoutTreePosi !== void 0 ? _route$layoutTreePosi : 0;
 		const treePath = createAppPageTreePath(route.routeSegments, treePosition);
 		return {
-			errorModule: route.errorTreePositions ? null : route.errors?.[index] ?? null,
-			forbiddenModule: route.forbiddens?.[index] ?? null,
+			errorModule: route.errorTreePositions ? null : (_route$errors$index = (_route$errors = route.errors) === null || _route$errors === void 0 ? void 0 : _route$errors[index]) !== null && _route$errors$index !== void 0 ? _route$errors$index : null,
+			forbiddenModule: (_route$forbiddens$ind = (_route$forbiddens = route.forbiddens) === null || _route$forbiddens === void 0 ? void 0 : _route$forbiddens[index]) !== null && _route$forbiddens$ind !== void 0 ? _route$forbiddens$ind : null,
 			id: AppElementsWire.encodeLayoutId(treePath),
 			layoutModule,
-			notFoundModule: route.notFounds?.[index] ?? null,
-			unauthorizedModule: route.unauthorizeds?.[index] ?? null,
+			notFoundModule: (_route$notFounds$inde = (_route$notFounds = route.notFounds) === null || _route$notFounds === void 0 ? void 0 : _route$notFounds[index]) !== null && _route$notFounds$inde !== void 0 ? _route$notFounds$inde : null,
+			unauthorizedModule: (_route$unauthorizeds$ = (_route$unauthorizeds = route.unauthorizeds) === null || _route$unauthorizeds === void 0 ? void 0 : _route$unauthorizeds[index]) !== null && _route$unauthorizeds$ !== void 0 ? _route$unauthorizeds$ : null,
 			treePath,
 			treePosition
 		};
 	});
 }
 function createAppPageTemplateEntries(route) {
-	return (route.templates ?? []).map((templateModule, index) => {
-		const treePosition = route.templateTreePositions?.[index] ?? 0;
+	var _route$templates;
+	return ((_route$templates = route.templates) !== null && _route$templates !== void 0 ? _route$templates : []).map((templateModule, index) => {
+		var _route$templateTreePo, _route$templateTreePo2;
+		const treePosition = (_route$templateTreePo = (_route$templateTreePo2 = route.templateTreePositions) === null || _route$templateTreePo2 === void 0 ? void 0 : _route$templateTreePo2[index]) !== null && _route$templateTreePo !== void 0 ? _route$templateTreePo : 0;
 		const treePath = createAppPageTreePath(route.routeSegments, treePosition);
 		return {
 			id: AppElementsWire.encodeTemplateId(treePath),
@@ -10951,9 +11080,11 @@ function createAppPageTemplateEntries(route) {
 	});
 }
 function createAppPageErrorEntries(route) {
-	return (route.errorPaths ?? route.errors ?? []).flatMap((errorModule, index) => {
+	var _ref, _route$errorPaths;
+	return ((_ref = (_route$errorPaths = route.errorPaths) !== null && _route$errorPaths !== void 0 ? _route$errorPaths : route.errors) !== null && _ref !== void 0 ? _ref : []).flatMap((errorModule, index) => {
+		var _route$errorTreePosit;
 		if (!errorModule) return [];
-		const treePosition = route.errorTreePositions?.[index];
+		const treePosition = (_route$errorTreePosit = route.errorTreePositions) === null || _route$errorTreePosit === void 0 ? void 0 : _route$errorTreePosit[index];
 		if (treePosition === void 0) return [];
 		return [{
 			errorModule,
@@ -10962,12 +11093,14 @@ function createAppPageErrorEntries(route) {
 	});
 }
 function createAppPageParallelSlotEntries(layoutIndex, layoutEntries, route, getEffectiveSlotParams) {
+	var _route$slots;
 	const parallelSlots = {};
-	for (const [slotKey, slot] of Object.entries(route.slots ?? {})) {
+	for (const [slotKey, slot] of Object.entries((_route$slots = route.slots) !== null && _route$slots !== void 0 ? _route$slots : {})) {
+		var _layoutEntries$target, _layoutEntries$target2;
 		const slotName = slot.name;
 		const targetIndex = slot.layoutIndex >= 0 ? slot.layoutIndex : layoutEntries.length - 1;
 		if (targetIndex !== layoutIndex) continue;
-		const treePath = layoutEntries[targetIndex]?.treePath ?? "/";
+		const treePath = (_layoutEntries$target = (_layoutEntries$target2 = layoutEntries[targetIndex]) === null || _layoutEntries$target2 === void 0 ? void 0 : _layoutEntries$target2.treePath) !== null && _layoutEntries$target !== void 0 ? _layoutEntries$target : "/";
 		const slotParams = getEffectiveSlotParams(slotKey, slotName);
 		parallelSlots[slotName] = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(LayoutSegmentProvider, {
 			segmentMap: { children: slot.routeSegments ? resolveAppPageChildSegments(slot.routeSegments, 0, slotParams) : [] },
@@ -10984,8 +11117,9 @@ function createAppPageRouteHead(metadata, viewport) {
 	] });
 }
 function buildAppPageElements(options) {
-	const interceptionContext = options.interceptionContext ?? null;
-	const routeSegments = options.route.routeSegments ?? [];
+	var _options$interception, _options$route$routeS, _layoutEntries$0$tree, _layoutEntries$, _options$route$ids$la, _options$route$ids, _options$route$slots, _options$route$slots3, _options$renderMode2, _getDefaultExport2, _getDefaultExport3, _getDefaultExport4;
+	const interceptionContext = (_options$interception = options.interceptionContext) !== null && _options$interception !== void 0 ? _options$interception : null;
+	const routeSegments = (_options$route$routeS = options.route.routeSegments) !== null && _options$route$routeS !== void 0 ? _options$route$routeS : [];
 	const routeResetKey = resolveAppPageRouteStateKey(routeSegments, options.matchedParams);
 	const routeId = AppElementsWire.encodeRouteId(options.routePath, interceptionContext);
 	const pageId = AppElementsWire.encodePageId(options.routePath, interceptionContext);
@@ -11006,17 +11140,18 @@ function buildAppPageElements(options) {
 	const templateDependenciesById = /* @__PURE__ */ new Map();
 	const templateDependenciesBeforeById = /* @__PURE__ */ new Map();
 	const pageDependencies = [];
-	const rootLayoutTreePath = layoutEntries[0]?.treePath ?? null;
+	const rootLayoutTreePath = (_layoutEntries$0$tree = (_layoutEntries$ = layoutEntries[0]) === null || _layoutEntries$ === void 0 ? void 0 : _layoutEntries$.treePath) !== null && _layoutEntries$0$tree !== void 0 ? _layoutEntries$0$tree : null;
 	const elements = { ...AppElementsWire.createMetadataEntries({
 		interceptionContext,
-		layoutIds: options.route.ids?.layouts ?? layoutEntries.map((entry) => entry.id),
+		layoutIds: (_options$route$ids$la = (_options$route$ids = options.route.ids) === null || _options$route$ids === void 0 ? void 0 : _options$route$ids.layouts) !== null && _options$route$ids$la !== void 0 ? _options$route$ids$la : layoutEntries.map((entry) => entry.id),
 		rootLayoutTreePath,
 		routeId
 	}) };
 	const slotNameCounts = /* @__PURE__ */ new Map();
-	for (const slot of Object.values(options.route.slots ?? {})) {
+	for (const slot of Object.values((_options$route$slots = options.route.slots) !== null && _options$route$slots !== void 0 ? _options$route$slots : {})) {
+		var _slotNameCounts$get;
 		const slotName = slot.name;
-		slotNameCounts.set(slotName, (slotNameCounts.get(slotName) ?? 0) + 1);
+		slotNameCounts.set(slotName, ((_slotNameCounts$get = slotNameCounts.get(slotName)) !== null && _slotNameCounts$get !== void 0 ? _slotNameCounts$get : 0) + 1);
 	}
 	const orderedTreePositions = Array.from(new Set([
 		...layoutEntries.map((entry) => entry.treePosition),
@@ -11024,11 +11159,15 @@ function buildAppPageElements(options) {
 		...errorEntries.map((entry) => entry.treePosition)
 	])).sort((left, right) => left - right);
 	const resolveSlotOverride = (slotKey, slotName) => {
-		const overrideByKey = options.slotOverrides?.[slotKey];
+		var _options$slotOverride, _slotNameCounts$get2, _options$slotOverride2;
+		const overrideByKey = (_options$slotOverride = options.slotOverrides) === null || _options$slotOverride === void 0 ? void 0 : _options$slotOverride[slotKey];
 		if (overrideByKey) return overrideByKey;
-		if (slotKey === slotName || (slotNameCounts.get(slotName) ?? 0) === 1) return options.slotOverrides?.[slotName];
+		if (slotKey === slotName || ((_slotNameCounts$get2 = slotNameCounts.get(slotName)) !== null && _slotNameCounts$get2 !== void 0 ? _slotNameCounts$get2 : 0) === 1) return (_options$slotOverride2 = options.slotOverrides) === null || _options$slotOverride2 === void 0 ? void 0 : _options$slotOverride2[slotName];
 	};
-	const getEffectiveSlotParams = (slotKey, slotName) => resolveSlotOverride(slotKey, slotName)?.params ?? options.matchedParams;
+	const getEffectiveSlotParams = (slotKey, slotName) => {
+		var _resolveSlotOverride$, _resolveSlotOverride;
+		return (_resolveSlotOverride$ = (_resolveSlotOverride = resolveSlotOverride(slotKey, slotName)) === null || _resolveSlotOverride === void 0 ? void 0 : _resolveSlotOverride.params) !== null && _resolveSlotOverride$ !== void 0 ? _resolveSlotOverride$ : options.matchedParams;
+	};
 	for (const treePosition of orderedTreePositions) {
 		const layoutIndex = layoutIndicesByTreePosition.get(treePosition);
 		if (layoutIndex !== void 0) {
@@ -11050,6 +11189,7 @@ function buildAppPageElements(options) {
 	}
 	elements[pageId] = renderAfterAppDependencies(options.element, pageDependencies);
 	for (const templateEntry of templateEntries) {
+		var _templateDependencies;
 		const templateComponent = getDefaultExport$1(templateEntry.templateModule);
 		if (!templateComponent) continue;
 		const TemplateComponent = templateComponent;
@@ -11061,14 +11201,15 @@ function buildAppPageElements(options) {
 			params: options.matchedParams,
 			children: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(Children, {})
 		});
-		elements[templateEntry.id] = renderAfterAppDependencies(templateElement, templateDependenciesBeforeById.get(templateEntry.id) ?? []);
+		elements[templateEntry.id] = renderAfterAppDependencies(templateElement, (_templateDependencies = templateDependenciesBeforeById.get(templateEntry.id)) !== null && _templateDependencies !== void 0 ? _templateDependencies : []);
 	}
 	for (let index = 0; index < layoutEntries.length; index++) {
+		var _options$route$slots2, _layoutDependenciesBe;
 		const layoutEntry = layoutEntries[index];
 		const layoutComponent = getDefaultExport$1(layoutEntry.layoutModule);
 		if (!layoutComponent) continue;
 		const layoutProps = { params: options.makeThenableParams(resolveAppPageSegmentParams(options.route.routeSegments, layoutEntry.treePosition, options.matchedParams)) };
-		for (const slot of Object.values(options.route.slots ?? {})) {
+		for (const slot of Object.values((_options$route$slots2 = options.route.slots) !== null && _options$route$slots2 !== void 0 ? _options$route$slots2 : {})) {
 			const slotName = slot.name;
 			if ((slot.layoutIndex >= 0 ? slot.layoutIndex : layoutEntries.length - 1) !== index) continue;
 			layoutProps[slotName] = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(ParallelSlot, { name: slotName });
@@ -11082,29 +11223,30 @@ function buildAppPageElements(options) {
 			...layoutProps,
 			children: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(Children, {})
 		});
-		elements[layoutEntry.id] = renderAfterAppDependencies(layoutElement, layoutDependenciesBefore[index] ?? []);
+		elements[layoutEntry.id] = renderAfterAppDependencies(layoutElement, (_layoutDependenciesBe = layoutDependenciesBefore[index]) !== null && _layoutDependenciesBe !== void 0 ? _layoutDependenciesBe : []);
 	}
-	for (const [slotKey, slot] of Object.entries(options.route.slots ?? {})) {
+	for (const [slotKey, slot] of Object.entries((_options$route$slots3 = options.route.slots) !== null && _options$route$slots3 !== void 0 ? _options$route$slots3 : {})) {
+		var _layoutEntries$target3, _layoutEntries$target4, _slot$routeSegments, _getDefaultExport, _options$mountedSlotI, _slotOverride$layoutM, _options$renderMode, _slotDependenciesByLa;
 		const slotName = slot.name;
 		const targetIndex = slot.layoutIndex >= 0 ? slot.layoutIndex : layoutEntries.length - 1;
-		const treePath = layoutEntries[targetIndex]?.treePath ?? "/";
+		const treePath = (_layoutEntries$target3 = (_layoutEntries$target4 = layoutEntries[targetIndex]) === null || _layoutEntries$target4 === void 0 ? void 0 : _layoutEntries$target4.treePath) !== null && _layoutEntries$target3 !== void 0 ? _layoutEntries$target3 : "/";
 		const slotId = AppElementsWire.encodeSlotId(slotName, treePath);
 		const slotOverride = resolveSlotOverride(slotKey, slotName);
 		const slotParams = getEffectiveSlotParams(slotKey, slotName);
-		const slotResetKey = resolveAppPageRouteStateKey(slot.routeSegments ?? [], slotParams);
-		const overrideOrPageComponent = getDefaultExport$1(slotOverride?.pageModule) ?? getDefaultExport$1(slot.page);
+		const slotResetKey = resolveAppPageRouteStateKey((_slot$routeSegments = slot.routeSegments) !== null && _slot$routeSegments !== void 0 ? _slot$routeSegments : [], slotParams);
+		const overrideOrPageComponent = (_getDefaultExport = getDefaultExport$1(slotOverride === null || slotOverride === void 0 ? void 0 : slotOverride.pageModule)) !== null && _getDefaultExport !== void 0 ? _getDefaultExport : getDefaultExport$1(slot.page);
 		const defaultComponent = getDefaultExport$1(slot.default);
-		if (!overrideOrPageComponent && defaultComponent && options.isRscRequest && options.mountedSlotIds?.has(slotId)) continue;
-		const slotComponent = overrideOrPageComponent ?? defaultComponent;
+		if (!overrideOrPageComponent && defaultComponent && options.isRscRequest && ((_options$mountedSlotI = options.mountedSlotIds) === null || _options$mountedSlotI === void 0 ? void 0 : _options$mountedSlotI.has(slotId))) continue;
+		const slotComponent = overrideOrPageComponent !== null && overrideOrPageComponent !== void 0 ? overrideOrPageComponent : defaultComponent;
 		if (!slotComponent) {
 			elements[slotId] = AppElementsWire.unmatchedSlotValue;
 			continue;
 		}
 		const slotThenableParams = options.makeThenableParams(slotParams);
 		const slotProps = { params: slotThenableParams };
-		if (slotOverride?.props) Object.assign(slotProps, slotOverride.props);
+		if (slotOverride === null || slotOverride === void 0 ? void 0 : slotOverride.props) Object.assign(slotProps, slotOverride.props);
 		let slotElement = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(slotComponent, { ...slotProps });
-		const interceptLayouts = slotOverride?.layoutModules ?? [];
+		const interceptLayouts = (_slotOverride$layoutM = slotOverride === null || slotOverride === void 0 ? void 0 : slotOverride.layoutModules) !== null && _slotOverride$layoutM !== void 0 ? _slotOverride$layoutM : [];
 		for (let layoutIndex = interceptLayouts.length - 1; layoutIndex >= 0; layoutIndex--) {
 			const interceptLayoutComponent = getDefaultExport$1(interceptLayouts[layoutIndex]);
 			if (!interceptLayoutComponent) continue;
@@ -11119,7 +11261,7 @@ function buildAppPageElements(options) {
 			children: slotElement
 		});
 		const slotLoadingComponent = getDefaultExport$1(slot.loading);
-		if (slotLoadingComponent && !shouldSuppressLoadingBoundaries(options.renderMode ?? "navigation")) slotElement = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(import_react_react_server.Suspense, {
+		if (slotLoadingComponent && !shouldSuppressLoadingBoundaries((_options$renderMode = options.renderMode) !== null && _options$renderMode !== void 0 ? _options$renderMode : "navigation")) slotElement = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(import_react_react_server.Suspense, {
 			fallback: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(slotLoadingComponent, {}),
 			children: slotElement
 		}, slotResetKey);
@@ -11129,7 +11271,7 @@ function buildAppPageElements(options) {
 			fallback: slotErrorComponent,
 			children: slotElement
 		});
-		elements[slotId] = renderAfterAppDependencies(slotElement, targetIndex >= 0 ? slotDependenciesByLayoutIndex[targetIndex] ?? [] : []);
+		elements[slotId] = renderAfterAppDependencies(slotElement, targetIndex >= 0 ? (_slotDependenciesByLa = slotDependenciesByLayoutIndex[targetIndex]) !== null && _slotDependenciesByLa !== void 0 ? _slotDependenciesByLa : [] : []);
 	}
 	let routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(LayoutSegmentProvider, {
 		segmentMap: { children: [] },
@@ -11137,24 +11279,24 @@ function buildAppPageElements(options) {
 	});
 	routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(RedirectBoundary, { children: routeChildren });
 	const routeLoadingComponent = getDefaultExport$1(options.route.loading);
-	if (routeLoadingComponent && !shouldSuppressLoadingBoundaries(options.renderMode ?? "navigation")) routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(import_react_react_server.Suspense, {
+	if (routeLoadingComponent && !shouldSuppressLoadingBoundaries((_options$renderMode2 = options.renderMode) !== null && _options$renderMode2 !== void 0 ? _options$renderMode2 : "navigation")) routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(import_react_react_server.Suspense, {
 		fallback: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(routeLoadingComponent, {}),
 		children: routeChildren
 	}, routeResetKey);
 	const lastLayoutErrorModule = errorEntries.length > 0 ? errorEntries[errorEntries.length - 1].errorModule : null;
-	const notFoundComponent = getDefaultExport$1(options.route.notFound) ?? getDefaultExport$1(options.rootNotFoundModule);
+	const notFoundComponent = (_getDefaultExport2 = getDefaultExport$1(options.route.notFound)) !== null && _getDefaultExport2 !== void 0 ? _getDefaultExport2 : getDefaultExport$1(options.rootNotFoundModule);
 	if (notFoundComponent) routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(NotFoundBoundary, {
 		resetKey: routeResetKey,
 		fallback: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(notFoundComponent, {}),
 		children: routeChildren
 	});
-	const forbiddenComponent = getDefaultExport$1(options.route.forbidden) ?? getDefaultExport$1(options.rootForbiddenModule);
+	const forbiddenComponent = (_getDefaultExport3 = getDefaultExport$1(options.route.forbidden)) !== null && _getDefaultExport3 !== void 0 ? _getDefaultExport3 : getDefaultExport$1(options.rootForbiddenModule);
 	if (forbiddenComponent) routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(ForbiddenBoundary, {
 		resetKey: routeResetKey,
 		fallback: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(forbiddenComponent, {}),
 		children: routeChildren
 	});
-	const unauthorizedComponent = getDefaultExport$1(options.route.unauthorized) ?? getDefaultExport$1(options.rootUnauthorizedModule);
+	const unauthorizedComponent = (_getDefaultExport4 = getDefaultExport$1(options.route.unauthorized)) !== null && _getDefaultExport4 !== void 0 ? _getDefaultExport4 : getDefaultExport$1(options.rootUnauthorizedModule);
 	if (unauthorizedComponent) routeChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(UnauthorizedBoundary, {
 		resetKey: routeResetKey,
 		fallback: /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(unauthorizedComponent, {}),
@@ -11167,6 +11309,7 @@ function buildAppPageElements(options) {
 		children: routeChildren
 	});
 	for (let index = orderedTreePositions.length - 1; index >= 0; index--) {
+		var _errorEntry$errorModu, _layoutIndicesByTreeP, _options$route$slots4;
 		const treePosition = orderedTreePositions[index];
 		const segmentResetKey = resolveAppPageSegmentStateKey(routeSegments, treePosition, options.matchedParams);
 		let segmentChildren = routeChildren;
@@ -11193,7 +11336,7 @@ function buildAppPageElements(options) {
 				children: segmentChildren
 			});
 		}
-		const segmentErrorComponent = getErrorBoundaryExport(errorEntry?.errorModule ?? layoutEntry?.errorModule);
+		const segmentErrorComponent = getErrorBoundaryExport((_errorEntry$errorModu = errorEntry === null || errorEntry === void 0 ? void 0 : errorEntry.errorModule) !== null && _errorEntry$errorModu !== void 0 ? _errorEntry$errorModu : layoutEntry === null || layoutEntry === void 0 ? void 0 : layoutEntry.errorModule);
 		if (segmentErrorComponent) segmentChildren = /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)(ErrorBoundary, {
 			resetKey: segmentResetKey,
 			fallback: segmentErrorComponent,
@@ -11208,9 +11351,9 @@ function buildAppPageElements(options) {
 			continue;
 		}
 		const layoutHasElement = getDefaultExport$1(layoutEntry.layoutModule) !== null;
-		const layoutIndex = layoutIndicesByTreePosition.get(treePosition) ?? -1;
+		const layoutIndex = (_layoutIndicesByTreeP = layoutIndicesByTreePosition.get(treePosition)) !== null && _layoutIndicesByTreeP !== void 0 ? _layoutIndicesByTreeP : -1;
 		const segmentMap = { children: resolveAppPageChildSegments(routeSegments, layoutEntry.treePosition, options.matchedParams) };
-		for (const [slotKey, slot] of Object.entries(options.route.slots ?? {})) {
+		for (const [slotKey, slot] of Object.entries((_options$route$slots4 = options.route.slots) !== null && _options$route$slots4 !== void 0 ? _options$route$slots4 : {})) {
 			const slotName = slot.name;
 			if ((slot.layoutIndex >= 0 ? slot.layoutIndex : layoutEntries.length - 1) !== layoutIndex) continue;
 			const slotParams = getEffectiveSlotParams(slotKey, slotName);
@@ -11256,14 +11399,16 @@ function routeSegmentsApplyWithParallelSlots(routeSegments, routePrefixSegments)
 	return visiblePrefixSegments.length !== routePrefixSegments.length && routeSegmentsApply(routeSegments, visiblePrefixSegments);
 }
 function routeSpecificity(route) {
-	return route.routeSegments?.length ?? routeScore(route.routePrefix);
+	var _route$routeSegments$, _route$routeSegments;
+	return (_route$routeSegments$ = (_route$routeSegments = route.routeSegments) === null || _route$routeSegments === void 0 ? void 0 : _route$routeSegments.length) !== null && _route$routeSegments$ !== void 0 ? _route$routeSegments$ : routeScore(route.routePrefix);
 }
 function selectDeepestRoutes(metadataRoutes, kind, routePath, params, routeSegments) {
 	if (!metadataRoutes || metadataRoutes.length === 0) return [];
 	let selectedScore = -1;
 	const selectedRoutes = [];
 	for (const route of metadataRoutes) {
-		if ((route.headData?.kind ?? getMetadataRouteKind(route)) !== kind) continue;
+		var _route$headData$kind, _route$headData;
+		if (((_route$headData$kind = (_route$headData = route.headData) === null || _route$headData === void 0 ? void 0 : _route$headData.kind) !== null && _route$headData$kind !== void 0 ? _route$headData$kind : getMetadataRouteKind(route)) !== kind) continue;
 		if (routeSegments && route.routeSegments) {
 			if (!routeSegmentsApplyWithParallelSlots(routeSegments, route.routeSegments)) continue;
 			const currentScore = routeSpecificity(route);
@@ -11383,16 +11528,16 @@ function hasOwnProperty(source, key) {
 	return Boolean(source && Object.prototype.hasOwnProperty.call(source, key));
 }
 function hasOpenGraphImages(metadata) {
-	return hasOwnProperty(metadata?.openGraph, "images");
+	return hasOwnProperty(metadata === null || metadata === void 0 ? void 0 : metadata.openGraph, "images");
 }
 function hasTwitterImages(metadata) {
-	return hasOwnProperty(metadata?.twitter, "images");
+	return hasOwnProperty(metadata === null || metadata === void 0 ? void 0 : metadata.twitter, "images");
 }
 function hasIcons(metadata) {
-	return Boolean(metadata?.icons);
+	return Boolean(metadata === null || metadata === void 0 ? void 0 : metadata.icons);
 }
 function getMetadataSourceForRoute(route, options, fallbackMetadata) {
-	if (!options?.metadataSources) return fallbackMetadata;
+	if (!(options === null || options === void 0 ? void 0 : options.metadataSources)) return fallbackMetadata;
 	if (!route.routeSegments) return null;
 	for (let index = options.metadataSources.length - 1; index >= 0; index--) {
 		const source = options.metadataSources[index];
@@ -11467,6 +11612,7 @@ async function resolveRouteHeadData(route, params) {
 	const metadataSources = await resolveDynamicImageMetadataSources(route, params);
 	const resolvedHeadData = [];
 	for (const metadataSource of metadataSources) {
+		var _metadataSource$conte;
 		let hrefBase = resolvedUrl;
 		if (metadataSource.id !== void 0) {
 			const normalizedId = normalizeMetadataImageId(route, metadataSource.id);
@@ -11474,11 +11620,11 @@ async function resolveRouteHeadData(route, params) {
 			hrefBase = `${resolvedUrl}/${normalizedId}`;
 		}
 		const href = withContentHash(hrefBase, route.contentHash);
-		const contentType = metadataSource.contentType ?? route.contentType;
+		const contentType = (_metadataSource$conte = metadataSource.contentType) !== null && _metadataSource$conte !== void 0 ? _metadataSource$conte : route.contentType;
 		const size = metadataSource.size;
 		if (routeKind === "icon" || routeKind === "apple") {
 			let sizes;
-			if (size?.width !== void 0 && size.height !== void 0) sizes = `${size.width}x${size.height}`;
+			if ((size === null || size === void 0 ? void 0 : size.width) !== void 0 && size.height !== void 0) sizes = `${size.width}x${size.height}`;
 			resolvedHeadData.push({
 				kind: routeKind,
 				href,
@@ -11491,9 +11637,9 @@ async function resolveRouteHeadData(route, params) {
 			kind: routeKind,
 			href,
 			alt: metadataSource.alt,
-			height: size?.height,
+			height: size === null || size === void 0 ? void 0 : size.height,
 			type: contentType,
-			width: size?.width
+			width: size === null || size === void 0 ? void 0 : size.width
 		});
 	}
 	return resolvedHeadData;
@@ -11502,8 +11648,9 @@ async function resolveHeadDataList(routes, params) {
 	return (await Promise.all(routes.map((route) => resolveRouteHeadData(route, params)))).flat();
 }
 async function applyFileBasedMetadata(metadata, routePath, params, metadataRoutes, options) {
+	var _options$routeSegment;
 	if (!metadataRoutes || metadataRoutes.length === 0) return metadata;
-	const routeSegments = options?.routeSegments ?? null;
+	const routeSegments = (_options$routeSegment = options === null || options === void 0 ? void 0 : options.routeSegments) !== null && _options$routeSegment !== void 0 ? _options$routeSegment : null;
 	const faviconRoutes = selectDeepestRoutes(metadataRoutes, "favicon", routePath, params, routeSegments);
 	const iconRoutes = selectDeepestRoutes(metadataRoutes, "icon", routePath, params, routeSegments).filter((route) => !iconRouteHasExplicitIconsAtSource(route, options, metadata));
 	const appleRoutes = selectDeepestRoutes(metadataRoutes, "apple", routePath, params, routeSegments).filter((route) => !iconRouteHasExplicitIconsAtSource(route, options, metadata));
@@ -11586,11 +11733,13 @@ async function applyFileBasedMetadata(metadata, routePath, params, metadataRoute
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-head.js
 function resolveActiveParallelRouteHeadInputs(options) {
-	return Object.entries(options.slots ?? {}).map(([slotKey, slot]) => {
+	var _options$slots;
+	return Object.entries((_options$slots = options.slots) !== null && _options$slots !== void 0 ? _options$slots : {}).map(([slotKey, slot]) => {
+		var _options$interceptLay, _options$interceptPar;
 		if (options.interceptSlotKey === slotKey && options.interceptPage) return {
-			layoutModules: options.interceptLayouts ?? [],
+			layoutModules: (_options$interceptLay = options.interceptLayouts) !== null && _options$interceptLay !== void 0 ? _options$interceptLay : [],
 			pageModule: options.interceptPage,
-			params: options.interceptParams ?? options.params,
+			params: (_options$interceptPar = options.interceptParams) !== null && _options$interceptPar !== void 0 ? _options$interceptPar : options.params,
 			routeSegments: options.routeSegments
 		};
 		return {
@@ -11607,7 +11756,7 @@ function isPresent(value) {
 function collectAppPageSearchParams(searchParams) {
 	const pageSearchParams = Object.create(null);
 	let hasSearchParams = false;
-	searchParams?.forEach((value, key) => {
+	searchParams === null || searchParams === void 0 || searchParams.forEach((value, key) => {
 		hasSearchParams = true;
 		const currentValue = pageSearchParams[key];
 		if (Array.isArray(currentValue)) {
@@ -11626,10 +11775,13 @@ function collectAppPageSearchParams(searchParams) {
 	};
 }
 function createMetadataSources(metadataResults, routeSegments, layoutTreePositions, pageMetadata, includePageSource) {
-	const metadataSources = metadataResults.map((metadata, index) => ({
-		routeSegments: routeSegments.slice(0, layoutTreePositions[index] ?? 0),
-		metadata
-	}));
+	const metadataSources = metadataResults.map((metadata, index) => {
+		var _layoutTreePositions$;
+		return {
+			routeSegments: routeSegments.slice(0, (_layoutTreePositions$ = layoutTreePositions[index]) !== null && _layoutTreePositions$ !== void 0 ? _layoutTreePositions$ : 0),
+			metadata
+		};
+	});
 	if (includePageSource) metadataSources.push({
 		routeSegments,
 		metadata: pageMetadata
@@ -11639,11 +11791,12 @@ function createMetadataSources(metadataResults, routeSegments, layoutTreePositio
 function createLayoutInputs(layoutModules, layoutTreePositions) {
 	const layoutInputs = [];
 	for (let index = 0; index < layoutModules.length; index++) {
+		var _layoutTreePositions$2;
 		const layoutModule = layoutModules[index];
 		if (!isPresent(layoutModule)) continue;
 		layoutInputs.push({
 			module: layoutModule,
-			treePosition: layoutTreePositions[index] ?? 0
+			treePosition: (_layoutTreePositions$2 = layoutTreePositions[index]) !== null && _layoutTreePositions$2 !== void 0 ? _layoutTreePositions$2 : 0
 		});
 	}
 	return layoutInputs;
@@ -11672,13 +11825,14 @@ async function resolveLayoutViewport(layoutInputs, params, routeSegments) {
 	}));
 }
 async function resolveParallelRouteHead(parallelRoute, fallbackParams, fallbackRouteSegments, pageSearchParams, parent) {
-	const params = parallelRoute.params ?? fallbackParams;
-	const routeSegments = parallelRoute.routeSegments ?? fallbackRouteSegments;
+	var _parallelRoute$params, _parallelRoute$routeS, _parallelRoute$layout;
+	const params = (_parallelRoute$params = parallelRoute.params) !== null && _parallelRoute$params !== void 0 ? _parallelRoute$params : fallbackParams;
+	const routeSegments = (_parallelRoute$routeS = parallelRoute.routeSegments) !== null && _parallelRoute$routeS !== void 0 ? _parallelRoute$routeS : fallbackRouteSegments;
 	const metadataResults = [];
 	const viewportResults = [];
 	const metadataSources = [];
 	let accumulatedMetadata = parent;
-	const layoutModules = [...parallelRoute.layoutModules ?? [], parallelRoute.layoutModule].filter(isPresent);
+	const layoutModules = [...(_parallelRoute$layout = parallelRoute.layoutModules) !== null && _parallelRoute$layout !== void 0 ? _parallelRoute$layout : [], parallelRoute.layoutModule].filter(isPresent);
 	const layoutViewportPromises = layoutModules.map((layoutModule) => resolveModuleViewport(layoutModule, params));
 	const pageViewportPromise = parallelRoute.pageModule ? resolveModuleViewport(parallelRoute.pageModule, params) : Promise.resolve(null);
 	for (const layoutViewportPromise of layoutViewportPromises) layoutViewportPromise.catch(() => null);
@@ -11716,8 +11870,9 @@ async function resolveAppPageHead(options) {
 	return await runWithFetchDedupe(() => resolveAppPageHeadInner(options));
 }
 async function resolveAppPageHeadInner(options) {
-	const routeSegments = options.routeSegments ?? [];
-	const layoutTreePositions = options.layoutTreePositions ?? [];
+	var _options$routeSegment, _options$layoutTreePo, _options$parallelRout;
+	const routeSegments = (_options$routeSegment = options.routeSegments) !== null && _options$routeSegment !== void 0 ? _options$routeSegment : [];
+	const layoutTreePositions = (_options$layoutTreePo = options.layoutTreePositions) !== null && _options$layoutTreePo !== void 0 ? _options$layoutTreePo : [];
 	const layoutInputs = createLayoutInputs(options.layoutModules, layoutTreePositions);
 	const layoutSourcePositions = layoutInputs.map((input) => input.treePosition);
 	const { hasSearchParams, pageSearchParams } = collectAppPageSearchParams(options.searchParams);
@@ -11729,7 +11884,7 @@ async function resolveAppPageHeadInner(options) {
 	pageParentPromise.catch(() => null);
 	const pageMetadataPromise = options.pageModule ? resolveModuleMetadata(options.pageModule, options.params, pageSearchParams, pageParentPromise) : Promise.resolve(null);
 	const pageViewportPromise = options.pageModule ? resolveModuleViewport(options.pageModule, options.params) : Promise.resolve(null);
-	const parallelRouteHeadPromise = Promise.all((options.parallelRoutes ?? []).map((parallelRoute) => resolveParallelRouteHead(parallelRoute, options.params, routeSegments, pageSearchParams, pageParentPromise)));
+	const parallelRouteHeadPromise = Promise.all(((_options$parallelRout = options.parallelRoutes) !== null && _options$parallelRout !== void 0 ? _options$parallelRout : []).map((parallelRoute) => resolveParallelRouteHead(parallelRoute, options.params, routeSegments, pageSearchParams, pageParentPromise)));
 	const [layoutMetadataResults, layoutViewportResults, pageMetadata, pageViewport, parallelRouteHeads] = await Promise.all([
 		layoutMetadataPromise,
 		layoutViewportPromise,
@@ -11780,13 +11935,15 @@ async function resolveAppPageHeadInner(options) {
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-boundary.js
 function resolveAppPageHttpAccessBoundaryComponent(options) {
+	var _options$routeForbidd, _options$routeUnautho, _options$routeNotFoun, _options$getDefaultEx;
 	let boundaryModule;
-	if (options.statusCode === 403) boundaryModule = options.routeForbiddenModule ?? options.rootForbiddenModule;
-	else if (options.statusCode === 401) boundaryModule = options.routeUnauthorizedModule ?? options.rootUnauthorizedModule;
-	else boundaryModule = options.routeNotFoundModule ?? options.rootNotFoundModule;
-	return options.getDefaultExport(boundaryModule) ?? null;
+	if (options.statusCode === 403) boundaryModule = (_options$routeForbidd = options.routeForbiddenModule) !== null && _options$routeForbidd !== void 0 ? _options$routeForbidd : options.rootForbiddenModule;
+	else if (options.statusCode === 401) boundaryModule = (_options$routeUnautho = options.routeUnauthorizedModule) !== null && _options$routeUnautho !== void 0 ? _options$routeUnautho : options.rootUnauthorizedModule;
+	else boundaryModule = (_options$routeNotFoun = options.routeNotFoundModule) !== null && _options$routeNotFoun !== void 0 ? _options$routeNotFoun : options.rootNotFoundModule;
+	return (_options$getDefaultEx = options.getDefaultExport(boundaryModule)) !== null && _options$getDefaultEx !== void 0 ? _options$getDefaultEx : null;
 }
 function resolveAppPageParentHttpAccessBoundaryModule(options) {
+	var _rootModule;
 	let routeModules = options.routeNotFoundModules;
 	let rootModule = options.rootNotFoundModule;
 	if (options.statusCode === 403) {
@@ -11800,15 +11957,16 @@ function resolveAppPageParentHttpAccessBoundaryModule(options) {
 		const module = routeModules[index];
 		if (module) return module;
 	}
-	return rootModule ?? null;
+	return (_rootModule = rootModule) !== null && _rootModule !== void 0 ? _rootModule : null;
 }
 function resolveAppPageErrorBoundary(options) {
+	var _options$errorModules;
 	const pageErrorComponent = options.getDefaultExport(options.pageErrorModule);
 	if (pageErrorComponent) return {
 		component: pageErrorComponent,
 		isGlobalError: false
 	};
-	const segmentErrorModules = options.errorModules ?? options.layoutErrorModules;
+	const segmentErrorModules = (_options$errorModules = options.errorModules) !== null && _options$errorModules !== void 0 ? _options$errorModules : options.layoutErrorModules;
 	if (segmentErrorModules) for (let index = segmentErrorModules.length - 1; index >= 0; index--) {
 		const segmentErrorComponent = options.getDefaultExport(segmentErrorModules[index]);
 		if (segmentErrorComponent) return {
@@ -11818,7 +11976,7 @@ function resolveAppPageErrorBoundary(options) {
 	}
 	const globalErrorComponent = options.getDefaultExport(options.globalErrorModule);
 	return {
-		component: globalErrorComponent ?? null,
+		component: globalErrorComponent !== null && globalErrorComponent !== void 0 ? globalErrorComponent : null,
 		isGlobalError: Boolean(globalErrorComponent)
 	};
 }
@@ -11831,7 +11989,8 @@ function wrapAppPageBoundaryElement(options) {
 		const asyncParams = options.makeThenableParams(resolveAppPageSegmentParams(options.routeSegments, treePosition, options.matchedParams));
 		element = options.renderLayout(layoutComponent, element, asyncParams);
 		if (options.isRscRequest && options.renderLayoutSegmentProvider && options.resolveChildSegments) {
-			const childSegments = options.resolveChildSegments(options.routeSegments ?? [], treePosition, options.matchedParams);
+			var _options$routeSegment;
+			const childSegments = options.resolveChildSegments((_options$routeSegment = options.routeSegments) !== null && _options$routeSegment !== void 0 ? _options$routeSegment : [], treePosition, options.matchedParams);
 			element = options.renderLayoutSegmentProvider({ children: childSegments }, element);
 		}
 	}
@@ -11841,11 +12000,12 @@ function wrapAppPageBoundaryElement(options) {
 async function renderAppPageBoundaryResponse(options) {
 	const rscStream = runWithFetchDedupe(() => options.renderToReadableStream(options.element, { onError: options.createRscOnErrorHandler() }));
 	if (options.isRscRequest) {
+		var _options$middlewareHe;
 		const headers = new Headers({
 			"Content-Type": "text/x-component; charset=utf-8",
 			Vary: VINEXT_RSC_VARY_HEADER
 		});
-		mergeMiddlewareResponseHeaders(headers, options.middlewareHeaders ?? null);
+		mergeMiddlewareResponseHeaders(headers, (_options$middlewareHe = options.middlewareHeaders) !== null && _options$middlewareHe !== void 0 ? _options$middlewareHe : null);
 		return new Response(rscStream, {
 			status: options.status,
 			headers
@@ -11863,8 +12023,9 @@ function createAppPageFontData(options) {
 	};
 }
 async function renderAppPageHtmlStream(options) {
+	var _options$formState;
 	const ssrOptions = {
-		formState: options.formState ?? null,
+		formState: (_options$formState = options.formState) !== null && _options$formState !== void 0 ? _options$formState : null,
 		scriptNonce: options.scriptNonce,
 		sideStream: options.sideStream,
 		capturedRscDataRef: options.capturedRscDataRef,
@@ -11908,6 +12069,7 @@ function deferUntilStreamConsumed(stream, onFlush) {
 	});
 }
 async function renderAppPageHtmlResponse(options) {
+	var _options$middlewareHe;
 	const safeStream = deferUntilStreamConsumed(await renderAppPageHtmlStream(options), () => {
 		options.clearRequestContext();
 	});
@@ -11916,7 +12078,7 @@ async function renderAppPageHtmlResponse(options) {
 		Vary: VINEXT_RSC_VARY_HEADER
 	});
 	if (options.fontLinkHeader) headers.set("Link", options.fontLinkHeader);
-	mergeMiddlewareResponseHeaders(headers, options.middlewareHeaders ?? null);
+	mergeMiddlewareResponseHeaders(headers, (_options$middlewareHe = options.middlewareHeaders) !== null && _options$middlewareHe !== void 0 ? _options$middlewareHe : null);
 	return new Response(safeStream, {
 		status: options.status,
 		headers
@@ -11924,8 +12086,9 @@ async function renderAppPageHtmlResponse(options) {
 }
 async function renderAppPageHtmlStreamWithRecovery(options) {
 	try {
+		var _options$onShellRende;
 		const htmlStream = await options.renderHtmlStream();
-		options.onShellRendered?.();
+		(_options$onShellRende = options.onShellRendered) === null || _options$onShellRende === void 0 || _options$onShellRende.call(options);
 		return {
 			htmlStream,
 			response: null
@@ -11968,9 +12131,11 @@ function shouldRerenderAppPageWithGlobalError(options) {
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-boundary-render.js
 function getDefaultExport(module) {
-	return module?.default ?? null;
+	var _module$default;
+	return (_module$default = module === null || module === void 0 ? void 0 : module.default) !== null && _module$default !== void 0 ? _module$default : null;
 }
 function wrapRenderedBoundaryElement(options) {
+	var _options$routeSegment;
 	return wrapAppPageBoundaryElement({
 		element: options.element,
 		getDefaultExport,
@@ -11997,7 +12162,7 @@ function wrapRenderedBoundaryElement(options) {
 			return (0, import_react_react_server.createElement)(LayoutSegmentProvider, { segmentMap }, children);
 		},
 		resolveChildSegments: options.resolveChildSegments,
-		routeSegments: options.routeSegments ?? [],
+		routeSegments: (_options$routeSegment = options.routeSegments) !== null && _options$routeSegment !== void 0 ? _options$routeSegment : [],
 		skipLayoutWrapping: options.skipLayoutWrapping
 	});
 }
@@ -12012,25 +12177,28 @@ function createAppPageBoundaryLayoutEntries(route, layoutModules) {
 	});
 }
 function resolveHttpAccessFallbackHeadRouteSegments(route, layoutModules) {
-	if (!route?.routeSegments) return;
+	var _route$layoutTreePosi, _route$layoutTreePosi2;
+	if (!(route === null || route === void 0 ? void 0 : route.routeSegments)) return;
 	if (!route.layouts || layoutModules.length >= route.layouts.length) return route.routeSegments;
 	const lastIncludedLayoutIndex = layoutModules.length - 1;
 	if (lastIncludedLayoutIndex < 0) return [];
-	const segmentCount = route.layoutTreePositions?.[lastIncludedLayoutIndex] ?? 0;
+	const segmentCount = (_route$layoutTreePosi = (_route$layoutTreePosi2 = route.layoutTreePositions) === null || _route$layoutTreePosi2 === void 0 ? void 0 : _route$layoutTreePosi2[lastIncludedLayoutIndex]) !== null && _route$layoutTreePosi !== void 0 ? _route$layoutTreePosi : 0;
 	return route.routeSegments.slice(0, segmentCount);
 }
 function resolveHttpAccessFallbackHeadLayoutTreePositions(route, layoutModules) {
-	if (!route?.layouts || layoutModules.length >= route.layouts.length) return route?.layoutTreePositions;
-	return route.layoutTreePositions?.slice(0, layoutModules.length);
+	var _route$layoutTreePosi3;
+	if (!(route === null || route === void 0 ? void 0 : route.layouts) || layoutModules.length >= route.layouts.length) return route === null || route === void 0 ? void 0 : route.layoutTreePositions;
+	return (_route$layoutTreePosi3 = route.layoutTreePositions) === null || _route$layoutTreePosi3 === void 0 ? void 0 : _route$layoutTreePosi3.slice(0, layoutModules.length);
 }
 function createAppPageBoundaryRscPayload(options) {
+	var _layoutEntries$0$tree, _layoutEntries$;
 	const routeId = AppElementsWire.encodeRouteId(options.pathname, null);
 	const layoutEntries = createAppPageBoundaryLayoutEntries(options.route, options.layoutModules);
 	return {
 		...AppElementsWire.createMetadataEntries({
 			interceptionContext: null,
 			layoutIds: layoutEntries.map((entry) => entry.id),
-			rootLayoutTreePath: layoutEntries[0]?.treePath ?? null,
+			rootLayoutTreePath: (_layoutEntries$0$tree = (_layoutEntries$ = layoutEntries[0]) === null || _layoutEntries$ === void 0 ? void 0 : _layoutEntries$.treePath) !== null && _layoutEntries$0$tree !== void 0 ? _layoutEntries$0$tree : null,
 			routeId
 		}),
 		[routeId]: options.element
@@ -12059,7 +12227,8 @@ async function renderAppPageBoundaryElementResponse(options) {
 			});
 		},
 		createRscOnErrorHandler() {
-			return options.createRscOnErrorHandler(pathname, options.routePattern ?? pathname);
+			var _options$routePattern;
+			return options.createRscOnErrorHandler(pathname, (_options$routePattern = options.routePattern) !== null && _options$routePattern !== void 0 ? _options$routePattern : pathname);
 		},
 		element: createAppPageBoundaryRscPayload({
 			element: options.element,
@@ -12074,25 +12243,26 @@ async function renderAppPageBoundaryElementResponse(options) {
 	});
 }
 async function renderAppPageHttpAccessFallback(options) {
-	const boundaryComponent = options.boundaryComponent ?? resolveAppPageHttpAccessBoundaryComponent({
+	var _options$boundaryComp, _options$route, _options$route2, _options$route3, _ref, _options$layoutModule, _options$route4, _options$route$patter, _options$route5, _options$route6, _options$route7, _options$route8;
+	const boundaryComponent = (_options$boundaryComp = options.boundaryComponent) !== null && _options$boundaryComp !== void 0 ? _options$boundaryComp : resolveAppPageHttpAccessBoundaryComponent({
 		getDefaultExport,
 		rootForbiddenModule: options.rootForbiddenModule,
 		rootNotFoundModule: options.rootNotFoundModule,
 		rootUnauthorizedModule: options.rootUnauthorizedModule,
-		routeForbiddenModule: options.route?.forbidden,
-		routeNotFoundModule: options.route?.notFound,
-		routeUnauthorizedModule: options.route?.unauthorized,
+		routeForbiddenModule: (_options$route = options.route) === null || _options$route === void 0 ? void 0 : _options$route.forbidden,
+		routeNotFoundModule: (_options$route2 = options.route) === null || _options$route2 === void 0 ? void 0 : _options$route2.notFound,
+		routeUnauthorizedModule: (_options$route3 = options.route) === null || _options$route3 === void 0 ? void 0 : _options$route3.unauthorized,
 		statusCode: options.statusCode
 	});
 	if (!boundaryComponent) return null;
-	const layoutModules = options.layoutModules ?? options.route?.layouts ?? options.rootLayouts;
+	const layoutModules = (_ref = (_options$layoutModule = options.layoutModules) !== null && _options$layoutModule !== void 0 ? _options$layoutModule : (_options$route4 = options.route) === null || _options$route4 === void 0 ? void 0 : _options$route4.layouts) !== null && _ref !== void 0 ? _ref : options.rootLayouts;
 	const routeSegments = resolveHttpAccessFallbackHeadRouteSegments(options.route, layoutModules);
 	const { metadata, viewport } = await resolveAppPageHead({
 		layoutModules,
 		layoutTreePositions: resolveHttpAccessFallbackHeadLayoutTreePositions(options.route, layoutModules),
 		metadataRoutes: options.metadataRoutes,
 		params: options.matchedParams,
-		routePath: options.route?.pattern ?? new URL(options.requestUrl).pathname,
+		routePath: (_options$route$patter = (_options$route5 = options.route) === null || _options$route5 === void 0 ? void 0 : _options$route5.pattern) !== null && _options$route$patter !== void 0 ? _options$route$patter : new URL(options.requestUrl).pathname,
 		routeSegments
 	});
 	const headElements = [(0, import_react_react_server.createElement)("meta", {
@@ -12117,49 +12287,51 @@ async function renderAppPageHttpAccessFallback(options) {
 		includeGlobalErrorBoundary: true,
 		isRscRequest: options.isRscRequest,
 		layoutModules,
-		layoutTreePositions: options.route?.layoutTreePositions,
+		layoutTreePositions: (_options$route6 = options.route) === null || _options$route6 === void 0 ? void 0 : _options$route6.layoutTreePositions,
 		makeThenableParams: options.makeThenableParams,
 		matchedParams: options.matchedParams,
 		resolveChildSegments: options.resolveChildSegments,
-		routeSegments: options.route?.routeSegments
+		routeSegments: (_options$route7 = options.route) === null || _options$route7 === void 0 ? void 0 : _options$route7.routeSegments
 	});
 	return renderAppPageBoundaryElementResponse({
 		...options,
 		element,
 		layoutModules,
 		route: options.route,
-		routePattern: options.route?.pattern,
+		routePattern: (_options$route8 = options.route) === null || _options$route8 === void 0 ? void 0 : _options$route8.pattern,
 		status: options.statusCode
 	});
 }
 async function renderAppPageErrorBoundary(options) {
+	var _options$route9, _options$route10, _options$route11, _ref2, _options$matchedParam, _options$route12, _options$route$layout, _options$route13, _options$route18, _options$route19, _options$route20;
 	const errorBoundary = resolveAppPageErrorBoundary({
 		getDefaultExport,
-		errorModules: options.route?.errorPaths,
+		errorModules: (_options$route9 = options.route) === null || _options$route9 === void 0 ? void 0 : _options$route9.errorPaths,
 		globalErrorModule: options.globalErrorModule,
-		layoutErrorModules: options.route?.errors,
-		pageErrorModule: options.route?.error
+		layoutErrorModules: (_options$route10 = options.route) === null || _options$route10 === void 0 ? void 0 : _options$route10.errors,
+		pageErrorModule: (_options$route11 = options.route) === null || _options$route11 === void 0 ? void 0 : _options$route11.error
 	});
 	if (!errorBoundary.component) return null;
 	const rawError = options.error instanceof Error ? options.error : new Error(String(options.error));
 	rewriteClientHookError(rawError);
 	const errorObject = options.sanitizeErrorForClient(rawError);
-	const matchedParams = options.matchedParams ?? options.route?.params ?? {};
-	const layoutModules = options.route?.layouts ?? options.rootLayouts;
+	const matchedParams = (_ref2 = (_options$matchedParam = options.matchedParams) !== null && _options$matchedParam !== void 0 ? _options$matchedParam : (_options$route12 = options.route) === null || _options$route12 === void 0 ? void 0 : _options$route12.params) !== null && _ref2 !== void 0 ? _ref2 : {};
+	const layoutModules = (_options$route$layout = (_options$route13 = options.route) === null || _options$route13 === void 0 ? void 0 : _options$route13.layouts) !== null && _options$route$layout !== void 0 ? _options$route$layout : options.rootLayouts;
 	const pathname = new URL(options.requestUrl).pathname;
 	const headElements = [(0, import_react_react_server.createElement)("meta", {
 		charSet: "utf-8",
 		key: "charset"
 	})];
 	if (!errorBoundary.isGlobalError) try {
+		var _options$route14, _options$route$patter2, _options$route15, _options$route16;
 		const { metadata, viewport } = await resolveAppPageHead({
 			fallbackOnFileMetadataError: true,
 			layoutModules,
-			layoutTreePositions: options.route?.layoutTreePositions,
+			layoutTreePositions: (_options$route14 = options.route) === null || _options$route14 === void 0 ? void 0 : _options$route14.layoutTreePositions,
 			metadataRoutes: options.metadataRoutes,
 			params: matchedParams,
-			routePath: options.route?.pattern ?? pathname,
-			routeSegments: options.route?.routeSegments
+			routePath: (_options$route$patter2 = (_options$route15 = options.route) === null || _options$route15 === void 0 ? void 0 : _options$route15.pattern) !== null && _options$route$patter2 !== void 0 ? _options$route$patter2 : pathname,
+			routeSegments: (_options$route16 = options.route) === null || _options$route16 === void 0 ? void 0 : _options$route16.routeSegments
 		});
 		if (metadata) headElements.push((0, import_react_react_server.createElement)(MetadataHead, {
 			key: "metadata",
@@ -12170,7 +12342,8 @@ async function renderAppPageErrorBoundary(options) {
 			viewport
 		}));
 	} catch (error) {
-		console.error(`[vinext] App page error boundary head resolution failed for ${options.route?.pattern ?? pathname}:`, error);
+		var _options$route$patter3, _options$route17;
+		console.error(`[vinext] App page error boundary head resolution failed for ${(_options$route$patter3 = (_options$route17 = options.route) === null || _options$route17 === void 0 ? void 0 : _options$route17.pattern) !== null && _options$route$patter3 !== void 0 ? _options$route$patter3 : pathname}:`, error);
 	}
 	const element = wrapRenderedBoundaryElement({
 		element: (0, import_react_react_server.createElement)(import_react_react_server.Fragment, null, ...headElements, (0, import_react_react_server.createElement)(errorBoundary.component, { error: errorObject })),
@@ -12178,11 +12351,11 @@ async function renderAppPageErrorBoundary(options) {
 		includeGlobalErrorBoundary: !errorBoundary.isGlobalError,
 		isRscRequest: options.isRscRequest,
 		layoutModules,
-		layoutTreePositions: options.route?.layoutTreePositions,
+		layoutTreePositions: (_options$route18 = options.route) === null || _options$route18 === void 0 ? void 0 : _options$route18.layoutTreePositions,
 		makeThenableParams: options.makeThenableParams,
 		matchedParams,
 		resolveChildSegments: options.resolveChildSegments,
-		routeSegments: options.route?.routeSegments,
+		routeSegments: (_options$route19 = options.route) === null || _options$route19 === void 0 ? void 0 : _options$route19.routeSegments,
 		skipLayoutWrapping: errorBoundary.isGlobalError
 	});
 	return renderAppPageBoundaryElementResponse({
@@ -12190,7 +12363,7 @@ async function renderAppPageErrorBoundary(options) {
 		element,
 		layoutModules,
 		route: options.route,
-		routePattern: options.route?.pattern,
+		routePattern: (_options$route20 = options.route) === null || _options$route20 === void 0 ? void 0 : _options$route20.pattern,
 		status: 200
 	});
 }
@@ -12210,8 +12383,9 @@ function createAppFallbackRenderer(options) {
 	const { rootForbiddenModule, rootLayouts, rootNotFoundModule, rootUnauthorizedModule } = rootBoundaries;
 	return {
 		renderHttpAccessFallback(route, statusCode, isRscRequest, request, opts, scriptNonce, middlewareContext) {
+			var _opts$boundaryCompone, _opts$layouts, _ref, _opts$matchedParams;
 			return renderAppPageHttpAccessFallback({
-				boundaryComponent: opts?.boundaryComponent ?? null,
+				boundaryComponent: (_opts$boundaryCompone = opts === null || opts === void 0 ? void 0 : opts.boundaryComponent) !== null && _opts$boundaryCompone !== void 0 ? _opts$boundaryCompone : null,
 				buildFontLinkHeader: fontProviders.buildFontLinkHeader,
 				clearRequestContext,
 				createRscOnErrorHandler(pathname, routePath) {
@@ -12223,11 +12397,11 @@ function createAppFallbackRenderer(options) {
 				getNavigationContext,
 				globalErrorModule,
 				isRscRequest,
-				layoutModules: opts?.layouts ?? null,
+				layoutModules: (_opts$layouts = opts === null || opts === void 0 ? void 0 : opts.layouts) !== null && _opts$layouts !== void 0 ? _opts$layouts : null,
 				loadSsrHandler: ssrLoader,
 				makeThenableParams,
-				matchedParams: opts?.matchedParams ?? route?.params ?? {},
-				middlewareContext: middlewareContext ?? EMPTY_MW_CTX,
+				matchedParams: (_ref = (_opts$matchedParams = opts === null || opts === void 0 ? void 0 : opts.matchedParams) !== null && _opts$matchedParams !== void 0 ? _opts$matchedParams : route === null || route === void 0 ? void 0 : route.params) !== null && _ref !== void 0 ? _ref : {},
+				middlewareContext: middlewareContext !== null && middlewareContext !== void 0 ? middlewareContext : EMPTY_MW_CTX,
 				metadataRoutes,
 				requestUrl: request.url,
 				resolveChildSegments,
@@ -12245,6 +12419,7 @@ function createAppFallbackRenderer(options) {
 			return this.renderHttpAccessFallback(route, 404, isRscRequest, request, { matchedParams }, scriptNonce, middlewareContext);
 		},
 		renderErrorBoundary(route, error, isRscRequest, request, matchedParams, scriptNonce, middlewareContext) {
+			var _ref2;
 			return renderAppPageErrorBoundary({
 				buildFontLinkHeader: fontProviders.buildFontLinkHeader,
 				clearRequestContext,
@@ -12260,8 +12435,8 @@ function createAppFallbackRenderer(options) {
 				isRscRequest,
 				loadSsrHandler: ssrLoader,
 				makeThenableParams,
-				matchedParams: matchedParams ?? route?.params ?? {},
-				middlewareContext: middlewareContext ?? EMPTY_MW_CTX,
+				matchedParams: (_ref2 = matchedParams !== null && matchedParams !== void 0 ? matchedParams : route === null || route === void 0 ? void 0 : route.params) !== null && _ref2 !== void 0 ? _ref2 : {},
+				middlewareContext: middlewareContext !== null && middlewareContext !== void 0 ? middlewareContext : EMPTY_MW_CTX,
 				metadataRoutes,
 				requestUrl: request.url,
 				resolveChildSegments,
@@ -12293,17 +12468,23 @@ function createAppFallbackRenderer(options) {
 * {@link https://github.com/vercel/next.js/blob/canary/packages/next/src/server/app-render/create-metadata.tsx|create-metadata.tsx}.
 */
 async function buildPageElements$1(options) {
+	var _route$page, _opts$interceptLayout, _opts$interceptPage, _opts$interceptParams, _opts$interceptSlotKe, _route$routeSegments, _route$slots, _route$routeSegments2, _opts$interceptionCon2;
 	const { route, params, routePath, pageRequest, globalErrorModule, rootNotFoundModule, rootForbiddenModule, rootUnauthorizedModule, metadataRoutes } = options;
 	const { opts, searchParams, isRscRequest, mountedSlotsHeader, renderMode = APP_RSC_RENDER_MODE_NAVIGATION } = pageRequest;
 	const pageModule = route.page;
-	const PageComponent = pageModule?.default;
+	const PageComponent = pageModule === null || pageModule === void 0 ? void 0 : pageModule.default;
 	if (!!pageModule && !PageComponent) {
-		const interceptionContext = opts?.interceptionContext ?? null;
+		var _opts$interceptionCon, _route$ids$layouts, _route$ids, _route$layouts;
+		const interceptionContext = (_opts$interceptionCon = opts === null || opts === void 0 ? void 0 : opts.interceptionContext) !== null && _opts$interceptionCon !== void 0 ? _opts$interceptionCon : null;
 		const noExportRouteId = AppElementsWire.encodeRouteId(routePath, interceptionContext);
 		let noExportRootLayout = null;
-		const noExportLayoutIds = route.ids?.layouts ?? route.layouts.map((_, index) => AppElementsWire.encodeLayoutId(createAppPageTreePath(route.routeSegments, route.layoutTreePositions?.[index] ?? 0)));
-		if (route.layouts?.length > 0) {
-			const treePosition = route.layoutTreePositions?.[0] ?? 0;
+		const noExportLayoutIds = (_route$ids$layouts = (_route$ids = route.ids) === null || _route$ids === void 0 ? void 0 : _route$ids.layouts) !== null && _route$ids$layouts !== void 0 ? _route$ids$layouts : route.layouts.map((_, index) => {
+			var _route$layoutTreePosi, _route$layoutTreePosi2;
+			return AppElementsWire.encodeLayoutId(createAppPageTreePath(route.routeSegments, (_route$layoutTreePosi = (_route$layoutTreePosi2 = route.layoutTreePositions) === null || _route$layoutTreePosi2 === void 0 ? void 0 : _route$layoutTreePosi2[index]) !== null && _route$layoutTreePosi !== void 0 ? _route$layoutTreePosi : 0));
+		});
+		if (((_route$layouts = route.layouts) === null || _route$layouts === void 0 ? void 0 : _route$layouts.length) > 0) {
+			var _route$layoutTreePosi3, _route$layoutTreePosi4;
+			const treePosition = (_route$layoutTreePosi3 = (_route$layoutTreePosi4 = route.layoutTreePositions) === null || _route$layoutTreePosi4 === void 0 ? void 0 : _route$layoutTreePosi4[0]) !== null && _route$layoutTreePosi3 !== void 0 ? _route$layoutTreePosi3 : 0;
 			noExportRootLayout = createAppPageTreePath(route.routeSegments, treePosition);
 		}
 		return {
@@ -12320,19 +12501,19 @@ async function buildPageElements$1(options) {
 		layoutModules: route.layouts,
 		layoutTreePositions: route.layoutTreePositions,
 		metadataRoutes,
-		pageModule: route.page ?? null,
+		pageModule: (_route$page = route.page) !== null && _route$page !== void 0 ? _route$page : null,
 		parallelRoutes: resolveActiveParallelRouteHeadInputs({
-			interceptLayouts: opts?.interceptLayouts ?? null,
-			interceptPage: opts?.interceptPage ?? null,
-			interceptParams: opts?.interceptParams ?? null,
-			interceptSlotKey: opts?.interceptSlotKey ?? null,
+			interceptLayouts: (_opts$interceptLayout = opts === null || opts === void 0 ? void 0 : opts.interceptLayouts) !== null && _opts$interceptLayout !== void 0 ? _opts$interceptLayout : null,
+			interceptPage: (_opts$interceptPage = opts === null || opts === void 0 ? void 0 : opts.interceptPage) !== null && _opts$interceptPage !== void 0 ? _opts$interceptPage : null,
+			interceptParams: (_opts$interceptParams = opts === null || opts === void 0 ? void 0 : opts.interceptParams) !== null && _opts$interceptParams !== void 0 ? _opts$interceptParams : null,
+			interceptSlotKey: (_opts$interceptSlotKe = opts === null || opts === void 0 ? void 0 : opts.interceptSlotKey) !== null && _opts$interceptSlotKe !== void 0 ? _opts$interceptSlotKe : null,
 			params,
-			routeSegments: route.routeSegments ?? [],
-			slots: route.slots ?? null
+			routeSegments: (_route$routeSegments = route.routeSegments) !== null && _route$routeSegments !== void 0 ? _route$routeSegments : [],
+			slots: (_route$slots = route.slots) !== null && _route$slots !== void 0 ? _route$slots : null
 		}),
 		params,
 		routePath: route.pattern,
-		routeSegments: route.routeSegments ?? null,
+		routeSegments: (_route$routeSegments2 = route.routeSegments) !== null && _route$routeSegments2 !== void 0 ? _route$routeSegments2 : null,
 		searchParams
 	});
 	const pageProps = { params: makeThenableParams(params) };
@@ -12344,18 +12525,18 @@ async function buildPageElements$1(options) {
 	const slotOverrides = buildSlotOverrides(route, params, routePath, opts);
 	return buildAppPageElements({
 		element: PageComponent ? (0, import_react_react_server.createElement)(PageComponent, pageProps) : null,
-		globalErrorModule: globalErrorModule ?? null,
+		globalErrorModule: globalErrorModule !== null && globalErrorModule !== void 0 ? globalErrorModule : null,
 		isRscRequest,
 		mountedSlotIds,
 		makeThenableParams,
 		matchedParams: params,
 		resolvedMetadata,
 		resolvedViewport,
-		interceptionContext: opts?.interceptionContext ?? null,
+		interceptionContext: (_opts$interceptionCon2 = opts === null || opts === void 0 ? void 0 : opts.interceptionContext) !== null && _opts$interceptionCon2 !== void 0 ? _opts$interceptionCon2 : null,
 		routePath,
-		rootNotFoundModule: rootNotFoundModule ?? null,
-		rootForbiddenModule: rootForbiddenModule ?? null,
-		rootUnauthorizedModule: rootUnauthorizedModule ?? null,
+		rootNotFoundModule: rootNotFoundModule !== null && rootNotFoundModule !== void 0 ? rootNotFoundModule : null,
+		rootForbiddenModule: rootForbiddenModule !== null && rootForbiddenModule !== void 0 ? rootForbiddenModule : null,
+		rootUnauthorizedModule: rootUnauthorizedModule !== null && rootUnauthorizedModule !== void 0 ? rootUnauthorizedModule : null,
 		route,
 		slotOverrides,
 		renderMode
@@ -12410,6 +12591,7 @@ function collectParamNameSet(params) {
 }
 //#endregion
 //#region node_modules/vinext/dist/server/isr-cache.js
+var _g$_PENDING_REGEN_KEY, _g$_REVALIDATE_KEY;
 /**
 * ISR (Incremental Static Regeneration) cache layer.
 *
@@ -12450,12 +12632,12 @@ async function isrSet(key, data, revalidateSeconds, tags, expireSeconds) {
 			expire: expireSeconds
 		},
 		revalidate: revalidateSeconds,
-		tags: tags ?? []
+		tags: tags !== null && tags !== void 0 ? tags : []
 	});
 }
 var _PENDING_REGEN_KEY = Symbol.for("vinext.isrCache.pendingRegenerations");
 var _g$1 = globalThis;
-var pendingRegenerations = _g$1[_PENDING_REGEN_KEY] ?? (_g$1[_PENDING_REGEN_KEY] = /* @__PURE__ */ new Map());
+var pendingRegenerations = (_g$_PENDING_REGEN_KEY = _g$1[_PENDING_REGEN_KEY]) !== null && _g$_PENDING_REGEN_KEY !== void 0 ? _g$_PENDING_REGEN_KEY : _g$1[_PENDING_REGEN_KEY] = /* @__PURE__ */ new Map();
 /**
 * Trigger a background regeneration for a cache key.
 *
@@ -12471,6 +12653,7 @@ var pendingRegenerations = _g$1[_PENDING_REGEN_KEY] ?? (_g$1[_PENDING_REGEN_KEY]
 * `revalidateReason: "stale"`.
 */
 function triggerBackgroundRegeneration(key, renderFn, errorContext) {
+	var _getRequestExecutionC;
 	if (pendingRegenerations.has(key)) return;
 	const promise = renderFn().catch((err) => {
 		console.error(`[vinext] ISR background regeneration failed for ${key}:`, err);
@@ -12488,7 +12671,7 @@ function triggerBackgroundRegeneration(key, renderFn, errorContext) {
 		pendingRegenerations.delete(key);
 	});
 	pendingRegenerations.set(key, promise);
-	getRequestExecutionContext()?.waitUntil(promise);
+	(_getRequestExecutionC = getRequestExecutionContext()) === null || _getRequestExecutionC === void 0 || _getRequestExecutionC.waitUntil(promise);
 }
 /**
 * Build a CachedAppPageValue for the App Router ISR cache.
@@ -12520,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "d8540892-8409-4fd5-9093-d98f49052445") {
+function appIsrCacheKey(pathname, suffix, buildId = "07c7f905-6db7-4518-901a-4bc17b2de425") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -12543,7 +12726,7 @@ function appIsrRouteKey(pathname) {
 	return appIsrCacheKey(pathname, "route");
 }
 var _REVALIDATE_KEY = Symbol.for("vinext.isrCache.revalidateDurations");
-_g$1[_REVALIDATE_KEY] ?? (_g$1[_REVALIDATE_KEY] = /* @__PURE__ */ new Map());
+(_g$_REVALIDATE_KEY = _g$1[_REVALIDATE_KEY]) !== null && _g$_REVALIDATE_KEY !== void 0 || (_g$1[_REVALIDATE_KEY] = /* @__PURE__ */ new Map());
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-cache.js
 var NO_STORE_CACHE_CONTROL = "no-store, must-revalidate";
@@ -12551,6 +12734,7 @@ function buildAppPageCacheControl(cacheState, revalidateSeconds, expireSeconds) 
 	return buildCachedRevalidateCacheControl(cacheState, revalidateSeconds, expireSeconds);
 }
 function buildAppPageCachedHeaders(options) {
+	var _options$middlewareHe;
 	const headers = new Headers({
 		"Cache-Control": options.cacheControl,
 		"Content-Type": options.contentType,
@@ -12558,18 +12742,18 @@ function buildAppPageCachedHeaders(options) {
 		[VINEXT_CACHE_HEADER]: options.cacheState
 	});
 	if (options.mountedSlotsHeader) headers.set(VINEXT_MOUNTED_SLOTS_HEADER, options.mountedSlotsHeader);
-	mergeMiddlewareResponseHeaders(headers, options.middlewareHeaders ?? null);
+	mergeMiddlewareResponseHeaders(headers, (_options$middlewareHe = options.middlewareHeaders) !== null && _options$middlewareHe !== void 0 ? _options$middlewareHe : null);
 	return headers;
 }
 function getCachedAppPageValue(entry) {
-	return entry?.value.value && entry.value.value.kind === "APP_PAGE" ? entry.value.value : null;
+	return (entry === null || entry === void 0 ? void 0 : entry.value.value) && entry.value.value.kind === "APP_PAGE" ? entry.value.value : null;
 }
 function resolveAppPageCacheWritePolicy(options) {
 	let revalidateSeconds = options.revalidateSeconds;
 	let expireSeconds = options.expireSeconds;
 	const requestCacheLife = options.requestCacheLife;
-	if (requestCacheLife?.revalidate !== void 0) revalidateSeconds = revalidateSeconds === null ? requestCacheLife.revalidate : Math.min(revalidateSeconds, requestCacheLife.revalidate);
-	if (requestCacheLife?.expire !== void 0) expireSeconds = requestCacheLife.expire;
+	if ((requestCacheLife === null || requestCacheLife === void 0 ? void 0 : requestCacheLife.revalidate) !== void 0) revalidateSeconds = revalidateSeconds === null ? requestCacheLife.revalidate : Math.min(revalidateSeconds, requestCacheLife.revalidate);
+	if ((requestCacheLife === null || requestCacheLife === void 0 ? void 0 : requestCacheLife.expire) !== void 0) expireSeconds = requestCacheLife.expire;
 	if (revalidateSeconds === null || revalidateSeconds <= 0 || !Number.isFinite(revalidateSeconds)) return null;
 	return {
 		expireSeconds,
@@ -12577,9 +12761,10 @@ function resolveAppPageCacheWritePolicy(options) {
 	};
 }
 function buildAppPageCachedResponse(cachedValue, options) {
-	const status = options.middlewareStatus ?? (cachedValue.status || 200);
-	const revalidateSeconds = options.cacheControl?.revalidate ?? options.revalidateSeconds;
-	const expireSeconds = options.cacheControl === void 0 ? void 0 : options.cacheControl.expire ?? options.expireSeconds;
+	var _options$middlewareSt, _options$cacheControl, _options$cacheControl2, _options$cacheControl3;
+	const status = (_options$middlewareSt = options.middlewareStatus) !== null && _options$middlewareSt !== void 0 ? _options$middlewareSt : cachedValue.status || 200;
+	const revalidateSeconds = (_options$cacheControl = (_options$cacheControl2 = options.cacheControl) === null || _options$cacheControl2 === void 0 ? void 0 : _options$cacheControl2.revalidate) !== null && _options$cacheControl !== void 0 ? _options$cacheControl : options.revalidateSeconds;
+	const expireSeconds = options.cacheControl === void 0 ? void 0 : (_options$cacheControl3 = options.cacheControl.expire) !== null && _options$cacheControl3 !== void 0 ? _options$cacheControl3 : options.expireSeconds;
 	const cacheControl = buildAppPageCacheControl(options.cacheState, revalidateSeconds, expireSeconds);
 	if (options.isRscRequest) {
 		if (!cachedValue.rscData) return null;
@@ -12610,12 +12795,14 @@ function buildAppPageCachedResponse(cachedValue, options) {
 async function readAppPageCacheResponse(options) {
 	const isrKey = options.isRscRequest ? options.isrRscKey(options.cleanPathname, options.mountedSlotsHeader, options.renderMode) : options.isrHtmlKey(options.cleanPathname);
 	try {
+		var _options$isrDebug6;
 		const cached = await options.isrGet(isrKey);
 		const cachedValue = getCachedAppPageValue(cached);
-		if (cachedValue && !cached?.isStale) {
+		if (cachedValue && !(cached === null || cached === void 0 ? void 0 : cached.isStale)) {
+			var _options$isrDebug2;
 			const hitResponse = buildAppPageCachedResponse(cachedValue, {
 				cacheState: "HIT",
-				cacheControl: cached?.value.cacheControl,
+				cacheControl: cached === null || cached === void 0 ? void 0 : cached.value.cacheControl,
 				expireSeconds: options.expireSeconds,
 				isRscRequest: options.isRscRequest,
 				middlewareHeaders: options.middlewareHeaders,
@@ -12624,22 +12811,25 @@ async function readAppPageCacheResponse(options) {
 				revalidateSeconds: options.revalidateSeconds
 			});
 			if (hitResponse) {
-				options.isrDebug?.(options.isRscRequest ? "HIT (RSC)" : "HIT (HTML)", options.cleanPathname);
+				var _options$isrDebug;
+				(_options$isrDebug = options.isrDebug) === null || _options$isrDebug === void 0 || _options$isrDebug.call(options, options.isRscRequest ? "HIT (RSC)" : "HIT (HTML)", options.cleanPathname);
 				options.clearRequestContext();
 				return hitResponse;
 			}
-			options.isrDebug?.("MISS (empty cached entry)", options.cleanPathname);
+			(_options$isrDebug2 = options.isrDebug) === null || _options$isrDebug2 === void 0 || _options$isrDebug2.call(options, "MISS (empty cached entry)", options.cleanPathname);
 		}
-		if (cached?.isStale && cachedValue) {
+		if ((cached === null || cached === void 0 ? void 0 : cached.isStale) && cachedValue) {
+			var _options$isrDebug5;
 			const regenerationKey = options.isRscRequest ? options.isrRscKey(options.cleanPathname, options.mountedSlotsHeader, options.renderMode) : options.isrHtmlKey(options.cleanPathname);
 			options.scheduleBackgroundRegeneration(regenerationKey, async () => {
+				var _revalidatedPage$cach, _revalidatedPage$cach2, _revalidatedPage$cach3, _revalidatedPage$cach4, _options$isrDebug3;
 				const revalidatedPage = await options.renderFreshPageForCache();
-				const revalidateSeconds = revalidatedPage.cacheControl?.revalidate ?? options.revalidateSeconds;
-				const expireSeconds = revalidatedPage.cacheControl?.expire ?? options.expireSeconds;
+				const revalidateSeconds = (_revalidatedPage$cach = (_revalidatedPage$cach2 = revalidatedPage.cacheControl) === null || _revalidatedPage$cach2 === void 0 ? void 0 : _revalidatedPage$cach2.revalidate) !== null && _revalidatedPage$cach !== void 0 ? _revalidatedPage$cach : options.revalidateSeconds;
+				const expireSeconds = (_revalidatedPage$cach3 = (_revalidatedPage$cach4 = revalidatedPage.cacheControl) === null || _revalidatedPage$cach4 === void 0 ? void 0 : _revalidatedPage$cach4.expire) !== null && _revalidatedPage$cach3 !== void 0 ? _revalidatedPage$cach3 : options.expireSeconds;
 				const writes = [options.isrSet(options.isrRscKey(options.cleanPathname, options.mountedSlotsHeader, options.renderMode), buildAppPageCacheValue("", revalidatedPage.rscData, 200), revalidateSeconds, revalidatedPage.tags, expireSeconds)];
 				if (!options.isRscRequest) writes.push(options.isrSet(options.isrHtmlKey(options.cleanPathname), buildAppPageCacheValue(revalidatedPage.html, void 0, 200), revalidateSeconds, revalidatedPage.tags, expireSeconds));
 				await Promise.all(writes);
-				options.isrDebug?.("regen complete", options.cleanPathname);
+				(_options$isrDebug3 = options.isrDebug) === null || _options$isrDebug3 === void 0 || _options$isrDebug3.call(options, "regen complete", options.cleanPathname);
 			});
 			const staleResponse = buildAppPageCachedResponse(cachedValue, {
 				cacheState: "STALE",
@@ -12652,19 +12842,21 @@ async function readAppPageCacheResponse(options) {
 				revalidateSeconds: options.revalidateSeconds
 			});
 			if (staleResponse) {
-				options.isrDebug?.(options.isRscRequest ? "STALE (RSC)" : "STALE (HTML)", options.cleanPathname);
+				var _options$isrDebug4;
+				(_options$isrDebug4 = options.isrDebug) === null || _options$isrDebug4 === void 0 || _options$isrDebug4.call(options, options.isRscRequest ? "STALE (RSC)" : "STALE (HTML)", options.cleanPathname);
 				options.clearRequestContext();
 				return staleResponse;
 			}
-			options.isrDebug?.("STALE MISS (empty stale entry)", options.cleanPathname);
+			(_options$isrDebug5 = options.isrDebug) === null || _options$isrDebug5 === void 0 || _options$isrDebug5.call(options, "STALE MISS (empty stale entry)", options.cleanPathname);
 		}
-		if (!cached) options.isrDebug?.("MISS (no cache entry)", options.cleanPathname);
+		if (!cached) (_options$isrDebug6 = options.isrDebug) === null || _options$isrDebug6 === void 0 || _options$isrDebug6.call(options, "MISS (no cache entry)", options.cleanPathname);
 	} catch (isrReadError) {
 		console.error("[vinext] ISR cache read error:", isrReadError);
 	}
 	return null;
 }
 function finalizeAppPageHtmlCacheResponse(response, options) {
+	var _options$waitUntil;
 	if (!response.body) return response;
 	const [streamForClient, streamForCache] = response.body.tee();
 	const htmlKey = options.isrHtmlKey(options.cleanPathname);
@@ -12676,30 +12868,33 @@ function finalizeAppPageHtmlCacheResponse(response, options) {
 	}
 	const cachePromise = (async () => {
 		try {
+			var _options$capturedDyna, _options$getRequestCa, _options$isrDebug9;
 			const cachedHtml = await readStreamAsText(streamForCache);
-			if (options.capturedDynamicUsageBeforeContextCleanup?.() === true || options.consumeDynamicUsage()) {
-				options.isrDebug?.("HTML cache write skipped (dynamic usage during render)", htmlKey);
+			if (((_options$capturedDyna = options.capturedDynamicUsageBeforeContextCleanup) === null || _options$capturedDyna === void 0 ? void 0 : _options$capturedDyna.call(options)) === true || options.consumeDynamicUsage()) {
+				var _options$isrDebug7;
+				(_options$isrDebug7 = options.isrDebug) === null || _options$isrDebug7 === void 0 || _options$isrDebug7.call(options, "HTML cache write skipped (dynamic usage during render)", htmlKey);
 				return;
 			}
 			const cachePolicy = resolveAppPageCacheWritePolicy({
 				expireSeconds: options.expireSeconds,
-				requestCacheLife: options.getRequestCacheLife?.(),
+				requestCacheLife: (_options$getRequestCa = options.getRequestCacheLife) === null || _options$getRequestCa === void 0 ? void 0 : _options$getRequestCa.call(options),
 				revalidateSeconds: options.revalidateSeconds
 			});
 			if (!cachePolicy) {
-				options.isrDebug?.("HTML cache write skipped (no cache policy)", htmlKey);
+				var _options$isrDebug8;
+				(_options$isrDebug8 = options.isrDebug) === null || _options$isrDebug8 === void 0 || _options$isrDebug8.call(options, "HTML cache write skipped (no cache policy)", htmlKey);
 				return;
 			}
 			const pageTags = options.getPageTags();
 			const writes = [options.isrSet(htmlKey, buildAppPageCacheValue(cachedHtml, void 0, 200), cachePolicy.revalidateSeconds, pageTags, cachePolicy.expireSeconds)];
 			if (options.capturedRscDataPromise) writes.push(options.capturedRscDataPromise.then((rscData) => options.isrSet(rscKey, buildAppPageCacheValue("", rscData, 200), cachePolicy.revalidateSeconds, pageTags, cachePolicy.expireSeconds)));
 			await Promise.all(writes);
-			options.isrDebug?.("HTML cache written", htmlKey);
+			(_options$isrDebug9 = options.isrDebug) === null || _options$isrDebug9 === void 0 || _options$isrDebug9.call(options, "HTML cache written", htmlKey);
 		} catch (cacheError) {
 			console.error("[vinext] ISR cache write error:", cacheError);
 		}
 	})();
-	options.waitUntil?.(cachePromise);
+	(_options$waitUntil = options.waitUntil) === null || _options$waitUntil === void 0 || _options$waitUntil.call(options, cachePromise);
 	return new Response(streamForClient, {
 		status: response.status,
 		statusText: response.statusText,
@@ -12719,32 +12914,36 @@ function finalizeAppPageRscCacheResponse(response, options) {
 	});
 }
 function scheduleAppPageRscCacheWrite(options) {
+	var _options$waitUntil2;
 	const capturedRscDataPromise = options.capturedRscDataPromise;
 	if (!capturedRscDataPromise || options.dynamicUsedDuringBuild) return false;
 	const rscKey = options.isrRscKey(options.cleanPathname, options.mountedSlotsHeader, options.renderMode);
 	const cachePromise = (async () => {
 		try {
+			var _options$getRequestCa2, _options$isrDebug12;
 			const rscData = await capturedRscDataPromise;
 			if (options.consumeDynamicUsage()) {
-				options.isrDebug?.("RSC cache write skipped (dynamic usage during render)", rscKey);
+				var _options$isrDebug10;
+				(_options$isrDebug10 = options.isrDebug) === null || _options$isrDebug10 === void 0 || _options$isrDebug10.call(options, "RSC cache write skipped (dynamic usage during render)", rscKey);
 				return;
 			}
 			const cachePolicy = resolveAppPageCacheWritePolicy({
 				expireSeconds: options.expireSeconds,
-				requestCacheLife: options.getRequestCacheLife?.(),
+				requestCacheLife: (_options$getRequestCa2 = options.getRequestCacheLife) === null || _options$getRequestCa2 === void 0 ? void 0 : _options$getRequestCa2.call(options),
 				revalidateSeconds: options.revalidateSeconds
 			});
 			if (!cachePolicy) {
-				options.isrDebug?.("RSC cache write skipped (no cache policy)", rscKey);
+				var _options$isrDebug11;
+				(_options$isrDebug11 = options.isrDebug) === null || _options$isrDebug11 === void 0 || _options$isrDebug11.call(options, "RSC cache write skipped (no cache policy)", rscKey);
 				return;
 			}
 			await options.isrSet(rscKey, buildAppPageCacheValue("", rscData, 200), cachePolicy.revalidateSeconds, options.getPageTags(), cachePolicy.expireSeconds);
-			options.isrDebug?.("RSC cache written", rscKey);
+			(_options$isrDebug12 = options.isrDebug) === null || _options$isrDebug12 === void 0 || _options$isrDebug12.call(options, "RSC cache written", rscKey);
 		} catch (cacheError) {
 			console.error("[vinext] ISR RSC cache write error:", cacheError);
 		}
 	})();
-	options.waitUntil?.(cachePromise);
+	(_options$waitUntil2 = options.waitUntil) === null || _options$waitUntil2 === void 0 || _options$waitUntil2.call(options, cachePromise);
 	return true;
 }
 //#endregion
@@ -12761,11 +12960,12 @@ function isStaticOrSsgAppPageCandidate(options) {
 	return !options.isDynamicRoute;
 }
 function resolveAppPageMethodResponse(options) {
+	var _options$middlewareHe;
 	if (!isNonGetOrHead(options.request.method)) return null;
 	if (isPossibleAppRouteActionRequest(options.request)) return null;
 	if (!isStaticOrSsgAppPageCandidate(options)) return null;
 	const headers = new Headers();
-	mergeMiddlewareResponseHeaders(headers, options.middlewareHeaders ?? null);
+	mergeMiddlewareResponseHeaders(headers, (_options$middlewareHe = options.middlewareHeaders) !== null && _options$middlewareHe !== void 0 ? _options$middlewareHe : null);
 	return methodNotAllowedResponse("GET, HEAD", { headers });
 }
 //#endregion
@@ -12824,14 +13024,15 @@ function buildResponseTiming(options) {
 	};
 }
 function readRequestCacheLifeForPrerender(options) {
-	return options.peekRequestCacheLife?.() ?? options.getRequestCacheLife();
+	var _options$peekRequestC, _options$peekRequestC2;
+	return (_options$peekRequestC = (_options$peekRequestC2 = options.peekRequestCacheLife) === null || _options$peekRequestC2 === void 0 ? void 0 : _options$peekRequestC2.call(options)) !== null && _options$peekRequestC !== void 0 ? _options$peekRequestC : options.getRequestCacheLife();
 }
 function applyRequestCacheLife(options) {
 	let revalidateSeconds = options.revalidateSeconds;
 	let expireSeconds = options.expireSeconds;
 	const requestCacheLife = options.requestCacheLife;
-	if (requestCacheLife?.revalidate !== void 0) revalidateSeconds = revalidateSeconds === null ? requestCacheLife.revalidate : Math.min(revalidateSeconds, requestCacheLife.revalidate);
-	if (requestCacheLife?.expire !== void 0) expireSeconds = requestCacheLife.expire;
+	if ((requestCacheLife === null || requestCacheLife === void 0 ? void 0 : requestCacheLife.revalidate) !== void 0) revalidateSeconds = revalidateSeconds === null ? requestCacheLife.revalidate : Math.min(revalidateSeconds, requestCacheLife.revalidate);
+	if ((requestCacheLife === null || requestCacheLife === void 0 ? void 0 : requestCacheLife.expire) !== void 0) expireSeconds = requestCacheLife.expire;
 	return {
 		expireSeconds,
 		revalidateSeconds
@@ -12842,6 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
+	var _7c7f9056db;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -12849,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: "d8540892-8409-4fd5-9093-d98f49052445",
+		deploymentVersion: (_7c7f9056db = "07c7f905-6db7-4518-901a-4bc17b2de425") !== null && _7c7f9056db !== void 0 ? _7c7f9056db : null,
 		rootBoundaryId
 	});
 }
@@ -12988,7 +13190,8 @@ async function renderAppPageLifecycle(options) {
 			expireSeconds,
 			revalidateSeconds,
 			waitUntil(promise) {
-				options.waitUntil?.(promise);
+				var _options$waitUntil;
+				(_options$waitUntil = options.waitUntil) === null || _options$waitUntil === void 0 || _options$waitUntil.call(options, promise);
 			}
 		});
 	}
@@ -13007,12 +13210,13 @@ async function renderAppPageLifecycle(options) {
 			return options.renderErrorBoundaryResponse(error);
 		},
 		async renderHtmlStream() {
+			var _options$formState;
 			const ssrHandler = await options.loadSsrHandler();
 			return renderAppPageHtmlStream({
 				capturedRscDataRef,
 				fontData,
 				navigationContext: options.getNavigationContext(),
-				formState: options.formState ?? null,
+				formState: (_options$formState = options.formState) !== null && _options$formState !== void 0 ? _options$formState : null,
 				rscStream: rscForResponse,
 				scriptNonce: options.scriptNonce,
 				sideStream: rscCapture.sideStream,
@@ -13110,7 +13314,8 @@ async function renderAppPageLifecycle(options) {
 			expireSeconds,
 			revalidateSeconds,
 			waitUntil(cachePromise) {
-				options.waitUntil?.(cachePromise);
+				var _options$waitUntil2;
+				(_options$waitUntil2 = options.waitUntil) === null || _options$waitUntil2 === void 0 || _options$waitUntil2.call(options, cachePromise);
 			}
 		});
 	}
@@ -13126,7 +13331,7 @@ async function settleCapturedRscRenderForCacheMetadata(capturedRscDataPromise) {
 	if (!capturedRscDataPromise) return;
 	try {
 		await capturedRscDataPromise;
-	} catch {}
+	} catch (_unused) {}
 }
 //#endregion
 //#region node_modules/vinext/dist/server/app-page-dispatch.js
@@ -13137,13 +13342,14 @@ function buildAppPageTags(cleanPathname, extraTags, routeSegments) {
 	return buildPageCacheTags(cleanPathname, extraTags, [...routeSegments], "page");
 }
 async function runAppPageRevalidationContext(options, renderFn) {
+	var _options$currentFetch;
 	return runWithRequestContext(createRequestContext({
 		headersContext: createStaticGenerationHeadersContext({
 			dynamicConfig: options.dynamicConfig,
 			routeKind: "page",
 			routePattern: options.routePattern
 		}),
-		currentFetchCacheMode: options.currentFetchCacheMode ?? null,
+		currentFetchCacheMode: (_options$currentFetch = options.currentFetchCacheMode) !== null && _options$currentFetch !== void 0 ? _options$currentFetch : null,
 		executionContext: getRequestExecutionContext(),
 		unstableCacheRevalidation: "foreground"
 	}), async () => {
@@ -13174,6 +13380,7 @@ async function dispatchAppPage(options) {
 	return await runWithFetchDedupe(() => dispatchAppPageInner(options));
 }
 async function dispatchAppPageInner(options) {
+	var _options$fetchCache, _options$renderMode, _route$loading, _options$formState, _options$renderMode2, _route$error, _route$errors;
 	const route = options.route;
 	const dynamicConfig = options.dynamicConfig;
 	const currentRevalidateSeconds = options.revalidateSeconds;
@@ -13182,7 +13389,7 @@ async function dispatchAppPageInner(options) {
 	const isForceDynamic = dynamicConfig === "force-dynamic";
 	const isDraftMode = isDraftModeRequest(options.request);
 	setCurrentFetchSoftTags(buildAppPageTags(options.cleanPathname, [], route.routeSegments));
-	setCurrentFetchCacheMode(options.fetchCache ?? null);
+	setCurrentFetchCacheMode((_options$fetchCache = options.fetchCache) !== null && _options$fetchCache !== void 0 ? _options$fetchCache : null);
 	if (options.hasPageModule && !options.hasPageDefaultExport) {
 		options.clearRequestContext();
 		return new Response("Page has no default export", { status: 500 });
@@ -13234,42 +13441,45 @@ async function dispatchAppPageInner(options) {
 			mountedSlotsHeader: options.mountedSlotsHeader,
 			renderMode: options.renderMode,
 			expireSeconds: options.expireSeconds,
-			revalidateSeconds: currentRevalidateSeconds ?? 0,
-			renderFreshPageForCache: async () => runAppPageRevalidationContext({
-				cleanPathname: options.cleanPathname,
-				currentFetchCacheMode: options.fetchCache ?? null,
-				dynamicConfig,
-				params: options.params,
-				routePattern: route.pattern,
-				routeSegments: route.routeSegments,
-				setNavigationContext: options.setNavigationContext
-			}, async () => {
-				const revalidatedElement = await options.buildPageElement(route, options.params, void 0, new URLSearchParams());
-				const revalidatedOnError = options.createRscOnErrorHandler(options.cleanPathname, route.pattern);
-				const revalidatedRscCapture = teeAppPageRscStreamForCapture(options.renderToReadableStream(revalidatedElement, { onError: revalidatedOnError }), true);
-				const revalidatedSsrEntry = await options.loadSsrHandler();
-				const revalidatedCapturedRscRef = { value: null };
-				const html = await readStreamAsText(await revalidatedSsrEntry.handleSsr(revalidatedRscCapture.ssrStream, options.getNavigationContext(), {
-					links: options.getFontLinks(),
-					styles: options.getFontStyles(),
-					preloads: options.getFontPreloads()
-				}, revalidatedRscCapture.sideStream ? {
-					sideStream: revalidatedRscCapture.sideStream,
-					capturedRscDataRef: revalidatedCapturedRscRef
-				} : void 0));
-				const rscData = await getCapturedRscDataPromise(revalidatedCapturedRscRef.value);
-				const cacheLife = _consumeRequestScopedCacheLife();
-				options.clearRequestContext();
-				return {
-					html,
-					rscData,
-					tags: buildAppPageTags(options.cleanPathname, getCollectedFetchTags(), route.routeSegments),
-					cacheControl: typeof cacheLife?.revalidate === "number" ? {
-						revalidate: cacheLife.revalidate,
-						expire: cacheLife.expire
-					} : void 0
-				};
-			}),
+			revalidateSeconds: currentRevalidateSeconds !== null && currentRevalidateSeconds !== void 0 ? currentRevalidateSeconds : 0,
+			renderFreshPageForCache: async () => {
+				var _options$fetchCache2;
+				return runAppPageRevalidationContext({
+					cleanPathname: options.cleanPathname,
+					currentFetchCacheMode: (_options$fetchCache2 = options.fetchCache) !== null && _options$fetchCache2 !== void 0 ? _options$fetchCache2 : null,
+					dynamicConfig,
+					params: options.params,
+					routePattern: route.pattern,
+					routeSegments: route.routeSegments,
+					setNavigationContext: options.setNavigationContext
+				}, async () => {
+					const revalidatedElement = await options.buildPageElement(route, options.params, void 0, new URLSearchParams());
+					const revalidatedOnError = options.createRscOnErrorHandler(options.cleanPathname, route.pattern);
+					const revalidatedRscCapture = teeAppPageRscStreamForCapture(options.renderToReadableStream(revalidatedElement, { onError: revalidatedOnError }), true);
+					const revalidatedSsrEntry = await options.loadSsrHandler();
+					const revalidatedCapturedRscRef = { value: null };
+					const html = await readStreamAsText(await revalidatedSsrEntry.handleSsr(revalidatedRscCapture.ssrStream, options.getNavigationContext(), {
+						links: options.getFontLinks(),
+						styles: options.getFontStyles(),
+						preloads: options.getFontPreloads()
+					}, revalidatedRscCapture.sideStream ? {
+						sideStream: revalidatedRscCapture.sideStream,
+						capturedRscDataRef: revalidatedCapturedRscRef
+					} : void 0));
+					const rscData = await getCapturedRscDataPromise(revalidatedCapturedRscRef.value);
+					const cacheLife = _consumeRequestScopedCacheLife();
+					options.clearRequestContext();
+					return {
+						html,
+						rscData,
+						tags: buildAppPageTags(options.cleanPathname, getCollectedFetchTags(), route.routeSegments),
+						cacheControl: typeof (cacheLife === null || cacheLife === void 0 ? void 0 : cacheLife.revalidate) === "number" ? {
+							revalidate: cacheLife.revalidate,
+							expire: cacheLife.expire
+						} : void 0
+					};
+				});
+			},
 			scheduleBackgroundRegeneration(key, renderFn) {
 				options.scheduleBackgroundRegeneration(key, renderFn, {
 					routerKind: "App Router",
@@ -13290,7 +13500,8 @@ async function dispatchAppPageInner(options) {
 	if (dynamicParamsResponse) return dynamicParamsResponse;
 	const interceptResult = await resolveAppPageIntercept({
 		buildPageElement(interceptRoute, interceptParams, interceptOpts, interceptSearchParams) {
-			setCurrentFetchCacheMode(options.resolveRouteFetchCacheMode?.(interceptRoute) ?? null);
+			var _options$resolveRoute, _options$resolveRoute2;
+			setCurrentFetchCacheMode((_options$resolveRoute = (_options$resolveRoute2 = options.resolveRouteFetchCacheMode) === null || _options$resolveRoute2 === void 0 ? void 0 : _options$resolveRoute2.call(options, interceptRoute)) !== null && _options$resolveRoute !== void 0 ? _options$resolveRoute : null);
 			return options.buildPageElement(interceptRoute, interceptParams, interceptOpts, interceptSearchParams);
 		},
 		cleanPathname: options.cleanPathname,
@@ -13306,6 +13517,7 @@ async function dispatchAppPageInner(options) {
 		},
 		isRscRequest: options.isRscRequest,
 		renderInterceptResponse(sourceRoute, interceptElement) {
+			var _options$middlewareCo;
 			const interceptOnError = options.createRscOnErrorHandler(options.cleanPathname, sourceRoute.pattern);
 			const interceptStream = options.renderToReadableStream(interceptElement, { onError: interceptOnError });
 			const interceptHeaders = new Headers({
@@ -13314,7 +13526,7 @@ async function dispatchAppPageInner(options) {
 			});
 			mergeMiddlewareResponseHeaders(interceptHeaders, options.middlewareContext.headers);
 			return new Response(interceptStream, {
-				status: options.middlewareContext.status ?? 200,
+				status: (_options$middlewareCo = options.middlewareContext.status) !== null && _options$middlewareCo !== void 0 ? _options$middlewareCo : 200,
 				headers: interceptHeaders
 			});
 		},
@@ -13362,8 +13574,8 @@ async function dispatchAppPageInner(options) {
 			return _peekRequestScopedCacheLife();
 		},
 		handlerStart: options.handlerStart,
-		hasLoadingBoundary: shouldSuppressLoadingBoundaries(options.renderMode ?? "navigation") ? false : Boolean(route.loading?.default),
-		formState: options.formState ?? null,
+		hasLoadingBoundary: shouldSuppressLoadingBoundaries((_options$renderMode = options.renderMode) !== null && _options$renderMode !== void 0 ? _options$renderMode : "navigation") ? false : Boolean((_route$loading = route.loading) === null || _route$loading === void 0 ? void 0 : _route$loading.default),
+		formState: (_options$formState = options.formState) !== null && _options$formState !== void 0 ? _options$formState : null,
 		isProgressiveActionRender: options.isProgressiveActionRender === true,
 		isDynamicError,
 		isDraftMode,
@@ -13389,7 +13601,8 @@ async function dispatchAppPageInner(options) {
 		},
 		classification: {
 			getLayoutId(index) {
-				const treePosition = route.layoutTreePositions?.[index] ?? 0;
+				var _route$layoutTreePosi, _route$layoutTreePosi2;
+				const treePosition = (_route$layoutTreePosi = (_route$layoutTreePosi2 = route.layoutTreePositions) === null || _route$layoutTreePosi2 === void 0 ? void 0 : _route$layoutTreePosi2[index]) !== null && _route$layoutTreePosi !== void 0 ? _route$layoutTreePosi : 0;
 				return AppElementsWire.encodeLayoutId(createAppPageTreePath([...route.routeSegments], treePosition));
 			},
 			buildTimeClassifications: route.__buildTimeClassifications,
@@ -13410,7 +13623,7 @@ async function dispatchAppPageInner(options) {
 		},
 		revalidateSeconds: currentRevalidateSeconds,
 		mountedSlotsHeader: options.mountedSlotsHeader,
-		renderMode: options.renderMode ?? "navigation",
+		renderMode: (_options$renderMode2 = options.renderMode) !== null && _options$renderMode2 !== void 0 ? _options$renderMode2 : "navigation",
 		renderErrorBoundaryResponse(renderError) {
 			return options.renderErrorBoundaryPage(renderError);
 		},
@@ -13421,14 +13634,15 @@ async function dispatchAppPageInner(options) {
 			return renderPageSpecialError(options, specialError);
 		},
 		renderToReadableStream: options.renderToReadableStream,
-		routeHasLocalBoundary: Boolean(route.error?.default || route.errors?.some((errorModule) => errorModule?.default)),
+		routeHasLocalBoundary: Boolean(((_route$error = route.error) === null || _route$error === void 0 ? void 0 : _route$error.default) || ((_route$errors = route.errors) === null || _route$errors === void 0 ? void 0 : _route$errors.some((errorModule) => errorModule === null || errorModule === void 0 ? void 0 : errorModule.default))),
 		routePattern: route.pattern,
 		runWithSuppressedHookWarning(probe) {
 			return options.runWithSuppressedHookWarning(probe);
 		},
 		scriptNonce: options.scriptNonce,
 		waitUntil(cachePromise) {
-			getRequestExecutionContext()?.waitUntil(cachePromise);
+			var _getRequestExecutionC;
+			(_getRequestExecutionC = getRequestExecutionContext()) === null || _getRequestExecutionC === void 0 || _getRequestExecutionC.waitUntil(cachePromise);
 		}
 	});
 }
@@ -13440,7 +13654,8 @@ async function renderLayoutSpecialError(options, specialError, layoutIndex) {
 		isRscRequest: options.isRscRequest,
 		middlewareContext: options.middlewareContext,
 		renderFallbackPage(statusCode) {
-			const parentBoundary = resolveAppPageParentHttpAccessBoundaryModule({
+			var _resolveAppPageParent;
+			const parentBoundary = (_resolveAppPageParent = resolveAppPageParentHttpAccessBoundaryModule({
 				layoutIndex,
 				rootForbiddenModule: options.rootForbiddenModule,
 				rootNotFoundModule: options.rootNotFoundModule,
@@ -13449,7 +13664,7 @@ async function renderLayoutSpecialError(options, specialError, layoutIndex) {
 				routeNotFoundModules: options.route.notFounds,
 				routeUnauthorizedModules: options.route.unauthorizeds,
 				statusCode
-			})?.default;
+			})) === null || _resolveAppPageParent === void 0 ? void 0 : _resolveAppPageParent.default;
 			return options.renderHttpAccessFallbackPage(statusCode, {
 				boundaryComponent: parentBoundary,
 				layouts: options.route.layouts.slice(0, layoutIndex),
@@ -13521,7 +13736,8 @@ function describeFetchCacheConflict(value) {
 * those modules and delegate the behavior to this helper.
 */
 function resolveAppPageSegmentConfig(options) {
-	const segments = [...options.layouts ?? [], options.page];
+	var _options$layouts;
+	const segments = [...(_options$layouts = options.layouts) !== null && _options$layouts !== void 0 ? _options$layouts : [], options.page];
 	const config = { revalidateSeconds: null };
 	let hasForceCache = false;
 	let hasForceNoStore = false;
@@ -13559,7 +13775,8 @@ function resolveAppPageSegmentConfig(options) {
 	return config;
 }
 function resolveAppPageFetchCacheMode(options) {
-	return resolveAppPageSegmentConfig(options).fetchCache ?? null;
+	var _resolveAppPageSegmen;
+	return (_resolveAppPageSegmen = resolveAppPageSegmentConfig(options).fetchCache) !== null && _resolveAppPageSegmen !== void 0 ? _resolveAppPageSegmen : null;
 }
 //#endregion
 //#region node_modules/vinext/dist/routing/route-trie.js
@@ -13773,6 +13990,7 @@ function mergeMatchedParams(sourceParams, targetParams) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/navigation-state.js
+var _g$_FALLBACK_KEY;
 /**
 * Server-only navigation state backed by AsyncLocalStorage.
 *
@@ -13788,13 +14006,14 @@ function mergeMatchedParams(sourceParams, targetParams) {
 var _FALLBACK_KEY = Symbol.for("vinext.navigation.fallback");
 var _g = globalThis;
 var _als = getOrCreateAls("vinext.navigation.als");
-var _fallbackState = _g[_FALLBACK_KEY] ?? (_g[_FALLBACK_KEY] = {
+var _fallbackState = (_g$_FALLBACK_KEY = _g[_FALLBACK_KEY]) !== null && _g$_FALLBACK_KEY !== void 0 ? _g$_FALLBACK_KEY : _g[_FALLBACK_KEY] = {
 	serverContext: null,
 	serverInsertedHTMLCallbacks: []
-});
+};
 function _getState() {
+	var _als$getStore;
 	if (isInsideUnifiedScope()) return getRequestContext();
-	return _als.getStore() ?? _fallbackState;
+	return (_als$getStore = _als.getStore()) !== null && _als$getStore !== void 0 ? _als$getStore : _fallbackState;
 }
 var _accessors = {
 	getServerContext() {
@@ -13826,12 +14045,13 @@ function sortFontsVariantValues(valA, valB) {
 //#endregion
 //#region node_modules/vinext/dist/build/google-fonts/build-url.js
 function buildGoogleFontsUrl$1(fontFamily, axes, display) {
+	var _axes$variableAxes, _axes$variableAxes2;
 	const variants = [];
-	if (axes.wght) for (const wght of axes.wght) if (!axes.ital) variants.push([["wght", wght], ...axes.variableAxes ?? []]);
+	if (axes.wght) for (const wght of axes.wght) if (!axes.ital) variants.push([["wght", wght], ...(_axes$variableAxes = axes.variableAxes) !== null && _axes$variableAxes !== void 0 ? _axes$variableAxes : []]);
 	else for (const ital of axes.ital) variants.push([
 		["ital", ital],
 		["wght", wght],
-		...axes.variableAxes ?? []
+		...(_axes$variableAxes2 = axes.variableAxes) !== null && _axes$variableAxes2 !== void 0 ? _axes$variableAxes2 : []
 	]);
 	else if (axes.variableAxes) variants.push([...axes.variableAxes]);
 	if (axes.variableAxes) for (const variant of variants) variant.sort(([a], [b]) => {
@@ -13964,18 +14184,19 @@ function hashString(value) {
 	return hash.toString(36).padStart(7, "0");
 }
 function createFontIdentity(family, options, cssVarName, fallback) {
+	var _options$display, _options$_selfHostedC;
 	return hashString([
 		family,
 		cssVarName,
 		normalizeWeightOption(options.weight),
 		normalizeStyleOption(options.style),
 		normalizeStringSetOption(options.subsets),
-		options.display ?? "swap",
+		(_options$display = options.display) !== null && _options$display !== void 0 ? _options$display : "swap",
 		normalizeBooleanOption(options.preload),
 		normalizeFallbackOption(fallback),
 		normalizeStringOrBooleanOption(options.adjustFontFallback),
 		normalizeStringSetOption(options.axes),
-		options._selfHostedCSS ?? ""
+		(_options$_selfHostedC = options._selfHostedCSS) !== null && _options$_selfHostedC !== void 0 ? _options$_selfHostedC : ""
 	].join("\0"));
 }
 /**
@@ -13998,6 +14219,7 @@ function createFontIdentity(family, options, cssVarName, fallback) {
 * of the broken `:wght@100..900` URL that issue #885 reports.
 */
 function buildGoogleFontsUrl(family, options) {
+	var _options$display2;
 	const weights = options.weight ? Array.isArray(options.weight) ? options.weight : [options.weight] : [];
 	const styles = options.style ? Array.isArray(options.style) ? options.style : [options.style] : [];
 	const hasItalic = styles.includes("italic");
@@ -14007,7 +14229,7 @@ function buildGoogleFontsUrl(family, options) {
 	return buildGoogleFontsUrl$1(family, {
 		wght: normalizedWeights.length > 0 ? normalizedWeights : ital ? ["400"] : void 0,
 		ital
-	}, options.display ?? "swap");
+	}, (_options$display2 = options.display) !== null && _options$display2 !== void 0 ? _options$display2 : "swap");
 }
 /**
 * Inject a <link> tag for the font (client-side only).
@@ -14161,10 +14383,11 @@ function injectSelfHostedCSS(css) {
 }
 function createFontLoader(family) {
 	return function fontLoader(options = {}) {
-		const fallback = options.fallback ?? ["sans-serif"];
+		var _options$fallback, _sanitizeCSSVarName;
+		const fallback = (_options$fallback = options.fallback) !== null && _options$fallback !== void 0 ? _options$fallback : ["sans-serif"];
 		const fontFamily = `'${escapeCSSString(family)}', ${fallback.map(sanitizeFallback).join(", ")}`;
 		const defaultVarName = toVarName(family);
-		const cssVarName = options.variable ? sanitizeCSSVarName(options.variable) ?? defaultVarName : defaultVarName;
+		const cssVarName = options.variable ? (_sanitizeCSSVarName = sanitizeCSSVarName(options.variable)) !== null && _sanitizeCSSVarName !== void 0 ? _sanitizeCSSVarName : defaultVarName : defaultVarName;
 		const id = createFontIdentity(family, options, cssVarName, fallback);
 		const classSegment = fontClassSegment(family);
 		const className = `__font_${classSegment}_${id}`;
@@ -14389,6 +14612,31 @@ var hydrationWatchScript = String.raw`
     var node = event.target;
     if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK')) assetFailed = true;
   }, true);
+  // Some mobile WebViews keep a native modal backdrop active even when
+  // its dialog is clipped or invisible. Recover only demonstrably invisible
+  // design dialogs; leave intentionally visible dialogs untouched.
+  var checks = 0;
+  function recoverHiddenDialog() {
+    checks++;
+    var modals = document.querySelectorAll('dialog.interface-settings[open]');
+    for (var i=0;i<modals.length;i++) {
+      var dialog = modals[i];
+      var rect = dialog.getBoundingClientRect();
+      var style = window.getComputedStyle(dialog);
+      if (style.display === 'none' || style.visibility === 'hidden'
+          || rect.width < 80 || rect.height < 40
+          || rect.right <= 0 || rect.left >= window.innerWidth
+          || rect.bottom <= 0 || rect.top >= window.innerHeight) {
+        try {
+          if (typeof dialog.close === 'function') dialog.close();
+          else dialog.removeAttribute('open');
+          document.documentElement.setAttribute('data-herolist-recovered-dialog', '1');
+        } catch (ignore) {}
+      }
+    }
+    if (checks < 10) window.setTimeout(recoverHiddenDialog, 1500);
+  }
+  window.setTimeout(recoverHiddenDialog, 1500);
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
@@ -14578,7 +14826,7 @@ async function GET() {
 			"content-type": "application/json; charset=utf-8",
 			"cache-control": "no-store"
 		} });
-	} catch {
+	} catch (_unused) {
 		return Response.json({ error: "Build metadata unavailable" }, { status: 503 });
 	}
 }
@@ -14966,7 +15214,7 @@ function __validateDevRequestOrigin(request) {
 	let originHostname;
 	try {
 		originHostname = new URL(origin).hostname.toLowerCase();
-	} catch {
+	} catch (_unused) {
 		return __forbidden();
 	}
 	if (__safeDevHosts.includes(originHostname) || originHostname.endsWith(".localhost")) return null;
@@ -14997,7 +15245,8 @@ var _virtual_vinext_rsc_entry_default = createAppRscHandler({
 	configRedirects: __configRedirects,
 	configRewrites: __configRewrites,
 	dispatchMatchedPage({ cleanPathname, formState, handlerStart, interceptionContext, isProgressiveActionRender, isRscRequest, middlewareContext, mountedSlotsHeader, params, request, route, scriptNonce, searchParams, renderMode }) {
-		const PageComponent = route.page?.default;
+		var _route$page, _segmentConfig$fetchC;
+		const PageComponent = (_route$page = route.page) === null || _route$page === void 0 ? void 0 : _route$page.default;
 		const __segmentConfig = resolveAppPageSegmentConfig({
 			layouts: route.layouts,
 			page: route.page
@@ -15031,7 +15280,7 @@ var _virtual_vinext_rsc_entry_default = createAppRscHandler({
 			debugClassification: __classDebug,
 			dynamicConfig: __segmentConfig.dynamicConfig,
 			dynamicParamsConfig: __segmentConfig.dynamicParamsConfig,
-			fetchCache: __segmentConfig.fetchCache ?? null,
+			fetchCache: (_segmentConfig$fetchC = __segmentConfig.fetchCache) !== null && _segmentConfig$fetchC !== void 0 ? _segmentConfig$fetchC : null,
 			findIntercept(pathname) {
 				return findIntercept(pathname, interceptionContext);
 			},
@@ -15065,10 +15314,11 @@ var _virtual_vinext_rsc_entry_default = createAppRscHandler({
 			mountedSlotsHeader,
 			params,
 			probeLayoutAt(li) {
-				const LayoutComp = route.layouts[li]?.default;
+				var _route$layouts$li, _route$layoutTreePosi, _route$layoutTreePosi2;
+				const LayoutComp = (_route$layouts$li = route.layouts[li]) === null || _route$layouts$li === void 0 ? void 0 : _route$layouts$li.default;
 				if (!LayoutComp) return null;
 				return LayoutComp({
-					params: makeThenableParams(resolveAppPageSegmentParams(route.routeSegments, route.layoutTreePositions?.[li] ?? 0, params)),
+					params: makeThenableParams(resolveAppPageSegmentParams(route.routeSegments, (_route$layoutTreePosi = (_route$layoutTreePosi2 = route.layoutTreePositions) === null || _route$layoutTreePosi2 === void 0 ? void 0 : _route$layoutTreePosi2[li]) !== null && _route$layoutTreePosi !== void 0 ? _route$layoutTreePosi : 0, params)),
 					children: null
 				});
 			},

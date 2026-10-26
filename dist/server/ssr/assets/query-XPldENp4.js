@@ -1,7 +1,8 @@
 //#region node_modules/vinext/dist/utils/domain-locale.js
 function normalizeDomainHostname(hostname) {
+	var _hostname$split$;
 	if (!hostname) return void 0;
-	return hostname.split(",", 1)[0]?.trim().split(":", 1)[0]?.toLowerCase() || void 0;
+	return ((_hostname$split$ = hostname.split(",", 1)[0]) === null || _hostname$split$ === void 0 || (_hostname$split$ = _hostname$split$.trim().split(":", 1)[0]) === null || _hostname$split$ === void 0 ? void 0 : _hostname$split$.toLowerCase()) || void 0;
 }
 /**
 * Match a configured domain either by hostname or locale.
@@ -11,16 +12,18 @@ function normalizeDomainHostname(hostname) {
 * should pass hostname or detectedLocale, not both.
 */
 function detectDomainLocale(domainItems, hostname, detectedLocale) {
-	if (!domainItems?.length) return void 0;
+	var _item$locales;
+	if (!(domainItems === null || domainItems === void 0 ? void 0 : domainItems.length)) return void 0;
 	const normalizedHostname = normalizeDomainHostname(hostname);
-	const normalizedLocale = detectedLocale?.toLowerCase();
-	for (const item of domainItems) if (normalizedHostname === normalizeDomainHostname(item.domain) || normalizedLocale === item.defaultLocale.toLowerCase() || item.locales?.some((locale) => locale.toLowerCase() === normalizedLocale)) return item;
+	const normalizedLocale = detectedLocale === null || detectedLocale === void 0 ? void 0 : detectedLocale.toLowerCase();
+	for (const item of domainItems) if (normalizedHostname === normalizeDomainHostname(item.domain) || normalizedLocale === item.defaultLocale.toLowerCase() || ((_item$locales = item.locales) === null || _item$locales === void 0 ? void 0 : _item$locales.some((locale) => locale.toLowerCase() === normalizedLocale))) return item;
 }
 function addLocalePrefix(path, locale, localeDefault) {
+	var _pathWithLeadingSlash;
 	const normalizedLocale = locale.toLowerCase();
 	if (normalizedLocale === localeDefault.toLowerCase()) return path;
 	const pathWithLeadingSlash = path.startsWith("/") ? path : `/${path}`;
-	const normalizedPathname = (pathWithLeadingSlash.split(/[?#]/, 1)[0] ?? pathWithLeadingSlash).toLowerCase();
+	const normalizedPathname = ((_pathWithLeadingSlash = pathWithLeadingSlash.split(/[?#]/, 1)[0]) !== null && _pathWithLeadingSlash !== void 0 ? _pathWithLeadingSlash : pathWithLeadingSlash).toLowerCase();
 	const localePrefix = `/${normalizedLocale}`;
 	if (normalizedPathname === localePrefix || normalizedPathname.startsWith(`${localePrefix}/`)) return path.startsWith("/") ? path : pathWithLeadingSlash;
 	return `/${locale}${pathWithLeadingSlash}`;
@@ -30,10 +33,10 @@ function withBasePath(path, basePath = "") {
 	return basePath + path;
 }
 function getDomainLocaleUrl(url, locale, { basePath, currentHostname, domainItems }) {
-	if (!domainItems?.length) return void 0;
+	if (!(domainItems === null || domainItems === void 0 ? void 0 : domainItems.length)) return void 0;
 	const targetDomain = detectDomainLocale(domainItems, void 0, locale);
 	if (!targetDomain) return void 0;
-	const currentDomain = detectDomainLocale(domainItems, currentHostname ?? void 0);
+	const currentDomain = detectDomainLocale(domainItems, currentHostname !== null && currentHostname !== void 0 ? currentHostname : void 0);
 	const localizedPath = addLocalePrefix(url, locale, targetDomain.defaultLocale);
 	if (currentDomain && normalizeDomainHostname(currentDomain.domain) === normalizeDomainHostname(targetDomain.domain)) return;
 	return `${`http${targetDomain.http ? "" : "s"}://`}${targetDomain.domain}${withBasePath(localizedPath, basePath)}`;

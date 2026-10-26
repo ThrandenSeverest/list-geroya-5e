@@ -29,12 +29,13 @@ function shouldResetBoundary(nextResetState, previousResetState) {
 	return nextResetState.previousPathname !== previousResetState.previousPathname;
 }
 function isRedirectError(error) {
-	return getErrorDigest(error)?.startsWith("NEXT_REDIRECT;") ?? false;
+	var _getErrorDigest$start, _getErrorDigest;
+	return (_getErrorDigest$start = (_getErrorDigest = getErrorDigest(error)) === null || _getErrorDigest === void 0 ? void 0 : _getErrorDigest.startsWith("NEXT_REDIRECT;")) !== null && _getErrorDigest$start !== void 0 ? _getErrorDigest$start : false;
 }
 function decodeRedirectTarget(target) {
 	try {
 		return decodeURIComponent(target);
-	} catch {
+	} catch (_unused) {
 		return target;
 	}
 }

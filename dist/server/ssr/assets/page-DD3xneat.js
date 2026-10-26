@@ -1,5 +1,5 @@
 import { _ as isDangerousScheme, a as navigateClientSide, b as hasBasePath, d as createRscRequestUrl, g as withBasePath, h as toSameOriginAppPath, i as getPrefetchedUrls, m as toBrowserNavigationHref, o as prefetchRscResponse, p as resolveRelativeHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestHeaders, v as AppElementsWire, x as stripBasePath, y as VINEXT_MOUNTED_SLOTS_HEADER } from "../index.js";
-import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-DGHsJKv-.js";
+import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-XPldENp4.js";
 import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
 import React, { createContext, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
@@ -15,7 +15,7 @@ function encodePathDelimiters(segment) {
 function decodeRouteSegment(segment) {
 	try {
 		return encodePathDelimiters(decodeURIComponent(segment));
-	} catch {
+	} catch (_unused) {
 		return segment;
 	}
 }
@@ -29,7 +29,7 @@ function normalizePathnameForRouteMatch(pathname) {
 function decodeMatchedParam(value) {
 	try {
 		return decodeURIComponent(value);
-	} catch {
+	} catch (_unused2) {
 		return value;
 	}
 }
@@ -268,7 +268,7 @@ function getLinkPrefetchHref(input) {
 		if (!basePath) return parsed.pathname + parsed.search + parsed.hash;
 		if (!hasBasePath(parsed.pathname, basePath)) return null;
 		return stripBasePath(parsed.pathname, basePath) + parsed.search + parsed.hash;
-	} catch {
+	} catch (_unused) {
 		return null;
 	}
 }
@@ -277,6 +277,7 @@ function isAbsoluteOrProtocolRelative(href) {
 }
 //#endregion
 //#region node_modules/vinext/dist/shims/link.js
+var _ref;
 /**
 * next/link shim
 *
@@ -286,11 +287,12 @@ function isAbsoluteOrProtocolRelative(href) {
 */
 var LinkStatusContext = createContext({ pending: false });
 /** basePath from next.config.js, injected by the plugin at build time */
-var __basePath = "";
+var __basePath = (_ref = "") !== null && _ref !== void 0 ? _ref : "";
 var linkPrefetchRouteTrieCache = createRouteTrieCache();
 function resolveHref(href) {
+	var _href$pathname;
 	if (typeof href === "string") return href;
-	let url = href.pathname ?? "/";
+	let url = (_href$pathname = href.pathname) !== null && _href$pathname !== void 0 ? _href$pathname : "/";
 	if (href.query) {
 		const params = urlQueryToSearchParams(href.query);
 		url = appendSearchParamsToUrl(url, params);
@@ -307,7 +309,7 @@ function toSameOriginRouteHref(href) {
 	let url;
 	try {
 		url = new URL(href, window.location.href);
-	} catch {
+	} catch (_unused) {
 		return null;
 	}
 	if (url.origin !== window.location.origin) return null;
@@ -334,6 +336,7 @@ function canAutoPrefetchFullAppRoute(href) {
 * the main thread during initial page load.
 */
 function prefetchUrl(href, mode, priority = "low") {
+	var _window$requestIdleCa;
 	if (typeof window === "undefined") return;
 	const prefetchHref = getLinkPrefetchHref({
 		href,
@@ -342,8 +345,9 @@ function prefetchUrl(href, mode, priority = "low") {
 	});
 	if (prefetchHref == null) return;
 	const fullHref = toBrowserNavigationHref(prefetchHref, window.location.href, __basePath);
-	(window.requestIdleCallback ?? ((fn) => setTimeout(fn, 100)))(() => {
+	((_window$requestIdleCa = window.requestIdleCallback) !== null && _window$requestIdleCa !== void 0 ? _window$requestIdleCa : ((fn) => setTimeout(fn, 100)))(() => {
 		(async () => {
+			var _window$__NEXT_DATA__;
 			if (typeof window.__VINEXT_RSC_NAVIGATE__ === "function") {
 				if (mode === "auto" && !canAutoPrefetchFullAppRoute(prefetchHref)) return;
 				const interceptionContext = getCurrentInterceptionContext();
@@ -361,7 +365,7 @@ function prefetchUrl(href, mode, priority = "low") {
 					priority,
 					purpose: "prefetch"
 				}), interceptionContext, mountedSlotsHeader);
-			} else if (window.__NEXT_DATA__?.__vinext?.pageModuleUrl) {
+			} else if ((_window$__NEXT_DATA__ = window.__NEXT_DATA__) === null || _window$__NEXT_DATA__ === void 0 || (_window$__NEXT_DATA__ = _window$__NEXT_DATA__.__vinext) === null || _window$__NEXT_DATA__ === void 0 ? void 0 : _window$__NEXT_DATA__.pageModuleUrl) {
 				const link = document.createElement("link");
 				link.rel = "prefetch";
 				link.href = fullHref;
@@ -387,7 +391,7 @@ function getSharedObserver() {
 			const callback = observerCallbacks.get(entry.target);
 			if (callback) {
 				callback();
-				sharedObserver?.unobserve(entry.target);
+				sharedObserver === null || sharedObserver === void 0 || sharedObserver.unobserve(entry.target);
 				observerCallbacks.delete(entry.target);
 			}
 		}
@@ -395,16 +399,19 @@ function getSharedObserver() {
 	return sharedObserver;
 }
 function getDefaultLocale() {
+	var _getI18nContext;
 	if (typeof window !== "undefined") return window.__VINEXT_DEFAULT_LOCALE__;
-	return getI18nContext()?.defaultLocale;
+	return (_getI18nContext = getI18nContext()) === null || _getI18nContext === void 0 ? void 0 : _getI18nContext.defaultLocale;
 }
 function getDomainLocales() {
-	if (typeof window !== "undefined") return window.__NEXT_DATA__?.domainLocales;
-	return getI18nContext()?.domainLocales;
+	var _window$__NEXT_DATA__2, _getI18nContext2;
+	if (typeof window !== "undefined") return (_window$__NEXT_DATA__2 = window.__NEXT_DATA__) === null || _window$__NEXT_DATA__2 === void 0 ? void 0 : _window$__NEXT_DATA__2.domainLocales;
+	return (_getI18nContext2 = getI18nContext()) === null || _getI18nContext2 === void 0 ? void 0 : _getI18nContext2.domainLocales;
 }
 function getCurrentHostname() {
+	var _getI18nContext3;
 	if (typeof window !== "undefined") return window.location.hostname;
-	return getI18nContext()?.hostname;
+	return (_getI18nContext3 = getI18nContext()) === null || _getI18nContext3 === void 0 ? void 0 : _getI18nContext3.hostname;
 }
 function getDomainLocaleHref(href, locale) {
 	return getDomainLocaleUrl(href, locale, {
@@ -420,16 +427,17 @@ function getDomainLocaleHref(href, locale) {
 * - locale=undefined → use current locale (href as-is in most cases)
 */
 function applyLocaleToHref(href, locale) {
+	var _getDefaultLocale;
 	if (locale === false) return href;
 	if (locale === void 0) return href;
 	if (href.startsWith("http://") || href.startsWith("https://") || href.startsWith("//")) return href;
 	const domainLocaleHref = getDomainLocaleHref(href, locale);
 	if (domainLocaleHref) return domainLocaleHref;
-	return addLocalePrefix(href, locale, getDefaultLocale() ?? "");
+	return addLocalePrefix(href, locale, (_getDefaultLocale = getDefaultLocale()) !== null && _getDefaultLocale !== void 0 ? _getDefaultLocale : "");
 }
 var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefetchProp, scroll = true, children, onClick, onMouseEnter, onTouchStart, onNavigate, ...rest }, forwardedRef) {
 	const { locale, ...restWithoutLocale } = rest;
-	const resolvedHref = as ?? resolveHref(href);
+	const resolvedHref = as !== null && as !== void 0 ? as : resolveHref(href);
 	const isDangerous = typeof resolvedHref === "string" && isDangerousScheme(resolvedHref);
 	const localizedHref = applyLocaleToHref(isDangerous ? "/" : resolvedHref, locale);
 	const fullHref = withBasePath(localizedHref, __basePath);
@@ -485,11 +493,11 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 		localizedHref
 	]);
 	const handleMouseEnter = useCallback((e) => {
-		onMouseEnter?.(e);
+		onMouseEnter === null || onMouseEnter === void 0 || onMouseEnter(e);
 		prefetchOnIntent();
 	}, [onMouseEnter, prefetchOnIntent]);
 	const handleTouchStart = useCallback((e) => {
-		onTouchStart?.(e);
+		onTouchStart === null || onTouchStart === void 0 || onTouchStart(e);
 		prefetchOnIntent();
 	}, [onTouchStart, prefetchOnIntent]);
 	const handleClick = async (e) => {
@@ -520,7 +528,7 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 			};
 			onNavigate(navEvent);
 			if (navEvent.defaultPrevented) return;
-		} catch {}
+		} catch (_unused2) {}
 		if (typeof window.__VINEXT_RSC_NAVIGATE__ === "function") {
 			setPending(true);
 			React.startTransition(() => {
@@ -530,10 +538,10 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 			});
 			return;
 		} else try {
-			const Router = (await import("./router-D_IdNyDo.js")).default;
+			const Router = (await import("./router-lWVvXzZB.js")).default;
 			if (replace) await Router.replace(absoluteHref, void 0, { scroll });
 			else await Router.push(absoluteHref, void 0, { scroll });
-		} catch {
+		} catch (_unused3) {
 			if (replace) window.history.replaceState({}, "", absoluteFullHref);
 			else window.history.pushState({}, "", absoluteFullHref);
 			window.dispatchEvent(new PopStateEvent("popstate"));
@@ -565,6 +573,7 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 //#endregion
 //#region app/account/page.tsx
 function AccountPage() {
+	var _account$authConfig, _account$linkedProvid, _account$linkedProvid2, _account$authConfig2;
 	const [account, setAccount] = useState(null);
 	const [mode, setMode] = useState("login");
 	const [email, setEmail] = useState("");
@@ -706,8 +715,8 @@ function AccountPage() {
 					className: "eyebrow",
 					children: "Лист Героя 5e · аккаунт"
 				}),
-				/* @__PURE__ */ jsx("h1", { children: account?.legacyRecovery ? "Перенос старого аккаунта" : account?.authenticated ? "Ваш аккаунт" : mode === "register" ? "Создать аккаунт" : mode === "forgot" ? "Забыли пароль?" : mode === "reset" ? "Новый пароль" : mode === "legacy" ? "Доступ к старому аккаунту" : "Войти" }),
-				account?.legacyRecovery ? /* @__PURE__ */ jsxs("div", {
+				/* @__PURE__ */ jsx("h1", { children: (account === null || account === void 0 ? void 0 : account.legacyRecovery) ? "Перенос старого аккаунта" : (account === null || account === void 0 ? void 0 : account.authenticated) ? "Ваш аккаунт" : mode === "register" ? "Создать аккаунт" : mode === "forgot" ? "Забыли пароль?" : mode === "reset" ? "Новый пароль" : mode === "legacy" ? "Доступ к старому аккаунту" : "Войти" }),
+				(account === null || account === void 0 ? void 0 : account.legacyRecovery) ? /* @__PURE__ */ jsxs("div", {
 					className: "auth-profile",
 					children: [
 						/* @__PURE__ */ jsxs("p", { children: [
@@ -740,7 +749,7 @@ function AccountPage() {
 							children: "Выйти"
 						})
 					]
-				}) : account?.authenticated ? /* @__PURE__ */ jsxs("div", {
+				}) : (account === null || account === void 0 ? void 0 : account.authenticated) ? /* @__PURE__ */ jsxs("div", {
 					className: "auth-profile",
 					children: [
 						/* @__PURE__ */ jsxs("p", { children: [
@@ -751,24 +760,24 @@ function AccountPage() {
 						/* @__PURE__ */ jsxs("p", { children: [
 							/* @__PURE__ */ jsx("b", { children: "Подтверждение:" }),
 							" ",
-							!account.authConfig?.emailVerificationEnabled ? "сейчас не требуется" : account.emailVerified ? "подтверждена" : "не подтверждена"
+							!((_account$authConfig = account.authConfig) === null || _account$authConfig === void 0 ? void 0 : _account$authConfig.emailVerificationEnabled) ? "сейчас не требуется" : account.emailVerified ? "подтверждена" : "не подтверждена"
 						] }),
 						/* @__PURE__ */ jsx("p", { children: "Персонажи объединяются с локальной коллекцией и синхронизируются между устройствами." }),
-						account.authProvider === "email" && !account.linkedProviders?.includes("telegram") && /* @__PURE__ */ jsx("button", {
+						account.authProvider === "email" && !((_account$linkedProvid = account.linkedProviders) === null || _account$linkedProvid === void 0 ? void 0 : _account$linkedProvid.includes("telegram")) && /* @__PURE__ */ jsx("button", {
 							type: "button",
 							className: "primary-action",
 							disabled: busy,
 							onClick: () => loginTelegram(true),
 							children: "Привязать Telegram без потери персонажей"
 						}),
-						account.linkedProviders?.includes("telegram") && /* @__PURE__ */ jsxs("p", { children: [/* @__PURE__ */ jsx("b", { children: "Telegram:" }), " привязан. Через него открывается эта же коллекция персонажей."] }),
+						((_account$linkedProvid2 = account.linkedProviders) === null || _account$linkedProvid2 === void 0 ? void 0 : _account$linkedProvid2.includes("telegram")) && /* @__PURE__ */ jsxs("p", { children: [/* @__PURE__ */ jsx("b", { children: "Telegram:" }), " привязан. Через него открывается эта же коллекция персонажей."] }),
 						messengerLink && /* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("a", {
 							href: messengerLink,
 							target: "_blank",
 							rel: "noopener noreferrer",
 							children: "Открыть Telegram и подтвердить привязку"
 						}) }),
-						account.authConfig?.emailVerificationEnabled && !account.emailVerified && /* @__PURE__ */ jsx("button", {
+						((_account$authConfig2 = account.authConfig) === null || _account$authConfig2 === void 0 ? void 0 : _account$authConfig2.emailVerificationEnabled) && !account.emailVerified && /* @__PURE__ */ jsx("button", {
 							onClick: resendVerification,
 							children: "Отправить подтверждение повторно"
 						}),

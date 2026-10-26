@@ -1,51 +1,51 @@
 export default {
-  "bootstrapScriptContent": "import(\"/assets/index-uhA7IIkA.js\")",
+  "bootstrapScriptContent": "import(\"/assets/index-CKZsDOaU.js\")",
   "clientReferenceDeps": {
     "724dcbd470a5": {
       "js": [
-        "/assets/page-D1j_GN10.js",
-        "/assets/index-uhA7IIkA.js",
+        "/assets/page-BHJw2iTZ.js",
+        "/assets/index-CKZsDOaU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/framework-BdWPhpd4.js",
+        "/assets/framework-CelLJrx0.js",
         "/assets/assetUrl-wDRmmXdz.js",
-        "/assets/query-D8Wk3mvj.js"
+        "/assets/query-Drlvluxq.js"
       ],
       "css": []
     },
     "6efdf509a785": {
       "js": [
-        "/assets/page-D_5A4WqZ.js",
+        "/assets/page-CtQMY-vr.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/assetUrl-wDRmmXdz.js",
-        "/assets/framework-BdWPhpd4.js",
-        "/assets/index-uhA7IIkA.js"
+        "/assets/framework-CelLJrx0.js",
+        "/assets/index-CKZsDOaU.js"
       ],
       "css": [
-        "/assets/page-JjTFi22x.css"
+        "/assets/page-B0Hjf3YD.css"
       ]
     },
     "593f344dc510": {
       "js": [
-        "/assets/index-uhA7IIkA.js",
+        "/assets/index-CKZsDOaU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/framework-BdWPhpd4.js"
+        "/assets/framework-CelLJrx0.js"
       ],
       "css": []
     },
     "15c18cfaeeff": {
       "js": [
-        "/assets/layout-segment-context-1BINLoms.js",
-        "/assets/index-uhA7IIkA.js",
+        "/assets/layout-segment-context-MP8Jvsz5.js",
+        "/assets/index-CKZsDOaU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/framework-BdWPhpd4.js"
+        "/assets/framework-CelLJrx0.js"
       ],
       "css": []
     },
     "8c0f216c4604": {
       "js": [
-        "/assets/index-uhA7IIkA.js",
+        "/assets/index-CKZsDOaU.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
-        "/assets/framework-BdWPhpd4.js"
+        "/assets/framework-CelLJrx0.js"
       ],
       "css": []
     }
@@ -54,7 +54,7 @@ export default {
     "app/layout.tsx": {
       "js": [],
       "css": [
-        "/assets/index-BtRxp8k1.css"
+        "/assets/index-BIN7KN04.css"
       ]
     }
   }
