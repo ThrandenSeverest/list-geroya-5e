@@ -702,7 +702,7 @@ function normalizeCharacter(value: Partial<ExportCharacter>): ExportCharacter {
 function savedCharacterExportContext(value: ExportCharacter, activeBan: BanList | null = null) {
   const character = normalizeCharacter(value);
   const advancementFields = deriveLegacyAdvancementFields(character.advancements || []);
-  const rulesCharacter = restrictedCharacter({ ...character, ...advancementFields, useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned, tceFullBanned: !!activeBan?.tceFullBanned, bannedOptionalFeatures: catalogs.optionalFeatures.filter(option => !allowed(activeBan, "optionalFeatures", option.id)).map(option => option.id) : [], bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id) });
+  const rulesCharacter = restrictedCharacter({ ...character, ...advancementFields, useTasha: !!character.useTasha && !activeBan?.tceOptionalFeaturesBanned && !activeBan?.tceFullBanned, tceFullBanned: !!activeBan?.tceFullBanned, bannedOptionalFeatures: catalogs.optionalFeatures.filter(option => !allowed(activeBan, "optionalFeatures", option.id)).map(option => option.id), bannedClassOptions: activeBan ? ensureClassOptionsCatalog().filter(option => !allowed(activeBan, "classOptions", option.id)).map(option => option.id) : [] });
   const abilities = finalAbilityScores(rulesCharacter);
   const exportCharacter = { ...rulesCharacter, abilities };
   const race = races.find(option => option.id === exportCharacter.race);
