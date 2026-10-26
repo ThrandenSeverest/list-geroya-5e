@@ -31,13 +31,23 @@ export function ThemeControls({label,theme,onCycle,onTheme,appearance}:{label:st
   // Portal dialogs into document.body so route/view switches cannot detach them.
   const [dialogHost,setDialogHost]=useState<HTMLElement|null>(null);
   useEffect(()=>{setDialogHost(document.body);},[]);
+  // Native dialog support varies across Android WebView and older Safari.
+  // A non-modal fallback must never make the whole document inert.
+  function showDialog() {
+    const el=dialog.current;
+    if(!el || el.open)return;
+    if(typeof el.showModal==="function"){
+      try{el.showModal();return;}catch{/* Fall back to a visible non-modal window. */}
+    }
+    el.setAttribute("open","");
+  }
   useEffect(()=>{
     if(!dialogHost || !appearance.showDesignPicker || document.querySelector('.theme-controls')!==owner.current)return;
     setGallery(true);
-    if(!dialog.current?.open)dialog.current?.showModal();
+    showDialog();
   },[appearance.showDesignPicker,dialogHost]);
-  function close(){dialog.current?.close();appearance.closeDesignPicker();}
-  function open(chooser=false){setGallery(chooser);setDraft(active && !calmPresets.some(p=>p.id===active.id) ? {...active,colors:{...active.colors}} : null);setNotice("");dialog.current?.showModal();}
+  function close(){if(dialog.current?.open){if(typeof dialog.current.close==="function")dialog.current.close();else dialog.current.removeAttribute("open");}appearance.closeDesignPicker();}
+  function open(chooser=false){setGallery(chooser);setDraft(active && !calmPresets.some(p=>p.id===active.id) ? {...active,colors:{...active.colors}} : null);setNotice("");showDialog();}
   function select(id:string){const preset=findDesign(preferences.presets,id);update({...preferences,activePreset:preset?id:''});onTheme(preset?.base || (id==='parchment'?'parchment':'classic'));setDraft(preset && !calmPresets.some(p=>p.id===preset.id)?{...preset,colors:{...preset.colors}}:null);setNotice("");}
   function create(){const preset:ThemePreset={id:crypto.randomUUID(),name:"Моя тема",base:active?.base || theme,layout:active?.layout || (calmPresets.some(p=>p.id===active?.id)?active?.id:undefined),colors:{...active?.colors},roles:{...active?.roles}};setDraft(preset);setGallery(false);update({...preferences,activePreset:preset.id,presets:[...preferences.presets,preset]});setNotice("Новая тема создана. Изменения цветов сохраняются автоматически.");}
   function edit(next:ThemePreset){setDraft(next);update({...preferences,presets:preferences.presets.map(p=>p.id===next.id?next:p)});}
