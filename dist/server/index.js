@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _8a5ae3c3b4748a;
-		return (_8a5ae3c3b4748a = "88a5ae3c-3b47-48a4-89c8-2b10aea08443") !== null && _8a5ae3c3b4748a !== void 0 ? _8a5ae3c3b4748a : void 0;
+		var _6fe674497ac45ccB;
+		return (_6fe674497ac45ccB = "46fe6744-97ac-45cc-bf34-3ab43effab3d") !== null && _6fe674497ac45ccB !== void 0 ? _6fe674497ac45ccB : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "88a5ae3c-3b47-48a4-89c8-2b10aea08443") {
+function appIsrCacheKey(pathname, suffix, buildId = "46fe6744-97ac-45cc-bf34-3ab43effab3d") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _8a5ae3c3b4748a;
+	var _6fe674497ac45ccB;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_8a5ae3c3b4748a = "88a5ae3c-3b47-48a4-89c8-2b10aea08443") !== null && _8a5ae3c3b4748a !== void 0 ? _8a5ae3c3b4748a : null,
+		deploymentVersion: (_6fe674497ac45ccB = "46fe6744-97ac-45cc-bf34-3ab43effab3d") !== null && _6fe674497ac45ccB !== void 0 ? _6fe674497ac45ccB : null,
 		rootBoundaryId
 	});
 }
@@ -14693,7 +14693,31 @@ var hydrationWatchScript = String.raw`
 var touchDiagnosticsScript = String.raw`
 (function () {
   if (window.location.search.indexOf('herolist_diag=1') < 0) return;
-  var recent = [], faults = [], resourcesFailed = [], bootTime = Date.now();
+  var recent = [], faults = [], resourcesFailed = [], interactions = [], bootTime = Date.now();
+  var nativeTapCount = 0;
+  function viewName() {
+    if (document.querySelector('nav.steps')) return 'character-editor';
+    if (document.querySelector('.character-library-layout')) return 'character-library';
+    if (document.querySelector('.play-shell')) return 'game';
+    return 'other';
+  }
+  function buttonName(node) {
+    if (!node) return '';
+    var btn = node.closest ? node.closest('button') : null;
+    return btn ? (btn.getAttribute('aria-label') || btn.textContent || '').trim().replace(/\\s+/g,' ').slice(0,65) : '';
+  }
+  function reactHandler(node) {
+    if (!node) return 'n/a';
+    var keys = Object.keys(node), key, props;
+    for (var i=0; i<keys.length; i++) {
+      key=keys[i];
+      if (key.indexOf('__reactProps') === 0) {
+        props=node[key];
+        return props && typeof props.onClick === 'function' ? 'present' : 'absent';
+      }
+    }
+    return 'not-mounted';
+  }
   function excerpt(url) {
     if (!url) return '';
     var parts = String(url).split('/');
@@ -14707,8 +14731,16 @@ var touchDiagnosticsScript = String.raw`
     return tag + (cls ? '.' + cls.trim().replace(/\s+/g, '.').slice(0,100) : '');
   }
   function record(kind, event) {
-    recent.push(kind + ' -> ' + brief(event.target));
-    if (recent.length > 8) recent.shift();
+    var node=event.target, btn=node && node.closest ? node.closest('button') : null;
+    recent.push(kind + ' -> ' + brief(node) + (btn ? ' ['+buttonName(node)+']' : ''));
+    if (recent.length > 12) recent.shift();
+    if (kind==='click' && btn && !btn.closest('#herolist-device-diagnostics')) {
+      var before=viewName(), name=buttonName(btn), disabled=btn.disabled, handler=reactHandler(btn);
+      window.setTimeout(function(){
+        interactions.push(name + ': disabled='+disabled+', reactOnClick='+handler+', view='+before+' -> '+viewName());
+        if(interactions.length>8) interactions.shift();
+      },600);
+    }
   }
   function fault(value) {
     faults.push(String(value).slice(0,220));
@@ -14757,6 +14789,9 @@ var touchDiagnosticsScript = String.raw`
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
       'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\.js(\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
       'resource errors: '+(resourcesFailed.join(' | ')||'none'),
+      'current view: '+viewName(),
+      'native diagnostic taps: '+nativeTapCount,
+      'React click follow-up: '+(interactions.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
       hit('.character-card-actions button'),
@@ -14772,19 +14807,49 @@ var touchDiagnosticsScript = String.raw`
     [].forEach.call(document.querySelectorAll('dialog.interface-settings[open]'),function(d){try{d.close();}catch(e){}});
     var panel = document.createElement('section');
     panel.id = 'herolist-device-diagnostics';
-    panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:48vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
+    panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:42vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
     var title=document.createElement('strong');title.textContent='Диагностика запуска и касаний HeroList';
+    var status=document.createElement('div');
+    status.setAttribute('role','status');
+    status.style.cssText='padding:7px 0;font-weight:bold;color:#e9d39a';
+    status.textContent='Диагностика активна. Нажмите «Проверка», затем кнопки сайта.';
     var detail=document.createElement('textarea');
-    detail.readOnly=true;detail.style.cssText='box-sizing:border-box;width:100%;height:160px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
+    detail.readOnly=true;
+    detail.style.cssText='box-sizing:border-box;width:100%;height:125px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
     detail.value=snapshot;
+    var test=document.createElement('button');test.textContent='Проверка касания';
     var copy=document.createElement('button');copy.textContent='Скопировать отчёт';
     var update=document.createElement('button');update.textContent='Обновить показатели';
-    var close=document.createElement('button');close.textContent='Скрыть диагностику';
-    [copy,update,close].forEach(function(b){b.style.cssText='padding:9px;margin:4px;border:1px solid #e1a071;background:#253644;color:white'});
-    copy.onclick=function(){detail.focus();detail.select();try{document.execCommand('copy');}catch(e){}};
-    update.onclick=function(){detail.value=report();};
-    close.onclick=function(){panel.parentNode.removeChild(panel);};
-    panel.appendChild(title);panel.appendChild(detail);panel.appendChild(copy);panel.appendChild(update);panel.appendChild(close);
+    var close=document.createElement('button');close.textContent='Свернуть';
+    [test,copy,update,close].forEach(function(b){b.type='button';b.style.cssText='padding:9px;margin:3px;border:1px solid #e1a071;background:#253644;color:white;min-height:44px;touch-action:manipulation'});
+    var refreshCount=0;
+    function updateReport(){
+      detail.value=report();
+      refreshCount++;
+      status.textContent='Отчёт обновлён ('+refreshCount+'): '+new Date().toLocaleTimeString();
+    }
+    test.addEventListener('click',function(){
+      nativeTapCount++;
+      status.textContent='Нативные нажатия работают: '+nativeTapCount;
+      detail.value=report();
+    });
+    update.addEventListener('click',updateReport);
+    copy.addEventListener('click',function(){
+      detail.value=report();
+      function copied(ok){
+        if(ok)status.textContent='Отчёт скопирован в буфер обмена';
+        else status.textContent='Автокопирование запрещено браузером. Выделите текст отчёта вручную.';
+      }
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(detail.value).then(function(){copied(true);},function(){copied(false);});
+      }else{
+        detail.focus();detail.select();
+        try{copied(!!document.execCommand('copy'));}catch(e){copied(false);}
+      }
+    });
+    close.addEventListener('click',function(){panel.style.display='none';});
+    panel.appendChild(title);panel.appendChild(status);panel.appendChild(detail);
+    panel.appendChild(test);panel.appendChild(update);panel.appendChild(copy);panel.appendChild(close);
     document.body.appendChild(panel);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(mount,1600);});
