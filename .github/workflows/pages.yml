@@ -17,9 +17,9 @@ permissions:
   pages: write
 concurrency:
   group: herolist-pages
-  # A skipped workflow_run (from a failed verifier) must not cancel an
-  # in-flight successful publication and leave Pages stale.
-  cancel-in-progress: false
+  # Direct push publishes only the latest main source. Older in-flight builds
+  # can be discarded instead of delaying current mobile fixes.
+  cancel-in-progress: true
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
