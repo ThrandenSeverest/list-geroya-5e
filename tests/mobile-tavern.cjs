@@ -89,9 +89,8 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
       console.log('mobile Tavern touch targets: '+width+'px OK');
       await context.close();
     }
-    // A fresh phone has no remembered theme and opens its design chooser.
-    // Check Safari/WebKit as well as Chromium: invisible native dialogs can
-    // block *all* taps, including the otherwise native hamburger <summary>.
+    // A fresh Android phone has no remembered theme. Hidden desktop controls
+    // must NOT open a top-layer design modal over the mobile Tavern.
     const firstContext = await browser.newContext({
       viewport: {width:390,height:850}, isMobile:true, hasTouch:true, deviceScaleFactor:3
     });
@@ -101,12 +100,9 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
     await firstPage.route('**/api/**', route => route.fulfill({json:{authenticated:false}}));
     await firstPage.goto(url.href);
     await firstPage.waitForFunction(() => document.documentElement.getAttribute('data-herolist-hydrated')==='1');
-    const modal = firstPage.locator('dialog.interface-settings[open]');
-    await modal.waitFor({state:'visible'});
-    const frame = await modal.boundingBox();
-    assert.ok(frame && frame.width>150 && frame.x>=0 && frame.x+frame.width<=390,'Design chooser visible on physical mobile viewport');
-    await modal.getByRole('button',{name:'Использовать выбранный дизайн'}).tap();
-    assert.equal(await firstPage.locator('dialog.interface-settings[open]').count(),0,'Modal closes and releases touch lock');
+    await firstPage.waitForTimeout(1000);
+    assert.equal(await firstPage.locator('dialog.interface-settings[open]').count(),0,
+      'No hidden design modal must block first-run mobile Tavern');
     const hamburger = firstPage.locator('.mobile-top-menu summary');
     await hamburger.tap();
     assert.equal(await firstPage.locator('.mobile-top-menu').getAttribute('open'),'');
