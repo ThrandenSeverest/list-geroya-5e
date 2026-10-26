@@ -34924,12 +34924,18 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	const [gallery, setGallery] = useState(false);
 	const owner = useRef(null);
 	const [dialogHost, setDialogHost] = useState(null);
+	const [touchDialogOpen, setTouchDialogOpen] = useState(false);
 	useEffect(() => {
 		setDialogHost(document.body);
 	}, []);
 	function showDialog() {
 		const el = dialog.current;
 		if (!el || el.open) return;
+		if (window.matchMedia("(max-width: 760px), (pointer: coarse)").matches) {
+			el.setAttribute("open", "");
+			setTouchDialogOpen(true);
+			return;
+		}
 		if (typeof el.showModal === "function") try {
 			el.showModal();
 			return;
@@ -34946,6 +34952,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	}, [appearance.showDesignPicker, dialogHost]);
 	function close() {
 		var _dialog$current;
+		setTouchDialogOpen(false);
 		if ((_dialog$current = dialog.current) === null || _dialog$current === void 0 ? void 0 : _dialog$current.open) if (typeof dialog.current.close === "function") dialog.current.close();
 		else dialog.current.removeAttribute("open");
 		appearance.closeDesignPicker();
@@ -35017,9 +35024,13 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 					"aria-hidden": "true"
 				})
 			}),
-			dialogHost && createPortal(/* @__PURE__ */ jsxs("dialog", {
+			dialogHost && createPortal(/* @__PURE__ */ jsxs(Fragment$1, { children: [touchDialogOpen && /* @__PURE__ */ jsx("div", {
+				className: "mobile-design-scrim",
+				"aria-hidden": "true",
+				onClick: close
+			}), /* @__PURE__ */ jsxs("dialog", {
 				ref: dialog,
-				className: `interface-settings${gallery ? " design-gallery-dialog" : ""}`,
+				className: `interface-settings${gallery ? " design-gallery-dialog" : ""}${touchDialogOpen ? " touch-design-dialog" : ""}`,
 				"aria-labelledby": settingsId,
 				onClose: appearance.closeDesignPicker,
 				onClick: (event) => {
@@ -35276,7 +35287,7 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 						children: notice
 					})
 				] })]
-			}), dialogHost)
+			})] }), dialogHost)
 		]
 	});
 }
