@@ -9,7 +9,7 @@ export const touchDiagnosticsScript = String.raw`
     var tag = (node.tagName || '').toLowerCase();
     if (!tag) return 'unknown';
     var cls = typeof node.className === 'string' ? node.className : '';
-    return tag + (cls ? '.' + cls.trim().replace(/\\s+/g, '.').slice(0,100) : '');
+    return tag + (cls ? '.' + cls.trim().replace(/\s+/g, '.').slice(0,100) : '');
   }
   function record(kind, event) {
     recent.push(kind + ' -> ' + brief(event.target));
