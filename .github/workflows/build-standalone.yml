@@ -1,19 +1,10 @@
 name: Build offline HeroList APK and Windows EXE
 
+# Standalone packages must not rebuild on site, mobile, or game-mode changes.
+# Resume APK/EXE builds only after mobile behavior is confirmed on real devices
+# and someone deliberately starts this workflow.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'standalone/**'
-      - 'app/**'
-      - 'public/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'next.config.ts'
-      - 'vite.config.ts'
-      - 'scripts/verify-offline-assets.mjs'
-      - '.github/workflows/build-standalone.yml'
 
 permissions:
   contents: read
