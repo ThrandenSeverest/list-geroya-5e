@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _Aa1f818270e456c;
-		return (_Aa1f818270e456c = "8aa1f818-270e-456c-9539-ff8ee45cb487") !== null && _Aa1f818270e456c !== void 0 ? _Aa1f818270e456c : void 0;
+		var _Fd533e2740b46d;
+		return (_Fd533e2740b46d = "4fd533e2-740b-46d7-88a0-7a6d7a688328") !== null && _Fd533e2740b46d !== void 0 ? _Fd533e2740b46d : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "8aa1f818-270e-456c-9539-ff8ee45cb487") {
+function appIsrCacheKey(pathname, suffix, buildId = "4fd533e2-740b-46d7-88a0-7a6d7a688328") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _Aa1f818270e456c;
+	var _Fd533e2740b46d;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_Aa1f818270e456c = "8aa1f818-270e-456c-9539-ff8ee45cb487") !== null && _Aa1f818270e456c !== void 0 ? _Aa1f818270e456c : null,
+		deploymentVersion: (_Fd533e2740b46d = "4fd533e2-740b-46d7-88a0-7a6d7a688328") !== null && _Fd533e2740b46d !== void 0 ? _Fd533e2740b46d : null,
 		rootBoundaryId
 	});
 }
@@ -14640,6 +14640,9 @@ var hydrationWatchScript = String.raw`
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
+    // Opt-in diagnostics has its own full report. Do not cover it with this
+    // fixed-position warning: users on broken phones must be able to copy it.
+    if (window.location.search.indexOf('herolist_diag=1') !== -1) return;
     if (document.getElementById('herolist-boot-warning')) return;
     var panel = document.createElement('section');
     panel.id = 'herolist-boot-warning';
@@ -14675,7 +14678,12 @@ var hydrationWatchScript = String.raw`
 var touchDiagnosticsScript = String.raw`
 (function () {
   if (window.location.search.indexOf('herolist_diag=1') < 0) return;
-  var recent = [], faults = [], bootTime = Date.now();
+  var recent = [], faults = [], resourcesFailed = [], bootTime = Date.now();
+  function excerpt(url) {
+    if (!url) return '';
+    var parts = String(url).split('/');
+    return parts.slice(-2).join('/').slice(0,130);
+  }
   function brief(node) {
     if (!node) return 'none';
     var tag = (node.tagName || '').toLowerCase();
@@ -14695,7 +14703,14 @@ var touchDiagnosticsScript = String.raw`
     document.addEventListener(kind, function (event) { record(kind,event); }, true);
   });
   window.addEventListener('error', function (event) {
-    fault(event.message || ((event.target && event.target.tagName) || 'resource error'));
+    var node = event.target;
+    if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK' || node.tagName === 'IMG')) {
+      var resource = node.src || node.href || '';
+      resourcesFailed.push(node.tagName + ': ' + excerpt(resource));
+      if (resourcesFailed.length > 8) resourcesFailed.shift();
+      return;
+    }
+    fault((event.message || 'script error') + ' @ ' + excerpt(event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0));
   }, true);
   window.addEventListener('unhandledrejection', function (event) {
     fault('rejection: ' + (event.reason && event.reason.message || event.reason || 'unknown'));
@@ -14725,6 +14740,8 @@ var touchDiagnosticsScript = String.raw`
       'features: dialog='+!!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal)+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
       'hydrated: '+document.documentElement.getAttribute('data-herolist-hydrated')+', elapsed='+Math.round((Date.now()-bootTime)/1000)+'s',
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
+      'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\.js(\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
+      'resource errors: '+(resourcesFailed.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
       hit('.character-card-actions button'),
@@ -14741,7 +14758,7 @@ var touchDiagnosticsScript = String.raw`
     var panel = document.createElement('section');
     panel.id = 'herolist-device-diagnostics';
     panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:48vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
-    var title=document.createElement('strong');title.textContent='Диагностика касаний HeroList';
+    var title=document.createElement('strong');title.textContent='Диагностика запуска и касаний HeroList';
     var detail=document.createElement('textarea');
     detail.readOnly=true;detail.style.cssText='box-sizing:border-box;width:100%;height:160px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
     detail.value=snapshot;
