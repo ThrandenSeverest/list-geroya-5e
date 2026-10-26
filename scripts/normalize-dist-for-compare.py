@@ -19,6 +19,20 @@ def normalize(root: Path) -> None:
         client_info.unlink()
 
     build_ids: list[str] = []
+    build_id_aliases: set[str] = set()
+    # Vinext 0.0.50 inlines a fresh random UUID in server/index.js each build,
+    # including a SWC-generated temporary identifier derived from that UUID.
+    # A plain build ID replacement misses the identifier and makes identical
+    # source produce different hashes for some chunks.
+    server_entry = root / "server/index.js"
+    if server_entry.exists():
+        entry = server_entry.read_text(encoding="utf-8")
+        for match in re.finditer(
+            r'get buildId\(\)\s*\{\s*var (_[0-9a-f]+);\s*return \(\1 = "([0-9a-f-]{36})"',
+            entry,
+        ):
+            build_id_aliases.add(match.group(1))
+            build_ids.append(match.group(2))
     for path in root.glob("server/**/BUILD_ID"):
         build_ids.append(path.read_text(encoding="utf-8").strip())
         path.unlink()
@@ -41,6 +55,8 @@ def normalize(root: Path) -> None:
             build_ids.append(detected.group(1))
         for build_id in set(build_ids):
             normalized = normalized.replace(build_id, "normalized-build-id")
+        for alias in build_id_aliases:
+            normalized = normalized.replace(alias, "_normalizedBuildId")
         normalized = re.sub(
             r'(function getDraftSecret\(\) \{\s*return ")[^"]+(";\s*\})',
             r'\1normalized-draft-secret\2',
