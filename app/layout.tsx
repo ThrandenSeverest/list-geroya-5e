@@ -3,6 +3,7 @@ import "./globals.css";
 import "./game-mode.css";
 import "./calm-design.css";
 import "./sheet-layout.css";
+import "./paperdoll.css";
 import { storageGuardScript } from "./storageGuard";
 import { hydrationWatchScript } from "./hydrationWatch";
 

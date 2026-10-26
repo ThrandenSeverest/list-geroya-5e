@@ -1,3 +1,4 @@
+import { PaperdollIcon, hasPaperdollRace } from "./PaperdollIcon";
 import { assetUrl } from "./assetUrl";
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
@@ -190,6 +191,7 @@ type CatalogIconProps = {
   className?: string;
   experimental?: boolean;
   image?: string;
+  raceId?: string;
 };
 
 type ExperimentalIcon = { sheet: string; cell: number };
@@ -206,8 +208,12 @@ addRaceSheet("races-leonin", ["leonin", "owlin", "kender", "grung", "hexblood", 
 addRaceSheet("races-tortle", ["tortle", "triton", "yuanpure", "vedalken", "simichybrid", "loxodon", "warforged", "kalashtar", "verdan"]);
 addRaceSheet("races-spelljammer", ["autognome", "astralelf", "giff", "plasmoid", "thrikreen"]);
 
-export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false, image }: CatalogIconProps) {
+export function CatalogIcon({ id = "", kind, fallback = "?", className = "sigil", experimental = false, image, raceId }: CatalogIconProps) {
   if(image?.startsWith('data:image/png;base64,'))return <span className={`${className} catalog-icon homebrew-catalog-icon`} aria-hidden="true" title={fallback}><img src={image} alt="" /></span>;
+  const dollRace = kind === "race" ? id : raceId || "human";
+  if ((kind === "race" || kind === "class") && hasPaperdollRace(dollRace) && !id.startsWith("hb:")) {
+    return <PaperdollIcon raceId={dollRace} classId={kind === "class" ? id : undefined} className={className} title={fallback} />;
+  }
   if (kind === "race" && id === "locathah") {
     return <span className={`${className} catalog-icon experimental-catalog-icon locathah-catalog-icon`} aria-hidden="true" title={fallback} style={{ "--experimental-sheet": `url("${assetUrl("experimental/locathah.png")}")` } as CSSProperties} />;
   }

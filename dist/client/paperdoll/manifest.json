@@ -1,0 +1,427 @@
+{
+  "version": 1,
+  "canvas": {
+    "width": 512,
+    "height": 512
+  },
+  "atlas": {
+    "columns": 3,
+    "rows": 2,
+    "order": "row-major"
+  },
+  "profiles": {
+    "large": 1.0,
+    "regular": 0.88,
+    "small": 0.72
+  },
+  "outfitRect": [
+    20,
+    242,
+    472,
+    270
+  ],
+  "sourceCollarLandmarks": [
+    [
+      270,
+      270,
+      270,
+      270,
+      270,
+      270
+    ],
+    [
+      270,
+      270,
+      280,
+      280,
+      270,
+      280
+    ],
+    [
+      350,
+      350,
+      350,
+      320,
+      340,
+      340
+    ],
+    [
+      310,
+      310,
+      310,
+      290,
+      310,
+      310
+    ],
+    [
+      365,
+      340,
+      360,
+      290,
+      290,
+      290
+    ],
+    [
+      310,
+      310,
+      310,
+      290,
+      290,
+      290
+    ],
+    [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ],
+    [
+      300,
+      300,
+      300,
+      300,
+      300,
+      300
+    ]
+  ],
+  "layerOrder": [
+    "base",
+    "class-outfit",
+    "race-foreground"
+  ],
+  "classes": [
+    "barbarian",
+    "bard",
+    "cleric",
+    "druid",
+    "fighter",
+    "monk",
+    "paladin",
+    "ranger",
+    "rogue",
+    "sorcerer",
+    "warlock",
+    "wizard",
+    "artificer"
+  ],
+  "races": {
+    "human": {
+      "body": "regular",
+      "sheet": "bases-01",
+      "cell": 0
+    },
+    "dwarf": {
+      "body": "large",
+      "sheet": "bases-01",
+      "cell": 1
+    },
+    "elf": {
+      "body": "regular",
+      "sheet": "bases-01",
+      "cell": 2
+    },
+    "halfling": {
+      "body": "small",
+      "sheet": "bases-01",
+      "cell": 3
+    },
+    "dragonborn": {
+      "body": "large",
+      "sheet": "bases-01",
+      "cell": 4
+    },
+    "gnome": {
+      "body": "small",
+      "sheet": "bases-01",
+      "cell": 5
+    },
+    "halfelf": {
+      "body": "regular",
+      "sheet": "bases-02",
+      "cell": 0
+    },
+    "halforc": {
+      "body": "large",
+      "sheet": "bases-02",
+      "cell": 1
+    },
+    "tiefling": {
+      "body": "regular",
+      "sheet": "bases-02",
+      "cell": 2
+    },
+    "aarakocra": {
+      "body": "regular",
+      "sheet": "bases-02",
+      "cell": 3
+    },
+    "aasimar": {
+      "body": "regular",
+      "sheet": "bases-02",
+      "cell": 4
+    },
+    "bugbear": {
+      "body": "large",
+      "sheet": "bases-02",
+      "cell": 5
+    },
+    "centaur": {
+      "body": "regular",
+      "sheet": "bases-03",
+      "cell": 0
+    },
+    "changeling": {
+      "body": "regular",
+      "sheet": "bases-03",
+      "cell": 1
+    },
+    "deepgnome": {
+      "body": "small",
+      "sheet": "bases-03",
+      "cell": 2
+    },
+    "duergar": {
+      "body": "large",
+      "sheet": "bases-03",
+      "cell": 3
+    },
+    "eladrin": {
+      "body": "regular",
+      "sheet": "bases-03",
+      "cell": 4
+    },
+    "fairy": {
+      "body": "small",
+      "sheet": "bases-03",
+      "cell": 5
+    },
+    "firbolg": {
+      "body": "large",
+      "sheet": "bases-04",
+      "cell": 0
+    },
+    "genasi": {
+      "body": "regular",
+      "sheet": "bases-04",
+      "cell": 1
+    },
+    "githyanki": {
+      "body": "regular",
+      "sheet": "bases-04",
+      "cell": 2
+    },
+    "githzerai": {
+      "body": "regular",
+      "sheet": "bases-04",
+      "cell": 3
+    },
+    "goblin": {
+      "body": "small",
+      "sheet": "bases-04",
+      "cell": 4
+    },
+    "goliath": {
+      "body": "large",
+      "sheet": "bases-04",
+      "cell": 5
+    },
+    "harengon": {
+      "body": "regular",
+      "sheet": "bases-05",
+      "cell": 0
+    },
+    "hobgoblin": {
+      "body": "regular",
+      "sheet": "bases-05",
+      "cell": 1
+    },
+    "kenku": {
+      "body": "regular",
+      "sheet": "bases-05",
+      "cell": 2
+    },
+    "kobold": {
+      "body": "small",
+      "sheet": "bases-05",
+      "cell": 3
+    },
+    "lizardfolk": {
+      "body": "large",
+      "sheet": "bases-05",
+      "cell": 4
+    },
+    "locathah": {
+      "body": "large",
+      "sheet": "bases-05",
+      "cell": 5
+    },
+    "minotaur": {
+      "body": "large",
+      "sheet": "bases-06",
+      "cell": 0
+    },
+    "orc": {
+      "body": "large",
+      "sheet": "bases-06",
+      "cell": 1
+    },
+    "satyr": {
+      "body": "regular",
+      "sheet": "bases-06",
+      "cell": 2
+    },
+    "seafelf": {
+      "body": "regular",
+      "sheet": "bases-06",
+      "cell": 3
+    },
+    "shadarkai": {
+      "body": "regular",
+      "sheet": "bases-06",
+      "cell": 4
+    },
+    "shifter": {
+      "body": "regular",
+      "sheet": "bases-06",
+      "cell": 5
+    },
+    "tabaxi": {
+      "body": "regular",
+      "sheet": "bases-07",
+      "cell": 0
+    },
+    "tortle": {
+      "body": "large",
+      "sheet": "bases-07",
+      "cell": 1
+    },
+    "triton": {
+      "body": "regular",
+      "sheet": "bases-07",
+      "cell": 2
+    },
+    "yuanpure": {
+      "body": "regular",
+      "sheet": "bases-07",
+      "cell": 3
+    },
+    "vedalken": {
+      "body": "regular",
+      "sheet": "bases-07",
+      "cell": 4
+    },
+    "simichybrid": {
+      "body": "regular",
+      "sheet": "bases-07",
+      "cell": 5
+    },
+    "loxodon": {
+      "body": "large",
+      "sheet": "bases-08",
+      "cell": 0
+    },
+    "warforged": {
+      "body": "large",
+      "sheet": "bases-08",
+      "cell": 1
+    },
+    "kalashtar": {
+      "body": "regular",
+      "sheet": "bases-08",
+      "cell": 2
+    },
+    "verdan": {
+      "body": "regular",
+      "sheet": "bases-08",
+      "cell": 3
+    },
+    "leonin": {
+      "body": "large",
+      "sheet": "bases-08",
+      "cell": 4
+    },
+    "owlin": {
+      "body": "regular",
+      "sheet": "bases-08",
+      "cell": 5
+    },
+    "kender": {
+      "body": "small",
+      "sheet": "bases-09",
+      "cell": 0
+    },
+    "grung": {
+      "body": "small",
+      "sheet": "bases-09",
+      "cell": 1
+    },
+    "hexblood": {
+      "body": "regular",
+      "sheet": "bases-09",
+      "cell": 2
+    },
+    "reborn": {
+      "body": "regular",
+      "sheet": "bases-09",
+      "cell": 3
+    },
+    "dhampir": {
+      "body": "regular",
+      "sheet": "bases-09",
+      "cell": 4
+    },
+    "customlineage": {
+      "body": "regular",
+      "sheet": "bases-09",
+      "cell": 5
+    },
+    "hadozee": {
+      "body": "regular",
+      "sheet": "bases-10",
+      "cell": 0
+    },
+    "autognome": {
+      "body": "small",
+      "sheet": "bases-10",
+      "cell": 1
+    },
+    "astralelf": {
+      "body": "regular",
+      "sheet": "bases-10",
+      "cell": 2
+    },
+    "giff": {
+      "body": "large",
+      "sheet": "bases-10",
+      "cell": 3
+    },
+    "plasmoid": {
+      "body": "regular",
+      "sheet": "bases-10",
+      "cell": 4
+    },
+    "thrikreen": {
+      "body": "regular",
+      "sheet": "bases-10",
+      "cell": 5
+    }
+  }
+}

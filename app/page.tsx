@@ -2800,7 +2800,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
               const itemRace = races.find(item => item.id === slot.character.race) || homebrewOption(slot.character.race);
               return <article key={slot.id} className={slot.id === vault.activeId ? "active" : ""}>
                 <label className="character-select"><input type="checkbox" checked={selectedSlotIds.includes(slot.id)} onChange={() => toggleSlotSelection(slot.id)} /><span>Выбрать</span></label>
-                <CatalogIcon id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===(itemClass?.id||itemRace?.id))?.icon} />
+                <CatalogIcon raceId={itemRace?.id} id={itemClass?.id || itemRace?.id} kind={itemClass ? "class" : "race"} fallback={itemClass?.name || itemRace?.name || "Новый герой"} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===(itemClass?.id||itemRace?.id))?.icon} />
                 <div><small>{slot.id === vault.activeId ? "Текущий персонаж" : `Сохранён ${new Date(slot.updatedAt).toLocaleDateString("ru-RU")}`}</small><h2>{slot.character.name || "Безымянный герой"}</h2>{slot.character.adventure && <p><b>{slot.character.adventure.name}</b> · {slot.character.adventure.status === "archived" ? "Завершено" : "В игре"}</p>}<p>{itemRace?.name || "Раса не выбрана"} · {itemClass?.name || "Класс не выбран"} · {slot.character.level} уровень</p></div>
                 <div className="character-card-actions">
                   <button type="button" onClick={() => selectSlot(slot.id)}>Открыть</button>
@@ -3133,7 +3133,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                       : [{ ...backgroundRule(option.id, option).feature }];
                   return (
                     <article key={option.id} className={`choice-card ${selected ? "selected" : ""}`}>
-                      <CatalogIcon id={option.id} kind={step === 0 ? "race" : step === 1 ? "class" : "background"} fallback={option.name} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===option.id)?.icon} />
+                      <CatalogIcon raceId={selectedRace?.id} id={option.id} kind={step === 0 ? "race" : step === 1 ? "class" : "background"} fallback={option.name} experimental={usesOrnateIcons} image={homebrew.elements.find(e=>e.id===option.id)?.icon} />
                       <div>
                         <div className="card-title"><h2>{option.name}</h2><em>{option.source}</em></div>
                         <p>{option.description}</p>
@@ -3949,6 +3949,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
           <p className="eyebrow">Ваш герой</p>
           <div className="summary-catalog-icon-wrap selected">
             <CatalogIcon
+              raceId={selectedRace?.id}
               id={selectedClass?.id || selectedRace?.id}
               kind={selectedClass ? "class" : "race"}
               fallback={selectedClass?.name || selectedRace?.name || "Новый герой"}
