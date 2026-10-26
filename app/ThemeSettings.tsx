@@ -28,9 +28,9 @@ export function ThemeControls({label,theme,onCycle,onTheme,appearance}:{label:st
   // The desktop ThemeControls is CSS-hidden on mobile, and the mobile copy lives
   // inside a closed <details>. A modal nested in either hidden ancestor can
   // create an invisible top-layer backdrop that blocks every button on the page.
-  // Portal dialogs directly beneath the visible app shell, not beneath controls.
+  // Portal dialogs into document.body so route/view switches cannot detach them.
   const [dialogHost,setDialogHost]=useState<HTMLElement|null>(null);
-  useEffect(()=>{setDialogHost(document.querySelector<HTMLElement>('.app-shell'));},[]);
+  useEffect(()=>{setDialogHost(document.body);},[]);
   useEffect(()=>{
     if(!dialogHost || !appearance.showDesignPicker || document.querySelector('.theme-controls')!==owner.current)return;
     setGallery(true);
