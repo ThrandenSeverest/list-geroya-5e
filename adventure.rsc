@@ -108,12 +108,12 @@
     // block the application merely because the safety layer cannot run.
   }
 })();
-0:{"__route":"route:/adventure/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/adventure/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/adventure/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:1abw5icr9h1sc","deploymentVersion":"d166858b-685d-485b-ac45-256b642da109","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
+0:{"__route":"route:/adventure/","__interceptionContext":null,"__layoutIds":["layout:/"],"__rootLayout":"/","page:/adventure/":"$L1","layout:/":[[[["$","link","css:/list-geroya-5e/assets/index-CR4KreGw.css",{"rel":"stylesheet","precedence":"vite-rsc/importer-resources","href":"/list-geroya-5e/assets/index-CR4KreGw.css","data-rsc-css-href":"/list-geroya-5e/assets/index-CR4KreGw.css"}],"$undefined"],["$","html",null,{"lang":"ru","children":[["$","head",null,{"children":[["$","script",null,{"dangerouslySetInnerHTML":{"__html":"$2"}}],"$L3","$L4"]}],"$L5"]}]],"$L6"],"route:/adventure/":"$L7","__layoutFlags":{"layout:/":"s"},"__artifactCompatibility":{"schemaVersion":1,"graphVersion":"app-route-graph:1abw5icr9h1sc","deploymentVersion":"55db3be4-f858-4336-9ea6-35448e4a91d2","appElementsSchemaVersion":1,"rscPayloadSchemaVersion":1,"rootBoundaryId":"/","renderEpoch":null}}
 a:I["8c0f216c4604",[],"Children",1]
 b:I["15c18cfaeeff",[],"LayoutSegmentProvider",1]
 c:I["8c0f216c4604",[],"Slot",1]
 d:I["593f344dc510",[],"RedirectBoundary",1]
-8:Tdf8,
+8:Tede,
 (function () {
   var assetFailed = false;
   window.addEventListener('error', function (event) {
@@ -148,6 +148,9 @@ d:I["593f344dc510",[],"RedirectBoundary",1]
   window.setTimeout(function () {
     if (document.documentElement.getAttribute('data-herolist-hydrated') === '1') return;
     if (!document.querySelector('.character-library-layout')) return;
+    // Opt-in diagnostics has its own full report. Do not cover it with this
+    // fixed-position warning: users on broken phones must be able to copy it.
+    if (window.location.search.indexOf('herolist_diag=1') !== -1) return;
     if (document.getElementById('herolist-boot-warning')) return;
     var panel = document.createElement('section');
     panel.id = 'herolist-boot-warning';
