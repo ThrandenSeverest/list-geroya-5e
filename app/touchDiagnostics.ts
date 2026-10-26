@@ -3,7 +3,12 @@
 export const touchDiagnosticsScript = String.raw`
 (function () {
   if (window.location.search.indexOf('herolist_diag=1') < 0) return;
-  var recent = [], faults = [], bootTime = Date.now();
+  var recent = [], faults = [], resourcesFailed = [], bootTime = Date.now();
+  function excerpt(url) {
+    if (!url) return '';
+    var parts = String(url).split('/');
+    return parts.slice(-2).join('/').slice(0,130);
+  }
   function brief(node) {
     if (!node) return 'none';
     var tag = (node.tagName || '').toLowerCase();
@@ -23,7 +28,14 @@ export const touchDiagnosticsScript = String.raw`
     document.addEventListener(kind, function (event) { record(kind,event); }, true);
   });
   window.addEventListener('error', function (event) {
-    fault(event.message || ((event.target && event.target.tagName) || 'resource error'));
+    var node = event.target;
+    if (node && (node.tagName === 'SCRIPT' || node.tagName === 'LINK' || node.tagName === 'IMG')) {
+      var resource = node.src || node.href || '';
+      resourcesFailed.push(node.tagName + ': ' + excerpt(resource));
+      if (resourcesFailed.length > 8) resourcesFailed.shift();
+      return;
+    }
+    fault((event.message || 'script error') + ' @ ' + excerpt(event.filename || '') + ':' + (event.lineno || 0) + ':' + (event.colno || 0));
   }, true);
   window.addEventListener('unhandledrejection', function (event) {
     fault('rejection: ' + (event.reason && event.reason.message || event.reason || 'unknown'));
@@ -53,6 +65,8 @@ export const touchDiagnosticsScript = String.raw`
       'features: dialog='+!!(window.HTMLDialogElement && HTMLDialogElement.prototype.showModal)+', randomUUID='+!!(window.crypto && crypto.randomUUID)+', CSS-has='+cssSupports,
       'hydrated: '+document.documentElement.getAttribute('data-herolist-hydrated')+', elapsed='+Math.round((Date.now()-bootTime)/1000)+'s',
       'scripts: '+document.scripts.length+', openDialogs: '+active.map(brief).join(' / '),
+      'loaded JS entries: '+(performance.getEntriesByType ? performance.getEntriesByType('resource').filter(function(x){return /\\.js(\\?|$)/.test(x.name);}).map(function(x){return excerpt(x.name)+' '+Math.round(x.transferSize||0)+'b';}).slice(-12).join(' | ') : 'unavailable'),
+      'resource errors: '+(resourcesFailed.join(' | ')||'none'),
       hit('.mobile-top-menu summary'),
       hit('.mode-signs button'),
       hit('.character-card-actions button'),
@@ -69,7 +83,7 @@ export const touchDiagnosticsScript = String.raw`
     var panel = document.createElement('section');
     panel.id = 'herolist-device-diagnostics';
     panel.style.cssText='position:fixed;z-index:2147483647;left:4px;right:4px;bottom:4px;max-height:48vh;overflow:auto;background:#121d24;color:#fff;border:2px solid #e1a071;padding:10px;font:13px/1.4 Arial,sans-serif;box-shadow:0 0 16px #000b';
-    var title=document.createElement('strong');title.textContent='Диагностика касаний HeroList';
+    var title=document.createElement('strong');title.textContent='Диагностика запуска и касаний HeroList';
     var detail=document.createElement('textarea');
     detail.readOnly=true;detail.style.cssText='box-sizing:border-box;width:100%;height:160px;margin-top:6px;background:#f7f7f7;color:#111;font:11px/1.3 monospace';
     detail.value=snapshot;
