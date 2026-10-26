@@ -66,10 +66,31 @@ jobs:
           python3 scripts/check-sanitized-dist.py
       - name: Save verified and sanitized precompiled dist in main
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A dist
-          if ! git diff --cached --quiet; then
-            git commit -m "build: commit updated production dist after gameplay fixes"
-            git push origin HEAD:main
-          fi
+          # Source updates may land while the compiler is running.
+          # Rebuild on the newest main rather than force-pushing stale dist.
+          for attempt in 1 2 3; do
+            git fetch origin main
+            if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+              git reset --hard origin/main
+              npm run build
+              python3 scripts/sanitize-committed-dist.py
+              python3 scripts/write-build-info.py
+              python3 scripts/check-sanitized-dist.py
+            fi
+            git add -A dist
+            if git diff --cached --quiet; then
+              echo "Production dist already matches current main"
+              exit 0
+            fi
+            git commit -m "build: sync verified production dist with source"
+            if git push origin HEAD:main; then
+              echo "Committed dist on current main"
+              exit 0
+            fi
+            git reset --hard HEAD^
+          done
+          echo "main moved repeatedly during build; aborting instead of overwriting newer source"
+          exit 1
