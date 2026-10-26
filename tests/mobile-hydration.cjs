@@ -22,6 +22,27 @@ const url = new URL('adventure/', process.env.HEROLIST_URL || 'http://127.0.0.1:
     assert.equal(await page.locator('.library-head h1').innerText(), 'Приключения');
     assert.equal(await page.locator('#herolist-boot-warning').count(), 0);
     console.log('Missing-JS recovery and interactive hydration OK');
+    // Regression: a design chooser mounted beneath CSS-hidden desktop controls
+    // used to trap every mobile tap behind an invisible native modal backdrop.
+    const fresh = await browser.newContext({viewport:{width:390,height:850},isMobile:true,hasTouch:true});
+    const blocked = await fresh.newPage();
+    const errors = [];
+    blocked.on('pageerror', e => errors.push(e.message));
+    await blocked.goto(url.href);
+    await blocked.waitForFunction(() => document.documentElement.getAttribute('data-herolist-hydrated') === '1');
+    const chooser = blocked.locator('dialog.interface-settings:modal');
+    await chooser.waitFor({state:'visible'});
+    assert.equal(await chooser.count(),1,'Exactly one design modal should open');
+    await chooser.getByRole('button',{name:'Использовать выбранный дизайн'}).tap();
+    assert.equal(await blocked.locator('dialog.interface-settings:modal').count(),0,'Modal backdrop must be gone');
+    await blocked.locator('.mobile-top-menu summary').tap();
+    assert.equal(await blocked.locator('.mobile-top-menu').getAttribute('open'),'');
+    await blocked.locator('.mobile-top-menu summary').tap();
+    await blocked.locator('.mode-signs').getByRole('button',{name:/Приключения/}).tap();
+    assert.equal(await blocked.locator('.library-head h1').innerText(),'Приключения');
+    assert.deepEqual(errors,[]);
+    console.log('First-launch mobile design chooser, hamburger and Tavern taps OK');
+    await fresh.close();
     await context.close();
   } finally { await browser.close(); }
 })().catch(e => {console.error(e);process.exitCode=1;});
