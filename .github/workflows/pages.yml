@@ -87,27 +87,38 @@ jobs:
           git add -A
           git diff --cached --quiet || git commit -m "Deploy verified main ${{ github.sha }}"
           git push origin HEAD:gh-pages
-      - name: Request Pages build and verify publication
+      - name: Verify live Pages artifact after deployment
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh api --method POST "repos/$GITHUB_REPOSITORY/pages/builds"
-          expected=$(git -C /tmp/herolist-pages rev-parse HEAD)
-          for attempt in {1..20}; do
-            status=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.status')
-            commit=$(gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" --jq '.commit')
-            if [ "$commit" = "$expected" ] && [ "$status" = "built" ]; then
-              site=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
-              curl --fail --silent --show-error "${site}BUILD_INFO.json?revision=$expected" > /tmp/published-build-info.json
-              diff dist/client/BUILD_INFO.json /tmp/published-build-info.json
-              echo "Published $site at $expected"
-              exit 0
+          set -euo pipefail
+          # Pushing gh-pages already triggers the Pages deployment. Calling
+          # POST /pages/builds again races with GitHub's own automatic build.
+          # The builds/latest API can stay queued after a successful deploy,
+          # so validate the real hosted BUILD_INFO.json rather than that state.
+          site=$(gh api "repos/$GITHUB_REPOSITORY/pages" --jq '.html_url')
+          case "$site" in
+            */) ;;
+            *) site="$site/" ;;
+          esac
+          for attempt in $(seq 1 48); do
+            if curl --fail --location --silent --show-error --max-time 15 \
+              --header 'Cache-Control: no-cache' \
+              "${site}BUILD_INFO.json?source=${GITHUB_SHA}&check=${attempt}" \
+              -o /tmp/published-build-info.json; then
+              if cmp -s dist/client/BUILD_INFO.json /tmp/published-build-info.json; then
+                echo "Verified LIVE Pages artifact at ${site} on attempt ${attempt}"
+                cat /tmp/published-build-info.json
+                exit 0
+              fi
             fi
-            if [ "$commit" = "$expected" ] && [ "$status" = "errored" ]; then
-              gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest"
-              exit 1
-            fi
-            sleep 15
+            echo "Pages still propagating (attempt ${attempt}/48)"
+            sleep 10
           done
-          echo "Timed out verifying GitHub Pages publication"
+          echo "The live site did not serve this build after polling" >&2
+          gh api "repos/$GITHUB_REPOSITORY/pages/builds/latest" || true
+          echo "Expected:" >&2
+          cat dist/client/BUILD_INFO.json >&2
+          echo "Last response:" >&2
+          cat /tmp/published-build-info.json >&2 || true
           exit 1
