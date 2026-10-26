@@ -34938,6 +34938,9 @@ function ThemeControls({ label, theme, onCycle, onTheme, appearance }) {
 	}
 	useEffect(() => {
 		if (!dialogHost || !appearance.showDesignPicker || document.querySelector(".theme-controls") !== owner.current) return;
+		const control = owner.current;
+		if (!control || !control.getClientRects().length || control.closest("details:not([open])")) return;
+		if (window.matchMedia("(max-width: 760px)").matches && document.querySelector(".character-library-layout")) return;
 		setGallery(true);
 		showDialog();
 	}, [appearance.showDesignPicker, dialogHost]);
