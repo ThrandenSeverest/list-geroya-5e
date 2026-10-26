@@ -1,4 +1,5 @@
 name: Publish GitHub Pages
+# Rebuild verified mobile-fixed main after physical Android confirmation.
 on:
   push:
     branches: [main]

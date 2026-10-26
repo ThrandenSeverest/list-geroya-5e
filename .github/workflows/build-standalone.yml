@@ -5,6 +5,10 @@ name: Build offline HeroList APK and Windows EXE
 # and someone deliberately starts this workflow.
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'release/requests/mobile-confirmed-2026-10-26.md'
 
 permissions:
   contents: read
