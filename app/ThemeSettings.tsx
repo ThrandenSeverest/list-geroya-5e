@@ -1,6 +1,7 @@
 "use client";
 import { useEffect,useRef,useState,useId,type CSSProperties } from "react";
 import { Settings } from "lucide-react";
+import { createPortal } from "react-dom";
 import colors from "./themeColors.json";
 import { calmPresets,designChoices,findDesign } from './designPresets';
 import { assetUrl } from './assetUrl';
@@ -24,14 +25,24 @@ export function ThemeControls({label,theme,onCycle,onTheme,appearance}:{label:st
   const [notice,setNotice]=useState("");
   const [gallery,setGallery]=useState(false);
   const owner=useRef<HTMLSpanElement>(null);
-  useEffect(()=>{if(appearance.showDesignPicker && document.querySelector('.theme-controls')===owner.current){setGallery(true);dialog.current?.showModal();}},[appearance.showDesignPicker]);
+  // The desktop ThemeControls is CSS-hidden on mobile, and the mobile copy lives
+  // inside a closed <details>. A modal nested in either hidden ancestor can
+  // create an invisible top-layer backdrop that blocks every button on the page.
+  // Portal dialogs directly beneath the visible app shell, not beneath controls.
+  const [dialogHost,setDialogHost]=useState<HTMLElement|null>(null);
+  useEffect(()=>{setDialogHost(document.querySelector<HTMLElement>('.app-shell'));},[]);
+  useEffect(()=>{
+    if(!dialogHost || !appearance.showDesignPicker || document.querySelector('.theme-controls')!==owner.current)return;
+    setGallery(true);
+    if(!dialog.current?.open)dialog.current?.showModal();
+  },[appearance.showDesignPicker,dialogHost]);
   function close(){dialog.current?.close();appearance.closeDesignPicker();}
   function open(chooser=false){setGallery(chooser);setDraft(active && !calmPresets.some(p=>p.id===active.id) ? {...active,colors:{...active.colors}} : null);setNotice("");dialog.current?.showModal();}
   function select(id:string){const preset=findDesign(preferences.presets,id);update({...preferences,activePreset:preset?id:''});onTheme(preset?.base || (id==='parchment'?'parchment':'classic'));setDraft(preset && !calmPresets.some(p=>p.id===preset.id)?{...preset,colors:{...preset.colors}}:null);setNotice("");}
   function create(){const preset:ThemePreset={id:crypto.randomUUID(),name:"Моя тема",base:active?.base || theme,layout:active?.layout || (calmPresets.some(p=>p.id===active?.id)?active?.id:undefined),colors:{...active?.colors},roles:{...active?.roles}};setDraft(preset);setGallery(false);update({...preferences,activePreset:preset.id,presets:[...preferences.presets,preset]});setNotice("Новая тема создана. Изменения цветов сохраняются автоматически.");}
   function edit(next:ThemePreset){setDraft(next);update({...preferences,presets:preferences.presets.map(p=>p.id===next.id?next:p)});}
   return <span ref={owner} className="theme-controls"><button className={`experimental-toggle theme-${theme}`} onClick={()=>open(true)} title="Выбрать оформление сайта">{label}</button><button className="experimental-toggle theme-gear" onClick={()=>open(false)} aria-label="Настройки интерфейса" title="Настройки интерфейса"><Settings size={18} aria-hidden="true" /></button>
-    <dialog ref={dialog} className={`interface-settings${gallery?' design-gallery-dialog':''}`} aria-labelledby={settingsId} onClose={appearance.closeDesignPicker} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}}}>
+    {dialogHost && createPortal(<dialog ref={dialog} className={`interface-settings${gallery?' design-gallery-dialog':''}`} aria-labelledby={settingsId} onClose={appearance.closeDesignPicker} onClick={event=>{if(event.target===dialog.current){const r=dialog.current.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}}}>
       <header><h2 id={settingsId}>{gallery?'Выберите дизайн HeroList':'Настройки интерфейса'}</h2><button onClick={close} aria-label="Закрыть настройки">✕</button></header>
       {gallery ? <>
         <p>Пять вариантов оформления. Вы сможете сменить дизайн в любой момент.</p>
@@ -48,5 +59,5 @@ export function ThemeControls({label,theme,onCycle,onTheme,appearance}:{label:st
       <div className="theme-preset-actions"><button onClick={create}>Создать свою тему</button>{draft&&<><button onClick={()=>{const copy={...draft,id:crypto.randomUUID(),name:`${draft.name} — копия`,colors:{...draft.colors}};update({...preferences,activePreset:copy.id,presets:[...preferences.presets,copy]});setDraft(copy);}}>Копировать тему</button><button onClick={()=>{if(!confirm(`Удалить тему «${draft.name}»?`))return;update({...preferences,activePreset:"",presets:preferences.presets.filter(p=>p.id!==draft.id)});setDraft(null);}}>Удалить тему</button></>}</div>
       {draft&&<><label>Название темы<input maxLength={80} value={draft.name} onChange={e=>edit({...draft,name:e.target.value})}/></label><label>Основа темы<select value={draft.base} onChange={e=>{const base=e.target.value as BaseTheme;edit({...draft,base,colors:{},roles:{}});onTheme(base);}}><option value="classic">Синий с золотом</option><option value="parchment">Пергамент</option></select></label><div className="theme-palette">{paletteRoles.map((role,index)=><label key={role.token}>{role.label}<input type="color" aria-label={role.label} value={draft.roles?.[role.token] || draft.colors[role[draft.base]] || `#${role[draft.base]}`} onChange={e=>edit(changePaletteRole(draft,index,e.target.value))}/></label>)}</div><details><summary>Все цвета · тонкая настройка</summary><p>Здесь можно изменить отдельные оттенки, включая служебные цвета и эффекты. Исходный цвет указан рядом с образцом.</p><div className="theme-palette">{colors.map(color=><label key={color}>#{color}<input type="color" aria-label={`Цвет #${color}`} value={draft.colors[color]||`#${color}`} onChange={e=>edit({...draft,colors:{...draft.colors,[color]:e.target.value}})}/></label>)}</div></details><div className="theme-preset-actions"><button onClick={()=>edit({...draft,colors:{},roles:{}})}>Вернуть цвета основы</button><button onClick={()=>{setNotice("Тема сохранена в этом браузере.");}}>Сохранить тему</button></div></>}
       <p role="status">{notice}</p></>}
-    </dialog></span>;
+    </dialog>,dialogHost)}</span>;
 }
