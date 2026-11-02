@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _A6c4cce5c3d4b;
-		return (_A6c4cce5c3d4b = "4a6c4cce-5c3d-4b60-9c0e-45243d393acb") !== null && _A6c4cce5c3d4b !== void 0 ? _A6c4cce5c3d4b : void 0;
+		var _Dd1d460Ded;
+		return (_Dd1d460Ded = "6dd1d460-ded3-4261-99e6-a63d77d1c5d9") !== null && _Dd1d460Ded !== void 0 ? _Dd1d460Ded : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "4a6c4cce-5c3d-4b60-9c0e-45243d393acb") {
+function appIsrCacheKey(pathname, suffix, buildId = "6dd1d460-ded3-4261-99e6-a63d77d1c5d9") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _A6c4cce5c3d4b;
+	var _Dd1d460Ded;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_A6c4cce5c3d4b = "4a6c4cce-5c3d-4b60-9c0e-45243d393acb") !== null && _A6c4cce5c3d4b !== void 0 ? _A6c4cce5c3d4b : null,
+		deploymentVersion: (_Dd1d460Ded = "6dd1d460-ded3-4261-99e6-a63d77d1c5d9") !== null && _Dd1d460Ded !== void 0 ? _Dd1d460Ded : null,
 		rootBoundaryId
 	});
 }
@@ -14875,6 +14875,10 @@ function RootLayout({ children }) {
 	return /* @__PURE__ */ (0, import_jsx_runtime_react_server.jsxs)("html", {
 		lang: "ru",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsxs)("head", { children: [
+			/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("meta", {
+				name: "viewport",
+				content: "width=device-width, initial-scale=1"
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: storageGuardScript } }),
 			/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: hydrationWatchScript } }),
 			/* @__PURE__ */ (0, import_jsx_runtime_react_server.jsx)("script", { dangerouslySetInnerHTML: { __html: touchDiagnosticsScript } })
