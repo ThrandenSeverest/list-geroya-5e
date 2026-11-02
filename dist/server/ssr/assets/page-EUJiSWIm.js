@@ -67764,7 +67764,7 @@ function TextEntryDialog({ dialog, onValueChange, onCancel, onConfirm }) {
 		})
 	});
 }
-function AccountAccess({ account, cloudState, compact = false }) {
+function AccountAccess({ account, compact = false }) {
 	if (account && isStaticPages()) return /* @__PURE__ */ jsx("span", {
 		className: "account-access",
 		children: "Локальные сохранения"
@@ -67787,7 +67787,7 @@ function AccountAccess({ account, cloudState, compact = false }) {
 		children: [/* @__PURE__ */ jsx("span", {
 			className: "account-online",
 			children: "●"
-		}), /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx("strong", { children: account.displayName || "Аккаунт HeroList" }), !compact && /* @__PURE__ */ jsx("small", { children: cloudState === "saving" ? "Синхронизация…" : cloudState === "error" ? "Ошибка синхронизации" : "Данные сохранены" })] })]
+		}), /* @__PURE__ */ jsx("span", { children: /* @__PURE__ */ jsx("strong", { children: "Вход выполнен" }) })]
 	});
 }
 function AdventureApp() {
