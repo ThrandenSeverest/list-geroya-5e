@@ -1800,6 +1800,25 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(var(--
   .interface-settings.touch-design-dialog header { position:sticky; top:-16px; z-index:1; padding:10px 0; background:var(--panel); }
 }
 
+/* The parchment mobile chrome follows the page surface; only the active step is filled. */
+@media screen and (max-width:760px) {
+  .modern-design .topbar .brand,
+  .modern-design .steps .step {
+    background:transparent;
+    border-color:transparent;
+    box-shadow:none;
+  }
+  .modern-design .mobile-top-menu summary {
+    background:transparent;
+    color:var(--theme-8f1821,#8f1821);
+    border-color:var(--theme-8c7258,#8c7258);
+  }
+  .modern-design .mobile-actions {
+    background:var(--theme-f1e2bd,#f1e2bd);
+    border-color:var(--theme-8c7258,#8c7258);
+  }
+}
+
 /* Hanging mode signs use transparent vector masks and the active theme palette. */
 .character-library-layout { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 24px; align-items: start; }
 .character-library-layout > .character-library { min-width: 0; }
