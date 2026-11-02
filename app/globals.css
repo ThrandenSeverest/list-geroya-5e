@@ -1774,6 +1774,32 @@ footer { min-height: 45px; padding: 13px 28px; border-top: 1px solid rgba(var(--
 .app-shell { font-size:calc(16px * var(--interface-font,1)); color:var(--ivory); }
 @media(max-width:760px) { .topbar:not(.home-topbar)>.theme-controls { display:none; } .home-top-actions .theme-gear { display:grid; } }
 
+/* Keep long account names inside mobile navigation and profile cards. */
+.account-access { min-width:0; max-width:100%; }
+.account-access > span:last-child { min-width:0; }
+.account-access strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.auth-shell { width:100%; min-width:0; color:var(--theme-3d3028,#3d3028); }
+.auth-card { max-width:100%; min-width:0; }
+.auth-profile, .auth-profile > *, .auth-card p { min-width:0; overflow-wrap:anywhere; }
+.auth-profile button, .auth-profile a.primary-action { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+@media (max-width:760px) {
+  .topbar.home-topbar { min-width:0; flex-wrap:nowrap; }
+  .home-topbar .brand { min-width:0; flex:0 1 auto; }
+  .home-top-actions { min-width:0; flex:1 1 0; justify-content:flex-end; }
+  .home-top-actions .account-access { max-width:min(48vw,190px); overflow:hidden; }
+  .home-top-actions .account-access > span:last-child { overflow:hidden; }
+  .auth-shell { padding:20px 16px; }
+  .auth-card { margin:24px auto; padding:20px; }
+  .auth-card h1 { overflow-wrap:anywhere; }
+  .interface-settings.touch-design-dialog[open] {
+    inset: max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom));
+    width:auto; max-width:none; max-height:none; height:auto;
+    transform:none; margin:0; overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  .interface-settings.touch-design-dialog header { position:sticky; top:-16px; z-index:1; padding:10px 0; background:var(--panel); }
+}
+
 /* Hanging mode signs use transparent vector masks and the active theme palette. */
 .character-library-layout { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 24px; align-items: start; }
 .character-library-layout > .character-library { min-width: 0; }
