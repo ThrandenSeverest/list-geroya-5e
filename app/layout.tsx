@@ -27,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <script dangerouslySetInnerHTML={{ __html: storageGuardScript }} />
         <script dangerouslySetInnerHTML={{ __html: hydrationWatchScript }} />
         <script dangerouslySetInnerHTML={{ __html: touchDiagnosticsScript }} />
