@@ -815,11 +815,11 @@ function TextEntryDialog({ dialog, onValueChange, onCancel, onConfirm }: {
   </div>;
 }
 
-function AccountAccess({account,cloudState,compact=false}:{account:AccountState|null;cloudState:"local"|"saving"|"saved"|"error";compact?:boolean}) {
+function AccountAccess({account,compact=false}:{account:AccountState|null;cloudState:"local"|"saving"|"saved"|"error";compact?:boolean}) {
   if(account && isStaticPages())return <span className="account-access">Локальные сохранения</span>;
   if(!account)return <span className="account-access is-loading">Проверяем вход…</span>;
   if(!account.authenticated)return <a className={`account-access is-guest${compact?' compact':''}`} href="/account"><span className="telegram-mark">↗</span><span><strong>Войти через Telegram</strong>{!compact&&<small>Сохранения и Homebrew на всех устройствах</small>}</span></a>;
-  return <a className={`account-access is-user${compact?' compact':''}`} href="/account"><span className="account-online">●</span><span><strong>{account.displayName||'Аккаунт HeroList'}</strong>{!compact&&<small>{cloudState==='saving'?'Синхронизация…':cloudState==='error'?'Ошибка синхронизации':'Данные сохранены'}</small>}</span></a>;
+  return <a className={`account-access is-user${compact?' compact':''}`} href="/account"><span className="account-online">●</span><span><strong>Вход выполнен</strong></span></a>;
 }
 
 export function AdventureApp() { return <BuilderErrorBoundary><Builder adventureRoute /></BuilderErrorBoundary>; }
