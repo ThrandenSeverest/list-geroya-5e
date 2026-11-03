@@ -1,0 +1,50 @@
+name: Import HeroList images
+
+on:
+  push:
+    branches: [main, 'feat/**', 'assets/**']
+    paths: ['asset-import/jobs/*.json']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: herolist-image-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image verifier
+        run: python -m pip install 'Pillow>=11,<13'
+      - name: Download and verify images
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d asset-import/jobs ]; then
+            echo 'No image manifests to import'
+            exit 0
+          fi
+          find asset-import/jobs -maxdepth 1 -name '*.json' -print0 | xargs -0 -r python scripts/import_assets_manifest.py
+      - name: Commit newly imported images
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- public
+          if git diff --cached --quiet; then
+            echo "Assets already match repository"
+            exit 0
+          fi
+          git commit -m "assets: import verified images"
+          git push origin "HEAD:$GITHUB_REF_NAME"
