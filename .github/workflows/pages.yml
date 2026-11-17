@@ -35,6 +35,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare classic sheet artwork
+        run: bash scripts/prepare-classic-sheet-assets.sh
       - name: Build static test site
         run: npm run build
         env:
