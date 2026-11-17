@@ -43,11 +43,11 @@ function ClassicHeader({ title, page }: { title: string; page: number }) {
 function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots:number}) {
   const g=spellGeometry[level];
   return <div className="classic-source-spell-group" data-spell-level={level}>
-    {level>0&&slots>0&&<span className="classic-source-spell-slot" style={referencePosition(g.cx||0,g.cy||0)}>{slots}</span>}
+    {level>0&&slots>0&&<span className="classic-source-spell-slot" style={referencePosition((g.cx||0)-1.6,(g.cy||0)-.45)}>{slots}</span>}
     {entries.map((spell,index)=><div key={spell.id} className="classic-source-spell-row"
-      style={referencePosition(g.x,g.y+g.step*index-.65)}
+      style={referencePosition(g.x,g.y+g.step*index)}
       title={spell.alwaysPrepared?"Всегда подготовлено":spell.prepared?"Подготовлено":"Не подготовлено"}>
-      {spell.alwaysPrepared?"† ":spell.prepared?"● ":""}{spell.name}
+      <span className="classic-spell-mark">{spell.alwaysPrepared?"†":spell.prepared?"●":""}</span>{spell.name}
     </div>)}
   </div>;
 }
@@ -137,7 +137,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           <Panel title="Текущие хиты"><strong className="classic-sheet-hp">{props.currentHitPoints ?? props.hitPoints}</strong></Panel>
           <Panel title="Временные хиты"><strong className="classic-sheet-hp">{props.temporaryHitPoints ?? 0}</strong></Panel>
           <div className="classic-sheet-two">
-            <Panel title="Кости здоровья"><p>{props.hitDiceLabel || (props.identity.level + "к" + props.hitDie)}</p><p>Осталось: {props.hitDiceRemaining ?? props.identity.level}</p></Panel>
+            <Panel title="Кости здоровья"><p>{props.hitDiceLabel || (props.identity.level + "к" + props.hitDie)}</p><p>{props.hitDiceRemaining ?? props.identity.level}</p></Panel>
             <Panel title="Испытания против смерти"></Panel>
           </div>
           <Panel title="Атаки и заклинания">
@@ -147,7 +147,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           </Panel>
           <Panel title="Снаряжение">
             <div className="classic-sheet-coins">{coins.map(([name, amount]) => <div key={name}><b>{amount}</b><small>{name}</small></div>)}</div>
-            <p>{equipment || " "}</p>
+            <p className="classic-equipment-text">{equipment || " "}</p>
           </Panel>
         </div>
         <div className="classic-sheet-column classic-sheet-right">
@@ -176,7 +176,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       </div>
     </section>
     <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-3.jpg")}")`}}>
-      <ClassicHeader title={props.identity.className || "Класс заклинателя"} page={3} />
+      <ClassicHeader title={props.identity.name || ""} page={3} />
       <div className="classic-sheet-magic-header">
         <Field label="Класс заклинателя" value={props.identity.className} />
         <Field label="Заклинательная характеристика" value={props.spellAbility} />
