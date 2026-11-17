@@ -207,3 +207,21 @@
  font:400 7.2pt/1.15 Arial,Helvetica,sans-serif!important;
  padding:2.8mm .65mm!important;line-height:1.15!important
 }
+
+/* Page 2 ribbon and character appearance follow the same artwork transform. */
+.classic-sheet--template .classic-sheet-page:nth-child(2)>.classic-sheet-head{
+ left:11.55%!important;top:12.25%!important;width:27.5%!important;height:3.0%!important;
+}
+.classic-sheet--template .classic-sheet-page:nth-child(2)>.classic-sheet-head>strong{
+ font:700 10pt/1.1 Arial,Helvetica,sans-serif!important;text-align:left!important;
+}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-backstory{
+ left:4.9%!important;top:48.4%!important;width:27.5%!important;height:44.5%!important;
+}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-additional{
+ left:36.9%!important;top:48.1%!important;width:59%!important;height:24.2%!important;
+}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-treasure{
+ left:36.9%!important;top:75.7%!important;width:59%!important;height:16.5%!important;
+}
+.classic-sheet--template .classic-sheet-ability span{bottom:12%!important;}
