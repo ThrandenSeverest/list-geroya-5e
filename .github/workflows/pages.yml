@@ -6,6 +6,7 @@ on:
     paths:
       - 'app/**'
       - 'public/**'
+      - 'scripts/prepare-classic-sheet-assets.sh'
       - 'tests/mobile-*.cjs'
       - 'package.json'
       - 'package-lock.json'
