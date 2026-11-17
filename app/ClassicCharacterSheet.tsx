@@ -5,11 +5,13 @@ import type { PdfCharacterSheetProps, PdfSpell } from "./PdfCharacterSheet";
 import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
 import "./classic-character-sheet.css";
+import { assetUrl } from "./assetUrl";
+import { SpellCardsAppendix } from "./PdfCharacterSheet";
 
 const abilityOrder: (keyof AbilityScores)[] = ["str", "dex", "con", "int", "wis", "cha"];
 const modifier = (score: number) => Math.floor((score - 10) / 2);
 const signed = (n: number) => (n >= 0 ? "+" : "") + n;
-const spellCapacities = [8, 11, 10, 10, 9, 8, 6, 6, 6, 6];
+const spellCapacities = [8, 13, 13, 13, 13, 9, 9, 9, 6, 7];
 
 function Panel({ title, children, className = "" }: { title: string; children?: ReactNode; className?: string }) {
   return <section className={"classic-sheet-panel " + className}>
@@ -36,7 +38,7 @@ function SpellGroup({ level, entries, slots }: { level: number; entries: PdfSpel
       {Array.from({ length: Math.max(spellCapacities[level], entries.length) }, (_, index) => {
         const spell = entries[index];
         return <div key={index} className="classic-sheet-spell-row">
-          {level > 0 && <span className="classic-sheet-prepare" title={spell?.alwaysPrepared ? "Всегда подготовлено" : spell?.prepared ? "Подготовлено" : "Не подготовлено"}>{spell ? spell.alwaysPrepared ? "†" : spell.prepared ? "●" : "○" : "○"}</span>}
+          {level > 0 && <span className="classic-sheet-prepare" title={spell?.alwaysPrepared ? "Всегда подготовлено" : spell?.prepared ? "Подготовлено" : "Не подготовлено"}>{spell ? spell.alwaysPrepared ? "†" : spell.prepared ? "●" : "" : ""}</span>}
           <span>{spell?.name || "\u00a0"}</span>
         </div>;
       })}
@@ -56,8 +58,8 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
   const equipment = props.equipment.join("; ");
   const spellsByColumn = [[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]];
 
-  return <div className="classic-sheet-document" aria-label="Классический лист персонажа D&D 5e">
-    <section className="classic-sheet-page">
+  return <div className="classic-sheet-document classic-sheet--template" aria-label="Классический лист персонажа D&D 5e">
+    <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-1.jpg")}")`}}>
       <ClassicHeader title={props.identity.name || "Имя персонажа"} page={1} />
       <div className="classic-sheet-identity">
         <Field label="Имя персонажа" value={props.identity.name} />
@@ -137,7 +139,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         </div>
       </div>
     </section>
-    <section className="classic-sheet-page">
+    <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-2.jpg")}")`}}>
       <ClassicHeader title={props.identity.name || "Имя персонажа"} page={2} />
       <div className="classic-sheet-bio">{["Возраст", "Рост", "Вес", "Глаза", "Кожа", "Волосы"].map(name => <Field key={name} label={name} />)}</div>
       <div className="classic-sheet-story-grid">
@@ -151,7 +153,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         <Panel title="Сокровища" className="classic-sheet-treasure">{coins.map(([name, amount]) => <p key={name}>{name}: {amount}</p>)}</Panel>
       </div>
     </section>
-    <section className="classic-sheet-page">
+    <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-3.jpg")}")`}}>
       <ClassicHeader title={props.identity.name || "Имя заклинателя"} page={3} />
       <div className="classic-sheet-magic-header">
         <Field label="Класс заклинателя" value={props.identity.className} />
@@ -173,5 +175,6 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         <span>{spell.sourceLevel} круг · {spell.name}</span>
       </div>)}
     </section>)}
+    <SpellCardsAppendix spells={props.spells} identityName={props.identity.name} className={props.identity.className} startPage={4 + extraPages.length} />
   </div>;
 }
