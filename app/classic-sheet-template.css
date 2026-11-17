@@ -181,3 +181,29 @@
 .classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(5) .classic-sheet-panel-body{
   font-size:6.5pt!important;line-height:1.16!important
 }
+
+/* Separate preprinted markers from their captions. */
+.classic-sheet--template .classic-source-inspiration,
+.classic-sheet--template .classic-source-proficiency{display:contents!important;position:static!important}
+.classic-sheet--template .classic-source-inspiration strong,
+.classic-sheet--template .classic-source-proficiency strong{
+ position:absolute!important;z-index:6;display:block;
+ width:24px;text-align:center;
+ color:#101010;font:700 11pt/1.2 Arial,Helvetica,sans-serif;
+}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6){
+ left:4.65%!important;top:72.65%!important;width:5.3%!important;height:2.6%!important;
+}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6) .classic-sheet-panel-body{
+ padding:0!important;display:flex;align-items:center;justify-content:center;
+}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6) .classic-sheet-inline-value{
+ text-align:center!important;padding:0!important;font:700 11pt/1.2 Arial,Helvetica,sans-serif!important;
+}
+/* Attack column headings already exist in the PDF background. */
+.classic-sheet--template .classic-sheet-attacks thead{display:none!important}
+.classic-sheet--template .classic-sheet-attacks tbody tr:nth-child(n+4){display:none}
+.classic-sheet--template .classic-sheet-attacks tbody td{
+ font:400 7.2pt/1.15 Arial,Helvetica,sans-serif!important;
+ padding:2.8mm .65mm!important;line-height:1.15!important
+}
