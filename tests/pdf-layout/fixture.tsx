@@ -1,4 +1,5 @@
 import React from 'react';
+import {ClassicCharacterSheet} from '../../app/ClassicCharacterSheet';
 import {createRoot} from 'react-dom/client';
 import {PdfCharacterSheet, type PdfCharacterSheetProps} from '../../app/PdfCharacterSheet';
 import {resolvedRaceFeatures} from '../../app/racialTraits';
@@ -23,4 +24,4 @@ if(new URLSearchParams(location.search).get('scenario')==='adenon')Object.assign
  raceFeatures:resolvedRaceFeatures('dhampir','base'),
  attacks:Array.from({length:7},(_,i)=>({id:'test-'+i,kind:i<2?'weapon':'cantrip',name:['Боевой посох (1 рука)','Боевой посох (2 руки)','Вампирский укус','Громовой клинок — боевой посох','Электрошок','Огненный снаряд','Луч холода'][i],attackBonus:5,damageDisplay:'1d8+3',note:i>1?'Наложение заговора: одна атака оружием по цели в пределах 5 футов; оружие считается материальным компонентом. При попадании наносится обычный урон оружия и дополнительный урон в соответствии с уровнем персонажа.':''})),
 });
-createRoot(document.getElementById('root')!).render(<PdfCharacterSheet {...props as unknown as PdfCharacterSheetProps}/>);
+createRoot(document.getElementById('root')!).render(new URLSearchParams(location.search).has('classic') ? <ClassicCharacterSheet {...props as unknown as PdfCharacterSheetProps}/> : <PdfCharacterSheet {...props as unknown as PdfCharacterSheetProps}/>);

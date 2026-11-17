@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, CSSProperties } from "react";
+import { useLayoutEffect, useRef, type ReactNode, type CSSProperties } from "react";
 import type { PdfCharacterSheetProps, PdfSpell } from "./PdfCharacterSheet";
 import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
@@ -12,27 +12,14 @@ import { SpellCardsAppendix } from "./PdfCharacterSheet";
 const abilityOrder: (keyof AbilityScores)[] = ["str", "dex", "con", "int", "wis", "cha"];
 const modifier = (score: number) => Math.floor((score - 10) / 2);
 const signed = (n: number) => (n >= 0 ? "+" : "") + n;
-const spellCapacities = [8, 13, 13, 13, 13, 9, 9, 9, 6, 7];
-// Source artwork is centered with white margins: calibrated from original 1072×1409px raster.
-const referencePosition = (x:number,y:number):CSSProperties=>({
-  position:"absolute",left:`${(1.20+97.30*x/1072).toFixed(4)}%`,
-  top:`${(5.20+90.50*y/1409).toFixed(4)}%`
-});
-const originalSkillOrder=[
-  "Акробатика","Атлетика","Внимательность","Выживание","Уход за животными",
-  "Запугивание","Выступление","История","Ловкость рук","Магия","Медицина",
-  "Обман","Природа","Проницательность","Расследование","Религия","Скрытность","Убеждение"
-] as const;
+const spellCapacities = [12, 9, 9, 10, 9, 9, 6, 6, 5, 7];
+// Coordinates are percentages of the accepted full-page raster artwork.
+const referencePosition = (x:number,y:number):CSSProperties=>({position:"absolute",left:`${x}%`,top:`${y}%`});
+const originalSkillOrder=["Акробатика","Атлетика","Внимательность","Выживание","Выступление","Запугивание","История","Ловкость рук","Магия","Медицина","Обман","Природа","Проницательность","Расследование","Религия","Скрытность","Убеждение","Уход за животными"] as const;
 const spellGeometry:Record<number,{x:number;y:number;step:number;cx?:number;cy?:number}>={
-  0:{x:75,y:319,step:25.2},1:{x:75,y:621,step:25.2,cx:194,cy:555},
-  2:{x:75,y:1028,step:25.5,cx:194,cy:977},
-  3:{x:414,y:319,step:25.3,cx:531,cy:252},
-  4:{x:414,y:723,step:25.3,cx:531,cy:663},
-  5:{x:414,y:1129,step:25.8,cx:531,cy:1074},
-  6:{x:748,y:320,step:25.3,cx:878,cy:253},
-  7:{x:748,y:623,step:26.3,cx:878,cy:560},
-  8:{x:748,y:926,step:25.3,cx:878,cy:867},
-  9:{x:748,y:1181,step:25.3,cx:878,cy:1100}
+0:{x:6.2,y:30.0,step:1.49},1:{x:6.2,y:57.7,step:1.49,cx:14.8,cy:53.8},2:{x:6.2,y:80.7,step:1.49,cx:14.8,cy:76.8},
+3:{x:38.7,y:32.6,step:1.49,cx:46.6,cy:28.8},4:{x:38.7,y:57.3,step:1.49,cx:46.6,cy:53.4},5:{x:38.7,y:80.7,step:1.49,cx:46.6,cy:76.8},
+6:{x:70.3,y:33.0,step:1.44,cx:78.4,cy:28.8},7:{x:70.3,y:50.1,step:1.44,cx:78.4,cy:46.8},8:{x:70.3,y:67.1,step:1.44,cx:78.4,cy:63.5},9:{x:70.3,y:83.6,step:1.44,cx:78.4,cy:79.4}
 };
 
 function Panel({ title, children, className = "" }: { title: string; children?: ReactNode; className?: string }) {
@@ -56,9 +43,9 @@ function ClassicHeader({ title, page }: { title: string; page: number }) {
 function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots:number}) {
   const g=spellGeometry[level];
   return <div className="classic-source-spell-group" data-spell-level={level}>
-    {level>0&&slots>0&&<span className="classic-source-spell-slot" style={referencePosition(g.cx||0,g.cy||0)}>{slots} яч.</span>}
+    {level>0&&slots>0&&<span className="classic-source-spell-slot" style={referencePosition(g.cx||0,g.cy||0)}>{slots}</span>}
     {entries.map((spell,index)=><div key={spell.id} className="classic-source-spell-row"
-      style={referencePosition(g.x,g.y+g.step*index-15)}
+      style={referencePosition(g.x,g.y+g.step*index-.65)}
       title={spell.alwaysPrepared?"Всегда подготовлено":spell.prepared?"Подготовлено":"Не подготовлено"}>
       {spell.alwaysPrepared?"† ":spell.prepared?"● ":""}{spell.name}
     </div>)}
@@ -66,6 +53,15 @@ function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots
 }
 
 export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
+  const root=useRef<HTMLDivElement>(null);
+  useLayoutEffect(()=>{
+    const fit=()=>root.current?.querySelectorAll<HTMLElement>('.classic-sheet-page:not(.classic-sheet-overflow) .classic-sheet-panel-body, .classic-sheet-field-value').forEach(el=>{
+      el.style.fontSize='';
+      let size=parseFloat(getComputedStyle(el).fontSize);
+      while((el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)&&size>6){size-=.25;el.style.fontSize=`${size}px`;}
+    });
+    fit();document.fonts.ready.then(fit);
+  },[props]);
   const skills = originalSkillOrder.map(name=>({name,...skillKeys[name]}));
   const spells = Array.from(new Map(props.spells.map(spell => [spell.id, spell])).values());
   const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter(spell => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
@@ -77,7 +73,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
   const equipment = props.equipment.join("; ");
   const spellsByColumn = [[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]];
 
-  return <div className="classic-sheet-document classic-sheet--template" aria-label="Классический лист персонажа D&D 5e">
+  return <div ref={root} className="classic-sheet-document classic-sheet--template" aria-label="Классический лист персонажа D&D 5e">
     <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-1.jpg")}")`}}>
       <ClassicHeader title={props.identity.name || "Имя персонажа"} page={1} />
       <div className="classic-sheet-identity">
@@ -98,16 +94,16 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
               <b>{abilityLabels[ability]}</b><strong>{signed(modifier(props.abilities[ability]))}</strong><span>{props.abilities[ability]}</span>
             </div>)}
           </div>
-          <div className="classic-source-inspiration">{props.identity.inspiration && <strong style={referencePosition(176,229)}>●</strong>}</div>
-          <div className="classic-source-proficiency"><strong style={referencePosition(164,289)}>{signed(props.proficiency)}</strong></div>
+          <div className="classic-source-inspiration">{props.identity.inspiration && <strong style={referencePosition(15.5,16.6)}>●</strong>}</div>
+          <div className="classic-source-proficiency"><strong style={referencePosition(15.8,21.5)}>{signed(props.proficiency)}</strong></div>
           <div className="classic-source-saves">
             {abilityOrder.map((key,i)=>{
               const trained=props.savingThrows.includes(key);
               const value=modifier(props.abilities[key])+(trained?props.proficiency:0)+(props.savingThrowBonuses?.[key]||0);
-              const y=354+i*24.2;
+              const y=26.3+i*1.735;
               return <div key={key} className="classic-source-check">
-                {trained&&<span className="classic-source-checkmark" style={referencePosition(169,y)}>●</span>}
-                <span className="classic-source-checkvalue" style={referencePosition(186,y)}>{signed(value)}</span>
+                {trained&&<span className="classic-source-checkmark" style={referencePosition(16.05,y)}>●</span>}
+                <span className="classic-source-checkvalue" style={referencePosition(17.9,y)}>{signed(value)}</span>
               </div>;
             })}
           </div>
@@ -116,10 +112,10 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
               const trained=props.proficiencies.skills.includes(skill.name);
               const expert=props.proficiencies.expertise.includes(skill.name);
               const bonus=modifier(props.abilities[skill.stat as keyof AbilityScores])+(expert?2*props.proficiency:trained?props.proficiency:0);
-              const y=556+i*24.35;
+              const y=41.0+i*1.713;
               return <div key={skill.key} className="classic-source-check">
-                {(trained||expert)&&<span className="classic-source-checkmark" style={referencePosition(169,y)}>{expert?"◆":"●"}</span>}
-                <span className="classic-source-checkvalue" style={referencePosition(186,y)}>{signed(bonus)}</span>
+                {(trained||expert)&&<span className="classic-source-checkmark" style={referencePosition(16.05,y)}>{expert?"◆":"●"}</span>}
+                <span className="classic-source-checkvalue" style={referencePosition(17.9,y)}>{signed(bonus)}</span>
               </div>;
             })}
           </div>
@@ -142,11 +138,11 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           <Panel title="Временные хиты"><strong className="classic-sheet-hp">{props.temporaryHitPoints ?? 0}</strong></Panel>
           <div className="classic-sheet-two">
             <Panel title="Кости здоровья"><p>{props.hitDiceLabel || (props.identity.level + "к" + props.hitDie)}</p><p>Осталось: {props.hitDiceRemaining ?? props.identity.level}</p></Panel>
-            <Panel title="Испытания против смерти"><p>Успехи: ○ ○ ○</p><p>Провалы: ○ ○ ○</p></Panel>
+            <Panel title="Испытания против смерти"></Panel>
           </div>
           <Panel title="Атаки и заклинания">
             <table className="classic-sheet-attacks"><thead><tr><th>Название</th><th>Бонус</th><th>Урон / тип</th></tr></thead>
-              <tbody>{props.attacks.slice(0, 9).map((attack, index) => <tr key={attack.id || index}><td>{attack.name}</td><td>{String(attack.attackBonus ?? "")}</td><td>{String(attack.damageDisplay ?? "")}</td></tr>)}</tbody>
+              <tbody>{props.attacks.map((attack, index) => <tr key={attack.id || index}><td>{attack.name}</td><td>{String(attack.attackBonus ?? "")}</td><td>{String(attack.damageDisplay ?? "")}</td></tr>)}</tbody>
             </table>
           </Panel>
           <Panel title="Снаряжение">
@@ -160,7 +156,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           <Panel title="Узы"><p>{props.personality.bonds || " "}</p></Panel>
           <Panel title="Изъяны"><p>{props.personality.flaws || " "}</p></Panel>
           <Panel title="Особенности и свойства">
-            {features.slice(0, 15).map((feature, index) => <p key={index}><b>{feature.name}</b>{feature.description ? ": " + feature.description : ""}</p>)}
+            {features.slice(0, 6).map((feature, index) => <p key={index}><b>{feature.name}</b>{feature.description ? ": " + feature.description : ""}</p>)}
           </Panel>
         </div>
       </div>
@@ -174,7 +170,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         <Panel title="Символ" className="classic-sheet-symbol" />
         <Panel title="Предыстория персонажа" className="classic-sheet-backstory"><p>{props.identity.backgroundName}</p></Panel>
         <Panel title="Прочие свойства и особенности" className="classic-sheet-additional">
-          {features.slice(15).map((feature, index) => <p key={index}><b>{feature.name}.</b> {feature.description}</p>)}
+          {features.slice(6).map((feature, index) => <p key={index}><b>{feature.name}.</b> {feature.description}</p>)}
         </Panel>
         <Panel title="Сокровища" className="classic-sheet-treasure">{coins.map(([name, amount]) => <p key={name}>{name}: {amount}</p>)}</Panel>
       </div>

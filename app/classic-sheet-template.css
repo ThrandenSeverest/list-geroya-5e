@@ -225,3 +225,53 @@
  left:36.9%!important;top:75.7%!important;width:59%!important;height:16.5%!important;
 }
 .classic-sheet--template .classic-sheet-ability span{bottom:12%!important;}
+
+/* Accepted three-page raster, November 2026. Each page has its own geometry. */
+.classic-sheet--template .classic-sheet-identity{left:8%!important;top:7.1%!important;width:86%!important;height:4.2%!important;}
+.classic-sheet--template .classic-sheet-identity{grid-template-columns:36% 64%;gap:0}
+.classic-sheet--template .classic-sheet-field-value{height:100%;display:flex;align-items:center;font-size:8pt}
+.classic-sheet--template .classic-sheet-abilities{left:3.9%!important;top:18.9%!important;width:9.5%!important;height:56.2%!important;}
+.classic-sheet--template .classic-sheet-ability strong{top:15%;font-size:15pt}
+.classic-sheet--template .classic-sheet-ability span{bottom:36%!important;font-size:9pt}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6){left:3.0%!important;top:75.8%!important;width:4.7%!important;height:2.4%!important;}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7){left:3.6%!important;top:80.6%!important;width:29.7%!important;height:15.4%!important;}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7) b{display:none}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7) p{padding-left:0;margin:0 0 2mm}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7) .classic-sheet-panel-body{padding-top:11mm}
+.classic-sheet--template .classic-sheet-combat{left:36.8%!important;top:17.7%!important;width:28.3%!important;height:3.6%!important;}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2){left:48%!important;top:25.6%!important;width:15.5%!important;height:2%!important;}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(3){left:37.5%!important;top:27.6%!important;width:26.5%!important;height:2.8%!important;}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(4){left:37.5%!important;top:33.7%!important;width:26.5%!important;height:3.5%!important;}
+.classic-sheet--template .classic-sheet-two{left:37.2%!important;top:41.8%!important;width:27.6%!important;height:3.1%!important;}
+.classic-sheet--template .classic-sheet-two .classic-sheet-panel:first-child p{font-size:6pt}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(6){left:37%!important;top:50.8%!important;width:27.7%!important;height:21.5%!important;}
+.classic-sheet--template .classic-sheet-attacks tbody tr:nth-child(n+4){display:table-row}
+.classic-sheet--template .classic-sheet-attacks tbody td{padding:1.1mm .6mm!important;font-size:6.7pt!important}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(7){left:36.2%!important;top:76.8%!important;width:28.3%!important;height:19.8%!important;}
+.classic-sheet--template .classic-sheet-coins{width:15%;gap:1.5mm;margin-right:3mm}
+.classic-sheet--template .classic-sheet-coins>div{height:6.5mm;min-height:0}
+.classic-sheet--template .classic-sheet-coins small{display:inline;font-size:5pt;margin-left:1mm}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(1){left:68.4%!important;top:17.6%!important;width:27.4%!important;height:5.9%!important;}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(2){left:68.4%!important;top:26.2%!important;width:27.4%!important;height:4.2%!important;}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(3){left:68.4%!important;top:33.4%!important;width:27.4%!important;height:4.2%!important;}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(4){left:68.4%!important;top:40.5%!important;width:27.4%!important;height:4.0%!important;}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(5){left:68.4%!important;top:50.8%!important;width:27.4%!important;height:45.5%!important;}
+.classic-sheet--template .classic-sheet-panel-body{box-sizing:border-box}
+.classic-sheet--template .classic-sheet-page:nth-child(2)>.classic-sheet-head{left:46%!important;top:11.5%!important;width:45%!important;height:3%!important;}
+.classic-sheet--template .classic-sheet-bio{left:5%!important;top:18.6%!important;width:90%!important;height:2%!important;}
+.classic-sheet--template .classic-sheet-bio{grid-template-columns:repeat(6,1fr);grid-template-rows:1fr}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-backstory{left:5.5%!important;top:54.4%!important;width:41.3%!important;height:40%!important;}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-additional{left:53.5%!important;top:55%!important;width:40.7%!important;height:19.5%!important;}
+.classic-sheet--template .classic-sheet-page:nth-child(2) .classic-sheet-treasure{left:54%!important;top:81.7%!important;width:40%!important;height:13%!important;}
+.classic-sheet--template .classic-sheet-portrait{left:5%!important;top:26.2%!important;width:39%!important;height:22%!important;}
+.classic-sheet--template .classic-sheet-allies{left:49%!important;top:26%!important;width:28%!important;height:22%!important;}
+.classic-sheet--template .classic-sheet-symbol{left:81%!important;top:29.6%!important;width:12%!important;height:7.5%!important;}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(1){left:58.8%!important;top:9.1%!important;width:35%!important;height:2.8%!important;}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(2){left:23.8%!important;top:17.3%!important;width:7.2%!important;height:2.6%!important;}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(3){left:55.6%!important;top:17.3%!important;width:7.2%!important;height:2.6%!important;}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(4){left:87%!important;top:17.3%!important;width:6.8%!important;height:2.6%!important;}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field .classic-sheet-field-value{font-size:8pt!important;justify-content:center}
+.classic-sheet--template .classic-source-spell-row{font-size:6.5pt;width:25.5%;max-height:1.4%}
+.classic-sheet--template .classic-source-checkvalue{width:2.4%;font-size:7.5pt;line-height:1}
+.classic-sheet--template .classic-source-checkmark{width:1.2%;font-size:6pt;line-height:1}
+.classic-sheet--template .classic-source-spell-slot{width:3.2%;text-align:center}
