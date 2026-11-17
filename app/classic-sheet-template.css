@@ -119,3 +119,65 @@
   .classic-sheet--template .pdf-cards-appendix{zoom:1!important}
   .pdf-document .pdf-spell-card-grid--nine{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important}
 }
+
+/* Calibrated overlays: the pre-printed names, headings, circles and rules
+   belong to the template image. Rendering them again is always wrong. */
+.classic-sheet--template .classic-source-saves,
+.classic-sheet--template .classic-source-skills,
+.classic-sheet--template .classic-source-check,
+.classic-sheet--template .classic-sheet-spell-columns,
+.classic-sheet--template .classic-source-spell-group{position:static!important;display:contents!important}
+.classic-sheet--template .classic-source-checkvalue{
+  position:absolute!important; z-index:5;
+  display:block; width:18px; text-align:center; padding:0;
+  font:700 8pt/1.15 Arial,Helvetica,sans-serif; color:#131313;
+  white-space:nowrap; background:transparent;
+}
+.classic-sheet--template .classic-source-checkmark{
+  position:absolute!important; z-index:5;
+  display:block; width:12px; text-align:center;
+  font:700 6.5pt/1.15 Arial,Helvetica,sans-serif;
+  color:#161616; background:transparent;
+}
+.classic-sheet--template .classic-source-spell-row{
+  position:absolute!important;z-index:3;
+  width:24.4%; height:auto; max-height:1.65%;
+  font:400 7.2pt/1.1 Arial,Helvetica,sans-serif;
+  color:#171717;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:0;margin:0;border:0;background:transparent;
+}
+.classic-sheet--template .classic-source-spell-slot{
+  position:absolute!important;z-index:3;
+  font:700 7pt/1.1 Arial,Helvetica,sans-serif;
+  color:#171717;white-space:nowrap;
+  padding:0;margin:0;background:transparent;
+}
+/* Spell header values have their own pre-printed outlined boxes. */
+.classic-sheet--template .classic-sheet-page:nth-child(3)>.classic-sheet-head{display:none!important}
+.classic-sheet--template .classic-sheet-magic-header{position:static!important;display:contents!important}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field{
+  position:absolute!important;display:flex!important;align-items:center;justify-content:center;
+  padding:0!important;margin:0!important;border:0!important;overflow:hidden;
+}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field .classic-sheet-field-value{
+  width:100%;text-align:center;font:700 10pt/1.1 Arial,Helvetica,sans-serif!important;
+}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(1){
+  left:11.5%!important;top:11.2%!important;width:28%!important;height:2.8%!important
+}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(2){
+  left:45.0%!important;top:10.45%!important;width:13.0%!important;height:2.6%!important
+}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(3){
+  left:62.0%!important;top:10.45%!important;width:13.0%!important;height:2.6%!important
+}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(4){
+  left:79.0%!important;top:10.45%!important;width:13.0%!important;height:2.6%!important
+}
+/* Improve readability of the variable fields without covering the baked labels. */
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(-n+4) .classic-sheet-panel-body{
+  font-size:8pt!important;line-height:1.22!important
+}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(5) .classic-sheet-panel-body{
+  font-size:6.5pt!important;line-height:1.16!important
+}
