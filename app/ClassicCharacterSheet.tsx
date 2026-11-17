@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, CSSProperties } from "react";
 import type { PdfCharacterSheetProps, PdfSpell } from "./PdfCharacterSheet";
 import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
@@ -13,6 +13,27 @@ const abilityOrder: (keyof AbilityScores)[] = ["str", "dex", "con", "int", "wis"
 const modifier = (score: number) => Math.floor((score - 10) / 2);
 const signed = (n: number) => (n >= 0 ? "+" : "") + n;
 const spellCapacities = [8, 13, 13, 13, 13, 9, 9, 9, 6, 7];
+// Source artwork is centered with white margins: calibrated from original 1072×1409px raster.
+const referencePosition = (x:number,y:number):CSSProperties=>({
+  position:"absolute",left:`${(1.20+97.30*x/1072).toFixed(4)}%`,
+  top:`${(5.20+90.50*y/1409).toFixed(4)}%`
+});
+const originalSkillOrder=[
+  "Акробатика","Атлетика","Внимательность","Выживание","Уход за животными",
+  "Запугивание","Выступление","История","Ловкость рук","Магия","Медицина",
+  "Обман","Природа","Проницательность","Расследование","Религия","Скрытность","Убеждение"
+] as const;
+const spellGeometry:Record<number,{x:number;y:number;step:number;cx?:number;cy?:number}>={
+  0:{x:75,y:319,step:25.2},1:{x:75,y:621,step:25.2,cx:194,cy:555},
+  2:{x:75,y:1028,step:25.5,cx:194,cy:977},
+  3:{x:414,y:319,step:25.3,cx:531,cy:252},
+  4:{x:414,y:723,step:25.3,cx:531,cy:663},
+  5:{x:414,y:1129,step:25.8,cx:531,cy:1074},
+  6:{x:748,y:320,step:25.3,cx:878,cy:253},
+  7:{x:748,y:623,step:26.3,cx:878,cy:560},
+  8:{x:748,y:926,step:25.3,cx:878,cy:867},
+  9:{x:748,y:1181,step:25.3,cx:878,cy:1100}
+};
 
 function Panel({ title, children, className = "" }: { title: string; children?: ReactNode; className?: string }) {
   return <section className={"classic-sheet-panel " + className}>
@@ -32,23 +53,20 @@ function ClassicHeader({ title, page }: { title: string; page: number }) {
   </header>;
 }
 
-function SpellGroup({ level, entries, slots }: { level: number; entries: PdfSpell[]; slots: number }) {
-  return <section className="classic-sheet-spell-group">
-    <div className="classic-sheet-spell-group-head"><b>{level}</b><span>{level ? "ЗАКЛИНАНИЯ " + level + " КРУГА" : "ЗАГОВОРЫ"}</span>{level > 0 && <small>Ячейки: {slots}</small>}</div>
-    <div className="classic-sheet-spell-rows">
-      {Array.from({ length: Math.max(spellCapacities[level], entries.length) }, (_, index) => {
-        const spell = entries[index];
-        return <div key={index} className="classic-sheet-spell-row">
-          {level > 0 && <span className="classic-sheet-prepare" title={spell?.alwaysPrepared ? "Всегда подготовлено" : spell?.prepared ? "Подготовлено" : "Не подготовлено"}>{spell ? spell.alwaysPrepared ? "†" : spell.prepared ? "●" : "" : ""}</span>}
-          <span>{spell?.name || "\u00a0"}</span>
-        </div>;
-      })}
-    </div>
-  </section>;
+function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots:number}) {
+  const g=spellGeometry[level];
+  return <div className="classic-source-spell-group" data-spell-level={level}>
+    {level>0&&slots>0&&<span className="classic-source-spell-slot" style={referencePosition(g.cx||0,g.cy||0)}>{slots} яч.</span>}
+    {entries.map((spell,index)=><div key={spell.id} className="classic-source-spell-row"
+      style={referencePosition(g.x,g.y+g.step*index-15)}
+      title={spell.alwaysPrepared?"Всегда подготовлено":spell.prepared?"Подготовлено":"Не подготовлено"}>
+      {spell.alwaysPrepared?"† ":spell.prepared?"● ":""}{spell.name}
+    </div>)}
+  </div>;
 }
 
 export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
-  const skills = Object.entries(skillKeys).map(([name, detail]) => ({ name, ...detail }));
+  const skills = originalSkillOrder.map(name=>({name,...skillKeys[name]}));
   const spells = Array.from(new Map(props.spells.map(spell => [spell.id, spell])).values());
   const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter(spell => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
   const displayed = levelSpells.map((entries, level) => entries.slice(0, spellCapacities[level]));
@@ -82,22 +100,29 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           </div>
           <Panel title="Вдохновение"><strong className="classic-sheet-inline-value">{props.identity.inspiration ? "●" : "○"}</strong></Panel>
           <Panel title="Бонус мастерства"><strong className="classic-sheet-inline-value">{signed(props.proficiency)}</strong></Panel>
-          <Panel title="Испытания">
-            {abilityOrder.map(key => <div key={key} className="classic-sheet-check-row">
-              <span>{props.savingThrows.includes(key) ? "●" : "○"}</span><b>{signed(modifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (props.savingThrowBonuses?.[key] || 0))}</b>{abilityLabels[key]}
-            </div>)}
-          </Panel>
-          <Panel title="Навыки">
-            {skills.map(skill => {
-              const trained = props.proficiencies.skills.includes(skill.name);
-              const expert = props.proficiencies.expertise.includes(skill.name);
-              const bonus = modifier(props.abilities[skill.stat as keyof AbilityScores]) + (expert ? 2 * props.proficiency : trained ? props.proficiency : 0);
-              return <div className="classic-sheet-check-row" key={skill.key}>
-                <span>{expert ? "◆" : trained ? "●" : "○"}</span><b>{signed(bonus)}</b><span>{skill.name}</span>
-                <small>({abilityLabels[skill.stat as keyof AbilityScores].slice(0, 3)})</small>
+          <div className="classic-source-saves">
+            {abilityOrder.map((key,i)=>{
+              const trained=props.savingThrows.includes(key);
+              const value=modifier(props.abilities[key])+(trained?props.proficiency:0)+(props.savingThrowBonuses?.[key]||0);
+              const y=354+i*24.2;
+              return <div key={key} className="classic-source-check">
+                {trained&&<span className="classic-source-checkmark" style={referencePosition(169,y)}>●</span>}
+                <span className="classic-source-checkvalue" style={referencePosition(186,y)}>{signed(value)}</span>
               </div>;
             })}
-          </Panel>
+          </div>
+          <div className="classic-source-skills">
+            {skills.map((skill,i)=>{
+              const trained=props.proficiencies.skills.includes(skill.name);
+              const expert=props.proficiencies.expertise.includes(skill.name);
+              const bonus=modifier(props.abilities[skill.stat as keyof AbilityScores])+(expert?2*props.proficiency:trained?props.proficiency:0);
+              const y=556+i*24.35;
+              return <div key={skill.key} className="classic-source-check">
+                {(trained||expert)&&<span className="classic-source-checkmark" style={referencePosition(169,y)}>{expert?"◆":"●"}</span>}
+                <span className="classic-source-checkvalue" style={referencePosition(186,y)}>{signed(bonus)}</span>
+              </div>;
+            })}
+          </div>
           <Panel title="Пассивная мудрость (Внимательность)"><strong className="classic-sheet-inline-value">{props.passivePerception}</strong></Panel>
           <Panel title="Прочие умения и языки">
             <p><b>Языки:</b> {props.proficiencies.languages.join(", ") || "—"}</p>
@@ -163,9 +188,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         <Field label="Бонус атаки заклинанием" value={props.spellAttackBonus == null ? "" : signed(props.spellAttackBonus)} />
       </div>
       <div className="classic-sheet-spell-columns">
-        {spellsByColumn.map((column, index) => <div className="classic-sheet-spell-column" key={index}>
-          {column.map(level => <SpellGroup key={level} level={level} entries={displayed[level]} slots={props.spellSlots[level - 1] || (props.pactSlots?.level === level ? props.pactSlots.slots : 0)} />)}
-        </div>)}
+        {spellsByColumn.flat().map(level=><SpellGroup key={level} level={level} entries={displayed[level]} slots={props.spellSlots[level-1]||(props.pactSlots?.level===level?props.pactSlots.slots:0)} />)}
       </div>
       <div className="classic-sheet-note">● подготовлено · † всегда подготовлено · ○ не подготовлено</div>
     </section>
