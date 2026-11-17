@@ -98,8 +98,8 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
               <b>{abilityLabels[ability]}</b><strong>{signed(modifier(props.abilities[ability]))}</strong><span>{props.abilities[ability]}</span>
             </div>)}
           </div>
-          <Panel title="Вдохновение"><strong className="classic-sheet-inline-value">{props.identity.inspiration ? "●" : "○"}</strong></Panel>
-          <Panel title="Бонус мастерства"><strong className="classic-sheet-inline-value">{signed(props.proficiency)}</strong></Panel>
+          <div className="classic-source-inspiration">{props.identity.inspiration && <strong style={referencePosition(176,229)}>●</strong>}</div>
+          <div className="classic-source-proficiency"><strong style={referencePosition(164,289)}>{signed(props.proficiency)}</strong></div>
           <div className="classic-source-saves">
             {abilityOrder.map((key,i)=>{
               const trained=props.savingThrows.includes(key);
