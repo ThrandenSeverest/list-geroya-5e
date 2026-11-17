@@ -5,6 +5,7 @@ import type { PdfCharacterSheetProps, PdfSpell } from "./PdfCharacterSheet";
 import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
 import "./classic-character-sheet.css";
+import "./classic-sheet-template.css";
 import { assetUrl } from "./assetUrl";
 import { SpellCardsAppendix } from "./PdfCharacterSheet";
 
@@ -154,7 +155,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       </div>
     </section>
     <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-3.jpg")}")`}}>
-      <ClassicHeader title={props.identity.name || "Имя заклинателя"} page={3} />
+      <ClassicHeader title={props.identity.className || "Класс заклинателя"} page={3} />
       <div className="classic-sheet-magic-header">
         <Field label="Класс заклинателя" value={props.identity.className} />
         <Field label="Заклинательная характеристика" value={props.spellAbility} />
