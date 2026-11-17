@@ -75,3 +75,8 @@
   .classic-sheet-document{zoom:1!important;width:210mm!important}
   .classic-sheet-page{box-shadow:none!important;margin:0!important}
 }
+
+.character-sheet-format-toggle{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;margin:14px auto 18px}
+.character-sheet-format-toggle button{min-height:40px;padding:9px 16px;border:1px solid var(--gold,#a58a56);border-radius:7px;background:transparent;color:var(--ivory,#fff);font-size:14px;cursor:pointer}
+.character-sheet-format-toggle button[aria-pressed="true"]{background:var(--gold,#a58a56);color:#151515;font-weight:bold}
+@media print{.character-sheet-format-toggle{display:none!important}}
