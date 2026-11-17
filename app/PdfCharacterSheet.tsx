@@ -232,8 +232,23 @@ function paginateSpells(spells: PdfSpell[], wizardPrepared: boolean) {
 }
 
 function paginateSpellCards(spells: PdfSpell[]) {
+  // Longer descriptions need physically larger cards, not ever-smaller text
+  // in a rigid nine-card grid.
   const pages: PdfSpell[][] = [];
-  for (let index = 0; index < spells.length; index += 9) pages.push(spells.slice(index, index + 9));
+  let page: PdfSpell[] = [];
+  let budget = 0;
+  for (const spell of spells) {
+    const length = spell.description.length + (spell.castingTime?.length || 0);
+    const weight = length > 1500 ? 9 : length > 1000 ? 7 : length > 650 ? 5 : length > 400 ? 3 : length > 220 ? 2 : 1;
+    if (page.length && budget + weight > 9) {
+      pages.push(page);
+      page = [];
+      budget = 0;
+    }
+    page.push(spell);
+    budget += weight;
+  }
+  if (page.length) pages.push(page);
   return pages;
 }
 
@@ -258,7 +273,8 @@ export function PdfSpellCard({spell}:{spell:PdfSpell}) {
       <div><dt>Компоненты</dt><dd>{spell.components || spellComponentLabel(spell) || "—"}</dd></div>
       <div><dt>Длительность</dt><dd>{spell.duration || "—"}</dd></div>
     </dl>
-    <p>{spell.description || "Описание заклинания появится здесь."}</p>
+    <p>{spell.description || "Описание заклинания отсутствует в локальном каталоге."}</p>
+    <small className="pdf-spell-source"><a href={spell.url || `https://dnd.su/spells/?search=${encodeURIComponent(spell.name)}`} target="_blank" rel="noopener noreferrer">Проверить текст по источнику</a></small>
   </article>;
 }
 
@@ -599,7 +615,10 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       const pageNumber = firstSpellCardPageNumber + cardPageIndex;
       return <section className="pdf-page pdf-spell-card-page" key={`spell-card-page-${cardPageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`} title="Карточки заклинаний" page={pageNumber} />
-        <div className="pdf-spell-card-grid">
+        <div className="pdf-spell-card-grid" style={{
+          gridTemplateColumns: `repeat(${pageSpells.length <= 2 ? 1 : pageSpells.length <= 4 ? 2 : 3},minmax(0,1fr))`,
+          gridTemplateRows: `repeat(${Math.ceil(pageSpells.length / (pageSpells.length <= 2 ? 1 : pageSpells.length <= 4 ? 2 : 3))},minmax(0,1fr))`
+        }}>
           {pageSpells.map(spell => <PdfSpellCard spell={spell} key={`${spell.classSource}-${spell.id}`} />)}
         </div>
         <footer>Лист Героя 5e · Карточки заклинаний{cardPageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>
