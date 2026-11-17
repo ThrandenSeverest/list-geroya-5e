@@ -81,6 +81,7 @@ import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
+import { ClassicCharacterSheet } from "./ClassicCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
 import { racialSpellChoiceOptions, racialSpellDefinitions, resolvedRacialSpells } from "./racialSpellcasting";
 import { shortRestHitDieHealing } from "./restRules";
@@ -869,6 +870,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   const [folderImport, setFolderImport] = useState<FolderImportDraft | null>(null);
   const [libraryExportTarget, setLibraryExportTarget] = useState<LibraryExportTarget | null>(null);
   const [pdfSheetEdition, setPdfSheetEdition] = useState<"2014" | "2024">("2014");
+  const [classicSheetEnabled, setClassicSheetEnabled] = useState(false);
+  const SelectedCharacterSheet = classicSheetEnabled ? ClassicCharacterSheet : PdfCharacterSheet;
   const [account, setAccount] = useState<AccountState | null>(null);
   const [textEntryDialog, setTextEntryDialog] = useState<TextEntryDialogState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
@@ -3858,7 +3861,11 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                   </section>
                 </div>
               </div>
-              <PdfCharacterSheet
+              <div className="character-sheet-format-toggle" role="group" aria-label="Формат листа персонажа">
+                <button type="button" aria-pressed={!classicSheetEnabled} onClick={() => setClassicSheetEnabled(false)}>Современный лист</button>
+                <button type="button" aria-pressed={classicSheetEnabled} onClick={() => setClassicSheetEnabled(true)}>Классический лист D&amp;D</button>
+              </div>
+              <SelectedCharacterSheet
                 sheetEdition={pdfSheetEdition}
                 identity={{
                   name: character.name,
