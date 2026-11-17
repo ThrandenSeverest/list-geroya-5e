@@ -67,7 +67,12 @@
 .classic-sheet-note{text-align:center;font-size:6pt}
 .classic-sheet-overflow>.classic-sheet-spell-row{min-height:5.2mm}
 @media screen{
-  .classic-sheet-document{zoom:min(1,calc((100vw - 32px)/794));}
+  .classic-sheet-document{zoom:1}
+  @media (max-width:820px){.classic-sheet-document{zoom:.9}}
+  @media (max-width:720px){.classic-sheet-document{zoom:.8}}
+  @media (max-width:640px){.classic-sheet-document{zoom:.7}}
+  @media (max-width:560px){.classic-sheet-document{zoom:.6}}
+  @media (max-width:475px){.classic-sheet-document{zoom:.48}}
   .classic-sheet-page{box-shadow:0 7px 24px rgba(0,0,0,.35);margin-bottom:16px}
 }
 @media print{
