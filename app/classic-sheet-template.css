@@ -1,0 +1,121 @@
+/*
+ * Pixel-aligned fields above the genuine decorative D&D 5e sheet artwork.
+ * The background is rendered at build time into static assets (no cross-origin
+ * network requests in the browser and no vector re-imagination of the frame).
+ */
+.classic-sheet--template{width:210mm;max-width:none}
+.classic-sheet--template .classic-sheet-page:not(.classic-sheet-overflow){position:relative;display:block;width:210mm;height:297mm;min-height:297mm;margin:0 0 4mm;padding:0;overflow:hidden;border:0;background:#fff center center/100% 100% no-repeat;color:#171717;font:8pt/1.2 Arial,Helvetica,sans-serif;box-sizing:border-box;break-after:page;page-break-after:always}
+.classic-sheet--template .classic-sheet-page:not(.classic-sheet-overflow) .classic-sheet-panel{position:absolute;display:block;border:0!important;border-radius:0;background:transparent!important;box-shadow:none!important;margin:0;padding:0;min-height:0;overflow:visible}
+.classic-sheet--template .classic-sheet-page .classic-sheet-panel-body{min-height:0;height:100%;overflow:hidden;font:6.9pt/1.22 Arial,sans-serif;padding:1mm;overflow-wrap:anywhere}
+.classic-sheet--template .classic-sheet-panel-caption{display:none!important}
+.classic-sheet--template .classic-sheet-panel p{margin:0 0 1.3mm;line-height:1.24}
+.classic-sheet--template .classic-sheet-head{position:absolute;z-index:2;top:9.3%;left:8%;width:32%;height:5%;display:flex;border:0;padding:0;background:transparent;align-items:center;justify-content:start}
+.classic-sheet--template .classic-sheet-head :is(.classic-sheet-emblem,span){display:none}
+.classic-sheet--template .classic-sheet-head>strong{display:block;width:100%;text-align:left;font:700 10pt Arial,sans-serif;line-height:1.12}
+.classic-sheet--template .classic-sheet-page:first-child .classic-sheet-head{display:none}
+.classic-sheet--template .classic-sheet-identity{position:absolute;left:8%;top:9.8%;width:85%;height:6.2%;display:grid;grid-template-columns:43% 57%;gap:3%;margin:0;min-height:0}
+.classic-sheet--template .classic-sheet-identity>.classic-sheet-field{align-self:center}
+.classic-sheet--template .classic-sheet-identity-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,1fr);gap:0 2mm;min-width:0}
+.classic-sheet--template .classic-sheet-field{border:0;background:transparent;min-width:0;padding:0;justify-content:center;overflow:hidden}
+.classic-sheet--template .classic-sheet-field small{display:none}
+.classic-sheet--template .classic-sheet-field-value{font:700 8.5pt/1.1 Arial,sans-serif;color:#101010;max-width:100%;overflow-wrap:anywhere}
+.classic-sheet--template .classic-sheet-identity-fields .classic-sheet-field-value{font-size:7.4pt}
+.classic-sheet--template .classic-sheet-main-grid{position:static;display:block;margin:0}
+.classic-sheet--template .classic-sheet-column{position:static;display:block;overflow:visible}
+.classic-sheet--template .classic-sheet-abilities{position:absolute;left:4.5%;top:20.15%;width:9.7%;height:50%;display:grid;grid-template-columns:1fr;grid-template-rows:repeat(6,minmax(0,1fr));gap:0}
+.classic-sheet--template .classic-sheet-ability{position:relative;display:block;border:0!important;min-height:0;background:transparent}
+.classic-sheet--template .classic-sheet-ability b{display:none}
+.classic-sheet--template .classic-sheet-ability strong{position:absolute;top:23%;left:0;width:100%;font:700 15pt/1 Arial,sans-serif;text-align:center}
+.classic-sheet--template .classic-sheet-ability span{position:absolute;bottom:6%;left:27%;width:46%;min-width:0;border:0;border-radius:0;font:700 9pt/1 Arial,sans-serif;text-align:center}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(2){left:20%;top:19.7%;width:13%;height:2.5%}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(3){left:20%;top:23.4%;width:13%;height:2.3%}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(2) .classic-sheet-inline-value,
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(3) .classic-sheet-inline-value{font:700 12pt Arial;text-align:left;padding-left:1mm}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(4){left:16.2%;top:28.3%;width:17.4%;height:10.3%}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(5){left:16.2%;top:40.65%;width:17.4%;height:29.7%}
+.classic-sheet--template .classic-sheet-left .classic-sheet-check-row{display:flex;align-items:baseline;gap:1mm;font:6.6pt/1 Arial,sans-serif;min-height:0;white-space:nowrap}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(4) .classic-sheet-panel-body{display:flex;flex-direction:column;justify-content:space-around}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(5) .classic-sheet-panel-body{display:flex;flex-direction:column;justify-content:space-around}
+.classic-sheet--template .classic-sheet-left .classic-sheet-check-row>span:first-child{width:3mm;text-align:center}
+.classic-sheet--template .classic-sheet-left .classic-sheet-check-row>b{min-width:5mm}
+.classic-sheet--template .classic-sheet-left .classic-sheet-check-row>span:nth-child(3),
+.classic-sheet--template .classic-sheet-left .classic-sheet-check-row>small,
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(4) .classic-sheet-check-row{font-size:6.5pt}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6){left:9.5%;top:72.4%;width:23%;height:2.8%}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(6) .classic-sheet-inline-value{text-align:left;padding-left:2mm;font:700 12pt Arial}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7){left:5.2%;top:77.3%;width:27.5%;height:15.5%}
+.classic-sheet--template .classic-sheet-left>.classic-sheet-panel:nth-child(7) .classic-sheet-panel-body{font-size:6.7pt}
+.classic-sheet--template .classic-sheet-combat{position:absolute;left:37%;top:20.2%;width:27.2%;height:5.8%;display:grid;grid-template-columns:repeat(3,1fr);gap:1mm}
+.classic-sheet--template .classic-sheet-combat>.classic-sheet-panel{position:relative!important;display:flex!important;align-items:center;justify-content:center;min-height:0;text-align:center}
+.classic-sheet--template .classic-sheet-combat strong{font:700 15pt Arial}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2){left:38%;top:27%;width:25%;height:2.5%}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(3){left:37.2%;top:29.4%;width:27%;height:4.5%}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(4){left:37.2%;top:34%;width:27%;height:5%}
+.classic-sheet--template .classic-sheet-center .classic-sheet-hp{text-align:center;font:700 12pt Arial;padding:.6mm}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2) .classic-sheet-hp{text-align:right;padding-right:3mm}
+.classic-sheet--template .classic-sheet-two{position:absolute;left:36.8%;top:40.8%;width:28%;height:5%;display:grid;grid-template-columns:1fr 1fr;gap:2mm}
+.classic-sheet--template .classic-sheet-two .classic-sheet-panel{position:relative!important;width:100%;height:100%;display:block}
+.classic-sheet--template .classic-sheet-two p{font-size:6.7pt;margin:0}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(6){left:36.7%;top:48.0%;width:27.5%;height:22%}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(7){left:37.0%;top:72.2%;width:27.3%;height:21%}
+.classic-sheet--template .classic-sheet-attacks{table-layout:fixed;width:100%;font-size:6pt;border-collapse:collapse}
+.classic-sheet--template .classic-sheet-attacks th{font-size:5.5pt;line-height:1.1}
+.classic-sheet--template .classic-sheet-attacks td,.classic-sheet--template .classic-sheet-attacks th{padding:.7mm .5mm;line-height:1.15;border:0}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(6) .classic-sheet-panel-body{padding-top:1mm}
+.classic-sheet--template .classic-sheet-coins{display:flex;flex-direction:column;width:9mm;float:left;gap:2mm;margin:0 1.5mm 0 0}
+.classic-sheet--template .classic-sheet-coins>div{border:0;min-height:5mm}
+.classic-sheet--template .classic-sheet-coins b{font:700 7pt Arial}
+.classic-sheet--template .classic-sheet-coins small{display:none}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(7) p{font-size:6.1pt}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(1){left:67.7%;top:20.0%;width:27%;height:6.5%}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(2){left:67.7%;top:27.9%;width:27%;height:5.8%}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(3){left:67.7%;top:34.4%;width:27%;height:5.9%}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(4){left:67.7%;top:40.8%;width:27%;height:5.8%}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(5){left:67.7%;top:48.7%;width:27.5%;height:44.6%}
+.classic-sheet--template .classic-sheet-right>.classic-sheet-panel:nth-child(5) .classic-sheet-panel-body{font-size:5.9pt;line-height:1.22}
+.classic-sheet--template .classic-sheet-bio{position:absolute;left:43.3%;top:11.5%;width:50%;height:5%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:.7mm}
+.classic-sheet--template .classic-sheet-story-grid{display:contents}
+.classic-sheet--template .classic-sheet-portrait{left:5%;top:19.3%;width:27.5%;height:26.7%}
+.classic-sheet--template .classic-sheet-allies{left:36.5%;top:19.3%;width:59.5%;height:26.7%}
+.classic-sheet--template .classic-sheet-symbol{left:69%;top:21.3%;width:24%;height:16%}
+.classic-sheet--template .classic-sheet-backstory{left:5%;top:48.3%;width:27.5%;height:44.5%}
+.classic-sheet--template .classic-sheet-additional{left:36.5%;top:48.3%;width:59.5%;height:23.9%}
+.classic-sheet--template .classic-sheet-treasure{left:36.5%;top:74.0%;width:59.5%;height:19%}
+.classic-sheet--template .classic-sheet-bio .classic-sheet-field-value{font-size:7.4pt}
+.classic-sheet--template .classic-sheet-magic-header{position:absolute;left:43.5%;top:10.3%;width:50%;height:6%;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr;gap:1.5mm}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:first-child{position:absolute;left:-79%;top:0;width:75%;height:100%}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(2){grid-column:1}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(3){grid-column:2}
+.classic-sheet--template .classic-sheet-magic-header>.classic-sheet-field:nth-child(4){grid-column:3}
+.classic-sheet--template .classic-sheet-spell-columns{position:absolute;left:4.4%;top:20.1%;width:91%;height:74.3%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3.5mm;min-height:0}
+.classic-sheet--template .classic-sheet-spell-column{position:relative;display:block;overflow:hidden}
+.classic-sheet--template .classic-sheet-spell-group{position:absolute;width:100%;min-height:0;display:block;border:0;overflow:hidden;background:transparent}
+.classic-sheet--template .classic-sheet-spell-group-head{position:absolute;top:0;left:0;height:10%;width:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:end}
+.classic-sheet--template .classic-sheet-spell-group-head :is(b,span){display:none}
+.classic-sheet--template .classic-sheet-spell-group-head small{font:700 6pt Arial;padding:1mm 2mm 0 0;color:#222}
+.classic-sheet--template .classic-sheet-spell-rows{position:absolute;top:15%;left:0;width:100%;height:83%;padding:0;display:flex;flex-direction:column;justify-content:space-around;min-height:0}
+.classic-sheet--template .classic-sheet-spell-row{min-height:0;height:auto;flex:1;max-height:none;border:0;display:flex;align-items:flex-end;gap:1mm;font:6.5pt/1.1 Arial,sans-serif;white-space:nowrap}
+.classic-sheet--template .classic-sheet-spell-row>span:last-child{background:rgba(255,255,255,.86);padding:0 .5mm;overflow:hidden;text-overflow:ellipsis}
+.classic-sheet--template .classic-sheet-prepare{width:3mm;min-width:3mm;text-align:center;font-size:6.5pt}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(1)>.classic-sheet-spell-group:nth-child(1){top:0;height:22%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(1)>.classic-sheet-spell-group:nth-child(2){top:23%;height:34%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(1)>.classic-sheet-spell-group:nth-child(3){top:58%;height:42%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(2)>.classic-sheet-spell-group:nth-child(1){top:0;height:33%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(2)>.classic-sheet-spell-group:nth-child(2){top:34%;height:33%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(2)>.classic-sheet-spell-group:nth-child(3){top:68%;height:32%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(3)>.classic-sheet-spell-group:nth-child(1){top:0;height:24%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(3)>.classic-sheet-spell-group:nth-child(2){top:25%;height:26%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(3)>.classic-sheet-spell-group:nth-child(3){top:52%;height:22%}
+.classic-sheet--template .classic-sheet-spell-column:nth-child(3)>.classic-sheet-spell-group:nth-child(4){top:75%;height:25%}
+.classic-sheet--template .classic-sheet-note{display:none}
+.pdf-cards-appendix{width:210mm;max-width:none}
+.pdf-document .pdf-spell-card-grid--nine{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;height:238mm!important;min-height:238mm;align-content:stretch;gap:2mm}
+.pdf-document .pdf-spell-card-grid--nine .pdf-spell-card{min-height:0!important;max-height:none!important;height:auto;overflow:hidden;box-shadow:none}
+.pdf-document .pdf-spell-card-grid--nine .pdf-spell-card p{font-size:5.5pt;line-height:1.17;white-space:pre-line}
+.pdf-document .pdf-spell-card-grid--nine .pdf-spell-card--dense p{font-size:4.75pt}
+.pdf-document .pdf-spell-card-grid--nine .pdf-spell-card--micro p{font-size:4.35pt}
+@media print{
+  .classic-sheet--template .classic-sheet-page:not(.classic-sheet-overflow){margin:0!important;box-shadow:none!important;zoom:1!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .classic-sheet--template .pdf-cards-appendix{zoom:1!important}
+  .pdf-document .pdf-spell-card-grid--nine{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important}
+}
