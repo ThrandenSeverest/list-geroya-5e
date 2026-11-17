@@ -19,7 +19,7 @@ function Panel({ title, children, className = "" }: { title: string; children?: 
 }
 
 function Field({ label, value }: { label: string; value?: ReactNode }) {
-  return <div className="classic-sheet-field"><div className="classic-sheet-field-value">{value || "\u00a0"}</div><small>{label}</small></div>;
+  return <div className="classic-sheet-field"><div className="classic-sheet-field-value">{value ?? "\u00a0"}</div><small>{label}</small></div>;
 }
 
 function ClassicHeader({ title, page }: { title: string; page: number }) {
@@ -118,7 +118,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           </div>
           <Panel title="Атаки и заклинания">
             <table className="classic-sheet-attacks"><thead><tr><th>Название</th><th>Бонус</th><th>Урон / тип</th></tr></thead>
-              <tbody>{props.attacks.slice(0, 9).map((attack, index) => <tr key={attack.id || index}><td>{attack.name}</td><td>{String(attack.attackBonus ?? "")}</td><td>{String(attack.damage ?? "")}</td></tr>)}</tbody>
+              <tbody>{props.attacks.slice(0, 9).map((attack, index) => <tr key={attack.id || index}><td>{attack.name}</td><td>{String(attack.attackBonus ?? "")}</td><td>{String(attack.damageDisplay ?? "")}</td></tr>)}</tbody>
             </table>
           </Panel>
           <Panel title="Снаряжение">
