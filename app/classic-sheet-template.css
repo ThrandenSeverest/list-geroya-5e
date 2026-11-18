@@ -298,3 +298,15 @@
 .classic-sheet--template .classic-spell-mark{position:absolute;right:calc(100% + .9mm);width:2.5mm;text-align:center;font-size:8pt}
 .classic-sheet--template .classic-source-spell-slot{font-size:9pt;line-height:1.2}
 .classic-sheet--template .classic-sheet-page:nth-child(3)>.classic-sheet-head{display:flex!important;left:9%!important;top:8.2%!important;width:27%!important;height:2.5%!important}
+
+/* Keep the printed sheet independent of the surrounding application theme. */
+.classic-sheet--template .classic-sheet-page :is(table,tbody,tr,td,th){color:#171717!important}
+.classic-sheet--template .classic-sheet-identity-fields{top:6.5%;height:4.25%;row-gap:1.1%}
+.classic-sheet--template .classic-sheet-identity-fields .classic-sheet-field-value{white-space:nowrap;overflow-wrap:normal}
+.classic-sheet--template .classic-sheet-two{top:40.8%!important;height:4.7%!important;min-height:0!important}
+.classic-sheet--template .classic-sheet-two .classic-sheet-panel:first-child p{font-size:7pt;white-space:nowrap;left:37%;width:61%;text-align:center}
+.classic-sheet--template .classic-sheet-two .classic-sheet-panel:first-child p:first-child{top:4%}
+.classic-sheet--template .classic-sheet-two .classic-sheet-panel:first-child p:nth-child(2){top:50%}
+.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2){top:24.5%!important}
+.classic-sheet--template .classic-spell-mark{right:calc(100% + 1.8mm)}
+.classic-sheet--template :is([data-spell-level="6"],[data-spell-level="7"],[data-spell-level="8"],[data-spell-level="9"]) .classic-spell-mark{right:calc(100% + 2.5mm)}

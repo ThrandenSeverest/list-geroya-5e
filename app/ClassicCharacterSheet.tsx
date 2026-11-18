@@ -17,9 +17,9 @@ const spellCapacities = [12, 9, 9, 10, 9, 9, 6, 6, 5, 7];
 const referencePosition = (x:number,y:number):CSSProperties=>({position:"absolute",left:`${x}%`,top:`${y}%`});
 const originalSkillOrder=["Акробатика","Атлетика","Внимательность","Выживание","Выступление","Запугивание","История","Ловкость рук","Магия","Медицина","Обман","Природа","Проницательность","Расследование","Религия","Скрытность","Убеждение","Уход за животными"] as const;
 const spellGeometry:Record<number,{x:number;y:number;step:number;cx?:number;cy?:number}>={
-0:{x:6.2,y:30.0,step:1.49},1:{x:6.2,y:57.7,step:1.49,cx:14.8,cy:53.8},2:{x:6.2,y:80.7,step:1.49,cx:14.8,cy:76.8},
-3:{x:38.7,y:32.6,step:1.49,cx:46.6,cy:28.8},4:{x:38.7,y:57.3,step:1.49,cx:46.6,cy:53.4},5:{x:38.7,y:80.7,step:1.49,cx:46.6,cy:76.8},
-6:{x:70.3,y:33.0,step:1.44,cx:78.4,cy:28.8},7:{x:70.3,y:50.1,step:1.44,cx:78.4,cy:46.8},8:{x:70.3,y:67.1,step:1.44,cx:78.4,cy:63.5},9:{x:70.3,y:83.6,step:1.44,cx:78.4,cy:79.4}
+0:{x:6.2,y:30.0,step:1.49},1:{x:6.2,y:57.7,step:1.49,cx:14.8,cy:53.8},2:{x:6.2,y:80.45,step:1.49,cx:14.8,cy:76.8},
+3:{x:38.7,y:32.6,step:1.49,cx:46.6,cy:28.8},4:{x:38.7,y:57.3,step:1.49,cx:46.6,cy:53.4},5:{x:38.7,y:80.45,step:1.49,cx:46.6,cy:76.8},
+6:{x:70.3,y:32.6,step:1.44,cx:78.4,cy:28.8},7:{x:70.3,y:49.7,step:1.44,cx:78.4,cy:46.8},8:{x:70.3,y:66.7,step:1.44,cx:78.4,cy:63.5},9:{x:70.3,y:83.0,step:1.44,cx:78.4,cy:79.4}
 };
 
 function Panel({ title, children, className = "" }: { title: string; children?: ReactNode; className?: string }) {
