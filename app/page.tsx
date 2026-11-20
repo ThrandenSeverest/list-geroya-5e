@@ -3874,7 +3874,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                   inspiration: !!character.inspiration,
                   className: multiclassEntries.map(entry => `${classes.find(option => option.id === entry.classId)?.name || homebrewOption(entry.classId)?.name || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`).join(" / ") || "Класс не выбран",
                   subclassName: multiclassEntries.length > 1 ? undefined : chosenSubclass?.name,
-                  raceName: [selectedRace?.name, chosenRaceVariant?.name].filter(Boolean).join(" · ") || "Раса не выбрана",
+                  raceName: !selectedRace?.name ? "Раса не выбрана" : !variantsFor(character.race).length || !chosenRaceVariant?.name ? selectedRace.name : chosenRaceVariant.name === selectedRace.name || chosenRaceVariant.name.startsWith(`${selectedRace.name} —`) ? chosenRaceVariant.name : `${selectedRace.name} · ${chosenRaceVariant.name}`,
                   backgroundName: selectedBackground?.name || "Предыстория не выбрана",
                   alignment: character.alignment,
                   level: characterLevel(character),

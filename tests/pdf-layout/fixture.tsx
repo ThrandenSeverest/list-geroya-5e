@@ -10,7 +10,7 @@ const sheetEdition = new URLSearchParams(location.search).get('edition') === '20
 const resources = Array.from({length:count},(_,i)=>({name:['Ярость','Магическое чутьё','Восстановление магии','Выброс адреналина','Непоколебимая стойкость','Очень длинное название ограниченного расового ресурса'][i%6], current:3,max:i===8?100:3, isShortRest:false,isLongRest:true})).map((r,i)=>({...r,name:i>5?`${r.name} ${i+1}`:r.name}));
 const props = {
  sheetEdition,
- identity:{name:'Гарзуг Великий Искромант',playerName:'',experience:0,inspiration:false,className:'Варвар 3 / Волшебник',raceName:'Орк · Орк — Мордекайн (+2/+1)',backgroundName:'Шарлатан',alignment:'Хаотично-нейтральное',level:6},
+ identity:{name:'Гарзуг Великий Искромант',playerName:'',experience:0,inspiration:false,className:'Варвар 3 / Волшебник',raceName:'Орк',backgroundName:'Шарлатан',alignment:'Хаотично-нейтральное',level:6},
  classId:'wizard', abilities:{str:17,dex:12,con:14,int:14,wis:10,cha:8},proficiency:3,savingThrows:['str','con'],
  proficiencies:{skills:['Атлетика','Ловкость рук','Скрытность','Обман'],expertise:[],armor:['Лёгкие и средние доспехи','щиты'],weapons:['Простое и воинское оружие'],tools:['Набор для грима','Набор для фальсификации'],languages:['Общий','Орочий']},
  // Legacy conditional hints must not appear in the narrow AC/HP column.

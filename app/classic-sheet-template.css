@@ -319,3 +319,27 @@
 .classic-sheet--template .classic-sheet-attacks tbody td:nth-child(2){width:25%;text-align:center}
 .classic-sheet--template .classic-sheet-attacks tbody td:nth-child(3){width:35%;text-align:center}
 .classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2) .classic-sheet-panel-body{padding:0;display:flex;align-items:center;justify-content:flex-end}
+
+/* Editor controls are screen-only and never occupy printable page space. */
+.classic-sheet-editor{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;padding:9px;background:#f8f3e9;border:1px solid #b7a88b;color:#24201b;font:13px Arial,sans-serif}
+.classic-sheet-editor button{border:1px solid #a99b80;background:#fff;color:#24201b;padding:5px 8px;border-radius:4px;cursor:pointer;font:inherit}
+.classic-sheet-editor button[aria-pressed="true"]{background:#e8d9bd;border-color:#684c2a}
+.classic-sheet-editor button:disabled{opacity:.5;cursor:default}
+.classic-sheet-editor output{min-width:3em;text-align:center}
+.classic-sheet--template.classic-sheet--editing [data-classic-edit]:not(.classic-edited-hidden){cursor:pointer}
+.classic-sheet--template.classic-sheet--editing .classic-edited-selected{outline:1px dashed #a32323;outline-offset:1px}
+.classic-sheet--template .classic-edited-hidden{display:none!important}
+.classic-sheet--template.classic-sheet--hide-changeable :is(.classic-equipment-text,.classic-sheet-coins,.classic-spell-mark,.classic-sheet-page:nth-child(2) .classic-sheet-treasure p){visibility:hidden!important}
+@media print{.classic-sheet-editor{display:none!important}.classic-sheet--template .classic-edited-selected{outline:0!important}}
+
+/* Place drawn dots at the center of the artwork's empty circles. */
+.classic-sheet--template .classic-source-checkmark{display:grid;place-items:center;height:2.5mm!important;line-height:0!important;font-size:0!important;transform:translateY(.15mm)}
+.classic-sheet--template .classic-source-checkmark--dot::after,
+.classic-sheet--template .classic-spell-mark--dot::after{content:"";display:block;width:1mm;height:1mm;border-radius:50%;background:#191919}
+.classic-sheet--template .classic-source-checkmark--expert::after{content:"";display:block;width:1.25mm;height:1.25mm;transform:rotate(45deg);background:#191919}
+.classic-sheet--template .classic-spell-mark--dot{display:grid;place-items:center;height:2.5mm;font-size:0!important;line-height:0!important;transform:translateY(.1mm)}
+
+/* Currency is a value followed by its denomination on the same baseline. */
+.classic-sheet--template .classic-sheet-coins>div{position:relative;display:block!important}
+.classic-sheet--template .classic-sheet-coins b{position:absolute;left:35%;top:50%;transform:translate(-50%,-50%);font:700 10pt/1 Arial,sans-serif}
+.classic-sheet--template .classic-sheet-coins small{position:absolute;left:64%;top:50%;transform:translateY(-50%);font:700 6pt/1 Arial,sans-serif;margin:0}
