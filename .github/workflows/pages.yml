@@ -1,11 +1,12 @@
 name: Publish GitHub Pages
-# Rebuild verified mobile-fixed main after physical Android confirmation.
+# Deploy source from the triggering branch. Temporary feature preview publication is limited to this branch.
 on:
   push:
-    branches: [main]
+    branches: [main, feature/classic-sheet-and-spell-text-audit]
     paths:
       - 'app/**'
       - 'public/**'
+      - 'scripts/prepare-classic-sheet-assets.sh'
       - 'tests/mobile-*.cjs'
       - 'package.json'
       - 'package-lock.json'
@@ -18,13 +19,13 @@ permissions:
   pages: write
 concurrency:
   group: herolist-pages
-  # Direct push publishes only the latest main source. Older in-flight builds
+  # Direct push publishes only the latest triggering source. Older in-flight builds
   # can be discarded instead of delaying current mobile fixes.
   cancel-in-progress: true
 jobs:
   publish:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +36,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Prepare classic sheet artwork
+        run: bash scripts/prepare-classic-sheet-assets.sh
       - name: Build static test site
         run: npm run build
         env:
@@ -86,7 +89,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git diff --cached --quiet || git commit -m "Deploy verified main ${{ github.sha }}"
+          git diff --cached --quiet || git commit -m "Deploy verified source ${{ github.sha }}"
           git push origin HEAD:gh-pages
       - name: Verify live Pages artifact after deployment
         env:

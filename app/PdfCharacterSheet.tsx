@@ -232,9 +232,49 @@ function paginateSpells(spells: PdfSpell[], wizardPrepared: boolean) {
 }
 
 function paginateSpellCards(spells: PdfSpell[]) {
+  // Every printed page keeps exactly the same 3x3 card geometry.
+  // Long spells continue on another card rather than being clipped or
+  // forcing every card on the page to grow.
+  const pieces = spells.flatMap(spell => {
+    const chunks: string[] = [];
+    let remaining = spell.description || "";
+    while (remaining.length > 820) {
+      let cut = Math.max(remaining.lastIndexOf(". ", 820), remaining.lastIndexOf("\n", 820));
+      if (cut < 510) cut = remaining.lastIndexOf(" ", 820);
+      if (cut < 510) cut = 820;
+      else if (remaining.slice(cut, cut + 2) === ". ") cut += 1;
+      chunks.push(remaining.slice(0, cut).trim());
+      remaining = remaining.slice(cut).trim();
+    }
+    chunks.push(remaining);
+    return chunks.map((description, index) => ({
+      ...spell,
+      id: index ? `${spell.id}-continuation-${index}` : spell.id,
+      name: index ? `${spell.name} (продолжение ${index + 1})` : spell.name,
+      description,
+    }));
+  });
   const pages: PdfSpell[][] = [];
-  for (let index = 0; index < spells.length; index += 9) pages.push(spells.slice(index, index + 9));
+  for (let index = 0; index < pieces.length; index += 9) pages.push(pieces.slice(index, index + 9));
   return pages;
+}
+
+export function SpellCardsAppendix({ spells, identityName, className, startPage = 4 }: {
+  spells: PdfSpell[];
+  identityName: string;
+  className: string;
+  startPage?: number;
+}) {
+  const pages = paginateSpellCards(spells);
+  return <div className="pdf-document pdf-document--a4 pdf-cards-appendix">
+    {pages.map((pageSpells, index) => <section className="pdf-page pdf-spell-card-page" key={index}>
+      <PageHeader eyebrow={`${identityName} · ${className}`} title="Карточки заклинаний" page={startPage + index} />
+      <div className="pdf-spell-card-grid pdf-spell-card-grid--nine" style={{gridTemplateColumns:"repeat(3,minmax(0,1fr))",gridTemplateRows:"repeat(3,minmax(0,1fr))"}}>
+        {pageSpells.map(spell => <PdfSpellCard spell={spell} key={spell.id + spell.classSource} />)}
+      </div>
+      <footer>Лист Героя 5e · Карточки заклинаний <span>{startPage + index}</span></footer>
+    </section>)}
+  </div>;
 }
 
 function spellCardDensity(spell: PdfSpell) {
@@ -258,7 +298,8 @@ export function PdfSpellCard({spell}:{spell:PdfSpell}) {
       <div><dt>Компоненты</dt><dd>{spell.components || spellComponentLabel(spell) || "—"}</dd></div>
       <div><dt>Длительность</dt><dd>{spell.duration || "—"}</dd></div>
     </dl>
-    <p>{spell.description || "Описание заклинания появится здесь."}</p>
+    <p>{spell.description || "Описание заклинания отсутствует в локальном каталоге."}</p>
+
   </article>;
 }
 
@@ -599,7 +640,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       const pageNumber = firstSpellCardPageNumber + cardPageIndex;
       return <section className="pdf-page pdf-spell-card-page" key={`spell-card-page-${cardPageIndex}`}>
         <PageHeader eyebrow={`${props.identity.className} · справочник заклинаний${cardPageIndex ? " · продолжение" : ""}`} title="Карточки заклинаний" page={pageNumber} />
-        <div className="pdf-spell-card-grid">
+        <div className="pdf-spell-card-grid pdf-spell-card-grid--nine" style={{ gridTemplateColumns:"repeat(3,minmax(0,1fr))", gridTemplateRows:"repeat(3,minmax(0,1fr))" }}>
           {pageSpells.map(spell => <PdfSpellCard spell={spell} key={`${spell.classSource}-${spell.id}`} />)}
         </div>
         <footer>Лист Героя 5e · Карточки заклинаний{cardPageIndex ? " · продолжение" : ""} <span>{pageNumber} / {totalPages}</span></footer>

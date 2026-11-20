@@ -1,4 +1,5 @@
 import React from 'react';
+import {ClassicCharacterSheet} from '../../app/ClassicCharacterSheet';
 import {createRoot} from 'react-dom/client';
 import {PdfCharacterSheet, type PdfCharacterSheetProps} from '../../app/PdfCharacterSheet';
 import {resolvedRaceFeatures} from '../../app/racialTraits';
@@ -9,7 +10,7 @@ const sheetEdition = new URLSearchParams(location.search).get('edition') === '20
 const resources = Array.from({length:count},(_,i)=>({name:['Ярость','Магическое чутьё','Восстановление магии','Выброс адреналина','Непоколебимая стойкость','Очень длинное название ограниченного расового ресурса'][i%6], current:3,max:i===8?100:3, isShortRest:false,isLongRest:true})).map((r,i)=>({...r,name:i>5?`${r.name} ${i+1}`:r.name}));
 const props = {
  sheetEdition,
- identity:{name:'Гарзуг Великий Искромант',playerName:'',experience:0,inspiration:false,className:'Варвар 3 / Волшебник',raceName:'Орк · Орк — Мордекайн (+2/+1)',backgroundName:'Шарлатан',alignment:'Хаотично-нейтральное',level:6},
+ identity:{name:'Гарзуг Великий Искромант',playerName:'',experience:0,inspiration:false,className:'Варвар 3 / Волшебник',raceName:'Орк',backgroundName:'Шарлатан',alignment:'Хаотично-нейтральное',level:6},
  classId:'wizard', abilities:{str:17,dex:12,con:14,int:14,wis:10,cha:8},proficiency:3,savingThrows:['str','con'],
  proficiencies:{skills:['Атлетика','Ловкость рук','Скрытность','Обман'],expertise:[],armor:['Лёгкие и средние доспехи','щиты'],weapons:['Простое и воинское оружие'],tools:['Набор для грима','Набор для фальсификации'],languages:['Общий','Орочий']},
  // Legacy conditional hints must not appear in the narrow AC/HP column.
@@ -23,4 +24,7 @@ if(new URLSearchParams(location.search).get('scenario')==='adenon')Object.assign
  raceFeatures:resolvedRaceFeatures('dhampir','base'),
  attacks:Array.from({length:7},(_,i)=>({id:'test-'+i,kind:i<2?'weapon':'cantrip',name:['Боевой посох (1 рука)','Боевой посох (2 руки)','Вампирский укус','Громовой клинок — боевой посох','Электрошок','Огненный снаряд','Луч холода'][i],attackBonus:5,damageDisplay:'1d8+3',note:i>1?'Наложение заговора: одна атака оружием по цели в пределах 5 футов; оружие считается материальным компонентом. При попадании наносится обычный урон оружия и дополнительный урон в соответствии с уровнем персонажа.':''})),
 });
-createRoot(document.getElementById('root')!).render(<PdfCharacterSheet {...props as unknown as PdfCharacterSheetProps}/>);
+if(new URLSearchParams(location.search).has('classic')) Object.assign(props, {
+spells:Array.from({length:10},(_,level)=>Array.from({length:level===0?4:3},(_,i)=>({id:`sample-${level}-${i}`,name:['Волшебная рука','Злая насмешка','Рассеивание магии','Малая иллюзия'][i%4],level,description:'Описание тестового заклинания.',prepared:i%2===0,alwaysPrepared:i===2,classSource:'Бард'}))).flat()
+});
+createRoot(document.getElementById('root')!).render(new URLSearchParams(location.search).has('classic') ? <ClassicCharacterSheet {...props as unknown as PdfCharacterSheetProps}/> : <PdfCharacterSheet {...props as unknown as PdfCharacterSheetProps}/>);
