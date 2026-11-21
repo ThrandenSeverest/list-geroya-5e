@@ -1836,14 +1836,14 @@ var armorOptions = new Set([
 	"leather-bow",
 	"studded"
 ]);
-function modifier$3(score) {
+function modifier$5(score) {
 	return Math.floor((score - 10) / 2);
 }
 function isOneHandedWeapon(option) {
 	return (finesseWeapons.has(option.id) || strengthWeapons.has(option.id)) && !twoHandedWeapons.has(option.id);
 }
 function armorScore(option, abilities) {
-	const dexterity = modifier$3(abilities.dex);
+	const dexterity = modifier$5(abilities.dex);
 	if (option.id === "chain") return abilities.str >= 13 ? 160 : -1e3;
 	if (option.id === "scale") return (14 + Math.min(2, dexterity)) * 10 - (dexterity >= 3 ? 2 : 0);
 	if (option.id === "studded") return (12 + dexterity) * 10;
@@ -1867,8 +1867,8 @@ function conditionalProficiencyPenalty(classId, subclass, option) {
 function optionScore(classId, option, abilities, context) {
 	var _context$classChoices;
 	const styles = new Set(((_context$classChoices = context.classChoices) === null || _context$classChoices === void 0 ? void 0 : _context$classChoices["fighting-style"]) || []);
-	const strength = modifier$3(abilities.str);
-	const dexterity = modifier$3(abilities.dex);
+	const strength = modifier$5(abilities.str);
+	const dexterity = modifier$5(abilities.dex);
 	const proficiencyPenalty = conditionalProficiencyPenalty(classId, context.subclass || "", option);
 	if (proficiencyPenalty) return proficiencyPenalty;
 	if (armorOptions.has(option.id)) return armorScore(option, abilities);
@@ -13226,7 +13226,7 @@ var legacySpells = [
 		"bard",
 		"sorcerer",
 		"wizard"
-	], "Меняет исход броска и передаёт преимущество."),
+	], "Когда видимое вами существо в пределах 60 футов успешно совершает бросок атаки, проверку характеристики или спасбросок, вы можете реакцией заставить его повторно бросить к20 и использовать меньший из двух результатов. Затем выберите другое видимое вами существо в пределах дистанции (можно выбрать себя). В течение следующей минуты выбранное существо получает преимущество на следующую атаку, проверку характеристики или спасбросок. Одновременно одно существо не может пользоваться таким преимуществом от нескольких применений этого заклинания."),
 	S$1("aid", "Подмога", "PHB", 2, "Ограждение", [
 		"cleric",
 		"paladin",
@@ -13376,7 +13376,13 @@ var spells = [...documentSpells.map((spell) => {
 		...spell,
 		classes: legacy.classes
 	} : spell;
-}), ...legacySpells.filter((spell) => !documentSpellIds.has(spell.id))];
+}), ...legacySpells.filter((spell) => !documentSpellIds.has(spell.id)).map((spell) => spell.id === "silvery" ? {
+	...spell,
+	castingTime: "1 реакция (после успешной атаки, проверки или спасброска видимой цели)",
+	range: "60 футов",
+	components: "В",
+	duration: "мгновенная"
+} : spell)];
 //#endregion
 //#region app/homebrew.ts
 var emptyHomebrewLibrary = {
@@ -26703,7 +26709,7 @@ var damagingCantrips = {
 function normalizeEquipmentName(value) {
 	return value.toLowerCase().replace(/\s*\([^)]*\)\s*/g, "").replace(/\s*[×x]\s*\d+\s*$/i, "").replace(/\s+и\s+\d+\s+(болтов|стрел|снарядов)\s*$/i, "").trim();
 }
-function signed$1(value) {
+function signed$3(value) {
 	return value >= 0 ? `+${value}` : `${value}`;
 }
 var damageTypeNames = {
@@ -26750,7 +26756,7 @@ function subclassAttacks(character, prof) {
 			attackBonus: prof + abilityMod,
 			attackBonusExtra: 0,
 			damageFormula: `${dice}+${typeof damageBonus === "string" ? damageBonus : `[${ability.toUpperCase()}]`}`,
-			damageDisplay: `${dice}${typeof damageBonus === "number" && bonus ? signed$1(bonus) : ""}`,
+			damageDisplay: `${dice}${typeof damageBonus === "number" && bonus ? signed$3(bonus) : ""}`,
 			note
 		});
 	};
@@ -26794,7 +26800,7 @@ function subclassAttacks(character, prof) {
 			attackBonus: prof + abilityModifier$2(character.abilities.cha),
 			attackBonusExtra: 0,
 			damageFormula: "1d10+[PB]",
-			damageDisplay: `1d10${signed$1(prof)}`,
+			damageDisplay: `1d10${signed$3(prof)}`,
 			note: `Временный спутник Dancing Item. КД 16; хиты ${10 + 5 * entry.level}; атака использует модификатор атаки заклинанием барда.`
 		});
 		if (entry.classId === "ranger" && subclass === "drakewarden" && entry.level >= 3) {
@@ -26809,7 +26815,7 @@ function subclassAttacks(character, prof) {
 				attackBonus: prof + abilityMod,
 				attackBonusExtra: 3 - abilityModifier$2(character.abilities.str),
 				damageFormula: `1d6+[PB]${extra ? `+${extra}` : ""}`,
-				damageDisplay: `1d6${signed$1(prof)}${extra ? ` + ${extra} стихией` : ""}`,
+				damageDisplay: `1d6${signed$3(prof)}${extra ? ` + ${extra} стихией` : ""}`,
 				note: `Атака временного дрейка; КД ${14 + prof}, хиты ${5 + 5 * entry.level}. Стихийный тип выбирается при каждом призыве.`
 			});
 		}
@@ -26847,7 +26853,7 @@ function characterAttacks(character, spells) {
 				attackBonus: (proficient ? prof : 0) + abilityMod + attackBonusExtra,
 				attackBonusExtra,
 				damageFormula: `${dice}+${abilityVariable}${damageExtra ? `+${damageExtra}` : ""}`,
-				damageDisplay: `${dice}${signed$1(abilityMod + damageExtra)}`,
+				damageDisplay: `${dice}${signed$3(abilityMod + damageExtra)}`,
 				note: proficient ? void 0 : "Нет владения оружием: бонус мастерства не прибавлен к атаке."
 			};
 		};
@@ -26867,7 +26873,7 @@ function characterAttacks(character, spells) {
 			attackBonus: prof + modifier,
 			attackBonusExtra: 0,
 			damageFormula: `${monkMartialDie(monkLevel)}+[${ability.toUpperCase()}]`,
-			damageDisplay: `${monkMartialDie(monkLevel)}${signed$1(modifier)}`,
+			damageDisplay: `${monkMartialDie(monkLevel)}${signed$3(modifier)}`,
 			note: "Боевые искусства монаха: Сила или Ловкость. Кость растёт с уровнем монаха; бонусная атака доступна при выполнении условий способности."
 		}];
 	})() : [];
@@ -26923,7 +26929,7 @@ function characterAttacks(character, spells) {
 					attackBonus: castingMod + (weapon.proficient ? prof : 0),
 					attackBonusExtra: 0,
 					damageFormula: `1d8+[${castingAbility.toUpperCase()}]${extra ? `+${extra}` : ""}`,
-					damageDisplay: `1d8${signed$1(castingMod + extra)}`,
+					damageDisplay: `1d8${signed$3(castingMod + extra)}`,
 					note: "Условный профиль: после наложения Дубинки, пока держите зачарованное оружие; 1 минута. Кость не растёт с уровнем."
 				};
 			}
@@ -26938,7 +26944,7 @@ function characterAttacks(character, spells) {
 				note: [
 					weapon.note,
 					"Наложение заговора: одна атака оружием по цели в пределах 5 футов; оружие стоимостью не менее 1 см.",
-					spell.id === "booming" ? `Отдельно: ${diceCount}d8 звуком при добровольном перемещении цели на 5+ футов до начала вашего следующего хода.` : `Отдельно второй цели в пределах 5 футов: ${extraDice ? `${extraDice}d8${signed$1(castingMod)}` : castingMod} огнём.`
+					spell.id === "booming" ? `Отдельно: ${diceCount}d8 звуком при добровольном перемещении цели на 5+ футов до начала вашего следующего хода.` : `Отдельно второй цели в пределах 5 футов: ${extraDice ? `${extraDice}d8${signed$3(castingMod)}` : castingMod} огнём.`
 				].filter(Boolean).join(" ")
 			};
 		});
@@ -26956,7 +26962,7 @@ function characterAttacks(character, spells) {
 			saveDc: definition.mode === "save" ? 8 + prof + castingMod : void 0,
 			attackBonusExtra: 0,
 			damageFormula: `${spell.id === "eldritch" || definition.fixedDice ? 1 : diceCount}${definition.dice}${agonizing ? "+[CHA]" : definition.addAbility ? `+[${castingAbility.toUpperCase()}]` : ""}`,
-			damageDisplay: `${spell.id === "eldritch" || definition.fixedDice ? 1 : diceCount}${definition.dice}${damageBonus ? signed$1(damageBonus) : ""}`,
+			damageDisplay: `${spell.id === "eldritch" || definition.fixedDice ? 1 : diceCount}${definition.dice}${damageBonus ? signed$3(damageBonus) : ""}`,
 			note: [
 				definition.save ? `Спасбросок: ${definition.save.toUpperCase()}.` : "",
 				definition.note,
@@ -27019,7 +27025,7 @@ function lssWeaponAttacks(attacks) {
 }
 //#endregion
 //#region app/armor.ts
-var modifier$2 = (score) => Math.floor((score - 10) / 2);
+var modifier$4 = (score) => Math.floor((score - 10) / 2);
 function hasItem(items, pattern) {
 	return items.some((item) => pattern.test(item));
 }
@@ -27029,9 +27035,9 @@ function hasFeat(character, featId) {
 function armorClassBreakdown(character) {
 	var _character$adventure, _getClassProgress, _normalizedLevelHisto, _character$classChoic, _character$classChoic2;
 	const items = character.inventoryOverride === void 0 ? selectedEquipment(character) : character.inventoryOverride.split(/\n|\s*·\s*/).map((item) => item.trim()).filter(Boolean);
-	const dex = modifier$2(character.abilities.dex);
-	const con = modifier$2(character.abilities.con);
-	const wis = modifier$2(character.abilities.wis);
+	const dex = modifier$4(character.abilities.dex);
+	const con = modifier$4(character.abilities.con);
+	const wis = modifier$4(character.abilities.wis);
 	const equipped = (_character$adventure = character.adventure) === null || _character$adventure === void 0 ? void 0 : _character$adventure.inventory.filter((i) => i.equipped && i.quantity > 0);
 	const shield = equipped ? equipped.some(isShieldItem) : hasItem(items, /(?:^|\s)(?:деревянный\s+)?щит(?:$|\s)/i);
 	const armors = [
@@ -27422,12 +27428,12 @@ function speedBreakdown(character) {
 }
 //#endregion
 //#region app/derivedSkills.ts
-var modifier$1 = (score) => Math.floor((score - 10) / 2);
+var modifier$3 = (score) => Math.floor((score - 10) / 2);
 var proficiencyBonus$1 = (level) => Math.floor((Math.max(1, level) - 1) / 4) + 2;
 function skillBonusBreakdown(character, skill) {
 	const rule = skillKeys[skill];
 	if (!rule) throw new Error(`Unknown skill: ${skill}`);
-	const ability = modifier$1(character.abilities[rule.stat]);
+	const ability = modifier$3(character.abilities[rule.stat]);
 	const proficient = characterProficiencies(character).skills.includes(skill);
 	const expertise = proficient && characterExpertiseSkills(character).includes(skill);
 	const training = proficient ? proficiencyBonus$1(characterLevel(character)) * (expertise ? 2 : 1) : 0;
@@ -27450,14 +27456,14 @@ function passivePerceptionBreakdown(character) {
 }
 //#endregion
 //#region app/initiative.ts
-var modifier = (score) => Math.floor((score - 10) / 2);
+var modifier$2 = (score) => Math.floor((score - 10) / 2);
 /** Permanent initiative modifier; roll-specific dice and advantage remain notes. */
 function initiativeBreakdown(character) {
 	var _getClassProgress, _getClassProgress2, _getClassProgress3;
 	const pb = Math.floor((characterLevel(character) - 1) / 4) + 2;
 	const sources = [];
 	const notes = [];
-	let value = modifier(character.abilities.dex);
+	let value = modifier$2(character.abilities.dex);
 	sources.push(`Ловкость ${value >= 0 ? "+" : ""}${value}`);
 	const add = (amount, source) => {
 		value += amount;
@@ -27473,11 +27479,11 @@ function initiativeBreakdown(character) {
 		if (Math.max(jack, athlete)) add(Math.max(jack, athlete), athlete >= jack && athlete ? "Выдающийся атлет" : "Мастер на все руки");
 	}
 	const rogue = getClassProgress(character, "rogue");
-	if ((rogue === null || rogue === void 0 ? void 0 : rogue.subclassId) === "swashbuckler" && rogue.level >= 3) add(modifier(character.abilities.cha), "Лихая удаль");
+	if ((rogue === null || rogue === void 0 ? void 0 : rogue.subclassId) === "swashbuckler" && rogue.level >= 3) add(modifier$2(character.abilities.cha), "Лихая удаль");
 	const wizard = getClassProgress(character, "wizard");
-	if (wizard && wizard.level >= 2 && ["warmagic", "chronurgy"].includes(wizard.subclassId || "")) add(modifier(character.abilities.int), wizard.subclassId === "warmagic" ? "Тактическая смекалка" : "Хрональная осведомлённость");
+	if (wizard && wizard.level >= 2 && ["warmagic", "chronurgy"].includes(wizard.subclassId || "")) add(modifier$2(character.abilities.int), wizard.subclassId === "warmagic" ? "Тактическая смекалка" : "Хрональная осведомлённость");
 	const ranger = getClassProgress(character, "ranger");
-	if ((ranger === null || ranger === void 0 ? void 0 : ranger.subclassId) === "gloomstalker" && ranger.level >= 3) add(modifier(character.abilities.wis), "Ужасающая засада");
+	if ((ranger === null || ranger === void 0 ? void 0 : ranger.subclassId) === "gloomstalker" && ranger.level >= 3) add(modifier$2(character.abilities.wis), "Ужасающая засада");
 	if (((_getClassProgress = getClassProgress(character, "barbarian")) === null || _getClassProgress === void 0 ? void 0 : _getClassProgress.level) && getClassProgress(character, "barbarian").level >= 7) notes.push("Дикий инстинкт: преимущество на бросок инициативы");
 	if (((_getClassProgress2 = getClassProgress(character, "paladin")) === null || _getClassProgress2 === void 0 ? void 0 : _getClassProgress2.subclassId) === "watchers" && getClassProgress(character, "paladin").level >= 7) notes.push("Аура стража: +БМ к инициативе, пока паладин дееспособен и цель в ауре");
 	if (((_getClassProgress3 = getClassProgress(character, "cleric")) === null || _getClassProgress3 === void 0 ? void 0 : _getClassProgress3.subclassId) === "twilight") notes.push("Благословение бдительности: преимущество только для выбранного существа до следующего броска");
@@ -48547,7 +48553,7 @@ var orders = {
 	wizard: "int con dex wis cha str",
 	artificer: "int con dex wis cha str"
 };
-function abilityOrder(classId, subclassId = "") {
+function abilityOrder$1(classId, subclassId = "") {
 	if (classId === "warlock" && subclassId === "hexblade") return [
 		"cha",
 		"con",
@@ -48559,7 +48565,7 @@ function abilityOrder(classId, subclassId = "") {
 	return (orders[classId] || orders.fighter).split(" ");
 }
 function standardAbilityBuild(classId, subclassId = "") {
-	return Object.fromEntries(abilityOrder(classId, subclassId).map((key, i) => [key, standardArray[i]]));
+	return Object.fromEntries(abilityOrder$1(classId, subclassId).map((key, i) => [key, standardArray[i]]));
 }
 function swapStandardAbility(abilities, key, value) {
 	if (!standardArray.includes(value)) return abilities;
@@ -48575,7 +48581,7 @@ function buildRecommendedCharacter(result, level, initial) {
 	var _subclasses$result$cl, _variants$find, _variants$find2, _selectedRaceVariant;
 	if (!Number.isInteger(level) || level < 1 || level > 20) throw new Error("Уровень должен быть от 1 до 20.");
 	if (!races.some((x) => x.id === result.raceId) || !classes.some((x) => x.id === result.classId) || !backgrounds.some((x) => x.id === result.backgroundId) || !((_subclasses$result$cl = subclasses[result.classId]) === null || _subclasses$result$cl === void 0 ? void 0 : _subclasses$result$cl.options.some((x) => x.id === result.subclassId))) throw new Error("Результат несовместим с каталогом.");
-	const order = abilityOrder(result.classId, result.subclassId);
+	const order = abilityOrder$1(result.classId, result.subclassId);
 	const variants = variantsFor(result.raceId);
 	const variant = ((_variants$find = variants.find((x) => x.id === result.raceVariantId)) === null || _variants$find === void 0 ? void 0 : _variants$find.id) || ((_variants$find2 = variants.find((x) => x.id !== "variant")) === null || _variants$find2 === void 0 ? void 0 : _variants$find2.id) || "base";
 	let c = {
@@ -54725,7 +54731,7 @@ function spellComponentLabel(spell) {
 //#endregion
 //#region app/PdfCharacterSheet.tsx
 var abilityModifier = (score) => Math.floor((score - 10) / 2);
-var signed = (value) => value >= 0 ? `+${value}` : `${value}`;
+var signed$2 = (value) => value >= 0 ? `+${value}` : `${value}`;
 function compactRulesText(value) {
 	return value.split(/\n(?:источники|источник|официальные книги|правовой статус|исключено|приложение:)/i)[0].replace(/•\s*-{5,}[\s\S]*/g, "").replace(/\s+/g, " ").trim();
 }
@@ -54829,7 +54835,7 @@ function FeatureDescription({ description }) {
 		]
 	});
 }
-function FeatureList({ features }) {
+function FeatureList$1({ features }) {
 	return /* @__PURE__ */ jsx("div", {
 		className: "pdf-feature-list",
 		children: features.map((feature, index) => /* @__PURE__ */ jsxs("article", { children: [/* @__PURE__ */ jsx("h3", { children: feature.name }), /* @__PURE__ */ jsx(FeatureDescription, { description: feature.description })] }, `${feature.name}-${index}`))
@@ -54883,9 +54889,52 @@ function paginateSpells(spells, wizardPrepared) {
 	return pages.length ? pages : [[]];
 }
 function paginateSpellCards(spells) {
+	const pieces = spells.flatMap((spell) => {
+		const chunks = [];
+		let remaining = spell.description || "";
+		while (remaining.length > 820) {
+			let cut = Math.max(remaining.lastIndexOf(". ", 820), remaining.lastIndexOf("\n", 820));
+			if (cut < 510) cut = remaining.lastIndexOf(" ", 820);
+			if (cut < 510) cut = 820;
+			else if (remaining.slice(cut, cut + 2) === ". ") cut += 1;
+			chunks.push(remaining.slice(0, cut).trim());
+			remaining = remaining.slice(cut).trim();
+		}
+		chunks.push(remaining);
+		return chunks.map((description, index) => ({
+			...spell,
+			id: index ? `${spell.id}-continuation-${index}` : spell.id,
+			name: index ? `${spell.name} (продолжение ${index + 1})` : spell.name,
+			description
+		}));
+	});
 	const pages = [];
-	for (let index = 0; index < spells.length; index += 9) pages.push(spells.slice(index, index + 9));
+	for (let index = 0; index < pieces.length; index += 9) pages.push(pieces.slice(index, index + 9));
 	return pages;
+}
+function SpellCardsAppendix({ spells, identityName, className, startPage = 4 }) {
+	return /* @__PURE__ */ jsx("div", {
+		className: "pdf-document pdf-document--a4 pdf-cards-appendix",
+		children: paginateSpellCards(spells).map((pageSpells, index) => /* @__PURE__ */ jsxs("section", {
+			className: "pdf-page pdf-spell-card-page",
+			children: [
+				/* @__PURE__ */ jsx(PageHeader, {
+					eyebrow: `${identityName} · ${className}`,
+					title: "Карточки заклинаний",
+					page: startPage + index
+				}),
+				/* @__PURE__ */ jsx("div", {
+					className: "pdf-spell-card-grid pdf-spell-card-grid--nine",
+					style: {
+						gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+						gridTemplateRows: "repeat(3,minmax(0,1fr))"
+					},
+					children: pageSpells.map((spell) => /* @__PURE__ */ jsx(PdfSpellCard, { spell }, spell.id + spell.classSource))
+				}),
+				/* @__PURE__ */ jsxs("footer", { children: ["Лист Героя 5e · Карточки заклинаний ", /* @__PURE__ */ jsx("span", { children: startPage + index })] })
+			]
+		}, index))
+	});
 }
 function spellCardDensity(spell) {
 	var _spell$castingTime, _spell$range, _spell$components, _spell$duration;
@@ -54914,7 +54963,7 @@ function PdfSpellCard({ spell }) {
 				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Компоненты" }), /* @__PURE__ */ jsx("dd", { children: spell.components || spellComponentLabel(spell) || "—" })] }),
 				/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("dt", { children: "Длительность" }), /* @__PURE__ */ jsx("dd", { children: spell.duration || "—" })] })
 			] }),
-			/* @__PURE__ */ jsx("p", { children: spell.description || "Описание заклинания появится здесь." })
+			/* @__PURE__ */ jsx("p", { children: spell.description || "Описание заклинания отсутствует в локальном каталоге." })
 		]
 	});
 }
@@ -55333,7 +55382,7 @@ function PdfCharacterSheet(props) {
 					return /* @__PURE__ */ jsxs("span", { children: [
 						/* @__PURE__ */ jsx("i", { children: props.savingThrows.includes(key) ? "●" : "○" }),
 						/* @__PURE__ */ jsx("b", { children: classic ? abilityLabels[key].slice(0, 3) : abilityLabels[key] }),
-						/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (((_props$savingThrowBon = props.savingThrowBonuses) === null || _props$savingThrowBon === void 0 ? void 0 : _props$savingThrowBon[key]) || 0)) })
+						/* @__PURE__ */ jsx("strong", { children: signed$2(abilityModifier(props.abilities[key]) + (props.savingThrows.includes(key) ? props.proficiency : 0) + (((_props$savingThrowBon = props.savingThrowBonuses) === null || _props$savingThrowBon === void 0 ? void 0 : _props$savingThrowBon[key]) || 0)) })
 					] }, key);
 				})
 			})
@@ -55436,7 +55485,7 @@ function PdfCharacterSheet(props) {
 								className: "pdf-ability-row",
 								children: Object.keys(abilityLabels).map((key) => /* @__PURE__ */ jsxs("div", { children: [
 									/* @__PURE__ */ jsx("small", { children: abilityLabels[key] }),
-									/* @__PURE__ */ jsx("strong", { children: signed(abilityModifier(props.abilities[key])) }),
+									/* @__PURE__ */ jsx("strong", { children: signed$2(abilityModifier(props.abilities[key])) }),
 									/* @__PURE__ */ jsx("span", { children: props.abilities[key] })
 								] }, key))
 							}),
@@ -55457,7 +55506,7 @@ function PdfCharacterSheet(props) {
 											}),
 											/* @__PURE__ */ jsxs("p", {
 												className: "pdf-inline-stats",
-												children: [/* @__PURE__ */ jsxs("b", { children: ["БМ ", signed(props.proficiency)] }), /* @__PURE__ */ jsxs("b", { children: ["Пассивная внимательность ", props.passivePerception] })]
+												children: [/* @__PURE__ */ jsxs("b", { children: ["БМ ", signed$2(props.proficiency)] }), /* @__PURE__ */ jsxs("b", { children: ["Пассивная внимательность ", props.passivePerception] })]
 											}),
 											skills.map((skill) => {
 												const proficient = props.proficiencies.skills.includes(skill.name);
@@ -55465,7 +55514,7 @@ function PdfCharacterSheet(props) {
 												const bonus = abilityModifier(props.abilities[skill.stat]) + (expertise ? props.proficiency * 2 : proficient ? props.proficiency : 0);
 												return /* @__PURE__ */ jsxs("p", { children: [
 													/* @__PURE__ */ jsx("i", { children: expertise ? "◆" : proficient ? "●" : "○" }),
-													/* @__PURE__ */ jsx("b", { children: signed(bonus) }),
+													/* @__PURE__ */ jsx("b", { children: signed$2(bonus) }),
 													skill.name,
 													" ",
 													/* @__PURE__ */ jsxs("small", { children: [
@@ -55486,7 +55535,7 @@ function PdfCharacterSheet(props) {
 												className: "pdf-combat-cards",
 												children: [
 													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: props.ac }), /* @__PURE__ */ jsx("span", { children: "КД" })] }),
-													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: signed(props.initiative) }), /* @__PURE__ */ jsx("span", { children: "Инициатива" })] }),
+													/* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("strong", { children: signed$2(props.initiative) }), /* @__PURE__ */ jsx("span", { children: "Инициатива" })] }),
 													/* @__PURE__ */ jsxs("div", { children: [
 														/* @__PURE__ */ jsx("strong", { children: props.speed }),
 														/* @__PURE__ */ jsx("span", { children: "Скорость" }),
@@ -55574,7 +55623,7 @@ function PdfCharacterSheet(props) {
 												style: { "--attack-columns": `minmax(0,1.4fr)${layout.visible.hit ? " minmax(0,.7fr)" : ""}${layout.visible.damage ? " minmax(0,.8fr)" : ""}` },
 												children: [
 													/* @__PURE__ */ jsx("b", { children: attack.name }),
-													layout.visible.hit && /* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed(attack.attackBonus) : `Сл ${attack.saveDc}` }),
+													layout.visible.hit && /* @__PURE__ */ jsx("span", { children: attack.attackBonus !== void 0 ? signed$2(attack.attackBonus) : `Сл ${attack.saveDc}` }),
 													layout.visible.damage && /* @__PURE__ */ jsx("code", { children: attack.damageDisplay })
 												]
 											}), layout.visible.notes && attack.note && /* @__PURE__ */ jsx("p", { children: attack.note })] }, attack.id)),
@@ -55588,14 +55637,14 @@ function PdfCharacterSheet(props) {
 													" · Сл ",
 													source.dc,
 													" · атака ",
-													signed(source.attack)
+													signed$2(source.attack)
 												] }, source.name))
 											}) : props.spellAbility && /* @__PURE__ */ jsxs("div", {
 												className: "pdf-spell-numbers",
 												children: [
 													/* @__PURE__ */ jsxs("span", { children: ["Базовая характеристика ", /* @__PURE__ */ jsx("b", { children: props.spellAbility })] }),
 													/* @__PURE__ */ jsxs("span", { children: ["Сл ", /* @__PURE__ */ jsx("b", { children: props.spellSaveDc })] }),
-													/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed(props.spellAttackBonus || 0) })] })
+													/* @__PURE__ */ jsxs("span", { children: ["Атака ", /* @__PURE__ */ jsx("b", { children: signed$2(props.spellAttackBonus || 0) })] })
 												]
 											})),
 											classic && racialPanel
@@ -55644,7 +55693,7 @@ function PdfCharacterSheet(props) {
 							}),
 							/* @__PURE__ */ jsxs("div", {
 								className: "pdf-two-columns",
-								children: [/* @__PURE__ */ jsx(FeatureList, { features: pageColumns[0] }), /* @__PURE__ */ jsx(FeatureList, { features: pageColumns[1] })]
+								children: [/* @__PURE__ */ jsx(FeatureList$1, { features: pageColumns[0] }), /* @__PURE__ */ jsx(FeatureList$1, { features: pageColumns[1] })]
 							}),
 							/* @__PURE__ */ jsxs("footer", { children: [
 								"Лист Героя 5e · Классовые способности",
@@ -55806,7 +55855,11 @@ function PdfCharacterSheet(props) {
 								page: pageNumber
 							}),
 							/* @__PURE__ */ jsx("div", {
-								className: "pdf-spell-card-grid",
+								className: "pdf-spell-card-grid pdf-spell-card-grid--nine",
+								style: {
+									gridTemplateColumns: "repeat(3,minmax(0,1fr))",
+									gridTemplateRows: "repeat(3,minmax(0,1fr))"
+								},
 								children: pageSpells.map((spell) => /* @__PURE__ */ jsx(PdfSpellCard, { spell }, `${spell.classSource}-${spell.id}`))
 							}),
 							/* @__PURE__ */ jsxs("footer", { children: [
@@ -55891,6 +55944,1640 @@ function PdfCharacterSheet(props) {
 			]
 		})]
 	});
+}
+//#endregion
+//#region app/CharacterSheet2024.tsx
+var signed$1 = (value) => value < 0 ? String(value) : `+${value}`;
+var modifier$1 = (score) => Math.floor((score - 10) / 2);
+var attackRows = 6;
+var spellRows = 30;
+var skillsByAbility = {
+	str: ["Атлетика"],
+	dex: [
+		"Акробатика",
+		"Ловкость рук",
+		"Скрытность"
+	],
+	con: [],
+	int: [
+		"История",
+		"Магия",
+		"Природа",
+		"Расследование",
+		"Религия"
+	],
+	wis: [
+		"Внимательность",
+		"Выживание",
+		"Медицина",
+		"Проницательность",
+		"Уход за животными"
+	],
+	cha: [
+		"Выступление",
+		"Запугивание",
+		"Обман",
+		"Убеждение"
+	]
+};
+function Panel$1({ title, className = "", children }) {
+	return /* @__PURE__ */ jsxs("section", {
+		className: `hs24-panel ${className}`,
+		children: [/* @__PURE__ */ jsx("h2", { children: title }), children]
+	});
+}
+function Value({ label, children, className }) {
+	return /* @__PURE__ */ jsxs("div", {
+		className: className ? `hs24-value ${className}` : "hs24-value",
+		children: [/* @__PURE__ */ jsx("span", { children: label }), /* @__PURE__ */ jsx("strong", {
+			title: typeof children === "string" ? children : void 0,
+			children
+		})]
+	});
+}
+function Marks({ total, used = 0, label }) {
+	return /* @__PURE__ */ jsx("span", {
+		className: "hs24-marks",
+		role: "img",
+		"aria-label": `${label}: ${used} из ${total}`,
+		children: Array.from({ length: total }, (_, i) => /* @__PURE__ */ jsx("i", { className: i < used ? "filled" : "" }, i))
+	});
+}
+function Ability({ ability, props }) {
+	var _props$savingThrowBon, _props$savingThrowBon2;
+	const score = props.abilities[ability];
+	const mod = modifier$1(score);
+	const save = props.savingThrows.includes(ability);
+	return /* @__PURE__ */ jsxs(Panel$1, {
+		title: abilityLabels[ability],
+		className: "hs24-ability",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "hs24-ability-values",
+				children: [/* @__PURE__ */ jsx(Value, {
+					label: "Модификатор",
+					children: signed$1(mod)
+				}), /* @__PURE__ */ jsx("strong", {
+					className: "hs24-ability-score",
+					"aria-label": `${abilityLabels[ability]}: ${score}`,
+					children: score
+				})]
+			}),
+			/* @__PURE__ */ jsxs("div", {
+				className: "hs24-check hs24-save",
+				children: [
+					/* @__PURE__ */ jsx(Marks, {
+						total: 1,
+						used: Number(save),
+						label: "Владение"
+					}),
+					/* @__PURE__ */ jsx("b", { children: signed$1(mod + (save ? props.proficiency : 0) + ((_props$savingThrowBon = (_props$savingThrowBon2 = props.savingThrowBonuses) === null || _props$savingThrowBon2 === void 0 ? void 0 : _props$savingThrowBon2[ability]) !== null && _props$savingThrowBon !== void 0 ? _props$savingThrowBon : 0)) }),
+					"Спасбросок"
+				]
+			}),
+			skillsByAbility[ability].map((skill) => {
+				var _props$sheet2024$skil, _props$sheet;
+				const trained = props.proficiencies.skills.includes(skill);
+				const expert = props.proficiencies.expertise.includes(skill);
+				const bonus = (_props$sheet2024$skil = (_props$sheet = props.sheet2024) === null || _props$sheet === void 0 || (_props$sheet = _props$sheet.skillBonuses) === null || _props$sheet === void 0 ? void 0 : _props$sheet[skill]) !== null && _props$sheet2024$skil !== void 0 ? _props$sheet2024$skil : mod + (expert ? 2 : trained ? 1 : 0) * props.proficiency;
+				return /* @__PURE__ */ jsxs("div", {
+					className: "hs24-check",
+					children: [
+						/* @__PURE__ */ jsx(Marks, {
+							total: 1,
+							used: Number(trained || expert),
+							label: expert ? "Компетентность" : "Владение"
+						}),
+						/* @__PURE__ */ jsx("b", { children: signed$1(bonus) }),
+						skill === "Внимательность" ? "Восприятие" : skill
+					]
+				}, skill);
+			})
+		]
+	});
+}
+function AttackTable({ attacks, blankRows = 0 }) {
+	return /* @__PURE__ */ jsxs("table", {
+		className: "hs24-table hs24-attacks",
+		children: [
+			/* @__PURE__ */ jsxs("colgroup", { children: [
+				/* @__PURE__ */ jsx("col", { style: { width: "30%" } }),
+				/* @__PURE__ */ jsx("col", { style: { width: "16%" } }),
+				/* @__PURE__ */ jsx("col", { style: { width: "19%" } }),
+				/* @__PURE__ */ jsx("col", {})
+			] }),
+			/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
+				/* @__PURE__ */ jsx("th", { children: "Название" }),
+				/* @__PURE__ */ jsx("th", { children: "Атака / Сл" }),
+				/* @__PURE__ */ jsx("th", { children: "Урон и эффект" }),
+				/* @__PURE__ */ jsx("th", { children: "Заметки" })
+			] }) }),
+			/* @__PURE__ */ jsx("tbody", { children: Array.from({ length: Math.max(attacks.length, blankRows) }, (_, index) => {
+				const a = attacks[index];
+				return /* @__PURE__ */ jsxs("tr", { children: [
+					/* @__PURE__ */ jsx("td", { children: a === null || a === void 0 ? void 0 : a.name }),
+					/* @__PURE__ */ jsx("td", { children: (a === null || a === void 0 ? void 0 : a.attackBonus) != null ? signed$1(a.attackBonus) : (a === null || a === void 0 ? void 0 : a.saveDc) != null ? `Сл ${a.saveDc}` : "" }),
+					/* @__PURE__ */ jsx("td", { children: a === null || a === void 0 ? void 0 : a.damageDisplay }),
+					/* @__PURE__ */ jsx("td", { children: a === null || a === void 0 ? void 0 : a.note })
+				] }, index);
+			}) })
+		]
+	});
+}
+function SpellTable({ spells, blankRows = 0 }) {
+	return /* @__PURE__ */ jsxs("table", {
+		className: "hs24-table hs24-spells",
+		children: [
+			/* @__PURE__ */ jsxs("colgroup", { children: [
+				/* @__PURE__ */ jsx("col", { style: { width: "6%" } }),
+				/* @__PURE__ */ jsx("col", { style: { width: "30%" } }),
+				/* @__PURE__ */ jsx("col", { style: { width: "20%" } }),
+				/* @__PURE__ */ jsx("col", { style: { width: "19%" } }),
+				/* @__PURE__ */ jsx("col", {})
+			] }),
+			/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
+				/* @__PURE__ */ jsx("th", { children: "Ур." }),
+				/* @__PURE__ */ jsx("th", { children: "Название" }),
+				/* @__PURE__ */ jsx("th", { children: "Время накладывания" }),
+				/* @__PURE__ */ jsx("th", { children: "К / Р / М" }),
+				/* @__PURE__ */ jsx("th", { children: "Заметки" })
+			] }) }),
+			/* @__PURE__ */ jsx("tbody", { children: Array.from({ length: Math.max(spells.length, blankRows) }, (_, index) => {
+				var _spell$duration;
+				const spell = spells[index];
+				const flags = spell ? [
+					/(?:концентрац|concentration)/i.test((_spell$duration = spell.duration) !== null && _spell$duration !== void 0 ? _spell$duration : ""),
+					!!spell.ritual,
+					spellComponentLabel(spell).includes("М")
+				] : [];
+				return /* @__PURE__ */ jsxs("tr", { children: [
+					/* @__PURE__ */ jsx("td", { children: spell === null || spell === void 0 ? void 0 : spell.level }),
+					/* @__PURE__ */ jsxs("td", { children: [(spell === null || spell === void 0 ? void 0 : spell.alwaysPrepared) ? "† " : "", spell === null || spell === void 0 ? void 0 : spell.name] }),
+					/* @__PURE__ */ jsx("td", { children: spell === null || spell === void 0 ? void 0 : spell.castingTime }),
+					/* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx("div", {
+						className: "hs24-flags",
+						children: [
+							"К",
+							"Р",
+							"М"
+						].map((label, i) => /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx(Marks, {
+							total: 1,
+							used: Number(!!flags[i]),
+							label
+						}), label] }, label))
+					}) }),
+					/* @__PURE__ */ jsx("td", { children: [spell === null || spell === void 0 ? void 0 : spell.range, spell === null || spell === void 0 ? void 0 : spell.classSource].filter(Boolean).join(" · ") })
+				] }, index);
+			}) })
+		]
+	});
+}
+function FeatureList({ features }) {
+	return /* @__PURE__ */ jsx(Fragment$1, { children: features.map((f, i) => /* @__PURE__ */ jsxs("p", { children: [
+		/* @__PURE__ */ jsxs("b", { children: [f.name, "."] }),
+		" ",
+		f.description
+	] }, i)) });
+}
+function CharacterSheet2024(props) {
+	var _Object$entries$find, _props$backgroundFeat, _data$attuned, _props$initiativeNote, _props$defenses, _props$defenses2, _props$defenses3, _props$defenses4, _props$initiativeNote2, _props$currentHitPoin, _data$hitDiceMaximum, _props$pactSlots, _props$spellcastingSo, _props$spellcastingSo2, _props$spellcastingSo3, _props$spellcastingSo4, _props$spellcastingSo5;
+	const root = useRef(null);
+	const [overflow, setOverflow] = useState([]);
+	const [tableOverflow, setTableOverflow] = useState({
+		attacks: false,
+		spells: false
+	});
+	const { identity, proficiencies, sheet2024: data } = props;
+	const primaryAbility = (_Object$entries$find = Object.entries(abilityLabels).find(([, label]) => label === props.spellAbility)) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[0];
+	const spells = [...new Map(props.spells.filter((s) => s.level === 0 || s.prepared || s.alwaysPrepared).map((s) => {
+		var _s$grantSource;
+		return [`${s.id}:${s.classSource}:${(_s$grantSource = s.grantSource) !== null && _s$grantSource !== void 0 ? _s$grantSource : ""}`, s];
+	})).values()].sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, "ru"));
+	const armor = proficiencies.armor.join(", ");
+	const notes = [
+		{
+			id: "class",
+			label: "Классовые умения",
+			content: /* @__PURE__ */ jsx(FeatureList, { features: props.classFeatures })
+		},
+		{
+			id: "species",
+			label: "Особенности вида",
+			content: /* @__PURE__ */ jsx(FeatureList, { features: props.raceFeatures })
+		},
+		{
+			id: "feats",
+			label: "Черты",
+			content: /* @__PURE__ */ jsx(FeatureList, { features: props.featFeatures })
+		},
+		{
+			id: "weapons",
+			label: "Владение оружием",
+			content: proficiencies.weapons.join(", ")
+		},
+		{
+			id: "tools",
+			label: "Владение инструментами",
+			content: proficiencies.tools.join(", ")
+		},
+		{
+			id: "history",
+			label: "Предыстория и личность",
+			content: /* @__PURE__ */ jsxs(Fragment$1, { children: [
+				/* @__PURE__ */ jsx("p", { children: /* @__PURE__ */ jsx("b", { children: identity.backgroundName }) }),
+				((_props$backgroundFeat = props.backgroundFeature) === null || _props$backgroundFeat === void 0 ? void 0 : _props$backgroundFeat.name) && /* @__PURE__ */ jsx(FeatureList, { features: [props.backgroundFeature] }),
+				Object.entries({
+					"Черты характера": props.personality.traits,
+					"Идеалы": props.personality.ideals,
+					"Привязанности": props.personality.bonds,
+					"Слабости": props.personality.flaws
+				}).filter(([, value]) => value).map(([label, value]) => /* @__PURE__ */ jsxs("p", { children: [
+					/* @__PURE__ */ jsxs("b", { children: [label, "."] }),
+					" ",
+					value
+				] }, label))
+			] })
+		},
+		{
+			id: "languages",
+			label: "Языки",
+			content: proficiencies.languages.join(", ")
+		},
+		{
+			id: "equipment",
+			label: "Снаряжение",
+			content: props.equipment.join(" · ")
+		},
+		{
+			id: "attuned",
+			label: "Настроенные предметы",
+			content: data === null || data === void 0 || (_data$attuned = data.attuned) === null || _data$attuned === void 0 ? void 0 : _data$attuned.join(", ")
+		}
+	];
+	useLayoutEffect(() => {
+		const doc = root.current;
+		if (!doc) return;
+		const measure = () => {
+			for (const line of doc.querySelectorAll(".hs24-identity strong, .hs24-stats strong")) {
+				line.style.removeProperty("font-size");
+				const nominal = Number.parseFloat(getComputedStyle(line).fontSize);
+				const minimum = Math.min(nominal, 9.6);
+				const available = line.clientWidth - 1;
+				let size = nominal;
+				while (line.scrollWidth > available + 1 && size > minimum) {
+					size = Math.max(minimum, size - .5);
+					line.style.fontSize = `${size}px`;
+				}
+			}
+			const clipped = [...doc.querySelectorAll("[data-hs24-fit]")].filter((box) => {
+				box.style.removeProperty("font-size");
+				if (box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1) return false;
+				box.style.fontSize = "7pt";
+				return box.scrollHeight > box.clientHeight + 1 || box.scrollWidth > box.clientWidth + 1;
+			}).map((box) => box.dataset.hs24Fit);
+			setOverflow((previous) => clipped.join("|") === previous.join("|") ? previous : clipped);
+			const hasClippedCells = (table) => [...doc.querySelectorAll(`.hs24-page ${table} td`)].some((cell) => cell.scrollWidth > cell.clientWidth + 1);
+			const attacks = hasClippedCells(".hs24-attacks");
+			const spells = hasClippedCells(".hs24-spells");
+			setTableOverflow((previous) => attacks === previous.attacks && spells === previous.spells ? previous : {
+				attacks,
+				spells
+			});
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		doc.querySelectorAll(".hs24-page").forEach((page) => observer.observe(page));
+		return () => observer.disconnect();
+	}, [props]);
+	function note(id, className = "") {
+		const entry = notes.find((item) => item.id === id);
+		return /* @__PURE__ */ jsxs("div", {
+			className: `hs24-paper ${className}`,
+			children: [/* @__PURE__ */ jsx("div", {
+				"data-hs24-fit": id,
+				children: entry.content
+			}), overflow.includes(id) && /* @__PURE__ */ jsx("span", {
+				className: "hs24-overflow-hint",
+				children: "Полный текст в приложении"
+			})]
+		});
+	}
+	const moreAttacks = props.attacks.length > attackRows || tableOverflow.attacks;
+	const moreSpells = spells.length > spellRows || tableOverflow.spells;
+	const hasBattleNotes = props.resources.length > 0 || !!((_props$initiativeNote = props.initiativeNotes) === null || _props$initiativeNote === void 0 ? void 0 : _props$initiativeNote.length) || Object.values((_props$defenses = props.defenses) !== null && _props$defenses !== void 0 ? _props$defenses : {}).some((values) => values.length > 0);
+	const battleNotes = /* @__PURE__ */ jsxs(Fragment$1, { children: [
+		props.resources.map((resource, i) => /* @__PURE__ */ jsxs("div", {
+			className: "hs24-resource",
+			children: [
+				/* @__PURE__ */ jsx("b", { children: resource.name }),
+				/* @__PURE__ */ jsxs("strong", { children: [
+					resource.current,
+					"/",
+					resource.max,
+					resource.die ? ` · ${resource.die}` : ""
+				] }),
+				/* @__PURE__ */ jsx("small", { children: resourceRestLabel(resource) })
+			]
+		}, i)),
+		[
+			["Сопротивления", (_props$defenses2 = props.defenses) === null || _props$defenses2 === void 0 ? void 0 : _props$defenses2.resistances],
+			["Иммунитеты", (_props$defenses3 = props.defenses) === null || _props$defenses3 === void 0 ? void 0 : _props$defenses3.immunities],
+			["Уязвимости", (_props$defenses4 = props.defenses) === null || _props$defenses4 === void 0 ? void 0 : _props$defenses4.vulnerabilities]
+		].filter(([, values]) => values === null || values === void 0 ? void 0 : values.length).map(([label, values]) => /* @__PURE__ */ jsxs("p", { children: [
+			/* @__PURE__ */ jsxs("b", { children: [label, "."] }),
+			" ",
+			values === null || values === void 0 ? void 0 : values.join(", ")
+		] }, label)),
+		(_props$initiativeNote2 = props.initiativeNotes) === null || _props$initiativeNote2 === void 0 ? void 0 : _props$initiativeNote2.map((entry, i) => /* @__PURE__ */ jsx("p", { children: entry }, i))
+	] });
+	return /* @__PURE__ */ jsx("div", {
+		className: "hs24-preview",
+		children: /* @__PURE__ */ jsxs("div", {
+			ref: root,
+			className: "hs24-document",
+			"aria-label": "Лист Героя 2024",
+			children: [
+				/* @__PURE__ */ jsxs("section", {
+					className: "hs24-page hs24-main",
+					children: [
+						/* @__PURE__ */ jsxs("div", {
+							className: "hs24-top",
+							children: [
+								/* @__PURE__ */ jsxs("section", {
+									className: "hs24-panel hs24-identity",
+									children: [/* @__PURE__ */ jsx(Value, {
+										label: "Имя персонажа",
+										children: identity.name
+									}), /* @__PURE__ */ jsxs("div", { children: [
+										/* @__PURE__ */ jsx(Value, {
+											label: "Предыстория",
+											children: identity.backgroundName
+										}),
+										/* @__PURE__ */ jsx(Value, {
+											label: "Класс",
+											children: identity.className
+										}),
+										/* @__PURE__ */ jsx(Value, {
+											label: "Вид",
+											children: identity.raceName
+										}),
+										/* @__PURE__ */ jsx(Value, {
+											label: "Подкласс",
+											children: identity.subclassName
+										})
+									] })]
+								}),
+								/* @__PURE__ */ jsxs("section", {
+									className: "hs24-panel hs24-level",
+									children: [/* @__PURE__ */ jsx(Value, {
+										label: "Уровень",
+										children: identity.level
+									}), /* @__PURE__ */ jsx(Value, {
+										label: "Опыт",
+										children: identity.experience
+									})]
+								}),
+								/* @__PURE__ */ jsxs(Panel$1, {
+									title: "Класс брони",
+									className: "hs24-ac",
+									children: [/* @__PURE__ */ jsx("strong", { children: props.ac }), /* @__PURE__ */ jsxs("span", { children: ["Щит ", /* @__PURE__ */ jsx(Marks, {
+										total: 1,
+										used: Number(!!(data === null || data === void 0 ? void 0 : data.shield)),
+										label: "Щит в руках"
+									})] })]
+								}),
+								/* @__PURE__ */ jsxs("div", {
+									className: "hs24-panel hs24-health",
+									children: [
+										/* @__PURE__ */ jsxs(Panel$1, {
+											title: "Хиты",
+											className: "hs24-vitals",
+											children: [
+												/* @__PURE__ */ jsx(Value, {
+													label: "Текущие",
+													children: (_props$currentHitPoin = props.currentHitPoints) !== null && _props$currentHitPoin !== void 0 ? _props$currentHitPoin : props.hitPoints
+												}),
+												/* @__PURE__ */ jsx(Value, {
+													label: "Временные",
+													children: props.temporaryHitPoints || ""
+												}),
+												/* @__PURE__ */ jsx(Value, {
+													label: "Максимум",
+													children: props.hitPoints
+												})
+											]
+										}),
+										/* @__PURE__ */ jsxs(Panel$1, {
+											title: "Кости хитов",
+											className: "hs24-dice",
+											children: [/* @__PURE__ */ jsx(Value, {
+												label: "Потрачено",
+												children: data === null || data === void 0 ? void 0 : data.hitDiceSpent
+											}), /* @__PURE__ */ jsx(Value, {
+												label: "Максимум",
+												children: (_data$hitDiceMaximum = data === null || data === void 0 ? void 0 : data.hitDiceMaximum) !== null && _data$hitDiceMaximum !== void 0 ? _data$hitDiceMaximum : `${identity.level}к${props.hitDie}`
+											})]
+										}),
+										/* @__PURE__ */ jsxs(Panel$1, {
+											title: "Спасброски от смерти",
+											className: "hs24-death",
+											children: [/* @__PURE__ */ jsx(Value, {
+												label: "Успехи",
+												children: /* @__PURE__ */ jsx(Marks, {
+													total: 3,
+													used: data === null || data === void 0 ? void 0 : data.deathSuccesses,
+													label: "Успехи"
+												})
+											}), /* @__PURE__ */ jsx(Value, {
+												label: "Провалы",
+												children: /* @__PURE__ */ jsx(Marks, {
+													total: 3,
+													used: data === null || data === void 0 ? void 0 : data.deathFailures,
+													label: "Провалы"
+												})
+											})]
+										})
+									]
+								})
+							]
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "hs24-wordmark",
+							children: ["Лист Героя ", /* @__PURE__ */ jsx("span", { children: "2024" })]
+						}),
+						/* @__PURE__ */ jsxs("div", {
+							className: "hs24-body",
+							children: [/* @__PURE__ */ jsxs("aside", {
+								className: "hs24-left",
+								children: [/* @__PURE__ */ jsxs("div", {
+									className: "hs24-abilities",
+									children: [/* @__PURE__ */ jsxs("div", { children: [
+										/* @__PURE__ */ jsx(Panel$1, {
+											title: "Бонус мастерства",
+											className: "hs24-counter",
+											children: /* @__PURE__ */ jsx("strong", { children: signed$1(props.proficiency) })
+										}),
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "str",
+											props
+										}),
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "dex",
+											props
+										}),
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "con",
+											props
+										}),
+										/* @__PURE__ */ jsx(Panel$1, {
+											title: "Героическое вдохновение",
+											className: "hs24-inspiration",
+											children: /* @__PURE__ */ jsx(Marks, {
+												total: 1,
+												used: Number(identity.inspiration),
+												label: "Вдохновение"
+											})
+										})
+									] }), /* @__PURE__ */ jsxs("div", { children: [
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "int",
+											props
+										}),
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "wis",
+											props
+										}),
+										/* @__PURE__ */ jsx(Ability, {
+											ability: "cha",
+											props
+										})
+									] })]
+								}), /* @__PURE__ */ jsxs(Panel$1, {
+									title: "Владение инструментами и снаряжением",
+									className: "hs24-training",
+									children: [
+										/* @__PURE__ */ jsxs("div", {
+											className: "hs24-armor",
+											children: [/* @__PURE__ */ jsxs("b", { children: [
+												"Обращение",
+												/* @__PURE__ */ jsx("br", {}),
+												"с доспехами"
+											] }), [
+												["Лёгкие", /л[её]гк/i],
+												["Средние", /средн/i],
+												["Тяжёлые", /тяж[её]л/i],
+												["Щит", /щит/i]
+											].map(([label, match]) => /* @__PURE__ */ jsxs("span", { children: [/* @__PURE__ */ jsx(Marks, {
+												total: 1,
+												used: Number(match.test(armor)),
+												label: String(label)
+											}), String(label)] }, String(label)))]
+										}),
+										/* @__PURE__ */ jsx("h3", { children: "Оружие" }),
+										note("weapons"),
+										/* @__PURE__ */ jsx("h3", { children: "Инструменты" }),
+										note("tools")
+									]
+								})]
+							}), /* @__PURE__ */ jsxs("div", {
+								className: "hs24-right",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "hs24-stats",
+										children: [
+											/* @__PURE__ */ jsx(Value, {
+												label: "Инициатива",
+												children: signed$1(props.initiative)
+											}),
+											/* @__PURE__ */ jsxs(Value, {
+												label: "Скорость",
+												children: [props.speed, " фт."]
+											}),
+											/* @__PURE__ */ jsx(Value, {
+												label: "Размер",
+												className: "hs24-size",
+												children: data === null || data === void 0 ? void 0 : data.size
+											}),
+											/* @__PURE__ */ jsx(Value, {
+												label: "Пассивное восприятие",
+												children: props.passivePerception
+											})
+										]
+									}),
+									/* @__PURE__ */ jsx(Panel$1, {
+										title: "Оружие и боевые заговоры",
+										children: /* @__PURE__ */ jsx(AttackTable, {
+											attacks: props.attacks.slice(0, attackRows),
+											blankRows: attackRows
+										})
+									}),
+									/* @__PURE__ */ jsx(Panel$1, {
+										title: "Классовые умения",
+										className: "hs24-class",
+										children: note("class", "hs24-two-columns")
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "hs24-traits",
+										children: [/* @__PURE__ */ jsx(Panel$1, {
+											title: "Особенности вида",
+											children: note("species")
+										}), /* @__PURE__ */ jsx(Panel$1, {
+											title: "Черты",
+											children: note("feats")
+										})]
+									})
+								]
+							})]
+						})
+					]
+				}),
+				/* @__PURE__ */ jsxs("section", {
+					className: "hs24-page hs24-magic",
+					children: [/* @__PURE__ */ jsxs("div", {
+						className: "hs24-magic-main",
+						children: [/* @__PURE__ */ jsxs("div", {
+							className: "hs24-magic-top",
+							children: [/* @__PURE__ */ jsxs(Panel$1, {
+								title: "Базовая характеристика",
+								className: "hs24-casting",
+								children: [
+									/* @__PURE__ */ jsx(Value, {
+										label: "Характеристика",
+										children: props.spellAbility
+									}),
+									/* @__PURE__ */ jsx(Value, {
+										label: "Модификатор",
+										children: primaryAbility ? signed$1(modifier$1(props.abilities[primaryAbility])) : ""
+									}),
+									/* @__PURE__ */ jsx(Value, {
+										label: "Сл спасброска",
+										children: props.spellSaveDc
+									}),
+									/* @__PURE__ */ jsx(Value, {
+										label: "Бонус атаки",
+										children: props.spellAttackBonus == null ? "" : signed$1(props.spellAttackBonus)
+									})
+								]
+							}), /* @__PURE__ */ jsxs("div", {
+								className: "hs24-slot-column",
+								children: [/* @__PURE__ */ jsxs("div", {
+									className: "hs24-wordmark",
+									children: ["Лист Героя ", /* @__PURE__ */ jsx("span", { children: "2024" })]
+								}), /* @__PURE__ */ jsxs(Panel$1, {
+									title: "Ячейки заклинаний",
+									className: "hs24-slots",
+									children: [/* @__PURE__ */ jsx("div", { children: [
+										0,
+										3,
+										6
+									].map((start) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("small", { children: "Круг · всего / потрачено" }), [
+										start,
+										start + 1,
+										start + 2
+									].map((i) => {
+										var _data$spellSlotsUsed;
+										const total = props.spellSlots[i] || 0;
+										return /* @__PURE__ */ jsxs("div", { children: [
+											/* @__PURE__ */ jsx("b", { children: i + 1 }),
+											/* @__PURE__ */ jsx("span", { children: total || "—" }),
+											/* @__PURE__ */ jsx(Marks, {
+												total: total || (i === 0 ? 4 : i < 5 ? 3 : i < 7 ? 2 : 1),
+												used: data === null || data === void 0 || (_data$spellSlotsUsed = data.spellSlotsUsed) === null || _data$spellSlotsUsed === void 0 ? void 0 : _data$spellSlotsUsed[i],
+												label: "Потрачено"
+											})
+										] }, i);
+									})] }, start)) }), !!((_props$pactSlots = props.pactSlots) === null || _props$pactSlots === void 0 ? void 0 : _props$pactSlots.slots) && /* @__PURE__ */ jsxs("p", { children: [
+										"Магия договора · ",
+										props.pactSlots.level,
+										" круг · ",
+										props.pactSlots.slots,
+										" ",
+										/* @__PURE__ */ jsx(Marks, {
+											total: props.pactSlots.slots,
+											used: data === null || data === void 0 ? void 0 : data.pactSlotsUsed,
+											label: "Потрачено"
+										})
+									] })]
+								})]
+							})]
+						}), /* @__PURE__ */ jsx(Panel$1, {
+							title: "Заговоры и подготовленные заклинания",
+							className: "hs24-spellbook",
+							children: /* @__PURE__ */ jsx(SpellTable, {
+								spells: spells.slice(0, spellRows),
+								blankRows: spellRows
+							})
+						})]
+					}), /* @__PURE__ */ jsxs("aside", {
+						className: "hs24-magic-side",
+						children: [
+							/* @__PURE__ */ jsx(Panel$1, {
+								title: "Внешность",
+								children: /* @__PURE__ */ jsx("div", { className: "hs24-paper" })
+							}),
+							/* @__PURE__ */ jsxs(Panel$1, {
+								title: "Предыстория и личность",
+								children: [note("history"), /* @__PURE__ */ jsx(Value, {
+									label: "Мировоззрение",
+									children: identity.alignment
+								})]
+							}),
+							/* @__PURE__ */ jsx(Panel$1, {
+								title: "Языки",
+								children: note("languages")
+							}),
+							/* @__PURE__ */ jsxs(Panel$1, {
+								title: "Снаряжение",
+								className: "hs24-equipment",
+								children: [
+									note("equipment"),
+									/* @__PURE__ */ jsx("h3", { children: "Магические предметы с настройкой" }),
+									note("attuned", "hs24-attuned")
+								]
+							}),
+							/* @__PURE__ */ jsx(Panel$1, {
+								title: "Кошелёк",
+								children: /* @__PURE__ */ jsx("div", {
+									className: "hs24-wallet",
+									children: [
+										["ММ", props.currency.cp],
+										["СМ", props.currency.sp],
+										["ЭМ", data === null || data === void 0 ? void 0 : data.electrum],
+										["ЗМ", props.currency.gp],
+										["ПМ", props.currency.pp]
+									].map(([label, value]) => /* @__PURE__ */ jsx(Value, {
+										label,
+										children: value
+									}, label))
+								})
+							})
+						]
+					})]
+				}),
+				(overflow.length > 0 || moreSpells || moreAttacks || hasBattleNotes || ((_props$spellcastingSo = (_props$spellcastingSo2 = props.spellcastingSources) === null || _props$spellcastingSo2 === void 0 ? void 0 : _props$spellcastingSo2.length) !== null && _props$spellcastingSo !== void 0 ? _props$spellcastingSo : 0) > 1) && /* @__PURE__ */ jsxs("section", {
+					className: "hs24-appendix",
+					children: [
+						/* @__PURE__ */ jsxs("h2", { children: [identity.name, " · Приложение к листу 2024"] }),
+						moreAttacks && /* @__PURE__ */ jsx(Panel$1, {
+							title: "Оружие и боевые заговоры",
+							children: /* @__PURE__ */ jsx(AttackTable, { attacks: props.attacks })
+						}),
+						moreSpells && /* @__PURE__ */ jsx(Panel$1, {
+							title: tableOverflow.spells ? "Полный список заклинаний" : "Продолжение списка заклинаний",
+							children: /* @__PURE__ */ jsx(SpellTable, { spells: tableOverflow.spells ? spells : spells.slice(spellRows) })
+						}),
+						((_props$spellcastingSo3 = (_props$spellcastingSo4 = props.spellcastingSources) === null || _props$spellcastingSo4 === void 0 ? void 0 : _props$spellcastingSo4.length) !== null && _props$spellcastingSo3 !== void 0 ? _props$spellcastingSo3 : 0) > 1 && /* @__PURE__ */ jsx(Panel$1, {
+							title: "Источники заклинаний",
+							children: (_props$spellcastingSo5 = props.spellcastingSources) === null || _props$spellcastingSo5 === void 0 ? void 0 : _props$spellcastingSo5.map((source, i) => /* @__PURE__ */ jsxs("p", { children: [
+								source.name,
+								" · ",
+								source.ability,
+								" · Сл ",
+								source.dc,
+								" · атака ",
+								signed$1(source.attack)
+							] }, i))
+						}),
+						hasBattleNotes && /* @__PURE__ */ jsx(Panel$1, {
+							title: "Ресурсы и защита",
+							children: battleNotes
+						}),
+						notes.filter((entry) => overflow.includes(entry.id)).map((entry) => /* @__PURE__ */ jsx(Panel$1, {
+							title: entry.label,
+							children: entry.content
+						}, entry.id))
+					]
+				})
+			]
+		})
+	});
+}
+//#endregion
+//#region app/ClassicCharacterSheet.tsx
+var abilityOrder = [
+	"str",
+	"dex",
+	"con",
+	"int",
+	"wis",
+	"cha"
+];
+var modifier = (score) => Math.floor((score - 10) / 2);
+var signed = (n) => (n >= 0 ? "+" : "") + n;
+var spellCapacities = [
+	12,
+	9,
+	9,
+	10,
+	9,
+	9,
+	6,
+	6,
+	5,
+	7
+];
+var editSelector = [
+	".classic-sheet-head > strong",
+	".classic-sheet-field-value",
+	".classic-sheet-ability strong",
+	".classic-sheet-ability span",
+	".classic-source-checkvalue",
+	".classic-sheet-inline-value",
+	".classic-sheet-combat strong",
+	".classic-sheet-hp",
+	".classic-sheet-two p",
+	".classic-sheet-attacks tbody tr",
+	".classic-sheet-coins > div",
+	".classic-equipment-text",
+	".classic-sheet-proficiencies p",
+	".classic-sheet-right .classic-sheet-panel p",
+	".classic-sheet-backstory p",
+	".classic-sheet-additional p",
+	".classic-sheet-treasure p",
+	".classic-source-spell-row",
+	".classic-source-spell-slot"
+].join(", ");
+var fitSelector = [
+	".classic-sheet-panel-body",
+	".classic-sheet-field-value",
+	".classic-sheet-head > strong",
+	".classic-sheet-proficiencies p",
+	".classic-equipment-text",
+	".classic-spell-name",
+	".classic-sheet-attack-cell"
+].join(", ");
+function fitSheetText(box, preferredSize) {
+	var _box$querySelector;
+	const resize = (size) => box.style.setProperty("font-size", `${size}px`, "important");
+	const ribbonText = box.querySelector(".classic-sheet-ribbon-text");
+	const ribbonWidth = (_box$querySelector = box.querySelector("path")) === null || _box$querySelector === void 0 ? void 0 : _box$querySelector.getTotalLength();
+	const fits = () => ribbonText && ribbonWidth ? ribbonText.getComputedTextLength() <= ribbonWidth - 4 : box.scrollHeight <= box.clientHeight && box.scrollWidth <= box.clientWidth;
+	resize(preferredSize);
+	if (fits()) return;
+	let low = Math.min(preferredSize, ribbonText ? 1 : 6);
+	let high = preferredSize;
+	while (high - low > .25) {
+		const size = (low + high) / 2;
+		resize(size);
+		if (fits()) low = size;
+		else high = size;
+	}
+	resize(low);
+}
+function readEdits(key) {
+	if (typeof window === "undefined") return {};
+	try {
+		return JSON.parse(localStorage.getItem(key) || "{}");
+	} catch (_unused) {
+		return {};
+	}
+}
+function purseGold(item) {
+	const match = item.trim().match(/^кошел[ьё]\s+с\s+(\d+)\s*зм\.?$/i);
+	return match ? Number(match[1]) : null;
+}
+var referencePosition = (x, y) => ({
+	position: "absolute",
+	left: `${x}%`,
+	top: `${y}%`
+});
+var originalSkillOrder = [
+	"Акробатика",
+	"Атлетика",
+	"Внимательность",
+	"Выживание",
+	"Выступление",
+	"Запугивание",
+	"История",
+	"Ловкость рук",
+	"Магия",
+	"Медицина",
+	"Обман",
+	"Природа",
+	"Проницательность",
+	"Расследование",
+	"Религия",
+	"Скрытность",
+	"Убеждение",
+	"Уход за животными"
+];
+var spellGeometry = {
+	0: {
+		x: 6.2,
+		y: 30,
+		step: 1.49
+	},
+	1: {
+		x: 6.2,
+		y: 57.7,
+		step: 1.49,
+		cx: 14.8,
+		cy: 53.8
+	},
+	2: {
+		x: 6.2,
+		y: 80.45,
+		step: 1.49,
+		cx: 14.8,
+		cy: 76.8
+	},
+	3: {
+		x: 38.7,
+		y: 32.6,
+		step: 1.49,
+		cx: 46.6,
+		cy: 28.8
+	},
+	4: {
+		x: 38.7,
+		y: 57.3,
+		step: 1.49,
+		cx: 46.6,
+		cy: 53.4
+	},
+	5: {
+		x: 38.7,
+		y: 80.45,
+		step: 1.49,
+		cx: 46.6,
+		cy: 76.8
+	},
+	6: {
+		x: 70.3,
+		y: 32.6,
+		step: 1.44,
+		cx: 78.4,
+		cy: 28.8
+	},
+	7: {
+		x: 70.3,
+		y: 49.7,
+		step: 1.44,
+		cx: 78.4,
+		cy: 46.8
+	},
+	8: {
+		x: 70.3,
+		y: 66.7,
+		step: 1.44,
+		cx: 78.4,
+		cy: 63.5
+	},
+	9: {
+		x: 70.3,
+		y: 83,
+		step: 1.44,
+		cx: 78.4,
+		cy: 79.4
+	}
+};
+function Panel({ title, children, className = "" }) {
+	return /* @__PURE__ */ jsxs("section", {
+		className: "classic-sheet-panel " + className,
+		children: [/* @__PURE__ */ jsx("div", {
+			className: "classic-sheet-panel-body",
+			children
+		}), /* @__PURE__ */ jsx("div", {
+			className: "classic-sheet-panel-caption",
+			children: title
+		})]
+	});
+}
+function Field$1({ label, value }) {
+	return /* @__PURE__ */ jsxs("div", {
+		className: "classic-sheet-field",
+		children: [/* @__PURE__ */ jsx("div", {
+			className: "classic-sheet-field-value",
+			children: value !== null && value !== void 0 ? value : "\xA0"
+		}), /* @__PURE__ */ jsx("small", { children: label })]
+	});
+}
+function ClassicHeader({ title, page }) {
+	const ribbonId = useId();
+	return /* @__PURE__ */ jsxs("header", {
+		className: "classic-sheet-head",
+		children: [
+			/* @__PURE__ */ jsxs("div", {
+				className: "classic-sheet-emblem",
+				children: [/* @__PURE__ */ jsx("b", { children: "D&D" }), /* @__PURE__ */ jsx("small", { children: "ЛИСТ ПЕРСОНАЖА" })]
+			}),
+			/* @__PURE__ */ jsx("strong", {
+				title,
+				children: page === 2 ? /* @__PURE__ */ jsxs("svg", {
+					className: "classic-sheet-ribbon-name",
+					viewBox: "0 0 310 34",
+					role: "img",
+					"aria-label": title,
+					children: [/* @__PURE__ */ jsx("defs", { children: /* @__PURE__ */ jsx("path", {
+						id: ribbonId,
+						d: "M 3,27 Q 155,12 307,27"
+					}) }), /* @__PURE__ */ jsx("text", {
+						className: "classic-sheet-ribbon-text",
+						textAnchor: "middle",
+						children: /* @__PURE__ */ jsx("textPath", {
+							href: `#${ribbonId}`,
+							startOffset: "50%",
+							children: title
+						})
+					})]
+				}) : title
+			}),
+			/* @__PURE__ */ jsxs("span", { children: [page, " / 3"] })
+		]
+	});
+}
+function SpellGroup({ level, entries, slots }) {
+	const g = spellGeometry[level];
+	return /* @__PURE__ */ jsxs("div", {
+		className: "classic-source-spell-group",
+		"data-spell-level": level,
+		children: [level > 0 && slots > 0 && /* @__PURE__ */ jsx("span", {
+			className: "classic-source-spell-slot",
+			style: referencePosition((g.cx || 0) - 1.6, (g.cy || 0) - .45),
+			children: slots
+		}), entries.map((spell, index) => /* @__PURE__ */ jsxs("div", {
+			className: "classic-source-spell-row",
+			style: referencePosition(g.x, g.y + g.step * index),
+			title: spell.alwaysPrepared ? "Всегда подготовлено" : spell.prepared ? "Подготовлено" : "Не подготовлено",
+			children: [/* @__PURE__ */ jsx("span", {
+				className: "classic-spell-mark" + (spell.prepared && !spell.alwaysPrepared ? " classic-spell-mark--dot" : ""),
+				children: spell.alwaysPrepared ? "†" : spell.prepared ? "●" : ""
+			}), /* @__PURE__ */ jsx("span", {
+				className: "classic-spell-name",
+				title: spell.name,
+				children: spell.name
+			})]
+		}, spell.id))]
+	});
+}
+function ClassicCharacterSheet(props) {
+	var _props$currentHitPoin, _props$hitDiceRemaini;
+	const root = useRef(null);
+	const editKey = `herolist-classic-text-v1:${props.identity.name || "unnamed"}`;
+	const [editMode, setEditMode] = useState(false);
+	const [hideChangeable, setHideChangeable] = useState(false);
+	const [selected, setSelected] = useState(null);
+	const [editScope, setEditScope] = useState(editKey);
+	const [edits, setEdits] = useState(() => readEdits(editKey));
+	useEffect(() => {
+		if (editScope !== editKey) {
+			setEditScope(editKey);
+			setEdits(readEdits(editKey));
+			setSelected(null);
+		}
+	}, [editKey, editScope]);
+	useEffect(() => {
+		if (editScope !== editKey) return;
+		try {
+			localStorage.setItem(editKey, JSON.stringify(edits));
+		} catch (_unused2) {}
+	}, [
+		edits,
+		editKey,
+		editScope
+	]);
+	const updateSelected = (patch) => {
+		if (!selected) return;
+		setEdits((current) => ({
+			...current,
+			[selected]: {
+				scale: 100,
+				bold: false,
+				hidden: false,
+				...current[selected],
+				...patch
+			}
+		}));
+	};
+	const selectedEdit = selected ? edits[selected] : void 0;
+	useLayoutEffect(() => {
+		const sheet = root.current;
+		if (!sheet) return;
+		const template = ".classic-sheet-page:not(.classic-sheet-overflow)";
+		const editNodes = [...sheet.querySelectorAll(editSelector)];
+		const boxes = [...sheet.querySelectorAll(fitSelector)].filter((box) => box.closest(template));
+		const targets = new Set([...editNodes, ...boxes]);
+		const scales = /* @__PURE__ */ new Map();
+		editNodes.forEach((element, index) => {
+			const id = `text-${index}`;
+			const edit = edits[id];
+			element.dataset.classicEdit = id;
+			element.classList.toggle("classic-edited-hidden", Boolean(edit === null || edit === void 0 ? void 0 : edit.hidden));
+			element.classList.toggle("classic-edited-selected", editMode && selected === id);
+			element.style.setProperty("font-weight", (edit === null || edit === void 0 ? void 0 : edit.bold) ? "700" : "", "important");
+			if (Number.isFinite(edit === null || edit === void 0 ? void 0 : edit.scale)) scales.set(element, Math.max(60, Math.min(180, edit.scale)) / 100);
+		});
+		const fit = () => {
+			targets.forEach((element) => element.style.removeProperty("font-size"));
+			scales.forEach((scale, element) => {
+				if (scale !== 1) element.style.setProperty("font-size", `${parseFloat(getComputedStyle(element).fontSize) * scale}px`, "important");
+			});
+			for (const box of [...boxes].reverse()) {
+				var _scales$get;
+				if (!box.clientWidth || !box.clientHeight) continue;
+				const owner = box.matches(".classic-spell-name, .classic-sheet-attack-cell") ? box.closest("[data-classic-edit]") : null;
+				const scale = owner ? (_scales$get = scales.get(owner)) !== null && _scales$get !== void 0 ? _scales$get : 1 : 1;
+				if (owner) box.style.fontWeight = owner.style.fontWeight;
+				fitSheetText(box, parseFloat(getComputedStyle(box).fontSize) * scale);
+			}
+		};
+		let active = true;
+		fit();
+		document.fonts.ready.then(() => {
+			if (active) fit();
+		});
+		const resize = new ResizeObserver(fit);
+		sheet.querySelectorAll(template).forEach((page) => resize.observe(page));
+		window.addEventListener("beforeprint", fit);
+		window.addEventListener("afterprint", fit);
+		return () => {
+			active = false;
+			resize.disconnect();
+			window.removeEventListener("beforeprint", fit);
+			window.removeEventListener("afterprint", fit);
+		};
+	}, [
+		props,
+		edits,
+		editMode,
+		selected
+	]);
+	const skills = originalSkillOrder.map((name) => ({
+		name,
+		...skillKeys[name]
+	}));
+	const spells = Array.from(new Map(props.spells.map((spell) => [spell.id, spell])).values());
+	const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter((spell) => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
+	const displayed = levelSpells.map((entries, level) => entries.slice(0, spellCapacities[level]));
+	const extraSpells = levelSpells.flatMap((entries, level) => entries.slice(spellCapacities[level]).map((spell) => ({
+		...spell,
+		sourceLevel: level
+	})));
+	const extraPages = Array.from({ length: Math.ceil(extraSpells.length / 42) }, (_, index) => extraSpells.slice(index * 42, (index + 1) * 42));
+	const features = [
+		...props.classFeatures,
+		...props.raceFeatures,
+		...props.featFeatures,
+		props.backgroundFeature
+	].filter(Boolean);
+	const purse = props.equipment.map(purseGold).filter((n) => n !== null).reduce((a, b) => a + b, 0);
+	const gold = props.currency.gp || purse;
+	const coins = [
+		["ПП", props.currency.pp],
+		["ЗМ", gold],
+		["СМ", props.currency.sp],
+		["ММ", props.currency.cp]
+	];
+	const equipment = props.equipment.filter((item) => purseGold(item) === null).join("; ");
+	return /* @__PURE__ */ jsxs(Fragment$1, { children: [/* @__PURE__ */ jsxs("div", {
+		className: "classic-sheet-editor",
+		role: "group",
+		"aria-label": "Настройки классического листа",
+		children: [
+			/* @__PURE__ */ jsx("button", {
+				type: "button",
+				"aria-pressed": editMode,
+				onClick: () => {
+					setEditMode(!editMode);
+					setSelected(null);
+				},
+				children: editMode ? "Завершить редактирование" : "Редактировать лист"
+			}),
+			/* @__PURE__ */ jsx("button", {
+				type: "button",
+				"aria-pressed": hideChangeable,
+				onClick: () => setHideChangeable((value) => !value),
+				children: hideChangeable ? "Показать изменяемую информацию" : "Скрыть изменяемую информацию"
+			}),
+			editMode && /* @__PURE__ */ jsxs(Fragment$1, { children: [
+				/* @__PURE__ */ jsx("span", { children: selected ? "Выбран текст на листе" : "Выберите текст на листе" }),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !selected,
+					onClick: () => updateSelected({ scale: Math.max(60, ((selectedEdit === null || selectedEdit === void 0 ? void 0 : selectedEdit.scale) || 100) - 10) }),
+					"aria-label": "Уменьшить текст",
+					children: "А−"
+				}),
+				/* @__PURE__ */ jsxs("output", { children: [(selectedEdit === null || selectedEdit === void 0 ? void 0 : selectedEdit.scale) || 100, "%"] }),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !selected,
+					onClick: () => updateSelected({ scale: Math.min(180, ((selectedEdit === null || selectedEdit === void 0 ? void 0 : selectedEdit.scale) || 100) + 10) }),
+					"aria-label": "Увеличить текст",
+					children: "А+"
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !selected,
+					"aria-pressed": !!(selectedEdit === null || selectedEdit === void 0 ? void 0 : selectedEdit.bold),
+					onClick: () => updateSelected({ bold: !(selectedEdit === null || selectedEdit === void 0 ? void 0 : selectedEdit.bold) }),
+					children: /* @__PURE__ */ jsx("b", { children: "Жирный" })
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !selected,
+					onClick: () => updateSelected({ hidden: true }),
+					children: "Удалить с листа"
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					disabled: !selected,
+					onClick: () => {
+						if (!selected) return;
+						setEdits((current) => {
+							const next = { ...current };
+							delete next[selected];
+							return next;
+						});
+					},
+					children: "Вернуть текст"
+				}),
+				/* @__PURE__ */ jsx("button", {
+					type: "button",
+					onClick: () => {
+						setEdits({});
+						setSelected(null);
+					},
+					children: "Сбросить правки"
+				})
+			] })
+		]
+	}), /* @__PURE__ */ jsxs("div", {
+		ref: root,
+		className: "classic-sheet-document classic-sheet--template" + (editMode ? " classic-sheet--editing" : "") + (hideChangeable ? " classic-sheet--hide-changeable" : ""),
+		onClickCapture: (event) => {
+			var _root$current;
+			if (!editMode) return;
+			const target = event.target.closest("[data-classic-edit]");
+			if (target && ((_root$current = root.current) === null || _root$current === void 0 ? void 0 : _root$current.contains(target))) setSelected(target.dataset.classicEdit || null);
+		},
+		"aria-label": "Классический лист персонажа D&D 5e",
+		children: [
+			/* @__PURE__ */ jsxs("section", {
+				className: "classic-sheet-page",
+				style: { backgroundImage: `url("${assetUrl("classic-sheet/page-1.jpg")}")` },
+				children: [
+					/* @__PURE__ */ jsx(ClassicHeader, {
+						title: props.identity.name || "Имя персонажа",
+						page: 1
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "classic-sheet-identity",
+						children: [/* @__PURE__ */ jsx(Field$1, {
+							label: "Имя персонажа",
+							value: props.identity.name
+						}), /* @__PURE__ */ jsxs("div", {
+							className: "classic-sheet-identity-fields",
+							children: [
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Класс и уровень",
+									value: props.identity.className + " " + props.identity.level
+								}),
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Предыстория",
+									value: props.identity.backgroundName
+								}),
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Имя игрока",
+									value: props.identity.playerName
+								}),
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Раса",
+									value: props.identity.raceName
+								}),
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Мировоззрение",
+									value: props.identity.alignment
+								}),
+								/* @__PURE__ */ jsx(Field$1, {
+									label: "Опыт",
+									value: props.identity.experience || ""
+								})
+							]
+						})]
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "classic-sheet-main-grid",
+						children: [
+							/* @__PURE__ */ jsxs("div", {
+								className: "classic-sheet-column classic-sheet-left",
+								children: [
+									/* @__PURE__ */ jsx("div", {
+										className: "classic-sheet-abilities",
+										children: abilityOrder.map((ability) => /* @__PURE__ */ jsxs("div", {
+											className: "classic-sheet-ability",
+											children: [
+												/* @__PURE__ */ jsx("b", { children: abilityLabels[ability] }),
+												/* @__PURE__ */ jsx("strong", { children: signed(modifier(props.abilities[ability])) }),
+												/* @__PURE__ */ jsx("span", { children: props.abilities[ability] })
+											]
+										}, ability))
+									}),
+									/* @__PURE__ */ jsx("div", {
+										className: "classic-source-inspiration",
+										children: props.identity.inspiration && /* @__PURE__ */ jsx("strong", {
+											style: referencePosition(15.5, 16.6),
+											children: "●"
+										})
+									}),
+									/* @__PURE__ */ jsx("div", {
+										className: "classic-source-proficiency",
+										children: /* @__PURE__ */ jsx("strong", {
+											style: referencePosition(15.8, 21.5),
+											children: signed(props.proficiency)
+										})
+									}),
+									/* @__PURE__ */ jsx("div", {
+										className: "classic-source-saves",
+										children: abilityOrder.map((key, i) => {
+											var _props$savingThrowBon;
+											const trained = props.savingThrows.includes(key);
+											const value = modifier(props.abilities[key]) + (trained ? props.proficiency : 0) + (((_props$savingThrowBon = props.savingThrowBonuses) === null || _props$savingThrowBon === void 0 ? void 0 : _props$savingThrowBon[key]) || 0);
+											const y = 26.3 + i * 1.735;
+											return /* @__PURE__ */ jsxs("div", {
+												className: "classic-source-check",
+												children: [trained && /* @__PURE__ */ jsx("span", {
+													className: "classic-source-checkmark classic-source-checkmark--dot",
+													style: referencePosition(16.05, y),
+													children: "●"
+												}), /* @__PURE__ */ jsx("span", {
+													className: "classic-source-checkvalue",
+													style: referencePosition(17.9, y),
+													children: signed(value)
+												})]
+											}, key);
+										})
+									}),
+									/* @__PURE__ */ jsx("div", {
+										className: "classic-source-skills",
+										children: skills.map((skill, i) => {
+											const trained = props.proficiencies.skills.includes(skill.name);
+											const expert = props.proficiencies.expertise.includes(skill.name);
+											const bonus = modifier(props.abilities[skill.stat]) + (expert ? 2 * props.proficiency : trained ? props.proficiency : 0);
+											const y = 41 + i * 1.713;
+											return /* @__PURE__ */ jsxs("div", {
+												className: "classic-source-check",
+												children: [(trained || expert) && /* @__PURE__ */ jsx("span", {
+													className: "classic-source-checkmark " + (expert ? "classic-source-checkmark--expert" : "classic-source-checkmark--dot"),
+													style: referencePosition(16.05, y),
+													children: expert ? "◆" : "●"
+												}), /* @__PURE__ */ jsx("span", {
+													className: "classic-source-checkvalue",
+													style: referencePosition(17.9, y),
+													children: signed(bonus)
+												})]
+											}, skill.key);
+										})
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Пассивная мудрость (Внимательность)",
+										children: /* @__PURE__ */ jsx("strong", {
+											className: "classic-sheet-inline-value",
+											children: props.passivePerception
+										})
+									}),
+									/* @__PURE__ */ jsxs(Panel, {
+										title: "Прочие умения и языки",
+										className: "classic-sheet-proficiencies",
+										children: [
+											/* @__PURE__ */ jsxs("p", {
+												title: props.proficiencies.languages.join(", "),
+												children: [
+													/* @__PURE__ */ jsx("b", { children: "Языки:" }),
+													" ",
+													props.proficiencies.languages.join(", ") || "—"
+												]
+											}),
+											/* @__PURE__ */ jsxs("p", {
+												title: props.proficiencies.tools.join(", "),
+												children: [
+													/* @__PURE__ */ jsx("b", { children: "Инструменты:" }),
+													" ",
+													props.proficiencies.tools.join(", ") || "—"
+												]
+											}),
+											/* @__PURE__ */ jsxs("p", {
+												title: props.proficiencies.armor.join(", "),
+												children: [
+													/* @__PURE__ */ jsx("b", { children: "Доспехи:" }),
+													" ",
+													props.proficiencies.armor.join(", ") || "—"
+												]
+											}),
+											/* @__PURE__ */ jsxs("p", {
+												title: props.proficiencies.weapons.join(", "),
+												children: [
+													/* @__PURE__ */ jsx("b", { children: "Оружие:" }),
+													" ",
+													props.proficiencies.weapons.join(", ") || "—"
+												]
+											})
+										]
+									})
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "classic-sheet-column classic-sheet-center",
+								children: [
+									/* @__PURE__ */ jsxs("div", {
+										className: "classic-sheet-combat",
+										children: [
+											/* @__PURE__ */ jsx(Panel, {
+												title: "Класс брони",
+												children: /* @__PURE__ */ jsx("strong", { children: props.ac })
+											}),
+											/* @__PURE__ */ jsx(Panel, {
+												title: "Инициатива",
+												children: /* @__PURE__ */ jsx("strong", { children: signed(props.initiative) })
+											}),
+											/* @__PURE__ */ jsx(Panel, {
+												title: "Скорость",
+												children: /* @__PURE__ */ jsx("strong", { children: props.speed })
+											})
+										]
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Максимум хитов",
+										children: /* @__PURE__ */ jsx("strong", {
+											className: "classic-sheet-hp",
+											children: props.hitPoints
+										})
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Текущие хиты",
+										children: /* @__PURE__ */ jsx("strong", {
+											className: "classic-sheet-hp",
+											children: (_props$currentHitPoin = props.currentHitPoints) !== null && _props$currentHitPoin !== void 0 ? _props$currentHitPoin : props.hitPoints
+										})
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Временные хиты",
+										children: /* @__PURE__ */ jsx("strong", {
+											className: "classic-sheet-hp",
+											children: props.temporaryHitPoints || ""
+										})
+									}),
+									/* @__PURE__ */ jsxs("div", {
+										className: "classic-sheet-two",
+										children: [/* @__PURE__ */ jsxs(Panel, {
+											title: "Кости здоровья",
+											children: [/* @__PURE__ */ jsx("p", { children: props.hitDiceLabel || props.identity.level + "к" + props.hitDie }), /* @__PURE__ */ jsx("p", { children: (_props$hitDiceRemaini = props.hitDiceRemaining) !== null && _props$hitDiceRemaini !== void 0 ? _props$hitDiceRemaini : props.identity.level })]
+										}), /* @__PURE__ */ jsx(Panel, { title: "Испытания против смерти" })]
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Атаки и заклинания",
+										children: /* @__PURE__ */ jsxs("table", {
+											className: "classic-sheet-attacks",
+											style: { "--classic-attack-count": Math.max(props.attacks.length, 1) },
+											children: [/* @__PURE__ */ jsx("thead", { children: /* @__PURE__ */ jsxs("tr", { children: [
+												/* @__PURE__ */ jsx("th", { children: "Название" }),
+												/* @__PURE__ */ jsx("th", { children: "Бонус" }),
+												/* @__PURE__ */ jsx("th", { children: "Урон / тип" })
+											] }) }), /* @__PURE__ */ jsx("tbody", { children: props.attacks.map((attack, index) => {
+												var _attack$attackBonus, _attack$damageDisplay;
+												return /* @__PURE__ */ jsx("tr", { children: [
+													attack.name,
+													String((_attack$attackBonus = attack.attackBonus) !== null && _attack$attackBonus !== void 0 ? _attack$attackBonus : ""),
+													String((_attack$damageDisplay = attack.damageDisplay) !== null && _attack$damageDisplay !== void 0 ? _attack$damageDisplay : "")
+												].map((value, column) => /* @__PURE__ */ jsx("td", { children: /* @__PURE__ */ jsx("span", {
+													className: "classic-sheet-attack-cell",
+													title: value,
+													children: value
+												}) }, column)) }, attack.id || index);
+											}) })]
+										})
+									}),
+									/* @__PURE__ */ jsxs(Panel, {
+										title: "Снаряжение",
+										children: [/* @__PURE__ */ jsx("div", {
+											className: "classic-sheet-coins",
+											children: coins.map(([name, amount]) => /* @__PURE__ */ jsxs("div", { children: [/* @__PURE__ */ jsx("b", { children: amount || "" }), /* @__PURE__ */ jsx("small", { children: name })] }, name))
+										}), /* @__PURE__ */ jsx("p", {
+											className: "classic-equipment-text",
+											title: equipment,
+											children: equipment || " "
+										})]
+									})
+								]
+							}),
+							/* @__PURE__ */ jsxs("div", {
+								className: "classic-sheet-column classic-sheet-right",
+								children: [
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Свойства личности",
+										children: /* @__PURE__ */ jsx("p", { children: props.personality.traits || " " })
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Идеалы",
+										children: /* @__PURE__ */ jsx("p", { children: props.personality.ideals || " " })
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Узы",
+										children: /* @__PURE__ */ jsx("p", { children: props.personality.bonds || " " })
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Изъяны",
+										children: /* @__PURE__ */ jsx("p", { children: props.personality.flaws || " " })
+									}),
+									/* @__PURE__ */ jsx(Panel, {
+										title: "Особенности и свойства",
+										children: features.slice(0, 6).map((feature, index) => /* @__PURE__ */ jsxs("p", { children: [/* @__PURE__ */ jsx("b", { children: feature.name }), feature.description ? ": " + feature.description : ""] }, index))
+									})
+								]
+							})
+						]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "classic-sheet-page",
+				style: { backgroundImage: `url("${assetUrl("classic-sheet/page-2.jpg")}")` },
+				children: [
+					/* @__PURE__ */ jsx(ClassicHeader, {
+						title: props.identity.name || "Имя персонажа",
+						page: 2
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "classic-sheet-bio",
+						children: [
+							"Возраст",
+							"Рост",
+							"Вес",
+							"Глаза",
+							"Кожа",
+							"Волосы"
+						].map((name) => /* @__PURE__ */ jsx(Field$1, { label: name }, name))
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "classic-sheet-story-grid",
+						children: [
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Внешность персонажа",
+								className: "classic-sheet-portrait"
+							}),
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Союзники и организации",
+								className: "classic-sheet-allies"
+							}),
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Символ",
+								className: "classic-sheet-symbol"
+							}),
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Предыстория персонажа",
+								className: "classic-sheet-backstory",
+								children: /* @__PURE__ */ jsx("p", { children: props.identity.backgroundName })
+							}),
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Прочие свойства и особенности",
+								className: "classic-sheet-additional",
+								children: features.slice(6).map((feature, index) => /* @__PURE__ */ jsxs("p", { children: [
+									/* @__PURE__ */ jsxs("b", { children: [feature.name, "."] }),
+									" ",
+									feature.description
+								] }, index))
+							}),
+							/* @__PURE__ */ jsx(Panel, {
+								title: "Сокровища",
+								className: "classic-sheet-treasure",
+								children: coins.filter(([, amount]) => amount > 0).map(([name, amount]) => /* @__PURE__ */ jsxs("p", { children: [
+									name,
+									": ",
+									amount
+								] }, name))
+							})
+						]
+					})
+				]
+			}),
+			/* @__PURE__ */ jsxs("section", {
+				className: "classic-sheet-page",
+				style: { backgroundImage: `url("${assetUrl("classic-sheet/page-3.jpg")}")` },
+				children: [
+					/* @__PURE__ */ jsx(ClassicHeader, {
+						title: props.identity.name || "",
+						page: 3
+					}),
+					/* @__PURE__ */ jsxs("div", {
+						className: "classic-sheet-magic-header",
+						children: [
+							/* @__PURE__ */ jsx(Field$1, {
+								label: "Класс заклинателя",
+								value: props.identity.className
+							}),
+							/* @__PURE__ */ jsx(Field$1, {
+								label: "Заклинательная характеристика",
+								value: props.spellAbility
+							}),
+							/* @__PURE__ */ jsx(Field$1, {
+								label: "Сл испытаний",
+								value: props.spellSaveDc
+							}),
+							/* @__PURE__ */ jsx(Field$1, {
+								label: "Бонус атаки заклинанием",
+								value: props.spellAttackBonus == null ? "" : signed(props.spellAttackBonus)
+							})
+						]
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "classic-sheet-spell-columns",
+						children: [
+							[
+								0,
+								1,
+								2
+							],
+							[
+								3,
+								4,
+								5
+							],
+							[
+								6,
+								7,
+								8,
+								9
+							]
+						].flat().map((level) => {
+							var _props$pactSlots;
+							return /* @__PURE__ */ jsx(SpellGroup, {
+								level,
+								entries: displayed[level],
+								slots: props.spellSlots[level - 1] || (((_props$pactSlots = props.pactSlots) === null || _props$pactSlots === void 0 ? void 0 : _props$pactSlots.level) === level ? props.pactSlots.slots : 0)
+							}, level);
+						})
+					}),
+					/* @__PURE__ */ jsx("div", {
+						className: "classic-sheet-note",
+						children: "● подготовлено · † всегда подготовлено · ○ не подготовлено"
+					})
+				]
+			}),
+			extraPages.map((page, pageIndex) => /* @__PURE__ */ jsxs("section", {
+				className: "classic-sheet-page classic-sheet-overflow",
+				children: [/* @__PURE__ */ jsx(ClassicHeader, {
+					title: "Продолжение списка заклинаний",
+					page: 4 + pageIndex
+				}), page.map((spell) => /* @__PURE__ */ jsxs("div", {
+					className: "classic-sheet-spell-row",
+					children: [/* @__PURE__ */ jsx("span", {
+						className: "classic-sheet-prepare",
+						children: spell.alwaysPrepared ? "†" : spell.prepared ? "●" : "○"
+					}), /* @__PURE__ */ jsxs("span", { children: [
+						spell.sourceLevel,
+						" круг · ",
+						spell.name
+					] })]
+				}, spell.id))]
+			}, pageIndex)),
+			/* @__PURE__ */ jsx(SpellCardsAppendix, {
+				spells: props.spells,
+				identityName: props.identity.name,
+				className: props.identity.className,
+				startPage: 4 + extraPages.length
+			})
+		]
+	})] });
 }
 //#endregion
 //#region app/spellCompatibility.ts
@@ -67794,7 +69481,7 @@ function AdventureApp() {
 	return /* @__PURE__ */ jsx(BuilderErrorBoundary, { children: /* @__PURE__ */ jsx(Builder, { adventureRoute: true }) });
 }
 function Builder({ adventureRoute = false } = {}) {
-	var _classRuleFor, _homebrew$elements$fi3, _classRuleFor2, _character$spellGrant, _character$raceChoice3, _feats$find4, _classRuleFor4, _sourcedSpellGroups$f2, _homebrew$elements$fi7;
+	var _classRuleFor, _homebrew$elements$fi3, _classRuleFor2, _character$spellGrant, _character$raceChoice3, _feats$find4, _selectedRace$details, _character$adventure$, _character$adventure, _character$adventure2, _classRuleFor4, _sourcedSpellGroups$f2, _homebrew$elements$fi7;
 	const [view, setView] = useState(adventureRoute ? "characters" : "home");
 	const [step, setStep] = useState(0);
 	const [character, setCharacter] = useState(initial);
@@ -67841,7 +69528,8 @@ function Builder({ adventureRoute = false } = {}) {
 	const [moveFolderId, setMoveFolderId] = useState("unfiled");
 	const [folderImport, setFolderImport] = useState(null);
 	const [libraryExportTarget, setLibraryExportTarget] = useState(null);
-	const [pdfSheetEdition, setPdfSheetEdition] = useState("2014");
+	const [sheetFormat, setSheetFormat] = useState("modern");
+	const SelectedCharacterSheet = sheetFormat === "2024" ? CharacterSheet2024 : sheetFormat === "classic" ? ClassicCharacterSheet : PdfCharacterSheet;
 	const [account, setAccount] = useState(null);
 	const [textEntryDialog, setTextEntryDialog] = useState(null);
 	const [cloudState, setCloudState] = useState("local");
@@ -69422,7 +71110,7 @@ function Builder({ adventureRoute = false } = {}) {
 		download(createNativeCharacterFile(rulesCharacter), `${safeName(character.name)} — Лист Героя 5e.json`);
 	}
 	function printPdf(sheetEdition) {
-		setPdfSheetEdition(sheetEdition);
+		setSheetFormat((current) => sheetEdition === "2024" ? "2024" : current === "classic" ? "classic" : "modern");
 		window.setTimeout(() => printStandalonePdf(`${safeName(character.name)} — Лист Героя ${sheetEdition}.pdf`), 150);
 	}
 	function persistVault(next) {
@@ -73659,8 +75347,51 @@ function Builder({ adventureRoute = false } = {}) {
 											]
 										})]
 									}),
-									/* @__PURE__ */ jsx(PdfCharacterSheet, {
-										sheetEdition: pdfSheetEdition,
+									/* @__PURE__ */ jsxs("div", {
+										className: "character-sheet-format-toggle",
+										role: "group",
+										"aria-label": "Формат листа персонажа",
+										children: [
+											/* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-pressed": sheetFormat === "modern",
+												onClick: () => setSheetFormat("modern"),
+												children: "Современный лист"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-pressed": sheetFormat === "classic",
+												onClick: () => setSheetFormat("classic"),
+												children: "Классический лист D&D"
+											}),
+											/* @__PURE__ */ jsx("button", {
+												type: "button",
+												"aria-pressed": sheetFormat === "2024",
+												onClick: () => setSheetFormat("2024"),
+												children: "Лист 2024"
+											})
+										]
+									}),
+									/* @__PURE__ */ jsx(SelectedCharacterSheet, {
+										sheet2024: sheetFormat === "2024" ? {
+											size: [
+												chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.description,
+												...selectedRace && "details" in selectedRace ? (_selectedRace$details = selectedRace.details) !== null && _selectedRace$details !== void 0 ? _selectedRace$details : [] : [],
+												selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.description
+											].map((text) => {
+												var _text$match;
+												return text === null || text === void 0 || (_text$match = text.match(/(?:^|[.!]\s*)(Маленький|Малый|Средний|Большой|Крошечный) размер/i)) === null || _text$match === void 0 ? void 0 : _text$match[1];
+											}).find(Boolean),
+											skillBonuses: Object.fromEntries(Object.keys(skillKeys).map((skill) => [skill, skillBonusBreakdown(exportCharacter, skill).value])),
+											shield: (_character$adventure$ = (_character$adventure = character.adventure) === null || _character$adventure === void 0 ? void 0 : _character$adventure.inventory.some((item) => item.equipped && item.quantity > 0 && isShieldItem(item))) !== null && _character$adventure$ !== void 0 ? _character$adventure$ : ac.bonuses.some((bonus) => /щит/i.test(bonus)),
+											hitDiceSpent: hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.spent, 0),
+											hitDiceMaximum: hitDicePoolsForCharacter.map((pool) => `${pool.max}к${pool.die}`).join(" + "),
+											deathSuccesses: character.deathSaveSuccesses,
+											deathFailures: character.deathSaveFailures,
+											spellSlotsUsed: character.spellSlotsUsed,
+											pactSlotsUsed: character.pactSlotsUsed,
+											attuned: (_character$adventure2 = character.adventure) === null || _character$adventure2 === void 0 ? void 0 : _character$adventure2.inventory.filter((item) => item.attuned).map((item) => item.name)
+										} : void 0,
 										identity: {
 											name: character.name,
 											playerName: character.playerName,
@@ -73671,7 +75402,7 @@ function Builder({ adventureRoute = false } = {}) {
 												return `${((_classes$find12 = classes.find((option) => option.id === entry.classId)) === null || _classes$find12 === void 0 ? void 0 : _classes$find12.name) || ((_homebrewOption = homebrewOption(entry.classId)) === null || _homebrewOption === void 0 ? void 0 : _homebrewOption.name) || entry.classId}${multiclassEntries.length > 1 ? ` ${entry.level}` : ""}`;
 											}).join(" / ") || "Класс не выбран",
 											subclassName: multiclassEntries.length > 1 ? void 0 : chosenSubclass === null || chosenSubclass === void 0 ? void 0 : chosenSubclass.name,
-											raceName: [selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name, chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name].filter(Boolean).join(" · ") || "Раса не выбрана",
+											raceName: !(selectedRace === null || selectedRace === void 0 ? void 0 : selectedRace.name) ? "Раса не выбрана" : !variantsFor(character.race).length || !(chosenRaceVariant === null || chosenRaceVariant === void 0 ? void 0 : chosenRaceVariant.name) ? selectedRace.name : chosenRaceVariant.name === selectedRace.name || chosenRaceVariant.name.startsWith(`${selectedRace.name} —`) ? chosenRaceVariant.name : `${selectedRace.name} · ${chosenRaceVariant.name}`,
 											backgroundName: (selectedBackground === null || selectedBackground === void 0 ? void 0 : selectedBackground.name) || "Предыстория не выбрана",
 											alignment: character.alignment,
 											level: characterLevel(character)
@@ -73876,7 +75607,7 @@ function Builder({ adventureRoute = false } = {}) {
 											}),
 											/* @__PURE__ */ jsx("button", {
 												onClick: () => printPdf("2024"),
-												children: "PDF-лист 2024 · альтернативный"
+												children: "PDF-лист 2024"
 											}),
 											/* @__PURE__ */ jsx("button", {
 												onClick: () => exportLongStoryShort("2014"),
