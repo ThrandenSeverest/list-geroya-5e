@@ -93,15 +93,6 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     { id: "feats", label: "Черты", content: <FeatureList features={props.featFeatures} /> },
     { id: "weapons", label: "Владение оружием", content: proficiencies.weapons.join(", ") },
     { id: "tools", label: "Владение инструментами", content: proficiencies.tools.join(", ") },
-    { id: "play", label: "Ресурсы и защита", content: <>
-      {props.resources.map((resource, i) => <div className="hs24-resource" key={i}>
-        <b>{resource.name}</b><strong>{resource.current}/{resource.max}{resource.die ? ` · ${resource.die}` : ""}</strong>
-        <small>{resourceRestLabel(resource)}</small>
-      </div>)}
-      {([["Сопротивления", props.defenses?.resistances], ["Иммунитеты", props.defenses?.immunities], ["Уязвимости", props.defenses?.vulnerabilities]] as const)
-        .filter(([, values]) => values?.length).map(([label, values]) => <p key={label}><b>{label}.</b> {values?.join(", ")}</p>)}
-      {props.initiativeNotes?.map((entry, i) => <p key={i}>{entry}</p>)}
-    </> },
     { id: "history", label: "Предыстория и личность", content: <><p><b>{identity.backgroundName}</b></p>{props.backgroundFeature?.name && <FeatureList features={[props.backgroundFeature]} />}{Object.entries({ "Черты характера": props.personality.traits, "Идеалы": props.personality.ideals, "Привязанности": props.personality.bonds, "Слабости": props.personality.flaws }).filter(([, value]) => value).map(([label, value]) => <p key={label}><b>{label}.</b> {value}</p>)}</> },
     { id: "languages", label: "Языки", content: proficiencies.languages.join(", ") },
     { id: "equipment", label: "Снаряжение", content: props.equipment.join(" · ") },
@@ -138,15 +129,28 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
 
   const moreAttacks = props.attacks.length > attackRows || tableOverflow.attacks;
   const moreSpells = spells.length > spellRows || tableOverflow.spells;
+  const hasBattleNotes = props.resources.length > 0 || !!props.initiativeNotes?.length ||
+    Object.values(props.defenses ?? {}).some(values => values.length > 0);
+  const battleNotes = <>
+      {props.resources.map((resource, i) => <div className="hs24-resource" key={i}>
+        <b>{resource.name}</b><strong>{resource.current}/{resource.max}{resource.die ? ` · ${resource.die}` : ""}</strong>
+        <small>{resourceRestLabel(resource)}</small>
+      </div>)}
+      {([["Сопротивления", props.defenses?.resistances], ["Иммунитеты", props.defenses?.immunities], ["Уязвимости", props.defenses?.vulnerabilities]] as const)
+        .filter(([, values]) => values?.length).map(([label, values]) => <p key={label}><b>{label}.</b> {values?.join(", ")}</p>)}
+      {props.initiativeNotes?.map((entry, i) => <p key={i}>{entry}</p>)}
+    </>;
   return <div className="hs24-preview"><div ref={root} className="hs24-document" aria-label="Лист Героя 2024">
     <section className="hs24-page hs24-main">
       <div className="hs24-top">
         <section className="hs24-panel hs24-identity"><Value label="Имя персонажа">{identity.name}</Value><div><Value label="Предыстория">{identity.backgroundName}</Value><Value label="Класс">{identity.className}</Value><Value label="Вид">{identity.raceName}</Value><Value label="Подкласс">{identity.subclassName}</Value></div></section>
         <section className="hs24-panel hs24-level"><Value label="Уровень">{identity.level}</Value><Value label="Опыт">{identity.experience}</Value></section>
         <Panel title="Класс брони" className="hs24-ac"><strong>{props.ac}</strong><span>Щит <Marks total={1} used={Number(!!data?.shield)} label="Щит в руках" /></span></Panel>
-        <Panel title="Хиты" className="hs24-vitals"><Value label="Текущие">{props.currentHitPoints ?? props.hitPoints}</Value><Value label="Временные">{props.temporaryHitPoints || ""}</Value><Value label="Максимум">{props.hitPoints}</Value></Panel>
-        <Panel title="Кости хитов" className="hs24-dice"><Value label="Потрачено">{data?.hitDiceSpent}</Value><Value label="Максимум">{data?.hitDiceMaximum ?? `${identity.level}к${props.hitDie}`}</Value></Panel>
-        <Panel title="Спасброски от смерти" className="hs24-death"><Value label="Успехи"><Marks total={3} used={data?.deathSuccesses} label="Успехи" /></Value><Value label="Провалы"><Marks total={3} used={data?.deathFailures} label="Провалы" /></Value></Panel>
+        <div className="hs24-panel hs24-health">
+          <Panel title="Хиты" className="hs24-vitals"><Value label="Текущие">{props.currentHitPoints ?? props.hitPoints}</Value><Value label="Временные">{props.temporaryHitPoints || ""}</Value><Value label="Максимум">{props.hitPoints}</Value></Panel>
+          <Panel title="Кости хитов" className="hs24-dice"><Value label="Потрачено">{data?.hitDiceSpent}</Value><Value label="Максимум">{data?.hitDiceMaximum ?? `${identity.level}к${props.hitDie}`}</Value></Panel>
+          <Panel title="Спасброски от смерти" className="hs24-death"><Value label="Успехи"><Marks total={3} used={data?.deathSuccesses} label="Успехи" /></Value><Value label="Провалы"><Marks total={3} used={data?.deathFailures} label="Провалы" /></Value></Panel>
+        </div>
       </div>
       <div className="hs24-wordmark">Лист Героя <span>2024</span></div>
       <div className="hs24-body">
@@ -159,14 +163,15 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
             <div className="hs24-armor">{[["Лёгкие", /л[её]гк/i], ["Средние", /средн/i], ["Тяжёлые", /тяж[её]л/i], ["Щит", /щит/i]].map(([label, match]) => <span key={String(label)}><Marks total={1} used={Number((match as RegExp).test(armor))} label={String(label)} />{String(label)}</span>)}</div>
             <h3>Оружие</h3>{note("weapons")}<h3>Инструменты</h3>{note("tools")}
           </Panel>
-          <Panel title="Ресурсы и защита" className="hs24-play">{note("play")}</Panel>
         </aside>
         <div className="hs24-right">
           <div className="hs24-stats"><Value label="Инициатива">{signed(props.initiative)}</Value><Value label="Скорость">{props.speed} фт.</Value><Value label="Размер">{data?.size}</Value><Value label="Пассивное восприятие">{props.passivePerception}</Value></div>
           <Panel title="Оружие и боевые заговоры"><AttackTable attacks={props.attacks.slice(0, attackRows)} blankRows={attackRows} /></Panel>
           <Panel title="Классовые умения" className="hs24-class">{note("class", "hs24-two-columns")}</Panel>
-          <div className={`hs24-traits${props.raceFeatures.length && !props.featFeatures.length ? " hs24-traits--species" : !props.raceFeatures.length && props.featFeatures.length ? " hs24-traits--feats" : ""}`}><Panel title="Особенности вида">{note("species")}</Panel><Panel title="Черты">{note("feats")}</Panel></div>
-          <Panel title="Заметки"><div className="hs24-paper" /></Panel>
+          <div className="hs24-traits">
+            <Panel title="Особенности вида">{note("species")}</Panel>
+            <Panel title="Черты">{note("feats")}</Panel>
+          </div>
         </div>
       </div>
     </section>
@@ -197,11 +202,12 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
         <Panel title="Кошелёк"><div className="hs24-wallet">{([["ММ", props.currency.cp], ["СМ", props.currency.sp], ["ЭМ", data?.electrum], ["ЗМ", props.currency.gp], ["ПМ", props.currency.pp]] as const).map(([label, value]) => <Value key={label} label={label}>{value}</Value>)}</div></Panel>
       </aside>
     </section>
-    {(overflow.length > 0 || moreSpells || moreAttacks || (props.spellcastingSources?.length ?? 0) > 1) && <section className="hs24-appendix">
+    {(overflow.length > 0 || moreSpells || moreAttacks || hasBattleNotes || (props.spellcastingSources?.length ?? 0) > 1) && <section className="hs24-appendix">
       <h2>{identity.name} · Приложение к листу 2024</h2>
       {moreAttacks && <Panel title="Оружие и боевые заговоры"><AttackTable attacks={props.attacks} /></Panel>}
       {moreSpells && <Panel title={tableOverflow.spells ? "Полный список заклинаний" : "Продолжение списка заклинаний"}><SpellTable spells={tableOverflow.spells ? spells : spells.slice(spellRows)} /></Panel>}
       {(props.spellcastingSources?.length ?? 0) > 1 && <Panel title="Источники заклинаний">{props.spellcastingSources?.map((source, i) => <p key={i}>{source.name} · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</p>)}</Panel>}
+      {hasBattleNotes && <Panel title="Ресурсы и защита">{battleNotes}</Panel>}
       {notes.filter(entry => overflow.includes(entry.id)).map(entry => <Panel key={entry.id} title={entry.label}>{entry.content}</Panel>)}
     </section>}
   </div></div>;

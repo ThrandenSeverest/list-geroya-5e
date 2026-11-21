@@ -15,7 +15,7 @@
   width: 210mm;
   height: 297mm;
   padding: 5mm 4.5mm;
-  background: #f4f4ef;
+  background: #efefe9;
   margin-block-end: 5mm;
   box-shadow: 0 2mm 9mm #0003;
 }
@@ -41,7 +41,7 @@
 .hs24-value { display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; }
 .hs24-value span { font: 700 6.5pt/1.05 Arial, sans-serif; }
 .hs24-value strong { font: 700 9pt/1.15 Arial, sans-serif; min-height: 3.2mm; overflow-wrap: anywhere; }
-.hs24-top { display: grid; grid-template-columns: minmax(0,4.7fr) 18mm 19mm minmax(0,2.05fr) 17mm 23mm; gap: 1.2mm; height: 29mm; }
+.hs24-top { display: grid; grid-template-columns: minmax(0,1.14fr) 18mm 19mm minmax(0,1fr); gap: 1.7mm; height: 29mm; }
 .hs24-identity { justify-content: space-between; padding-inline: 2mm; }
 .hs24-identity > div:last-child { display: grid; grid-template-columns: 1fr 1fr; row-gap: .6mm; column-gap: 2mm; }
 .hs24-identity .hs24-value { flex-direction: column-reverse; }
@@ -66,11 +66,11 @@
 .hs24-body { display: grid; grid-template-columns: 34.6% minmax(0,1fr); gap: 2.6mm; }
 .hs24-body > *, .hs24-magic > * { min-height: 0; min-width: 0; }
 .hs24-left, .hs24-right, .hs24-magic-main, .hs24-magic-side { display: grid; gap: 2mm; }
-.hs24-left { grid-template-rows: 135mm minmax(33mm,.75fr) minmax(0,1fr); }
+.hs24-left { grid-template-rows: minmax(0,1fr) 55mm; }
 .hs24-abilities { display: grid; grid-template-columns: 1fr 1fr; gap: 1.7mm; }
 .hs24-abilities > div { display: grid; gap: 1.4mm; min-width: 0; min-height: 0; }
-.hs24-abilities > div:first-child { grid-template-rows: 18mm 28mm 36mm 24mm minmax(0,1fr); }
-.hs24-abilities > div:nth-child(2) { grid-template-rows: 1fr 1fr .9fr; }
+.hs24-abilities > div:first-child { grid-template-rows: 25.5fr 41fr 52fr 34fr 23fr; }
+.hs24-abilities > div:nth-child(2) { grid-template-rows: 1.04fr 1.04fr .95fr; }
 .hs24-counter, .hs24-inspiration { align-items: center; justify-content: space-between; }
 .hs24-counter h2, .hs24-inspiration h2 { width: 100%; }
 .hs24-counter strong { font: 700 18pt/1 Georgia, serif; padding-block: 2mm; }
@@ -89,15 +89,12 @@
 .hs24-armor { display: flex; justify-content: space-between; gap: .5mm; padding: 1.1mm 0; border-bottom: .2mm solid var(--hs24-rule); font-size: 6.5pt; }
 .hs24-armor span { white-space: nowrap; }
 .hs24-training > .hs24-paper { flex: 1; }
-.hs24-right { grid-template-rows: 14mm 44mm minmax(0,1.25fr) minmax(0,1.15fr) minmax(0,.55fr); }
-.hs24-traits--species { grid-template-columns: 1.5fr 1fr; }
-.hs24-traits--feats { grid-template-columns: 1fr 1.5fr; }
-.hs24-main .hs24-attacks { flex: none; height: auto; }
+.hs24-right { grid-template-rows: 16mm 58mm minmax(0,1.18fr) minmax(0,1fr); }
+.hs24-main .hs24-attacks { flex: 1; height: auto; }
 .hs24-main .hs24-attacks th { height: 4.3mm; }
-.hs24-main .hs24-attacks td { height: 5.1mm; vertical-align: middle; }
+.hs24-main .hs24-attacks td { height: 7.6mm; vertical-align: middle; }
 .hs24-resource { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .4mm 1mm; padding: .8mm 0; border-bottom: .2mm solid #a1a7a3; }
 .hs24-resource small { grid-column: 1/-1; }
-.hs24-play .hs24-paper p { margin-top: 1mm; }
 .hs24-stats, .hs24-traits { display: grid; gap: 2mm; grid-auto-columns: minmax(0,1fr); grid-auto-flow: column; min-height: 0; }
 .hs24-stats .hs24-value { background: #fff; border: .7mm double var(--hs24-ink); border-radius: 1.8mm .4mm; text-align: center; padding: 1mm .4mm; justify-content: space-between; }
 .hs24-stats strong { font: 700 13pt/1 Georgia, serif; }
@@ -105,6 +102,7 @@
 .hs24-paper > div { height: 100%; overflow: hidden; padding: 1.1mm; overflow-wrap: anywhere; }
 .hs24-paper p { margin-bottom: .85mm; }
 .hs24-two-columns > div { column-count: 2; column-gap: 3mm; column-rule: .2mm solid var(--hs24-rule); column-fill: auto; }
+.hs24-two-columns > div > p { break-inside: avoid-column; }
 .hs24-overflow-hint { position: absolute; right: 0; bottom: 0; background: white; border-top: .2mm solid var(--hs24-rule); padding: .4mm; font-size: 6pt; }
 .hs24-table { border-collapse: collapse; color: var(--hs24-ink); table-layout: fixed; width: 100%; font: 7.3pt/1.13 Arial, sans-serif; }
 .hs24-table th, .hs24-table td { border-bottom: .2mm solid #969b98; border-right: .2mm solid #969b98; padding: .3mm .7mm; text-align: left; overflow-wrap: anywhere; }
@@ -234,3 +232,67 @@
 .hs24-page .hs24-inspiration .hs24-marks { margin: .6mm 0 1.1mm; }
 .hs24-page .hs24-armor { gap: .4mm; flex-wrap: wrap; justify-content: start; column-gap: 1.8mm; }
 .hs24-stats .hs24-value > span { display: grid; place-items: center; text-align: center; min-height: 4mm; }
+
+/* Align the printed panel divisions without adding boxes to the reference grid. */
+.hs24-page .hs24-health {
+  display: grid;
+  grid-template-columns: 1.7fr .8fr 1.15fr;
+  padding: .2mm .6mm;
+}
+.hs24-page .hs24-health > .hs24-panel {
+  border: 0;
+  border-image: none;
+  padding: 1mm .8mm .6mm;
+  min-width: 0;
+}
+.hs24-page .hs24-health > .hs24-panel + .hs24-panel {
+  border-left: .23mm solid var(--hs24-rule);
+}
+.hs24-page .hs24-health h2 {
+  font-size: 7.4pt;
+  padding: .3mm 0 .7mm;
+}
+.hs24-health .hs24-value, .hs24-level .hs24-value { flex-direction: column-reverse; }
+.hs24-health .hs24-value > span, .hs24-level .hs24-value > span {
+  border-top: .2mm solid var(--hs24-rule);
+  padding-top: .45mm;
+}
+.hs24-health .hs24-vitals .hs24-value:nth-child(2) { justify-content: flex-end; }
+.hs24-health .hs24-death .hs24-value > span { border: 0; }
+.hs24-top .hs24-level { margin-left: -3.1mm; }
+.hs24-page .hs24-identity { padding-right: 4.8mm; }
+
+.hs24-page .hs24-ability { position: relative; }
+.hs24-page .hs24-ability h2 { border-bottom: 0; }
+.hs24-ability-values {
+  flex: 0 0 21mm;
+  align-content: start;
+  align-items: start;
+  grid-template-columns: 13.8mm minmax(0,1fr);
+  gap: 0;
+  padding: .5mm .7mm 1mm;
+}
+.hs24-ability-values .hs24-value:first-child { z-index: 1; }
+.hs24-ability-values .hs24-value:first-child strong {
+  width: 13mm;
+  height: 13.5mm;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.hs24-ability-values .hs24-value:nth-child(2) {
+  margin: 2.3mm .2mm 0 -1.75mm;
+}
+.hs24-ability-values .hs24-value:nth-child(2) strong { margin: 0; padding-left: 2mm; }
+.hs24-page .hs24-counter strong { padding-block: 1.65mm; }
+.hs24-check { flex: 1 0 4.35mm; min-height: 4.35mm; }
+.hs24-page .hs24-armor {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: .35mm;
+}
+.hs24-page .hs24-armor > span { display: flex; align-items: center; gap: .4mm; }
+.hs24-paper {
+  background: repeating-linear-gradient(0deg, #e2e3df 0 .12mm, transparent .12mm 1.85mm),
+    repeating-linear-gradient(90deg, #e7e8e2 0 .12mm, transparent .12mm 1.85mm);
+}
