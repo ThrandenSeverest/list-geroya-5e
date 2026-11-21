@@ -6,6 +6,7 @@ import type { AbilityScores } from "./exportFormats";
 import type { CharacterAttack } from "./combat";
 import { abilityLabels, type Feature } from "./rules";
 import { spellComponentLabel } from "./spellComponents";
+import { resourceRestLabel } from "./characterResources";
 import "./character-sheet-2024.css";
 
 const signed = (value: number) => value < 0 ? String(value) : `+${value}`;
@@ -92,6 +93,15 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     { id: "feats", label: "Черты", content: <FeatureList features={props.featFeatures} /> },
     { id: "weapons", label: "Владение оружием", content: proficiencies.weapons.join(", ") },
     { id: "tools", label: "Владение инструментами", content: proficiencies.tools.join(", ") },
+    { id: "play", label: "Ресурсы и защита", content: <>
+      {props.resources.map((resource, i) => <div className="hs24-resource" key={i}>
+        <b>{resource.name}</b><strong>{resource.current}/{resource.max}{resource.die ? ` · ${resource.die}` : ""}</strong>
+        <small>{resourceRestLabel(resource)}</small>
+      </div>)}
+      {([["Сопротивления", props.defenses?.resistances], ["Иммунитеты", props.defenses?.immunities], ["Уязвимости", props.defenses?.vulnerabilities]] as const)
+        .filter(([, values]) => values?.length).map(([label, values]) => <p key={label}><b>{label}.</b> {values?.join(", ")}</p>)}
+      {props.initiativeNotes?.map((entry, i) => <p key={i}>{entry}</p>)}
+    </> },
     { id: "history", label: "Предыстория и личность", content: <><p><b>{identity.backgroundName}</b></p>{props.backgroundFeature?.name && <FeatureList features={[props.backgroundFeature]} />}{Object.entries({ "Черты характера": props.personality.traits, "Идеалы": props.personality.ideals, "Привязанности": props.personality.bonds, "Слабости": props.personality.flaws }).filter(([, value]) => value).map(([label, value]) => <p key={label}><b>{label}.</b> {value}</p>)}</> },
     { id: "languages", label: "Языки", content: proficiencies.languages.join(", ") },
     { id: "equipment", label: "Снаряжение", content: props.equipment.join(" · ") },
@@ -149,12 +159,14 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
             <div className="hs24-armor">{[["Лёгкие", /л[её]гк/i], ["Средние", /средн/i], ["Тяжёлые", /тяж[её]л/i], ["Щит", /щит/i]].map(([label, match]) => <span key={String(label)}><Marks total={1} used={Number((match as RegExp).test(armor))} label={String(label)} />{String(label)}</span>)}</div>
             <h3>Оружие</h3>{note("weapons")}<h3>Инструменты</h3>{note("tools")}
           </Panel>
+          <Panel title="Ресурсы и защита" className="hs24-play">{note("play")}</Panel>
         </aside>
         <div className="hs24-right">
           <div className="hs24-stats"><Value label="Инициатива">{signed(props.initiative)}</Value><Value label="Скорость">{props.speed} фт.</Value><Value label="Размер">{data?.size}</Value><Value label="Пассивное восприятие">{props.passivePerception}</Value></div>
           <Panel title="Оружие и боевые заговоры"><AttackTable attacks={props.attacks.slice(0, attackRows)} blankRows={attackRows} /></Panel>
           <Panel title="Классовые умения" className="hs24-class">{note("class", "hs24-two-columns")}</Panel>
-          <div className="hs24-traits"><Panel title="Особенности вида">{note("species")}</Panel><Panel title="Черты">{note("feats")}</Panel></div>
+          <div className={`hs24-traits${props.raceFeatures.length && !props.featFeatures.length ? " hs24-traits--species" : !props.raceFeatures.length && props.featFeatures.length ? " hs24-traits--feats" : ""}`}><Panel title="Особенности вида">{note("species")}</Panel><Panel title="Черты">{note("feats")}</Panel></div>
+          <Panel title="Заметки"><div className="hs24-paper" /></Panel>
         </div>
       </div>
     </section>

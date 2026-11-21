@@ -1,4 +1,5 @@
 import React from 'react';
+import { classRules } from '../../app/rules';
 import { CharacterSheet2024 } from '../../app/CharacterSheet2024';
 import {ClassicCharacterSheet} from '../../app/ClassicCharacterSheet';
 import {createRoot} from 'react-dom/client';
@@ -26,6 +27,12 @@ if(new URLSearchParams(location.search).get('scenario')==='adenon')Object.assign
  attacks:Array.from({length:7},(_,i)=>({id:'test-'+i,kind:i<2?'weapon':'cantrip',name:['Боевой посох (1 рука)','Боевой посох (2 руки)','Вампирский укус','Громовой клинок — боевой посох','Электрошок','Огненный снаряд','Луч холода'][i],attackBonus:5,damageDisplay:'1d8+3',note:i>1?'Наложение заговора: одна атака оружием по цели в пределах 5 футов; оружие считается материальным компонентом. При попадании наносится обычный урон оружия и дополнительный урон в соответствии с уровнем персонажа.':''})),
 });
 const newSheet = new URLSearchParams(location.search).get('layout') === '2024';
+if(newSheet) Object.assign(props, {
+  classFeatures: props.identity.level === 1
+    ? classRules.wizard.features.filter(feature => (feature.level ?? 1) === 1)
+    : [...classRules.barbarian.features, ...classRules.wizard.features].filter(feature => (feature.level ?? 1) <= 3),
+  sheet2024: { size: 'Средний', hitDiceSpent: 0, hitDiceMaximum: props.hitDiceLabel },
+});
 if(newSheet || new URLSearchParams(location.search).has('classic')) Object.assign(props, {
 spells:Array.from({length:10},(_,level)=>Array.from({length:level===0?4:3},(_,i)=>({id:`sample-${level}-${i}`,name:['Волшебная рука','Злая насмешка','Рассеивание магии','Малая иллюзия'][i%4],level,description:'Описание тестового заклинания.',prepared:i%2===0,alwaysPrepared:i===2,classSource:'Бард'}))).flat()
 });
