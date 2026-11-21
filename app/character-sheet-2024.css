@@ -1,6 +1,6 @@
 .hs24-document {
-  --hs24-ink: #202727;
-  --hs24-rule: #58605f;
+  --hs24-ink: #191918;
+  --hs24-rule: #33332f;
   --hs24-paper: #fff;
   position: relative;
   width: 210mm;
@@ -15,7 +15,7 @@
   width: 210mm;
   height: 297mm;
   padding: 5mm 4.5mm;
-  background: #efefe9;
+  background: #efeee8;
   margin-block-end: 5mm;
   box-shadow: 0 2mm 9mm #0003;
 }
@@ -151,7 +151,7 @@
 
 /* Engraved frames use fixed corner slices so they keep their shape on wide panels. */
 .hs24-page {
-  outline: .65mm double #838986;
+  outline: .18mm solid #b2b1a9;
   outline-offset: -2.6mm;
 }
 .hs24-page .hs24-panel {
@@ -183,7 +183,7 @@
   border: .7mm solid transparent;
   border-radius: 0;
   background: url("./sheet-2024-art/gauge.svg") center / 100% 100% no-repeat;
-  padding: 1.1mm 2mm .85mm;
+  padding: .9mm 1.4mm 1.65mm;
 }
 .hs24-stats strong { margin-bottom: .45mm; }
 .hs24-counter strong,
@@ -288,11 +288,81 @@
 .hs24-check { flex: 1 0 4.35mm; min-height: 4.35mm; }
 .hs24-page .hs24-armor {
   display: grid;
-  grid-template-columns: repeat(4,minmax(0,1fr));
+  grid-template-columns: minmax(0,1.3fr) repeat(3,minmax(0,1fr)) minmax(0,.65fr);
   gap: .35mm;
 }
 .hs24-page .hs24-armor > span { display: flex; align-items: center; gap: .4mm; }
 .hs24-paper {
   background: repeating-linear-gradient(0deg, #e2e3df 0 .12mm, transparent .12mm 1.85mm),
     repeating-linear-gradient(90deg, #e7e8e2 0 .12mm, transparent .12mm 1.85mm);
+}
+
+.hs24-page .hs24-ability {
+  border-image-source: url("./sheet-2024-art/ability-frame.svg");
+  border-image-width: 3.2mm;
+  padding-inline: 1.9mm;
+}
+.hs24-page .hs24-panel h2 {
+  border-bottom-width: .28mm;
+  border-bottom-style: solid;
+  font-size: 8pt;
+  letter-spacing: .025em;
+}
+.hs24-page .hs24-ability h2, .hs24-page .hs24-ac h2 { border-bottom: 0; }
+.hs24-page .hs24-ability h2 { padding-top: 1.1mm; }
+.hs24-page .hs24-health h2 { font-size: 7.4pt; }
+.hs24-page .hs24-ac, .hs24-page .hs24-level {
+  border: 0;
+  border-image: none;
+}
+.hs24-page .hs24-level {
+  margin-block: .7mm;
+  position: relative;
+  z-index: 1;
+}
+.hs24-page .hs24-inspiration {
+  border-image: none;
+  background: url("./sheet-2024-art/inspiration.svg") center / 100% 100%;
+  padding-bottom: 2.4mm;
+}
+.hs24-page .hs24-inspiration h2 { padding-top: .9mm; }
+.hs24-stats .hs24-value > span {
+  place-items: start center;
+  text-transform: uppercase;
+  font-size: 7.3pt;
+  line-height: .94;
+}
+.hs24-stats strong { margin: 0; font-size: 11.5pt; }
+.hs24-ability-values {
+  grid-template-columns: 12.1mm minmax(0,1fr);
+  padding-inline: .4mm;
+}
+.hs24-ability-values .hs24-value:first-child strong { width: 12.1mm; height: 12.5mm; }
+.hs24-ability-values > .hs24-ability-score {
+  display: grid;
+  place-items: center;
+  height: 8.4mm;
+  margin: 2.85mm 0 0 -1.6mm;
+  padding: 1mm .9mm 0 2.3mm;
+  background-image: url("./sheet-2024-art/score-tab.svg");
+}
+.hs24-page .hs24-check {
+  font-size: 7.1pt;
+  padding-inline: .2mm;
+}
+.hs24-page .hs24-armor > b {
+  font-size: 5.7pt;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+.hs24-page .hs24-armor > span { font-size: 5.9pt; }
+.hs24-page .hs24-table td,
+.hs24-page .hs24-table th { border-color: #8c8b83; }
+.hs24-wordmark::before,
+.hs24-wordmark::after {
+  height: 1.65mm;
+  clip-path: none;
+  background: none;
+  border-block: .24mm solid var(--hs24-ink);
+  border-inline: .7mm double var(--hs24-ink);
 }

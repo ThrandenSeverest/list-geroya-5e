@@ -41,7 +41,7 @@ function Ability({ ability, props }: { ability: keyof AbilityScores; props: PdfC
   const mod = modifier(score);
   const save = props.savingThrows.includes(ability);
   return <Panel title={abilityLabels[ability]} className="hs24-ability">
-    <div className="hs24-ability-values"><Value label="Модификатор">{signed(mod)}</Value><Value label="Значение">{score}</Value></div>
+    <div className="hs24-ability-values"><Value label="Модификатор">{signed(mod)}</Value><strong className="hs24-ability-score" aria-label={`${abilityLabels[ability]}: ${score}`}>{score}</strong></div>
     <div className="hs24-check hs24-save"><Marks total={1} used={Number(save)} label="Владение" /><b>{signed(mod + (save ? props.proficiency : 0) + (props.savingThrowBonuses?.[ability] ?? 0))}</b>Спасбросок</div>
     {skillsByAbility[ability].map(skill => {
       const trained = props.proficiencies.skills.includes(skill);
@@ -160,7 +160,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
             <div><Ability ability="int" props={props} /><Ability ability="wis" props={props} /><Ability ability="cha" props={props} /></div>
           </div>
           <Panel title="Владение инструментами и снаряжением" className="hs24-training">
-            <div className="hs24-armor">{[["Лёгкие", /л[её]гк/i], ["Средние", /средн/i], ["Тяжёлые", /тяж[её]л/i], ["Щит", /щит/i]].map(([label, match]) => <span key={String(label)}><Marks total={1} used={Number((match as RegExp).test(armor))} label={String(label)} />{String(label)}</span>)}</div>
+            <div className="hs24-armor"><b>Обращение<br />с доспехами</b>{[["Лёгкие", /л[её]гк/i], ["Средние", /средн/i], ["Тяжёлые", /тяж[её]л/i], ["Щит", /щит/i]].map(([label, match]) => <span key={String(label)}><Marks total={1} used={Number((match as RegExp).test(armor))} label={String(label)} />{String(label)}</span>)}</div>
             <h3>Оружие</h3>{note("weapons")}<h3>Инструменты</h3>{note("tools")}
           </Panel>
         </aside>
