@@ -382,7 +382,7 @@
 }
 .classic-sheet--template .classic-sheet-page:nth-child(2) > .classic-sheet-head {
   left: 45.5%;
-  top: 12.65%;
+  top: 11.95%;
   width: 39%;
   height: 3.05%;
 }
@@ -418,4 +418,12 @@
 .classic-sheet--template .classic-sheet-identity > .classic-sheet-field > .classic-sheet-field-value,
 .classic-sheet--template .classic-sheet-page:not(.classic-sheet-overflow) > .classic-sheet-head > strong {
   font-size: 17pt;
+}
+
+.classic-sheet--template .classic-sheet-ribbon-name {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+  overflow: hidden;
 }

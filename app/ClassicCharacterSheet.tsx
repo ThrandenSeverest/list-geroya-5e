@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 import type { PdfCharacterSheetProps, PdfSpell } from "./PdfCharacterSheet";
 import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
@@ -29,11 +29,15 @@ const fitSelector = [
 ].join(', ');
 
 function fitSheetText(box: HTMLElement, preferredSize: number) {
-  const minimum = Math.min(preferredSize, 6);
   const resize = (size: number) => box.style.setProperty('font-size', `${size}px`, 'important');
-  const fits = () => box.scrollHeight <= box.clientHeight && box.scrollWidth <= box.clientWidth;
+  const ribbonText = box.querySelector<SVGTextElement>('.classic-sheet-ribbon-text');
+  const ribbonWidth = box.querySelector<SVGPathElement>('path')?.getTotalLength();
+  const fits = () => ribbonText && ribbonWidth
+    ? ribbonText.getComputedTextLength() <= ribbonWidth - 4
+    : box.scrollHeight <= box.clientHeight && box.scrollWidth <= box.clientWidth;
   resize(preferredSize);
   if (fits()) return;
+  const minimum = Math.min(preferredSize, ribbonText ? 1 : 6);
   let low = minimum;
   let high = preferredSize;
   while (high - low > 0.25) {
@@ -74,9 +78,17 @@ function Field({ label, value }: { label: string; value?: ReactNode }) {
 }
 
 function ClassicHeader({ title, page }: { title: string; page: number }) {
+  const ribbonId = useId();
   return <header className="classic-sheet-head">
     <div className="classic-sheet-emblem"><b>D&amp;D</b><small>ЛИСТ ПЕРСОНАЖА</small></div>
-    <strong>{title}</strong><span>{page} / 3</span>
+    <strong title={title}>
+      {page === 2 ? <svg className="classic-sheet-ribbon-name" viewBox="0 0 310 34" role="img" aria-label={title}>
+        <defs><path id={ribbonId} d="M 3,27 Q 155,12 307,27" /></defs>
+        <text className="classic-sheet-ribbon-text" textAnchor="middle">
+          <textPath href={`#${ribbonId}`} startOffset="50%">{title}</textPath>
+        </text>
+      </svg> : title}
+    </strong><span>{page} / 3</span>
   </header>;
 }
 
