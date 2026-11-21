@@ -95,6 +95,24 @@ async function saved(page) {
         assert.ok(await page.getByRole('link',{name:/Войти через Telegram/}).first().isVisible(),'Telegram login remains visible in the builder');
         if(width<=760) await page.locator('.mobile-top-menu summary').click();
         assert.equal(await page.locator('.pdf-hp strong').textContent(),'30');
+        if (width > 760) {
+          await page.getByRole('button', { name: 'Лист 2024', exact: true }).click();
+          const sheet = page.locator('.hs24-document');
+          assert.equal(await sheet.locator('.hs24-page').count(), 2);
+          assert.equal(await sheet.locator('.hs24-identity > .hs24-value strong').textContent(), character.name);
+          assert.equal(await sheet.locator('.hs24-vitals .hs24-value').first().locator('strong').textContent(), '30');
+          assert.equal(await sheet.locator('.hs24-check').count(), 24);
+          assert.equal(await sheet.locator('.hs24-spellbook tbody tr').count(), 30);
+          await page.emulateMedia({ media: 'print' });
+          const dimensions = await sheet.locator('.hs24-page').evaluateAll(pages => pages.map(page => {
+            const box = page.getBoundingClientRect();
+            return [box.width, box.height, page.scrollHeight - page.clientHeight];
+          }));
+          assert.ok(dimensions.every(([w, h, overflow]) => Math.abs(w / h - 210 / 297) < .002 && overflow <= 1),
+            'Both 2024 print pages must retain the A4 bounds');
+          await page.emulateMedia({ media: 'screen' });
+          await page.getByRole('button', { name: 'Современный лист', exact: true }).click();
+        }
         const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');
         await editor.locator('summary').click();
         await editor.getByRole('spinbutton',{name:'Бросок хитов за уровень 3',exact:true}).fill('7');

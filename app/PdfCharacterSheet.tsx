@@ -16,6 +16,19 @@ export type PdfSpell = CatalogSpell & { prepared: boolean; alwaysPrepared: boole
 
 export type PdfCharacterSheetProps = {
   sheetEdition?: "2014" | "2024";
+  sheet2024?: {
+    skillBonuses?: Record<string, number>;
+    size?: string;
+    shield?: boolean;
+    hitDiceSpent?: number;
+    hitDiceMaximum?: string;
+    deathSuccesses?: number;
+    deathFailures?: number;
+    spellSlotsUsed?: number[];
+    pactSlotsUsed?: number;
+    attuned?: string[];
+    electrum?: number;
+  };
   identity: {
     name: string;
     playerName: string;

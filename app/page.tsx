@@ -2,7 +2,7 @@
 
 import { ModeSigns } from "./ModeSigns";
 import { GameMode } from "./GameMode";
-import { createAdventureCharacter } from "./adventure";
+import { createAdventureCharacter, isShieldItem } from "./adventure";
 
 import { ThemeControls, useInterfacePreferences } from "./ThemeSettings";
 import { designLayout } from "./designPresets";
@@ -81,6 +81,8 @@ import { detailedFeatures, documentedClassFeatures } from "./featureDetails";
 import { catalogSources, matchesSources, sourceTokens } from "./catalogFilters";
 import { featRequirementMet } from "./featRequirements";
 import { PdfCharacterSheet } from "./PdfCharacterSheet";
+import { CharacterSheet2024 } from "./CharacterSheet2024";
+import { skillBonusBreakdown } from "./derivedSkills";
 import { ClassicCharacterSheet } from "./ClassicCharacterSheet";
 import { additionalSpellSources, sourceAvailableSpellCatalog } from "./spellCompatibility";
 import { racialSpellChoiceOptions, racialSpellDefinitions, resolvedRacialSpells } from "./racialSpellcasting";
@@ -869,9 +871,8 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   const [moveFolderId, setMoveFolderId] = useState("unfiled");
   const [folderImport, setFolderImport] = useState<FolderImportDraft | null>(null);
   const [libraryExportTarget, setLibraryExportTarget] = useState<LibraryExportTarget | null>(null);
-  const [pdfSheetEdition, setPdfSheetEdition] = useState<"2014" | "2024">("2014");
-  const [classicSheetEnabled, setClassicSheetEnabled] = useState(false);
-  const SelectedCharacterSheet = classicSheetEnabled ? ClassicCharacterSheet : PdfCharacterSheet;
+  const [sheetFormat, setSheetFormat] = useState<"modern" | "classic" | "2024">("modern");
+  const SelectedCharacterSheet = sheetFormat === "2024" ? CharacterSheet2024 : sheetFormat === "classic" ? ClassicCharacterSheet : PdfCharacterSheet;
   const [account, setAccount] = useState<AccountState | null>(null);
   const [textEntryDialog, setTextEntryDialog] = useState<TextEntryDialogState | null>(null);
   const [cloudState, setCloudState] = useState<"local" | "saving" | "saved" | "error">("local");
@@ -2251,7 +2252,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
   }
 
   function printPdf(sheetEdition: "2014" | "2024") {
-    setPdfSheetEdition(sheetEdition);
+    setSheetFormat(current => sheetEdition === "2024" ? "2024" : current === "classic" ? "classic" : "modern");
     window.setTimeout(() => printStandalonePdf(`${safeName(character.name)} — Лист Героя ${sheetEdition}.pdf`), 150);
   }
 
@@ -3862,11 +3863,24 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 </div>
               </div>
               <div className="character-sheet-format-toggle" role="group" aria-label="Формат листа персонажа">
-                <button type="button" aria-pressed={!classicSheetEnabled} onClick={() => setClassicSheetEnabled(false)}>Современный лист</button>
-                <button type="button" aria-pressed={classicSheetEnabled} onClick={() => setClassicSheetEnabled(true)}>Классический лист D&amp;D</button>
+                <button type="button" aria-pressed={sheetFormat === "modern"} onClick={() => setSheetFormat("modern")}>Современный лист</button>
+                <button type="button" aria-pressed={sheetFormat === "classic"} onClick={() => setSheetFormat("classic")}>Классический лист D&amp;D</button>
+                <button type="button" aria-pressed={sheetFormat === "2024"} onClick={() => setSheetFormat("2024")}>Лист 2024</button>
               </div>
               <SelectedCharacterSheet
-                sheetEdition={pdfSheetEdition}
+                sheet2024={sheetFormat === "2024" ? {
+                  size: [chosenRaceVariant?.description, ...(selectedRace && "details" in selectedRace ? selectedRace.details ?? [] : []), selectedRace?.description]
+                    .map(text => text?.match(/(?:^|[.!]\s*)(Маленький|Малый|Средний|Большой|Крошечный) размер/i)?.[1]).find(Boolean),
+                  skillBonuses: Object.fromEntries(Object.keys(skillKeys).map(skill => [skill, skillBonusBreakdown(exportCharacter, skill).value])),
+                  shield: character.adventure?.inventory.some(item => item.equipped && item.quantity > 0 && isShieldItem(item)) ?? ac.bonuses.some(bonus => /щит/i.test(bonus)),
+                  hitDiceSpent: hitDicePoolsForCharacter.reduce((sum, pool) => sum + pool.spent, 0),
+                  hitDiceMaximum: hitDicePoolsForCharacter.map(pool => `${pool.max}к${pool.die}`).join(" + "),
+                  deathSuccesses: character.deathSaveSuccesses,
+                  deathFailures: character.deathSaveFailures,
+                  spellSlotsUsed: character.spellSlotsUsed,
+                  pactSlotsUsed: character.pactSlotsUsed,
+                  attuned: character.adventure?.inventory.filter(item => item.attuned).map(item => item.name),
+                } : undefined}
                 identity={{
                   name: character.name,
                   playerName: character.playerName,
@@ -3947,7 +3961,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 </div>}
                 <button onClick={resetCurrentCharacter}>Сбросить</button>
                 <button onClick={() => printPdf("2014")}>PDF-лист 2014</button>
-                <button onClick={() => printPdf("2024")}>PDF-лист 2024 · альтернативный</button>
+                <button onClick={() => printPdf("2024")}>PDF-лист 2024</button>
                 <button onClick={() => exportLongStoryShort("2014")}>Long Story Short JSON</button>
                 <button onClick={() => exportLongStoryShort("2024")}>Long Story Short 2024 JSON</button>
                 <button onClick={exportHelpmate}>Helpmate JSON</button>
