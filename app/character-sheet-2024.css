@@ -142,3 +142,77 @@
 @media screen {
   .hs24-preview { width: 100%; overflow: auto; }
 }
+
+/* Engraved frames use fixed corner slices so they keep their shape on wide panels. */
+.hs24-page {
+  outline: .65mm double #838986;
+  outline-offset: -2.6mm;
+}
+.hs24-page .hs24-panel {
+  border-color: transparent;
+  border-radius: 0;
+  border-image: url("./sheet-2024-art/panel.svg") 18 / 3.4mm stretch;
+  background-clip: padding-box;
+}
+.hs24-page .hs24-panel h2 {
+  border-bottom: .55mm double var(--hs24-rule);
+  padding-inline: .6mm;
+  letter-spacing: .025em;
+}
+.hs24-page .hs24-level,
+.hs24-page .hs24-ac {
+  border-image: none;
+  background: var(--hs24-badge) center / 100% 100% no-repeat;
+}
+.hs24-page .hs24-level {
+  --hs24-badge: url("./sheet-2024-art/oval.svg");
+  padding-inline: 2mm;
+}
+.hs24-page .hs24-ac {
+  --hs24-badge: url("./sheet-2024-art/shield.svg");
+  padding: 1.35mm 2.2mm 3mm;
+}
+.hs24-page .hs24-ac h2 { border-bottom: 0; }
+.hs24-page .hs24-stats .hs24-value {
+  border: .7mm solid transparent;
+  border-radius: 0;
+  background: url("./sheet-2024-art/gauge.svg") center / 100% 100% no-repeat;
+  padding: 1.1mm 2mm .85mm;
+}
+.hs24-stats strong { margin-bottom: .45mm; }
+.hs24-counter strong,
+.hs24-ability-values strong,
+.hs24-wallet strong {
+  border: 0;
+  border-radius: 0;
+  background: url("./sheet-2024-art/plaque.svg") center / 100% 100% no-repeat;
+}
+.hs24-counter strong { width: 50%; text-align: center; padding: 1.65mm 0; }
+.hs24-ability-values strong { padding: 1.4mm 1.1mm; }
+.hs24-ability-values .hs24-value:first-child strong {
+  background-image: url("./sheet-2024-art/oval.svg");
+  border-radius: 0;
+  width: 86%;
+  align-self: center;
+  padding-block: 2.15mm;
+}
+.hs24-ability-values .hs24-value:nth-child(2) strong { margin-inline-start: -1mm; }
+.hs24-wallet strong { min-height: 7mm; padding-block: 1.6mm; }
+.hs24-wordmark::before,
+.hs24-wordmark::after {
+  height: 2.4mm;
+  border: 0;
+  background: var(--hs24-rule);
+  clip-path: polygon(evenodd, 0 50%, 3mm 0, calc(100% - 2mm) 0, 100% 50%, calc(100% - 2mm) 100%, 3mm 100%, 0 50%, 1mm 50%, 3.2mm 78%, calc(100% - 2.2mm) 78%, calc(100% - 1mm) 50%, calc(100% - 2.2mm) 22%, 3.2mm 22%, 1mm 50%);
+}
+.hs24-inspiration .hs24-marks i {
+  border: 0;
+  width: 4.4mm;
+  height: 4.4mm;
+  transform: none;
+  background: var(--hs24-ink);
+  clip-path: polygon(evenodd, 50% 0, 63% 36%, 100% 50%, 63% 64%, 50% 100%, 37% 64%, 0 50%, 37% 36%, 50% 0, 50% 23%, 43% 42%, 23% 50%, 43% 58%, 50% 77%, 57% 58%, 77% 50%, 57% 42%, 50% 23%);
+}
+.hs24-inspiration .hs24-marks i.filled {
+  clip-path: polygon(50% 0, 63% 36%, 100% 50%, 63% 64%, 50% 100%, 37% 64%, 0 50%, 37% 36%);
+}
