@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _c6aab52967604fe7B;
-		return (_c6aab52967604fe7B = "c6aab529-6760-4fe7-be38-4e1b416c8c38") !== null && _c6aab52967604fe7B !== void 0 ? _c6aab52967604fe7B : void 0;
+		var _c0e5d7028ddc4aaaB;
+		return (_c0e5d7028ddc4aaaB = "c0e5d702-8ddc-4aaa-b297-b6436430997e") !== null && _c0e5d7028ddc4aaaB !== void 0 ? _c0e5d7028ddc4aaaB : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "c6aab529-6760-4fe7-be38-4e1b416c8c38") {
+function appIsrCacheKey(pathname, suffix, buildId = "c0e5d702-8ddc-4aaa-b297-b6436430997e") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _c6aab52967604fe7B;
+	var _c0e5d7028ddc4aaaB;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_c6aab52967604fe7B = "c6aab529-6760-4fe7-be38-4e1b416c8c38") !== null && _c6aab52967604fe7B !== void 0 ? _c6aab52967604fe7B : null,
+		deploymentVersion: (_c0e5d7028ddc4aaaB = "c0e5d702-8ddc-4aaa-b297-b6436430997e") !== null && _c0e5d7028ddc4aaaB !== void 0 ? _c0e5d7028ddc4aaaB : null,
 		rootBoundaryId
 	});
 }
@@ -15185,6 +15185,20 @@ var __configHeaders = [];
 var __publicFiles = new Set([
 	"/acknowledgements/krugovorot-mirov.png",
 	"/acknowledgements/velmira.png",
+	"/classic-preview/alignment-final.css",
+	"/classic-preview/assets/index-BRC8P0mk.js",
+	"/classic-preview/assets/index-C-6UVrCV.js",
+	"/classic-preview/assets/index-C9p2vVAs.css",
+	"/classic-preview/assets/index-CCD9OeYW.js",
+	"/classic-preview/assets/index-CcSpvK2i.css",
+	"/classic-preview/assets/index-DVQhcGMo.css",
+	"/classic-preview/classic-sheet/page-1.jpg",
+	"/classic-preview/classic-sheet/page-2.jpg",
+	"/classic-preview/classic-sheet/page-3.jpg",
+	"/classic-preview/index.html",
+	"/classic-sheet/page-1.jpg",
+	"/classic-sheet/page-2.jpg",
+	"/classic-sheet/page-3.jpg",
 	"/design-previews/classic.svg",
 	"/design-previews/graphite.svg",
 	"/design-previews/journal.svg",
