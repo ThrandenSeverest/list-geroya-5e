@@ -43,6 +43,10 @@ jobs:
         env:
           HEROLIST_PAGES: "1"
           NEXT_PUBLIC_BASE_PATH: /list-geroya-5e
+      - name: Refresh the classic sheet preview
+        run: |
+          npx vite build --config tests/pdf-layout/preview.config.mjs --outDir "$RUNNER_TEMP/classic-preview"
+          cp -a "$RUNNER_TEMP/classic-preview/." dist/client/classic-preview/
       - name: Prepare Pages files
         run: |
           find dist/client -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec sed -i -e 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/assets/_vinext_fonts#g' -e 's#url(/assets/_vinext_fonts#url(/list-geroya-5e/assets/_vinext_fonts#g' {} +

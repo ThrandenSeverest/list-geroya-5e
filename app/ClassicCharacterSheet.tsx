@@ -18,10 +18,33 @@ const editSelector = [
   '.classic-sheet-head > strong', '.classic-sheet-field-value', '.classic-sheet-ability strong', '.classic-sheet-ability span',
   '.classic-source-checkvalue', '.classic-sheet-inline-value', '.classic-sheet-combat strong', '.classic-sheet-hp',
   '.classic-sheet-two p', '.classic-sheet-attacks tbody tr', '.classic-sheet-coins > div', '.classic-equipment-text',
-  '.classic-sheet-left > .classic-sheet-panel:nth-child(7) p', '.classic-sheet-right .classic-sheet-panel p',
+  '.classic-sheet-proficiencies p', '.classic-sheet-right .classic-sheet-panel p',
   '.classic-sheet-backstory p', '.classic-sheet-additional p', '.classic-sheet-treasure p',
   '.classic-source-spell-row', '.classic-source-spell-slot'
 ].join(', ');
+const fitSelector = [
+  '.classic-sheet-panel-body', '.classic-sheet-field-value', '.classic-sheet-head > strong',
+  '.classic-sheet-proficiencies p', '.classic-equipment-text', '.classic-spell-name',
+  '.classic-sheet-attack-cell'
+].join(', ');
+
+function fitSheetText(box: HTMLElement, preferredSize: number) {
+  const minimum = Math.min(preferredSize, 6);
+  const resize = (size: number) => box.style.setProperty('font-size', `${size}px`, 'important');
+  const fits = () => box.scrollHeight <= box.clientHeight && box.scrollWidth <= box.clientWidth;
+  resize(preferredSize);
+  if (fits()) return;
+  let low = minimum;
+  let high = preferredSize;
+  while (high - low > 0.25) {
+    const size = (low + high) / 2;
+    resize(size);
+    if (fits()) low = size;
+    else high = size;
+  }
+  resize(low);
+}
+
 function readEdits(key:string):Record<string,TextEdit>{
   if(typeof window==='undefined')return {};
   try{return JSON.parse(localStorage.getItem(key)||'{}') as Record<string,TextEdit>}catch{return {}}
@@ -64,7 +87,7 @@ function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots
     {entries.map((spell,index)=><div key={spell.id} className="classic-source-spell-row"
       style={referencePosition(g.x,g.y+g.step*index)}
       title={spell.alwaysPrepared?"Всегда подготовлено":spell.prepared?"Подготовлено":"Не подготовлено"}>
-      <span className={"classic-spell-mark"+(spell.prepared&&!spell.alwaysPrepared?" classic-spell-mark--dot":"")}>{spell.alwaysPrepared?"†":spell.prepared?"●":""}</span>{spell.name}
+      <span className={"classic-spell-mark"+(spell.prepared&&!spell.alwaysPrepared?" classic-spell-mark--dot":"")}>{spell.alwaysPrepared?"†":spell.prepared?"●":""}</span><span className="classic-spell-name" title={spell.name}>{spell.name}</span>
     </div>)}
   </div>;
 }
@@ -84,31 +107,57 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
     setEdits(current=>({...current,[selected]:{...{scale:100,bold:false,hidden:false},...current[selected],...patch}}));
   };
   const selectedEdit=selected?edits[selected]:undefined;
-  useLayoutEffect(()=>{
-    const fit=()=>root.current?.querySelectorAll<HTMLElement>('.classic-sheet-page:not(.classic-sheet-overflow) .classic-sheet-panel-body, .classic-sheet-field-value').forEach(el=>{
-      el.style.fontSize='';
-      let size=parseFloat(getComputedStyle(el).fontSize);
-      while((el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)&&size>6){size-=.25;el.style.fontSize=`${size}px`;}
+  useLayoutEffect(() => {
+    const sheet = root.current;
+    if (!sheet) return;
+    const template = '.classic-sheet-page:not(.classic-sheet-overflow)';
+    const editNodes = [...sheet.querySelectorAll<HTMLElement>(editSelector)];
+    const boxes = [...sheet.querySelectorAll<HTMLElement>(fitSelector)]
+      .filter(box => box.closest(template));
+    const targets = new Set([...editNodes, ...boxes]);
+    const scales = new Map<HTMLElement, number>();
+
+    editNodes.forEach((element, index) => {
+      const id = `text-${index}`;
+      const edit = edits[id];
+      element.dataset.classicEdit = id;
+      element.classList.toggle('classic-edited-hidden', Boolean(edit?.hidden));
+      element.classList.toggle('classic-edited-selected', editMode && selected === id);
+      element.style.setProperty('font-weight', edit?.bold ? '700' : '', 'important');
+      if (Number.isFinite(edit?.scale)) scales.set(element, Math.max(60, Math.min(180, edit.scale)) / 100);
     });
-    fit();document.fonts.ready.then(fit);
-  },[props]);
-  useLayoutEffect(()=>{
-    const nodes=root.current?.querySelectorAll<HTMLElement>(editSelector);
-    nodes?.forEach((el,index)=>{
-      const id=`text-${index}`;
-      el.dataset.classicEdit=id;
-      el.classList.toggle('classic-edited-hidden',Boolean(edits[id]?.hidden));
-      el.classList.toggle('classic-edited-selected',editMode&&selected===id);
-      el.style.removeProperty('font-size');el.style.removeProperty('font-weight');
-      if(edits[id]){
-        if(edits[id].scale!==100){
-          const base=parseFloat(getComputedStyle(el).fontSize);
-          el.style.setProperty('font-size',`${base*edits[id].scale/100}px`,'important');
-        }
-        if(edits[id].bold)el.style.setProperty('font-weight','700','important');
+
+    const fit = () => {
+      targets.forEach(element => element.style.removeProperty('font-size'));
+      scales.forEach((scale, element) => {
+        if (scale !== 1) element.style.setProperty('font-size',
+          `${parseFloat(getComputedStyle(element).fontSize) * scale}px`, 'important');
+      });
+      // Fit children with independent bounds before measuring their parent panels.
+      for (const box of [...boxes].reverse()) {
+        if (!box.clientWidth || !box.clientHeight) continue;
+        const owner = box.matches('.classic-spell-name, .classic-sheet-attack-cell')
+          ? box.closest<HTMLElement>('[data-classic-edit]') : null;
+        const scale = owner ? scales.get(owner) ?? 1 : 1;
+        if (owner) box.style.fontWeight = owner.style.fontWeight;
+        fitSheetText(box, parseFloat(getComputedStyle(box).fontSize) * scale);
       }
-    });
-  },[props,edits,editMode,selected]);
+    };
+
+    let active = true;
+    fit();
+    void document.fonts.ready.then(() => { if (active) fit(); });
+    const resize = new ResizeObserver(fit);
+    sheet.querySelectorAll(template).forEach(page => resize.observe(page));
+    window.addEventListener('beforeprint', fit);
+    window.addEventListener('afterprint', fit);
+    return () => {
+      active = false;
+      resize.disconnect();
+      window.removeEventListener('beforeprint', fit);
+      window.removeEventListener('afterprint', fit);
+    };
+  }, [props, edits, editMode, selected]);
   const skills = originalSkillOrder.map(name=>({name,...skillKeys[name]}));
   const spells = Array.from(new Map(props.spells.map(spell => [spell.id, spell])).values());
   const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter(spell => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
@@ -187,11 +236,11 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
             })}
           </div>
           <Panel title="Пассивная мудрость (Внимательность)"><strong className="classic-sheet-inline-value">{props.passivePerception}</strong></Panel>
-          <Panel title="Прочие умения и языки">
-            <p><b>Языки:</b> {props.proficiencies.languages.join(", ") || "—"}</p>
-            <p><b>Инструменты:</b> {props.proficiencies.tools.join(", ") || "—"}</p>
-            <p><b>Доспехи:</b> {props.proficiencies.armor.join(", ") || "—"}</p>
-            <p><b>Оружие:</b> {props.proficiencies.weapons.join(", ") || "—"}</p>
+          <Panel title="Прочие умения и языки" className="classic-sheet-proficiencies">
+            <p title={props.proficiencies.languages.join(", ")}><b>Языки:</b> {props.proficiencies.languages.join(", ") || "—"}</p>
+            <p title={props.proficiencies.tools.join(", ")}><b>Инструменты:</b> {props.proficiencies.tools.join(", ") || "—"}</p>
+            <p title={props.proficiencies.armor.join(", ")}><b>Доспехи:</b> {props.proficiencies.armor.join(", ") || "—"}</p>
+            <p title={props.proficiencies.weapons.join(", ")}><b>Оружие:</b> {props.proficiencies.weapons.join(", ") || "—"}</p>
           </Panel>
         </div>
         <div className="classic-sheet-column classic-sheet-center">
@@ -208,13 +257,15 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
             <Panel title="Испытания против смерти"></Panel>
           </div>
           <Panel title="Атаки и заклинания">
-            <table className="classic-sheet-attacks"><thead><tr><th>Название</th><th>Бонус</th><th>Урон / тип</th></tr></thead>
-              <tbody>{props.attacks.map((attack, index) => <tr key={attack.id || index}><td>{attack.name}</td><td>{String(attack.attackBonus ?? "")}</td><td>{String(attack.damageDisplay ?? "")}</td></tr>)}</tbody>
+            <table className="classic-sheet-attacks" style={{ "--classic-attack-count": Math.max(props.attacks.length, 1) } as CSSProperties}><thead><tr><th>Название</th><th>Бонус</th><th>Урон / тип</th></tr></thead>
+              <tbody>{props.attacks.map((attack, index) => <tr key={attack.id || index}>{[attack.name, String(attack.attackBonus ?? ""), String(attack.damageDisplay ?? "")].map((value, column) =>
+                <td key={column}><span className="classic-sheet-attack-cell" title={value}>{value}</span></td>
+              )}</tr>)}</tbody>
             </table>
           </Panel>
           <Panel title="Снаряжение">
             <div className="classic-sheet-coins">{coins.map(([name, amount]) => <div key={name}><b>{amount||""}</b><small>{name}</small></div>)}</div>
-            <p className="classic-equipment-text">{equipment || " "}</p>
+            <p className="classic-equipment-text" title={equipment}>{equipment || " "}</p>
           </Panel>
         </div>
         <div className="classic-sheet-column classic-sheet-right">
