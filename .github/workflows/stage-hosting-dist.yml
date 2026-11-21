@@ -1,0 +1,49 @@
+name: Stage hosting dist
+on:
+  push:
+    branches: [release/hosting-2026-11-22]
+    paths: [.github/workflows/stage-hosting-dist.yml]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build production runtime
+        run: |
+          bash scripts/prepare-classic-sheet-assets.sh
+          npm run build
+          python3 scripts/sanitize-committed-dist.py
+          HEROLIST_SOURCE_COMMIT=64bcb8a592abdf361c67fa5438fe4cb0a43e7486 python3 scripts/write-build-info.py
+          python3 scripts/check-sanitized-dist.py
+      - name: Smoke test the production runtime
+        run: |
+          mkdir "$RUNNER_TEMP/runtime"
+          cp -a dist deployment package.json package-lock.json .npmrc "$RUNNER_TEMP/runtime/"
+          cd "$RUNNER_TEMP/runtime"
+          npm ci --omit=dev --ignore-scripts
+          PORT=3998 HOST=127.0.0.1 npm start > runtime.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..25}; do
+            if curl --fail --silent http://127.0.0.1:3998/ >/dev/null && curl --fail --silent http://127.0.0.1:3998/account >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat runtime.log
+          exit 1
+      - name: Commit the tested build to the staging branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A dist
+          git commit -m 'build: stage verified hosting dist'
+          git push origin HEAD:refs/heads/release/hosting-2026-11-22
