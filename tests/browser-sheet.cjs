@@ -103,6 +103,19 @@ async function saved(page) {
           assert.equal(await sheet.locator('.hs24-vitals .hs24-value').first().locator('strong').textContent(), '30');
           assert.equal(await sheet.locator('.hs24-check').count(), 24);
           assert.equal(await sheet.locator('.hs24-spellbook tbody tr').count(), 30);
+          const misplaced = await sheet.locator('.hs24-stats .hs24-value').evaluateAll(counters =>
+            counters.flatMap(counter => {
+              const frame = counter.getBoundingClientRect();
+              return [...counter.children].filter(element => element.textContent.trim()).flatMap(element => {
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                const text = range.getBoundingClientRect();
+                const centerOffset = Math.abs((text.left + text.right - frame.left - frame.right) / 2);
+                return centerOffset > 1.5 || text.top < frame.top + 1 || text.bottom > frame.bottom - 1
+                  ? [element.textContent] : [];
+              });
+            }));
+          assert.deepEqual(misplaced, [], 'Counter text stays centered and clear of the frame');
           await page.emulateMedia({ media: 'print' });
           const dimensions = await sheet.locator('.hs24-page').evaluateAll(pages => pages.map(page => {
             const box = page.getBoundingClientRect();
