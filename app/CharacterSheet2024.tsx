@@ -26,8 +26,8 @@ function Panel({ title, className = "", children }: { title: string; className?:
   return <section className={`hs24-panel ${className}`}><h2>{title}</h2>{children}</section>;
 }
 
-function Value({ label, children }: { label: string; children?: ReactNode }) {
-  return <div className="hs24-value"><span>{label}</span><strong title={typeof children === "string" ? children : undefined}>{children}</strong></div>;
+function Value({ label, children, className }: { label: string; children?: ReactNode; className?: string }) {
+  return <div className={className ? `hs24-value ${className}` : "hs24-value"}><span>{label}</span><strong title={typeof children === "string" ? children : undefined}>{children}</strong></div>;
 }
 
 function Marks({ total, used = 0, label }: { total: number; used?: number; label: string }) {
@@ -176,7 +176,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
           </Panel>
         </aside>
         <div className="hs24-right">
-          <div className="hs24-stats"><Value label="Инициатива">{signed(props.initiative)}</Value><Value label="Скорость">{props.speed} фт.</Value><Value label="Размер">{data?.size}</Value><Value label="Пассивное восприятие">{props.passivePerception}</Value></div>
+          <div className="hs24-stats"><Value label="Инициатива">{signed(props.initiative)}</Value><Value label="Скорость">{props.speed} фт.</Value><Value label="Размер" className="hs24-size">{data?.size}</Value><Value label="Пассивное восприятие">{props.passivePerception}</Value></div>
           <Panel title="Оружие и боевые заговоры"><AttackTable attacks={props.attacks.slice(0, attackRows)} blankRows={attackRows} /></Panel>
           <Panel title="Классовые умения" className="hs24-class">{note("class", "hs24-two-columns")}</Panel>
           <div className="hs24-traits">

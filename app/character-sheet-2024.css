@@ -73,9 +73,8 @@
 .hs24-abilities > div { display: grid; gap: 1.4mm; min-width: 0; min-height: 0; }
 .hs24-abilities > div:first-child { grid-template-rows: 25.5fr 41fr 52fr 34fr 23fr; }
 .hs24-abilities > div:nth-child(2) { grid-template-rows: 1.04fr 1.04fr .95fr; }
-.hs24-counter, .hs24-inspiration { align-items: center; justify-content: space-between; }
-.hs24-counter h2, .hs24-inspiration h2 { width: 100%; }
-.hs24-counter strong { font: 750 16pt/1 var(--hs24-type); padding-block: 2mm; }
+.hs24-inspiration { align-items: center; justify-content: space-between; }
+.hs24-inspiration h2 { width: 100%; }
 .hs24-inspiration .hs24-marks { margin-block: 1mm 2.2mm; }
 .hs24-inspiration .hs24-marks i { width: 3mm; height: 3mm; }
 .hs24-ability { justify-content: stretch; padding-inline: .7mm; }
@@ -191,14 +190,12 @@
   justify-items: stretch;
   padding: 1.2mm 2.6mm 1.1mm;
 }
-.hs24-counter strong,
 .hs24-ability-values strong,
 .hs24-wallet strong {
   border: 0;
   border-radius: 0;
   background: url("./sheet-2024-art/plaque.svg") center / 100% 100% no-repeat;
 }
-.hs24-counter strong { width: 50%; text-align: center; padding: .9mm 0; }
 .hs24-ability-values strong { padding: 1.4mm 1.1mm; }
 .hs24-ability-values .hs24-value:first-child strong {
   background-image: url("./sheet-2024-art/oval.svg");
@@ -288,7 +285,6 @@
   margin: 2.3mm .2mm 0 -1.75mm;
 }
 .hs24-ability-values .hs24-value:nth-child(2) strong { margin: 0; padding-left: 2mm; }
-.hs24-page .hs24-counter strong { padding-block: 1.65mm; }
 .hs24-check { flex: 1 0 4.35mm; min-height: 4.35mm; }
 .hs24-page .hs24-armor {
   display: grid;
@@ -385,3 +381,27 @@
   border-block: .24mm solid var(--hs24-ink);
   border-inline: .7mm double var(--hs24-ink);
 }
+
+.hs24-page .hs24-counter {
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr);
+  row-gap: .7mm;
+  padding: 1.5mm 1.9mm 1.45mm;
+}
+.hs24-page .hs24-counter h2 { text-wrap: balance; padding-top: .35mm; }
+.hs24-counter > strong {
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 86%;
+  height: min(100%, 14.6mm);
+  padding: 1mm .5mm 1.8mm;
+  background: url("./sheet-2024-art/proficiency.svg") center / 100% 100% no-repeat;
+  font: 750 17pt/1 var(--hs24-type);
+}
+.hs24-page .hs24-stats .hs24-size {
+  background-image: url("./sheet-2024-art/size.svg");
+  padding-inline: 3.4mm;
+}
+.hs24-size strong { font-size: 11.5pt; }
