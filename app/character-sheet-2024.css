@@ -2,10 +2,12 @@
   --hs24-ink: #191918;
   --hs24-rule: #33332f;
   --hs24-paper: #fff;
+  --hs24-type: Arial, Helvetica, sans-serif;
   position: relative;
   width: 210mm;
   margin: 5mm auto;
-  font: 8pt/1.2 Arial, Helvetica, sans-serif;
+  font: 8pt/1.23 var(--hs24-type);
+  font-variant-numeric: tabular-nums;
   color: var(--hs24-ink);
   print-color-adjust: exact;
 }
@@ -30,7 +32,7 @@
   flex-direction: column;
 }
 .hs24-document .hs24-panel h2 {
-  font: 700 8.2pt/1.05 Arial, sans-serif;
+  font: 800 8.2pt/1.13 var(--hs24-type);
   color: var(--hs24-ink);
   text-align: center;
   text-transform: uppercase;
@@ -39,17 +41,17 @@
 }
 .hs24-document .hs24-panel h3 { font: 700 7pt/1.1 Arial, sans-serif; margin: .7mm .2mm .5mm; }
 .hs24-value { display: flex; flex-direction: column; min-width: 0; justify-content: flex-end; }
-.hs24-value span { font: 700 6.5pt/1.05 Arial, sans-serif; }
-.hs24-value strong { font: 700 9pt/1.15 Arial, sans-serif; min-height: 3.2mm; overflow-wrap: anywhere; }
+.hs24-value span { font: 700 6.65pt/1.12 var(--hs24-type); }
+.hs24-value strong { font: 700 9pt/1.12 var(--hs24-type); min-height: 3.2mm; overflow-wrap: anywhere; }
 .hs24-top { display: grid; grid-template-columns: minmax(0,1.14fr) 18mm 19mm minmax(0,1fr); gap: 1.7mm; height: 29mm; }
 .hs24-identity { justify-content: space-between; padding-inline: 2mm; }
 .hs24-identity > div:last-child { display: grid; grid-template-columns: 1fr 1fr; row-gap: .6mm; column-gap: 2mm; }
 .hs24-identity .hs24-value { flex-direction: column-reverse; }
-.hs24-identity strong { border-bottom: .23mm solid var(--hs24-rule); margin-bottom: .4mm; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; overflow: hidden; }
-.hs24-identity > .hs24-value strong { font: 700 13pt/1.05 Georgia, serif; }
+.hs24-identity strong { border-bottom: .23mm solid var(--hs24-rule); margin-bottom: .45mm; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.hs24-identity > .hs24-value strong { font: 700 13.5pt/1.1 var(--hs24-type); }
 .hs24-level, .hs24-ac, .hs24-dice, .hs24-death { align-items: stretch; text-align: center; justify-content: space-around; }
 .hs24-level { border-radius: 40%; }
-.hs24-level .hs24-value:first-child strong, .hs24-ac > strong { font: 700 19pt/1 Georgia, serif; }
+.hs24-level .hs24-value:first-child strong, .hs24-ac > strong { font: 750 18pt/1 var(--hs24-type); }
 .hs24-ac { border-radius: 1mm 1mm 6mm 6mm; }
 .hs24-ac > span { font-size: 6.5pt; }
 .hs24-vitals { display: grid; grid-template-columns: 1fr 1fr; gap: .5mm 1mm; text-align: center; }
@@ -73,14 +75,14 @@
 .hs24-abilities > div:nth-child(2) { grid-template-rows: 1.04fr 1.04fr .95fr; }
 .hs24-counter, .hs24-inspiration { align-items: center; justify-content: space-between; }
 .hs24-counter h2, .hs24-inspiration h2 { width: 100%; }
-.hs24-counter strong { font: 700 18pt/1 Georgia, serif; padding-block: 2mm; }
+.hs24-counter strong { font: 750 16pt/1 var(--hs24-type); padding-block: 2mm; }
 .hs24-inspiration .hs24-marks { margin-block: 1mm 2.2mm; }
 .hs24-inspiration .hs24-marks i { width: 3mm; height: 3mm; }
 .hs24-ability { justify-content: stretch; padding-inline: .7mm; }
 .hs24-ability-values { display: grid; grid-template-columns: 1.35fr 1fr; align-items: center; gap: .8mm; flex: 1; min-height: 0; padding: 1mm 0; }
 .hs24-ability-values .hs24-value { text-align: center; flex-direction: column-reverse; }
 .hs24-ability-values .hs24-value span { font-size: 5.5pt; margin-top: .6mm; }
-.hs24-ability-values strong { font: 700 11pt/1 Georgia, serif; border: .26mm solid var(--hs24-rule); border-radius: 2mm .4mm; padding: 1.1mm 0; }
+.hs24-ability-values strong { font: 700 11pt/1 var(--hs24-type); border: .26mm solid var(--hs24-rule); border-radius: 2mm .4mm; padding: 1.1mm 0; }
 .hs24-ability-values .hs24-value:first-child strong { font-size: 15pt; border-radius: 45%; }
 .hs24-check { display: grid; grid-template-columns: 2.7mm 5mm minmax(0,1fr); align-items: center; gap: .7mm; min-height: 3.8mm; font-size: 6.9pt; }
 .hs24-check b { border-bottom: .19mm solid #898a82; text-align: center; }
@@ -97,7 +99,7 @@
 .hs24-resource small { grid-column: 1/-1; }
 .hs24-stats, .hs24-traits { display: grid; gap: 2mm; grid-auto-columns: minmax(0,1fr); grid-auto-flow: column; min-height: 0; }
 .hs24-stats .hs24-value { background: #fff; border: .7mm double var(--hs24-ink); border-radius: 1.8mm .4mm; text-align: center; padding: 1mm .4mm; justify-content: space-between; }
-.hs24-stats strong { font: 700 13pt/1 Georgia, serif; }
+.hs24-stats strong { font: 750 12pt/1 var(--hs24-type); }
 .hs24-paper { position: relative; flex: 1; min-height: 0; margin-top: .6mm; background: repeating-linear-gradient(0deg, #dcded8 0 .14mm, transparent .14mm 2mm), repeating-linear-gradient(90deg, #e0e1da 0 .14mm, transparent .14mm 2mm); }
 .hs24-paper > div { height: 100%; overflow: hidden; padding: 1.1mm; overflow-wrap: anywhere; }
 .hs24-paper p { margin-bottom: .85mm; }
@@ -183,9 +185,11 @@
   border: .7mm solid transparent;
   border-radius: 0;
   background: url("./sheet-2024-art/gauge.svg") center / 100% 100% no-repeat;
-  padding: .9mm 1.4mm 1.65mm;
+  display: grid;
+  grid-template-rows: 4.9mm minmax(0,1fr);
+  align-items: center;
+  padding: .4mm 1.5mm .8mm;
 }
-.hs24-stats strong { margin-bottom: .45mm; }
 .hs24-counter strong,
 .hs24-ability-values strong,
 .hs24-wallet strong {
@@ -231,7 +235,6 @@
 .hs24-page .hs24-ability h2 { font-size: 7.7pt; }
 .hs24-page .hs24-inspiration .hs24-marks { margin: .6mm 0 1.1mm; }
 .hs24-page .hs24-armor { gap: .4mm; flex-wrap: wrap; justify-content: start; column-gap: 1.8mm; }
-.hs24-stats .hs24-value > span { display: grid; place-items: center; text-align: center; min-height: 4mm; }
 
 /* Align the printed panel divisions without adding boxes to the reference grid. */
 .hs24-page .hs24-health {
@@ -327,12 +330,24 @@
 }
 .hs24-page .hs24-inspiration h2 { padding-top: .9mm; }
 .hs24-stats .hs24-value > span {
-  place-items: start center;
+  text-wrap: balance;
   text-transform: uppercase;
   font-size: 7.3pt;
-  line-height: .94;
+  font-weight: 800;
+  line-height: 1.02;
 }
-.hs24-stats strong { margin: 0; font-size: 11.5pt; }
+.hs24-stats strong {
+  min-height: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hs24-identity .hs24-value > span { text-transform: uppercase; }
+.hs24-identity > div:last-child strong { font-size: 8.5pt; }
+.hs24-page .hs24-training h2 { font-size: 7.7pt; text-wrap: balance; }
+.hs24-health .hs24-value > span, .hs24-level .hs24-value > span { font-size: 6.6pt; }
+.hs24-page .hs24-paper { font-size: 7.65pt; line-height: 1.24; }
+.hs24-page .hs24-table th { font-size: 7.05pt; }
 .hs24-ability-values {
   grid-template-columns: 12.1mm minmax(0,1fr);
   padding-inline: .4mm;
@@ -347,7 +362,9 @@
   background-image: url("./sheet-2024-art/score-tab.svg");
 }
 .hs24-page .hs24-check {
-  font-size: 7.1pt;
+  grid-template-columns: 2.4mm 4.7mm minmax(0,1fr);
+  font-size: 6.95pt;
+  line-height: 1.12;
   padding-inline: .2mm;
 }
 .hs24-page .hs24-armor > b {

@@ -27,7 +27,7 @@ function Panel({ title, className = "", children }: { title: string; className?:
 }
 
 function Value({ label, children }: { label: string; children?: ReactNode }) {
-  return <div className="hs24-value"><span>{label}</span><strong>{children}</strong></div>;
+  return <div className="hs24-value"><span>{label}</span><strong title={typeof children === "string" ? children : undefined}>{children}</strong></div>;
 }
 
 function Marks({ total, used = 0, label }: { total: number; used?: number; label: string }) {
@@ -103,6 +103,17 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     const doc = root.current;
     if (!doc) return;
     const measure = () => {
+      for (const line of doc.querySelectorAll<HTMLElement>(".hs24-identity strong, .hs24-stats strong")) {
+        line.style.removeProperty("font-size");
+        const nominal = Number.parseFloat(getComputedStyle(line).fontSize);
+        const minimum = Math.min(nominal, 9.6);
+        const available = line.clientWidth - 1;
+        let size = nominal;
+        while (line.scrollWidth > available + 1 && size > minimum) {
+          size = Math.max(minimum, size - 0.5);
+          line.style.fontSize = `${size}px`;
+        }
+      }
       const clipped = [...doc.querySelectorAll<HTMLElement>("[data-hs24-fit]")].filter(box => {
         box.style.removeProperty("font-size");
         if (box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1) return false;
