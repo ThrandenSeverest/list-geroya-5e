@@ -12,6 +12,12 @@ export type DiceBody = {
   radius: number;
   entered: boolean;
   impact: number;
+  // Independent launch / tumble, never synchronized to the rest of the throw.
+  launchDelay?: number;
+  age?: number;
+  spin?: number;
+  spinVelocity?: number;
+  surfaceDrag?: number;
 };
 
 export type DiceSpawn = {
@@ -21,6 +27,9 @@ export type DiceSpawn = {
   radius: number;
   seed: number;
   seedY: number;
+  seedAngle?: number;
+  seedDelay?: number;
+  seedSpin?: number;
   index?: number;
 };
 
@@ -38,21 +47,30 @@ export function screenDieRadius(size: number): number {
 
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
 
-export function spawnScreenDie({id,width,height,radius,seed,seedY,index=0}:DiceSpawn):DiceBody {
+export function spawnScreenDie({id,width,height,radius,seed,seedY,seedAngle=seedY,seedDelay=seed,seedSpin=seed,index=0}:DiceSpawn):DiceBody {
   const area=diceSafeArea(width,height,radius);
-  const y=area.top+(area.bottom-area.top)*clamp(.18+seedY*.64,0,1);
-  // A visible ~0.2s right-edge entrance, not a near-instant 2200px/s teleport.
-  const speed=Math.min(1750,Math.max(850,width*1.32))*(.83+seed*.34);
+  // Throw from the right, but each die has a different height, speed, and ANGLE.
+  // Previously every die shared nearly the same negative X velocity.
+  const lane=clamp(.13+.74*seedY,0,1);
+  const y=area.top+(area.bottom-area.top)*lane;
+  const angle=(clamp(seedAngle,0,1)*2-1)*.94; // -54° to +54°
+  const speed=Math.min(1880,Math.max(880,width*1.38))*(.67+clamp(seed,0,1)*.72);
+  const spinSign=seedSpin>.5?1:-1;
   return {
     id,
-    // Offscreen only before entrance. Subsequent motion stays inside the arena.
     x:width+radius+70+Math.min(index,14)*12,
     y,
-    vx:-speed,
-    vy:(seedY-.5)*(width<700?280:440),
+    vx:-Math.cos(angle)*speed,
+    vy:Math.sin(angle)*speed,
     radius,
     entered:false,
-    impact:0
+    impact:0,
+    // A handful of dice fly immediately; others follow in a loose, irregular burst.
+    launchDelay:Math.min(.53,index*.026+clamp(seedDelay,0,1)*.21),
+    age:0,
+    spin:(seedSpin-.5)*2.8,
+    spinVelocity:spinSign*(5.5+Math.abs(seedSpin-.5)*11),
+    surfaceDrag:.68+clamp(1-seedDelay,0,1)*.92
   };
 }
 
@@ -72,7 +90,7 @@ function wallContact(body:DiceBody,width:number,height:number) {
 
 function collision(a:DiceBody,b:DiceBody) {
   // Do not collide with dice still fully outside the right entrance.
-  if(!a.entered||!b.entered)return;
+  if(!a.entered||!b.entered||(a.launchDelay||0)>0||(b.launchDelay||0)>0)return;
   const dx=b.x-a.x,dy=b.y-a.y,required=a.radius+b.radius+2;
   if(Math.abs(dx)>=required||Math.abs(dy)>=required)return;
   let dist=Math.hypot(dx,dy);
@@ -93,9 +111,18 @@ function collision(a:DiceBody,b:DiceBody) {
 
   const relative=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
   if(relative<0){
-    const impulse=-(1+.54)*relative*.5;
+    const impulse=-(1+.51)*relative*.5;
     a.vx-=impulse*nx;a.vy-=impulse*ny;
     b.vx+=impulse*nx;b.vy+=impulse*ny;
+    // A glancing contact redirects travel along the tangent, instead of
+    // simply pushing two parallel-moving discs into a rigid line.
+    const tx=-ny,ty=nx;
+    const tangent=(b.vx-a.vx)*tx+(b.vy-a.vy)*ty;
+    const sideways=Math.max(-110,Math.min(110,tangent*.18));
+    a.vx+=sideways*tx;a.vy+=sideways*ty;
+    b.vx-=sideways*tx;b.vy-=sideways*ty;
+    a.spinVelocity=(a.spinVelocity||0)-sideways*.018;
+    b.spinVelocity=(b.spinVelocity||0)+sideways*.018;
     const contact=Math.min(1,Math.abs(relative)/500);
     a.impact=Math.max(a.impact,contact);
     b.impact=Math.max(b.impact,contact);
@@ -106,14 +133,20 @@ function collision(a:DiceBody,b:DiceBody) {
 export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:number):void {
   const seconds=clamp(dt,0,1/24);
   if(seconds<=0||!bodies.length)return;
-  // Lower surface drag preserves momentum over much more of the screen.
-  // Collisions and wall rebounds still dissipate energy independently.
-  const damping=Math.exp(-1.05*seconds);
   for(const body of bodies){
+    if((body.launchDelay||0)>0){
+      body.launchDelay=Math.max(0,(body.launchDelay||0)-seconds);
+      continue;
+    }
+    body.age=(body.age||0)+seconds;
     body.x+=body.vx*seconds;
     body.y+=body.vy*seconds;
+    // Individual friction makes every die coast to a stop at a different time.
+    const damping=Math.exp(-(body.surfaceDrag??1.05)*seconds);
     body.vx*=damping;
     body.vy*=damping;
+    body.spin=(body.spin||0)+(body.spinVelocity||0)*seconds;
+    body.spinVelocity=(body.spinVelocity||0)*Math.exp(-1.5*seconds);
     body.impact*=Math.exp(-7*seconds);
     if(Math.hypot(body.vx,body.vy)<3)body.vx=body.vy=0;
     wallContact(body,width,height);
