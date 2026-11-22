@@ -283,6 +283,11 @@ export function DiceScreenOverlay({
             window.innerHeight,
             window.visualViewport?.height||window.innerHeight
           ));
+          // HeroList uses body { zoom: 1.25 } on desktop. Fixed descendants
+          // inherit that magnification; counter it for viewport-sized dice only.
+          // Never alter the user's UI zoom preference.
+          const bodyZoom=parseFloat(getComputedStyle(document.body).zoom)||1;
+          node.style.zoom=String(1/bodyZoom);
           // Match the *physical* viewport exactly: never CSS-stretch the backing buffer.
           node.style.width=width+'px';
           node.style.height=height+'px';
