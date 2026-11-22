@@ -46,7 +46,7 @@ export function spawnScreenDie({id,width,height,radius,seed,seedY,index=0}:DiceS
   return {
     id,
     // Offscreen only before entrance. Subsequent motion stays inside the arena.
-    x:width+radius+13+Math.min(index,14)*12,
+    x:width+radius+70+Math.min(index,14)*12,
     y,
     vx:-speed,
     vy:(seedY-.5)*(width<700?280:440),
@@ -60,7 +60,7 @@ function wallContact(body:DiceBody,width:number,height:number) {
   const area=diceSafeArea(width,height,body.radius);
   const left=area.left,right=area.right,top=area.top,bottom=area.bottom;
   // A viewport resize must not strand a still-incoming die outside the screen.
-  if(!body.entered&&body.x>width+body.radius+45)body.x=width+body.radius+45;
+  if(!body.entered&&body.x>width+body.radius+290)body.x=width+body.radius+290;
   if(!body.entered&&body.x<=right)body.entered=true;
   if(body.entered) {
     if(body.x<left){body.x=left;if(body.vx<0)body.vx=-body.vx*.42;body.impact=Math.max(body.impact,.38);}
