@@ -28,7 +28,12 @@ test('attack customizations recompute with ability and proficiency and survive n
  assert.equal(characterAttacks(playDerived(play),[]).find(x=>x.id===base.id)!.attackBonus,7);
 });
 test('invalid view settings recover without touching character data',()=>{
- assert.deepEqual(normalizePlayView({density:'huge',hiddenBlocks:['turn','unknown'],hints:'unknown',sessionPanels:{actions:true,spells:'bad'},layout:'bad'}),{density:undefined,hints:'brief',hiddenBlocks:['turn'],sessionPanels:{actions:true},layout:'columns',diceAnimation:true,diceColor:'#332c27',diceLifetime:3});
+ assert.deepEqual(normalizePlayView({density:'huge',hiddenBlocks:['turn','unknown'],hints:'unknown',sessionPanels:{actions:true,spells:'bad'},layout:'bad'}),{density:undefined,hints:'brief',hiddenBlocks:['turn'],sessionPanels:{actions:true},layout:'columns',diceAnimation:true,diceColor:'#332c27',diceLifetime:3,diceNumberColor:'#fff0c8',diceNumberStyle:'classic'});
+});
+test('dice number settings survive normalization and reject unknown values',()=>{
+ const view=normalizePlayView({diceNumberStyle:'mono',diceNumberColor:'#11ccff'});
+ assert.equal(view.diceNumberStyle,'mono');assert.equal(view.diceNumberColor,'#11ccff');
+ assert.equal(normalizePlayView({diceNumberStyle:'mystery',diceNumberColor:'red'}).diceNumberStyle,'classic');
 });
 test('note windows and interface layout survive export and health undo',()=>{
  const c=createAdventureCharacter(hero(),'source','date','Тест');

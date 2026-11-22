@@ -19,7 +19,6 @@ export type DiceBody = {
   spinVelocity?: number;
   surfaceDrag?: number;
   spinDirection?: number;
-  restBlend?: number;
   // Small vertical motion (screen pixels), not sideways position teleportation.
   hopHeight?: number;
   hopVelocity?: number;
@@ -78,7 +77,6 @@ export function spawnScreenDie({id,width,height,radius,seed,seedY,seedAngle=seed
     spin:(seedSpin-.5)*2.8,
     spinVelocity:spinSign*speed/Math.max(8,(radius-2)/1.27*.82),
     spinDirection:spinSign,
-    restBlend:0,
     surfaceDrag:.90+clamp(1-seedDelay,0,1)*.20,
     hopHeight:0,hopVelocity:0,
     orientation:[0,0,0,1]
@@ -144,7 +142,6 @@ function collision(a:DiceBody,b:DiceBody) {
           const remaining=Math.sqrt(Math.max(0,speed*speed-lift*lift))/speed;
           body.vx*=remaining;body.vy*=remaining;
           body.hopVelocity=lift;
-          body.restBlend=0;
         }
       }
     }
@@ -195,9 +192,6 @@ export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:n
       const length=Math.hypot(...next);
       body.orientation=next.map(v=>v/length) as typeof next;
     }
-    // Settle only after translation ends, so a face never slides across wood.
-    const restTarget=nextSpeed===0&&!airborne?1:0;
-    body.restBlend=clamp((body.restBlend||0)+(restTarget-(body.restBlend||0))*(1-Math.exp(-12*seconds)),0,1);
     // No timer-based or random jumps on a flat tabletop. Gravity acts only
     // after a fast collision has supplied a vertical impulse.
     if(airborne){

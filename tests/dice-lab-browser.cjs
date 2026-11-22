@@ -22,7 +22,7 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       assert.match(build,/dice-preview build|Локальная сборка/);
       const button=page.getByRole('button',{name:'12d6',exact:true});
       await button.click();
-      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='wood-contact-rolling-v7');
+      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='wood-contact-rolling-v8');
       await page.waitForFunction(()=>{
         const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
         try{return JSON.parse(data||'[]').length===12;}catch{return false;}
@@ -81,6 +81,22 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
         const items=JSON.parse(document.querySelector('canvas.hero-screen-dice')?.dataset.diceState||'[]');
         return items.length===15&&items.every(d=>Math.hypot(d.vx,d.vy)===0&&d.hopHeight===0);
       },undefined,{timeout:5000});
+      await page.waitForFunction(()=>{
+        const items=JSON.parse(document.querySelector('canvas.hero-screen-dice')?.dataset.diceState||'[]');
+        return items.length===15&&items.every(d=>d.settled);
+      },undefined,{timeout:3000});
+      const settled=await canvas.evaluate(node=>JSON.parse(node.dataset.diceState||'[]'));
+      assert.ok(settled.every(d=>d.settled),'every stopped die has selected a final face');
+      await page.waitForTimeout(200);
+      const stationary=await canvas.evaluate(node=>JSON.parse(node.dataset.diceState||'[]'));
+      assert.deepEqual(stationary.map(d=>d.orientation),settled.map(d=>d.orientation),
+        'stopped dice must not turn backward into a new face');
+      await page.getByRole('combobox',{name:'Стиль чисел на кубиках'}).selectOption('modern');
+      await page.getByLabel('Цвет чисел на кубиках').fill('#11ccff');
+      await page.waitForFunction(()=>{
+        const node=document.querySelector('canvas.hero-screen-dice');
+        return node?.dataset.numberStyle==='modern'&&node?.dataset.numberColor==='#11ccff';
+      });
       assert.deepEqual(errors,[], 'no JS or HTTP errors');
       await page.screenshot({path:'/tmp/dice-lab-'+width+'.png'});
       console.log('PASS dice lab',width,height,dpr,'build:',build,'dice:',items.length);

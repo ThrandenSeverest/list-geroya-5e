@@ -8,11 +8,11 @@ import { spawnScreenDie, screenDieSize, screenDieRadius, stepScreenDice, type Di
 import './dice-screen.css';
 
 export type ScreenRoll = { id: string; name: string; result: DiceResult };
-export type DiceScreenOptions = { enabled: boolean; color: string; lifetime: number };
+export type DiceScreenOptions = { enabled: boolean; color: string; lifetime: number; numberColor: string; numberStyle: 'classic' | 'modern' | 'mono' };
 type Numbering = 'regular' | 'tens' | 'units';
 type MovingDie = {
   id: string; rollId: string; sides: number; value: number; numbering: Numbering;
-  born: number; seed: number; size: number; faceIndex: number; body: DiceBody;
+  born: number; seed: number; size: number; faceIndex: number; anchorFaceIndex: number; settled: boolean; body: DiceBody;
 };
 type Point2 = [number, number];
 
@@ -95,7 +95,8 @@ function renderFaceNumber(
   transform:(v:Vec3)=>Vec3,
   project:(v:Vec3)=>Point2,
   scale:number,
-  inradius:number
+  inradius:number,
+  numberColor:string,numberStyle:DiceScreenOptions['numberStyle']
 ){
   const center=average(face.vertices.map(i=>vertices[i]));
   const point=project(center);
@@ -115,8 +116,9 @@ function renderFaceNumber(
   // Text is physically attached to the face's plane. No screen-upright labels.
   ctx.translate(point[0],point[1]);
   ctx.transform(right[0],right[1],down[0],down[1],0,0);
-  ctx.fillStyle='#fff0c8';
-  ctx.font='700 '+fontSize.toFixed(1)+'px Georgia,serif';
+  ctx.fillStyle=numberColor;
+  const font=numberStyle==='modern'?'Arial,sans-serif':numberStyle==='mono'?'ui-monospace,Consolas,monospace':'Georgia,serif';
+  ctx.font='700 '+fontSize.toFixed(1)+'px '+font;
   ctx.textAlign='center';
   ctx.textBaseline='middle';
   ctx.fillText(text,0,0,Math.max(13,inradius*1.75));
@@ -126,7 +128,7 @@ function renderFaceNumber(
 function renderDie(
   ctx:CanvasRenderingContext2D,
   die:MovingDie,now:number,
-  width:number,height:number,color:number[],hold:number
+  width:number,height:number,color:number[],hold:number,numberColor:string,numberStyle:DiceScreenOptions['numberStyle']
 ){
   const elapsed=now-die.born;
   if(elapsed>=FLIGHT_MS+hold+FADE_MS)return;
@@ -150,9 +152,7 @@ function renderDie(
     ctx.restore();
   }
   // Spin is integrated by physics using each die's actual travel speed.
-  // Trig wrapping preserves continuity through full rotations. Only the small
-  // remaining fractional angle blends into the chosen final result face.
-  const settle=clamp(die.body.restBlend||0);
+  // Unsupported custom dice retain their final 2D rotation.
   const tumble=die.body.spin||0;
   const wrapAngle=(angle:number)=>Math.atan2(Math.sin(angle),Math.cos(angle));
   const twist=die.seed*Math.PI*2;
@@ -160,7 +160,7 @@ function renderDie(
     // A nonstandard user-defined die never gets silently replaced by a d20.
     const points:Point2[]=[];
     for(let i=0;i<8;i++){
-      const angle=2*Math.PI*i/8+twist+wrapAngle(tumble*.9)*(1-settle);
+      const angle=2*Math.PI*i/8+twist+wrapAngle(tumble*.9);
       points.push([x+Math.cos(angle)*die.size*.94,y+Math.sin(angle)*die.size*.94]);
     }
     polygon(ctx,points);
@@ -170,28 +170,32 @@ function renderDie(
     gradient.addColorStop(1,shade(color,.68));
     ctx.fillStyle=gradient;ctx.fill();
     ctx.strokeStyle='#e5c68b';ctx.lineWidth=2;ctx.stroke();
-    ctx.save();ctx.translate(x,y);ctx.rotate(twist+wrapAngle(tumble*.9)*(1-settle));
-    ctx.fillStyle='#fff0c8';ctx.font='700 '+Math.round(die.size*.51)+'px Georgia,serif';
+    ctx.save();ctx.translate(x,y);ctx.rotate(twist+wrapAngle(tumble*.9));
+    ctx.fillStyle=numberColor;ctx.font='700 '+Math.round(die.size*.51)+'px '+(numberStyle==='modern'?'Arial,sans-serif':numberStyle==='mono'?'ui-monospace,Consolas,monospace':'Georgia,serif');
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(String(die.value),0,-die.size*.09,die.size*1.38);
     ctx.font='600 '+Math.round(die.size*.21)+'px Georgia,serif';
     ctx.fillText('d'+die.sides,0,die.size*.5);
     ctx.restore();ctx.restore();return;
   }
-  const selected=mesh.faces[die.faceIndex%mesh.faces.length];
-  // The physical contact axis comes from travel direction, not arbitrary
-  // Euler animation. Shortest-path quaternion settling cannot wrap at +/-pi.
-  const source=die.body.orientation??[0,0,0,1];
-  const sign=source[3]<0?-1:1;
-  const half=Math.acos(clamp(source[3]*sign,-1,1));
-  const weight=half>1e-6?Math.sin(half*(1-settle))/Math.sin(half):1-settle;
-  const q=source.map((v,i)=>i===3?Math.cos(half*(1-settle)):v*sign*weight);
+  const selected=mesh.faces[die.anchorFaceIndex%mesh.faces.length];
+  // Keep the physical orientation even after the die stops. Blending the
+  // quaternion toward identity made the die roll backward after landing.
+  const q=die.body.orientation??[0,0,0,1];
   const transform=(v:Vec3):Vec3=>{
     const base=rotate(alignFace(v,selected.normal),.10,-.10,twist);
     const u:Vec3=[q[0],q[1],q[2]];
     const uv=cross(u,base),uuv=cross(u,uv);
     return add(base,add(uv.map(n=>2*q[3]*n) as Vec3,uuv.map(n=>2*n) as Vec3));
   };
+  if(die.settled && Math.hypot(die.body.vx,die.body.vy)>0)die.settled=false;
+  if(!die.settled && die.body.entered && Math.hypot(die.body.vx,die.body.vy)===0 && !(die.body.hopVelocity||0)) {
+    // The face that actually ends on top carries the predetermined result.
+    // Changing the face's label never rotates or repositions the stopped die.
+    let highest=-Infinity;
+    mesh.faces.forEach((face,index)=>{const height=transform(face.normal)[2];if(height>highest){highest=height;die.faceIndex=index;}});
+    die.settled=true;
+  }
   const transformed=mesh.vertices.map(transform);
   const maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v)))||1;
   const scale=die.size/maxRadius;
@@ -231,7 +235,7 @@ function renderDie(
     if(f.normal[2]<.19)continue;
     const inradius=faceInradius(points,center);
     if(inradius<5)continue;
-    renderFaceNumber(ctx,die,f.face,f.index,mesh.faces.length,transformed,transform,project,scale,inradius);
+    renderFaceNumber(ctx,die,f.face,f.index,mesh.faces.length,transformed,transform,project,scale,inradius,numberColor,numberStyle);
   }
   ctx.restore();
 }
@@ -294,7 +298,7 @@ export function DiceScreenOverlay({
         });
         dice.current.set(id,{
           ...die,id,rollId:roll.id,born:now,seed,size,body,
-          faceIndex:Math.floor(hash(id+'face')*faces)
+          faceIndex:Math.floor(hash(id+'face')*faces),anchorFaceIndex:Math.floor(hash(id+'face')*faces),settled:false
         });
       }
     }
@@ -345,20 +349,22 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='wood-contact-rolling-v7';
+          node.dataset.diceEngine='wood-contact-rolling-v8';
+          node.dataset.numberStyle=opts.numberStyle;
+          node.dataset.numberColor=opts.numberColor;
           if(window.location.pathname.includes('/dice-lab')){
             node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
               id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
               entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy,
               launchDelay:d.body.launchDelay||0,spin:d.body.spin||0,
               spinVelocity:d.body.spinVelocity||0,hopHeight:d.body.hopHeight||0,
-              age:d.body.age||0
+              age:d.body.age||0,orientation:d.body.orientation,faceIndex:d.faceIndex,settled:d.settled
             })));
           }
           if(opts.enabled){
             const color=rgb(opts.color);
             const hold=clamp(opts.lifetime,0,30)*1000;
-            for(const die of dice.current.values())renderDie(ctx,die,now,width,height,color,hold);
+            for(const die of dice.current.values())renderDie(ctx,die,now,width,height,color,hold,/^#[0-9a-f]{6}$/i.test(opts.numberColor)?opts.numberColor:'#fff0c8',opts.numberStyle);
             for(const [id,born] of started.current){
               if(now-born<FLIGHT_MS+hold+FADE_MS)continue;
               started.current.delete(id);
@@ -382,7 +388,7 @@ export function DiceScreenOverlay({
       const node=canvas.current,ctx=node?.getContext('2d');
       if(node&&ctx)ctx.clearRect(0,0,node.width,node.height);
     }
-  },[options.enabled,options.color,options.lifetime]);
+  },[options.enabled,options.color,options.lifetime,options.numberColor,options.numberStyle]);
   return portal?createPortal(
     <canvas ref={canvas} className="hero-screen-dice" aria-hidden="true"
       style={{display:options.enabled?'block':'none'}}/>,portal

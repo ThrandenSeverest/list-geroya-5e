@@ -27,6 +27,8 @@ export default function DiceLabPage() {
   const [rolls,setRolls]=useState<ScreenRoll[]>([]);
   const [enabled,setEnabled]=useState(true);
   const [color,setColor]=useState(defaultColor);
+  const [numberColor,setNumberColor]=useState('#fff0c8');
+  const [numberStyle,setNumberStyle]=useState<'classic'|'modern'|'mono'>('classic');
   const [lifetime,setLifetime]=useState(8);
   const [build,setBuild]=useState('Загрузка номера сборки…');
   const [history,setHistory]=useState<string[]>([]);
@@ -82,6 +84,12 @@ export default function DiceLabPage() {
           <label style={{display:'flex',gap:8,alignItems:'center'}}>Цвет
             <input aria-label="Цвет кубиков" type="color" value={color} onChange={e=>setColor(e.target.value)}/>
           </label>
+          <label style={{display:'flex',gap:8,alignItems:'center'}}>Цвет чисел
+            <input aria-label="Цвет чисел на кубиках" type="color" value={numberColor} onChange={e=>setNumberColor(e.target.value)}/>
+          </label>
+          <label style={{display:'flex',gap:8,alignItems:'center'}}>Стиль чисел
+            <select aria-label="Стиль чисел на кубиках" value={numberStyle} onChange={e=>setNumberStyle(e.target.value as typeof numberStyle)} style={{background:'#202936',color:'white',padding:10,borderRadius:7}}><option value="classic">Классический</option><option value="modern">Современный</option><option value="mono">Моноширинный</option></select>
+          </label>
           <label style={{display:'flex',gap:8,alignItems:'center'}}>Время до исчезновения
             <select aria-label="Время до исчезновения" value={lifetime} onChange={e=>setLifetime(Number(e.target.value))}
               style={{background:'#202936',color:'white',padding:10,borderRadius:7}}>
@@ -101,7 +109,7 @@ export default function DiceLabPage() {
         Тестовый маршрут: <code>/dice-preview/dice-lab/</code>. Он использует тот же компонент анимации, что игровой режим.
       </p>
     </div>
-    <DiceScreenOverlay rolls={rolls} options={{enabled,color,lifetime}}
+    <DiceScreenOverlay rolls={rolls} options={{enabled,color,lifetime,numberColor,numberStyle}}
       onExpire={id=>setRolls(previous=>previous.filter(roll=>roll.id!==id))}/>
   </main>;
 }
