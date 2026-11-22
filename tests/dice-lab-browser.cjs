@@ -27,6 +27,15 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
         const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
         try{return JSON.parse(data||'[]').length===12;}catch{return false;}
       },undefined,{timeout:5000});
+      const dimensions=await canvas.evaluate(node=>({
+        canvasWidth:node.getBoundingClientRect().width,
+        canvasHeight:node.getBoundingClientRect().height,
+        innerWidth:window.innerWidth,
+        visualWidth:window.visualViewport?.width,
+        clientWidth:document.documentElement.clientWidth
+      }));
+      assert.ok(dimensions.canvasWidth<=Math.min(dimensions.innerWidth,dimensions.visualWidth||Infinity)+1,
+        'Canvas must fit the visible viewport: '+JSON.stringify(dimensions));
       let items=await canvas.evaluate(node=>JSON.parse(node.dataset.diceState||'[]'));
       assert.equal(items.length,12);
       assert.ok(items.every(d=>d.modelSize<=29),'Smaller dice: '+JSON.stringify(items));
