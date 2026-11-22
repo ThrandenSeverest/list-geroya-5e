@@ -10,7 +10,7 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       const errors=[];
       page.on('pageerror',error=>errors.push(error.message));
       page.on('response',response=>{
-        if(response.status()>=400 && new URL(response.url()).origin===new URL(root).origin) {
+        if(response.status()>=400 && !response.url().endsWith('/favicon.ico') && new URL(response.url()).origin===new URL(root).origin) {
           errors.push(response.status()+' '+response.url());
         }
       });
@@ -18,11 +18,11 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       await page.getByRole('heading',{name:'Лаборатория кубиков'}).waitFor({timeout:20000});
       const canvas=page.locator('canvas.hero-screen-dice');
       await canvas.waitFor({state:'attached'});
-      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='right-entry-physics-v3');
       const build=await page.getByTestId('dice-build').innerText();
       assert.match(build,/dice-preview build|Локальная сборка/);
       const button=page.getByRole('button',{name:'12d6',exact:true});
       await button.click();
+      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='right-entry-physics-v3');
       await page.waitForFunction(()=>{
         const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
         try{return JSON.parse(data||'[]').length===12;}catch{return false;}
