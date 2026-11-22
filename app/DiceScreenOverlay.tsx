@@ -22,6 +22,10 @@ const clamp=(n:number,a=0,b=1)=>Math.min(b,Math.max(a,n));
 const hash=(text:string)=>{
   let hash=2166136261;
   for(let i=0;i<text.length;i++)hash=Math.imul(hash^text.charCodeAt(i),16777619);
+  // Avalanche the hash so adjacent dice IDs do not produce correlated directions.
+  hash^=hash>>>16;hash=Math.imul(hash,0x7feb352d);
+  hash^=hash>>>15;hash=Math.imul(hash,0x846ca68b);
+  hash^=hash>>>16;
   return (hash>>>0)/4294967295;
 };
 const add=(a:Vec3,b:Vec3):Vec3=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
@@ -144,13 +148,16 @@ function renderDie(
     ctx.restore();
   }
   const momentum=clamp(Math.hypot(die.body.vx,die.body.vy)/950);
-  const spin=Math.pow(1-t,2)+momentum*.04+die.body.impact*.08;
+  // Each die tumbles according to its OWN angular velocity, wall and die impacts,
+  // rather than a shared time-based rotation curve.
+  const settle=clamp(((die.body.age||0)-.70)/1.05)*clamp(1-momentum*.95);
+  const tumble=(die.body.spin||0)*(1-settle);
   const twist=die.seed*Math.PI*2;
   if(!mesh){
     // A nonstandard user-defined die never gets silently replaced by a d20.
     const points:Point2=[];
     for(let i=0;i<8;i++){
-      const angle=2*Math.PI*i/8+twist+spin*Math.PI*2.4;
+      const angle=2*Math.PI*i/8+twist+tumble*.9;
       points.push([x+Math.cos(angle)*die.size*.94,y+Math.sin(angle)*die.size*.94]);
     }
     polygon(ctx,points);
@@ -160,7 +167,7 @@ function renderDie(
     gradient.addColorStop(1,shade(color,.68));
     ctx.fillStyle=gradient;ctx.fill();
     ctx.strokeStyle='#e5c68b';ctx.lineWidth=2;ctx.stroke();
-    ctx.save();ctx.translate(x,y);ctx.rotate(twist+spin*Math.PI*3);
+    ctx.save();ctx.translate(x,y);ctx.rotate(twist+tumble*.9);
     ctx.fillStyle='#fff0c8';ctx.font='700 '+Math.round(die.size*.51)+'px Georgia,serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(String(die.value),0,-die.size*.09,die.size*1.38);
@@ -169,9 +176,9 @@ function renderDie(
     ctx.restore();ctx.restore();return;
   }
   const selected=mesh.faces[die.faceIndex%mesh.faces.length];
-  const ax=.31+(die.seed-.5)*.32+spin*(Math.PI*4.2+die.seed*4);
-  const ay=-.30+(hash(die.id+'/tilt')-.5)*.34+spin*(Math.PI*4.8+die.seed*5);
-  const az=twist+spin*(Math.PI*4.3);
+  const ax=.10+(die.seed-.5)*.30+Math.sin(tumble*.72+die.seed)*1.28*(1-settle);
+  const ay=-.10+(hash(die.id+'/tilt')-.5)*.32+Math.cos(tumble*1.02+die.seed)*1.20*(1-settle);
+  const az=twist+tumble*.62;
   const transform=(v:Vec3)=>rotate(alignFace(v,selected.normal),ax,ay,az);
   const transformed=mesh.vertices.map(transform);
   const maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v)))||1;
@@ -260,14 +267,19 @@ export function DiceScreenOverlay({
         props.current.onExpire(oldest);
       }
       for(let i=0;i<all.length;i++){
-        const id=roll.id+':'+i,seed=hash(id);
+        const id=roll.id+':'+i,seed=hash(id+'|orientation');
         const die=all[i];
         const faces=diceMesh(die.sides)?.faces.length||8;
         const width=Math.max(1,Math.min(window.innerWidth,document.documentElement.clientWidth||window.innerWidth,window.visualViewport?.width||window.innerWidth));
         const height=Math.max(1,Math.min(window.innerHeight,window.visualViewport?.height||window.innerHeight));
         const size=screenDieSize(width,height);
         const radius=screenDieRadius(size);
-        const body=spawnScreenDie({id,width,height,radius,seed,seedY:hash(id+'y'),index:i});
+        const body=spawnScreenDie({
+          id,width,height,radius,
+          seed:hash(id+'|speed'),seedY:hash(id+'|lane'),
+          seedAngle:hash(id+'|angle'),seedDelay:hash(id+'|delay'),
+          seedSpin:hash(id+'|spin'),index:i
+        });
         dice.current.set(id,{
           ...die,id,rollId:roll.id,born:now,seed,size,body,
           faceIndex:Math.floor(hash(id+'face')*faces)
@@ -321,11 +333,12 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='long-throw-collisions-v4';
+          node.dataset.diceEngine='independent-random-trajectories-v5';
           if(window.location.pathname.includes('/dice-lab')){
             node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
               id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
-              entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy
+              entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy,
+              launchDelay:d.body.launchDelay||0,spin:d.body.spin||0,age:d.body.age||0
             })));
           }
           if(opts.enabled){
