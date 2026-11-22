@@ -128,3 +128,46 @@ test('a multi-die throw has independent angles, launch delays, speeds and spins'
   assert.ok(Math.max(...directions)-Math.min(...directions)>.4,'directions remain different in flight');
   assert.ok(bodies.some(d=>Math.abs(d.spin||0)>.2),'dies tumble independently');
 });
+
+
+test('angular speed follows each die travel speed and decays when it stops',()=>{
+  const spec={width:1000,height:740,radius:40,seed:.41,seedY:.43,seedAngle:.46,seedDelay:.3,seedSpin:.78};
+  const fast=spawnScreenDie({id:'fast',...spec}), slow=spawnScreenDie({id:'slow',...spec});
+  for(const die of [fast,slow]){
+    die.x=550;die.y=310;die.entered=true;die.launchDelay=0;die.spinVelocity=0;die.hopCooldown=15;
+    die.surfaceDrag=.03;
+  }
+  fast.vx=-750;fast.vy=0;
+  slow.vx=-145;slow.vy=0;
+  for(let i=0;i<18;i++){
+    stepScreenDice([fast],1000,740,1/90);
+    stepScreenDice([slow],1000,740,1/90);
+  }
+  assert.ok(Math.abs(fast.spinVelocity||0)>Math.abs(slow.spinVelocity||0)*3,
+    'fast die should tumble much faster: '+fast.spinVelocity+' vs '+slow.spinVelocity);
+  const before=Math.abs(fast.spinVelocity||0);
+  fast.vx=0;fast.vy=0;
+  for(let i=0;i<48;i++)stepScreenDice([fast],1000,740,1/90);
+  assert.ok(Math.abs(fast.spinVelocity||0)<before*.17,'rotation should wind down when movement ends');
+});
+test('subtle deterministic hops change height and shadow, never horizontal trajectory',()=>{
+  const settings={width:1000,height:740,radius:35,seed:.2,seedY:.35,seedAngle:.44,seedDelay:.5,seedSpin:.8};
+  const bouncing=spawnScreenDie({id:'hop',...settings});
+  const smooth=spawnScreenDie({id:'smooth',...settings});
+  for(const d of [bouncing,smooth]){
+    d.x=700;d.y=370;d.vx=-510;d.vy=0;d.entered=true;d.launchDelay=0;
+    d.surfaceDrag=.20;d.hopHeight=0;d.hopVelocity=0;d.roughnessState=0;
+  }
+  bouncing.hopCooldown=0;
+  smooth.hopCooldown=20;
+  let peak=0;
+  for(let i=0;i<90;i++){
+    stepScreenDice([bouncing],1000,740,1/90);
+    stepScreenDice([smooth],1000,740,1/90);
+    peak=Math.max(peak,bouncing.hopHeight||0);
+    assert.ok(Math.abs(bouncing.x-smooth.x)<.0001);
+    assert.ok(Math.abs(bouncing.y-smooth.y)<.0001);
+  }
+  assert.ok(peak>1&&peak<=14,'small bounded hops should be visible: '+peak);
+  assert.equal(smooth.hopHeight,0,'a smooth surface should not hop');
+});
