@@ -4,7 +4,7 @@ export type ScreenDie = { sides: number; value: number };
 export type Vec3 = [number, number, number];
 export type DiceMesh = { vertices: Vec3[]; faces: { vertices: number[]; normal: Vec3 }[] };
 
-const SUPPORTED = new Set([4, 6, 8, 10, 12, 20, 100]);
+const SUPPORTED = new Set([4, 6, 8, 10, 12, 20]);
 
 // The order is the original rolls[] order, not the sum or guessed sides.
 export function diceFromResult(result: Pick<DiceResult, 'formula' | 'rolls'>): ScreenDie[] {
@@ -20,7 +20,7 @@ export function diceFromResult(result: Pick<DiceResult, 'formula' | 'rolls'>): S
   }
   // Invalid/unrecognized formulas should not invent a shower of d20s.
   return result.rolls.flatMap((value, i) =>
-    SUPPORTED.has(found[i]) && Number.isInteger(value)
+    found[i] >= 2 && found[i] <= 1000 && Number.isInteger(value)
       ? [{ sides: found[i], value }]
       : []
   );
@@ -107,7 +107,7 @@ const meshes: Record<number, DiceMesh> = {
 };
 
 export function diceMesh(sides: number): DiceMesh {
-  return meshes[sides === 100 ? 10 : sides];
+  return meshes[sides];
 }
 
 export function supportedScreenDie(sides: number): boolean {
