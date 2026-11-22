@@ -251,9 +251,8 @@ export function DiceScreenOverlay({
         const id=roll.id+':'+i,seed=hash(id);
         const die=all[i];
         const faces=diceMesh(die.sides)?.faces.length||8;
-        const viewport=canvas.current?.getBoundingClientRect();
-        const width=viewport?.width||window.innerWidth;
-        const height=viewport?.height||window.innerHeight;
+        const width=Math.max(1,Math.min(window.innerWidth,document.documentElement.clientWidth||window.innerWidth,window.visualViewport?.width||window.innerWidth));
+        const height=Math.max(1,Math.min(window.innerHeight,window.visualViewport?.height||window.innerHeight));
         const size=screenDieSize(width,height);
         const radius=screenDieRadius(size);
         const body=spawnScreenDie({id,width,height,radius,seed,seedY:hash(id+'y'),index:i});
@@ -273,8 +272,22 @@ export function DiceScreenOverlay({
       if(node){
         const ctx=node.getContext('2d',{alpha:true});
         if(ctx){
-          const viewport=node.getBoundingClientRect();
-          const width=viewport.width,height=viewport.height;
+          // CSS canvas boxes can differ from the actual visual viewport due to
+          // zoom/scrollbars; physics must never use that larger rectangle.
+          const width=Math.max(1,Math.min(
+            window.innerWidth,
+            document.documentElement.clientWidth||window.innerWidth,
+            window.visualViewport?.width||window.innerWidth
+          ));
+          const height=Math.max(1,Math.min(
+            window.innerHeight,
+            window.visualViewport?.height||window.innerHeight
+          ));
+          // Match the *physical* viewport exactly: never CSS-stretch the backing buffer.
+          node.style.width=width+'px';
+          node.style.height=height+'px';
+          node.style.left='0px';
+          node.style.top='0px';
           const dt=lastFrame.current===null?0:clamp((now-lastFrame.current)/1000,0,.055);
           lastFrame.current=now;
           if(opts.enabled&&dt>0){
