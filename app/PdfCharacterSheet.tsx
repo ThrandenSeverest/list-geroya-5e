@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { SheetTextEditor, useSheetTextEditor } from "./SheetTextEditor";
+import { SheetTextEditor, sheetIdentityFields, useSheetTextEditor, type SheetIdentity } from "./SheetTextEditor";
 import { Settings } from 'lucide-react';
 import { fitSheet,optimalSheetSizes,sheetColumns,type SheetPanelId } from './fitSheet';
 import { defaultSheetLayout,normalizeSheetLayout,type SheetGroup } from './sheetLayout';
@@ -30,10 +30,8 @@ export type PdfCharacterSheetProps = {
     attuned?: string[];
     electrum?: number;
   };
-  identity: {
+  identity: SheetIdentity & {
     name: string;
-    playerName: string;
-    experience: number;
     inspiration: boolean;
     className: string;
     subclassName?: string;
@@ -42,6 +40,7 @@ export type PdfCharacterSheetProps = {
     alignment: string;
     level: number;
   };
+  onIdentityChange?: (patch: Partial<SheetIdentity>) => void;
   classId: string;
   abilities: AbilityScores;
   proficiency: number;
@@ -391,7 +390,7 @@ function InventoryPanel({ equipment, currency, mode, onModeChange,size,onSize,st
 }
 
 const editableText = [
-  ".pdf-hero-header :is(h1, small, dt, dd)", ".pdf-ability-row :is(small, strong, span)", ".pdf-skills p",
+  ".pdf-hero-header :is(h1, small, dt, dd, .pdf-player-name)", ".pdf-ability-row :is(small, strong, span)", ".pdf-skills p",
   ".pdf-save-row > span", ".pdf-combat-cards :is(strong, span, small)", ".pdf-hp > *", ".pdf-current-hp b",
   ".pdf-panel h2", ".pdf-panel p", ".pdf-attack-columns > *", ".pdf-spell-numbers > span",
   ".pdf-resource :is(b, small, .pdf-resource-counter)", ".pdf-currency-grid :is(b, span)",
@@ -403,6 +402,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const primaryContent = useRef<HTMLDivElement>(null);
   const editRoot = useRef<HTMLDivElement>(null);
   const editor = useSheetTextEditor(editRoot, `herolist-ergonomic-text-v1:${props.identity.name || "unnamed"}`, editableText);
+  const identityFields = sheetIdentityFields(props.identity, editor.editMode, props.onIdentityChange);
   const attackDialog=useRef<HTMLDialogElement>(null);
   const [layout,setLayout]=useState(defaultSheetLayout);
   const [layoutReady,setLayoutReady]=useState(false);
@@ -556,12 +556,14 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
       <div className="pdf-primary-content" ref={primaryContent}>
       <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · правила 2014 · лист {sheetEdition}</i></div>
       <header className="pdf-hero-header">
-        <div><small>ИМЯ ПЕРСОНАЖА</small><h1>{props.identity.name || "Безымянный герой"}</h1></div>
+        <div><small>ИМЯ ПЕРСОНАЖА</small><h1>{props.identity.name || "Безымянный герой"}</h1>
+          <small>ИМЯ ИГРОКА</small><div className="pdf-player-name">{identityFields.playerName}</div>
+        </div>
         <dl>
           <div><dt>Класс и уровень</dt><dd>{props.identity.className} {props.identity.level}{props.identity.subclassName ? ` · ${props.identity.subclassName}` : ""}</dd></div>
           <div><dt>Раса</dt><dd>{props.identity.raceName}</dd></div>
           <div><dt>Предыстория</dt><dd>{props.identity.backgroundName}</dd></div>
-          <div><dt>Опыт</dt><dd /></div>
+          <div><dt>Опыт</dt><dd>{identityFields.experience}</dd></div>
           <div><dt>Мировоззрение</dt><dd>{props.identity.alignment || "—"}</dd></div>
           <div><dt>Вдохновение</dt><dd>{props.identity.inspiration ? "Есть" : ""}</dd></div>
         </dl>

@@ -27,6 +27,7 @@
 .pdf-document .pdf-brand { letter-spacing:.07em; }
 .pdf-document .pdf-hero-header { margin:3mm 0;gap:4mm; }
 .pdf-document .pdf-hero-header h1 { font-size:19pt; }
+.pdf-document .pdf-player-name { min-height:1.2em;font:700 8pt Georgia,serif;overflow-wrap:anywhere; }
 .pdf-document .pdf-hero-header dl div { min-height:11mm; }
 .pdf-document .pdf-ability-row { margin-bottom:3mm; }
 .pdf-document .pdf-ability-row>div { min-height:19mm; }
@@ -38,7 +39,8 @@
 .pdf-document .pdf-panel-controls output { color:#425957;min-width:30px;text-align:center;font:10px Arial,sans-serif; }
 .pdf-document .pdf-panel-controls button:focus-visible { outline:2px solid #315d56;outline-offset:2px; }
 .pdf-document .pdf-skills :is(p,.pdf-save-row) { font-size:calc(7.4pt * var(--sheet-text-scale,1));line-height:1.28; }
-.pdf-document .pdf-skills > p:not(.pdf-inline-stats) { padding:.45mm 0;grid-template-columns:3mm 6mm minmax(0,1fr) auto; }
+.pdf-document .pdf-skills > p:not(.pdf-inline-stats) { padding:.45mm 0;grid-template-columns:3mm minmax(max(6mm,3ch),max-content) minmax(0,1fr) auto; }
+.pdf-document .pdf-skills > p:not(.pdf-inline-stats) > b { white-space:nowrap;padding-right:.6mm; }
 .pdf-document .pdf-skills small { font-size:.8em; }
 .pdf-document .pdf-skills .pdf-proficiencies p { font-size:calc(6.6pt * var(--sheet-text-scale,1));padding:.5mm 0; }
 .pdf-document .pdf-skills .pdf-save-row :is(b,strong) { font-size:inherit; }

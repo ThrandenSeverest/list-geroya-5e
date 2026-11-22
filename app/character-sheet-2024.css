@@ -47,6 +47,7 @@
 .hs24-identity { justify-content: space-between; padding-inline: 2mm; }
 .hs24-identity > div:last-child { display: grid; grid-template-columns: 1fr 1fr; row-gap: .6mm; column-gap: 2mm; }
 .hs24-identity .hs24-value { flex-direction: column-reverse; }
+.hs24-player-name { grid-column: 1 / -1; }
 .hs24-identity strong { border-bottom: .23mm solid var(--hs24-rule); margin-bottom: .45mm; display: block; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .hs24-identity > .hs24-value strong { font: 700 13.5pt/1.1 var(--hs24-type); }
 .hs24-level, .hs24-ac, .hs24-dice, .hs24-death { align-items: stretch; text-align: center; justify-content: space-around; }

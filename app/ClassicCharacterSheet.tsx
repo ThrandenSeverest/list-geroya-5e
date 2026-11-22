@@ -6,7 +6,7 @@ import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
 import "./classic-character-sheet.css";
 import "./classic-sheet-template.css";
-import { SheetTextEditor } from "./SheetTextEditor";
+import { SheetTextEditor, sheetIdentityFields } from "./SheetTextEditor";
 import { assetUrl } from "./assetUrl";
 import { SpellCardsAppendix } from "./PdfCharacterSheet";
 
@@ -186,6 +186,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
     }
   }
 
+  const identityFields = sheetIdentityFields(props.identity, editMode, props.onIdentityChange, true);
   const skills = originalSkillOrder.map(name=>({name,...skillKeys[name]}));
   const spells = Array.from(new Map(props.spells.map(spell => [spell.id, spell])).values());
   const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter(spell => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
@@ -219,10 +220,10 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
         <div className="classic-sheet-identity-fields">
           <Field label="Класс и уровень" value={props.identity.className + " " + props.identity.level} />
           <Field label="Предыстория" value={props.identity.backgroundName} />
-          <Field label="Имя игрока" value={props.identity.playerName} />
+          <Field label="Имя игрока" value={identityFields.playerName} />
           <Field label="Раса" value={props.identity.raceName} />
           <Field label="Мировоззрение" value={props.identity.alignment} />
-          <Field label="Опыт" value={props.identity.experience||""} />
+          <Field label="Опыт" value={identityFields.experience} />
         </div>
       </div>
       <div className="classic-sheet-main-grid">

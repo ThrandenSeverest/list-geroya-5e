@@ -8,7 +8,7 @@ import { abilityLabels, type Feature } from "./rules";
 import { spellComponentLabel } from "./spellComponents";
 import { resourceRestLabel } from "./characterResources";
 import "./character-sheet-2024.css";
-import { SheetTextEditor, useSheetTextEditor } from "./SheetTextEditor";
+import { SheetTextEditor, sheetIdentityFields, useSheetTextEditor } from "./SheetTextEditor";
 
 const editableText = [
   ".hs24-value > strong", ".hs24-value > span", ".hs24-panel h2", ".hs24-panel h3",
@@ -92,6 +92,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
   const [tableOverflow, setTableOverflow] = useState({ attacks: false, spells: false });
   const { identity, proficiencies, sheet2024: data } = props;
   const editor = useSheetTextEditor(root, `herolist-2024-text-v1:${identity.name || "unnamed"}`, editableText);
+  const identityFields = sheetIdentityFields(identity, editor.editMode, props.onIdentityChange);
   const primaryAbility = Object.entries(abilityLabels).find(([, label]) => label === props.spellAbility)?.[0] as keyof AbilityScores | undefined;
   const spells = [...new Map(props.spells.filter(s => s.level === 0 || s.prepared || s.alwaysPrepared)
     .map(s => [`${s.id}:${s.classSource}:${s.grantSource ?? ""}`, s])).values()]
@@ -170,8 +171,8 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
 
     <section className="hs24-page hs24-main">
       <div className="hs24-top">
-        <section className="hs24-panel hs24-identity"><Value label="Имя персонажа">{identity.name}</Value><div><Value label="Предыстория">{identity.backgroundName}</Value><Value label="Класс">{identity.className}</Value><Value label="Вид">{identity.raceName}</Value><Value label="Подкласс">{identity.subclassName}</Value></div></section>
-        <section className="hs24-panel hs24-level"><Value label="Уровень">{identity.level}</Value><Value label="Опыт">{identity.experience}</Value></section>
+        <section className="hs24-panel hs24-identity"><Value label="Имя персонажа">{identity.name}</Value><div><Value label="Предыстория">{identity.backgroundName}</Value><Value label="Класс">{identity.className}</Value><Value label="Вид">{identity.raceName}</Value><Value label="Подкласс">{identity.subclassName}</Value><Value label="Имя игрока" className="hs24-player-name">{identityFields.playerName}</Value></div></section>
+        <section className="hs24-panel hs24-level"><Value label="Уровень">{identity.level}</Value><Value label="Опыт">{identityFields.experience}</Value></section>
         <Panel title="Класс брони" className="hs24-ac"><strong>{props.ac}</strong><span>Щит <Marks total={1} used={Number(!!data?.shield)} label="Щит в руках" /></span></Panel>
         <div className="hs24-panel hs24-health">
           <Panel title="Хиты" className="hs24-vitals"><Value label="Текущие" changeable>{props.currentHitPoints ?? props.hitPoints}</Value><Value label="Временные" changeable>{props.temporaryHitPoints || ""}</Value><Value label="Максимум">{props.hitPoints}</Value></Panel>

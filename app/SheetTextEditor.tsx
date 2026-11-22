@@ -4,6 +4,28 @@ import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
 
 export type SheetTextEdit = { scale: number; bold: boolean; hidden: boolean };
 
+export type SheetIdentity = { playerName: string; experience: number };
+
+export function sheetIdentityFields(identity: SheetIdentity, editMode: boolean, onChange?: (patch: Partial<SheetIdentity>) => void, blankExperience = false) {
+  const { playerName, experience } = identity;
+  const printedExperience = blankExperience && experience === 0 ? "" : experience;
+  if (!editMode || !onChange) return { playerName, experience: printedExperience };
+
+  return {
+    playerName: <>
+      <input className="sheet-identity-input" aria-label="Имя игрока" value={playerName ?? ""}
+        onChange={event => onChange({ playerName: event.currentTarget.value })} />
+      <span className="sheet-identity-print">{playerName}</span>
+    </>,
+    experience: <>
+      <input className="sheet-identity-input" aria-label="Опыт" type="number" min="0" step="1"
+        value={experience || ""} placeholder="0"
+        onChange={event => onChange({ experience: Math.max(0, Math.trunc(event.currentTarget.valueAsNumber || 0)) })} />
+      <span className="sheet-identity-print">{printedExperience}</span>
+    </>,
+  };
+}
+
 export function SheetTextEditor({ label, editMode, hideChangeable, selected, selectedEdit, toggleEdit, toggleChangeable, updateSelected, restoreSelected, reset }: {
   label: string;
   editMode: boolean;

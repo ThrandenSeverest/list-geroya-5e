@@ -3868,6 +3868,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 <button type="button" aria-pressed={sheetFormat === "2024"} onClick={() => setSheetFormat("2024")}>Лист 2024</button>
               </div>
               <SelectedCharacterSheet
+                onIdentityChange={patch => setCharacter(current => ({ ...current, ...patch }))}
                 sheet2024={sheetFormat === "2024" ? {
                   size: [chosenRaceVariant?.description, ...(selectedRace && "details" in selectedRace ? selectedRace.details ?? [] : []), selectedRace?.description]
                     .map(text => text?.match(/(?:^|[.!]\s*)(Маленький|Малый|Средний|Большой|Крошечный) размер/i)?.[1]).find(Boolean),

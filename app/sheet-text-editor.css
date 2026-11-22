@@ -23,3 +23,29 @@
 .sheet-hide-changeable .hs24-marks[data-sheet-volatile] i.filled { background: transparent; }
 .sheet-hide-changeable .pdf-resource-marks i.spent { background: transparent; box-shadow: none; }
 @media print { .classic-sheet-editor { display: none !important; } }
+
+
+.sheet-identity-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 1.05em;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  appearance: textfield;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  outline: 1px dotted #8d7460;
+  outline-offset: -1px;
+}
+.sheet-identity-input:focus { outline: 1px solid #9c342a; }
+.sheet-identity-input::-webkit-inner-spin-button,
+.sheet-identity-input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+:is(.pdf-document, .classic-sheet-document, .hs24-document) .sheet-identity-print { display: none; font: inherit; }
+@media print {
+  .sheet-identity-input { display: none !important; }
+  :is(.pdf-document, .classic-sheet-document, .hs24-document) .sheet-identity-print { display: inline; }
+}
