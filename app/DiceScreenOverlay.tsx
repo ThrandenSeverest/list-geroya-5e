@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { DiceResult } from './adventure';
 import { diceFromResult, diceMesh, type Vec3 } from './diceScreenMath';
-import { diceMotionAt, diceRenderPixelRatio } from './diceScreenMotion';
+import { diceRenderPixelRatio } from './diceScreenMotion';
+import { spawnScreenDie, screenDieSize, screenDieRadius, stepScreenDice, type DiceBody } from './diceScreenPhysics';
 import './dice-screen.css';
 
 export type ScreenRoll = { id: string; name: string; result: DiceResult };
@@ -11,7 +12,7 @@ export type DiceScreenOptions = { enabled: boolean; color: string; lifetime: num
 type Numbering = 'regular' | 'tens' | 'units';
 type MovingDie = {
   id: string; rollId: string; sides: number; value: number; numbering: Numbering;
-  born: number; x: number; y: number; seed: number; size: number; faceIndex: number;
+  born: number; seed: number; size: number; faceIndex: number; body: DiceBody;
 };
 type Point2 = [number, number];
 
@@ -126,9 +127,8 @@ function renderDie(
   const elapsed=now-die.born;
   if(elapsed>=FLIGHT_MS+hold+FADE_MS)return;
   const fade=clamp((FLIGHT_MS+hold+FADE_MS-elapsed)/FADE_MS);
-  const radius=die.size*1.50;
-  const motion=diceMotionAt(die,width,height,radius,elapsed,FLIGHT_MS);
-  const {x,y,progress:t}=motion;
+  const {x,y}=die.body;
+  const t=clamp(elapsed/FLIGHT_MS);
   const mesh=diceMesh(die.sides);
   ctx.save();
   ctx.globalAlpha=fade;
@@ -143,7 +143,7 @@ function renderDie(
     ctx.fill();
     ctx.restore();
   }
-  const spin=Math.pow(1-t,2);
+  const spin=Math.pow(1-t,2)+die.body.impact*.09;
   const twist=die.seed*Math.PI*2;
   if(!mesh){
     // A nonstandard user-defined die never gets silently replaced by a d20.
@@ -226,6 +226,7 @@ export function DiceScreenOverlay({
   const started=useRef(new Map<string,number>());
   const props=useRef({options,onExpire});
   const raf=useRef<number|null>(null);
+  const lastFrame=useRef<number|null>(null);
   const frame=useRef<(now:number)=>void>(()=>{});
   props.current={options,onExpire};
   const requestFrame=()=>{
@@ -250,9 +251,14 @@ export function DiceScreenOverlay({
         const id=roll.id+':'+i,seed=hash(id);
         const die=all[i];
         const faces=diceMesh(die.sides)?.faces.length||8;
+        const viewport=canvas.current?.getBoundingClientRect();
+        const width=viewport?.width||window.innerWidth;
+        const height=viewport?.height||window.innerHeight;
+        const size=screenDieSize(width,height);
+        const radius=screenDieRadius(size);
+        const body=spawnScreenDie({id,width,height,radius,seed,seedY:hash(id+'y'),index:i});
         dice.current.set(id,{
-          ...die,id,rollId:roll.id,born:now,seed,x:hash(id+'x'),y:hash(id+'y'),
-          size:Math.min(window.innerWidth<700?64:88,Math.max(49,window.innerWidth*.166)),
+          ...die,id,rollId:roll.id,born:now,seed,size,body,
           faceIndex:Math.floor(hash(id+'face')*faces)
         });
       }
@@ -267,7 +273,15 @@ export function DiceScreenOverlay({
       if(node){
         const ctx=node.getContext('2d',{alpha:true});
         if(ctx){
-          const width=window.innerWidth,height=window.innerHeight;
+          const viewport=node.getBoundingClientRect();
+          const width=viewport.width,height=viewport.height;
+          const dt=lastFrame.current===null?0:clamp((now-lastFrame.current)/1000,0,.055);
+          lastFrame.current=now;
+          if(opts.enabled&&dt>0){
+            const bodies=[...dice.current.values()].map(d=>d.body);
+            const steps=Math.max(1,Math.ceil(dt/(1/90)));
+            for(let i=0;i<steps;i++)stepScreenDice(bodies,width,height,dt/steps);
+          }
           const ratio=diceRenderPixelRatio(width,height,window.devicePixelRatio||1);
           const pixelsW=Math.round(width*ratio),pixelsH=Math.round(height*ratio);
           if(node.width!==pixelsW||node.height!==pixelsH){
@@ -293,13 +307,14 @@ export function DiceScreenOverlay({
       if(dice.current.size&&opts.enabled)requestFrame();
     };
     if(dice.current.size)requestFrame();
-    return()=>{if(raf.current!==null)cancelAnimationFrame(raf.current);raf.current=null;};
+    return()=>{if(raf.current!==null)cancelAnimationFrame(raf.current);raf.current=null;lastFrame.current=null;};
   },[]);
   useEffect(()=>{
     if(options.enabled&&dice.current.size)requestFrame();
     if(!options.enabled){
       dice.current.clear();
       started.current.clear();
+      lastFrame.current=null;
       const node=canvas.current,ctx=node?.getContext('2d');
       if(node&&ctx)ctx.clearRect(0,0,node.width,node.height);
     }
