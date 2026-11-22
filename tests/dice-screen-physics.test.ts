@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { diceSafeArea } from '../app/diceScreenMotion';
+import { spawnScreenDie, screenDieRadius, screenDieSize, stepScreenDice, type DiceBody } from '../app/diceScreenPhysics';
+
+test('dice are substantially smaller than old default, with visible margins',()=>{
+  for(const [w,h] of [[320,568],[390,650],[430,930],[1280,720],[1920,1080]]){
+    const size=screenDieSize(w,h), radius=screenDieRadius(size);
+    assert.ok(size<=29,'too large at '+w+'x'+h+': '+size);
+    assert.ok(size>=12);
+    const area=diceSafeArea(w,h,radius);
+    assert.ok(area.left>=radius && area.right<=w-radius);
+    assert.ok(area.top>=radius && area.bottom<=h-radius);
+  }
+});
+test('every die starts to the right, then stays within the viewport after entry',()=>{
+  for(const [width,height] of [[320,568],[390,650],[430,930],[1280,720],[1920,1080]]){
+    const radius=screenDieRadius(screenDieSize(width,height));
+    for(const [seed,seedY] of [[0,0],[.01,.99],[.5,.5],[.99,.01],[1,1]]){
+      const d=spawnScreenDie({id:String(width)+':'+seed+':'+seedY,width,height,radius,seed,seedY});
+      assert.ok(d.x-radius>width, 'must arrive from the right edge');
+      let entered=false;
+      for(let i=0;i<600;i++){
+        stepScreenDice([d],width,height,1/90);
+        if(d.entered)entered=true;
+        if(entered){
+          const area=diceSafeArea(width,height,radius);
+          assert.ok(d.x>=area.left-1e-6 && d.x<=area.right+1e-6,JSON.stringify(d));
+          assert.ok(d.y>=area.top-1e-6 && d.y<=area.bottom+1e-6,JSON.stringify(d));
+        }
+      }
+      assert.ok(entered,'a die must actually enter the screen');
+    }
+  }
+});
+test('overlapping landed dice physically separate rather than stack',()=>{
+  const radius=24;
+  const bodies:DiceBody[]=[
+    {id:'a',x:170,y:220,vx:0,vy:0,radius,entered:true,impact:0},
+    {id:'b',x:173,y:222,vx:0,vy:0,radius,entered:true,impact:0}
+  ];
+  for(let i=0;i<6;i++)stepScreenDice(bodies,390,650,1/90);
+  assert.ok(Math.hypot(bodies[0].x-bodies[1].x,bodies[0].y-bodies[1].y)>=(radius*2)-.1);
+});
+test('colliding moving dice exchange impulse and leave no merged objects',()=>{
+  const bodies:DiceBody[]=[
+    {id:'a',x:164,y:220,vx:540,vy:0,radius:26,entered:true,impact:0},
+    {id:'b',x:218,y:220,vx:-540,vy:0,radius:26,entered:true,impact:0},
+  ];
+  stepScreenDice(bodies,390,650,1/90);
+  assert.ok(bodies[0].vx<0 && bodies[1].vx>0,'dice should bounce');
+  assert.ok(bodies[0].impact>0 && bodies[1].impact>0);
+  assert.ok(bodies[0].x+26<=bodies[1].x-26+.3);
+});
+test('many simultaneous right-side dice remain on the board and never stack',()=>{
+  const width=390,height=650,radius=screenDieRadius(screenDieSize(width,height));
+  const bodies=Array.from({length:9},(_,i)=>spawnScreenDie({
+    id:'die'+i,width,height,radius,
+    seed:(i*.137)%1,seedY:(i*.293+.14)%1,index:i
+  }));
+  for(let frame=0;frame<420;frame++){
+    stepScreenDice(bodies,width,height,1/90);
+    for(const die of bodies){
+      if(!die.entered)continue;
+      const area=diceSafeArea(width,height,die.radius);
+      assert.ok(die.x>=area.left-.001 && die.x<=area.right+.001);
+      assert.ok(die.y>=area.top-.001 && die.y<=area.bottom+.001);
+    }
+  }
+  assert.ok(bodies.every(d=>d.entered));
+  for(let i=0;i<bodies.length;i++)for(let j=i+1;j<bodies.length;j++){
+    const a=bodies[i],b=bodies[j];
+    const dist=Math.hypot(a.x-b.x,a.y-b.y);
+    assert.ok(dist+1 >= a.radius+b.radius,
+      'overlap '+a.id+'/'+b.id+': '+dist.toFixed(2)+' vs '+(a.radius+b.radius).toFixed(2));
+  }
+});
