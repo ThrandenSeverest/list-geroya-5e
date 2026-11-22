@@ -56999,11 +56999,14 @@ function ClassicCharacterSheet(props) {
 		const targets = new Set([...editNodes, ...boxes]);
 		const scales = /* @__PURE__ */ new Map();
 		editNodes.forEach((element, index) => {
+			var _element$textContent;
 			const id = `text-${index}`;
 			const edit = edits[id];
 			element.dataset.classicEdit = id;
 			element.classList.toggle("classic-edited-hidden", Boolean(edit === null || edit === void 0 ? void 0 : edit.hidden));
 			element.classList.toggle("classic-edited-selected", editMode && selected === id);
+			if (editMode && !(edit === null || edit === void 0 ? void 0 : edit.hidden) && ((_element$textContent = element.textContent) === null || _element$textContent === void 0 ? void 0 : _element$textContent.trim())) element.tabIndex = 0;
+			else element.removeAttribute("tabindex");
 			element.style.setProperty("font-weight", (edit === null || edit === void 0 ? void 0 : edit.bold) ? "700" : "", "important");
 			if (Number.isFinite(edit === null || edit === void 0 ? void 0 : edit.scale)) scales.set(element, Math.max(60, Math.min(180, edit.scale)) / 100);
 		});
@@ -57042,6 +57045,19 @@ function ClassicCharacterSheet(props) {
 		editMode,
 		selected
 	]);
+	function selectEditable(target, point) {
+		const sheet = root.current;
+		if (!editMode || !sheet) return;
+		const candidates = target instanceof Element ? [target] : [];
+		if (point) candidates.push(...document.elementsFromPoint(point.x, point.y));
+		for (const candidate of candidates) {
+			var _field$dataset$classi;
+			const field = candidate.closest("[data-classic-edit][tabindex=\"0\"]");
+			if (!field || !sheet.contains(field)) continue;
+			setSelected((_field$dataset$classi = field.dataset.classicEdit) !== null && _field$dataset$classi !== void 0 ? _field$dataset$classi : null);
+			return;
+		}
+	}
 	const skills = originalSkillOrder.map((name) => ({
 		name,
 		...skillKeys[name]
@@ -57145,12 +57161,11 @@ function ClassicCharacterSheet(props) {
 	}), /* @__PURE__ */ jsxs("div", {
 		ref: root,
 		className: "classic-sheet-document classic-sheet--template" + (editMode ? " classic-sheet--editing" : "") + (hideChangeable ? " classic-sheet--hide-changeable" : ""),
-		onClickCapture: (event) => {
-			var _root$current;
-			if (!editMode) return;
-			const target = event.target.closest("[data-classic-edit]");
-			if (target && ((_root$current = root.current) === null || _root$current === void 0 ? void 0 : _root$current.contains(target))) setSelected(target.dataset.classicEdit || null);
-		},
+		onClickCapture: (event) => selectEditable(event.target, {
+			x: event.clientX,
+			y: event.clientY
+		}),
+		onFocusCapture: (event) => selectEditable(event.target),
 		"aria-label": "Классический лист персонажа D&D 5e",
 		children: [
 			/* @__PURE__ */ jsxs("section", {
@@ -57346,14 +57361,14 @@ function ClassicCharacterSheet(props) {
 									/* @__PURE__ */ jsx(Panel, {
 										title: "Текущие хиты",
 										children: /* @__PURE__ */ jsx("strong", {
-											className: "classic-sheet-hp",
+											className: "classic-sheet-hp classic-sheet-hp--changeable",
 											children: (_props$currentHitPoin = props.currentHitPoints) !== null && _props$currentHitPoin !== void 0 ? _props$currentHitPoin : props.hitPoints
 										})
 									}),
 									/* @__PURE__ */ jsx(Panel, {
 										title: "Временные хиты",
 										children: /* @__PURE__ */ jsx("strong", {
-											className: "classic-sheet-hp",
+											className: "classic-sheet-hp classic-sheet-hp--changeable",
 											children: props.temporaryHitPoints || ""
 										})
 									}),
