@@ -23,8 +23,8 @@ export type DiceBody = {
   // Small vertical motion (screen pixels), not sideways position teleportation.
   hopHeight?: number;
   hopVelocity?: number;
-  hopCooldown?: number;
-  roughnessState?: number;
+  // Quaternion accumulated from distance travelled around the contact axis.
+  orientation?: [number, number, number, number];
 };
 
 export type DiceSpawn = {
@@ -76,13 +76,12 @@ export function spawnScreenDie({id,width,height,radius,seed,seedY,seedAngle=seed
     launchDelay:Math.min(.53,index*.026+clamp(seedDelay,0,1)*.21),
     age:0,
     spin:(seedSpin-.5)*2.8,
-    spinVelocity:spinSign*Math.min(26,speed/radius*(.49+.16*seedSpin)),
+    spinVelocity:spinSign*speed/Math.max(8,(radius-2)/1.27*.82),
     spinDirection:spinSign,
     restBlend:0,
-    surfaceDrag:.68+clamp(1-seedDelay,0,1)*.92,
+    surfaceDrag:.90+clamp(1-seedDelay,0,1)*.20,
     hopHeight:0,hopVelocity:0,
-    hopCooldown:.16+seedDelay*.36,
-    roughnessState:Math.floor((seedSpin*.37+seedY*.29+seedAngle*.34)*4294967295)>>>0
+    orientation:[0,0,0,1]
   };
 }
 
@@ -135,12 +134,19 @@ function collision(a:DiceBody,b:DiceBody) {
     b.vx-=sideways*tx;b.vy-=sideways*ty;
     a.spinVelocity=(a.spinVelocity||0)-sideways*.018;
     b.spinVelocity=(b.spinVelocity||0)+sideways*.018;
-    if(Math.abs(relative)>105){
-      const kick=Math.min(10,2+Math.abs(relative)*.012);
-      const v=Math.sqrt(2*950*kick);
-      a.hopVelocity=Math.max(a.hopVelocity||0,v);
-      b.hopVelocity=Math.max(b.hopVelocity||0,v*.82);
-      a.restBlend=0;b.restBlend=0;
+    // Only a hard impact can lift a die. Transfer, never invent, energy:
+    // vertical kinetic energy is paid for by the outgoing horizontal motion.
+    if(Math.abs(relative)>650){
+      for(const body of [a,b]){
+        const speed=Math.hypot(body.vx,body.vy);
+        const lift=Math.min(150,speed*.22);
+        if((body.hopHeight||0)===0 && lift>70){
+          const remaining=Math.sqrt(Math.max(0,speed*speed-lift*lift))/speed;
+          body.vx*=remaining;body.vy*=remaining;
+          body.hopVelocity=lift;
+          body.restBlend=0;
+        }
+      }
     }
     const contact=Math.min(1,Math.abs(relative)/500);
     a.impact=Math.max(a.impact,contact);
@@ -158,42 +164,48 @@ export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:n
       continue;
     }
     body.age=(body.age||0)+seconds;
-    body.x+=body.vx*seconds;
-    body.y+=body.vy*seconds;
-    // Individual friction makes every die coast to a stop at a different time.
-    const damping=Math.exp(-(body.surfaceDrag??1.05)*seconds);
-    body.vx*=damping;
-    body.vy*=damping;
-    // Angular speed tracks linear speed / die radius. As the die slows down,
-    // the tumbling follows instead of continuing at a disconnected fixed rate.
     const speed=Math.hypot(body.vx,body.vy);
-    const angularTarget=(body.spinDirection||1)*Math.min(26,(speed/Math.max(8,body.radius))*.63);
-    const angularEase=1-Math.exp(-7*seconds);
-    body.spinVelocity=(body.spinVelocity||0)+(angularTarget-(body.spinVelocity||0))*angularEase;
-    if(speed<2)body.spinVelocity=(body.spinVelocity||0)*Math.exp(-8*seconds);
-    body.spin=(body.spin||0)+(body.spinVelocity||0)*seconds;
-    // Blend into a stable result face without snapping backward when rolling ends.
-    const restTarget=speed<85?1:0;
-    body.restBlend=clamp((body.restBlend||0)+(restTarget-(body.restBlend||0))*(1-Math.exp(-3.5*seconds)),0,1);
-
-    // Height-only hops over imaginary table irregularities: no X/Y jitter.
-    // The per-die LCG makes motion deterministic and frame-rate independent.
-    body.hopVelocity=(body.hopVelocity||0)-950*seconds;
-    body.hopHeight=Math.max(0,(body.hopHeight||0)+(body.hopVelocity||0)*seconds);
-    if(body.hopHeight===0)body.hopVelocity=0;
-    body.hopCooldown=Math.max(0,(body.hopCooldown||0)-seconds);
-    if(body.entered && speed>145 && body.hopHeight===0 && body.hopCooldown<=0){
-      const next=(Math.imul(body.roughnessState??12345,1664525)+1013904223)>>>0;
-      body.roughnessState=next;
-      const random=next/4294967295;
-      if(random<.72){
-        const height=2+Math.min(6,speed/360)*(0.35+random);
-        body.hopVelocity=Math.sqrt(2*950*height);
-      }
-      body.hopCooldown=.22+random*.43;
+    const airborne=(body.hopHeight||0)>0 || (body.hopVelocity||0)>0;
+    // Constant rolling resistance on wood gives a finite stopping distance.
+    // Stronger loss at each face/edge is represented by the surface coefficient.
+    // Do not brake outside the entrance: every launch must reach the table.
+    const deceleration=body.entered&&!airborne?520*(body.surfaceDrag??1):0;
+    const nextSpeed=Math.max(0,speed-deceleration*seconds);
+    const movingTime=deceleration>0?Math.min(seconds,speed/deceleration):seconds;
+    const travel=speed>0?(speed+nextSpeed)*.5*movingTime:0;
+    const dx=speed>0?body.vx/speed*travel:0;
+    const dy=speed>0?body.vy/speed*travel:0;
+    body.x+=dx;body.y+=dy;
+    const factor=speed>0?nextSpeed/speed:0;
+    body.vx*=factor;body.vy*=factor;
+    // Rolling without slip: arc length = angle * contact radius. Screen Y
+    // points downward, Z toward the viewer, so the axis is (-dy, dx, 0).
+    const contactRadius=Math.max(8,(body.radius-2)/1.27*.82);
+    const angle=travel/contactRadius;
+    body.spinVelocity=(body.spinDirection||1)*nextSpeed/contactRadius;
+    body.spin=(body.spin||0)+(body.spinDirection||1)*angle;
+    if(travel>0){
+      const q=body.orientation??[0,0,0,1];
+      const sin=Math.sin(angle/2),c=Math.cos(angle/2);
+      const ax=-dy/travel*sin,ay=dx/travel*sin;
+      const next:[number,number,number,number]=[
+        c*q[0]+ax*q[3]+ay*q[2], c*q[1]+ay*q[3]-ax*q[2],
+        c*q[2]+ax*q[1]-ay*q[0], c*q[3]-ax*q[0]-ay*q[1]
+      ];
+      const length=Math.hypot(...next);
+      body.orientation=next.map(v=>v/length) as typeof next;
+    }
+    // Settle only after translation ends, so a face never slides across wood.
+    const restTarget=nextSpeed===0&&!airborne?1:0;
+    body.restBlend=clamp((body.restBlend||0)+(restTarget-(body.restBlend||0))*(1-Math.exp(-12*seconds)),0,1);
+    // No timer-based or random jumps on a flat tabletop. Gravity acts only
+    // after a fast collision has supplied a vertical impulse.
+    if(airborne){
+      const v=body.hopVelocity||0;
+      body.hopHeight=Math.max(0,(body.hopHeight||0)+v*seconds-.5*2400*seconds*seconds);
+      body.hopVelocity=body.hopHeight>0?v-2400*seconds:0;
     }
     body.impact*=Math.exp(-7*seconds);
-    if(Math.hypot(body.vx,body.vy)<3)body.vx=body.vy=0;
     wallContact(body,width,height);
   }
   if(bodies.length<2)return;

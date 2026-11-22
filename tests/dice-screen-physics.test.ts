@@ -134,7 +134,7 @@ test('angular speed follows each die travel speed and decays when it stops',()=>
   const spec={width:1000,height:740,radius:40,seed:.41,seedY:.43,seedAngle:.46,seedDelay:.3,seedSpin:.78};
   const fast=spawnScreenDie({id:'fast',...spec}), slow=spawnScreenDie({id:'slow',...spec});
   for(const die of [fast,slow]){
-    die.x=550;die.y=310;die.entered=true;die.launchDelay=0;die.spinVelocity=0;die.hopCooldown=15;
+    die.x=550;die.y=310;die.entered=true;die.launchDelay=0;die.spinVelocity=0;
     die.surfaceDrag=.03;
   }
   fast.vx=-750;fast.vy=0;
@@ -150,24 +150,43 @@ test('angular speed follows each die travel speed and decays when it stops',()=>
   for(let i=0;i<48;i++)stepScreenDice([fast],1000,740,1/90);
   assert.ok(Math.abs(fast.spinVelocity||0)<before*.17,'rotation should wind down when movement ends');
 });
-test('subtle deterministic hops change height and shadow, never horizontal trajectory',()=>{
-  const settings={width:1000,height:740,radius:35,seed:.2,seedY:.35,seedAngle:.44,seedDelay:.5,seedSpin:.8};
-  const bouncing=spawnScreenDie({id:'hop',...settings});
-  const smooth=spawnScreenDie({id:'smooth',...settings});
-  for(const d of [bouncing,smooth]){
-    d.x=700;d.y=370;d.vx=-510;d.vy=0;d.entered=true;d.launchDelay=0;
-    d.surfaceDrag=.20;d.hopHeight=0;d.hopVelocity=0;d.roughnessState=0;
-  }
-  bouncing.hopCooldown=0;
-  smooth.hopCooldown=20;
+test('wood friction stops dice finitely without spontaneous hops',()=>{
+  const d:DiceBody={id:'wood',x:500,y:400,vx:300,vy:0,radius:35,entered:true,impact:0};
   let peak=0;
-  for(let i=0;i<90;i++){
-    stepScreenDice([bouncing],1000,740,1/90);
-    stepScreenDice([smooth],1000,740,1/90);
-    peak=Math.max(peak,bouncing.hopHeight||0);
-    assert.ok(Math.abs(bouncing.x-smooth.x)<.0001);
-    assert.ok(Math.abs(bouncing.y-smooth.y)<.0001);
+  for(let i=0;i<180;i++){
+    stepScreenDice([d],2000,1000,1/120);
+    peak=Math.max(peak,d.hopHeight||0);
   }
-  assert.ok(peak>1&&peak<=14,'small bounded hops should be visible: '+peak);
-  assert.equal(smooth.hopHeight,0,'a smooth surface should not hop');
+  assert.equal(peak,0);
+  assert.equal(d.vx,0);
+  assert.ok(d.x>580&&d.x<590,'finite stop close to v²/(2a)');
+  const x=d.x;
+  for(let i=0;i<120;i++)stepScreenDice([d],2000,1000,1/120);
+  assert.equal(d.x,x,'no creeping after stop');
+});
+test('slow collisions stay grounded; hard collisions can lift with energy loss',()=>{
+  for(const speed of [100,700]){
+    const bodies:DiceBody[]=[
+      {id:'a',x:500,y:400,vx:speed,vy:0,radius:30,entered:true,impact:0},
+      {id:'b',x:561,y:400,vx:-speed,vy:0,radius:30,entered:true,impact:0}
+    ];
+    stepScreenDice(bodies,2000,1000,1/120);
+    const energy=bodies.reduce((sum,d)=>sum+d.vx*d.vx+d.vy*d.vy+(d.hopVelocity||0)**2,0);
+    assert.ok(energy<2*speed*speed);
+    assert.equal((bodies[0].hopVelocity||0)>0,speed===700);
+  }
+});
+test('rolling axis follows travel, and rotation equals travelled arc',()=>{
+  for(const [vx,vy] of [[300,0],[0,300],[-300,0]]){
+    const d:DiceBody={id:'axis',x:500,y:400,vx,vy,radius:35,entered:true,impact:0};
+    stepScreenDice([d],2000,1000,1/120);
+    const [qx,qy,qz,qw]=d.orientation!;
+    assert.ok(Math.abs(qz)<1e-9);
+    assert.ok(Math.abs(qx*vx+qy*vy)<1e-9,'axis perpendicular to travel');
+    const angle=2*Math.acos(qw);
+    const distance=Math.hypot(d.x-500,d.y-400);
+    assert.ok(Math.abs(angle-distance/((35-2)/1.27*.82))<1e-8);
+    assert.ok(Math.sign(qx)==(Math.sign(-vy)||0));
+    assert.equal(Math.sign(qy),Math.sign(vx)||0);
+  }
 });

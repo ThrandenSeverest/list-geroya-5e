@@ -135,11 +135,10 @@ function renderDie(
   // The underlying collision position stays fixed; only the die lifts briefly.
   const hop=Math.min(14,Math.max(0,die.body.hopHeight||0));
   const y=groundY-hop;
-  const t=clamp(elapsed/FLIGHT_MS);
   const mesh=diceMesh(die.sides);
   ctx.save();
   ctx.globalAlpha=fade;
-  const landed=clamp((t-.67)/.33);
+  const landed=1;
   // Contact shadow is on the ground, never on the digits.
   if(landed>0){
     ctx.save();
@@ -159,7 +158,7 @@ function renderDie(
   const twist=die.seed*Math.PI*2;
   if(!mesh){
     // A nonstandard user-defined die never gets silently replaced by a d20.
-    const points:Point2=[];
+    const points:Point2[]=[];
     for(let i=0;i<8;i++){
       const angle=2*Math.PI*i/8+twist+wrapAngle(tumble*.9)*(1-settle);
       points.push([x+Math.cos(angle)*die.size*.94,y+Math.sin(angle)*die.size*.94]);
@@ -180,10 +179,19 @@ function renderDie(
     ctx.restore();ctx.restore();return;
   }
   const selected=mesh.faces[die.faceIndex%mesh.faces.length];
-  const ax=.10+(die.seed-.5)*.30+wrapAngle(tumble*.72)*(1-settle);
-  const ay=-.10+(hash(die.id+'/tilt')-.5)*.32+wrapAngle(tumble*1.02)*(1-settle);
-  const az=twist+wrapAngle(tumble*.62)*(1-settle);
-  const transform=(v:Vec3)=>rotate(alignFace(v,selected.normal),ax,ay,az);
+  // The physical contact axis comes from travel direction, not arbitrary
+  // Euler animation. Shortest-path quaternion settling cannot wrap at +/-pi.
+  const source=die.body.orientation??[0,0,0,1];
+  const sign=source[3]<0?-1:1;
+  const half=Math.acos(clamp(source[3]*sign,-1,1));
+  const weight=half>1e-6?Math.sin(half*(1-settle))/Math.sin(half):1-settle;
+  const q=source.map((v,i)=>i===3?Math.cos(half*(1-settle)):v*sign*weight);
+  const transform=(v:Vec3):Vec3=>{
+    const base=rotate(alignFace(v,selected.normal),.10,-.10,twist);
+    const u:Vec3=[q[0],q[1],q[2]];
+    const uv=cross(u,base),uuv=cross(u,uv);
+    return add(base,add(uv.map(n=>2*q[3]*n) as Vec3,uuv.map(n=>2*n) as Vec3));
+  };
   const transformed=mesh.vertices.map(transform);
   const maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v)))||1;
   const scale=die.size/maxRadius;
@@ -337,7 +345,7 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='speed-linked-tumble-hops-v6';
+          node.dataset.diceEngine='wood-contact-rolling-v7';
           if(window.location.pathname.includes('/dice-lab')){
             node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
               id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,

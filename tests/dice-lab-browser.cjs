@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const { chromium }=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/dice-preview/').replace(/\/?$/,'/');
 (async()=>{
-  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+  const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_PATH?{executablePath:process.env.CHROMIUM_PATH}:{}),args:['--no-sandbox','--disable-dev-shm-usage']});
   try{
     for(const [width,height,dpr] of [[1280,800,1],[390,740,3]]){
       const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:dpr,isMobile:width<700});
@@ -22,7 +22,7 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       assert.match(build,/dice-preview build|Локальная сборка/);
       const button=page.getByRole('button',{name:'12d6',exact:true});
       await button.click();
-      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='speed-linked-tumble-hops-v6');
+      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='wood-contact-rolling-v7');
       await page.waitForFunction(()=>{
         const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
         try{return JSON.parse(data||'[]').length===12;}catch{return false;}
@@ -47,13 +47,9 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
         const speed=Math.hypot(die.vx,die.vy);
         if(speed<100)continue;
         const ratio=Math.abs(die.spinVelocity)*die.radius/speed;
-        assert.ok(ratio>.30&&ratio<.95,
+        assert.ok(ratio>1.4&&ratio<1.8,
           'tumbling must track forward velocity: '+JSON.stringify(die));
       }
-      await page.waitForFunction(()=>{
-        const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
-        try{return JSON.parse(data||'[]').some(d=>d.hopHeight>.7&&d.hopHeight<14);}catch{return false;}
-      },undefined,{timeout:6000});
       // The spawn side is checked in deterministic physics tests; browser polling is too late to observe one exact launch frame.
       // Launch a second throw before the first has expired.
       await page.getByRole('button',{name:'3d6',exact:true}).click();
@@ -81,6 +77,10 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
         assert.ok(dist+2>=a.radius+b.radius,
           'overlapping dice '+a.id+'/'+b.id+': '+dist+' required '+(a.radius+b.radius));
       }
+      await page.waitForFunction(()=>{
+        const items=JSON.parse(document.querySelector('canvas.hero-screen-dice')?.dataset.diceState||'[]');
+        return items.length===15&&items.every(d=>Math.hypot(d.vx,d.vy)===0&&d.hopHeight===0);
+      },undefined,{timeout:5000});
       assert.deepEqual(errors,[], 'no JS or HTTP errors');
       await page.screenshot({path:'/tmp/dice-lab-'+width+'.png'});
       console.log('PASS dice lab',width,height,dpr,'build:',build,'dice:',items.length);
