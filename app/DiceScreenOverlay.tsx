@@ -291,6 +291,13 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
+          node.dataset.diceEngine='right-entry-physics-v3';
+          if(window.location.pathname.includes('/dice-lab')){
+            node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
+              id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
+              entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy
+            })));
+          }
           if(opts.enabled){
             const color=rgb(opts.color);
             const hold=clamp(opts.lifetime,0,30)*1000;
