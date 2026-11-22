@@ -22,7 +22,7 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       assert.match(build,/dice-preview build|Локальная сборка/);
       const button=page.getByRole('button',{name:'12d6',exact:true});
       await button.click();
-      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='long-throw-collisions-v4');
+      await page.waitForFunction(()=>document.querySelector('canvas.hero-screen-dice')?.dataset.diceEngine==='independent-random-trajectories-v5');
       await page.waitForFunction(()=>{
         const data=document.querySelector('canvas.hero-screen-dice')?.dataset.diceState;
         try{return JSON.parse(data||'[]').length===12;}catch{return false;}
@@ -39,6 +39,9 @@ const root=(process.env.HEROLIST_URL || 'http://127.0.0.1:3997/list-geroya-5e/di
       let items=await canvas.evaluate(node=>JSON.parse(node.dataset.diceState||'[]'));
       assert.equal(items.length,12);
       assert.ok(items.every(d=>d.modelSize>=30&&d.modelSize<=45),'Moderate-size dice: '+JSON.stringify(items));
+      const angles=items.map(d=>Math.atan2(d.vy,-d.vx));
+      assert.ok(Math.max(...angles)-Math.min(...angles)>.5,
+        'The dice must not share a synchronized leftward path: '+JSON.stringify(items));
       // The spawn side is checked in deterministic physics tests; browser polling is too late to observe one exact launch frame.
       // Launch a second throw before the first has expired.
       await page.getByRole('button',{name:'3d6',exact:true}).click();
