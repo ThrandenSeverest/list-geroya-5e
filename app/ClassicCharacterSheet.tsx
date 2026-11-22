@@ -6,6 +6,7 @@ import { abilityLabels, skillKeys } from "./rules";
 import type { AbilityScores } from "./exportFormats";
 import "./classic-character-sheet.css";
 import "./classic-sheet-template.css";
+import { SheetTextEditor } from "./SheetTextEditor";
 import { assetUrl } from "./assetUrl";
 import { SpellCardsAppendix } from "./PdfCharacterSheet";
 
@@ -199,20 +200,13 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
   const spellsByColumn = [[0, 1, 2], [3, 4, 5], [6, 7, 8, 9]];
 
   return <>
-    <div className="classic-sheet-editor" role="group" aria-label="Настройки классического листа">
-      <button type="button" aria-pressed={editMode} onClick={()=>{setEditMode(!editMode);setSelected(null)}}>{editMode?'Завершить редактирование':'Редактировать лист'}</button>
-      <button type="button" aria-pressed={hideChangeable} onClick={()=>setHideChangeable(value=>!value)}>{hideChangeable?'Показать изменяемую информацию':'Скрыть изменяемую информацию'}</button>
-      {editMode&&<>
-        <span>{selected?'Выбран текст на листе':'Выберите текст на листе'}</span>
-        <button type="button" disabled={!selected} onClick={()=>updateSelected({scale:Math.max(60,(selectedEdit?.scale||100)-10)})} aria-label="Уменьшить текст">А−</button>
-        <output>{selectedEdit?.scale||100}%</output>
-        <button type="button" disabled={!selected} onClick={()=>updateSelected({scale:Math.min(180,(selectedEdit?.scale||100)+10)})} aria-label="Увеличить текст">А+</button>
-        <button type="button" disabled={!selected} aria-pressed={!!selectedEdit?.bold} onClick={()=>updateSelected({bold:!selectedEdit?.bold})}><b>Жирный</b></button>
-        <button type="button" disabled={!selected} onClick={()=>updateSelected({hidden:true})}>Удалить с листа</button>
-        <button type="button" disabled={!selected} onClick={()=>{if(!selected)return;setEdits(current=>{const next={...current};delete next[selected];return next})}}>Вернуть текст</button>
-        <button type="button" onClick={()=>{setEdits({});setSelected(null)}}>Сбросить правки</button>
-      </>}
-    </div>
+    <SheetTextEditor label="Настройки классического листа" editMode={editMode} hideChangeable={hideChangeable} selected={selected} selectedEdit={selectedEdit}
+      toggleEdit={() => { setEditMode(!editMode); setSelected(null); }}
+      toggleChangeable={() => setHideChangeable(value => !value)}
+      updateSelected={updateSelected}
+      restoreSelected={() => { if (selected) setEdits(current => { const next = { ...current }; delete next[selected]; return next; }); }}
+      reset={() => { setEdits({}); setSelected(null); }}
+    />
   <div ref={root} className={"classic-sheet-document classic-sheet--template"+(editMode?" classic-sheet--editing":"")+(hideChangeable?" classic-sheet--hide-changeable":"")}
     onClickCapture={event => selectEditable(event.target, { x: event.clientX, y: event.clientY })}
     onFocusCapture={event => selectEditable(event.target)}

@@ -63,6 +63,51 @@ async function openSheet(page) {
   const paper=await page.locator('.pdf-primary-page').boundingBox();
   assert.ok(paper&&Math.abs(paper.width/paper.height-210/297)<.002,'Preview retains its A4 aspect ratio');
 }
+async function verifySheetEditor(page, format, fields) {
+  const openFormat = () => page.getByRole('button', { name: format, exact: true }).click();
+  const toolbar = page.locator('.classic-sheet-editor');
+  const button = name => toolbar.getByRole('button', { name, exact: true });
+  const name = page.locator(fields.name);
+  const currentHP = page.locator(fields.currentHP);
+  const maxHP = page.locator(fields.maxHP);
+  const fontSize = () => name.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+  const initialSize = await fontSize();
+
+  await button('Скрыть изменяемую информацию').click();
+  assert.equal(await currentHP.isVisible(), false);
+  assert.equal(await maxHP.isVisible(), true);
+  await button('Показать изменяемую информацию').click();
+  await button('Редактировать лист').click();
+  await name.click();
+  assert.ok(await name.getAttribute('data-sheet-editor-selected') !== null);
+  await button('Уменьшить текст').click();
+  assert.equal(await toolbar.locator('output').textContent(), '90%');
+  assert.ok(Math.abs(await fontSize() - initialSize * .9) < .1);
+  await currentHP.focus();
+  assert.ok(await currentHP.getAttribute('data-sheet-editor-selected') !== null);
+  await name.click();
+  await button('Жирный').click();
+  assert.equal(await name.getAttribute('data-sheet-editor-bold'), '');
+  await button('Удалить с листа').click();
+  assert.equal(await name.isVisible(), false);
+  await button('Вернуть текст').click();
+  assert.equal(await name.isVisible(), true);
+  assert.ok(Math.abs(await fontSize() - initialSize) < .1);
+
+  await button('Уменьшить текст').click();
+  await button('Завершить редактирование').click();
+  await page.getByRole('button', { name: 'Классический лист D&D', exact: true }).click();
+  await openFormat();
+  await page.waitForFunction(selector => !!document.querySelector(selector)?.style.getPropertyValue('--sheet-editor-size'), fields.name);
+  assert.ok(Math.abs(await fontSize() - initialSize * .9) < .1);
+  await page.emulateMedia({ media: 'print' });
+  assert.equal(await toolbar.isVisible(), false);
+  assert.ok(Math.abs(await fontSize() - initialSize * .9) < .1);
+  await page.emulateMedia({ media: 'screen' });
+  await button('Редактировать лист').click();
+  await button('Сбросить правки').click();
+  await button('Завершить редактирование').click();
+}
 async function saved(page) {
   return page.evaluate(key => JSON.parse(localStorage.getItem(key)), key);
 }
@@ -124,6 +169,11 @@ async function saved(page) {
           assert.ok(dimensions.every(([w, h, overflow]) => Math.abs(w / h - 210 / 297) < .002 && overflow <= 1),
             'Both 2024 print pages must retain the A4 bounds');
           await page.emulateMedia({ media: 'screen' });
+          await verifySheetEditor(page, 'Лист 2024', {
+            name: '.hs24-identity > .hs24-value strong',
+            currentHP: '.hs24-vitals .hs24-value:nth-of-type(1) strong',
+            maxHP: '.hs24-vitals .hs24-value:nth-of-type(3) strong',
+          });
           await page.getByRole('button', { name: 'Классический лист D&D', exact: true }).click();
           const hitPoints = page.locator('.classic-sheet-hp--changeable').first();
           const maxHitPoints = page.locator('.classic-sheet-hp:not(.classic-sheet-hp--changeable)');
@@ -141,7 +191,12 @@ async function saved(page) {
           await hitPoints.focus();
           assert.equal(await hitPoints.evaluate(field => field.classList.contains('classic-edited-selected')), true);
           await page.getByRole('button', { name: 'Сбросить правки', exact: true }).click();
-          await page.getByRole('button', { name: 'Современный лист', exact: true }).click();
+          await page.getByRole('button', { name: 'Эргономичный лист', exact: true }).click();
+          await verifySheetEditor(page, 'Эргономичный лист', {
+            name: '.pdf-hero-header h1',
+            currentHP: '.pdf-current-hp label:first-child b',
+            maxHP: '.pdf-hp strong',
+          });
         }
         const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');
         await editor.locator('summary').click();

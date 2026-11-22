@@ -8,6 +8,15 @@ import { abilityLabels, type Feature } from "./rules";
 import { spellComponentLabel } from "./spellComponents";
 import { resourceRestLabel } from "./characterResources";
 import "./character-sheet-2024.css";
+import { SheetTextEditor, useSheetTextEditor } from "./SheetTextEditor";
+
+const editableText = [
+  ".hs24-value > strong", ".hs24-value > span", ".hs24-panel h2", ".hs24-panel h3",
+  ".hs24-ac > strong", ".hs24-counter > strong", ".hs24-ability-score", ".hs24-check > b",
+  ".hs24-check > span:last-child", ".hs24-table th", ".hs24-table td:not(:has(.hs24-flags))",
+  ".hs24-paper p", "[data-hs24-fit]:not(:has(p))", ".hs24-appendix p",
+  ".hs24-resource b", ".hs24-resource strong", ".hs24-resource small", ".hs24-slots b", ".hs24-slots div > span:not(.hs24-marks)",
+].join(", ");
 
 const signed = (value: number) => value < 0 ? String(value) : `+${value}`;
 const modifier = (score: number) => Math.floor((score - 10) / 2);
@@ -26,12 +35,12 @@ function Panel({ title, className = "", children }: { title: string; className?:
   return <section className={`hs24-panel ${className}`}><h2>{title}</h2>{children}</section>;
 }
 
-function Value({ label, children, className }: { label: string; children?: ReactNode; className?: string }) {
-  return <div className={className ? `hs24-value ${className}` : "hs24-value"}><span>{label}</span><strong title={typeof children === "string" ? children : undefined}>{children}</strong></div>;
+function Value({ label, children, className, changeable }: { label: string; children?: ReactNode; className?: string; changeable?: boolean }) {
+  return <div className={className ? `hs24-value ${className}` : "hs24-value"}><span>{label}</span><strong data-sheet-changeable={changeable ? "" : undefined} title={typeof children === "string" ? children : undefined}>{children}</strong></div>;
 }
 
-function Marks({ total, used = 0, label }: { total: number; used?: number; label: string }) {
-  return <span className="hs24-marks" role="img" aria-label={`${label}: ${used} из ${total}`}>
+function Marks({ total, used = 0, label, changeable }: { total: number; used?: number; label: string; changeable?: boolean }) {
+  return <span className="hs24-marks" data-sheet-volatile={changeable ? "" : undefined} role="img" aria-label={`${label}: ${used} из ${total}`}>
     {Array.from({ length: total }, (_, i) => <i key={i} className={i < used ? "filled" : ""} />)}
   </span>;
 }
@@ -42,12 +51,12 @@ function Ability({ ability, props }: { ability: keyof AbilityScores; props: PdfC
   const save = props.savingThrows.includes(ability);
   return <Panel title={abilityLabels[ability]} className="hs24-ability">
     <div className="hs24-ability-values"><Value label="Модификатор">{signed(mod)}</Value><strong className="hs24-ability-score" aria-label={`${abilityLabels[ability]}: ${score}`}>{score}</strong></div>
-    <div className="hs24-check hs24-save"><Marks total={1} used={Number(save)} label="Владение" /><b>{signed(mod + (save ? props.proficiency : 0) + (props.savingThrowBonuses?.[ability] ?? 0))}</b>Спасбросок</div>
+    <div className="hs24-check hs24-save"><Marks total={1} used={Number(save)} label="Владение" /><b>{signed(mod + (save ? props.proficiency : 0) + (props.savingThrowBonuses?.[ability] ?? 0))}</b><span>Спасбросок</span></div>
     {skillsByAbility[ability].map(skill => {
       const trained = props.proficiencies.skills.includes(skill);
       const expert = props.proficiencies.expertise.includes(skill);
       const bonus = props.sheet2024?.skillBonuses?.[skill] ?? mod + (expert ? 2 : trained ? 1 : 0) * props.proficiency;
-      return <div className="hs24-check" key={skill}><Marks total={1} used={Number(trained || expert)} label={expert ? "Компетентность" : "Владение"} /><b>{signed(bonus)}</b>{skill === "Внимательность" ? "Восприятие" : skill}</div>;
+      return <div className="hs24-check" key={skill}><Marks total={1} used={Number(trained || expert)} label={expert ? "Компетентность" : "Владение"} /><b>{signed(bonus)}</b><span>{skill === "Внимательность" ? "Восприятие" : skill}</span></div>;
     })}
   </Panel>;
 }
@@ -57,7 +66,7 @@ function AttackTable({ attacks, blankRows = 0 }: { attacks: CharacterAttack[]; b
     <thead><tr><th>Название</th><th>Атака / Сл</th><th>Урон и эффект</th><th>Заметки</th></tr></thead>
     <tbody>{Array.from({ length: Math.max(attacks.length, blankRows) }, (_, index) => {
       const a = attacks[index];
-      return <tr key={index}><td>{a?.name}</td><td>{a?.attackBonus != null ? signed(a.attackBonus) : a?.saveDc != null ? `Сл ${a.saveDc}` : ""}</td><td>{a?.damageDisplay}</td><td>{a?.note}</td></tr>;
+      return <tr key={index} data-sheet-text-row={a && `attack:${a.id}`}><td>{a?.name}</td><td>{a?.attackBonus != null ? signed(a.attackBonus) : a?.saveDc != null ? `Сл ${a.saveDc}` : ""}</td><td>{a?.damageDisplay}</td><td>{a?.note}</td></tr>;
     })}</tbody>
   </table>;
 }
@@ -68,7 +77,7 @@ function SpellTable({ spells, blankRows = 0 }: { spells: PdfSpell[]; blankRows?:
     <tbody>{Array.from({ length: Math.max(spells.length, blankRows) }, (_, index) => {
       const spell = spells[index];
       const flags = spell ? [/(?:концентрац|concentration)/i.test(spell.duration ?? ""), !!spell.ritual, spellComponentLabel(spell).includes("М")] : [];
-      return <tr key={index}><td>{spell?.level}</td><td>{spell?.alwaysPrepared ? "† " : ""}{spell?.name}</td><td>{spell?.castingTime}</td><td><div className="hs24-flags">{["К", "Р", "М"].map((label, i) => <span key={label}><Marks total={1} used={Number(!!flags[i])} label={label} />{label}</span>)}</div></td><td>{[spell?.range, spell?.classSource].filter(Boolean).join(" · ")}</td></tr>;
+      return <tr key={index} data-sheet-text-row={spell && `spell:${spell.classSource}:${spell.id}:${spell.grantSource ?? ""}`}><td>{spell?.level}</td><td>{spell?.alwaysPrepared ? "† " : ""}{spell?.name}</td><td>{spell?.castingTime}</td><td><div className="hs24-flags">{["К", "Р", "М"].map((label, i) => <span key={label}><Marks total={1} used={Number(!!flags[i])} label={label} />{label}</span>)}</div></td><td>{[spell?.range, spell?.classSource].filter(Boolean).join(" · ")}</td></tr>;
     })}</tbody>
   </table>;
 }
@@ -82,6 +91,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
   const [overflow, setOverflow] = useState<string[]>([]);
   const [tableOverflow, setTableOverflow] = useState({ attacks: false, spells: false });
   const { identity, proficiencies, sheet2024: data } = props;
+  const editor = useSheetTextEditor(root, `herolist-2024-text-v1:${identity.name || "unnamed"}`, editableText);
   const primaryAbility = Object.entries(abilityLabels).find(([, label]) => label === props.spellAbility)?.[0] as keyof AbilityScores | undefined;
   const spells = [...new Map(props.spells.filter(s => s.level === 0 || s.prepared || s.alwaysPrepared)
     .map(s => [`${s.id}:${s.classSource}:${s.grantSource ?? ""}`, s])).values()]
@@ -105,13 +115,15 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     const measure = () => {
       for (const line of doc.querySelectorAll<HTMLElement>(".hs24-identity strong, .hs24-stats strong")) {
         line.style.removeProperty("font-size");
+        line.style.removeProperty("--sheet-editor-fitted-size");
+        const manuallyScaled = !!line.style.getPropertyValue("--sheet-editor-size");
         const nominal = Number.parseFloat(getComputedStyle(line).fontSize);
         const minimum = Math.min(nominal, 9.6);
         const available = line.clientWidth - 1;
         let size = nominal;
         while (line.scrollWidth > available + 1 && size > minimum) {
           size = Math.max(minimum, size - 0.5);
-          line.style.fontSize = `${size}px`;
+          line.style.setProperty(manuallyScaled ? "--sheet-editor-fitted-size" : "font-size", `${size}px`);
         }
       }
       const clipped = [...doc.querySelectorAll<HTMLElement>("[data-hs24-fit]")].filter(box => {
@@ -131,11 +143,11 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     const observer = new ResizeObserver(measure);
     doc.querySelectorAll(".hs24-page").forEach(page => observer.observe(page));
     return () => observer.disconnect();
-  }, [props]);
+  });
 
   function note(id: string, className = "") {
     const entry = notes.find(item => item.id === id)!;
-    return <div className={`hs24-paper ${className}`}><div data-hs24-fit={id}>{entry.content}</div>{overflow.includes(id) && <span className="hs24-overflow-hint">Полный текст в приложении</span>}</div>;
+    return <div className={`hs24-paper ${className}`}><div data-hs24-fit={id} data-sheet-changeable={id === "equipment" || id === "attuned" ? "" : undefined}>{entry.content}</div>{overflow.includes(id) && <span className="hs24-overflow-hint">Полный текст в приложении</span>}</div>;
   }
 
   const moreAttacks = props.attacks.length > attackRows || tableOverflow.attacks;
@@ -144,30 +156,34 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
     Object.values(props.defenses ?? {}).some(values => values.length > 0);
   const battleNotes = <>
       {props.resources.map((resource, i) => <div className="hs24-resource" key={i}>
-        <b>{resource.name}</b><strong>{resource.current}/{resource.max}{resource.die ? ` · ${resource.die}` : ""}</strong>
+        <b>{resource.name}</b><strong data-sheet-changeable="">{resource.current}/{resource.max}{resource.die ? ` · ${resource.die}` : ""}</strong>
         <small>{resourceRestLabel(resource)}</small>
       </div>)}
       {([["Сопротивления", props.defenses?.resistances], ["Иммунитеты", props.defenses?.immunities], ["Уязвимости", props.defenses?.vulnerabilities]] as const)
         .filter(([, values]) => values?.length).map(([label, values]) => <p key={label}><b>{label}.</b> {values?.join(", ")}</p>)}
       {props.initiativeNotes?.map((entry, i) => <p key={i}>{entry}</p>)}
     </>;
-  return <div className="hs24-preview"><div ref={root} className="hs24-document" aria-label="Лист Героя 2024">
+  return <>
+    <SheetTextEditor label="Настройки листа 2024" {...editor} />
+    <div className="hs24-preview"><div ref={root} className={`hs24-document${editor.hideChangeable ? " sheet-hide-changeable" : ""}`} aria-label="Лист Героя 2024"
+      onClickCapture={event => editor.select(event.target)} onFocusCapture={event => editor.select(event.target)}>
+
     <section className="hs24-page hs24-main">
       <div className="hs24-top">
         <section className="hs24-panel hs24-identity"><Value label="Имя персонажа">{identity.name}</Value><div><Value label="Предыстория">{identity.backgroundName}</Value><Value label="Класс">{identity.className}</Value><Value label="Вид">{identity.raceName}</Value><Value label="Подкласс">{identity.subclassName}</Value></div></section>
         <section className="hs24-panel hs24-level"><Value label="Уровень">{identity.level}</Value><Value label="Опыт">{identity.experience}</Value></section>
         <Panel title="Класс брони" className="hs24-ac"><strong>{props.ac}</strong><span>Щит <Marks total={1} used={Number(!!data?.shield)} label="Щит в руках" /></span></Panel>
         <div className="hs24-panel hs24-health">
-          <Panel title="Хиты" className="hs24-vitals"><Value label="Текущие">{props.currentHitPoints ?? props.hitPoints}</Value><Value label="Временные">{props.temporaryHitPoints || ""}</Value><Value label="Максимум">{props.hitPoints}</Value></Panel>
-          <Panel title="Кости хитов" className="hs24-dice"><Value label="Потрачено">{data?.hitDiceSpent}</Value><Value label="Максимум">{data?.hitDiceMaximum ?? `${identity.level}к${props.hitDie}`}</Value></Panel>
-          <Panel title="Спасброски от смерти" className="hs24-death"><Value label="Успехи"><Marks total={3} used={data?.deathSuccesses} label="Успехи" /></Value><Value label="Провалы"><Marks total={3} used={data?.deathFailures} label="Провалы" /></Value></Panel>
+          <Panel title="Хиты" className="hs24-vitals"><Value label="Текущие" changeable>{props.currentHitPoints ?? props.hitPoints}</Value><Value label="Временные" changeable>{props.temporaryHitPoints || ""}</Value><Value label="Максимум">{props.hitPoints}</Value></Panel>
+          <Panel title="Кости хитов" className="hs24-dice"><Value label="Потрачено" changeable>{data?.hitDiceSpent}</Value><Value label="Максимум">{data?.hitDiceMaximum ?? `${identity.level}к${props.hitDie}`}</Value></Panel>
+          <Panel title="Спасброски от смерти" className="hs24-death"><Value label="Успехи"><Marks total={3} used={data?.deathSuccesses} label="Успехи" changeable /></Value><Value label="Провалы"><Marks total={3} used={data?.deathFailures} label="Провалы" changeable /></Value></Panel>
         </div>
       </div>
       <div className="hs24-wordmark">Лист Героя <span>2024</span></div>
       <div className="hs24-body">
         <aside className="hs24-left">
           <div className="hs24-abilities">
-            <div><Panel title="Бонус мастерства" className="hs24-counter"><strong>{signed(props.proficiency)}</strong></Panel><Ability ability="str" props={props} /><Ability ability="dex" props={props} /><Ability ability="con" props={props} /><Panel title="Героическое вдохновение" className="hs24-inspiration"><Marks total={1} used={Number(identity.inspiration)} label="Вдохновение" /></Panel></div>
+            <div><Panel title="Бонус мастерства" className="hs24-counter"><strong>{signed(props.proficiency)}</strong></Panel><Ability ability="str" props={props} /><Ability ability="dex" props={props} /><Ability ability="con" props={props} /><Panel title="Героическое вдохновение" className="hs24-inspiration"><Marks total={1} used={Number(identity.inspiration)} label="Вдохновение" changeable /></Panel></div>
             <div><Ability ability="int" props={props} /><Ability ability="wis" props={props} /><Ability ability="cha" props={props} /></div>
           </div>
           <Panel title="Владение инструментами и снаряжением" className="hs24-training">
@@ -198,9 +214,9 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
           <div className="hs24-slot-column"><div className="hs24-wordmark">Лист Героя <span>2024</span></div><Panel title="Ячейки заклинаний" className="hs24-slots">
             <div>{[0, 3, 6].map(start => <section key={start}><small>Круг · всего / потрачено</small>{[start, start + 1, start + 2].map(i => {
               const total = props.spellSlots[i] || 0;
-              return <div key={i}><b>{i + 1}</b><span>{total || "—"}</span><Marks total={total || (i === 0 ? 4 : i < 5 ? 3 : i < 7 ? 2 : 1)} used={data?.spellSlotsUsed?.[i]} label="Потрачено" /></div>;
+              return <div key={i}><b>{i + 1}</b><span>{total || "—"}</span><Marks total={total || (i === 0 ? 4 : i < 5 ? 3 : i < 7 ? 2 : 1)} used={data?.spellSlotsUsed?.[i]} label="Потрачено" changeable /></div>;
             })}</section>)}</div>
-            {!!props.pactSlots?.slots && <p>Магия договора · {props.pactSlots.level} круг · {props.pactSlots.slots} <Marks total={props.pactSlots.slots} used={data?.pactSlotsUsed} label="Потрачено" /></p>}
+            {!!props.pactSlots?.slots && <p>Магия договора · {props.pactSlots.level} круг · {props.pactSlots.slots} <Marks total={props.pactSlots.slots} used={data?.pactSlotsUsed} label="Потрачено" changeable /></p>}
           </Panel></div>
         </div>
         <Panel title="Заговоры и подготовленные заклинания" className="hs24-spellbook"><SpellTable spells={spells.slice(0, spellRows)} blankRows={spellRows} /></Panel>
@@ -210,7 +226,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
         <Panel title="Предыстория и личность">{note("history")}<Value label="Мировоззрение">{identity.alignment}</Value></Panel>
         <Panel title="Языки">{note("languages")}</Panel>
         <Panel title="Снаряжение" className="hs24-equipment">{note("equipment")}<h3>Магические предметы с настройкой</h3>{note("attuned", "hs24-attuned")}</Panel>
-        <Panel title="Кошелёк"><div className="hs24-wallet">{([["ММ", props.currency.cp], ["СМ", props.currency.sp], ["ЭМ", data?.electrum], ["ЗМ", props.currency.gp], ["ПМ", props.currency.pp]] as const).map(([label, value]) => <Value key={label} label={label}>{value}</Value>)}</div></Panel>
+        <Panel title="Кошелёк"><div className="hs24-wallet">{([["ММ", props.currency.cp], ["СМ", props.currency.sp], ["ЭМ", data?.electrum], ["ЗМ", props.currency.gp], ["ПМ", props.currency.pp]] as const).map(([label, value]) => <Value key={label} label={label} changeable>{value}</Value>)}</div></Panel>
       </aside>
     </section>
     {(overflow.length > 0 || moreSpells || moreAttacks || hasBattleNotes || (props.spellcastingSources?.length ?? 0) > 1) && <section className="hs24-appendix">
@@ -219,7 +235,7 @@ export function CharacterSheet2024(props: PdfCharacterSheetProps) {
       {moreSpells && <Panel title={tableOverflow.spells ? "Полный список заклинаний" : "Продолжение списка заклинаний"}><SpellTable spells={tableOverflow.spells ? spells : spells.slice(spellRows)} /></Panel>}
       {(props.spellcastingSources?.length ?? 0) > 1 && <Panel title="Источники заклинаний">{props.spellcastingSources?.map((source, i) => <p key={i}>{source.name} · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</p>)}</Panel>}
       {hasBattleNotes && <Panel title="Ресурсы и защита">{battleNotes}</Panel>}
-      {notes.filter(entry => overflow.includes(entry.id)).map(entry => <Panel key={entry.id} title={entry.label}>{entry.content}</Panel>)}
+      {notes.filter(entry => overflow.includes(entry.id)).map(entry => <Panel key={entry.id} title={entry.label}>{entry.id === "equipment" || entry.id === "attuned" ? <div data-sheet-changeable="">{entry.content}</div> : entry.content}</Panel>)}
     </section>}
-  </div></div>;
+  </div></div></>;
 }

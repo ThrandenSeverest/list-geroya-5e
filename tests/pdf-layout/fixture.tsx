@@ -1,3 +1,4 @@
+import "../../app/sheet-text-editor.css";
 import React from 'react';
 import { classRules } from '../../app/rules';
 import { CharacterSheet2024 } from '../../app/CharacterSheet2024';

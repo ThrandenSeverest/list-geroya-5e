@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { SheetTextEditor, useSheetTextEditor } from "./SheetTextEditor";
 import { Settings } from 'lucide-react';
 import { fitSheet,optimalSheetSizes,sheetColumns,type SheetPanelId } from './fitSheet';
 import { defaultSheetLayout,normalizeSheetLayout,type SheetGroup } from './sheetLayout';
@@ -335,7 +336,7 @@ function ResourceList({ resources }: { resources: PdfResource[] }) {
     const unit = resource.unit || 1;
     const marks = Math.ceil(resource.max / unit);
     const spentMarks = Math.ceil((resource.max - resource.current) / unit);
-    return <div className="pdf-resource" key={resource.name}>
+    return <div className="pdf-resource" key={resource.name} data-sheet-text-row={resource.name}>
       <div><b>{resource.name}{resource.die ? ` (${resource.die})` : ""}</b>{unit > 1 && <small>1 круг = {unit} хитов</small>}</div>
       {marks <= 24 ? <span className="pdf-resource-marks" aria-label={`Потрачено ${resource.max - resource.current} из ${resource.max}`}>
         {Array.from({ length: marks }, (_, index) => <i className={index < spentMarks ? "spent" : ""} key={index} />)}
@@ -389,8 +390,19 @@ function InventoryPanel({ equipment, currency, mode, onModeChange,size,onSize,st
   </section>;
 }
 
+const editableText = [
+  ".pdf-hero-header :is(h1, small, dt, dd)", ".pdf-ability-row :is(small, strong, span)", ".pdf-skills p",
+  ".pdf-save-row > span", ".pdf-combat-cards :is(strong, span, small)", ".pdf-hp > *", ".pdf-current-hp b",
+  ".pdf-panel h2", ".pdf-panel p", ".pdf-attack-columns > *", ".pdf-spell-numbers > span",
+  ".pdf-resource :is(b, small, .pdf-resource-counter)", ".pdf-currency-grid :is(b, span)",
+  ".pdf-feature-list :is(h3, p, th, td)", ".pdf-slot-strip :is(small, strong)",
+  ".pdf-spell-table :is(header, div) > :is(b, strong, span)", ".pdf-spell-card :is(h3, p)", ".pdf-page-header :is(h2, small)",
+].join(", ");
+
 export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
   const primaryContent = useRef<HTMLDivElement>(null);
+  const editRoot = useRef<HTMLDivElement>(null);
+  const editor = useSheetTextEditor(editRoot, `herolist-ergonomic-text-v1:${props.identity.name || "unnamed"}`, editableText);
   const attackDialog=useRef<HTMLDialogElement>(null);
   const [layout,setLayout]=useState(defaultSheetLayout);
   const [layoutReady,setLayoutReady]=useState(false);
@@ -526,7 +538,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
     window.addEventListener('beforeprint',fit);
     window.addEventListener('afterprint',fit);
     return ()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('resize',schedule);window.removeEventListener('beforeprint',fit);window.removeEventListener('afterprint',fit);};
-  },[props,inventoryMode,layout,fitRevision]);
+  },[props,inventoryMode,layout,fitRevision,editor.edits,editor.hideChangeable]);
 
   const sheetEdition = props.sheetEdition || "2014";
 
@@ -536,7 +548,10 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
 </section>);
   const proficiencyPanel=(<section className="pdf-panel pdf-proficiency-panel" style={panelStyle('skills')} data-sheet-group="skills" data-sheet-panel="proficiencies">          <div className="pdf-proficiencies"><h2>Владения и защита</h2>{proficiencyRows.map(([label, values]) => <p key={label}><b>{label}:</b> {values.join(", ") || "нет"}</p>)}{props.defenses && ([ ["Сопротивления",props.defenses.resistances],["Иммунитеты к урону",props.defenses.immunities],["Уязвимости",props.defenses.vulnerabilities] ] as const).filter(([,values])=>values.length).map(([label,values])=><p key={label}><b>{label}:</b> {values.join(", ")}</p>)}</div></section>);
 
-  return <div className="pdf-sheet-workspace"><div className="pdf-sheet-toolbar"><button type="button" disabled={!layoutReady} aria-pressed={!classic} onClick={()=>{autoFitRequest.current=true;setLayout(current=>({...current,mode:'adaptive'}));setFitRevision(value=>value+1);}}>Оптимальные настройки</button><button type="button" disabled={!layoutReady} aria-pressed={classic} onClick={()=>{autoFitRequest.current=false;setLayout(current=>({...current,mode:'classic'}));}}>Старое расположение</button><span role="status">{fitStatus}</span></div><div className={`pdf-document pdf-document--a4 pdf-document--${sheetEdition}`} data-sheet-edition={sheetEdition}>
+  return <div className="pdf-sheet-workspace"><div className="pdf-sheet-toolbar"><button type="button" disabled={!layoutReady} aria-pressed={!classic} onClick={()=>{autoFitRequest.current=true;setLayout(current=>({...current,mode:'adaptive'}));setFitRevision(value=>value+1);}}>Оптимальные настройки</button><button type="button" disabled={!layoutReady} aria-pressed={classic} onClick={()=>{autoFitRequest.current=false;setLayout(current=>({...current,mode:'classic'}));}}>Старое расположение</button><span role="status">{fitStatus}</span></div>
+    <SheetTextEditor label="Настройки эргономичного листа" {...editor} />
+    <div ref={editRoot} className={`pdf-document pdf-document--a4 pdf-document--${sheetEdition}${editor.hideChangeable ? " sheet-hide-changeable" : ""}`} data-sheet-edition={sheetEdition}
+      onClickCapture={event => editor.select(event.target)} onFocusCapture={event => editor.select(event.target)}>
     <section className="pdf-page pdf-primary-page">
       <div className="pdf-primary-content" ref={primaryContent}>
       <div className="pdf-brand">ЛИСТ ГЕРОЯ <i>5e · правила 2014 · лист {sheetEdition}</i></div>
@@ -570,7 +585,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <div className="pdf-combat-cards"><div><strong>{props.ac}</strong><span>КД</span></div><div><strong>{signed(props.initiative)}</strong><span>Инициатива</span></div><div><strong>{props.speed}</strong><span>Скорость</span>{props.movement && <small>{[props.movement.swim ? `плав. ${props.movement.swim}` : "", props.movement.climb ? `лаз. ${props.movement.climb}` : "", props.movement.fly ? `полёт ${props.movement.fly}` : ""].filter(Boolean).join(" · ")}</small>}</div></div>
           {!!props.initiativeNotes?.length && <p className="pdf-inline-stats">Инициатива: {props.initiativeNotes.join("; ")}</p>}
           <div className="pdf-panel pdf-hp"><small>МАКСИМУМ ХИТОВ</small><strong>{props.hitPoints}</strong><span>Кости хитов: {props.hitDiceLabel || `к${props.hitDie}`} · {props.hitDiceRemaining ?? props.identity.level} / {props.identity.level}</span></div>
-          <div className="pdf-panel pdf-current-hp"><label>ТЕКУЩИЕ ХИТЫ <b>{props.currentHitPoints || ""}</b></label><label>ВРЕМЕННЫЕ ХИТЫ <b>{props.temporaryHitPoints || ""}</b></label></div>
+          <div className="pdf-panel pdf-current-hp"><label>ТЕКУЩИЕ ХИТЫ <b>{props.currentHitPoints ?? ""}</b></label><label>ВРЕМЕННЫЕ ХИТЫ <b>{props.temporaryHitPoints || ""}</b></label></div>
           <div className="pdf-panel pdf-resources"><h2>Ресурсы</h2>
             {primaryResources.length ? <ResourceList resources={primaryResources} /> : <p>Ограниченных ресурсов нет.</p>}
             {resourcePages.length > 0 && <p className="pdf-resource-continuation">Остальные ресурсы — стр. {lifePageNumber + 1}</p>}
@@ -580,7 +595,7 @@ export function PdfCharacterSheet(props: PdfCharacterSheetProps) {
           <SheetPanelTitle title="Оружие и боевые заклинания" group="оружие и заклинания" size={layout.sizes.attacks} onSize={delta=>resize('attacks',delta)}><button type="button" aria-label="Настройки оружия и заклинаний" title="Что отображать на листе" onClick={()=>attackDialog.current?.showModal()}><Settings size={14} aria-hidden="true"/></button></SheetPanelTitle>
           {layout.visible.notice && <p>{automaticAttacksNotice}</p>}
           <div className="pdf-attack-head pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>Название</b>{layout.visible.hit&&<b>Атака / Сл</b>}{layout.visible.damage&&<b>Урон</b>}</div>
-          {props.attacks.filter(attack=>layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map(attack => <article key={attack.id}><div className="pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>{attack.name}</b>{layout.visible.hit&&<span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span>}{layout.visible.damage&&<code>{attack.damageDisplay}</code>}</div>{layout.visible.notes && attack.note && <p>{attack.note}</p>}</article>)}
+          {props.attacks.filter(attack=>layout.visible[attack.kind] && !layout.hiddenAttacks.includes(attack.id)).map(attack => <article key={attack.id} data-sheet-text-row={attack.id}><div className="pdf-attack-columns" style={{'--attack-columns':`minmax(0,1.4fr)${layout.visible.hit?' minmax(0,.7fr)':''}${layout.visible.damage?' minmax(0,.8fr)':''}`} as CSSProperties}><b>{attack.name}</b>{layout.visible.hit&&<span>{attack.attackBonus !== undefined ? signed(attack.attackBonus) : `Сл ${attack.saveDc}`}</span>}{layout.visible.damage&&<code>{attack.damageDisplay}</code>}</div>{layout.visible.notes && attack.note && <p>{attack.note}</p>}</article>)}
           {!props.attacks.some(attack=>layout.visible[attack.kind]&&!layout.hiddenAttacks.includes(attack.id)) && <p>Нет атак для отображения. Выберите их в настройках блока.</p>}
           {layout.visible.spellNumbers && (props.spellcastingSources?.length ? <div className="pdf-spell-numbers">{props.spellcastingSources.map(source => <span key={source.name}><b>{source.name}</b> · {source.ability} · Сл {source.dc} · атака {signed(source.attack)}</span>)}</div> : props.spellAbility && <div className="pdf-spell-numbers"><span>Базовая характеристика <b>{props.spellAbility}</b></span><span>Сл <b>{props.spellSaveDc}</b></span><span>Атака <b>{signed(props.spellAttackBonus || 0)}</b></span></div>)}
           {classic && racialPanel}

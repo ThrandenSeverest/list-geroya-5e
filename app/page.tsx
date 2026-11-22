@@ -3863,7 +3863,7 @@ function Builder({ adventureRoute = false }: { adventureRoute?: boolean } = {}) 
                 </div>
               </div>
               <div className="character-sheet-format-toggle" role="group" aria-label="Формат листа персонажа">
-                <button type="button" aria-pressed={sheetFormat === "modern"} onClick={() => setSheetFormat("modern")}>Современный лист</button>
+                <button type="button" aria-pressed={sheetFormat === "modern"} onClick={() => setSheetFormat("modern")}>Эргономичный лист</button>
                 <button type="button" aria-pressed={sheetFormat === "classic"} onClick={() => setSheetFormat("classic")}>Классический лист D&amp;D</button>
                 <button type="button" aria-pressed={sheetFormat === "2024"} onClick={() => setSheetFormat("2024")}>Лист 2024</button>
               </div>

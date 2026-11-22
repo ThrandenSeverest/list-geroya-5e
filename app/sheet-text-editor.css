@@ -1,0 +1,25 @@
+/* Editor controls are screen-only and never occupy printable page space. */
+.classic-sheet-editor{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 10px;padding:9px;background:#f8f3e9;border:1px solid #b7a88b;color:#24201b;font:13px Arial,sans-serif}
+.classic-sheet-editor button{border:1px solid #a99b80;background:#fff;color:#24201b;padding:5px 8px;border-radius:4px;cursor:pointer;font:inherit}
+.classic-sheet-editor button[aria-pressed="true"]{background:#e8d9bd;border-color:#684c2a}
+.classic-sheet-editor button:disabled{opacity:.5;cursor:default}
+.classic-sheet-editor output{min-width:3em;text-align:center}
+@media screen {
+  .classic-sheet-editor:has(button:first-child[aria-pressed="true"]) {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  [data-sheet-editor-field][tabindex="0"] { cursor: pointer; outline: 1px dotted #8d7460; outline-offset: -1px; }
+  [data-sheet-editor-field][tabindex="0"]:is(:hover, :focus-visible) { outline: 1px solid #9c342a; }
+  [data-sheet-editor-field][data-sheet-editor-selected] { outline: 2px solid #a32323; outline-offset: -2px; }
+}
+:is(.pdf-document, .hs24-document) [data-sheet-editor-field][style*="--sheet-editor-size"] {
+  font-size: var(--sheet-editor-fitted-size, var(--sheet-editor-size)) !important;
+}
+[data-sheet-editor-bold] { font-weight: 700 !important; }
+[data-sheet-editor-hidden],
+.sheet-hide-changeable :is([data-sheet-changeable], .pdf-current-hp b, .pdf-currency-grid b, .pdf-inventory-list, .pdf-inventory-compact, .pdf-resource-counter, .pdf-spell-table.wizard > div > span:last-child) { visibility: hidden !important; }
+.sheet-hide-changeable .hs24-marks[data-sheet-volatile] i.filled { background: transparent; }
+.sheet-hide-changeable .pdf-resource-marks i.spent { background: transparent; box-shadow: none; }
+@media print { .classic-sheet-editor { display: none !important; } }
