@@ -44,5 +44,5 @@ export function diceMotionAt(
 export function diceRenderPixelRatio(width:number,height:number,devicePixelRatio:number) {
   // Supersampled sharp small face lettering, bounded to ~12M pixels to protect phones.
   const budget=Math.sqrt(12_000_000/Math.max(1,width*height));
-  return Math.max(1,Math.min(4,Math.max(1,devicePixelRatio)*1.25,budget));
+  return Math.max(1,Math.min(4,Math.max(2.5,Math.max(1,devicePixelRatio)*1.25),budget));
 }
