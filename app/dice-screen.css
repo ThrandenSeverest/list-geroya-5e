@@ -1,0 +1,11 @@
+.hero-screen-dice{position:fixed;inset:0;width:100vw;height:100dvh;z-index:1010;pointer-events:none;touch-action:none;user-select:none;contain:strict}
+.play-dice-screen-settings{display:grid;gap:10px;padding:12px;border:1px solid var(--line);border-radius:5px;margin-top:12px}
+.play-dice-screen-settings legend{padding:0 7px;color:var(--ivory);font-weight:700}
+.play-dice-screen-settings .dice-color-control{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.play-dice-screen-settings input[type=color]{width:52px;height:38px;padding:2px;cursor:pointer;border:1px solid var(--line);border-radius:4px;background:transparent}
+.play-dice-screen-settings .dice-screen-preview{display:inline-flex;align-items:center;gap:6px}
+.play-dice-screen-settings .dice-screen-preview:before{content:"◆";color:var(--dice-screen-accent,#332c27);font-size:29px;-webkit-text-stroke:1px #d7bf8b}
+.play-dice-screen-settings .dice-screen-preview span{font-size:12px;color:var(--muted)}
+.play-dice-screen-settings select{max-width:250px}
+.play-dice-screen-settings small{color:var(--muted)}
+@media(prefers-reduced-motion:reduce){.hero-screen-dice{opacity:.9}}
