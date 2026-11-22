@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { DiceScreenOverlay, type ScreenRoll } from '../DiceScreenOverlay';
 import { rollDice } from '../adventure';
 
@@ -13,7 +13,7 @@ const choices = [
 ];
 const defaultColor='#633e9f';
 const makeId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+':'+Math.random();
-const styles:Record<string,React.CSSProperties>={
+const styles:Record<string,CSSProperties>={
   page:{minHeight:'100dvh',background:'radial-gradient(ellipse at 45% 28%,#253443,#0c111a 70%)',color:'#fff1dc',padding:'clamp(16px,3.5vw,38px)',fontFamily:'system-ui,Arial,sans-serif'},
   frame:{maxWidth:850,margin:'0 auto',position:'relative',zIndex:1},
   card:{background:'rgba(16,25,34,.94)',border:'1px solid #8c785e',borderRadius:14,padding:'clamp(16px,2.3vw,24px)',boxShadow:'0 16px 40px #0005'},
