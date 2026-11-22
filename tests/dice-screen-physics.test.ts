@@ -104,3 +104,27 @@ test('a fast die crosses more than half the board and stays on screen',()=>{
     assert.ok(die.x>=area.left&&die.x<=area.right);
   }
 });
+
+
+test('a multi-die throw has independent angles, launch delays, speeds and spins',()=>{
+  const width=1280,height=800,radius=screenDieRadius(screenDieSize(width,height));
+  const bodies=Array.from({length:12},(_,i)=>spawnScreenDie({
+    id:'direction-'+i,width,height,radius,index:i,
+    seed:(i*0.381+0.13)%1,
+    seedY:(i*0.271+0.07)%1,
+    seedAngle:(i*0.437+0.05)%1,
+    seedDelay:(i*0.193+0.27)%1,
+    seedSpin:(i*0.317+0.17)%1
+  }));
+  const angles=bodies.map(d=>Math.atan2(d.vy,-d.vx));
+  assert.ok(Math.max(...angles)-Math.min(...angles)>1,'launch directions should vary by > 1 radian');
+  assert.ok(new Set(bodies.map(d=>Math.round(Math.hypot(d.vx,d.vy)/25))).size>=6,'speeds should vary');
+  assert.ok(new Set(bodies.map(d=>Math.round((d.launchDelay||0)*1000/40))).size>=5,'launch times should vary');
+  assert.ok(bodies.some(d=>(d.spinVelocity||0)<0)&&bodies.some(d=>(d.spinVelocity||0)>0),'both spin directions');
+  // Dynamics should not collapse into a shared horizontal velocity.
+  for(let frame=0;frame<85;frame++)stepScreenDice(bodies,width,height,1/90);
+  assert.ok(bodies.filter(d=>d.entered).length>=6);
+  const directions=bodies.filter(d=>d.entered).map(d=>Math.atan2(d.vy,d.vx));
+  assert.ok(Math.max(...directions)-Math.min(...directions)>.4,'directions remain different in flight');
+  assert.ok(bodies.some(d=>Math.abs(d.spin||0)>.2),'dies tumble independently');
+});
