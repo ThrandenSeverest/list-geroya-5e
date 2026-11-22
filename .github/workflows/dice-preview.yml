@@ -44,6 +44,23 @@ jobs:
           find dist/client -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec sed -i             -e 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/dice-preview/assets/_vinext_fonts#g'             -e 's#url(/assets/_vinext_fonts#url(/list-geroya-5e/dice-preview/assets/_vinext_fonts#g' {} +
           touch dist/client/.nojekyll
           echo "dice-preview build ${GITHUB_SHA}" > dist/client/DICE_PREVIEW_BUILD.txt
+      - name: Browser verification of the actual dice animation (mobile and desktop)
+        timeout-minutes: 8
+        run: |
+          npm install --prefix /tmp/herolist-dice-playwright --no-save --package-lock=false playwright@1.51.1
+          /tmp/herolist-dice-playwright/node_modules/.bin/playwright install chromium
+          mkdir -p /tmp/herolist-dice-local/list-geroya-5e
+          ln -s "$GITHUB_WORKSPACE/dist/client" /tmp/herolist-dice-local/list-geroya-5e/dice-preview
+          python3 -m http.server 3997 --bind 127.0.0.1 --directory /tmp/herolist-dice-local >/tmp/herolist-dice-browser.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:3997/list-geroya-5e/dice-preview/dice-lab/ >/dev/null && break
+            sleep 1
+          done
+          HEROLIST_URL=http://127.0.0.1:3997/list-geroya-5e/dice-preview/ \
+            PLAYWRIGHT_MODULE=/tmp/herolist-dice-playwright/node_modules/playwright \
+            node tests/dice-lab-browser.cjs
       - name: Publish only dice-preview subfolder
         run: |
           git fetch origin gh-pages
