@@ -60,7 +60,23 @@ function drawDie(ctx: CanvasRenderingContext2D, die: DrawDie, width: number, hei
   const fade = elapsed > ARRIVE_MS + dieLifetimeMs ? Math.max(0, 1 - (elapsed - ARRIVE_MS - dieLifetimeMs) / FADE_MS) : 1;
   if (fade <= 0) return;
   const mesh = diceMesh(die.sides);
-  if (!mesh) return;
+  if (!mesh) {
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.translate(x, y);
+    ctx.rotate((1 - rotation) * Math.PI * 4);
+    ctx.shadowColor = '#000a'; ctx.shadowBlur = 15;
+    ctx.fillStyle = shade(color, .95); ctx.strokeStyle = '#dfc388'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let k = 0; k < 8; k++) { const angle = k * Math.PI / 4; const px = Math.cos(angle) * size * .75, py = Math.sin(angle) * size * .75; if (!k) ctx.moveTo(px,py); else ctx.lineTo(px,py); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ead7a5'; ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = 'bold ' + Math.max(12, size * .4) + 'px Georgia,serif'; ctx.fillText(String(die.value),0,-3);
+    ctx.font = 'bold ' + Math.max(9, size * .19) + 'px Georgia,serif'; ctx.fillText('d' + die.sides,0,size * .37);
+    ctx.restore();
+    return;
+  }
   ctx.save();
   ctx.globalAlpha = fade;
   ctx.shadowColor = '#000a';
