@@ -41,7 +41,8 @@ const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
 export function spawnScreenDie({id,width,height,radius,seed,seedY,index=0}:DiceSpawn):DiceBody {
   const area=diceSafeArea(width,height,radius);
   const y=area.top+(area.bottom-area.top)*clamp(.18+seedY*.64,0,1);
-  const speed=Math.min(2200,Math.max(680,width*1.47))*(.85+seed*.29);
+  // A visible ~0.2s right-edge entrance, not a near-instant 2200px/s teleport.
+  const speed=Math.min(900,Math.max(515,width*.62))*(.9+seed*.18);
   return {
     id,
     // Offscreen only before entrance. Subsequent motion stays inside the arena.
@@ -105,7 +106,7 @@ function collision(a:DiceBody,b:DiceBody) {
 export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:number):void {
   const seconds=clamp(dt,0,1/24);
   if(seconds<=0||!bodies.length)return;
-  const damping=Math.exp(-3.7*seconds);
+  const damping=Math.exp(-2.5*seconds);
   for(const body of bodies){
     body.x+=body.vx*seconds;
     body.y+=body.vy*seconds;
