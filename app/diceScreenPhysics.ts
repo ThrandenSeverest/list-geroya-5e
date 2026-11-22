@@ -18,6 +18,13 @@ export type DiceBody = {
   spin?: number;
   spinVelocity?: number;
   surfaceDrag?: number;
+  spinDirection?: number;
+  restBlend?: number;
+  // Small vertical motion (screen pixels), not sideways position teleportation.
+  hopHeight?: number;
+  hopVelocity?: number;
+  hopCooldown?: number;
+  roughnessState?: number;
 };
 
 export type DiceSpawn = {
@@ -69,8 +76,13 @@ export function spawnScreenDie({id,width,height,radius,seed,seedY,seedAngle=seed
     launchDelay:Math.min(.53,index*.026+clamp(seedDelay,0,1)*.21),
     age:0,
     spin:(seedSpin-.5)*2.8,
-    spinVelocity:spinSign*(5.5+Math.abs(seedSpin-.5)*11),
-    surfaceDrag:.68+clamp(1-seedDelay,0,1)*.92
+    spinVelocity:spinSign*Math.min(26,speed/radius*(.49+.16*seedSpin)),
+    spinDirection:spinSign,
+    restBlend:0,
+    surfaceDrag:.68+clamp(1-seedDelay,0,1)*.92,
+    hopHeight:0,hopVelocity:0,
+    hopCooldown:.16+seedDelay*.36,
+    roughnessState:Math.floor((seedSpin*.37+seedY*.29+seedAngle*.34)*4294967295)>>>0
   };
 }
 
@@ -123,6 +135,13 @@ function collision(a:DiceBody,b:DiceBody) {
     b.vx-=sideways*tx;b.vy-=sideways*ty;
     a.spinVelocity=(a.spinVelocity||0)-sideways*.018;
     b.spinVelocity=(b.spinVelocity||0)+sideways*.018;
+    if(Math.abs(relative)>105){
+      const kick=Math.min(10,2+Math.abs(relative)*.012);
+      const v=Math.sqrt(2*950*kick);
+      a.hopVelocity=Math.max(a.hopVelocity||0,v);
+      b.hopVelocity=Math.max(b.hopVelocity||0,v*.82);
+      a.restBlend=0;b.restBlend=0;
+    }
     const contact=Math.min(1,Math.abs(relative)/500);
     a.impact=Math.max(a.impact,contact);
     b.impact=Math.max(b.impact,contact);
@@ -145,8 +164,34 @@ export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:n
     const damping=Math.exp(-(body.surfaceDrag??1.05)*seconds);
     body.vx*=damping;
     body.vy*=damping;
+    // Angular speed tracks linear speed / die radius. As the die slows down,
+    // the tumbling follows instead of continuing at a disconnected fixed rate.
+    const speed=Math.hypot(body.vx,body.vy);
+    const angularTarget=(body.spinDirection||1)*Math.min(26,(speed/Math.max(8,body.radius))*.63);
+    const angularEase=1-Math.exp(-7*seconds);
+    body.spinVelocity=(body.spinVelocity||0)+(angularTarget-(body.spinVelocity||0))*angularEase;
+    if(speed<2)body.spinVelocity=(body.spinVelocity||0)*Math.exp(-8*seconds);
     body.spin=(body.spin||0)+(body.spinVelocity||0)*seconds;
-    body.spinVelocity=(body.spinVelocity||0)*Math.exp(-1.5*seconds);
+    // Blend into a stable result face without snapping backward when rolling ends.
+    const restTarget=speed<85?1:0;
+    body.restBlend=clamp((body.restBlend||0)+(restTarget-(body.restBlend||0))*(1-Math.exp(-3.5*seconds)),0,1);
+
+    // Height-only hops over imaginary table irregularities: no X/Y jitter.
+    // The per-die LCG makes motion deterministic and frame-rate independent.
+    body.hopVelocity=(body.hopVelocity||0)-950*seconds;
+    body.hopHeight=Math.max(0,(body.hopHeight||0)+(body.hopVelocity||0)*seconds);
+    if(body.hopHeight===0)body.hopVelocity=0;
+    body.hopCooldown=Math.max(0,(body.hopCooldown||0)-seconds);
+    if(body.entered && speed>145 && body.hopHeight===0 && body.hopCooldown<=0){
+      const next=(Math.imul(body.roughnessState??12345,1664525)+1013904223)>>>0;
+      body.roughnessState=next;
+      const random=next/4294967295;
+      if(random<.72){
+        const height=2+Math.min(6,speed/360)*(0.35+random);
+        body.hopVelocity=Math.sqrt(2*950*height);
+      }
+      body.hopCooldown=.22+random*.43;
+    }
     body.impact*=Math.exp(-7*seconds);
     if(Math.hypot(body.vx,body.vy)<3)body.vx=body.vy=0;
     wallContact(body,width,height);
