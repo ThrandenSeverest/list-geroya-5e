@@ -160,7 +160,7 @@ export function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, on
   function change(next: ExportCharacter | ((prev: ExportCharacter) => ExportCharacter)) {
     try { const value = typeof next === 'function' ? next(c) : next; onChange(commitPlayChange(c, value)); setError(''); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
   }
-  function presentRoll(name: string, r: DiceResult) { const id=playId(); setResult({ name, result:r }); setVisibleRolls(old => [{ id, name, result:r }, ...old].slice(0,3)); if(view.diceAnimation)setScreenRolls(old => [...old,{id,name,result:r}].slice(-8)); }
+  function presentRoll(name: string, r: DiceResult) { const id=playId(); setResult({ name, result:r }); setVisibleRolls(old => [{ id, name, result:r }, ...old].slice(0,3)); if(view.diceAnimation)setScreenRolls(old => [...old,{id,name,result:r}].slice(-32)); }
   function rolled(name: string, fn: () => DiceResult) { try { const r = fn(); presentRoll(name, r); change(logPlay(c, name, r)); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }
   function beginRoll(name: string, bonus: number) { setRollDraft({ name, bonus }); setRollAdjustment(0); setExtraDice(''); setDraftMode(mode); }
   function d20(name: string, bonus: number) { rolled(name, () => rollD20(bonus, mode)); }
