@@ -3,10 +3,11 @@ import test from 'node:test';
 import { diceSafeArea } from '../app/diceScreenMotion';
 import { spawnScreenDie, screenDieRadius, screenDieSize, stepScreenDice, type DiceBody } from '../app/diceScreenPhysics';
 
-test('dice are substantially smaller than old default, with visible margins',()=>{
+test('dice are visible without returning to oversized original scale',()=>{
   for(const [w,h] of [[320,568],[390,650],[430,930],[1280,720],[1920,1080]]){
     const size=screenDieSize(w,h), radius=screenDieRadius(size);
-    assert.ok(size<=29,'too large at '+w+'x'+h+': '+size);
+    assert.ok(size<=45,'too large at '+w+'x'+h+': '+size);
+    assert.ok(size>=Math.min(32,w*.085)-.01,'too small at '+w+'x'+h+': '+size);
     assert.ok(size>=12);
     const area=diceSafeArea(w,h,radius);
     assert.ok(area.left>=radius && area.right<=w-radius);
@@ -85,5 +86,21 @@ test('the right-edge entrance is visible for more than one animation frame',()=>
     assert.equal(die.entered,false,'entry should still be visible after 100ms');
     for(let i=0;i<90;i++)stepScreenDice([die],width,height,1/90);
     assert.equal(die.entered,true,'die should then visibly enter the board');
+  }
+});
+
+
+test('a fast die crosses more than half the board and stays on screen',()=>{
+  for(const [width,height] of [[390,740],[1280,800]]){
+    const radius=screenDieRadius(screenDieSize(width,height));
+    const die=spawnScreenDie({id:'long-flight',width,height,radius,seed:.65,seedY:.5});
+    let minX=Infinity;
+    for(let frame=0;frame<330;frame++){
+      stepScreenDice([die],width,height,1/90);
+      if(die.entered)minX=Math.min(minX,die.x);
+    }
+    assert.ok(minX<width*.47,'die did not travel far enough: '+minX+' / '+width);
+    const area=diceSafeArea(width,height,radius);
+    assert.ok(die.x>=area.left&&die.x<=area.right);
   }
 });
