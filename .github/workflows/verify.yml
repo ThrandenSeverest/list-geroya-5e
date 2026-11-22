@@ -113,3 +113,52 @@ jobs:
           # checks the complete canonical runtime inventory, including asset
           # references, without treating random chunk filenames as changes.
           python3 scripts/normalize-dist-for-compare.py /tmp/herolist-committed-dist dist
+
+  # Isolated experimental preview, never publish over the main Pages root.
+  dice_preview:
+    if: github.event_name == 'pull_request' && github.head_ref == 'test/screen-dice-animation-2026-11-22'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check artwork
+        run: bash scripts/prepare-classic-sheet-assets.sh
+      - name: Compile independent Pages preview
+        run: npm run build
+        env:
+          HEROLIST_PAGES: '1'
+          NEXT_PUBLIC_BASE_PATH: /list-geroya-5e/dice-preview
+      - name: Fix font URLs and prepare preview
+        run: |
+          find dist/client -type f \( -name '*.html' -o -name '*.css' -o -name '*.js' \) -exec sed -i             -e 's#href="/assets/_vinext_fonts#href="/list-geroya-5e/dice-preview/assets/_vinext_fonts#g'             -e 's#url(/assets/_vinext_fonts#url(/list-geroya-5e/dice-preview/assets/_vinext_fonts#g' {} +
+          touch dist/client/.nojekyll
+          echo "dice-preview build ${GITHUB_SHA}" > dist/client/DICE_PREVIEW_BUILD.txt
+      - name: Publish only dice-preview subfolder
+        run: |
+          git fetch origin gh-pages
+          git worktree add /tmp/herolist-preview-pages origin/gh-pages
+          mkdir -p /tmp/herolist-preview-pages/dice-preview
+          rsync -a --delete --exclude=.git dist/client/ /tmp/herolist-preview-pages/dice-preview/
+          cd /tmp/herolist-preview-pages
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dice-preview/
+          git diff --cached --quiet || git commit -m "Publish dice-preview ${GITHUB_SHA}"
+          git push origin HEAD:gh-pages
+      - name: Verify preview URL
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --location --silent --show-error --max-time 15               "https://thrandenseverest.github.io/list-geroya-5e/dice-preview/DICE_PREVIEW_BUILD.txt?attempt=${attempt}"               | grep -q "${GITHUB_SHA}"; then
+              echo "Preview live: https://thrandenseverest.github.io/list-geroya-5e/dice-preview/"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Preview not yet propagated" >&2
+          exit 1
