@@ -124,6 +124,23 @@ async function saved(page) {
           assert.ok(dimensions.every(([w, h, overflow]) => Math.abs(w / h - 210 / 297) < .002 && overflow <= 1),
             'Both 2024 print pages must retain the A4 bounds');
           await page.emulateMedia({ media: 'screen' });
+          await page.getByRole('button', { name: 'Классический лист D&D', exact: true }).click();
+          const hitPoints = page.locator('.classic-sheet-hp--changeable').first();
+          const maxHitPoints = page.locator('.classic-sheet-hp:not(.classic-sheet-hp--changeable)');
+          assert.equal(await hitPoints.textContent(), '30');
+          await page.getByRole('button', { name: 'Скрыть изменяемую информацию', exact: true }).click();
+          assert.equal(await hitPoints.isVisible(), false);
+          assert.equal(await maxHitPoints.isVisible(), true);
+          await page.getByRole('button', { name: 'Показать изменяемую информацию', exact: true }).click();
+          await page.getByRole('button', { name: 'Редактировать лист', exact: true }).click();
+          const nameField = page.locator('.classic-sheet-identity > .classic-sheet-field .classic-sheet-field-value');
+          await nameField.click();
+          assert.equal(await nameField.evaluate(field => field.classList.contains('classic-edited-selected')), true);
+          await page.getByRole('button', { name: 'Уменьшить текст', exact: true }).click();
+          assert.equal(await page.locator('.classic-sheet-editor output').textContent(), '90%');
+          await hitPoints.focus();
+          assert.equal(await hitPoints.evaluate(field => field.classList.contains('classic-edited-selected')), true);
+          await page.getByRole('button', { name: 'Сбросить правки', exact: true }).click();
           await page.getByRole('button', { name: 'Современный лист', exact: true }).click();
         }
         const editor=page.locator('.desktop-hp-roll-editor .hp-roll-editor');

@@ -135,6 +135,8 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       element.dataset.classicEdit = id;
       element.classList.toggle('classic-edited-hidden', Boolean(edit?.hidden));
       element.classList.toggle('classic-edited-selected', editMode && selected === id);
+      if (editMode && !edit?.hidden && element.textContent?.trim()) element.tabIndex = 0;
+      else element.removeAttribute("tabindex");
       element.style.setProperty('font-weight', edit?.bold ? '700' : '', 'important');
       if (Number.isFinite(edit?.scale)) scales.set(element, Math.max(60, Math.min(180, edit.scale)) / 100);
     });
@@ -170,6 +172,19 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       window.removeEventListener('afterprint', fit);
     };
   }, [props, edits, editMode, selected]);
+  function selectEditable(target: EventTarget | null, point?: { x: number; y: number }) {
+    const sheet = root.current;
+    if (!editMode || !sheet) return;
+    const candidates = target instanceof Element ? [target] : [];
+    if (point) candidates.push(...document.elementsFromPoint(point.x, point.y));
+    for (const candidate of candidates) {
+      const field = candidate.closest<HTMLElement>('[data-classic-edit][tabindex="0"]');
+      if (!field || !sheet.contains(field)) continue;
+      setSelected(field.dataset.classicEdit ?? null);
+      return;
+    }
+  }
+
   const skills = originalSkillOrder.map(name=>({name,...skillKeys[name]}));
   const spells = Array.from(new Map(props.spells.map(spell => [spell.id, spell])).values());
   const levelSpells = Array.from({ length: 10 }, (_, level) => spells.filter(spell => spell.level === level).sort((a, b) => a.name.localeCompare(b.name, "ru")));
@@ -199,7 +214,8 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       </>}
     </div>
   <div ref={root} className={"classic-sheet-document classic-sheet--template"+(editMode?" classic-sheet--editing":"")+(hideChangeable?" classic-sheet--hide-changeable":"")}
-    onClickCapture={event=>{if(!editMode)return;const target=(event.target as HTMLElement).closest<HTMLElement>('[data-classic-edit]');if(target&&root.current?.contains(target))setSelected(target.dataset.classicEdit||null)}}
+    onClickCapture={event => selectEditable(event.target, { x: event.clientX, y: event.clientY })}
+    onFocusCapture={event => selectEditable(event.target)}
     aria-label="Классический лист персонажа D&D 5e">
 
     <section className="classic-sheet-page" style={{backgroundImage:`url("${assetUrl("classic-sheet/page-1.jpg")}")`}}>
@@ -262,8 +278,8 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
             <Panel title="Скорость"><strong>{props.speed}</strong></Panel>
           </div>
           <Panel title="Максимум хитов"><strong className="classic-sheet-hp">{props.hitPoints}</strong></Panel>
-          <Panel title="Текущие хиты"><strong className="classic-sheet-hp">{props.currentHitPoints ?? props.hitPoints}</strong></Panel>
-          <Panel title="Временные хиты"><strong className="classic-sheet-hp">{props.temporaryHitPoints||""}</strong></Panel>
+          <Panel title="Текущие хиты"><strong className="classic-sheet-hp classic-sheet-hp--changeable">{props.currentHitPoints ?? props.hitPoints}</strong></Panel>
+          <Panel title="Временные хиты"><strong className="classic-sheet-hp classic-sheet-hp--changeable">{props.temporaryHitPoints||""}</strong></Panel>
           <div className="classic-sheet-two">
             <Panel title="Кости здоровья"><p>{props.hitDiceLabel || (props.identity.level + "к" + props.hitDie)}</p><p>{props.hitDiceRemaining ?? props.identity.level}</p></Panel>
             <Panel title="Испытания против смерти"></Panel>

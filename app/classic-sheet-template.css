@@ -354,10 +354,24 @@
 .classic-sheet-editor button[aria-pressed="true"]{background:#e8d9bd;border-color:#684c2a}
 .classic-sheet-editor button:disabled{opacity:.5;cursor:default}
 .classic-sheet-editor output{min-width:3em;text-align:center}
-.classic-sheet--template.classic-sheet--editing [data-classic-edit]:not(.classic-edited-hidden){cursor:pointer}
-.classic-sheet--template.classic-sheet--editing .classic-edited-selected{outline:1px dashed #a32323;outline-offset:1px}
+@media screen {
+  .classic-sheet-editor:has(button:first-child[aria-pressed="true"]) {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .classic-sheet--template.classic-sheet--editing [data-classic-edit][tabindex="0"] {
+    cursor: pointer;
+    outline: 1px dotted #8d7460;
+    outline-offset: -1px;
+  }
+  .classic-sheet--template.classic-sheet--editing [data-classic-edit][tabindex="0"]:is(:hover, :focus-visible) {
+    outline: 1px solid #9c342a;
+  }
+}
+.classic-sheet--template.classic-sheet--editing [data-classic-edit].classic-edited-selected{outline:2px solid #a32323;outline-offset:-2px}
 .classic-sheet--template .classic-edited-hidden{display:none!important}
-.classic-sheet--template.classic-sheet--hide-changeable :is(.classic-equipment-text,.classic-sheet-coins,.classic-spell-mark,.classic-sheet-page:nth-child(2) .classic-sheet-treasure p){visibility:hidden!important}
+.classic-sheet--template.classic-sheet--hide-changeable :is(.classic-sheet-hp--changeable,.classic-equipment-text,.classic-sheet-coins,.classic-spell-mark,.classic-sheet-page:nth-child(2) .classic-sheet-treasure p){visibility:hidden!important}
 @media print{.classic-sheet-editor{display:none!important}.classic-sheet--template .classic-edited-selected{outline:0!important}}
 
 /* Place drawn dots at the center of the artwork's empty circles. */
