@@ -26,14 +26,14 @@ export type DiceSpawn = {
 
 export function screenDieSize(width: number, height: number): number {
   const mobile = width < 700;
-  const preferred = mobile ? 24 : 29;
+  const preferred = mobile ? 36 : 45;
   // The old default scaled to 88 CSS units (up to ~200 px in apparent diameter).
-  return Math.max(12, Math.min(preferred, width * .061, height * .063));
+  return Math.max(17, Math.min(preferred, width * .085, height * .088));
 }
 
 export function screenDieRadius(size: number): number {
   // Covers the perspective-projected circumsphere and thin outer strokes.
-  return size * 1.46 + 3;
+  return size * 1.27 + 2;
 }
 
 const clamp=(n:number,a:number,b:number)=>Math.max(a,Math.min(b,n));
@@ -42,14 +42,14 @@ export function spawnScreenDie({id,width,height,radius,seed,seedY,index=0}:DiceS
   const area=diceSafeArea(width,height,radius);
   const y=area.top+(area.bottom-area.top)*clamp(.18+seedY*.64,0,1);
   // A visible ~0.2s right-edge entrance, not a near-instant 2200px/s teleport.
-  const speed=Math.min(900,Math.max(515,width*.62))*(.9+seed*.18);
+  const speed=Math.min(1750,Math.max(850,width*1.32))*(.83+seed*.34);
   return {
     id,
     // Offscreen only before entrance. Subsequent motion stays inside the arena.
-    x:width+radius+5+Math.min(index,6)*6,
+    x:width+radius+13+Math.min(index,14)*12,
     y,
     vx:-speed,
-    vy:(seedY-.5)*(width<700?200:295),
+    vy:(seedY-.5)*(width<700?280:440),
     radius,
     entered:false,
     impact:0
@@ -93,7 +93,7 @@ function collision(a:DiceBody,b:DiceBody) {
 
   const relative=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
   if(relative<0){
-    const impulse=-(1+.46)*relative*.5;
+    const impulse=-(1+.54)*relative*.5;
     a.vx-=impulse*nx;a.vy-=impulse*ny;
     b.vx+=impulse*nx;b.vy+=impulse*ny;
     const contact=Math.min(1,Math.abs(relative)/500);
@@ -106,7 +106,9 @@ function collision(a:DiceBody,b:DiceBody) {
 export function stepScreenDice(bodies:DiceBody[],width:number,height:number,dt:number):void {
   const seconds=clamp(dt,0,1/24);
   if(seconds<=0||!bodies.length)return;
-  const damping=Math.exp(-2.5*seconds);
+  // Lower surface drag preserves momentum over much more of the screen.
+  // Collisions and wall rebounds still dissipate energy independently.
+  const damping=Math.exp(-1.05*seconds);
   for(const body of bodies){
     body.x+=body.vx*seconds;
     body.y+=body.vy*seconds;
