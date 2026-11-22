@@ -70,30 +70,24 @@ function icosahedron(): Vec3[] {
   ];
 }
 
+/** Ten kite faces, with coplanar vertices. */
 function trapezohedron(): DiceMesh {
-  const vertices: Vec3[] = [[0, 0, 1.55], [0, 0, -1.55]];
-  const count = 5;
-  for (let i = 0; i < count; i++) {
-    const angle = 2 * Math.PI * i / count;
-    vertices.push([Math.cos(angle), Math.sin(angle), 0.27]);
+  const n=5, h=1.38;
+  const a=h*(1-Math.cos(Math.PI/n))/(1+Math.cos(Math.PI/n));
+  const vertices:Vec3[]=[[0,0,h],[0,0,-h]];
+  for(let i=0;i<n;i++){const t=i*2*Math.PI/n;vertices.push([Math.cos(t),Math.sin(t),a]);}
+  for(let i=0;i<n;i++){const t=(i+.5)*2*Math.PI/n;vertices.push([Math.cos(t),Math.sin(t),-a]);}
+  const faces:DiceMesh['faces']=[];
+  for(let i=0;i<n;i++)for(const ids of [
+    [0,2+i,7+i,2+(i+1)%n],
+    [1,7+i,2+(i+1)%n,7+(i+1)%n]
+  ]){
+    const center=average(ids.map(j=>vertices[j]));
+    let normal=unit(cross(sub(vertices[ids[1]],vertices[ids[0]]),sub(vertices[ids[2]],vertices[ids[0]])));
+    if(dot(normal,center)<0)normal=[-normal[0],-normal[1],-normal[2]];
+    faces.push({vertices:ids,normal});
   }
-  for (let i = 0; i < count; i++) {
-    const angle = 2 * Math.PI * (i + 0.5) / count;
-    vertices.push([Math.cos(angle), Math.sin(angle), -0.27]);
-  }
-  const faces: DiceMesh['faces'] = [];
-  for (let i = 0; i < count; i++) {
-    for (const ids of [
-      [0, 2 + i, 7 + i, 2 + (i + 1) % count],
-      [1, 7 + i, 2 + (i + 1) % count, 7 + (i + 1) % count]
-    ]) {
-      const center = average(ids.map(n => vertices[n]));
-      let normal = unit(cross(sub(vertices[ids[1]], vertices[ids[0]]), sub(vertices[ids[2]], vertices[ids[0]])));
-      if (dot(normal, center) < 0) normal = [-normal[0], -normal[1], -normal[2]];
-      faces.push({ vertices: ids, normal });
-    }
-  }
-  return { vertices, faces };
+  return {vertices,faces};
 }
 
 const ico = hull(icosahedron());
