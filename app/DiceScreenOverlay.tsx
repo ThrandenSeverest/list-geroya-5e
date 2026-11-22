@@ -16,7 +16,7 @@ type MovingDie = {
 };
 type Point2 = [number, number];
 
-const FLIGHT_MS = 1320;
+const FLIGHT_MS = 1900;
 const FADE_MS = 350;
 const clamp=(n:number,a=0,b=1)=>Math.min(b,Math.max(a,n));
 const hash=(text:string)=>{
@@ -143,7 +143,8 @@ function renderDie(
     ctx.fill();
     ctx.restore();
   }
-  const spin=Math.pow(1-t,2)+die.body.impact*.09;
+  const momentum=clamp(Math.hypot(die.body.vx,die.body.vy)/950);
+  const spin=Math.pow(1-t,2)+momentum*.04+die.body.impact*.08;
   const twist=die.seed*Math.PI*2;
   if(!mesh){
     // A nonstandard user-defined die never gets silently replaced by a d20.
@@ -168,8 +169,8 @@ function renderDie(
     ctx.restore();ctx.restore();return;
   }
   const selected=mesh.faces[die.faceIndex%mesh.faces.length];
-  const ax=.08+(die.seed-.5)*.24+spin*(Math.PI*4.2+die.seed*4);
-  const ay=-.09+(die.seed-.5)*.20+spin*(Math.PI*4.8+die.seed*5);
+  const ax=.31+(die.seed-.5)*.32+spin*(Math.PI*4.2+die.seed*4);
+  const ay=-.30+(hash(die.id+'/tilt')-.5)*.34+spin*(Math.PI*4.8+die.seed*5);
   const az=twist+spin*(Math.PI*4.3);
   const transform=(v:Vec3)=>rotate(alignFace(v,selected.normal),ax,ay,az);
   const transformed=mesh.vertices.map(transform);
@@ -247,6 +248,17 @@ export function DiceScreenOverlay({
           {sides:10,value:die.value===100?0:die.value%10,numbering:'units' as Numbering}
         ]:[{...die,numbering:'regular' as Numbering}]
       );
+      // Repeated test throws must not turn the screen into a packed, regular lattice.
+      // Keep every die from the *current* formula; retire only oldest previous
+      // throws when the display becomes too crowded to collide naturally.
+      const maxVisible=window.innerWidth<700?24:36;
+      while(dice.current.size+all.length>maxVisible) {
+        const oldest=[...started.current.keys()].find(id=>id!==roll.id);
+        if(!oldest)break;
+        started.current.delete(oldest);
+        for(const [key,die] of dice.current)if(die.rollId===oldest)dice.current.delete(key);
+        props.current.onExpire(oldest);
+      }
       for(let i=0;i<all.length;i++){
         const id=roll.id+':'+i,seed=hash(id);
         const die=all[i];
@@ -309,7 +321,7 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='right-entry-physics-v3';
+          node.dataset.diceEngine='long-throw-collisions-v4';
           if(window.location.pathname.includes('/dice-lab')){
             node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
               id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
