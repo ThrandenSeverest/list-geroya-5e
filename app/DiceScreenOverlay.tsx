@@ -131,7 +131,10 @@ function renderDie(
   const elapsed=now-die.born;
   if(elapsed>=FLIGHT_MS+hold+FADE_MS)return;
   const fade=clamp((FLIGHT_MS+hold+FADE_MS-elapsed)/FADE_MS);
-  const {x,y}=die.body;
+  const {x,y:groundY}=die.body;
+  // The underlying collision position stays fixed; only the die lifts briefly.
+  const hop=Math.min(14,Math.max(0,die.body.hopHeight||0));
+  const y=groundY-hop;
   const t=clamp(elapsed/FLIGHT_MS);
   const mesh=diceMesh(die.sides);
   ctx.save();
@@ -140,24 +143,25 @@ function renderDie(
   // Contact shadow is on the ground, never on the digits.
   if(landed>0){
     ctx.save();
-    ctx.globalAlpha=fade*.22*landed;
+    ctx.globalAlpha=fade*.22*landed*(1-hop/24);
     ctx.fillStyle='#000';
     ctx.beginPath();
-    ctx.ellipse(x,y+die.size*.72,die.size*.67,die.size*.18,0,0,Math.PI*2);
+    ctx.ellipse(x,groundY+die.size*.72,die.size*.67+hop*.14,die.size*.18+hop*.04,0,0,Math.PI*2);
     ctx.fill();
     ctx.restore();
   }
-  const momentum=clamp(Math.hypot(die.body.vx,die.body.vy)/950);
-  // Each die tumbles according to its OWN angular velocity, wall and die impacts,
-  // rather than a shared time-based rotation curve.
-  const settle=clamp(((die.body.age||0)-.70)/1.05)*clamp(1-momentum*.95);
-  const tumble=(die.body.spin||0)*(1-settle);
+  // Spin is integrated by physics using each die's actual travel speed.
+  // Trig wrapping preserves continuity through full rotations. Only the small
+  // remaining fractional angle blends into the chosen final result face.
+  const settle=clamp(die.body.restBlend||0);
+  const tumble=die.body.spin||0;
+  const wrapAngle=(angle:number)=>Math.atan2(Math.sin(angle),Math.cos(angle));
   const twist=die.seed*Math.PI*2;
   if(!mesh){
     // A nonstandard user-defined die never gets silently replaced by a d20.
     const points:Point2=[];
     for(let i=0;i<8;i++){
-      const angle=2*Math.PI*i/8+twist+tumble*.9;
+      const angle=2*Math.PI*i/8+twist+wrapAngle(tumble*.9)*(1-settle);
       points.push([x+Math.cos(angle)*die.size*.94,y+Math.sin(angle)*die.size*.94]);
     }
     polygon(ctx,points);
@@ -167,7 +171,7 @@ function renderDie(
     gradient.addColorStop(1,shade(color,.68));
     ctx.fillStyle=gradient;ctx.fill();
     ctx.strokeStyle='#e5c68b';ctx.lineWidth=2;ctx.stroke();
-    ctx.save();ctx.translate(x,y);ctx.rotate(twist+tumble*.9);
+    ctx.save();ctx.translate(x,y);ctx.rotate(twist+wrapAngle(tumble*.9)*(1-settle));
     ctx.fillStyle='#fff0c8';ctx.font='700 '+Math.round(die.size*.51)+'px Georgia,serif';
     ctx.textAlign='center';ctx.textBaseline='middle';
     ctx.fillText(String(die.value),0,-die.size*.09,die.size*1.38);
@@ -176,9 +180,9 @@ function renderDie(
     ctx.restore();ctx.restore();return;
   }
   const selected=mesh.faces[die.faceIndex%mesh.faces.length];
-  const ax=.10+(die.seed-.5)*.30+Math.sin(tumble*.72+die.seed)*1.28*(1-settle);
-  const ay=-.10+(hash(die.id+'/tilt')-.5)*.32+Math.cos(tumble*1.02+die.seed)*1.20*(1-settle);
-  const az=twist+tumble*.62;
+  const ax=.10+(die.seed-.5)*.30+wrapAngle(tumble*.72)*(1-settle);
+  const ay=-.10+(hash(die.id+'/tilt')-.5)*.32+wrapAngle(tumble*1.02)*(1-settle);
+  const az=twist+wrapAngle(tumble*.62)*(1-settle);
   const transform=(v:Vec3)=>rotate(alignFace(v,selected.normal),ax,ay,az);
   const transformed=mesh.vertices.map(transform);
   const maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v)))||1;
@@ -333,12 +337,14 @@ export function DiceScreenOverlay({
           ctx.imageSmoothingEnabled=true;
           ctx.imageSmoothingQuality='high';
           ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='independent-random-trajectories-v5';
+          node.dataset.diceEngine='speed-linked-tumble-hops-v6';
           if(window.location.pathname.includes('/dice-lab')){
             node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
               id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
               entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy,
-              launchDelay:d.body.launchDelay||0,spin:d.body.spin||0,age:d.body.age||0
+              launchDelay:d.body.launchDelay||0,spin:d.body.spin||0,
+              spinVelocity:d.body.spinVelocity||0,hopHeight:d.body.hopHeight||0,
+              age:d.body.age||0
             })));
           }
           if(opts.enabled){
