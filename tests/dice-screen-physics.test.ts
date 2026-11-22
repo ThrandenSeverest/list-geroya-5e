@@ -75,3 +75,15 @@ test('many simultaneous right-side dice remain on the board and never stack',()=
       'overlap '+a.id+'/'+b.id+': '+dist.toFixed(2)+' vs '+(a.radius+b.radius).toFixed(2));
   }
 });
+
+test('the right-edge entrance is visible for more than one animation frame',()=>{
+  for(const [width,height] of [[390,740],[1280,800]]){
+    const radius=screenDieRadius(screenDieSize(width,height));
+    const die=spawnScreenDie({id:'slow-in',width,height,radius,seed:.5,seedY:.5});
+    // Nine 90 Hz frames = 100 ms, not enough to pass across the entire entry gap.
+    for(let i=0;i<9;i++)stepScreenDice([die],width,height,1/90);
+    assert.equal(die.entered,false,'entry should still be visible after 100ms');
+    for(let i=0;i<90;i++)stepScreenDice([die],width,height,1/90);
+    assert.equal(die.entered,true,'die should then visibly enter the board');
+  }
+});
