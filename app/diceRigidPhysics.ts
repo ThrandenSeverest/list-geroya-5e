@@ -2,7 +2,7 @@ import { Body, Box, ContactMaterial, ConvexPolyhedron, GSSolver, Material, Plane
 import { diceMesh, type DiceMesh } from './diceScreenMath';
 
 export const DICE_UNIT=40;
-export type PhysicalDie={id:string;sides:number;numbering:'regular'|'tens'|'units';body:Body;mesh:DiceMesh;size:number;delay:number;launched:boolean;entered:boolean;still:number;settled:boolean;value?:number;age:number;lastImpact:number;cocked:number;localVertices:Vec3[]};
+export type PhysicalDie={id:string;sides:number;numbering:'regular'|'tens'|'units';body:Body;mesh:DiceMesh;size:number;delay:number;launched:boolean;entered:boolean;still:number;settled:boolean;value?:number;age:number;lastImpact:number;cocked:number;localVertices:Vec3[];random:()=>number;rerolls:number};
 const dot=(a:number[],b:number[])=>a.reduce((sum,n,i)=>sum+n*b[i],0);
 /** Fixed labels are assigned to mesh faces once; opposite faces add to N+1. */
 export function faceValues(sides:number):number[]{
@@ -56,22 +56,31 @@ export class DiceTable {
   b.quaternion.set(Math.sqrt(1-a)*Math.sin(b1),Math.sqrt(1-a)*Math.cos(b1),Math.sqrt(a)*Math.sin(c),Math.sqrt(a)*Math.cos(c));
   b.velocity.set(-Math.cos(angle)*speed,Math.sin(angle)*speed,-.8);
   b.angularVelocity.set(-b.velocity.y/(radius*.8),b.velocity.x/(radius*.8),(random()-.5)*5);
-  const die:PhysicalDie={id,sides,numbering,body:b,mesh,size,delay:random()*.14+index*.025,launched:false,entered:false,still:0,settled:false,age:0,lastImpact:0,cocked:0,localVertices};
+  const die:PhysicalDie={id,sides,numbering,body:b,mesh,size,delay:random()*.14+index*.025,launched:false,entered:false,still:0,settled:false,age:0,lastImpact:0,cocked:0,localVertices,random,rerolls:0};
   b.addEventListener('collide',(event:{contact:{getImpactVelocityAlongNormal:()=>number}})=>{const impact=Math.abs(event.contact.getImpactVelocityAlongNormal());if(impact>2.5)die.lastImpact=Math.max(die.lastImpact,impact);});
   this.dice.push(die);return die;
  }
  remove(id:string){const d=this.dice.find(x=>x.id===id);if(d?.launched)this.world.removeBody(d.body);this.dice=this.dice.filter(x=>x.id!==id);}
  step(dt=1/120){
   this.time+=dt;
-  for(const d of this.dice){if(!d.launched){d.delay-=dt;if(d.delay<=0){this.world.addBody(d.body);d.launched=true;}}}
+  for(const d of this.dice){if(!d.launched){d.delay-=dt;if(d.delay<=0&&!this.dice.some(other=>other!==d&&other.launched&&other.body.position.distanceTo(d.body.position)<(other.size+d.size)/DICE_UNIT*1.05)){this.world.addBody(d.body);d.launched=true;}}}
   this.world.step(dt);
   for(const d of this.dice){
    if(!d.launched)continue;if(d.settled){if(d.body.sleepState===Body.SLEEPING||d.body.type===Body.STATIC)continue;d.settled=false;d.value=undefined;d.still=0;}d.age+=dt;
    const b=d.body,r=d.size/DICE_UNIT;
-   if(!d.entered&&b.position.x<this.width/DICE_UNIT-r*.6){d.entered=true;b.collisionFilterMask=15;}
-   if(!d.entered&&d.age>1&&b.velocity.x>-.5)b.applyImpulse(new Vec3(-3,0,0));
+   if(!d.entered&&b.position.x+Math.max(...d.localVertices.map(v=>b.quaternion.vmult(v).x))<this.width/DICE_UNIT-.02){d.entered=true;b.collisionFilterMask=15;}
+   if(!d.entered){
+    if(b.velocity.x>-6){b.velocity.x=-6;b.angularVelocity.y=-6/(r*.8);}
+    if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
+    if(b.position.y>this.height/DICE_UNIT-r){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.17;}
+   }
    // Resizing or a very hard impact must not strand a die beyond the walls.
-   if(d.entered){b.position.x=Math.max(r,Math.min(this.width/DICE_UNIT-r,b.position.x));b.position.y=Math.max(r,Math.min(this.height/DICE_UNIT-r,b.position.y));}
+   if(d.entered){
+    if(b.position.x<0){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.17;}
+    if(b.position.x>this.width/DICE_UNIT){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.17;}
+    if(b.position.y<0){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
+    if(b.position.y>this.height/DICE_UNIT){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.17;}
+   }
    const flat=bottomFace(d),slow=b.velocity.length()<.18&&b.angularVelocity.length()<.22;
    const floorHeight=Math.min(...d.localVertices.map(v=>b.quaternion.vmult(v).z+b.position.z));
    const supported=flat.alignment>.9995&&Math.abs(floorHeight)<.035;
@@ -79,16 +88,18 @@ export class DiceTable {
    if(d.entered&&supported&&d.still>.35){
     d.settled=true;d.value=readPhysicalDie(d);b.velocity.setZero();b.angularVelocity.setZero();b.sleep();
    }
+   // A cocked die is invalid, as on a real table. Re-throw it; never invent a face.
    d.cocked=!supported&&b.velocity.length()<.7&&b.angularVelocity.length()<1?d.cocked+dt:0;
-   if(!d.settled&&d.cocked>1){
-    // Roll a cocked die away from neighbours or a wall, retaining its labels.
-    let dx=0,dy=0;
-    for(const other of this.dice)if(other!==d&&other.launched){const x=b.position.x-other.body.position.x,y=b.position.y-other.body.position.y,dist=Math.hypot(x,y);if(dist<r*3){dx+=x/(dist*dist+.1);dy+=y/(dist*dist+.1);}}
-    dx+=1/(b.position.x+.1)-1/(this.width/DICE_UNIT-b.position.x+.1);
-    dy+=1/(b.position.y+.1)-1/(this.height/DICE_UNIT-b.position.y+.1);
-    const length=Math.hypot(dx,dy);if(length<.01){dx=Math.sin(d.age*3.7);dy=Math.cos(d.age*2.1);}else{dx/=length;dy/=length;}
-    b.applyImpulse(new Vec3(dx*5,dy*5,1.5));b.angularVelocity.set(-dy*6/r,dx*6/r,0);d.cocked=0;d.still=0;
+   if(!d.settled&&(d.cocked>2||d.age>10)){
+    this.world.removeBody(b);d.launched=false;d.entered=false;d.delay=.2;d.age=0;d.still=0;d.cocked=0;d.rerolls++;
+    const random=d.random,angle=(random()-.5)*1.35,speed=16+random()*10;
+    b.position.set(this.width/DICE_UNIT+r+.3,r+.2+(this.height/DICE_UNIT-2*r-.4)*random(),r*1.3);
+    const a=random(),u=random()*Math.PI*2,v=random()*Math.PI*2;
+    b.quaternion.set(Math.sqrt(1-a)*Math.sin(u),Math.sqrt(1-a)*Math.cos(u),Math.sqrt(a)*Math.sin(v),Math.sqrt(a)*Math.cos(v));
+    b.velocity.set(-Math.cos(angle)*speed,Math.sin(angle)*speed,-.8);b.angularVelocity.set(-b.velocity.y/(r*.8),b.velocity.x/(r*.8),(random()-.5)*5);
+    b.collisionFilterMask=7;b.aabbNeedsUpdate=true;b.wakeUp();
    }
+
 
   }
  }

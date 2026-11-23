@@ -29,3 +29,16 @@ test('Outcome waits for physical dice; critical damage depends on the landed d20
 test('Mixed signed dice are requested together and keep their actual values',async()=>{
  const result=await resolvePhysicalAction(()=>rollDice('2d6-1d4+3'),async sides=>{assert.deepEqual(sides,[6,6,4]);return [2,6,4];});assert.deepEqual(result.rolls,[2,6,4]);assert.equal(result.total,7);
 });
+test('Overlapping throws cannot be trapped outside the entry or in a corner',()=>{
+ for(const width of [370,1260])for(const seed of [6,11,12,21,24,36,49]){
+  const table=new DiceTable(width,640),random=rng(seed),size=width<700?36:45;
+  const first=Array.from({length:12},(_,i)=>table.add('a'+i,6,size,random,'regular',i));let second:typeof first=[];
+  for(let frame=0;frame<3600;frame++){
+   if(frame===45)second=Array.from({length:3},(_,i)=>table.add('b'+i,6,size,random,'regular',i));
+   table.step();
+   for(const group of [first,second])if(group.length&&group.every(d=>d.settled))for(const d of group){d.body.type=2;d.body.mass=0;d.body.updateMassProperties();}
+   if(second.length&&table.dice.every(d=>d.settled))break;
+  }
+  assert.ok(table.dice.every(d=>d.settled),`width ${width}, seed ${seed}`);
+ }
+});
