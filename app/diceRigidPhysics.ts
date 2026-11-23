@@ -28,19 +28,21 @@ export function readPhysicalDie(d:PhysicalDie):number {
 export function vertexValue(d:PhysicalDie,vertex:number){const opposite=d.mesh.faces.findIndex(f=>!f.vertices.includes(vertex));return physicalFaceValue(4,opposite);}
 export class DiceTable {
  world:World;dice:PhysicalDie[]=[];width:number;height:number;time=0;private walls:Body[]=[];
- private dieMaterial=new Material('dice');private wood=new Material('wood');
+ private dieMaterial=new Material('dice');private wood=new Material('wood');private rim=new Material('rim');
  constructor(width:number,height:number){
   this.width=width;this.height=height;
-  const solver=new GSSolver();solver.iterations=18;solver.tolerance=1e-7;
+  const solver=new GSSolver();solver.iterations=28;solver.tolerance=1e-7;
   this.world=new World({gravity:new Vec3(0,0,-45),allowSleep:false,solver});
   this.world.addContactMaterial(new ContactMaterial(this.dieMaterial,this.wood,{friction:.55,restitution:.17,contactEquationStiffness:1e8,contactEquationRelaxation:4}));
-  this.world.addContactMaterial(new ContactMaterial(this.dieMaterial,this.dieMaterial,{friction:.4,restitution:.25}));
+  this.world.addContactMaterial(new ContactMaterial(this.dieMaterial,this.rim,{friction:.24,restitution:.52,contactEquationStiffness:1e8,contactEquationRelaxation:3}));
+  // Dice should rebound and roll off one another rather than lock face to face.
+  this.world.addContactMaterial(new ContactMaterial(this.dieMaterial,this.dieMaterial,{friction:.28,restitution:.3,contactEquationStiffness:1e8,contactEquationRelaxation:3}));
   const floor=new Body({mass:0,shape:new Plane(),material:this.wood,collisionFilterGroup:1});this.world.addBody(floor);this.resize(width,height);
  }
  resize(width:number,height:number){
   this.width=width;this.height=height;this.walls.forEach(w=>this.world.removeBody(w));this.walls=[];
   const w=width/DICE_UNIT,h=height/DICE_UNIT;
-  const wall=(x:number,y:number,sx:number,sy:number,group=4)=>{const b=new Body({mass:0,shape:new Box(new Vec3(sx,sy,8)),material:this.wood,position:new Vec3(x,y,7),collisionFilterGroup:group});this.world.addBody(b);this.walls.push(b);};
+  const wall=(x:number,y:number,sx:number,sy:number,group=4)=>{const b=new Body({mass:0,shape:new Box(new Vec3(sx,sy,8)),material:this.rim,position:new Vec3(x,y,7),collisionFilterGroup:group});this.world.addBody(b);this.walls.push(b);};
   wall(-1,h/2,1,h+2);wall(w+1,h/2,1,h+2,8);wall(w/2,-1,w+2,1);wall(w/2,h+1,w+2,1);
  }
  add(id:string,sides:number,size:number,random:()=>number=Math.random,numbering:PhysicalDie['numbering']='regular',index=0):PhysicalDie{
@@ -76,16 +78,16 @@ export class DiceTable {
    }
    // Resizing or a very hard impact must not strand a die beyond the walls.
    if(d.entered){
-    if(b.position.x<0){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.17;}
-    if(b.position.x>this.width/DICE_UNIT){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.17;}
-    if(b.position.y<0){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
-    if(b.position.y>this.height/DICE_UNIT){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.17;}
+    if(b.position.x<0){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.5;}
+    if(b.position.x>this.width/DICE_UNIT){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.5;}
+    if(b.position.y<0){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.5;}
+    if(b.position.y>this.height/DICE_UNIT){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.5;}
    }
    if(d.entered&&d.rerolls>0){
-    if(b.position.x<r){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.3;}
-    if(b.position.x>this.width/DICE_UNIT-r){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.3;}
-    if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.3;}
-    if(b.position.y>this.height/DICE_UNIT-r){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.3;}
+    if(b.position.x<r){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.5;}
+    if(b.position.x>this.width/DICE_UNIT-r){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.5;}
+    if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.5;}
+    if(b.position.y>this.height/DICE_UNIT-r){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.5;}
    }
    const flat=bottomFace(d),slow=b.velocity.length()<.18&&b.angularVelocity.length()<.22;
    const floorHeight=Math.min(...d.localVertices.map(v=>b.quaternion.vmult(v).z+b.position.z));
@@ -96,6 +98,29 @@ export class DiceTable {
    }
    // A cocked die is invalid, as on a real table. Re-throw it; never invent a face.
    d.cocked=!supported&&b.velocity.length()<.7&&b.angularVelocity.length()<1?d.cocked+dt:0;
+   // A die resting on another die can remain motionless indefinitely. Nudge the
+   // upper die sideways while preserving its physical orientation and outcome.
+   if(d.cocked>.45&&floorHeight>r*.2){
+    const lower=this.dice.find(other=>other!==d&&other.launched&&other.body.position.z<b.position.z-r*.25
+      &&Math.hypot(other.body.position.x-b.position.x,other.body.position.y-b.position.y)<(other.size+d.size)/DICE_UNIT*.7);
+    if(lower){
+     let dx=b.position.x-lower.body.position.x,dy=b.position.y-lower.body.position.y;
+     if(Math.hypot(dx,dy)<.05){const angle=d.random()*Math.PI*2;dx=Math.cos(angle);dy=Math.sin(angle);}
+     const length=Math.hypot(dx,dy);
+     b.applyImpulse(new Vec3(dx/length*4.5,dy/length*4.5,.5),new Vec3(-dy/length*r*.65,dx/length*r*.65,0));
+     b.wakeUp();d.cocked=0;
+    }
+   }
+   if(d.cocked>.45){
+    const w=this.width/DICE_UNIT,h=this.height/DICE_UNIT;
+    const dx=b.position.x<r*1.15?1:b.position.x>w-r*1.15?-1:0;
+    const dy=b.position.y<r*1.15?1:b.position.y>h-r*1.15?-1:0;
+    if(dx||dy){
+     const length=Math.hypot(dx,dy);
+     b.applyImpulse(new Vec3(dx/length*3.2,dy/length*3.2,.35),new Vec3(-dy*r*.55,dx*r*.55,0));
+     b.wakeUp();d.cocked=0;
+    }
+   }
    if(!d.settled&&d.rerolls>0&&d.cocked>2){
     // Once other dice are intangible, ease a rare die off the wall or its edge
     // without showing it fly across the table for another throw.
