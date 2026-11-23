@@ -52,7 +52,8 @@ test('First rethrow ignores other dice while keeping wood and walls',()=>{
  assert.equal(die.rerolls,1);
  assert.equal(die.body.collisionFilterMask&2,0,'other dice are intangible');
  assert.equal(die.body.collisionFilterMask&1,1,'the wooden table stays solid');
- assert.equal(die.body.collisionFilterMask&12,12,'the side and entry walls stay solid');
+ assert.equal(die.body.collisionFilterMask&12,0,'rethrow cannot become wedged against a wall');
+ assert.ok(die.body.position.x>table.width/40,'rethrow starts at the right edge');
  for(let step=0;step<3600&&!die.settled;step++)table.step();
  assert.ok(die.settled);
  assert.equal(die.rerolls,1);

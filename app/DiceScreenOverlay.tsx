@@ -167,7 +167,7 @@ export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:Scr
    node.style.zoom=String(1/(parseFloat(getComputedStyle(document.body).zoom)||1));node.style.width=width+'px';node.style.height=height+'px';
    if(node.width!==Math.round(width*ratio)||node.height!==Math.round(height*ratio)){node.width=Math.round(width*ratio);node.height=Math.round(height*ratio);}
    ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
-   for(const b of batches.current.values()){const alpha=b.completedAt===undefined?1:clamp((opts.lifetime*1000+350-(now-b.completedAt))/350);for(const d of b.dice)if(d.launched)renderDie(ctx,d,opts,alpha*(d.settled?1:clamp((2-d.cocked)/.3)*clamp((10-d.age)/.3)));}
+   for(const b of batches.current.values()){const alpha=b.completedAt===undefined?1:clamp((opts.lifetime*1000+350-(now-b.completedAt))/350);for(const d of b.dice)if(d.launched)renderDie(ctx,d,opts,alpha);}
    node.dataset.diceEngine='physical-outcome-v9';node.dataset.numberColor=opts.numberColor;node.dataset.numberStyle=opts.numberStyle;
    if(window.location.pathname.includes('/dice-lab'))node.dataset.diceState=JSON.stringify(sim.dice.map(d=>({id:d.id,sides:d.sides,numbering:d.numbering,x:d.body.position.x*DICE_UNIT+10,y:d.body.position.y*DICE_UNIT+10,modelSize:d.size,entered:d.entered,settled:d.settled,value:d.value,flat:bottomFace(d).alignment,orientation:[d.body.quaternion.x,d.body.quaternion.y,d.body.quaternion.z,d.body.quaternion.w],labels:d.mesh.faces.map((_,i)=>physicalFaceValue(d.sides,i))})));
    frame=requestAnimationFrame(tick);

@@ -49,7 +49,7 @@ export class DiceTable {
   const localVertices=mesh.vertices.map(v=>new Vec3(...v.map(n=>n/max*radius) as [number,number,number]));
   const shape=new ConvexPolyhedron({vertices:localVertices,faces:mesh.faces.map(f=>f.vertices.slice())});
   const b=new Body({mass:1,shape,material:this.dieMaterial,linearDamping:.13,angularDamping:.28,allowSleep:true,collisionFilterGroup:2,collisionFilterMask:7});
-  const angle=(random()-.5)*1.35,speed=16+random()*10;
+  const angle=(random()-.5)*1.35,speed=Math.sqrt(this.width/DICE_UNIT)*7*(.9+random()*.3);
   b.position.set(this.width/DICE_UNIT+radius+.3,(radius+.2)+(this.height/DICE_UNIT-2*radius-.4)*random(),radius*(1.1+random()*.35));
   // Uniform random orientation determines the physical initial state, never a target result.
   const a=random(),b1=random()*Math.PI*2,c=random()*Math.PI*2;
@@ -68,7 +68,7 @@ export class DiceTable {
   for(const d of this.dice){
    if(!d.launched)continue;if(d.settled){if(d.body.sleepState===Body.SLEEPING||d.body.type===Body.STATIC)continue;d.settled=false;d.value=undefined;d.still=0;}d.age+=dt;
    const b=d.body,r=d.size/DICE_UNIT;
-   if(!d.entered&&b.position.x+Math.max(...d.localVertices.map(v=>b.quaternion.vmult(v).x))<this.width/DICE_UNIT-.02){d.entered=true;b.collisionFilterMask=d.rerolls>0?13:15;}
+   if(!d.entered&&b.position.x+Math.max(...d.localVertices.map(v=>b.quaternion.vmult(v).x))<this.width/DICE_UNIT-.02){d.entered=true;b.collisionFilterMask=d.rerolls>0?1:15;}
    if(!d.entered){
     if(b.velocity.x>-6){b.velocity.x=-6;b.angularVelocity.y=-6/(r*.8);}
     if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
@@ -80,6 +80,12 @@ export class DiceTable {
     if(b.position.x>this.width/DICE_UNIT){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.17;}
     if(b.position.y<0){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
     if(b.position.y>this.height/DICE_UNIT){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.17;}
+   }
+   if(d.entered&&d.rerolls>0){
+    if(b.position.x<r){b.position.x=r;b.velocity.x=Math.abs(b.velocity.x)*.3;}
+    if(b.position.x>this.width/DICE_UNIT-r){b.position.x=this.width/DICE_UNIT-r;b.velocity.x=-Math.abs(b.velocity.x)*.3;}
+    if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.3;}
+    if(b.position.y>this.height/DICE_UNIT-r){b.position.y=this.height/DICE_UNIT-r;b.velocity.y=-Math.abs(b.velocity.y)*.3;}
    }
    const flat=bottomFace(d),slow=b.velocity.length()<.18&&b.angularVelocity.length()<.22;
    const floorHeight=Math.min(...d.localVertices.map(v=>b.quaternion.vmult(v).z+b.position.z));
@@ -100,14 +106,14 @@ export class DiceTable {
    }
    if(!d.settled&&d.rerolls===0&&(d.cocked>2||d.age>10)){
     this.world.removeBody(b);d.launched=false;d.entered=false;d.delay=.2;d.age=0;d.still=0;d.cocked=0;d.rerolls++;
-    const random=d.random,angle=(random()-.5)*1.35,speed=4+random()*3;
-    b.position.set(this.width/DICE_UNIT*.55,this.height/DICE_UNIT*(.32+.36*random()),r*1.3);
+    const random=d.random,angle=(random()-.5)*1.35,speed=Math.sqrt(this.width/DICE_UNIT)*7*(.9+random()*.3);
+    b.position.set(this.width/DICE_UNIT+r+.3,this.height/DICE_UNIT*(.25+.5*random()),r*1.3);
     const a=random(),u=random()*Math.PI*2,v=random()*Math.PI*2;
     b.quaternion.set(Math.sqrt(1-a)*Math.sin(u),Math.sqrt(1-a)*Math.cos(u),Math.sqrt(a)*Math.sin(v),Math.sqrt(a)*Math.cos(v));
     b.velocity.set(-Math.cos(angle)*speed,Math.sin(angle)*speed,-.8);b.angularVelocity.set(-b.velocity.y/(r*.8),b.velocity.x/(r*.8),(random()-.5)*5);
     // The first rethrow keeps collisions with wood and the boundaries, but
     // ignores every other die until this die has physically settled.
-    b.collisionFilterMask=13;b.aabbNeedsUpdate=true;b.wakeUp();
+    b.collisionFilterMask=1;b.aabbNeedsUpdate=true;b.wakeUp();
    }
 
 
