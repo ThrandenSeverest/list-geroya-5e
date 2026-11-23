@@ -307,6 +307,9 @@ async function saved(page) {
         await tray.getByLabel('Количество кубов',{exact:true}).fill('3');
         await tray.getByLabel('Модификатор',{exact:true}).fill('2');
         for(let i=0;i<3;i++) await tray.getByRole('button',{name:'Бросить 3d6+2',exact:true}).click();
+        // Physical rolls finish only after the dice have landed. Wait for the
+        // resulting history instead of reading the tray while throws are in flight.
+        await page.waitForFunction(() => document.querySelectorAll('.dice-history article').length === 3);
         const values=await tray.locator('.die-result b').allTextContents();assert.equal(values.length,3);
         assert.equal(Number(await tray.locator('.dice-total strong').innerText()),values.reduce((sum,n)=>sum+Number(n),2));
         assert.equal(await tray.locator('.dice-history article').count(),3);
