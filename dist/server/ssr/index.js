@@ -3170,13 +3170,13 @@ function createFromReadableStream(stream, options = {}) {
 //#region \0virtual:vite-rsc/client-references
 var client_references_default = {
 	"15c18cfaeeff": async () => {
-		const m = await import("./assets/layout-segment-context-M5UmYJFZ.js");
+		const m = await import("./assets/layout-segment-context-D5u8X0eP.js");
 		return { get "LayoutSegmentProvider"() {
 			return m["LayoutSegmentProvider"];
 		} };
 	},
 	"593f344dc510": async () => {
-		const m = await import("./assets/error-boundary-ALkiZBsX.js");
+		const m = await import("./assets/error-boundary-CdF3zXd5.js");
 		return {
 			get "ErrorBoundary"() {
 				return m["ErrorBoundary"];
@@ -3196,7 +3196,7 @@ var client_references_default = {
 		};
 	},
 	"6efdf509a785": async () => {
-		const m = await import("./assets/page-Cgqj9jJf.js");
+		const m = await import("./assets/page-PvTj-b-2.js");
 		return {
 			get "AdventureApp"() {
 				return m["AdventureApp"];
@@ -3207,7 +3207,7 @@ var client_references_default = {
 		};
 	},
 	"724dcbd470a5": async () => {
-		const m = await import("./assets/page-DD3xneat.js");
+		const m = await import("./assets/page-CsyTMcwf.js");
 		return { get "default"() {
 			return m["default"];
 		} };
@@ -3225,6 +3225,12 @@ var client_references_default = {
 				return m["Slot"];
 			}
 		};
+	},
+	"ce4a9d50bc06": async () => {
+		const m = await import("./assets/page-BinIP2Cs.js");
+		return { get "default"() {
+			return m["default"];
+		} };
 	}
 };
 //#endregion

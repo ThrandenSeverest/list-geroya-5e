@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _6173544106943b3A;
-		return (_6173544106943b3A = "66173544-1069-43b3-ae89-1a43f4e38c4d") !== null && _6173544106943b3A !== void 0 ? _6173544106943b3A : void 0;
+		var _7ba7421C1f5439d;
+		return (_7ba7421C1f5439d = "47ba7421-c1f5-439d-8e53-f4cd24326006") !== null && _7ba7421C1f5439d !== void 0 ? _7ba7421C1f5439d : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "66173544-1069-43b3-ae89-1a43f4e38c4d") {
+function appIsrCacheKey(pathname, suffix, buildId = "47ba7421-c1f5-439d-8e53-f4cd24326006") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _6173544106943b3A;
+	var _7ba7421C1f5439d;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_6173544106943b3A = "66173544-1069-43b3-ae89-1a43f4e38c4d") !== null && _6173544106943b3A !== void 0 ? _6173544106943b3A : null,
+		deploymentVersion: (_7ba7421C1f5439d = "47ba7421-c1f5-439d-8e53-f4cd24326006") !== null && _7ba7421C1f5439d !== void 0 ? _7ba7421C1f5439d : null,
 		rootBoundaryId
 	});
 }
@@ -14469,11 +14469,11 @@ function clearAppRequestContext() {
 }
 //#endregion
 //#region app/page.tsx
-var page_exports$2 = /* @__PURE__ */ __exportAll({
+var page_exports$3 = /* @__PURE__ */ __exportAll({
 	AdventureApp: () => AdventureApp,
-	default: () => page_default$1
+	default: () => page_default$2
 });
-var page_default$1 = /* @__PURE__ */ registerClientReference(() => {
+var page_default$2 = /* @__PURE__ */ registerClientReference(() => {
 	throw new Error("Unexpectedly client reference export 'default' is called on server");
 }, "6efdf509a785", "default");
 var AdventureApp = /* @__PURE__ */ registerClientReference(() => {
@@ -14899,13 +14899,13 @@ function __vite_rsc_wrap_css__(value, name) {
 }
 //#endregion
 //#region app/account/page.tsx
-var page_exports$1 = /* @__PURE__ */ __exportAll({ default: () => page_default });
-var page_default = /* @__PURE__ */ registerClientReference(() => {
+var page_exports$2 = /* @__PURE__ */ __exportAll({ default: () => page_default$1 });
+var page_default$1 = /* @__PURE__ */ registerClientReference(() => {
 	throw new Error("Unexpectedly client reference export 'default' is called on server");
 }, "724dcbd470a5", "default");
 //#endregion
 //#region app/adventure/page.tsx
-var page_exports = /* @__PURE__ */ __exportAll({
+var page_exports$1 = /* @__PURE__ */ __exportAll({
 	default: () => AdventurePage,
 	metadata: () => metadata
 });
@@ -14932,6 +14932,12 @@ async function GET() {
 	}
 }
 //#endregion
+//#region app/dice-lab/page.tsx
+var page_exports = /* @__PURE__ */ __exportAll({ default: () => page_default });
+var page_default = /* @__PURE__ */ registerClientReference(() => {
+	throw new Error("Unexpectedly client reference export 'default' is called on server");
+}, "ce4a9d50bc06", "default");
+//#endregion
 //#region \0virtual:vinext-rsc-entry
 var renderToReadableStream = createRscRenderer(renderToReadableStream$1);
 function _getSSRFontStyles() {
@@ -14956,6 +14962,7 @@ function __VINEXT_CLASS(routeIdx) { return ((routeIdx) => {
       case 1: return new Map([[0, "static"]]);
       case 2: return new Map([[0, "static"]]);
       case 3: return new Map([[0, "static"]]);
+      case 4: return new Map([[0, "static"]]);
       default: return null;
     }
   })(routeIdx); }
@@ -14980,7 +14987,7 @@ var routes = [
 		isDynamic: false,
 		params: [],
 		rootParamNames: [],
-		page: page_exports$2,
+		page: page_exports$3,
 		routeHandler: null,
 		layouts: [layout_exports],
 		routeSegments: [],
@@ -15017,7 +15024,7 @@ var routes = [
 		isDynamic: false,
 		params: [],
 		rootParamNames: [],
-		page: page_exports$1,
+		page: page_exports$2,
 		routeHandler: null,
 		layouts: [layout_exports],
 		routeSegments: ["account"],
@@ -15054,7 +15061,7 @@ var routes = [
 		isDynamic: false,
 		params: [],
 		rootParamNames: [],
-		page: page_exports,
+		page: page_exports$1,
 		routeHandler: null,
 		layouts: [layout_exports],
 		routeSegments: ["adventure"],
@@ -15095,6 +15102,43 @@ var routes = [
 		routeHandler: route_exports,
 		layouts: [layout_exports],
 		routeSegments: ["BUILD_INFO.json"],
+		templateTreePositions: [],
+		layoutTreePositions: [0],
+		templates: [],
+		errors: [null],
+		errorPaths: [],
+		errorTreePositions: [],
+		slots: {},
+		loading: null,
+		error: null,
+		notFound: null,
+		notFounds: [null],
+		forbidden: null,
+		forbiddens: [null],
+		unauthorized: null,
+		unauthorizeds: [null]
+	},
+	{
+		__buildTimeClassifications: __VINEXT_CLASS(4),
+		__buildTimeReasons: __classDebug ? __VINEXT_CLASS_REASONS(4) : null,
+		ids: {
+			"route": "route:/dice-lab",
+			"page": "page:/dice-lab",
+			"routeHandler": null,
+			"rootBoundary": "root-boundary:/",
+			"layouts": ["layout:/"],
+			"templates": [],
+			"slots": {}
+		},
+		pattern: "/dice-lab",
+		patternParts: ["dice-lab"],
+		isDynamic: false,
+		params: [],
+		rootParamNames: [],
+		page: page_exports,
+		routeHandler: null,
+		layouts: [layout_exports],
+		routeSegments: ["dice-lab"],
 		templateTreePositions: [],
 		layoutTreePositions: [0],
 		templates: [],
@@ -15185,6 +15229,8 @@ var __configHeaders = [];
 var __publicFiles = new Set([
 	"/acknowledgements/krugovorot-mirov.png",
 	"/acknowledgements/velmira.png",
+	"/audio/LICENSE.md",
+	"/audio/dice-wood.mp3",
 	"/classic-preview/alignment-final.css",
 	"/classic-preview/assets/index-BRC8P0mk.js",
 	"/classic-preview/assets/index-C-6UVrCV.js",

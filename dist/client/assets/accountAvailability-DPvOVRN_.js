@@ -1,0 +1,1 @@
+function e(e=typeof location>`u`?``:location.hostname){return e===`github.io`||e.endsWith(`.github.io`)?!0:typeof window>`u`?!1:[`app:`,`herolist:`,`capacitor:`,`file:`].includes(location.protocol)?!0:!!(window.HeroListDesktop||window.HeroListNative)}export{e as t};

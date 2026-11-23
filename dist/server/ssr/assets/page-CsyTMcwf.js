@@ -1,6 +1,7 @@
 import { _ as isDangerousScheme, a as navigateClientSide, b as hasBasePath, d as createRscRequestUrl, g as withBasePath, h as toSameOriginAppPath, i as getPrefetchedUrls, m as toBrowserNavigationHref, o as prefetchRscResponse, p as resolveRelativeHref, r as getMountedSlotsHeader, t as getCurrentInterceptionContext, u as createRscRequestHeaders, v as AppElementsWire, x as stripBasePath, y as VINEXT_MOUNTED_SLOTS_HEADER } from "../index.js";
 import { a as getDomainLocaleUrl, i as addLocalePrefix, n as appendSearchParamsToUrl, r as urlQueryToSearchParams } from "./query-XPldENp4.js";
-import { n as isStaticPages, t as assetUrl } from "./assetUrl-qQEqDRlW.js";
+import { t as isStaticPages } from "./accountAvailability-B9_Nf2Oz.js";
+import { t as assetUrl } from "./assetUrl-qy7r-vHn.js";
 import React, { createContext, forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 //#region node_modules/vinext/dist/routing/utils.js
@@ -538,7 +539,7 @@ var Link = forwardRef(function Link({ href, as, replace = false, prefetch: prefe
 			});
 			return;
 		} else try {
-			const Router = (await import("./router-lWVvXzZB.js")).default;
+			const Router = (await import("./router-XAA2OsS9.js")).default;
 			if (replace) await Router.replace(absoluteHref, void 0, { scroll });
 			else await Router.push(absoluteHref, void 0, { scroll });
 		} catch (_unused3) {

@@ -11,10 +11,4 @@ function isStaticPages(hostname = typeof location === "undefined" ? "" : locatio
 	return Boolean(window.HeroListDesktop || window.HeroListNative);
 }
 //#endregion
-//#region app/assetUrl.ts
-/** Public assets must share the build base on both root hosting and project Pages. */
-function assetUrl(path) {
-	return `${"/".replace(/\/$/, "")}/${path.replace(/^\/+/, "")}`;
-}
-//#endregion
-export { isStaticPages as n, assetUrl as t };
+export { isStaticPages as t };

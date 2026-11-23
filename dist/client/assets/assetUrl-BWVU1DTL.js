@@ -1,0 +1,1 @@
+function e(e){return`${`/`.replace(/\/$/,``)}/${e.replace(/^\/+/,``)}`}export{e as t};
