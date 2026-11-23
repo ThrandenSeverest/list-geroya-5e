@@ -63,12 +63,12 @@ export class DiceTable {
  remove(id:string){const d=this.dice.find(x=>x.id===id);if(d?.launched)this.world.removeBody(d.body);this.dice=this.dice.filter(x=>x.id!==id);}
  step(dt=1/120){
   this.time+=dt;
-  for(const d of this.dice){if(!d.launched){d.delay-=dt;if(d.delay<=0&&!this.dice.some(other=>other!==d&&other.launched&&other.body.position.distanceTo(d.body.position)<(other.size+d.size)/DICE_UNIT*1.05)){this.world.addBody(d.body);d.launched=true;}}}
+  for(const d of this.dice){if(!d.launched){d.delay-=dt;if(d.delay<=0&&(d.rerolls>0||!this.dice.some(other=>other!==d&&other.launched&&other.body.position.distanceTo(d.body.position)<(other.size+d.size)/DICE_UNIT*1.05))){this.world.addBody(d.body);d.launched=true;}}}
   this.world.step(dt);
   for(const d of this.dice){
    if(!d.launched)continue;if(d.settled){if(d.body.sleepState===Body.SLEEPING||d.body.type===Body.STATIC)continue;d.settled=false;d.value=undefined;d.still=0;}d.age+=dt;
    const b=d.body,r=d.size/DICE_UNIT;
-   if(!d.entered&&b.position.x+Math.max(...d.localVertices.map(v=>b.quaternion.vmult(v).x))<this.width/DICE_UNIT-.02){d.entered=true;b.collisionFilterMask=15;}
+   if(!d.entered&&b.position.x+Math.max(...d.localVertices.map(v=>b.quaternion.vmult(v).x))<this.width/DICE_UNIT-.02){d.entered=true;b.collisionFilterMask=d.rerolls>0?13:15;}
    if(!d.entered){
     if(b.velocity.x>-6){b.velocity.x=-6;b.angularVelocity.y=-6/(r*.8);}
     if(b.position.y<r){b.position.y=r;b.velocity.y=Math.abs(b.velocity.y)*.17;}
@@ -90,14 +90,24 @@ export class DiceTable {
    }
    // A cocked die is invalid, as on a real table. Re-throw it; never invent a face.
    d.cocked=!supported&&b.velocity.length()<.7&&b.angularVelocity.length()<1?d.cocked+dt:0;
-   if(!d.settled&&(d.cocked>2||d.age>10)){
+   if(!d.settled&&d.rerolls>0&&d.cocked>2){
+    // Once other dice are intangible, ease a rare die off the wall or its edge
+    // without showing it fly across the table for another throw.
+    const dx=this.width/DICE_UNIT/2-b.position.x,dy=this.height/DICE_UNIT/2-b.position.y;
+    const length=Math.hypot(dx,dy)||1;
+    b.applyImpulse(new Vec3(dx/length*2.5,dy/length*2.5,.6),new Vec3(r*.7,0,0));
+    b.wakeUp();d.cocked=0;
+   }
+   if(!d.settled&&d.rerolls===0&&(d.cocked>2||d.age>10)){
     this.world.removeBody(b);d.launched=false;d.entered=false;d.delay=.2;d.age=0;d.still=0;d.cocked=0;d.rerolls++;
-    const random=d.random,angle=(random()-.5)*1.35,speed=16+random()*10;
-    b.position.set(this.width/DICE_UNIT+r+.3,r+.2+(this.height/DICE_UNIT-2*r-.4)*random(),r*1.3);
+    const random=d.random,angle=(random()-.5)*1.35,speed=4+random()*3;
+    b.position.set(this.width/DICE_UNIT*.55,this.height/DICE_UNIT*(.32+.36*random()),r*1.3);
     const a=random(),u=random()*Math.PI*2,v=random()*Math.PI*2;
     b.quaternion.set(Math.sqrt(1-a)*Math.sin(u),Math.sqrt(1-a)*Math.cos(u),Math.sqrt(a)*Math.sin(v),Math.sqrt(a)*Math.cos(v));
     b.velocity.set(-Math.cos(angle)*speed,Math.sin(angle)*speed,-.8);b.angularVelocity.set(-b.velocity.y/(r*.8),b.velocity.x/(r*.8),(random()-.5)*5);
-    b.collisionFilterMask=7;b.aabbNeedsUpdate=true;b.wakeUp();
+    // The first rethrow keeps collisions with wood and the boundaries, but
+    // ignores every other die until this die has physically settled.
+    b.collisionFilterMask=13;b.aabbNeedsUpdate=true;b.wakeUp();
    }
 
 

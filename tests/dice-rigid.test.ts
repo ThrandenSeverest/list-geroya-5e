@@ -42,3 +42,19 @@ test('Overlapping throws cannot be trapped outside the entry or in a corner',()=
   assert.ok(table.dice.every(d=>d.settled),`width ${width}, seed ${seed}`);
  }
 });
+test('First rethrow ignores other dice while keeping wood and walls',()=>{
+ const table=new DiceTable(370,640),random=rng(7);
+ const die=table.add('cocked',4,30,random);
+ for(let step=0;step<30&&!die.launched;step++)table.step();
+ assert.ok(die.launched);
+ die.age=10;
+ table.step();
+ assert.equal(die.rerolls,1);
+ assert.equal(die.body.collisionFilterMask&2,0,'other dice are intangible');
+ assert.equal(die.body.collisionFilterMask&1,1,'the wooden table stays solid');
+ assert.equal(die.body.collisionFilterMask&12,12,'the side and entry walls stay solid');
+ for(let step=0;step<3600&&!die.settled;step++)table.step();
+ assert.ok(die.settled);
+ assert.equal(die.rerolls,1);
+ assert.equal(die.value,readPhysicalDie(die));
+});
