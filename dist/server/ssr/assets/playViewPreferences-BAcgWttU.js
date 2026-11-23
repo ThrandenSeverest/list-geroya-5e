@@ -35978,10 +35978,11 @@ var DiceTable = class {
 		this.walls = [];
 		this.dieMaterial = new Material("dice");
 		this.wood = new Material("wood");
+		this.rim = new Material("rim");
 		this.width = width;
 		this.height = height;
 		const solver = new GSSolver();
-		solver.iterations = 18;
+		solver.iterations = 28;
 		solver.tolerance = 1e-7;
 		this.world = new World({
 			gravity: new Vec3(0, 0, -45),
@@ -35994,9 +35995,17 @@ var DiceTable = class {
 			contactEquationStiffness: 1e8,
 			contactEquationRelaxation: 4
 		}));
+		this.world.addContactMaterial(new ContactMaterial(this.dieMaterial, this.rim, {
+			friction: .24,
+			restitution: .52,
+			contactEquationStiffness: 1e8,
+			contactEquationRelaxation: 3
+		}));
 		this.world.addContactMaterial(new ContactMaterial(this.dieMaterial, this.dieMaterial, {
-			friction: .4,
-			restitution: .25
+			friction: .28,
+			restitution: .3,
+			contactEquationStiffness: 1e8,
+			contactEquationRelaxation: 3
 		}));
 		const floor = new Body({
 			mass: 0,
@@ -36017,7 +36026,7 @@ var DiceTable = class {
 			const b = new Body({
 				mass: 0,
 				shape: new Box(new Vec3(sx, sy, 8)),
-				material: this.wood,
+				material: this.rim,
 				position: new Vec3(x, y, 7),
 				collisionFilterGroup: group
 			});
@@ -36125,37 +36134,37 @@ var DiceTable = class {
 			if (d.entered) {
 				if (b.position.x < 0) {
 					b.position.x = r;
-					b.velocity.x = Math.abs(b.velocity.x) * .17;
+					b.velocity.x = Math.abs(b.velocity.x) * .5;
 				}
 				if (b.position.x > this.width / 40) {
 					b.position.x = this.width / 40 - r;
-					b.velocity.x = -Math.abs(b.velocity.x) * .17;
+					b.velocity.x = -Math.abs(b.velocity.x) * .5;
 				}
 				if (b.position.y < 0) {
 					b.position.y = r;
-					b.velocity.y = Math.abs(b.velocity.y) * .17;
+					b.velocity.y = Math.abs(b.velocity.y) * .5;
 				}
 				if (b.position.y > this.height / 40) {
 					b.position.y = this.height / 40 - r;
-					b.velocity.y = -Math.abs(b.velocity.y) * .17;
+					b.velocity.y = -Math.abs(b.velocity.y) * .5;
 				}
 			}
 			if (d.entered && d.rerolls > 0) {
 				if (b.position.x < r) {
 					b.position.x = r;
-					b.velocity.x = Math.abs(b.velocity.x) * .3;
+					b.velocity.x = Math.abs(b.velocity.x) * .5;
 				}
 				if (b.position.x > this.width / 40 - r) {
 					b.position.x = this.width / 40 - r;
-					b.velocity.x = -Math.abs(b.velocity.x) * .3;
+					b.velocity.x = -Math.abs(b.velocity.x) * .5;
 				}
 				if (b.position.y < r) {
 					b.position.y = r;
-					b.velocity.y = Math.abs(b.velocity.y) * .3;
+					b.velocity.y = Math.abs(b.velocity.y) * .5;
 				}
 				if (b.position.y > this.height / 40 - r) {
 					b.position.y = this.height / 40 - r;
-					b.velocity.y = -Math.abs(b.velocity.y) * .3;
+					b.velocity.y = -Math.abs(b.velocity.y) * .5;
 				}
 			}
 			const flat = bottomFace(d), slow = b.velocity.length() < .18 && b.angularVelocity.length() < .22;
@@ -36170,6 +36179,32 @@ var DiceTable = class {
 				b.sleep();
 			}
 			d.cocked = !supported && b.velocity.length() < .7 && b.angularVelocity.length() < 1 ? d.cocked + dt : 0;
+			if (d.cocked > .45 && floorHeight > r * .2) {
+				const lower = this.dice.find((other) => other !== d && other.launched && other.body.position.z < b.position.z - r * .25 && Math.hypot(other.body.position.x - b.position.x, other.body.position.y - b.position.y) < (other.size + d.size) / 40 * .7);
+				if (lower) {
+					let dx = b.position.x - lower.body.position.x, dy = b.position.y - lower.body.position.y;
+					if (Math.hypot(dx, dy) < .05) {
+						const angle = d.random() * Math.PI * 2;
+						dx = Math.cos(angle);
+						dy = Math.sin(angle);
+					}
+					const length = Math.hypot(dx, dy);
+					b.applyImpulse(new Vec3(dx / length * 4.5, dy / length * 4.5, .5), new Vec3(-dy / length * r * .65, dx / length * r * .65, 0));
+					b.wakeUp();
+					d.cocked = 0;
+				}
+			}
+			if (d.cocked > .45) {
+				const w = this.width / 40, h = this.height / 40;
+				const dx = b.position.x < r * 1.15 ? 1 : b.position.x > w - r * 1.15 ? -1 : 0;
+				const dy = b.position.y < r * 1.15 ? 1 : b.position.y > h - r * 1.15 ? -1 : 0;
+				if (dx || dy) {
+					const length = Math.hypot(dx, dy);
+					b.applyImpulse(new Vec3(dx / length * 3.2, dy / length * 3.2, .35), new Vec3(-dy * r * .55, dx * r * .55, 0));
+					b.wakeUp();
+					d.cocked = 0;
+				}
+			}
 			if (!d.settled && d.rerolls > 0 && d.cocked > 2) {
 				const dx = this.width / 40 / 2 - b.position.x, dy = this.height / 40 / 2 - b.position.y;
 				const length = Math.hypot(dx, dy) || 1;
