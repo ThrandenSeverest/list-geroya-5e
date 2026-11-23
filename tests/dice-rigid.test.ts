@@ -42,6 +42,35 @@ test('Overlapping throws cannot be trapped outside the entry or in a corner',()=
   assert.ok(table.dice.every(d=>d.settled),`width ${width}, seed ${seed}`);
  }
 });
+test('A die balanced on another die rolls away and lands without a rethrow',()=>{
+ const table=new DiceTable(370,640),random=()=>.5;
+ const base=table.add('base',6,36,random);
+ for(let step=0;step<1800&&!base.settled;step++)table.step();
+ assert.ok(base.settled);
+ const top=table.add('top',6,36,random);
+ for(let step=0;step<100&&!top.launched;step++)table.step();
+ assert.ok(top.launched);
+ top.body.position.copy(base.body.position);
+ top.body.position.z+=1.8;
+ top.body.velocity.setZero();top.body.angularVelocity.setZero();top.body.aabbNeedsUpdate=true;
+ for(let step=0;step<1000&&!top.settled;step++)table.step();
+ assert.ok(top.settled,'upper die must roll off the lower die and reach the table');
+ assert.equal(top.rerolls,0,'collision resolution must avoid restarting the throw');
+ assert.ok(Math.hypot(top.body.position.x-base.body.position.x,top.body.position.y-base.body.position.y)>.8);
+ assert.equal(top.value,readPhysicalDie(top));
+});
+test('A fast die rebounds inward from the edge and still lands on the table',()=>{
+ const table=new DiceTable(370,640),die=table.add('rim',6,36,()=>.5);
+ for(let step=0;step<100&&!die.entered;step++)table.step();
+ assert.ok(die.entered);
+ die.body.position.set(table.width/40-1.2,8,1.1);
+ die.body.velocity.set(9,0,0);die.body.angularVelocity.setZero();die.body.aabbNeedsUpdate=true;
+ let rebound=0;
+ for(let step=0;step<40;step++){table.step();if(die.body.velocity.x<0){rebound=die.body.velocity.x;break;}}
+ assert.ok(rebound< -2.5,`edge rebound must carry die inward, got ${rebound}`);
+ for(let step=0;step<1800&&!die.settled;step++)table.step();
+ assert.ok(die.settled);assert.equal(die.value,readPhysicalDie(die));
+});
 test('First rethrow ignores other dice while keeping wood and walls',()=>{
  const table=new DiceTable(370,640),random=rng(7);
  const die=table.add('cocked',4,30,random);
