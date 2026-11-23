@@ -8,6 +8,7 @@ on:
       - 'public/**'
       - 'scripts/prepare-classic-sheet-assets.sh'
       - 'tests/mobile-*.cjs'
+      - 'tests/browser-sheet.cjs'
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
