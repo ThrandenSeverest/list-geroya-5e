@@ -1,33 +1,19 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import type { DiceResult } from './adventure';
-import { diceFromResult, diceMesh, type Vec3 } from './diceScreenMath';
-import { diceRenderPixelRatio } from './diceScreenMotion';
-import { spawnScreenDie, screenDieSize, screenDieRadius, stepScreenDice, type DiceBody } from './diceScreenPhysics';
+import {useEffect,useRef,useState} from 'react';
+import {createPortal} from 'react-dom';
+import {Body,Vec3 as PhysicsVec3} from 'cannon-es';
+import type {Vec3} from './diceScreenMath';
+import {diceRenderPixelRatio} from './diceScreenMotion';
+import {screenDieSize} from './diceScreenPhysics';
+import {DiceTable,DICE_UNIT,physicalFaceValue,vertexValue,bottomFace,type PhysicalDie} from './diceRigidPhysics';
+import {playDiceAudio} from './diceAudio';
 import './dice-screen.css';
-
-export type ScreenRoll = { id: string; name: string; result: DiceResult };
-export type DiceScreenOptions = { enabled: boolean; color: string; lifetime: number; numberColor: string; numberStyle: 'classic' | 'modern' | 'mono' };
-type Numbering = 'regular' | 'tens' | 'units';
-type MovingDie = {
-  id: string; rollId: string; sides: number; value: number; numbering: Numbering;
-  born: number; seed: number; size: number; faceIndex: number; anchorFaceIndex: number; settled: boolean; body: DiceBody;
-};
-type Point2 = [number, number];
-
-const FLIGHT_MS = 1900;
-const FADE_MS = 350;
+export type ScreenRoll={id:string;sides:number[]};
+export type DiceScreenOptions={enabled:boolean;color:string;lifetime:number;numberColor:string;numberStyle:'classic'|'modern'|'mono';size:number;numberScale:number;d4Mode:'vertex'|'face';d4Label:boolean;sound:boolean;volume:number};
+type MovingDie=PhysicalDie & {rollId:string;originalIndex:number};
+type Point2=[number,number];
 const clamp=(n:number,a=0,b=1)=>Math.min(b,Math.max(a,n));
-const hash=(text:string)=>{
-  let hash=2166136261;
-  for(let i=0;i<text.length;i++)hash=Math.imul(hash^text.charCodeAt(i),16777619);
-  // Avalanche the hash so adjacent dice IDs do not produce correlated directions.
-  hash^=hash>>>16;hash=Math.imul(hash,0x7feb352d);
-  hash^=hash>>>15;hash=Math.imul(hash,0x846ca68b);
-  hash^=hash>>>16;
-  return (hash>>>0)/4294967295;
-};
+const random=()=>{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]/4294967296;};
 const add=(a:Vec3,b:Vec3):Vec3=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
 const sub=(a:Vec3,b:Vec3):Vec3=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
 const cross=(a:Vec3,b:Vec3):Vec3=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -40,20 +26,6 @@ const average=(points:Vec3[]):Vec3=>{
   const n=points.length||1;
   return points.reduce<Vec3>((p,v)=>[p[0]+v[0]/n,p[1]+v[1]/n,p[2]+v[2]/n],[0,0,0]);
 };
-const rotate=(v:Vec3,rx:number,ry:number,rz:number):Vec3=>{
-  const [x,y,z]=v;
-  const y1=y*Math.cos(rx)-z*Math.sin(rx), z1=y*Math.sin(rx)+z*Math.cos(rx);
-  const x2=x*Math.cos(ry)+z1*Math.sin(ry), z2=-x*Math.sin(ry)+z1*Math.cos(ry);
-  return [x2*Math.cos(rz)-y1*Math.sin(rz),x2*Math.sin(rz)+y1*Math.cos(rz),z2];
-};
-/** Rodrigues rotation aligns the selected physical face toward the viewer. */
-function alignFace(v:Vec3,normal:Vec3):Vec3 {
-  const axis=cross(normal,[0,0,1]), c=clamp(dot(normal,[0,0,1]),-1,1);
-  const s=Math.hypot(...axis);
-  if(s<1e-7)return c>0?v:[v[0],-v[1],-v[2]];
-  const k=normalize(axis),p=cross(k,v),d=dot(k,v);
-  return [v[0]*c+p[0]*s+k[0]*d*(1-c),v[1]*c+p[1]*s+k[1]*d*(1-c),v[2]*c+p[2]*s+k[2]*d*(1-c)];
-}
 function rgb(input:string):number[]{
   const color=/^#[\da-f]{6}$/i.test(input)?input:'#332c27';
   return [1,3,5].map(i=>parseInt(color.slice(i,i+2),16));
@@ -75,16 +47,10 @@ function faceInradius(points:Point2[],center:Point2){
   }
   return result;
 }
-/** Map every face to a stable natural value, including 00/90 on percentile tens. */
-function faceNumber(die:MovingDie,face:number,faceCount:number){
-  const actual=die.numbering==='tens'?Math.round(die.value/10)
-    :die.numbering==='units'?die.value:die.value-1;
-  const digit=((face-die.faceIndex+actual)%faceCount+faceCount)%faceCount;
-  if(die.numbering==='tens')return String(digit*10).padStart(2,'0');
-  if(die.numbering==='units')return String(digit);
-  return String(digit+1);
+function faceNumber(die:MovingDie,face:number){
+ const value=physicalFaceValue(die.sides,face);
+ return die.numbering==='tens'?String((value-1)*10).padStart(2,'0'):die.numbering==='units'?String(value-1):String(value);
 }
-
 function renderFaceNumber(
   ctx:CanvasRenderingContext2D,
   die:MovingDie,
@@ -96,9 +62,9 @@ function renderFaceNumber(
   project:(v:Vec3)=>Point2,
   scale:number,
   inradius:number,
-  numberColor:string,numberStyle:DiceScreenOptions['numberStyle']
+  numberColor:string,numberStyle:DiceScreenOptions['numberStyle'],numberScale:number,textOverride?:string,anchor?:Vec3
 ){
-  const center=average(face.vertices.map(i=>vertices[i]));
+  const center=anchor??average(face.vertices.map(i=>vertices[i]));
   const point=project(center);
   const a=face.vertices[0],b=face.vertices[1];
   const u=normalize(sub(vertices[b],vertices[a]));
@@ -110,287 +76,103 @@ function renderFaceNumber(
   const right:Point2=[(unitX[0]-point[0])/scale,(unitX[1]-point[1])/scale];
   const down:Point2=[(unitY[0]-point[0])/scale,(unitY[1]-point[1])/scale];
   if(Math.abs(right[0]*down[1]-right[1]*down[0])<.09)return;
-  const text=faceNumber(die,faceIndex,faceCount);
-  const fontSize=Math.max(10,Math.min(die.size*.41,inradius*(text.length>1?1.18:1.5)));
+  const text=textOverride??faceNumber(die,faceIndex);
+  const fontSize=Math.max(10,Math.min(die.size*(textOverride!==undefined ? .22 : .41),inradius*(text.length>1?1.18:1.5)));
   ctx.save();
   // Text is physically attached to the face's plane. No screen-upright labels.
   ctx.translate(point[0],point[1]);
   ctx.transform(right[0],right[1],down[0],down[1],0,0);
   ctx.fillStyle=numberColor;
   const font=numberStyle==='modern'?'Arial,sans-serif':numberStyle==='mono'?'ui-monospace,Consolas,monospace':'Georgia,serif';
-  ctx.font='700 '+fontSize.toFixed(1)+'px '+font;
+  ctx.font='700 '+(fontSize*numberScale).toFixed(1)+'px '+font;
   ctx.textAlign='center';
   ctx.textBaseline='middle';
   ctx.fillText(text,0,0,Math.max(13,inradius*1.75));
   ctx.restore();
 }
 
-function renderDie(
-  ctx:CanvasRenderingContext2D,
-  die:MovingDie,now:number,
-  width:number,height:number,color:number[],hold:number,numberColor:string,numberStyle:DiceScreenOptions['numberStyle']
-){
-  const elapsed=now-die.born;
-  if(elapsed>=FLIGHT_MS+hold+FADE_MS)return;
-  const fade=clamp((FLIGHT_MS+hold+FADE_MS-elapsed)/FADE_MS);
-  const {x,y:groundY}=die.body;
-  // The underlying collision position stays fixed; only the die lifts briefly.
-  const hop=Math.min(14,Math.max(0,die.body.hopHeight||0));
-  const y=groundY-hop;
-  const mesh=diceMesh(die.sides);
-  ctx.save();
-  ctx.globalAlpha=fade;
-  const landed=1;
-  // Contact shadow is on the ground, never on the digits.
-  if(landed>0){
-    ctx.save();
-    ctx.globalAlpha=fade*.22*landed*(1-hop/24);
-    ctx.fillStyle='#000';
-    ctx.beginPath();
-    ctx.ellipse(x,groundY+die.size*.72,die.size*.67+hop*.14,die.size*.18+hop*.04,0,0,Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-  // Spin is integrated by physics using each die's actual travel speed.
-  // Unsupported custom dice retain their final 2D rotation.
-  const tumble=die.body.spin||0;
-  const wrapAngle=(angle:number)=>Math.atan2(Math.sin(angle),Math.cos(angle));
-  const twist=die.seed*Math.PI*2;
-  if(!mesh){
-    // A nonstandard user-defined die never gets silently replaced by a d20.
-    const points:Point2[]=[];
-    for(let i=0;i<8;i++){
-      const angle=2*Math.PI*i/8+twist+wrapAngle(tumble*.9);
-      points.push([x+Math.cos(angle)*die.size*.94,y+Math.sin(angle)*die.size*.94]);
-    }
-    polygon(ctx,points);
-    const gradient=ctx.createLinearGradient(x-die.size,y-die.size,x+die.size,y+die.size);
-    gradient.addColorStop(0,shade(color,1.38));
-    gradient.addColorStop(.6,shade(color,1.03));
-    gradient.addColorStop(1,shade(color,.68));
-    ctx.fillStyle=gradient;ctx.fill();
-    ctx.strokeStyle='#e5c68b';ctx.lineWidth=2;ctx.stroke();
-    ctx.save();ctx.translate(x,y);ctx.rotate(twist+wrapAngle(tumble*.9));
-    ctx.fillStyle=numberColor;ctx.font='700 '+Math.round(die.size*.51)+'px '+(numberStyle==='modern'?'Arial,sans-serif':numberStyle==='mono'?'ui-monospace,Consolas,monospace':'Georgia,serif');
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(String(die.value),0,-die.size*.09,die.size*1.38);
-    ctx.font='600 '+Math.round(die.size*.21)+'px Georgia,serif';
-    ctx.fillText('d'+die.sides,0,die.size*.5);
-    ctx.restore();ctx.restore();return;
-  }
-  const selected=mesh.faces[die.anchorFaceIndex%mesh.faces.length];
-  // Keep the physical orientation even after the die stops. Blending the
-  // quaternion toward identity made the die roll backward after landing.
-  const q=die.body.orientation??[0,0,0,1];
-  const transform=(v:Vec3):Vec3=>{
-    const base=rotate(alignFace(v,selected.normal),.10,-.10,twist);
-    const u:Vec3=[q[0],q[1],q[2]];
-    const uv=cross(u,base),uuv=cross(u,uv);
-    return add(base,add(uv.map(n=>2*q[3]*n) as Vec3,uuv.map(n=>2*n) as Vec3));
-  };
-  if(die.settled && Math.hypot(die.body.vx,die.body.vy)>0)die.settled=false;
-  if(!die.settled && die.body.entered && Math.hypot(die.body.vx,die.body.vy)===0 && !(die.body.hopVelocity||0)) {
-    // The face that actually ends on top carries the predetermined result.
-    // Changing the face's label never rotates or repositions the stopped die.
-    let highest=-Infinity;
-    mesh.faces.forEach((face,index)=>{const height=transform(face.normal)[2];if(height>highest){highest=height;die.faceIndex=index;}});
-    die.settled=true;
-  }
-  const transformed=mesh.vertices.map(transform);
-  const maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v)))||1;
-  const scale=die.size/maxRadius;
-  const project=(v:Vec3):Point2=>{
-    // Slight perspective gives depth without a low-res bitmap.
-    const perspective=4.7/(4.7-v[2]);
-    return [x+v[0]*scale*perspective,y+v[1]*scale*perspective];
-  };
-  const faces=mesh.faces.map((face,index)=>{
-    const points=face.vertices.map(i=>transformed[i]);
-    const normal=normalize(transform(face.normal));
-    const center=average(points);
-    return {face,index,normal,center,points};
-  }).filter(face=>face.normal[2]>.018).sort((a,b)=>a.center[2]-b.center[2]);
-  for(const f of faces){
-    const points=f.points.map(project);
-    const center=project(f.center);
-    polygon(ctx,points);
-    const light=.70+.22*Math.max(0,f.normal[2])+.16*Math.max(0,-f.normal[0]*.65+f.normal[1]*.45);
-    const gradient=ctx.createLinearGradient(x-die.size*.85,y-die.size*.85,x+die.size*.85,y+die.size*.85);
-    gradient.addColorStop(0,shade(color,light*1.28));
-    gradient.addColorStop(.5,shade(color,light*1.04));
-    gradient.addColorStop(1,shade(color,light*.81));
-    ctx.fillStyle=gradient;
-    ctx.fill();
-    ctx.strokeStyle='rgba(239,205,146,.94)';
-    ctx.lineWidth=Math.max(1.1,die.size/59);
-    ctx.lineJoin='round';
-    ctx.stroke();
-    // Fine inset edge highlight to give thickness without shadowing text.
-    ctx.save();
-    ctx.clip();
-    ctx.strokeStyle='rgba(255,237,197,.12)';
-    ctx.lineWidth=Math.max(2,die.size*.047);
-    ctx.stroke();
-    ctx.restore();
-    if(f.normal[2]<.19)continue;
-    const inradius=faceInradius(points,center);
-    if(inradius<5)continue;
-    renderFaceNumber(ctx,die,f.face,f.index,mesh.faces.length,transformed,transform,project,scale,inradius,numberColor,numberStyle);
-  }
-  ctx.restore();
+function renderDie(ctx:CanvasRenderingContext2D,die:MovingDie,options:DiceScreenOptions,alpha:number){
+ const {body,size,mesh}=die;
+ const x=body.position.x*DICE_UNIT+10,groundY=body.position.y*DICE_UNIT+10;
+ const lift=body.position.z*DICE_UNIT;
+ const y=groundY-lift*.34;
+ const inverted=die.sides===4&&options.d4Mode==='face'?-1:1;
+ const transform=(v:Vec3):Vec3=>{const p=body.quaternion.vmult(new PhysicsVec3(v[0]*inverted,v[1]*inverted,v[2]*inverted));return [p.x,p.y*.94-p.z*.34,p.y*.34+p.z*.94];};
+ const transformed=mesh.vertices.map(transform),maxRadius=Math.max(...mesh.vertices.map(v=>Math.hypot(...v))),scale=size/maxRadius;
+ const project=(v:Vec3):Point2=>[x+v[0]*scale,y+v[1]*scale];
+ const color=rgb(options.color);
+ ctx.save();ctx.globalAlpha=alpha;
+ ctx.fillStyle='rgba(0,0,0,.20)';ctx.beginPath();ctx.ellipse(x,groundY,size*.72,size*.25,0,0,Math.PI*2);ctx.fill();
+ const faces=mesh.faces.map((face,index)=>{const points=face.vertices.map(i=>transformed[i]);return {face,index,points,normal:normalize(transform(face.normal)),center:average(points)};}).filter(f=>f.normal[2]>.01).sort((a,b)=>a.center[2]-b.center[2]);
+ for(const f of faces){
+  const points=f.points.map(project),center=project(f.center);polygon(ctx,points);
+  const light=.65+.32*f.normal[2]+.18*Math.max(0,-f.normal[0]);
+  ctx.fillStyle=shade(color,light);ctx.fill();ctx.strokeStyle='#d4b57b';ctx.lineWidth=Math.max(1,size/60);ctx.lineJoin='round';ctx.stroke();
+  if(f.normal[2]<.18)continue;
+  const inradius=faceInradius(points,center);
+  if(die.sides===4&&options.d4Mode==='vertex'){
+   for(const index of f.face.vertices){const v=transformed[index],at=v.map((n,i)=>n*.60+f.center[i]*.40) as Vec3;
+    renderFaceNumber(ctx,die,f.face,f.index,mesh.faces.length,transformed,transform,project,scale,Math.max(8,inradius*.7),options.numberColor,options.numberStyle,options.numberScale,String(vertexValue(die,index)),at);
+   }
+  }else renderFaceNumber(ctx,die,f.face,f.index,mesh.faces.length,transformed,transform,project,scale,inradius,options.numberColor,options.numberStyle,options.numberScale);
+ }
+ if(die.sides===4&&die.settled&&options.d4Label){ctx.font='700 '+Math.round(size*.4)+'px '+(options.numberStyle==='modern'?'Arial,sans-serif':options.numberStyle==='mono'?'monospace':'Georgia,serif');ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle=options.numberColor;ctx.fillText(String(die.value),x,groundY+size*.85);}
+ ctx.restore();
 }
-
-/** Each new throw uses its own trajectory; existing dice never get re-laid out. */
-export function DiceScreenOverlay({
-  rolls,options,onExpire
-}:{rolls:ScreenRoll[];options:DiceScreenOptions;onExpire:(id:string)=>void;}){
-  const [portal,setPortal]=useState<HTMLElement|null>(null);
-  const canvas=useRef<HTMLCanvasElement>(null);
-  const dice=useRef(new Map<string,MovingDie>());
-  const started=useRef(new Map<string,number>());
-  const props=useRef({options,onExpire});
-  const raf=useRef<number|null>(null);
-  const lastFrame=useRef<number|null>(null);
-  const frame=useRef<(now:number)=>void>(()=>{});
-  props.current={options,onExpire};
-  const requestFrame=()=>{
-    if(raf.current===null)raf.current=requestAnimationFrame(time=>frame.current(time));
+export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:ScreenRoll[];options:DiceScreenOptions;onComplete:(id:string,values:number[])=>void;onExpire:(id:string)=>void}){
+ const [portal,setPortal]=useState<HTMLElement|null>(null);
+ const canvas=useRef<HTMLCanvasElement>(null),table=useRef<DiceTable|null>(null);
+ const batches=useRef(new Map<string,{roll:ScreenRoll;dice:MovingDie[];completedAt?:number}>());
+ const props=useRef({rolls,options,onComplete,onExpire});props.current={rolls,options,onComplete,onExpire};
+ useEffect(()=>setPortal(document.body),[]);
+ useEffect(()=>{
+  if(!portal)return;
+  let frame:number,last=0,accumulator=0;
+  const tick=(now:number)=>{
+   const node=canvas.current,ctx=node?.getContext('2d');if(!node||!ctx){frame=requestAnimationFrame(tick);return;}
+   const {rolls:current,options:opts,onComplete:complete,onExpire:expire}=props.current;
+   const width=Math.max(120,Math.min(window.innerWidth,window.visualViewport?.width||window.innerWidth));
+   const height=Math.max(160,Math.min(window.innerHeight,window.visualViewport?.height||window.innerHeight));
+   const w=width-20,h=height-(width<700?100:40);
+   if(!table.current)table.current=new DiceTable(w,h);
+   const sim=table.current;if(sim.width!==w||sim.height!==h)sim.resize(w,h);
+   const ids=new Set(current.map(r=>r.id));
+   for(const [id,b] of batches.current)if(!ids.has(id)){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);}
+   for(const roll of current){
+    if(batches.current.has(roll.id))continue;
+    // Retire completed older throws if they would crowd a new throw.
+    const count=roll.sides.reduce((n,s)=>n+(s===100?2:1),0);
+    if(sim.dice.length+count>(width<700?24:40))for(const [id,b] of batches.current)if(b.completedAt!==undefined){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);expire(id);}
+    const size=Math.max(6,Math.min(screenDieSize(width,height)*opts.size,Math.sqrt(w*h/Math.max(1,sim.dice.length+count)/7)));
+    const items:MovingDie[]=[];
+    roll.sides.forEach((s,index)=>{
+     const parts=s===100?['tens','units'] as const:['regular'] as const;
+     for(const numbering of parts){const d=sim.add(roll.id+':'+items.length,s===100?10:s,size,random,numbering,items.length) as MovingDie;d.rollId=roll.id;d.originalIndex=index;items.push(d);}
+    });
+    batches.current.set(roll.id,{roll,dice:items});
+   }
+   const dt=last?Math.min(.1,(now-last)/1000):0;last=now;accumulator+=dt;
+   while(accumulator>=1/120){if(sim.dice.some(d=>!d.settled))sim.step(1/120);accumulator-=1/120;}
+   let impact=0;for(const d of sim.dice){impact=Math.max(impact,d.lastImpact);d.lastImpact=0;}if(opts.sound&&impact>2.5)playDiceAudio(opts.volume,Math.min(1,impact/13));
+   for(const [id,b] of batches.current){
+    if(b.completedAt===undefined&&b.dice.every(d=>d.settled)){
+     b.completedAt=now;
+     for(const d of b.dice){d.body.type=Body.STATIC;d.body.mass=0;d.body.updateMassProperties();}
+     const values=b.roll.sides.map((s,i)=>{const parts=b.dice.filter(d=>d.originalIndex===i);return s===100?(parts.reduce((n,d)=>n+d.value!,0)||100):parts[0].value!;});
+     complete(id,values);
+    }
+    if(b.completedAt!==undefined&&now-b.completedAt>opts.lifetime*1000+350){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);expire(id);}
+   }
+   const ratio=diceRenderPixelRatio(width,height,window.devicePixelRatio||1);
+   node.style.zoom=String(1/(parseFloat(getComputedStyle(document.body).zoom)||1));node.style.width=width+'px';node.style.height=height+'px';
+   if(node.width!==Math.round(width*ratio)||node.height!==Math.round(height*ratio)){node.width=Math.round(width*ratio);node.height=Math.round(height*ratio);}
+   ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
+   for(const b of batches.current.values()){const alpha=b.completedAt===undefined?1:clamp((opts.lifetime*1000+350-(now-b.completedAt))/350);for(const d of b.dice)if(d.launched)renderDie(ctx,d,opts,alpha);}
+   node.dataset.diceEngine='physical-outcome-v9';node.dataset.numberColor=opts.numberColor;node.dataset.numberStyle=opts.numberStyle;
+   if(window.location.pathname.includes('/dice-lab'))node.dataset.diceState=JSON.stringify(sim.dice.map(d=>({id:d.id,sides:d.sides,numbering:d.numbering,x:d.body.position.x*DICE_UNIT+10,y:d.body.position.y*DICE_UNIT+10,modelSize:d.size,entered:d.entered,settled:d.settled,value:d.value,flat:bottomFace(d).alignment,orientation:[d.body.quaternion.x,d.body.quaternion.y,d.body.quaternion.z,d.body.quaternion.w],labels:d.mesh.faces.map((_,i)=>physicalFaceValue(d.sides,i))})));
+   frame=requestAnimationFrame(tick);
   };
-  useEffect(()=>setPortal(document.body),[]);
-  useEffect(()=>{
-    const now=performance.now();
-    const active=new Set(rolls.map(roll=>roll.id));
-    for(const key of started.current.keys())if(!active.has(key))started.current.delete(key);
-    for(const [key,die] of dice.current)if(!active.has(die.rollId))dice.current.delete(key);
-    for(const roll of rolls){
-      if(started.current.has(roll.id))continue;
-      started.current.set(roll.id,now);
-      const all=diceFromResult(roll.result).flatMap(die=>
-        die.sides===100?[
-          {sides:10,value:die.value===100?0:Math.floor(die.value/10)*10,numbering:'tens' as Numbering},
-          {sides:10,value:die.value===100?0:die.value%10,numbering:'units' as Numbering}
-        ]:[{...die,numbering:'regular' as Numbering}]
-      );
-      // Repeated test throws must not turn the screen into a packed, regular lattice.
-      // Keep every die from the *current* formula; retire only oldest previous
-      // throws when the display becomes too crowded to collide naturally.
-      const maxVisible=window.innerWidth<700?24:36;
-      while(dice.current.size+all.length>maxVisible) {
-        const oldest=[...started.current.keys()].find(id=>id!==roll.id);
-        if(!oldest)break;
-        started.current.delete(oldest);
-        for(const [key,die] of dice.current)if(die.rollId===oldest)dice.current.delete(key);
-        props.current.onExpire(oldest);
-      }
-      for(let i=0;i<all.length;i++){
-        const id=roll.id+':'+i,seed=hash(id+'|orientation');
-        const die=all[i];
-        const faces=diceMesh(die.sides)?.faces.length||8;
-        const width=Math.max(1,Math.min(window.innerWidth,document.documentElement.clientWidth||window.innerWidth,window.visualViewport?.width||window.innerWidth));
-        const height=Math.max(1,Math.min(window.innerHeight,window.visualViewport?.height||window.innerHeight));
-        const size=screenDieSize(width,height);
-        const radius=screenDieRadius(size);
-        const body=spawnScreenDie({
-          id,width,height,radius,
-          seed:hash(id+'|speed'),seedY:hash(id+'|lane'),
-          seedAngle:hash(id+'|angle'),seedDelay:hash(id+'|delay'),
-          seedSpin:hash(id+'|spin'),index:i
-        });
-        dice.current.set(id,{
-          ...die,id,rollId:roll.id,born:now,seed,size,body,
-          faceIndex:Math.floor(hash(id+'face')*faces),anchorFaceIndex:Math.floor(hash(id+'face')*faces),settled:false
-        });
-      }
-    }
-    if(dice.current.size)requestFrame();
-  },[rolls]);
-  useEffect(()=>{
-    frame.current=(now:number)=>{
-      raf.current=null;
-      const node=canvas.current;
-      const {options:opts,onExpire:expire}=props.current;
-      if(node){
-        const ctx=node.getContext('2d',{alpha:true});
-        if(ctx){
-          // CSS canvas boxes can differ from the actual visual viewport due to
-          // zoom/scrollbars; physics must never use that larger rectangle.
-          const width=Math.max(1,Math.min(
-            window.innerWidth,
-            document.documentElement.clientWidth||window.innerWidth,
-            window.visualViewport?.width||window.innerWidth
-          ));
-          const height=Math.max(1,Math.min(
-            window.innerHeight,
-            window.visualViewport?.height||window.innerHeight
-          ));
-          // HeroList uses body { zoom: 1.25 } on desktop. Fixed descendants
-          // inherit that magnification; counter it for viewport-sized dice only.
-          // Never alter the user's UI zoom preference.
-          const bodyZoom=parseFloat(getComputedStyle(document.body).zoom)||1;
-          node.style.zoom=String(1/bodyZoom);
-          // Match the *physical* viewport exactly: never CSS-stretch the backing buffer.
-          node.style.width=width+'px';
-          node.style.height=height+'px';
-          node.style.left='0px';
-          node.style.top='0px';
-          const dt=lastFrame.current===null?0:clamp((now-lastFrame.current)/1000,0,.055);
-          lastFrame.current=now;
-          if(opts.enabled&&dt>0){
-            const bodies=[...dice.current.values()].map(d=>d.body);
-            const steps=Math.max(1,Math.ceil(dt/(1/90)));
-            for(let i=0;i<steps;i++)stepScreenDice(bodies,width,height,dt/steps);
-          }
-          const ratio=diceRenderPixelRatio(width,height,window.devicePixelRatio||1);
-          const pixelsW=Math.round(width*ratio),pixelsH=Math.round(height*ratio);
-          if(node.width!==pixelsW||node.height!==pixelsH){
-            node.width=pixelsW;node.height=pixelsH;
-          }
-          ctx.setTransform(ratio,0,0,ratio,0,0);
-          ctx.imageSmoothingEnabled=true;
-          ctx.imageSmoothingQuality='high';
-          ctx.clearRect(0,0,width,height);
-          node.dataset.diceEngine='wood-contact-rolling-v8';
-          node.dataset.numberStyle=opts.numberStyle;
-          node.dataset.numberColor=opts.numberColor;
-          if(window.location.pathname.includes('/dice-lab')){
-            node.dataset.diceState=JSON.stringify([...dice.current.values()].map(d=>({
-              id:d.id,x:d.body.x,y:d.body.y,radius:d.body.radius,
-              entered:d.body.entered,modelSize:d.size,vx:d.body.vx,vy:d.body.vy,
-              launchDelay:d.body.launchDelay||0,spin:d.body.spin||0,
-              spinVelocity:d.body.spinVelocity||0,hopHeight:d.body.hopHeight||0,
-              age:d.body.age||0,orientation:d.body.orientation,faceIndex:d.faceIndex,settled:d.settled
-            })));
-          }
-          if(opts.enabled){
-            const color=rgb(opts.color);
-            const hold=clamp(opts.lifetime,0,30)*1000;
-            for(const die of dice.current.values())renderDie(ctx,die,now,width,height,color,hold,/^#[0-9a-f]{6}$/i.test(opts.numberColor)?opts.numberColor:'#fff0c8',opts.numberStyle);
-            for(const [id,born] of started.current){
-              if(now-born<FLIGHT_MS+hold+FADE_MS)continue;
-              started.current.delete(id);
-              for(const [key,die] of dice.current)if(die.rollId===id)dice.current.delete(key);
-              expire(id);
-            }
-          }
-        }
-      }
-      if(dice.current.size&&opts.enabled)requestFrame();
-    };
-    if(dice.current.size)requestFrame();
-    return()=>{if(raf.current!==null)cancelAnimationFrame(raf.current);raf.current=null;lastFrame.current=null;};
-  },[]);
-  useEffect(()=>{
-    if(options.enabled&&dice.current.size)requestFrame();
-    if(!options.enabled){
-      dice.current.clear();
-      started.current.clear();
-      lastFrame.current=null;
-      const node=canvas.current,ctx=node?.getContext('2d');
-      if(node&&ctx)ctx.clearRect(0,0,node.width,node.height);
-    }
-  },[options.enabled,options.color,options.lifetime,options.numberColor,options.numberStyle]);
-  return portal?createPortal(
-    <canvas ref={canvas} className="hero-screen-dice" aria-hidden="true"
-      style={{display:options.enabled?'block':'none'}}/>,portal
-  ):null;
+  frame=requestAnimationFrame(tick);return()=>{cancelAnimationFrame(frame);table.current=null;batches.current.clear();};
+ },[portal]);
+ return portal?createPortal(<canvas ref={canvas} className="hero-screen-dice" aria-hidden="true"/>,portal):null;
 }

@@ -1,9 +1,14 @@
 'use client';
-import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { DiceScreenOverlay, type ScreenRoll } from '../DiceScreenOverlay';
+import { useEffect, useState, type CSSProperties } from 'react';
+import {useDiceController} from '../useDiceController';
+import {DiceSettings,diceOptions} from '../DiceSettings';
+import {usePlayViewPreferences} from '../playViewPreferences';
+import type {DiceResult} from '../adventure';
 import { rollDice } from '../adventure';
 
 const choices = [
+  {name:'Четырёхгранник',formula:'1d4'},
+  {name:'Все грани',formula:'1d4+1d6+1d8+1d10+1d12+1d20'},
   { name:'Проверка d20', formula:'1d20' },
   { name:'Три шестигранника', formula:'3d6' },
   { name:'Смешанный бросок', formula:'2d8+1d4+3' },
@@ -11,8 +16,6 @@ const choices = [
   { name:'Процентный бросок', formula:'1d100' },
   { name:'Много кубиков', formula:'12d6' },
 ];
-const defaultColor='#633e9f';
-const makeId=()=>typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():String(Date.now())+':'+Math.random();
 const styles:Record<string,CSSProperties>={
   page:{minHeight:'100dvh',background:'radial-gradient(ellipse at 45% 28%,#253443,#0c111a 70%)',color:'#fff1dc',padding:'clamp(16px,3.5vw,38px)',fontFamily:'system-ui,Arial,sans-serif'},
   frame:{maxWidth:850,margin:'0 auto',position:'relative',zIndex:1},
@@ -24,14 +27,10 @@ const styles:Record<string,CSSProperties>={
 };
 
 export default function DiceLabPage() {
-  const [rolls,setRolls]=useState<ScreenRoll[]>([]);
-  const [enabled,setEnabled]=useState(true);
-  const [color,setColor]=useState(defaultColor);
-  const [numberColor,setNumberColor]=useState('#fff0c8');
-  const [numberStyle,setNumberStyle]=useState<'classic'|'modern'|'mono'>('classic');
-  const [lifetime,setLifetime]=useState(8);
+  const [view,updateView]=usePlayViewPreferences();
+  const controller=useDiceController(diceOptions(view));
   const [build,setBuild]=useState('Загрузка номера сборки…');
-  const [history,setHistory]=useState<string[]>([]);
+  const [history,setHistory]=useState<{name:string;result:DiceResult}[]>([]);
   const [formula,setFormula]=useState('2d6+1d4+3');
   const [error,setError]=useState('');
   useEffect(()=>{
@@ -41,17 +40,10 @@ export default function DiceLabPage() {
       .catch(()=>{if(!cancelled)setBuild('Локальная сборка');});
     return()=>{cancelled=true;};
   },[]);
-  const launch=useCallback((name:string,value:string)=>{
-    try{
-      const result=rollDice(value);
-      const roll={id:makeId(),name,result};
-      setRolls(previous=>[...previous,roll].slice(-50));
-      setHistory(previous=>[name+' — '+result.formula+' = '+result.total,...previous].slice(0,8));
-      setError('');
-    }catch(reason){
-      setError(reason instanceof Error?reason.message:String(reason));
-    }
-  },[]);
+  async function launch(name:string,value:string){
+    try{const result=await controller.run(()=>rollDice(value));setHistory(previous=>[{name,result},...previous].slice(0,8));setError('');}
+    catch(reason){if((reason as Error).name!=='AbortError')setError(reason instanceof Error?reason.message:String(reason));}
+  }
   return <main style={styles.page}>
     <div style={styles.frame}>
       <header style={{display:'flex',gap:14,justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',marginBottom:18}}>
@@ -73,43 +65,22 @@ export default function DiceLabPage() {
         <form onSubmit={e=>{e.preventDefault();launch('Своя формула',formula);}} style={{display:'flex',flexWrap:'wrap',gap:10,marginTop:14}}>
           <input style={{flex:'1 1 220px',minWidth:0,border:'1px solid #927757',background:'#111a25',color:'white',padding:12,borderRadius:7}}
             aria-label="Своя формула броска" value={formula} onChange={e=>setFormula(e.target.value)}/>
-          <button style={styles.button} type="submit">Бросить формулу</button>
+          <button style={styles.button} type="submit">Бросить формулу</button><DiceSettings view={view} onChange={updateView}/>
         </form>
         {error&&<p role="alert" style={{color:'#ffaaa0'}}>{error}</p>}
         <hr style={{border:0,borderTop:'1px solid #574f49',margin:'22px 0'}}/>
-        <div style={{display:'flex',flexWrap:'wrap',gap:22,alignItems:'center'}}>
-          <label style={{display:'flex',gap:7,alignItems:'center'}}>
-            <input aria-label="Включить анимацию" type="checkbox" checked={enabled} onChange={e=>setEnabled(e.target.checked)}/> Анимация
-          </label>
-          <label style={{display:'flex',gap:8,alignItems:'center'}}>Цвет
-            <input aria-label="Цвет кубиков" type="color" value={color} onChange={e=>setColor(e.target.value)}/>
-          </label>
-          <label style={{display:'flex',gap:8,alignItems:'center'}}>Цвет чисел
-            <input aria-label="Цвет чисел на кубиках" type="color" value={numberColor} onChange={e=>setNumberColor(e.target.value)}/>
-          </label>
-          <label style={{display:'flex',gap:8,alignItems:'center'}}>Стиль чисел
-            <select aria-label="Стиль чисел на кубиках" value={numberStyle} onChange={e=>setNumberStyle(e.target.value as typeof numberStyle)} style={{background:'#202936',color:'white',padding:10,borderRadius:7}}><option value="classic">Классический</option><option value="modern">Современный</option><option value="mono">Моноширинный</option></select>
-          </label>
-          <label style={{display:'flex',gap:8,alignItems:'center'}}>Время до исчезновения
-            <select aria-label="Время до исчезновения" value={lifetime} onChange={e=>setLifetime(Number(e.target.value))}
-              style={{background:'#202936',color:'white',padding:10,borderRadius:7}}>
-              {[0,1,3,5,8,15,30].map(t=><option key={t} value={t}>{t} сек.</option>)}
-            </select>
-          </label>
-        </div>
         <div style={{display:'flex',gap:16,alignItems:'center',marginTop:18}}>
-          <button style={styles.button} onClick={()=>{setRolls([]);setHistory([]);}}>Очистить кубики</button>
-          <span data-testid="active-rolls" style={styles.muted}>Активных бросков: {rolls.length}</span>
+          <button style={styles.button} onClick={()=>{controller.clear();setHistory([]);}}>Очистить кубики</button>
+          <span data-testid="active-rolls" style={styles.muted}>Активных бросков: {controller.pending}</span>
         </div>
         {history.length>0&&<div aria-label="История тестовых бросков" style={{marginTop:17,display:'grid',gap:5}}>
-          {history.map((v,i)=><div key={i} style={{fontSize:13,color:'#e8d3b3'}}>{v}</div>)}
+          {history.map((v,i)=><div key={i} data-testid="dice-history-result" data-result={JSON.stringify(v.result)} style={{fontSize:13,color:'#e8d3b3'}}>{v.name} — {v.result.formula} = {v.result.total}</div>)}
         </div>}
       </section>
       <p style={{...styles.muted,marginTop:18}}>
         Тестовый маршрут: <code>/dice-preview/dice-lab/</code>. Он использует тот же компонент анимации, что игровой режим.
       </p>
     </div>
-    <DiceScreenOverlay rolls={rolls} options={{enabled,color,lifetime,numberColor,numberStyle}}
-      onExpire={id=>setRolls(previous=>previous.filter(roll=>roll.id!==id))}/>
+    {controller.overlay}
   </main>;
 }

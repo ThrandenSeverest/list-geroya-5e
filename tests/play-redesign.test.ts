@@ -28,7 +28,7 @@ test('attack customizations recompute with ability and proficiency and survive n
  assert.equal(characterAttacks(playDerived(play),[]).find(x=>x.id===base.id)!.attackBonus,7);
 });
 test('invalid view settings recover without touching character data',()=>{
- assert.deepEqual(normalizePlayView({density:'huge',hiddenBlocks:['turn','unknown'],hints:'unknown',sessionPanels:{actions:true,spells:'bad'},layout:'bad'}),{density:undefined,hints:'brief',hiddenBlocks:['turn'],sessionPanels:{actions:true},layout:'columns',diceAnimation:true,diceColor:'#332c27',diceLifetime:3,diceNumberColor:'#fff0c8',diceNumberStyle:'classic'});
+ assert.deepEqual(normalizePlayView({density:'huge',hiddenBlocks:['turn','unknown'],hints:'unknown',sessionPanels:{actions:true,spells:'bad'},layout:'bad'}),{density:undefined,hints:'brief',hiddenBlocks:['turn'],sessionPanels:{actions:true},layout:'columns',diceAnimation:true,diceColor:'#332c27',diceLifetime:3,diceNumberColor:'#fff0c8',diceNumberStyle:'classic',diceSize:1,diceNumberScale:1,diceD4Mode:'vertex',diceD4Label:true,diceSound:true,diceVolume:.5});
 });
 test('dice number settings survive normalization and reject unknown values',()=>{
  const view=normalizePlayView({diceNumberStyle:'mono',diceNumberColor:'#11ccff'});

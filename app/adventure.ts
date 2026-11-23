@@ -1,3 +1,4 @@
+import { activeDiceSource, type DieSource } from './diceSource';
 import { equipmentPacks } from './equipmentPacks';
 import type { ExportCharacter } from './exportFormats';
 import { abilityModifier, estimatedHitPoints } from './exportFormats';
@@ -281,24 +282,33 @@ export function finishAttunement(c: ExportCharacter) {
 export type DiceResult = { formula: string; rolls: number[]; total: number; natural?: number; critical?: boolean };
 export type RollMode = 'normal' | 'advantage' | 'disadvantage';
 export function randomDie(sides: number): number {
+  const source=activeDiceSource();if(source)return source(sides);
   const limit = Math.floor(0x100000000 / sides) * sides;
   const values = new Uint32Array(1); do { crypto.getRandomValues(values); } while (values[0] >= limit);
   return values[0] % sides + 1;
 }
-/** Strict arithmetic parser: bounded sums of dice and integers, no code execution. */
-export function rollDice(formula: string, die: (sides: number) => number = randomDie, critical = false): DiceResult {
-  const value = formula.toLowerCase().replace(/к/g, 'd').replace(/\s/g, '').replace(/\+\-/g, '-').replace(/--/g, '+');
-  if (!value || value.length > 160 || !/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value)) throw new Error('Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.');
-  const rolls: number[] = []; let total = 0;
-  for (const term of value.match(/[+-]?[^+-]+/g) || []) {
-    const sign = term.startsWith('-') ? -1 : 1; const part = term.replace(/^[+-]/, '');
-    if (part.includes('d')) {
-      const [count, sides] = part.split('d').map(Number); const n = (count || 1) * (critical ? 2 : 1);
-      if ((count === 0 && part.startsWith('0')) || n < 1 || n > 200 || sides < 2 || sides > 1000 || rolls.length + n > 200) throw new Error('Слишком много костей или недопустимый размер кости.');
-      for (let i = 0; i < n; i++) { const rolled = die(sides); rolls.push(rolled); total += sign * rolled; }
-    } else { const n = Number(part); if (!Number.isSafeInteger(n) || n > 1000000) throw new Error('Слишком большой модификатор.'); total += sign * n; }
+export function prepareDice(die:(sides:number)=>number,sides:number[]){((die===randomDie?activeDiceSource():die) as DieSource|undefined)?.prepare?.(sides);}
+/** Parse and validate a formula without sampling any result. */
+export function diceFormulaTerms(formula:string,critical=false){
+ const value=formula.toLowerCase().replace(/к/g,'d').replace(/\s/g,'').replace(/\+\-/g,'-').replace(/--/g,'+');
+ if(!value||value.length>160||!/^[+-]?(?:\d*d\d+|\d+)(?:[+-](?:\d*d\d+|\d+))*$/.test(value))throw Error('Формула: например 1d20+5 или 2d6+3. Допускаются только кости, числа, + и −.');
+ let countTotal=0;
+ return (value.match(/[+-]?[^+-]+/g)||[]).map(term=>{
+  const sign=term.startsWith('-')?-1:1,part=term.replace(/^[+-]/,'');
+  if(part.includes('d')){const [count,sides]=part.split('d').map(Number),n=(count||1)*(critical?2:1);countTotal+=n;
+   if((count===0&&part.startsWith('0'))||n<1||n>200||sides<2||sides>1000||countTotal>200)throw Error('Слишком много костей или недопустимый размер кости.');
+   return {sign,count:n,sides,modifier:0};
   }
-  return { formula: critical ? `${formula} (крит: кости ×2)` : formula, rolls, total };
+  const modifier=Number(part);if(!Number.isSafeInteger(modifier)||modifier>1000000)throw Error('Слишком большой модификатор.');
+  return {sign,count:0,sides:0,modifier};
+ });
+}
+export function rollDice(formula:string,die:(sides:number)=>number=randomDie,critical=false):DiceResult{
+ const terms=diceFormulaTerms(formula,critical),sides=terms.flatMap(t=>Array(t.count).fill(t.sides));
+ prepareDice(die,sides);
+ const rolls:number[]=[];let total=0;
+ for(const term of terms){total+=term.sign*term.modifier;for(let i=0;i<term.count;i++){const value=die(term.sides);rolls.push(value);total+=term.sign*value;}}
+ return {formula:critical?`${formula} (крит: кости ×2)`:formula,rolls,total};
 }
 /** Attack damage is at least one after dice and modifiers; generic rolls remain signed. */
 export function rollDamage(formula: string, die?: (sides: number) => number, critical = false): DiceResult {
@@ -306,6 +316,7 @@ export function rollDamage(formula: string, die?: (sides: number) => number, cri
  return result.total<1?{...result,total:1}:result;
 }
 export function rollD20(bonus: number, mode: RollMode = 'normal', die: (sides: number) => number = randomDie): DiceResult {
+  prepareDice(die,mode==='normal'?[20]:[20,20]);
   const rolls = [die(20)]; if (mode !== 'normal') rolls.push(die(20));
   const natural = mode === 'advantage' ? Math.max(...rolls) : mode === 'disadvantage' ? Math.min(...rolls) : rolls[0];
   return { formula: `${mode === 'normal' ? '1d20' : '2d20' + (mode === 'advantage' ? ' (лучший)' : ' (худший)')}${bonus >= 0 ? '+' : ''}${bonus}`, rolls, total: natural + bonus, natural, critical: natural === 20 };
@@ -333,6 +344,7 @@ export function restPlay(c: ExportCharacter, kind: 'short' | 'long', selectedDic
   const keepConcentration = kind === 'short' && c.adventure.concentration && (remaining === undefined || remaining > 60);
   const derived = playDerived(c); const pools = playHitDicePools(c); const spent = Object.fromEntries(pools.map(p => [p.classId, p.spent]));
   let healing = 0;
+  if(kind==='short')prepareDice(die,pools.flatMap(pool=>Array(integer(selectedDice[pool.classId],0,pool.max-pool.spent)).fill(pool.die)));
   if (kind === 'short') for (const pool of pools) {
     const count = integer(selectedDice[pool.classId], 0, pool.max - pool.spent);
     for (let i = 0; i < count; i++) healing += Math.max(0, die(pool.die) + abilityModifier(derived.abilities.con));

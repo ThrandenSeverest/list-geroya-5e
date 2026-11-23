@@ -3,7 +3,7 @@ import type { CatalogSpell } from './catalog';
 import type { ExportCharacter } from './exportFormats';
 import { resolvePactMagic, resolveSpellSlots } from './multiclass';
 import { resolvedRacialSpells } from './racialSpellcasting';
-import { durationMinutes, endConcentration, logPlay, rollD20, rollDice, rollDamage, type DiceResult, type RollMode } from './adventure';
+import { durationMinutes, endConcentration, logPlay, diceFormulaTerms, rollD20, rollDice, rollDamage, type DiceResult, type RollMode } from './adventure';
 import { equippedHands, itemCategory } from './adventure';
 import { spellPlayProfile, type SpellPlayProfile } from './playSpells';
 export function spellHandsWarning(c:ExportCharacter,spell:CatalogSpell,classId=c.className):string|undefined {
@@ -44,7 +44,7 @@ export function castPlaySpell(c:ExportCharacter,spell:CatalogSpell,methodId:stri
  if(!method)throw new Error('Выбранная ячейка или использование уже недоступны.');
  const base=spellPlayProfile(c,spell,method.level,classId);
  const profile={...base,...(manualFormula?.trim()?base.healingFormula?{healingFormula:manualFormula.trim()}:{damageFormula:manualFormula.trim()}:{})};
- for(const formula of [profile.damageFormula,profile.healingFormula])if(formula)rollDice(formula,()=>1);
+ for(const formula of [profile.damageFormula,profile.healingFormula])if(formula)diceFormulaTerms(formula);
  const parts:CastPart[]=[],events:SpellCastResult['events']=[];
  for(let i=0;i<profile.projectiles;i++){
    const part:CastPart={},suffix=profile.projectiles>1?` · снаряд ${i+1}`:'';

@@ -84,7 +84,7 @@ function trapezohedron(): DiceMesh {
   ]){
     const center=average(ids.map(j=>vertices[j]));
     let normal=unit(cross(sub(vertices[ids[1]],vertices[ids[0]]),sub(vertices[ids[2]],vertices[ids[0]])));
-    if(dot(normal,center)<0)normal=[-normal[0],-normal[1],-normal[2]];
+    if(dot(normal,center)<0){normal=[-normal[0],-normal[1],-normal[2]];ids.reverse();}
     faces.push({vertices:ids,normal});
   }
   return {vertices,faces};
