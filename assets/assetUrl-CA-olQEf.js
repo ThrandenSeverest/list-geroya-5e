@@ -1,0 +1,1 @@
+function e(e){return`${`/list-geroya-5e/`.replace(/\/$/,``)}/${e.replace(/^\/+/,``)}`}export{e as t};

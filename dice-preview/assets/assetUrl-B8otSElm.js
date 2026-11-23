@@ -1,1 +1,0 @@
-function e(e){return`${`/list-geroya-5e/dice-preview/`.replace(/\/$/,``)}/${e.replace(/^\/+/,``)}`}export{e as t};

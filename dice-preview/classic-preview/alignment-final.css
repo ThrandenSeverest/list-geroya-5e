@@ -1,8 +1,0 @@
-/* Fixed column geometry follows the three preprinted attack cells. */
-.classic-sheet--template .classic-sheet-attacks{table-layout:fixed;width:100%!important;border-collapse:collapse}
-.classic-sheet--template .classic-sheet-attacks tbody tr{height:7.2mm}
-.classic-sheet--template .classic-sheet-attacks tbody td{vertical-align:middle;padding:.4mm .6mm!important}
-.classic-sheet--template .classic-sheet-attacks tbody td:nth-child(1){width:40%;text-align:left}
-.classic-sheet--template .classic-sheet-attacks tbody td:nth-child(2){width:25%;text-align:center}
-.classic-sheet--template .classic-sheet-attacks tbody td:nth-child(3){width:35%;text-align:center}
-.classic-sheet--template .classic-sheet-center>.classic-sheet-panel:nth-child(2) .classic-sheet-panel-body{padding:0;display:flex;align-items:center;justify-content:flex-end}
