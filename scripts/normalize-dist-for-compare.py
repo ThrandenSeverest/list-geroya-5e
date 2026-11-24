@@ -55,6 +55,13 @@ def normalize(root: Path) -> None:
             build_ids.append(detected.group(1))
         for build_id in set(build_ids):
             normalized = normalized.replace(build_id, "normalized-build-id")
+        # SWC also derives temporary variable names from the build UUID in
+        # artifact compatibility helpers. Only normalize aliases assigned this ID.
+        for generated_alias in set(re.findall(
+            r'(_[0-9A-Fa-f]{8,})\s*=\s*"normalized-build-id"', normalized
+        )):
+            normalized = re.sub(r'(?<![\w$])' + re.escape(generated_alias) + r'(?![\w$])',
+                                "_normalizedBuildId", normalized)
         for alias in build_id_aliases:
             normalized = re.sub(
                 r'get buildId\(\)\s*\{[^}]*\}',
