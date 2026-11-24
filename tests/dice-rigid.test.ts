@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DiceTable,bottomFace,readPhysicalDie,faceValues,vertexValue} from '../app/diceRigidPhysics';
+import {DiceTable,bottomFace,readPhysicalDie,faceValues,vertexValue,launchManualDie} from '../app/diceRigidPhysics';
 import {resolvePhysicalAction} from '../app/diceSource';
 import {rollDice,rollD20} from '../app/adventure';
 function rng(seed:number){return ()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};}
@@ -89,6 +89,18 @@ test('A rolling die touching the wall reverses direction, and touching dice repe
  assert.ok(Math.hypot(a.body.position.x-b.body.position.x,a.body.position.y-b.body.position.y)>=1.95);
  assert.ok(b.body.velocity.x>0,'collision transfers motion to the other die');
  assert.ok(a.body.velocity.x<b.body.velocity.x,'incoming die does not keep pushing through');
+});
+test('A hand-thrown die carries the release velocity and settles on a real face',()=>{
+ const table=new DiceTable(370,640),die=table.add('hand',20,36,rng(27));
+ launchManualDie(die,{x:160,y:320,vx:760,vy:-240,spin:5},370,640,0);
+ assert.ok(die.entered);
+ assert.ok(die.body.velocity.x>15&&die.body.velocity.y< -4);
+ const start=die.body.position.x;
+ for(let t=0;t<12;t++)table.step();
+ assert.ok(die.body.position.x>start+.4,'the manual throw must move in the release direction');
+ for(let t=0;t<3600&&!die.settled;t++)table.step();
+ assert.ok(die.settled);
+ assert.equal(die.value,readPhysicalDie(die));
 });
 test('First rethrow ignores other dice while keeping wood and walls',()=>{
  const table=new DiceTable(370,640),random=rng(7);

@@ -26,6 +26,15 @@ export function readPhysicalDie(d:PhysicalDie):number {
  return d.numbering==='tens'?(face-1)*10:d.numbering==='units'?face-1:face;
 }
 export function vertexValue(d:PhysicalDie,vertex:number){const opposite=d.mesh.faces.findIndex(f=>!f.vertices.includes(vertex));return physicalFaceValue(4,opposite);}
+/** Place a held die in the same world as automatic rolls, carrying the release velocity and spin. */
+export function launchManualDie(d:PhysicalDie,throwAt:{x:number;y:number;vx:number;vy:number;spin:number},width:number,height:number,index:number){
+ const r=d.size/DICE_UNIT,theta=index*2.39996,w=width/DICE_UNIT,h=height/DICE_UNIT;
+ const clamp=(v:number,low:number,high:number)=>Math.max(low,Math.min(high,v));
+ d.body.position.set(clamp((throwAt.x-10)/DICE_UNIT+Math.cos(theta)*r*.35,r,w-r),clamp((throwAt.y-10)/DICE_UNIT+Math.sin(theta)*r*.35,r,h-r),r*(1.7+d.random()*.3));
+ d.body.velocity.set(clamp(throwAt.vx/DICE_UNIT,-38,38)+(d.random()-.5)*2,clamp(throwAt.vy/DICE_UNIT,-38,38)+(d.random()-.5)*2,-1);
+ d.body.angularVelocity.set(-d.body.velocity.y/(r*.8)+throwAt.spin,d.body.velocity.x/(r*.8)+throwAt.spin,(d.random()-.5)*4+throwAt.spin*.5);
+ d.delay=index*.025;d.entered=true;d.body.collisionFilterMask=15;d.body.aabbNeedsUpdate=true;
+}
 export class DiceTable {
  world:World;dice:PhysicalDie[]=[];width:number;height:number;time=0;private walls:Body[]=[];
  private dieMaterial=new Material('dice');private wood=new Material('wood');private rim=new Material('rim');

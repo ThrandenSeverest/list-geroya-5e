@@ -5,10 +5,13 @@ import {Body,Vec3 as PhysicsVec3} from 'cannon-es';
 import type {Vec3} from './diceScreenMath';
 import {diceRenderPixelRatio} from './diceScreenMotion';
 import {screenDieSize} from './diceScreenPhysics';
-import {DiceTable,DICE_UNIT,physicalFaceValue,vertexValue,bottomFace,type PhysicalDie} from './diceRigidPhysics';
+import {DiceTable,DICE_UNIT,physicalFaceValue,vertexValue,bottomFace,launchManualDie,type PhysicalDie} from './diceRigidPhysics';
 import {playDiceAudio} from './diceAudio';
 import './dice-screen.css';
 export type ScreenRoll={id:string;sides:number[]};
+export type HeldDiceRoll={id:string;sides:number[];x:number;y:number;angle:number};
+export type ManualDiceThrow=HeldDiceRoll & {vx:number;vy:number;spin:number};
+export type ScreenRollWithThrow=ScreenRoll & {manual?:ManualDiceThrow};
 export type DiceScreenOptions={enabled:boolean;color:string;lifetime:number;numberColor:string;numberStyle:'classic'|'modern'|'mono';size:number;numberScale:number;d4Mode:'vertex'|'face';d4Label:boolean;sound:boolean;volume:number};
 type MovingDie=PhysicalDie & {rollId:string;originalIndex:number};
 type Point2=[number,number];
@@ -119,23 +122,41 @@ function renderDie(ctx:CanvasRenderingContext2D,die:MovingDie,options:DiceScreen
  if(die.sides===4&&die.settled&&options.d4Label){ctx.font='700 '+Math.round(size*.4)+'px '+(options.numberStyle==='modern'?'Arial,sans-serif':options.numberStyle==='mono'?'monospace':'Georgia,serif');ctx.textAlign='center';ctx.textBaseline='top';ctx.fillStyle=options.numberColor;ctx.fillText(String(die.value),x,groundY+size*.85);}
  ctx.restore();
 }
-export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:ScreenRoll[];options:DiceScreenOptions;onComplete:(id:string,values:number[])=>void;onExpire:(id:string)=>void}){
+export function DiceScreenOverlay({rolls,held,options,onComplete,onExpire}:{rolls:ScreenRollWithThrow[];held:HeldDiceRoll|null;options:DiceScreenOptions;onComplete:(id:string,values:number[])=>void;onExpire:(id:string)=>void}){
  const [portal,setPortal]=useState<HTMLElement|null>(null);
  const canvas=useRef<HTMLCanvasElement>(null),table=useRef<DiceTable|null>(null);
- const batches=useRef(new Map<string,{roll:ScreenRoll;dice:MovingDie[];completedAt?:number}>());
- const props=useRef({rolls,options,onComplete,onExpire});props.current={rolls,options,onComplete,onExpire};
+ const batches=useRef(new Map<string,{roll:ScreenRollWithThrow;dice:MovingDie[];completedAt?:number}>());
+ const preview=useRef<{id:string;dice:MovingDie[]}|null>(null);
+ const props=useRef({rolls,held,options,onComplete,onExpire});props.current={rolls,held,options,onComplete,onExpire};
  useEffect(()=>setPortal(document.body),[]);
  useEffect(()=>{
   if(!portal)return;
   let frame:number,last=0,accumulator=0;
   const tick=(now:number)=>{
    const node=canvas.current,ctx=node?.getContext('2d');if(!node||!ctx){frame=requestAnimationFrame(tick);return;}
-   const {rolls:current,options:opts,onComplete:complete,onExpire:expire}=props.current;
+   const {rolls:current,held:holding,options:opts,onComplete:complete,onExpire:expire}=props.current;
    const width=Math.max(120,Math.min(window.innerWidth,window.visualViewport?.width||window.innerWidth));
    const height=Math.max(160,Math.min(window.innerHeight,window.visualViewport?.height||window.innerHeight));
    const w=width-20,h=height-(width<700?100:40);
    if(!table.current)table.current=new DiceTable(w,h);
    const sim=table.current;if(sim.width!==w||sim.height!==h)sim.resize(w,h);
+   const size=Math.max(6,Math.min(screenDieSize(width,height)*opts.size,Math.min(w,h)*.18));
+   if(holding&&opts.enabled&&preview.current?.id!==holding.id){
+    const dice:MovingDie[]=[];
+    holding.sides.forEach((s,index)=>{for(const numbering of s===100?['tens','units'] as const:['regular'] as const){
+     const d=sim.add(holding.id+':'+dice.length,s===100?10:s,size,random,numbering,dice.length) as MovingDie;
+     d.rollId=holding.id;d.originalIndex=index;dice.push(d);
+     sim.dice.pop(); // A held die is rendered but is not yet in the physics world.
+    }});
+    preview.current={id:holding.id,dice};
+   }
+   if(holding&&preview.current?.id===holding.id){
+    preview.current.dice.forEach((d,i)=>{
+     const spread=Math.min(d.size*.45,12),theta=i*2.39996;
+     d.body.position.set(clamp((holding.x+Math.cos(theta)*spread-10)/DICE_UNIT,d.size/DICE_UNIT,w-d.size/DICE_UNIT),clamp((holding.y+Math.sin(theta)*spread-10)/DICE_UNIT,d.size/DICE_UNIT,h-d.size/DICE_UNIT),d.size/DICE_UNIT*1.8);
+     d.body.quaternion.setFromEuler(holding.angle+i*.37,holding.angle*.7+i*.59,holding.angle*.4+i*.81);
+    });
+   }
    const ids=new Set(current.map(r=>r.id));
    for(const [id,b] of batches.current)if(!ids.has(id)){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);}
    for(const roll of current){
@@ -143,14 +164,16 @@ export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:Scr
     // Retire completed older throws if they would crowd a new throw.
     const count=roll.sides.reduce((n,s)=>n+(s===100?2:1),0);
     if(sim.dice.length+count>(width<700?24:40))for(const [id,b] of batches.current)if(b.completedAt!==undefined){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);expire(id);}
-    const size=Math.max(6,Math.min(screenDieSize(width,height)*opts.size,Math.min(w,h)*.18));
     const items:MovingDie[]=[];
-    roll.sides.forEach((s,index)=>{
+    if(roll.manual&&preview.current?.id===roll.id){items.push(...preview.current.dice);preview.current=null;sim.dice.push(...items);}
+    else roll.sides.forEach((s,index)=>{
      const parts=s===100?['tens','units'] as const:['regular'] as const;
      for(const numbering of parts){const d=sim.add(roll.id+':'+items.length,s===100?10:s,size,random,numbering,items.length) as MovingDie;d.rollId=roll.id;d.originalIndex=index;items.push(d);}
     });
+    if(roll.manual)items.forEach((d,i)=>launchManualDie(d,roll.manual!,w,h,i));
     batches.current.set(roll.id,{roll,dice:items});
    }
+   if(!holding&&preview.current&&!current.some(r=>r.id===preview.current!.id))preview.current=null;
    const dt=last?Math.min(.1,(now-last)/1000):0;last=now;accumulator+=dt;
    while(accumulator>=1/120){if(sim.dice.length)sim.step(1/120);accumulator-=1/120;}
    let impact=0;for(const d of sim.dice){impact=Math.max(impact,d.lastImpact);d.lastImpact=0;}if(opts.sound&&impact>2.5)playDiceAudio(opts.volume,Math.min(1,impact/13));
@@ -168,11 +191,12 @@ export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:Scr
    if(node.width!==Math.round(width*ratio)||node.height!==Math.round(height*ratio)){node.width=Math.round(width*ratio);node.height=Math.round(height*ratio);}
    ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,width,height);
    for(const b of batches.current.values()){const alpha=b.completedAt===undefined?1:clamp((opts.lifetime*1000+350-(now-b.completedAt))/350);for(const d of b.dice)if(d.launched)renderDie(ctx,d,opts,alpha);}
+   if(holding&&preview.current?.id===holding.id)for(const d of preview.current.dice)renderDie(ctx,d,opts,1);
    node.dataset.diceEngine='physical-outcome-v9';node.dataset.numberColor=opts.numberColor;node.dataset.numberStyle=opts.numberStyle;
    if(window.location.pathname.includes('/dice-lab'))node.dataset.diceState=JSON.stringify(sim.dice.map(d=>({id:d.id,sides:d.sides,numbering:d.numbering,x:d.body.position.x*DICE_UNIT+10,y:d.body.position.y*DICE_UNIT+10,modelSize:d.size,entered:d.entered,settled:d.settled,value:d.value,flat:bottomFace(d).alignment,orientation:[d.body.quaternion.x,d.body.quaternion.y,d.body.quaternion.z,d.body.quaternion.w],labels:d.mesh.faces.map((_,i)=>physicalFaceValue(d.sides,i))})));
    frame=requestAnimationFrame(tick);
   };
-  frame=requestAnimationFrame(tick);return()=>{cancelAnimationFrame(frame);table.current=null;batches.current.clear();};
+  frame=requestAnimationFrame(tick);return()=>{cancelAnimationFrame(frame);table.current=null;batches.current.clear();preview.current=null;};
  },[portal]);
  return portal?createPortal(<canvas ref={canvas} className="hero-screen-dice" aria-hidden="true"/>,portal):null;
 }
