@@ -152,7 +152,7 @@ export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:Scr
     batches.current.set(roll.id,{roll,dice:items});
    }
    const dt=last?Math.min(.1,(now-last)/1000):0;last=now;accumulator+=dt;
-   while(accumulator>=1/120){if(sim.dice.some(d=>!d.settled))sim.step(1/120);accumulator-=1/120;}
+   while(accumulator>=1/120){if(sim.dice.length)sim.step(1/120);accumulator-=1/120;}
    let impact=0;for(const d of sim.dice){impact=Math.max(impact,d.lastImpact);d.lastImpact=0;}if(opts.sound&&impact>2.5)playDiceAudio(opts.volume,Math.min(1,impact/13));
    for(const [id,b] of batches.current){
     if(b.completedAt===undefined&&b.dice.every(d=>d.settled)){

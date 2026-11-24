@@ -88,3 +88,20 @@ test('First rethrow ignores other dice while keeping wood and walls',()=>{
  assert.equal(die.rerolls,1);
  assert.equal(die.value,readPhysicalDie(die));
 });
+
+test('Eight large mobile dice cannot share horizontal space after one second',()=>{
+ for(let seed=1;seed<=12;seed++){
+  const table=new DiceTable(370,640),random=rng(seed);
+  const dice=Array.from({length:8},(_,i)=>table.add('large'+i,6,48,random,'regular',i));
+  for(let frame=0;frame<1800;frame++){
+   table.step();
+   const active=dice.filter(d=>d.entered&&d.launched&&d.age>=1);
+   for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){
+    const a=active[i],b=active[j];
+    assert.ok(Math.hypot(a.body.position.x-b.body.position.x,a.body.position.y-b.body.position.y)>=(a.size+b.size)/40*1.35+.04-.01,`overlap seed ${seed} frame ${frame}`);
+   }
+   if(dice.every(d=>d.settled))break;
+  }
+  assert.ok(dice.every(d=>d.settled));
+ }
+});
