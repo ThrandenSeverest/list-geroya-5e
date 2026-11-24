@@ -36098,18 +36098,33 @@ var DiceTable = class {
 	solvePlanarContacts() {
 		const dice = this.dice.filter((d) => d.launched && d.entered && d.age >= 1);
 		const w = this.width / 40, h = this.height / 40;
-		const radius = (d) => d.size / 40 * 1.35 + .02;
+		const radius = (d) => d.size / 40 * .98;
 		const cy = (d) => d.body.position.y;
 		const move = (d, x, y) => {
 			d.body.position.x += x;
 			d.body.position.y += y;
 			d.body.aabbNeedsUpdate = true;
 		};
-		for (let pass = 0; pass < 160; pass++) {
+		for (let pass = 0; pass < 48; pass++) {
 			let error = 0;
 			for (const d of dice) {
-				const r = radius(d);
-				move(d, Math.max(r, Math.min(w - r, d.body.position.x)) - d.body.position.x, Math.max(r, Math.min(h - r, cy(d))) - cy(d));
+				const r = radius(d), b = d.body;
+				const px = Math.max(r, Math.min(w - r, b.position.x)), py = Math.max(r, Math.min(h - r, cy(d)));
+				if (px !== b.position.x || py !== cy(d)) move(d, px - b.position.x, py - cy(d));
+				if (!d.settled) {
+					const hitX = b.position.x <= r + .035 && b.velocity.x < -.2 || b.position.x >= w - r - .035 && b.velocity.x > .2;
+					const hitY = b.position.y <= r + .035 && b.velocity.y < -.2 || b.position.y >= h - r - .035 && b.velocity.y > .2;
+					if (hitX) {
+						b.velocity.x = -b.velocity.x * .5;
+						b.angularVelocity.y = -b.angularVelocity.y * .5;
+						b.wakeUp();
+					}
+					if (hitY) {
+						b.velocity.y = -b.velocity.y * .5;
+						b.angularVelocity.x = -b.angularVelocity.x * .5;
+						b.wakeUp();
+					}
+				}
 			}
 			for (let i = 0; i < dice.length; i++) for (let j = i + 1; j < dice.length; j++) {
 				const a = dice[i], b = dice[j];
@@ -36128,13 +36143,16 @@ var DiceTable = class {
 				move(b, nx * shift, ny * shift);
 				const closing = (b.body.velocity.x - a.body.velocity.x) * nx + (b.body.velocity.y - a.body.velocity.y) * ny;
 				if (closing < 0) {
+					const impulse = -closing * .62;
 					if (!a.settled) {
-						a.body.velocity.x += closing * nx * .5;
-						a.body.velocity.y += closing * ny * .5;
+						a.body.velocity.x -= impulse * nx;
+						a.body.velocity.y -= impulse * ny;
+						a.body.wakeUp();
 					}
 					if (!b.settled) {
-						b.body.velocity.x -= closing * nx * .5;
-						b.body.velocity.y -= closing * ny * .5;
+						b.body.velocity.x += impulse * nx;
+						b.body.velocity.y += impulse * ny;
+						b.body.wakeUp();
 					}
 				}
 			}

@@ -7452,8 +7452,8 @@ var NextURL = class NextURL {
 	* Matches the Next.js API: `request.nextUrl.buildId`.
 	*/
 	get buildId() {
-		var _Aa80a6fDa9d;
-		return (_Aa80a6fDa9d = "0aa80a6f-da9d-4669-8156-950bd510c930") !== null && _Aa80a6fDa9d !== void 0 ? _Aa80a6fDa9d : void 0;
+		var _Ffdbc69B6f84d;
+		return (_Ffdbc69B6f84d = "8ffdbc69-b6f8-4d43-88d3-f892187456c6") !== null && _Ffdbc69B6f84d !== void 0 ? _Ffdbc69B6f84d : void 0;
 	}
 };
 var RequestCookies = (_Symbol$iterator = Symbol.iterator, class {
@@ -12703,7 +12703,7 @@ function buildCacheKey(prefix, pathname, suffix) {
 * The suffix mirrors Next.js's separate on-disk app artifacts while keeping the
 * Cloudflare KV key under its 512-byte limit for long pathnames.
 */
-function appIsrCacheKey(pathname, suffix, buildId = "0aa80a6f-da9d-4669-8156-950bd510c930") {
+function appIsrCacheKey(pathname, suffix, buildId = "8ffdbc69-b6f8-4d43-88d3-f892187456c6") {
 	return buildCacheKey(buildId ? `app:${buildId}` : "app", pathname, suffix);
 }
 function appIsrHtmlKey(pathname) {
@@ -13043,7 +13043,7 @@ function readRootBoundaryId(element) {
 	return typeof rootLayoutTreePath === "string" ? rootLayoutTreePath : null;
 }
 function createAppPageArtifactCompatibility(element, routePattern) {
-	var _Aa80a6fDa9d;
+	var _Ffdbc69B6f84d;
 	if (!isAppElementsRecord(element)) return;
 	const rootBoundaryId = readRootBoundaryId(element);
 	return createArtifactCompatibilityEnvelope({
@@ -13051,7 +13051,7 @@ function createAppPageArtifactCompatibility(element, routePattern) {
 			routePattern,
 			rootBoundaryId
 		}),
-		deploymentVersion: (_Aa80a6fDa9d = "0aa80a6f-da9d-4669-8156-950bd510c930") !== null && _Aa80a6fDa9d !== void 0 ? _Aa80a6fDa9d : null,
+		deploymentVersion: (_Ffdbc69B6f84d = "8ffdbc69-b6f8-4d43-88d3-f892187456c6") !== null && _Ffdbc69B6f84d !== void 0 ? _Ffdbc69B6f84d : null,
 		rootBoundaryId
 	});
 }
