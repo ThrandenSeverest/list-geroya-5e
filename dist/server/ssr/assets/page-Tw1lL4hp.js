@@ -27953,6 +27953,33 @@ function SpellGroup({ level, entries, slots }) {
 }
 function ClassicCharacterSheet(props) {
 	var _props$currentHitPoin, _props$hitDiceRemaini;
+	const proficiencyLists = [
+		{
+			label: "Языки",
+			items: props.proficiencies.languages,
+			limit: 65
+		},
+		{
+			label: "Инструменты",
+			items: props.proficiencies.tools,
+			limit: 55
+		},
+		{
+			label: "Доспехи",
+			items: props.proficiencies.armor,
+			limit: 65
+		},
+		{
+			label: "Оружие",
+			items: props.proficiencies.weapons,
+			limit: 160
+		}
+	];
+	const hasProficiencyAppendix = proficiencyLists.some(({ items, limit }) => items.join(", ").length > limit);
+	const proficiencyDisplay = (label) => {
+		const list = proficiencyLists.find((entry) => entry.label === label);
+		return list.items.join(", ").length > list.limit ? `${list.items.length} наименований · полный список на стр. 4` : list.items.join(", ") || "—";
+	};
 	const root = useRef(null);
 	const editKey = `herolist-classic-text-v1:${props.identity.name || "unnamed"}`;
 	const [editMode, setEditMode] = useState(false);
@@ -28242,43 +28269,17 @@ function ClassicCharacterSheet(props) {
 											children: props.passivePerception
 										})
 									}),
-									/* @__PURE__ */ jsxs(Panel, {
+									/* @__PURE__ */ jsx(Panel, {
 										title: "Прочие умения и языки",
 										className: "classic-sheet-proficiencies",
-										children: [
-											/* @__PURE__ */ jsxs("p", {
-												title: props.proficiencies.languages.join(", "),
-												children: [
-													/* @__PURE__ */ jsx("b", { children: "Языки:" }),
-													" ",
-													props.proficiencies.languages.join(", ") || "—"
-												]
-											}),
-											/* @__PURE__ */ jsxs("p", {
-												title: props.proficiencies.tools.join(", "),
-												children: [
-													/* @__PURE__ */ jsx("b", { children: "Инструменты:" }),
-													" ",
-													props.proficiencies.tools.join(", ") || "—"
-												]
-											}),
-											/* @__PURE__ */ jsxs("p", {
-												title: props.proficiencies.armor.join(", "),
-												children: [
-													/* @__PURE__ */ jsx("b", { children: "Доспехи:" }),
-													" ",
-													props.proficiencies.armor.join(", ") || "—"
-												]
-											}),
-											/* @__PURE__ */ jsxs("p", {
-												title: props.proficiencies.weapons.join(", "),
-												children: [
-													/* @__PURE__ */ jsx("b", { children: "Оружие:" }),
-													" ",
-													props.proficiencies.weapons.join(", ") || "—"
-												]
-											})
-										]
+										children: proficiencyLists.map(({ label, items }) => /* @__PURE__ */ jsxs("p", {
+											title: items.join(", "),
+											children: [
+												/* @__PURE__ */ jsxs("b", { children: [label, ":"] }),
+												" ",
+												proficiencyDisplay(label)
+											]
+										}, label))
 									})
 								]
 							}),
@@ -28519,11 +28520,18 @@ function ClassicCharacterSheet(props) {
 					})
 				]
 			}),
+			hasProficiencyAppendix && /* @__PURE__ */ jsxs("section", {
+				className: "classic-sheet-page classic-sheet-overflow classic-sheet-proficiencies-appendix",
+				children: [/* @__PURE__ */ jsx(ClassicHeader, {
+					title: "Владения и языки",
+					page: 4
+				}), proficiencyLists.map(({ label, items }) => /* @__PURE__ */ jsxs("section", { children: [/* @__PURE__ */ jsx("h2", { children: label }), /* @__PURE__ */ jsx("p", { children: items.join(", ") || "—" })] }, label))]
+			}),
 			extraPages.map((page, pageIndex) => /* @__PURE__ */ jsxs("section", {
 				className: "classic-sheet-page classic-sheet-overflow",
 				children: [/* @__PURE__ */ jsx(ClassicHeader, {
 					title: "Продолжение списка заклинаний",
-					page: 4 + pageIndex
+					page: 4 + Number(hasProficiencyAppendix) + pageIndex
 				}), page.map((spell) => /* @__PURE__ */ jsxs("div", {
 					className: "classic-sheet-spell-row",
 					children: [/* @__PURE__ */ jsx("span", {
@@ -28540,7 +28548,7 @@ function ClassicCharacterSheet(props) {
 				spells: props.spells,
 				identityName: props.identity.name,
 				className: props.identity.className,
-				startPage: 4 + extraPages.length
+				startPage: 4 + Number(hasProficiencyAppendix) + extraPages.length
 			})
 		]
 	})] });
