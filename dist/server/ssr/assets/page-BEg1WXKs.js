@@ -27742,7 +27742,6 @@ var fitSelector = [
 	".classic-sheet-panel-body",
 	".classic-sheet-field-value",
 	".classic-sheet-head > strong",
-	".classic-sheet-proficiencies p",
 	".classic-equipment-text",
 	".classic-spell-name",
 	".classic-sheet-attack-cell"
