@@ -279,11 +279,11 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 1mm;
-  height: 86%;
+  gap: .5mm;
+  height: 94%;
   box-sizing: border-box;
   background: #fff;
-  padding: 2mm 2mm 1mm !important;
+  padding: 1mm 2mm 1mm !important;
   font-size: 10pt;
 }
 .classic-sheet--template .classic-sheet-proficiencies p {
