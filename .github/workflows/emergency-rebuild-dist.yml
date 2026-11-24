@@ -1,23 +1,13 @@
 name: Emergency rebuild committed dist
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'app/**'
-      - 'public/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'vite.config.ts'
-      - 'next.config.ts'
-      - 'tests/mobile-*.cjs'
-      - '.github/workflows/emergency-rebuild-dist.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: emergency-rebuild-committed-dist
+  group: herolist-host-dist
   cancel-in-progress: false
 
 jobs:
