@@ -1,10 +1,10 @@
 export default {
-  "bootstrapScriptContent": "import(\"/assets/index-BllxaukZ.js\")",
+  "bootstrapScriptContent": "import(\"/assets/index-DafAz_J_.js\")",
   "clientReferenceDeps": {
     "724dcbd470a5": {
       "js": [
-        "/assets/page-DhDc991_.js",
-        "/assets/index-BllxaukZ.js",
+        "/assets/page-D2PGBzyj.js",
+        "/assets/index-DafAz_J_.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CelLJrx0.js",
         "/assets/accountAvailability-DPvOVRN_.js",
@@ -20,7 +20,7 @@ export default {
         "/assets/playViewPreferences-0WOrZ5Vs.js",
         "/assets/assetUrl-BWVU1DTL.js",
         "/assets/framework-CelLJrx0.js",
-        "/assets/index-BllxaukZ.js"
+        "/assets/index-DafAz_J_.js"
       ],
       "css": [
         "/assets/playViewPreferences-3IMggQVC.css"
@@ -28,22 +28,22 @@ export default {
     },
     "6efdf509a785": {
       "js": [
-        "/assets/page-Dap2FnGe.js",
+        "/assets/page-BESl-haw.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/playViewPreferences-0WOrZ5Vs.js",
         "/assets/assetUrl-BWVU1DTL.js",
         "/assets/framework-CelLJrx0.js",
         "/assets/accountAvailability-DPvOVRN_.js",
-        "/assets/index-BllxaukZ.js"
+        "/assets/index-DafAz_J_.js"
       ],
       "css": [
-        "/assets/page-B0HlbZ-u.css",
+        "/assets/page-DCtZL95c.css",
         "/assets/playViewPreferences-3IMggQVC.css"
       ]
     },
     "593f344dc510": {
       "js": [
-        "/assets/index-BllxaukZ.js",
+        "/assets/index-DafAz_J_.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CelLJrx0.js"
       ],
@@ -51,8 +51,8 @@ export default {
     },
     "15c18cfaeeff": {
       "js": [
-        "/assets/layout-segment-context-WdEioI7-.js",
-        "/assets/index-BllxaukZ.js",
+        "/assets/layout-segment-context-BwJ4BXTA.js",
+        "/assets/index-DafAz_J_.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CelLJrx0.js"
       ],
@@ -60,7 +60,7 @@ export default {
     },
     "8c0f216c4604": {
       "js": [
-        "/assets/index-BllxaukZ.js",
+        "/assets/index-DafAz_J_.js",
         "/assets/rolldown-runtime-S-ySWqyJ.js",
         "/assets/framework-CelLJrx0.js"
       ],

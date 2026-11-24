@@ -27742,6 +27742,7 @@ var fitSelector = [
 	".classic-sheet-panel-body",
 	".classic-sheet-field-value",
 	".classic-sheet-head > strong",
+	".classic-sheet-proficiencies p",
 	".classic-equipment-text",
 	".classic-spell-name",
 	".classic-sheet-attack-cell"
@@ -27952,42 +27953,38 @@ function SpellGroup({ level, entries, slots }) {
 }
 function ClassicCharacterSheet(props) {
 	var _props$currentHitPoin, _props$hitDiceRemaini;
+	const compactTools = props.proficiencies.tools.map((item) => item.replace(/^Инструменты\s+/i, ""));
 	const proficiencyLists = [
 		{
 			label: "Языки",
 			items: props.proficiencies.languages,
-			limit: 120
+			display: props.proficiencies.languages.join(", "),
+			limit: 65
 		},
 		{
 			label: "Инструменты",
 			items: props.proficiencies.tools,
-			limit: 190
+			display: compactTools.join(", "),
+			limit: 125
 		},
 		{
 			label: "Доспехи",
 			items: props.proficiencies.armor,
-			limit: 120
+			display: props.proficiencies.armor.join(", "),
+			limit: 65
 		},
 		{
 			label: "Оружие",
 			items: props.proficiencies.weapons,
-			limit: 220
+			display: props.proficiencies.weapons.join(", "),
+			limit: 180
 		}
 	];
-	const lengths = proficiencyLists.map(({ items }) => items.join(", ").length);
-	const appendixLabels = new Set(proficiencyLists.filter((entry, index) => lengths[index] > entry.limit).map((entry) => entry.label));
-	let visibleLength = lengths.reduce((sum, length, index) => sum + (appendixLabels.has(proficiencyLists[index].label) ? 0 : length), 0);
-	for (const index of lengths.map((_, i) => i).sort((a, b) => lengths[b] - lengths[a])) {
-		if (visibleLength <= 320) break;
-		if (!appendixLabels.has(proficiencyLists[index].label)) {
-			appendixLabels.add(proficiencyLists[index].label);
-			visibleLength -= lengths[index];
-		}
-	}
+	const appendixLabels = new Set(proficiencyLists.filter((entry) => entry.display.length > entry.limit).map((entry) => entry.label));
 	const hasProficiencyAppendix = appendixLabels.size > 0;
 	const proficiencyDisplay = (label) => {
 		const list = proficiencyLists.find((entry) => entry.label === label);
-		return appendixLabels.has(label) ? `${list.items.length} владений · см. стр. 4` : list.items.join(", ") || "—";
+		return appendixLabels.has(label) ? `${list.items.length} владений · см. стр. 4` : list.display || "—";
 	};
 	const root = useRef(null);
 	const editKey = `herolist-classic-text-v1:${props.identity.name || "unnamed"}`;
