@@ -66,6 +66,10 @@
 .classic-sheet-prepare{min-width:3mm;color:#333}
 .classic-sheet-note{text-align:center;font-size:6pt}
 .classic-sheet-overflow>.classic-sheet-spell-row{min-height:5.2mm}
+.classic-sheet-proficiencies-appendix{gap:4mm}
+.classic-sheet-proficiencies-appendix>section{border:1px solid #aaa;padding:3mm 4mm;break-inside:avoid}
+.classic-sheet-proficiencies-appendix h2{font-size:10pt;margin:0 0 2mm}
+.classic-sheet-proficiencies-appendix p{font-size:9pt;line-height:1.4;margin:0;overflow-wrap:anywhere}
 @media screen{
   .classic-sheet-document{zoom:1}
   @media (max-width:820px){.classic-sheet-document{zoom:.9}}
