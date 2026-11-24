@@ -36212,7 +36212,7 @@ var DiceTable = class {
 				b.wakeUp();
 				d.cocked = 0;
 			}
-			if (!d.settled && d.rerolls === 0 && (d.cocked > 2 || d.age > 10)) {
+			if (!d.settled && d.rerolls === 0 && (d.cocked > .75 || d.age > 10)) {
 				this.world.removeBody(b);
 				d.launched = false;
 				d.entered = false;
@@ -36366,7 +36366,7 @@ function renderFaceNumber(ctx, die, face, faceIndex, faceCount, vertices, transf
 	ctx.transform(right[0], right[1], down[0], down[1], 0, 0);
 	ctx.fillStyle = numberColor;
 	const font = numberStyle === "modern" ? "Arial,sans-serif" : numberStyle === "mono" ? "ui-monospace,Consolas,monospace" : "Georgia,serif";
-	ctx.font = "700 " + (fontSize * numberScale).toFixed(1) + "px " + font;
+	ctx.font = (numberStyle === "classic" ? "italic 700 " : numberStyle === "mono" ? "400 " : "900 ") + (fontSize * numberScale).toFixed(1) + "px " + font;
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
 	ctx.fillText(text, 0, 0, Math.max(13, inradius * 1.75));
@@ -36479,7 +36479,7 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 						expire(id);
 					}
 				}
-				const size = Math.max(6, Math.min(screenDieSize(width, height) * opts.size, Math.sqrt(w * h / Math.max(1, sim.dice.length + count) / 7)));
+				const size = Math.max(6, Math.min(screenDieSize(width, height) * opts.size, Math.min(w, h) * .18));
 				const items = [];
 				roll.sides.forEach((s, index) => {
 					const parts = s === 100 ? ["tens", "units"] : ["regular"];
@@ -36777,6 +36777,8 @@ function DiceSettings({ view, onChange }) {
 					background: view.diceColor,
 					color: view.diceNumberColor,
 					fontFamily: view.diceNumberStyle === "modern" ? "Arial,sans-serif" : view.diceNumberStyle === "mono" ? "monospace" : "Georgia,serif",
+					fontStyle: view.diceNumberStyle === "classic" ? "italic" : "normal",
+					fontWeight: view.diceNumberStyle === "mono" ? 400 : view.diceNumberStyle === "modern" ? 900 : 700,
 					fontSize: 24 * view.diceNumberScale
 				},
 				children: "4 · 12 · 20"
@@ -36905,21 +36907,33 @@ function normalizePlayView(value) {
 function usePlayViewPreferences() {
 	const [view, setView] = useState(defaultPlayView);
 	useEffect(() => {
-		try {
-			setView(normalizePlayView(JSON.parse(localStorage.getItem(key) || "null")));
-		} catch (_unused) {}
+		const sync = () => {
+			try {
+				setView(normalizePlayView(JSON.parse(localStorage.getItem(key) || "null")));
+			} catch (_unused) {}
+		};
+		sync();
+		window.addEventListener(key, sync);
+		window.addEventListener("storage", sync);
+		return () => {
+			window.removeEventListener(key, sync);
+			window.removeEventListener("storage", sync);
+		};
 	}, []);
 	function update(patch) {
-		setView((previous) => {
-			const next = normalizePlayView({
-				...previous,
-				...patch
-			});
-			try {
-				localStorage.setItem(key, JSON.stringify(next));
-			} catch (_unused2) {}
-			return next;
+		let saved = view;
+		try {
+			saved = normalizePlayView(JSON.parse(localStorage.getItem(key) || "null"));
+		} catch (_unused2) {}
+		const next = normalizePlayView({
+			...saved,
+			...patch
 		});
+		try {
+			localStorage.setItem(key, JSON.stringify(next));
+		} catch (_unused3) {}
+		setView(next);
+		window.dispatchEvent(new Event(key));
 	}
 	return [view, update];
 }
