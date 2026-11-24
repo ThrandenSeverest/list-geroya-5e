@@ -25,7 +25,7 @@ const editSelector = [
 ].join(', ');
 const fitSelector = [
   '.classic-sheet-panel-body', '.classic-sheet-field-value', '.classic-sheet-head > strong',
-  '.classic-sheet-proficiencies p', '.classic-equipment-text', '.classic-spell-name',
+  '.classic-equipment-text', '.classic-spell-name',
   '.classic-sheet-attack-cell'
 ].join(', ');
 
@@ -106,20 +106,29 @@ function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots
 }
 
 export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
-  // The original paper template reserves one line for tools and only a few
-  // lines for weapons. Keep a short reference there and print long lists in
-  // full on a separate page instead of silently clipping them.
+  // Give ordinary lists the full available panel. Only unusually large lists
+  // need a continuation page; character-scale lists stay on the first sheet.
   const proficiencyLists = [
-    { label: "Языки", items: props.proficiencies.languages, limit: 65 },
-    { label: "Инструменты", items: props.proficiencies.tools, limit: 55 },
-    { label: "Доспехи", items: props.proficiencies.armor, limit: 65 },
-    { label: "Оружие", items: props.proficiencies.weapons, limit: 160 },
+    { label: "Языки", items: props.proficiencies.languages, limit: 120 },
+    { label: "Инструменты", items: props.proficiencies.tools, limit: 190 },
+    { label: "Доспехи", items: props.proficiencies.armor, limit: 120 },
+    { label: "Оружие", items: props.proficiencies.weapons, limit: 220 },
   ];
-  const hasProficiencyAppendix = proficiencyLists.some(({ items, limit }) => items.join(", ").length > limit);
+  const lengths = proficiencyLists.map(({ items }) => items.join(", ").length);
+  const appendixLabels = new Set(proficiencyLists.filter((entry, index) => lengths[index] > entry.limit).map(entry => entry.label));
+  let visibleLength = lengths.reduce((sum, length, index) => sum + (appendixLabels.has(proficiencyLists[index].label) ? 0 : length), 0);
+  for (const index of lengths.map((_, i) => i).sort((a, b) => lengths[b] - lengths[a])) {
+    if (visibleLength <= 320) break;
+    if (!appendixLabels.has(proficiencyLists[index].label)) {
+      appendixLabels.add(proficiencyLists[index].label);
+      visibleLength -= lengths[index];
+    }
+  }
+  const hasProficiencyAppendix = appendixLabels.size > 0;
   const proficiencyDisplay = (label: string) => {
     const list = proficiencyLists.find(entry => entry.label === label)!;
-    return list.items.join(", ").length > list.limit
-      ? `${list.items.length} наименований · полный список на стр. 4`
+    return appendixLabels.has(label)
+      ? `${list.items.length} владений · см. стр. 4`
       : list.items.join(", ") || "—";
   };
   const root=useRef<HTMLDivElement>(null);
