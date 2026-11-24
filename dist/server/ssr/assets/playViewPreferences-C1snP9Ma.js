@@ -35971,6 +35971,18 @@ function readPhysicalDie(d) {
 function vertexValue(d, vertex) {
 	return physicalFaceValue(4, d.mesh.faces.findIndex((f) => !f.vertices.includes(vertex)));
 }
+/** Place a held die in the same world as automatic rolls, carrying the release velocity and spin. */
+function launchManualDie(d, throwAt, width, height, index) {
+	const r = d.size / 40, theta = index * 2.39996, w = width / 40, h = height / 40;
+	const clamp = (v, low, high) => Math.max(low, Math.min(high, v));
+	d.body.position.set(clamp((throwAt.x - 10) / 40 + Math.cos(theta) * r * .35, r, w - r), clamp((throwAt.y - 10) / 40 + Math.sin(theta) * r * .35, r, h - r), r * (1.7 + d.random() * .3));
+	d.body.velocity.set(clamp(throwAt.vx / 40, -38, 38) + (d.random() - .5) * 2, clamp(throwAt.vy / 40, -38, 38) + (d.random() - .5) * 2, -1);
+	d.body.angularVelocity.set(-d.body.velocity.y / (r * .8) + throwAt.spin, d.body.velocity.x / (r * .8) + throwAt.spin, (d.random() - .5) * 4 + throwAt.spin * .5);
+	d.delay = index * .025;
+	d.entered = true;
+	d.body.collisionFilterMask = 15;
+	d.body.aabbNeedsUpdate = true;
+}
 var DiceTable = class {
 	constructor(width, height) {
 		this.dice = [];
@@ -36502,18 +36514,21 @@ function renderDie(ctx, die, options, alpha) {
 	}
 	ctx.restore();
 }
-function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
+function DiceScreenOverlay({ rolls, held, options, onComplete, onExpire }) {
 	const [portal, setPortal] = useState(null);
 	const canvas = useRef(null), table = useRef(null);
 	const batches = useRef(/* @__PURE__ */ new Map());
+	const preview = useRef(null);
 	const props = useRef({
 		rolls,
+		held,
 		options,
 		onComplete,
 		onExpire
 	});
 	props.current = {
 		rolls,
+		held,
 		options,
 		onComplete,
 		onExpire
@@ -36523,25 +36538,48 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 		if (!portal) return;
 		let frame, last = 0, accumulator = 0;
 		const tick = (now) => {
-			var _window$visualViewpor, _window$visualViewpor2;
+			var _window$visualViewpor, _window$visualViewpor2, _preview$current, _preview$current2, _preview$current4;
 			const node = canvas.current, ctx = node === null || node === void 0 ? void 0 : node.getContext("2d");
 			if (!node || !ctx) {
 				frame = requestAnimationFrame(tick);
 				return;
 			}
-			const { rolls: current, options: opts, onComplete: complete, onExpire: expire } = props.current;
+			const { rolls: current, held: holding, options: opts, onComplete: complete, onExpire: expire } = props.current;
 			const width = Math.max(120, Math.min(window.innerWidth, ((_window$visualViewpor = window.visualViewport) === null || _window$visualViewpor === void 0 ? void 0 : _window$visualViewpor.width) || window.innerWidth));
 			const height = Math.max(160, Math.min(window.innerHeight, ((_window$visualViewpor2 = window.visualViewport) === null || _window$visualViewpor2 === void 0 ? void 0 : _window$visualViewpor2.height) || window.innerHeight));
 			const w = width - 20, h = height - (width < 700 ? 100 : 40);
 			if (!table.current) table.current = new DiceTable(w, h);
 			const sim = table.current;
 			if (sim.width !== w || sim.height !== h) sim.resize(w, h);
+			const size = Math.max(6, Math.min(screenDieSize(width, height) * opts.size, Math.min(w, h) * .18));
+			if (holding && opts.enabled && ((_preview$current = preview.current) === null || _preview$current === void 0 ? void 0 : _preview$current.id) !== holding.id) {
+				const dice = [];
+				holding.sides.forEach((s, index) => {
+					for (const numbering of s === 100 ? ["tens", "units"] : ["regular"]) {
+						const d = sim.add(holding.id + ":" + dice.length, s === 100 ? 10 : s, size, random, numbering, dice.length);
+						d.rollId = holding.id;
+						d.originalIndex = index;
+						dice.push(d);
+						sim.dice.pop();
+					}
+				});
+				preview.current = {
+					id: holding.id,
+					dice
+				};
+			}
+			if (holding && ((_preview$current2 = preview.current) === null || _preview$current2 === void 0 ? void 0 : _preview$current2.id) === holding.id) preview.current.dice.forEach((d, i) => {
+				const spread = Math.min(d.size * .45, 12), theta = i * 2.39996;
+				d.body.position.set(clamp((holding.x + Math.cos(theta) * spread - 10) / 40, d.size / 40, w - d.size / 40), clamp((holding.y + Math.sin(theta) * spread - 10) / 40, d.size / 40, h - d.size / 40), d.size / 40 * 1.8);
+				d.body.quaternion.setFromEuler(holding.angle + i * .37, holding.angle * .7 + i * .59, holding.angle * .4 + i * .81);
+			});
 			const ids = new Set(current.map((r) => r.id));
 			for (const [id, b] of batches.current) if (!ids.has(id)) {
 				b.dice.forEach((d) => sim.remove(d.id));
 				batches.current.delete(id);
 			}
 			for (const roll of current) {
+				var _preview$current3;
 				if (batches.current.has(roll.id)) continue;
 				const count = roll.sides.reduce((n, s) => n + (s === 100 ? 2 : 1), 0);
 				if (sim.dice.length + count > (width < 700 ? 24 : 40)) {
@@ -36551,9 +36589,12 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 						expire(id);
 					}
 				}
-				const size = Math.max(6, Math.min(screenDieSize(width, height) * opts.size, Math.min(w, h) * .18));
 				const items = [];
-				roll.sides.forEach((s, index) => {
+				if (roll.manual && ((_preview$current3 = preview.current) === null || _preview$current3 === void 0 ? void 0 : _preview$current3.id) === roll.id) {
+					items.push(...preview.current.dice);
+					preview.current = null;
+					sim.dice.push(...items);
+				} else roll.sides.forEach((s, index) => {
 					const parts = s === 100 ? ["tens", "units"] : ["regular"];
 					for (const numbering of parts) {
 						const d = sim.add(roll.id + ":" + items.length, s === 100 ? 10 : s, size, random, numbering, items.length);
@@ -36562,11 +36603,13 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 						items.push(d);
 					}
 				});
+				if (roll.manual) items.forEach((d, i) => launchManualDie(d, roll.manual, w, h, i));
 				batches.current.set(roll.id, {
 					roll,
 					dice: items
 				});
 			}
+			if (!holding && preview.current && !current.some((r) => r.id === preview.current.id)) preview.current = null;
 			const dt = last ? Math.min(.1, (now - last) / 1e3) : 0;
 			last = now;
 			accumulator += dt;
@@ -36613,6 +36656,7 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 				const alpha = b.completedAt === void 0 ? 1 : clamp((opts.lifetime * 1e3 + 350 - (now - b.completedAt)) / 350);
 				for (const d of b.dice) if (d.launched) renderDie(ctx, d, opts, alpha);
 			}
+			if (holding && ((_preview$current4 = preview.current) === null || _preview$current4 === void 0 ? void 0 : _preview$current4.id) === holding.id) for (const d of preview.current.dice) renderDie(ctx, d, opts, 1);
 			node.dataset.diceEngine = "physical-outcome-v9";
 			node.dataset.numberColor = opts.numberColor;
 			node.dataset.numberStyle = opts.numberStyle;
@@ -36642,6 +36686,7 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 			cancelAnimationFrame(frame);
 			table.current = null;
 			batches.current.clear();
+			preview.current = null;
 		};
 	}, [portal]);
 	return portal ? createPortal(/* @__PURE__ */ jsx("canvas", {
@@ -36656,6 +36701,7 @@ var DiceActionContext = createContext(async (fn) => fn());
 var useDiceAction = () => useContext(DiceActionContext);
 function useDiceController(options) {
 	const [rolls, setRolls] = useState([]);
+	const [held, setHeld] = useState(null);
 	const pending = useRef(/* @__PURE__ */ new Map());
 	const latest = useRef(options);
 	latest.current = options;
@@ -36663,6 +36709,7 @@ function useDiceController(options) {
 		for (const p of pending.current.values()) p.reject(new DOMException("Бросок отменён", "AbortError"));
 		pending.current.clear();
 		setRolls([]);
+		setHeld(null);
 	};
 	useEffect(() => () => {
 		for (const p of pending.current.values()) p.reject(new DOMException("Бросок отменён", "AbortError"));
@@ -36673,9 +36720,10 @@ function useDiceController(options) {
 			for (const p of pending.current.values()) p.resolve(p.sides.map(randomDie));
 			pending.current.clear();
 			setRolls([]);
+			setHeld(null);
 		}
 	}, [options.enabled]);
-	const run = async (fn) => {
+	const run = async (fn, manual) => {
 		if (latest.current.sound) unlockDiceAudio();
 		return resolvePhysicalAction(fn, (sides) => {
 			if (!latest.current.enabled || sides.some((n) => n !== 100 && !diceMesh(n))) {
@@ -36683,7 +36731,7 @@ function useDiceController(options) {
 				return Promise.resolve(sides.map(randomDie));
 			}
 			return new Promise((resolve, reject) => {
-				const id = crypto.randomUUID();
+				const id = (manual === null || manual === void 0 ? void 0 : manual.id) || crypto.randomUUID();
 				pending.current.set(id, {
 					sides,
 					resolve,
@@ -36691,15 +36739,36 @@ function useDiceController(options) {
 				});
 				setRolls((old) => [...old, {
 					id,
-					sides
+					sides,
+					manual
 				}]);
 			});
 		});
 	};
+	const beginHold = (sides, x, y) => {
+		if (!latest.current.enabled) return "";
+		const id = crypto.randomUUID();
+		setHeld({
+			id,
+			sides,
+			x,
+			y,
+			angle: 0
+		});
+		return id;
+	};
+	const moveHold = (id, x, y, angle) => setHeld((old) => (old === null || old === void 0 ? void 0 : old.id) === id ? {
+		...old,
+		x,
+		y,
+		angle
+	} : old);
+	const endHold = (id) => setHeld((old) => (old === null || old === void 0 ? void 0 : old.id) === id ? null : old);
 	return {
 		run,
 		overlay: /* @__PURE__ */ jsx(DiceScreenOverlay, {
 			rolls,
+			held,
 			options,
 			onComplete: (id, values) => {
 				const p = pending.current.get(id);
@@ -36711,6 +36780,9 @@ function useDiceController(options) {
 			onExpire: (id) => setRolls((old) => old.filter((r) => r.id !== id))
 		}),
 		clear,
+		beginHold,
+		moveHold,
+		endHold,
 		pending: pending.current.size
 	};
 }

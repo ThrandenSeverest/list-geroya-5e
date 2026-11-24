@@ -1,6 +1,6 @@
 import { t as isStaticPages } from "./accountAvailability-B9_Nf2Oz.js";
 import { t as assetUrl } from "./assetUrl-qy7r-vHn.js";
-import { $ as isMusicalInstrument, $n as linkedChoicesForFeature, $t as homebrewPackageFor, A as newPlayItem, An as featAbilityBonuses, Ar as equipmentComplete, At as restrictedCharacter, B as rollD20, Bn as proficiencyChoiceRequirements, Bt as hbContext, C as healPlay, Cn as optionalClassFeatures, Cr as spells, Ct as racialSpellChoiceOptions, D as itemCategory, Dn as subclassRule, Dr as raceFeatures, Dt as optionalChoiceAllowed, E as itemBonus, En as spellAvailableToCharacter, Er as personalityOptions, Et as classOptionId, F as playMaximum, Fn as characterExpertiseSkills, Fr as backgroundEquipmentWithoutStartingGold, Ft as migrateSpellPreparation, G as updateInventory, Gn as classFeatureCorpus, Gt as hbValue, H as rollDice, Hn as proficiencyChoicesComplete, Ht as hbEnabled, I as queueAttunement, In as characterProficiencies, Ir as backgroundRule, It as setClassPreparedSpells, J as setSubclassRuntimeValue, Jn as magicFeatureIds, Jt as homebrewChoicesComplete, K as upgradeLegacyInventory, Kn as optionalClassFeatureCorpus, Kt as homebrewChoiceReason, L as resolveConcentrationCheck, Ln as classSkillUsedElsewhere, Lr as backgroundStartingGold, Lt as activeHomebrew, M as playDerived, Mn as featChoiceGroups, Mr as equipmentRule, Mt as spellIdFromDndUrl, N as playHitDicePools, Nn as featGrantedSpellIds, Nr as optimalEquipmentSelections, Nt as spellIdFromLssCardId, O as itemCategoryLabels, On as subclasses, Or as skillKeys, Ot as optionalFeatureAllowed, P as playId, Pn as artisanTools, Pr as selectedEquipment, Pt as classPreparedSpellIds, Q as currencyLabel, Qn as choicesForFeature, Qt as homebrewReferencesOnly, R as restPlay, Rn as gamingSets, Rt as bindHomebrewLibrary, S as handSlots, Sn as optimalSpellIds, Sr as races, St as resourceRestLabel, T as isShieldItem, Tn as selectedSubclass, Tr as classRules, Tt as resolvedRacialSpells, U as spellItemBonus, Un as knownLanguageOptions, Ut as hbResources, V as rollDamage, Vn as proficiencyChoiceUsedElsewhere, Vt as hbEffects, W as toggleCondition, Wn as languageRule, Wt as hbSum, X as subclassRuntimeValue, Xn as magicSpellList, Xt as homebrewExportClosure, Y as subclassRuntimeControls, Yn as magicLevel, Yt as homebrewDefenses, Z as catalogItemFor, Zn as slotSummary, Zt as homebrewExportWarning, _ as endConcentration, _n as variantsFor, _r as newHomebrew, a as DiceActionContext, an as effectLabel, ar as migrateMulticlassCharacter, at as estimatedHitPoints, b as expandEquipmentPack, bn as isTashaAdditionalSpell, br as classSkillRules, bt as characterResources, c as activeItem, cn as alwaysPreparedSpellEntries, cr as orderedCharacterClasses, ct as helpmateSubclassClassIds, d as applyPlayDamage, dn as raceAbilityBonuses, dr as evaluateFormula, dt as passivePerceptionBreakdown, en as homebrewPackageLabel, er as characterLevel, et as isWoodenFocus, f as concentrationDc, fn as raceProficiencies, fr as conditionIds, ft as skillBonusBreakdown, g as durationMinutes, gn as spellSelectionRuleForClass, gr as homebrewTypeLabels, gt as armorClassBreakdown, h as diceFormulaTerms, hn as spellSelectionRule, hr as emptyHomebrewLibrary, ht as skillNameFromExternalId, i as diceOptions, in as editableHomebrew, ir as hitDicePools, it as createLongStoryShortExport, j as playConditions, jn as featChoiceAvailability, jr as equipmentOptionAdvice, jt as helpmateSpellIds, k as logPlay, kn as advancementChoiceComplete, kr as defaultEquipmentSelections, kt as optionalFeatureId, l as advancePlayTurn, ln as finalAbilityScores, lr as resolvePactMagic, lt as proficiencyBonus, m as createAdventureCharacter, mn as selectedRaceVariant, mr as effectTypes, mt as normalizeImportedSkills, n as usePlayViewPreferences, nn as conditionFormula, nr as getClassLevel, nt as abilityModifier$1, o as useDiceAction, on as homebrewRelations, or as multiclassRequirement, ot as helpmateClassIds, p as consumePlayItem, pn as raceSkillChoiceCount, pr as damageTypes, pt as speedBreakdown, q as weaponItemBonus, qn as subclassFeatureCorpus, qt as homebrewChoiceStatuses, r as DiceSettings, rn as createChoiceOption, rr as getStartingClassId, rt as createHelpmateExport, s as useDiceController, sn as readConditions, sr as normalizedLevelHistory, st as helpmateSkippedSpells, t as defaultPlayView, tn as homebrewPackages, tr as classView, tt as itemCatalog, u as applyDeathSave, un as optimalAbilityBuild, ur as resolveSpellSlots, ut as initiativeBreakdown, v as equipInHand, vn as asiLevelsForClass, vr as normalizeHomebrewLibrary, vt as characterAttacks, w as integer, wn as pointBuySpent, wr as abilityLabels, wt as racialSpellDefinitions, x as handCost, xn as optimalPreparedSpellIds, xr as classes, xt as resourceCurrent, y as equippedHands, yn as feats, yr as backgrounds, yt as customizeAttack, z as restorePlayItem, zn as musicalInstruments, zt as classRuleFor } from "./playViewPreferences-pt-MdMDq.js";
+import { $ as isMusicalInstrument, $n as linkedChoicesForFeature, $t as homebrewPackageFor, A as newPlayItem, An as featAbilityBonuses, Ar as equipmentComplete, At as restrictedCharacter, B as rollD20, Bn as proficiencyChoiceRequirements, Bt as hbContext, C as healPlay, Cn as optionalClassFeatures, Cr as spells, Ct as racialSpellChoiceOptions, D as itemCategory, Dn as subclassRule, Dr as raceFeatures, Dt as optionalChoiceAllowed, E as itemBonus, En as spellAvailableToCharacter, Er as personalityOptions, Et as classOptionId, F as playMaximum, Fn as characterExpertiseSkills, Fr as backgroundEquipmentWithoutStartingGold, Ft as migrateSpellPreparation, G as updateInventory, Gn as classFeatureCorpus, Gt as hbValue, H as rollDice, Hn as proficiencyChoicesComplete, Ht as hbEnabled, I as queueAttunement, In as characterProficiencies, Ir as backgroundRule, It as setClassPreparedSpells, J as setSubclassRuntimeValue, Jn as magicFeatureIds, Jt as homebrewChoicesComplete, K as upgradeLegacyInventory, Kn as optionalClassFeatureCorpus, Kt as homebrewChoiceReason, L as resolveConcentrationCheck, Ln as classSkillUsedElsewhere, Lr as backgroundStartingGold, Lt as activeHomebrew, M as playDerived, Mn as featChoiceGroups, Mr as equipmentRule, Mt as spellIdFromDndUrl, N as playHitDicePools, Nn as featGrantedSpellIds, Nr as optimalEquipmentSelections, Nt as spellIdFromLssCardId, O as itemCategoryLabels, On as subclasses, Or as skillKeys, Ot as optionalFeatureAllowed, P as playId, Pn as artisanTools, Pr as selectedEquipment, Pt as classPreparedSpellIds, Q as currencyLabel, Qn as choicesForFeature, Qt as homebrewReferencesOnly, R as restPlay, Rn as gamingSets, Rt as bindHomebrewLibrary, S as handSlots, Sn as optimalSpellIds, Sr as races, St as resourceRestLabel, T as isShieldItem, Tn as selectedSubclass, Tr as classRules, Tt as resolvedRacialSpells, U as spellItemBonus, Un as knownLanguageOptions, Ut as hbResources, V as rollDamage, Vn as proficiencyChoiceUsedElsewhere, Vt as hbEffects, W as toggleCondition, Wn as languageRule, Wt as hbSum, X as subclassRuntimeValue, Xn as magicSpellList, Xt as homebrewExportClosure, Y as subclassRuntimeControls, Yn as magicLevel, Yt as homebrewDefenses, Z as catalogItemFor, Zn as slotSummary, Zt as homebrewExportWarning, _ as endConcentration, _n as variantsFor, _r as newHomebrew, a as DiceActionContext, an as effectLabel, ar as migrateMulticlassCharacter, at as estimatedHitPoints, b as expandEquipmentPack, bn as isTashaAdditionalSpell, br as classSkillRules, bt as characterResources, c as activeItem, cn as alwaysPreparedSpellEntries, cr as orderedCharacterClasses, ct as helpmateSubclassClassIds, d as applyPlayDamage, dn as raceAbilityBonuses, dr as evaluateFormula, dt as passivePerceptionBreakdown, en as homebrewPackageLabel, er as characterLevel, et as isWoodenFocus, f as concentrationDc, fn as raceProficiencies, fr as conditionIds, ft as skillBonusBreakdown, g as durationMinutes, gn as spellSelectionRuleForClass, gr as homebrewTypeLabels, gt as armorClassBreakdown, h as diceFormulaTerms, hn as spellSelectionRule, hr as emptyHomebrewLibrary, ht as skillNameFromExternalId, i as diceOptions, in as editableHomebrew, ir as hitDicePools, it as createLongStoryShortExport, j as playConditions, jn as featChoiceAvailability, jr as equipmentOptionAdvice, jt as helpmateSpellIds, k as logPlay, kn as advancementChoiceComplete, kr as defaultEquipmentSelections, kt as optionalFeatureId, l as advancePlayTurn, ln as finalAbilityScores, lr as resolvePactMagic, lt as proficiencyBonus, m as createAdventureCharacter, mn as selectedRaceVariant, mr as effectTypes, mt as normalizeImportedSkills, n as usePlayViewPreferences, nn as conditionFormula, nr as getClassLevel, nt as abilityModifier$1, o as useDiceAction, on as homebrewRelations, or as multiclassRequirement, ot as helpmateClassIds, p as consumePlayItem, pn as raceSkillChoiceCount, pr as damageTypes, pt as speedBreakdown, q as weaponItemBonus, qn as subclassFeatureCorpus, qt as homebrewChoiceStatuses, r as DiceSettings, rn as createChoiceOption, rr as getStartingClassId, rt as createHelpmateExport, s as useDiceController, sn as readConditions, sr as normalizedLevelHistory, st as helpmateSkippedSpells, t as defaultPlayView, tn as homebrewPackages, tr as classView, tt as itemCatalog, u as applyDeathSave, un as optimalAbilityBuild, ur as resolveSpellSlots, ut as initiativeBreakdown, v as equipInHand, vn as asiLevelsForClass, vr as normalizeHomebrewLibrary, vt as characterAttacks, w as integer, wn as pointBuySpent, wr as abilityLabels, wt as racialSpellDefinitions, x as handCost, xn as optimalPreparedSpellIds, xr as classes, xt as resourceCurrent, y as equippedHands, yn as feats, yr as backgrounds, yt as customizeAttack, z as restorePlayItem, zn as musicalInstruments, zt as classRuleFor } from "./playViewPreferences-C1snP9Ma.js";
 import { Component, createContext, createElement, forwardRef, useCallback, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Fragment as Fragment$1, jsx, jsxs } from "react/jsx-runtime";
 import { createPortal } from "react-dom";
@@ -1984,8 +1984,128 @@ function DiceFace({ sides, value }) {
 		]
 	});
 }
-function DiceTray({ rolls, onRoll, view, onViewChange }) {
+function DiceTray({ rolls, onRoll, onHoldStart, onHoldMove, onHoldEnd, view, onViewChange }) {
 	const [sides, setSides] = useState(20), [count, setCount] = useState(1), [modifier, setModifier] = useState(0), [formula, setFormula] = useState("1d20"), [error, setError] = useState("");
+	const hold = useRef(null), suppressClick = useRef(false);
+	const currentFormula = () => `${count}d${sides}${modifier >= 0 ? "+" : ""}${modifier}`;
+	function activate(g) {
+		if (g.id || !view.diceAnimation) return;
+		g.id = onHoldStart(Array(count).fill(sides), g.x, g.y);
+	}
+	function stop(cancel = false) {
+		const g = hold.current;
+		if (!g) return;
+		hold.current = null;
+		clearTimeout(g.timer);
+		if (!g.id) return;
+		onHoldEnd(g.id);
+		suppressClick.current = true;
+		setTimeout(() => {
+			suppressClick.current = false;
+		}, 0);
+		if (cancel) return;
+		const first = g.samples.filter((s) => g.samples[g.samples.length - 1].t - s.t <= 110)[0] || g.samples[0], last = g.samples[g.samples.length - 1];
+		const dt = Math.max(16, last.t - first.t), vx = Math.max(-1700, Math.min(1700, (last.x - first.x) / dt * 1e3)), vy = Math.max(-1700, Math.min(1700, (last.y - first.y) / dt * 1e3));
+		onRoll("Кубы", g.formula, {
+			id: g.id,
+			sides: Array(count).fill(sides),
+			x: g.x,
+			y: g.y,
+			angle: g.angle,
+			vx,
+			vy,
+			spin: (g.angle < 0 ? -1 : 1) * Math.min(12, g.shake)
+		});
+	}
+	function press(e) {
+		if (e.button !== 0 || !view.diceAnimation) return;
+		e.currentTarget.setPointerCapture(e.pointerId);
+		const now = performance.now(), g = {
+			id: "",
+			pointerId: e.pointerId,
+			formula: currentFormula(),
+			x: e.clientX,
+			y: e.clientY,
+			angle: 0,
+			shake: 0,
+			samples: [{
+				x: e.clientX,
+				y: e.clientY,
+				t: now
+			}]
+		};
+		g.timer = setTimeout(() => {
+			if (hold.current === g) activate(g);
+		}, 180);
+		hold.current = g;
+	}
+	function move(e) {
+		const g = hold.current;
+		if (!g || g.pointerId !== e.pointerId) return;
+		const now = performance.now(), previous = g.samples[g.samples.length - 1];
+		g.x = e.clientX;
+		g.y = e.clientY;
+		const dx = e.clientX - previous.x, dy = e.clientY - previous.y;
+		g.angle += (dx + dy) * .018;
+		g.shake = Math.min(12, g.shake + Math.hypot(dx, dy) * .045);
+		g.samples.push({
+			x: g.x,
+			y: g.y,
+			t: now
+		});
+		if (g.samples.length > 16) g.samples.shift();
+		if (Math.hypot(g.x - g.samples[0].x, g.y - g.samples[0].y) > 8) activate(g);
+		if (g.id) onHoldMove(g.id, g.x, g.y, g.angle);
+	}
+	function keyDown(e) {
+		var _hold$current;
+		if (!view.diceAnimation) return;
+		if (e.key === " " || e.key === "Enter") e.preventDefault();
+		if ((e.key === " " || e.key === "Enter") && !e.repeat && !hold.current) {
+			e.preventDefault();
+			const r = e.currentTarget.getBoundingClientRect(), now = performance.now(), g = {
+				id: "",
+				pointerId: -1,
+				formula: currentFormula(),
+				x: r.left + r.width / 2,
+				y: r.top + r.height / 2,
+				angle: 0,
+				shake: 0,
+				samples: [{
+					x: r.left + r.width / 2,
+					y: r.top + r.height / 2,
+					t: now
+				}]
+			};
+			g.timer = setTimeout(() => {
+				if (hold.current === g) activate(g);
+			}, 180);
+			hold.current = g;
+		} else if (((_hold$current = hold.current) === null || _hold$current === void 0 ? void 0 : _hold$current.pointerId) === -1 && e.key.startsWith("Arrow")) {
+			e.preventDefault();
+			const g = hold.current;
+			activate(g);
+			g.x += e.key === "ArrowRight" ? 24 : e.key === "ArrowLeft" ? -24 : 0;
+			g.y += e.key === "ArrowDown" ? 24 : e.key === "ArrowUp" ? -24 : 0;
+			g.angle += .4;
+			g.shake = Math.min(12, g.shake + 1);
+			g.samples.push({
+				x: g.x,
+				y: g.y,
+				t: performance.now()
+			});
+			onHoldMove(g.id, g.x, g.y, g.angle);
+		}
+	}
+	function keyUp(e) {
+		var _hold$current2;
+		if (((_hold$current2 = hold.current) === null || _hold$current2 === void 0 ? void 0 : _hold$current2.pointerId) === -1 && (e.key === " " || e.key === "Enter")) {
+			e.preventDefault();
+			const active = !!hold.current.id, formula = hold.current.formula;
+			stop();
+			if (!active) cast(formula);
+		}
+	}
 	function cast(value) {
 		try {
 			diceFormulaTerms(value);
@@ -2043,7 +2163,23 @@ function DiceTray({ rolls, onRoll, view, onViewChange }) {
 				className: "dice-roll-controls",
 				children: [/* @__PURE__ */ jsxs("button", {
 					className: "play-primary dice-roll-button",
-					onClick: () => cast(`${count}d${sides}${modifier >= 0 ? "+" : ""}${modifier}`),
+					onClick: () => {
+						if (suppressClick.current) {
+							suppressClick.current = false;
+							return;
+						}
+						cast(currentFormula());
+					},
+					onPointerDown: press,
+					onPointerMove: move,
+					onPointerUp: (e) => {
+						var _hold$current3;
+						if (((_hold$current3 = hold.current) === null || _hold$current3 === void 0 ? void 0 : _hold$current3.pointerId) === e.pointerId) stop();
+					},
+					onPointerCancel: () => stop(true),
+					onKeyDown: keyDown,
+					onKeyUp: keyUp,
+					title: "Нажмите для броска или удерживайте и потяните кубы",
 					children: [
 						"Бросить ",
 						count,
@@ -2994,9 +3130,9 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 			result: r
 		}, ...old].slice(0, 3));
 	}
-	async function rolled(name, fn) {
+	async function rolled(name, fn, manual) {
 		try {
-			const r = await diceController.run(fn);
+			const r = await diceController.run(fn, manual);
 			presentRoll(name, r);
 			commitCharacter(logPlay(currentCharacter.current, name, r));
 		} catch (e) {
@@ -4731,9 +4867,12 @@ function GameMode({ character: c, onChange, onBack, onEdit, onLevelUp, onExport,
 							rolls: visibleRolls,
 							view,
 							onViewChange: updateView,
-							onRoll: (name, formula) => {
+							onHoldStart: diceController.beginHold,
+							onHoldMove: diceController.moveHold,
+							onHoldEnd: diceController.endHold,
+							onRoll: (name, formula, manual) => {
 								setDiceOpen(false);
-								rolled(name, () => rollDice(formula));
+								rolled(name, () => rollDice(formula), manual);
 							}
 						})]
 					})]
@@ -39422,11 +39561,11 @@ var alignments = [
 var siteChangelog = [
 	{
 		version: "2.0",
-		publishedAt: "2026-11-24T15:40:00Z",
+		publishedAt: "2026-11-24T15:50:00Z",
 		changes: [
 			"Добавлены классический лист персонажа и лист по правилам 2024 года.",
 			"Исправлены отображение и печать карточек заклинаний.",
-			"Полностью новая физическая анимация кубов: реальные результаты броска, столкновения и отскоки. Можно настроить размер, цвета, цифры, звук и время отображения или полностью отключить анимацию."
+			"Полностью новая физическая анимация кубов: реальные результаты, столкновения и отскоки. Можно вытянуть кубы из кнопки, встряхнуть и бросить вручную, настроить размер, цвета, цифры, звук и время отображения или отключить анимацию."
 		]
 	},
 	{
