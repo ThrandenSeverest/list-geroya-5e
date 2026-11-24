@@ -28,7 +28,7 @@ def normalize(root: Path) -> None:
     if server_entry.exists():
         entry = server_entry.read_text(encoding="utf-8")
         for match in re.finditer(
-            r'get buildId\(\)\s*\{\s*var (_[0-9A-Fa-f]+);\s*return \(\1 = "([0-9a-f-]{36})"',
+            r'get buildId\(\)\s*\{\s*var (_[0-9A-Fa-f]*);\s*return \(\1 = "([0-9a-f-]{36})"',
             entry,
         ):
             build_id_aliases.add(match.group(1))
@@ -56,7 +56,12 @@ def normalize(root: Path) -> None:
         for build_id in set(build_ids):
             normalized = normalized.replace(build_id, "normalized-build-id")
         for alias in build_id_aliases:
-            normalized = normalized.replace(alias, "_normalizedBuildId")
+            normalized = re.sub(
+                r'get buildId\(\)\s*\{[^}]*\}',
+                lambda match: re.sub(r'(?<![\w$])' + re.escape(alias) + r'(?![\w$])',
+                                     "_normalizedBuildId", match.group(0)),
+                normalized,
+            )
         normalized = re.sub(
             r'(function getDraftSecret\(\) \{\s*return ")[^"]+(";\s*\})',
             r'\1normalized-draft-secret\2',
