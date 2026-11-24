@@ -10,7 +10,7 @@ export function normalizePlayView(value:unknown):PlayViewPreferences {
 }
 export function usePlayViewPreferences(){
   const [view,setView]=useState<PlayViewPreferences>(defaultPlayView);
-  useEffect(()=>{try{setView(normalizePlayView(JSON.parse(localStorage.getItem(key)||'null')));}catch{}},[]);
-  function update(patch:Partial<PlayViewPreferences>){setView(previous=>{const next=normalizePlayView({...previous,...patch});try{localStorage.setItem(key,JSON.stringify(next));}catch{}return next;});}
+  useEffect(()=>{const sync=()=>{try{setView(normalizePlayView(JSON.parse(localStorage.getItem(key)||'null')));}catch{}};sync();window.addEventListener(key,sync);window.addEventListener('storage',sync);return()=>{window.removeEventListener(key,sync);window.removeEventListener('storage',sync);};},[]);
+  function update(patch:Partial<PlayViewPreferences>){let saved=view;try{saved=normalizePlayView(JSON.parse(localStorage.getItem(key)||'null'));}catch{}const next=normalizePlayView({...saved,...patch});try{localStorage.setItem(key,JSON.stringify(next));}catch{}setView(next);window.dispatchEvent(new Event(key));}
   return [view,update] as const;
 }

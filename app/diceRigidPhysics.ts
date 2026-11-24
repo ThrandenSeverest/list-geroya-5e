@@ -129,7 +129,7 @@ export class DiceTable {
     b.applyImpulse(new Vec3(dx/length*2.5,dy/length*2.5,.6),new Vec3(r*.7,0,0));
     b.wakeUp();d.cocked=0;
    }
-   if(!d.settled&&d.rerolls===0&&(d.cocked>2||d.age>10)){
+   if(!d.settled&&d.rerolls===0&&(d.cocked>.75||d.age>10)){
     this.world.removeBody(b);d.launched=false;d.entered=false;d.delay=.2;d.age=0;d.still=0;d.cocked=0;d.rerolls++;
     const random=d.random,angle=(random()-.5)*1.35,speed=Math.sqrt(this.width/DICE_UNIT)*7*(.9+random()*.3);
     b.position.set(this.width/DICE_UNIT+r+.3,this.height/DICE_UNIT*(.25+.5*random()),r*1.3);

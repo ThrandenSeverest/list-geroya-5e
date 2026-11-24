@@ -84,7 +84,7 @@ function renderFaceNumber(
   ctx.transform(right[0],right[1],down[0],down[1],0,0);
   ctx.fillStyle=numberColor;
   const font=numberStyle==='modern'?'Arial,sans-serif':numberStyle==='mono'?'ui-monospace,Consolas,monospace':'Georgia,serif';
-  ctx.font='700 '+(fontSize*numberScale).toFixed(1)+'px '+font;
+  ctx.font=(numberStyle==='classic'?'italic 700 ':numberStyle==='mono'?'400 ':'900 ')+(fontSize*numberScale).toFixed(1)+'px '+font;
   ctx.textAlign='center';
   ctx.textBaseline='middle';
   ctx.fillText(text,0,0,Math.max(13,inradius*1.75));
@@ -143,7 +143,7 @@ export function DiceScreenOverlay({rolls,options,onComplete,onExpire}:{rolls:Scr
     // Retire completed older throws if they would crowd a new throw.
     const count=roll.sides.reduce((n,s)=>n+(s===100?2:1),0);
     if(sim.dice.length+count>(width<700?24:40))for(const [id,b] of batches.current)if(b.completedAt!==undefined){b.dice.forEach(d=>sim.remove(d.id));batches.current.delete(id);expire(id);}
-    const size=Math.max(6,Math.min(screenDieSize(width,height)*opts.size,Math.sqrt(w*h/Math.max(1,sim.dice.length+count)/7)));
+    const size=Math.max(6,Math.min(screenDieSize(width,height)*opts.size,Math.min(w,h)*.18));
     const items:MovingDie[]=[];
     roll.sides.forEach((s,index)=>{
      const parts=s===100?['tens','units'] as const:['regular'] as const;
