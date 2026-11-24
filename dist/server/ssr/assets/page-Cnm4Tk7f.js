@@ -27923,7 +27923,7 @@ function ClassicHeader({ title, page }) {
 					})]
 				}) : title
 			}),
-			/* @__PURE__ */ jsxs("span", { children: [page, " / 3"] })
+			/* @__PURE__ */ jsx("span", { children: page <= 3 ? `${page} / 3` : page })
 		]
 	});
 }
