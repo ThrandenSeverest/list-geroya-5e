@@ -68,12 +68,27 @@ export class DiceTable {
  solvePlanarContacts(){
   const dice=this.dice.filter(d=>d.launched&&d.entered&&d.age>=1);
   const w=this.width/DICE_UNIT,h=this.height/DICE_UNIT;
-  const radius=(d:PhysicalDie)=>d.size/DICE_UNIT*1.35+ .02;
+  // Keep the actual horizontal footprint clear without a generous halo.
+  const radius=(d:PhysicalDie)=>d.size/DICE_UNIT*.98;
   const cy=(d:PhysicalDie)=>d.body.position.y;
   const move=(d:PhysicalDie,x:number,y:number)=>{d.body.position.x+=x;d.body.position.y+=y;d.body.aabbNeedsUpdate=true;};
-  for(let pass=0;pass<160;pass++){
+  for(let pass=0;pass<48;pass++){
    let error=0;
-   for(const d of dice){const r=radius(d);move(d,Math.max(r,Math.min(w-r,d.body.position.x))-d.body.position.x,Math.max(r,Math.min(h-r,cy(d)))-cy(d));}
+   for(const d of dice){
+    const r=radius(d),b=d.body;
+    const px=Math.max(r,Math.min(w-r,b.position.x)),py=Math.max(r,Math.min(h-r,cy(d)));
+    if(px!==b.position.x||py!==cy(d)){
+     move(d,px-b.position.x,py-cy(d));
+    }
+    // An inward normal impulse also reverses the roll that drove the die into
+    // the rim. Resolve each wall independently, including a simultaneous corner hit.
+    if(!d.settled){
+     const hitX=(b.position.x<=r+.035&&b.velocity.x<-.2)||(b.position.x>=w-r-.035&&b.velocity.x>.2);
+     const hitY=(b.position.y<=r+.035&&b.velocity.y<-.2)||(b.position.y>=h-r-.035&&b.velocity.y>.2);
+     if(hitX){b.velocity.x=-b.velocity.x*.5;b.angularVelocity.y=-b.angularVelocity.y*.5;b.wakeUp();}
+     if(hitY){b.velocity.y=-b.velocity.y*.5;b.angularVelocity.x=-b.angularVelocity.x*.5;b.wakeUp();}
+    }
+   }
    for(let i=0;i<dice.length;i++)for(let j=i+1;j<dice.length;j++){
     const a=dice[i],b=dice[j];let dx=b.body.position.x-a.body.position.x,dy=cy(b)-cy(a),distance=Math.hypot(dx,dy);
     const gap=radius(a)+radius(b)-distance;if(gap<=0)continue;
@@ -81,10 +96,9 @@ export class DiceTable {
     if(distance<1e-8){const angle=(i*2.399963+j)*1.7;dx=Math.cos(angle);dy=Math.sin(angle);distance=1;}
     const nx=dx/distance,ny=dy/distance,shift=(gap+.001)/2;
     move(a,-nx*shift,-ny*shift);move(b,nx*shift,ny*shift);
-    // Remove only closing planar velocity so the next physics step cannot
-    // immediately drive the same pair back together.
+    // Transfer closing velocity so touching dice can push each other apart.
     const closing=(b.body.velocity.x-a.body.velocity.x)*nx+(b.body.velocity.y-a.body.velocity.y)*ny;
-    if(closing<0){if(!a.settled){a.body.velocity.x+=closing*nx*.5;a.body.velocity.y+=closing*ny*.5;}if(!b.settled){b.body.velocity.x-=closing*nx*.5;b.body.velocity.y-=closing*ny*.5;}}
+    if(closing<0){const impulse=-closing*.62;if(!a.settled){a.body.velocity.x-=impulse*nx;a.body.velocity.y-=impulse*ny;a.body.wakeUp();}if(!b.settled){b.body.velocity.x+=impulse*nx;b.body.velocity.y+=impulse*ny;b.body.wakeUp();}}
    }
    if(error<.002)break;
   }

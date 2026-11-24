@@ -71,6 +71,25 @@ test('A fast die rebounds inward from the edge and still lands on the table',()=
  for(let step=0;step<1800&&!die.settled;step++)table.step();
  assert.ok(die.settled);assert.equal(die.value,readPhysicalDie(die));
 });
+test('A rolling die touching the wall reverses direction, and touching dice repel',()=>{
+ const table=new DiceTable(370,640),random=rng(42);
+ const a=table.add('wall',6,40,random),b=table.add('neighbor',6,40,random);
+ for(let step=0;step<150&&(!a.entered||!b.entered);step++)table.step();
+ assert.ok(a.entered&&b.entered);
+ a.age=b.age=1.1;
+ a.body.position.set(.75,8,1);b.body.position.set(5,8,1);
+ a.body.velocity.set(-4,0,0);a.body.angularVelocity.set(0,-3,0);b.body.velocity.setZero();
+ table.solvePlanarContacts();
+ assert.ok(a.body.velocity.x>1,'wall contact must send the die back into the table');
+ assert.ok(a.body.angularVelocity.y>0,'spin must turn away from the wall');
+ assert.ok(a.body.position.x>=.98,'die stays clear of the wall');
+ a.body.position.set(3,8,1);b.body.position.set(4.2,8,1);
+ a.body.velocity.set(4,0,0);b.body.velocity.setZero();
+ table.solvePlanarContacts();
+ assert.ok(Math.hypot(a.body.position.x-b.body.position.x,a.body.position.y-b.body.position.y)>=1.95);
+ assert.ok(b.body.velocity.x>0,'collision transfers motion to the other die');
+ assert.ok(a.body.velocity.x<b.body.velocity.x,'incoming die does not keep pushing through');
+});
 test('First rethrow ignores other dice while keeping wood and walls',()=>{
  const table=new DiceTable(370,640),random=rng(7);
  const die=table.add('cocked',4,30,random);
@@ -98,7 +117,7 @@ test('Eight large mobile dice cannot share horizontal space after one second',()
    const active=dice.filter(d=>d.entered&&d.launched&&d.age>=1);
    for(let i=0;i<active.length;i++)for(let j=i+1;j<active.length;j++){
     const a=active[i],b=active[j];
-    assert.ok(Math.hypot(a.body.position.x-b.body.position.x,a.body.position.y-b.body.position.y)>=(a.size+b.size)/40*1.35+.04-.01,`overlap seed ${seed} frame ${frame}`);
+    assert.ok(Math.hypot(a.body.position.x-b.body.position.x,a.body.position.y-b.body.position.y)>=(a.size+b.size)/40*.98-.01,`overlap seed ${seed} frame ${frame}`);
    }
    if(dice.every(d=>d.settled))break;
   }
