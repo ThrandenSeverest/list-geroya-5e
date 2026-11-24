@@ -89,7 +89,7 @@ function ClassicHeader({ title, page }: { title: string; page: number }) {
           <textPath href={`#${ribbonId}`} startOffset="50%">{title}</textPath>
         </text>
       </svg> : title}
-    </strong><span>{page} / 3</span>
+    </strong><span>{page <= 3 ? `${page} / 3` : page}</span>
   </header>;
 }
 
