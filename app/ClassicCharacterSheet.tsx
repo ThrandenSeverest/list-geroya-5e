@@ -106,6 +106,22 @@ function SpellGroup({level,entries,slots}:{level:number;entries:PdfSpell[];slots
 }
 
 export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
+  // The original paper template reserves one line for tools and only a few
+  // lines for weapons. Keep a short reference there and print long lists in
+  // full on a separate page instead of silently clipping them.
+  const proficiencyLists = [
+    { label: "Языки", items: props.proficiencies.languages, limit: 65 },
+    { label: "Инструменты", items: props.proficiencies.tools, limit: 55 },
+    { label: "Доспехи", items: props.proficiencies.armor, limit: 65 },
+    { label: "Оружие", items: props.proficiencies.weapons, limit: 160 },
+  ];
+  const hasProficiencyAppendix = proficiencyLists.some(({ items, limit }) => items.join(", ").length > limit);
+  const proficiencyDisplay = (label: string) => {
+    const list = proficiencyLists.find(entry => entry.label === label)!;
+    return list.items.join(", ").length > list.limit
+      ? `${list.items.length} наименований · полный список на стр. 4`
+      : list.items.join(", ") || "—";
+  };
   const root=useRef<HTMLDivElement>(null);
   const editKey=`herolist-classic-text-v1:${props.identity.name || 'unnamed'}`;
   const [editMode,setEditMode]=useState(false);
@@ -259,10 +275,7 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
           </div>
           <Panel title="Пассивная мудрость (Внимательность)"><strong className="classic-sheet-inline-value">{props.passivePerception}</strong></Panel>
           <Panel title="Прочие умения и языки" className="classic-sheet-proficiencies">
-            <p title={props.proficiencies.languages.join(", ")}><b>Языки:</b> {props.proficiencies.languages.join(", ") || "—"}</p>
-            <p title={props.proficiencies.tools.join(", ")}><b>Инструменты:</b> {props.proficiencies.tools.join(", ") || "—"}</p>
-            <p title={props.proficiencies.armor.join(", ")}><b>Доспехи:</b> {props.proficiencies.armor.join(", ") || "—"}</p>
-            <p title={props.proficiencies.weapons.join(", ")}><b>Оружие:</b> {props.proficiencies.weapons.join(", ") || "—"}</p>
+            {proficiencyLists.map(({ label, items }) => <p key={label} title={items.join(", ")}><b>{label}:</b> {proficiencyDisplay(label)}</p>)}
           </Panel>
         </div>
         <div className="classic-sheet-column classic-sheet-center">
@@ -328,13 +341,20 @@ export function ClassicCharacterSheet(props: PdfCharacterSheetProps) {
       </div>
       <div className="classic-sheet-note">● подготовлено · † всегда подготовлено · ○ не подготовлено</div>
     </section>
+    {hasProficiencyAppendix && <section className="classic-sheet-page classic-sheet-overflow classic-sheet-proficiencies-appendix">
+      <ClassicHeader title="Владения и языки" page={4} />
+      {proficiencyLists.map(({ label, items }) => <section key={label}>
+        <h2>{label}</h2>
+        <p>{items.join(", ") || "—"}</p>
+      </section>)}
+    </section>}
     {extraPages.map((page, pageIndex) => <section className="classic-sheet-page classic-sheet-overflow" key={pageIndex}>
-      <ClassicHeader title="Продолжение списка заклинаний" page={4 + pageIndex} />
+      <ClassicHeader title="Продолжение списка заклинаний" page={4 + Number(hasProficiencyAppendix) + pageIndex} />
       {page.map(spell => <div key={spell.id} className="classic-sheet-spell-row">
         <span className="classic-sheet-prepare">{spell.alwaysPrepared ? "†" : spell.prepared ? "●" : "○"}</span>
         <span>{spell.sourceLevel} круг · {spell.name}</span>
       </div>)}
     </section>)}
-    <SpellCardsAppendix spells={props.spells} identityName={props.identity.name} className={props.identity.className} startPage={4 + extraPages.length} />
+    <SpellCardsAppendix spells={props.spells} identityName={props.identity.name} className={props.identity.className} startPage={4 + Number(hasProficiencyAppendix) + extraPages.length} />
   </div></>;
 }
