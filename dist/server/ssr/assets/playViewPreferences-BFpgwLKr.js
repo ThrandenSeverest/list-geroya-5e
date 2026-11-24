@@ -36093,8 +36093,61 @@ var DiceTable = class {
 		if (d === null || d === void 0 ? void 0 : d.launched) this.world.removeBody(d.body);
 		this.dice = this.dice.filter((x) => x.id !== id);
 	}
+	/** Solve unilateral horizontal body contacts after the initial airborne phase.
+	* Translation never changes an already landed face or its recorded result. */
+	solvePlanarContacts() {
+		const dice = this.dice.filter((d) => d.launched && d.entered && d.age >= 1);
+		const w = this.width / 40, h = this.height / 40;
+		const radius = (d) => d.size / 40 * 1.35 + .02;
+		const cy = (d) => d.body.position.y;
+		const move = (d, x, y) => {
+			d.body.position.x += x;
+			d.body.position.y += y;
+			d.body.aabbNeedsUpdate = true;
+		};
+		for (let pass = 0; pass < 160; pass++) {
+			let error = 0;
+			for (const d of dice) {
+				const r = radius(d);
+				move(d, Math.max(r, Math.min(w - r, d.body.position.x)) - d.body.position.x, Math.max(r, Math.min(h - r, cy(d))) - cy(d));
+			}
+			for (let i = 0; i < dice.length; i++) for (let j = i + 1; j < dice.length; j++) {
+				const a = dice[i], b = dice[j];
+				let dx = b.body.position.x - a.body.position.x, dy = cy(b) - cy(a), distance = Math.hypot(dx, dy);
+				const gap = radius(a) + radius(b) - distance;
+				if (gap <= 0) continue;
+				error = Math.max(error, gap);
+				if (distance < 1e-8) {
+					const angle = (i * 2.399963 + j) * 1.7;
+					dx = Math.cos(angle);
+					dy = Math.sin(angle);
+					distance = 1;
+				}
+				const nx = dx / distance, ny = dy / distance, shift = (gap + .001) / 2;
+				move(a, -nx * shift, -ny * shift);
+				move(b, nx * shift, ny * shift);
+				const closing = (b.body.velocity.x - a.body.velocity.x) * nx + (b.body.velocity.y - a.body.velocity.y) * ny;
+				if (closing < 0) {
+					if (!a.settled) {
+						a.body.velocity.x += closing * nx * .5;
+						a.body.velocity.y += closing * ny * .5;
+					}
+					if (!b.settled) {
+						b.body.velocity.x -= closing * nx * .5;
+						b.body.velocity.y -= closing * ny * .5;
+					}
+				}
+			}
+			if (error < .002) break;
+		}
+	}
 	step(dt = 1 / 120) {
 		this.time += dt;
+		for (const d of this.dice) if (d.settled) d.age += dt;
+		if (this.dice.length && this.dice.every((d) => d.settled)) {
+			this.solvePlanarContacts();
+			return;
+		}
 		for (const d of this.dice) if (!d.launched) {
 			d.delay -= dt;
 			if (d.delay <= 0 && (d.rerolls > 0 || !this.dice.some((other) => other !== d && other.launched && other.body.position.distanceTo(d.body.position) < (other.size + d.size) / 40 * 1.05))) {
@@ -36232,6 +36285,7 @@ var DiceTable = class {
 				b.wakeUp();
 			}
 		}
+		this.solvePlanarContacts();
 	}
 };
 //#endregion
@@ -36499,7 +36553,7 @@ function DiceScreenOverlay({ rolls, options, onComplete, onExpire }) {
 			last = now;
 			accumulator += dt;
 			while (accumulator >= 1 / 120) {
-				if (sim.dice.some((d) => !d.settled)) sim.step(1 / 120);
+				if (sim.dice.length) sim.step(1 / 120);
 				accumulator -= 1 / 120;
 			}
 			let impact = 0;
